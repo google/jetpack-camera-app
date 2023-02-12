@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.feature.preview.camera.surface
+package com.google.jetpackcamera.camerax.surface
 
 import android.util.Log
 import android.view.SurfaceHolder
@@ -23,7 +23,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.jetpackcamera.feature.preview.camera.surface.SurfaceHolderEvent.*
+import com.google.jetpackcamera.camerax.surface.SurfaceHolderEvent.*
 
 private const val TAG = "Surface"
 
@@ -33,9 +33,12 @@ fun Surface(
 ) {
     Log.d(TAG, "Surface")
 
-    AndroidView(factory = {context ->
+    AndroidView(factory = { context ->
         SurfaceView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             holder.addCallback(
                 object : SurfaceHolder.Callback {
                     override fun surfaceCreated(holder: SurfaceHolder) {

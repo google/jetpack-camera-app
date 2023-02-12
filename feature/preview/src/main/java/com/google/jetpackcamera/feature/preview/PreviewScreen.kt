@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.jetpackcamera.feature.preview.camera.CameraPreview
+import com.google.jetpackcamera.camerax.CameraPreview
 
 private const val TAG = "ViewFinder"
 

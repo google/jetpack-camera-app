@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.feature.preview.camera.surface
+package com.google.jetpackcamera.camerax.surface
 
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
@@ -38,19 +38,28 @@ fun Texture(
 ) {
     Log.d(TAG, "Texture")
 
-    var textureView : TextureView? by remember { mutableStateOf(null) }
+    var textureView: TextureView? by remember { mutableStateOf(null) }
 
     AndroidView(
         factory = { context ->
             TextureView(context).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 surfaceTextureListener = object : TextureView.SurfaceTextureListener {
                     override fun onSurfaceTextureAvailable(
                         surface: SurfaceTexture,
                         width: Int,
                         height: Int
                     ) {
-                        onSurfaceTextureEvent(SurfaceTextureEvent.SurfaceTextureAvailable(surface, width, height))
+                        onSurfaceTextureEvent(
+                            SurfaceTextureEvent.SurfaceTextureAvailable(
+                                surface,
+                                width,
+                                height
+                            )
+                        )
                     }
 
                     override fun onSurfaceTextureSizeChanged(
@@ -58,11 +67,21 @@ fun Texture(
                         width: Int,
                         height: Int
                     ) {
-                        onSurfaceTextureEvent(SurfaceTextureEvent.SurfaceTextureSizeChanged(surface, width, height))
+                        onSurfaceTextureEvent(
+                            SurfaceTextureEvent.SurfaceTextureSizeChanged(
+                                surface,
+                                width,
+                                height
+                            )
+                        )
                     }
 
                     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-                        return onSurfaceTextureEvent(SurfaceTextureEvent.SurfaceTextureDestroyed(surface))
+                        return onSurfaceTextureEvent(
+                            SurfaceTextureEvent.SurfaceTextureDestroyed(
+                                surface
+                            )
+                        )
                     }
 
                     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
@@ -79,15 +98,15 @@ fun Texture(
 
 sealed interface SurfaceTextureEvent {
     data class SurfaceTextureAvailable(
-        val surface : SurfaceTexture,
-        val width : Int,
-        val height : Int
+        val surface: SurfaceTexture,
+        val width: Int,
+        val height: Int
     ) : SurfaceTextureEvent
 
     data class SurfaceTextureSizeChanged(
-        val surface : SurfaceTexture,
-        val width : Int,
-        val height : Int
+        val surface: SurfaceTexture,
+        val width: Int,
+        val height: Int
     ) : SurfaceTextureEvent
 
     data class SurfaceTextureDestroyed(

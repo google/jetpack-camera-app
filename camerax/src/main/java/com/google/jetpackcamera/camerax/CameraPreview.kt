@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.feature.preview.camera
+package com.google.jetpackcamera.camerax
 
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
-import com.google.jetpackcamera.feature.preview.camera.surface.CombinedSurface
-import com.google.jetpackcamera.feature.preview.camera.surface.CombinedSurfaceEvent
-import com.google.jetpackcamera.feature.preview.camera.surface.SurfaceType
+import com.google.jetpackcamera.camerax.surface.CombinedSurface
+import com.google.jetpackcamera.camerax.surface.CombinedSurfaceEvent
+import com.google.jetpackcamera.camerax.surface.SurfaceType
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.view.PreviewView.ImplementationMode
@@ -64,7 +64,7 @@ fun CameraPreview(
 
 @Composable
 fun PreviewSurface(
-    surfaceRequest : SurfaceRequest?,
+    surfaceRequest: SurfaceRequest?,
 //    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     type: SurfaceType = SurfaceType.TEXTURE_VIEW,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
@@ -86,16 +86,16 @@ fun PreviewSurface(
             }
     }
 
-    when(implementationMode) {
+    when (implementationMode) {
         ImplementationMode.PERFORMANCE -> TODO()
         ImplementationMode.COMPATIBLE -> CombinedSurface(
             onSurfaceEvent = { event ->
-                surface = when (event)     {
+                surface = when (event) {
                     is CombinedSurfaceEvent.SurfaceAvailable -> {
                         event.surface
                     }
 
-                    is CombinedSurfaceEvent.SurfaceDestroyed ->  {
+                    is CombinedSurfaceEvent.SurfaceDestroyed -> {
                         null
                     }
                 }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.feature.preview.camera.surface
+package com.google.jetpackcamera.camerax.surface
 
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
 import androidx.compose.runtime.Composable
-import com.google.jetpackcamera.feature.preview.camera.surface.SurfaceType.*
+import com.google.jetpackcamera.camerax.surface.SurfaceType.*
 
 private const val TAG = "CombinedSurface"
 
@@ -63,6 +63,7 @@ fun CombinedSurface(
                     is SurfaceTextureEvent.SurfaceTextureSizeChanged -> {
                         // TODO(yasith@)
                     }
+
                     is SurfaceTextureEvent.SurfaceTextureUpdated -> {
                         // TODO(yasith@)
                     }
