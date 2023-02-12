@@ -21,6 +21,9 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
+/**
+ * Dagger [Module] for camera data layer.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 interface CameraModule {
@@ -28,5 +31,5 @@ interface CameraModule {
     @Binds
     fun bindsCameraRepository(
         cameraXCameraRepository: CameraXCameraRepository
-    ) : CameraRepository
+    ): CameraRepository
 }

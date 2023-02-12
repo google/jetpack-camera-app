@@ -33,24 +33,27 @@ import com.google.jetpackcamera.feature.preview.camera.CameraPreview
 
 private const val TAG = "ViewFinder"
 
+/**
+ * Screen used for the Preview feature.
+ */
 @Composable
 fun PreviewScreen(
     viewModel: PreviewViewModel = viewModel()
 ) {
     Log.d(TAG, "ViewFinder")
 
-    val previewUiState : PreviewUiState by viewModel.previewUiState.collectAsState()
+    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val onSurfaceProviderReady : (SurfaceProvider) -> Unit = {
+    val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         viewModel.startPreview(lifecycleOwner, it)
     }
 
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Text(text = "Camera Not Ready")
-    } else if (previewUiState.cameraState == CameraState.READY){
+    } else if (previewUiState.cameraState == CameraState.READY) {
         Box() {
             CameraPreview(
                 modifier = Modifier

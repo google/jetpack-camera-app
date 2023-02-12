@@ -31,11 +31,14 @@ import javax.inject.Inject
 
 private const val TAG = "CameraXCameraRepository"
 
-class CameraXCameraRepository @Inject constructor (
+/**
+ * CameraX based implementation for [CameraRepository]
+ */
+class CameraXCameraRepository @Inject constructor(
     private val application: Application
 ) : CameraRepository {
     private lateinit var cameraProvider: ProcessCameraProvider
-    private lateinit var camera : Camera
+    private lateinit var camera: Camera
 
     private val imageCaptureUseCase = ImageCapture.Builder()
         .setTargetAspectRatio(AspectRatio.RATIO_16_9)
@@ -45,7 +48,7 @@ class CameraXCameraRepository @Inject constructor (
         .setTargetAspectRatio(AspectRatio.RATIO_16_9)
         .build()
 
-    override suspend fun initialize() : List<Int> {
+    override suspend fun initialize(): List<Int> {
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -63,7 +66,7 @@ class CameraXCameraRepository @Inject constructor (
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
         @LensFacing lensFacing: Int,
-    ) : Boolean {
+    ): Boolean {
         Log.d(TAG, "startPreview")
 
         val cameraSelector = cameraLensToSelector(lensFacing)

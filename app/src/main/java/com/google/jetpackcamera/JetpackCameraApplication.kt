@@ -19,5 +19,8 @@ package com.google.jetpackcamera
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
+/**
+ * [Application] class for JetpackCameraApp.
+ */
 @HiltAndroidApp
 class JetpackCameraApplication : Application()

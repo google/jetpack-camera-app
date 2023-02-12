@@ -27,12 +27,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * [ViewModel] for [PreviewScreen].
+ */
 @HiltViewModel
-class PreviewViewModel @Inject constructor (
+class PreviewViewModel @Inject constructor(
     private val cameraRepository: CameraRepository
 ) : ViewModel() {
 
-    private val _previewUiState: MutableStateFlow<PreviewUiState> = MutableStateFlow(PreviewUiState())
+    private val _previewUiState: MutableStateFlow<PreviewUiState> =
+        MutableStateFlow(PreviewUiState())
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
 
     init {
@@ -42,9 +46,11 @@ class PreviewViewModel @Inject constructor (
     private fun initializeCamera() {
         viewModelScope.launch {
             cameraRepository.initialize()
-            _previewUiState.emit(previewUiState.value.copy(
-                cameraState = CameraState.READY
-            ))
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    cameraState = CameraState.READY
+                )
+            )
         }
     }
 

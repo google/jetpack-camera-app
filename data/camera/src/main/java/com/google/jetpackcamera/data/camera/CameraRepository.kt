@@ -20,13 +20,22 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
 
+/**
+ * Data layer for camera.
+ */
 interface CameraRepository {
 
-    suspend fun initialize() : List<Int>
+    /**
+     * Initializes the camera.
+     */
+    suspend fun initialize(): List<Int>
 
+    /**
+     * Starts the camera preview.
+     */
     fun startPreview(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
         @CameraSelector.LensFacing lensFacing: Int
-    ) : Boolean
+    ): Boolean
 }

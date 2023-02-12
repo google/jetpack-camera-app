@@ -42,6 +42,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 
 
+/**
+ * Activity for the JetpackCameraApp.
+ */
 @OptIn(ExperimentalPermissionsApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -51,15 +54,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             JetpackCameraTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val permissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
+                    val permissionState =
+                        rememberPermissionState(permission = Manifest.permission.CAMERA)
                     permissionStateFlow = MutableStateFlow(permissionState)
 
-                    if (permissionState.status.isGranted)  {
+                    if (permissionState.status.isGranted) {
                         PreviewScreen()
                     } else {
                         CameraPermission(permissionState)
@@ -72,7 +75,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-private fun CameraPermission(cameraPermissionState : PermissionState) {
+private fun CameraPermission(cameraPermissionState: PermissionState) {
     Column {
         val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
             "The camera is important for this app. Please grant the permission."
