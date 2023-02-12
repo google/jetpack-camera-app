@@ -1,25 +1,20 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
 }
 
 android {
-    namespace 'com.google.jetpackcamera'
+    namespace 'com.google.jetpackcamera.feature.preview'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.google.jetpackcamera"
         minSdk 24
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary true
-        }
+        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
@@ -41,11 +36,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.3.2'
     }
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-    }
 }
 
 dependencies {
@@ -64,9 +54,6 @@ dependencies {
     // Compose - Integration with ViewModels
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1'
 
-    // Compose - Integration with Activities
-    implementation 'androidx.activity:activity-compose:1.5.1'
-
     // Compose - Testing
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
 
@@ -75,17 +62,27 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
-    implementation 'androidx.core:core-ktx:1.8.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.3.1'
+    // Guava
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1'
+
+    // Compose
+    def compose_ui_version = '1.2.0-beta01'
+    implementation "androidx.compose.ui:ui:$compose_ui_version"
+    implementation "androidx.compose.ui:ui-tooling-preview:$compose_ui_version"
+
+    // CameraX
+    def camerax_version = "1.1.0-beta01"
+    implementation "androidx.camera:camera-core:${camerax_version}"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-video:${camerax_version}"
+
+    implementation "androidx.camera:camera-view:${camerax_version}"
+    implementation "androidx.camera:camera-extensions:${camerax_version}"
 
     // Hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
-
-    // Accompanist - Permissions
-    implementation 'com.google.accompanist:accompanist-permissions:0.26.5-rc'
-
-    implementation(project(":feature:preview"))
 }
 
 // Allow references to generated code
