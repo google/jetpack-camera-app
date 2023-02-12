@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.data.camera
 
 import android.app.Application
 import android.util.Log
@@ -24,17 +24,16 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.guava.await
 import javax.inject.Inject
 
-private const val TAG = "CameraRepository"
+private const val TAG = "CameraXCameraRepository"
 
-class CameraRepository @Inject constructor (
+class CameraXCameraRepository @Inject constructor (
     private val application: Application
-){
+) : CameraRepository {
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var camera : Camera
 
@@ -46,7 +45,7 @@ class CameraRepository @Inject constructor (
         .setTargetAspectRatio(AspectRatio.RATIO_16_9)
         .build()
 
-    suspend fun initializeCamera() : List<Int> {
+    override suspend fun initialize() : List<Int> {
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -60,9 +59,9 @@ class CameraRepository @Inject constructor (
         return availableCameraLens
     }
 
-    fun startPreview(
+    override fun startPreview(
         lifecycleOwner: LifecycleOwner,
-        surfaceProvider: SurfaceProvider,
+        surfaceProvider: Preview.SurfaceProvider,
         @LensFacing lensFacing: Int,
     ) : Boolean {
         Log.d(TAG, "startPreview")

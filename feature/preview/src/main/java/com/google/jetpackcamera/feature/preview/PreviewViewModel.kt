@@ -20,6 +20,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.camera.core.Preview.SurfaceProvider
+import com.google.jetpackcamera.data.camera.CameraRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +41,7 @@ class PreviewViewModel @Inject constructor (
 
     private fun initializeCamera() {
         viewModelScope.launch {
-            cameraRepository.initializeCamera()
+            cameraRepository.initialize()
             _previewUiState.emit(previewUiState.value.copy(
                 cameraState = CameraState.READY
             ))
