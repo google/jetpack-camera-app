@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace 'com.google.jetpackcamera.feature.preview'
+    namespace 'com.google.jetpackcamera.settings'
     compileSdk 33
 
     defaultConfig {
@@ -65,17 +65,11 @@ dependencies {
     // Guava
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1'
 
-    // CameraX
-    def camerax_version = "1.1.0-beta01"
-    implementation "androidx.camera:camera-core:${camerax_version}"
-    implementation "androidx.camera:camera-view:${camerax_version}"
-
     // Hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
 
-    implementation(project(":domain:camera"))
-    implementation(project(":camerax"))
+    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code
