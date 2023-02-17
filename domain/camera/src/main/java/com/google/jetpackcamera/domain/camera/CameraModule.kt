@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.data.camera
+package com.google.jetpackcamera.domain.camera
 
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
-import androidx.lifecycle.LifecycleOwner
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 
 /**
- * Data layer for camera.
+ * Dagger [Module] for camera data layer.
  */
-interface CameraRepository {
+@Module
+@InstallIn(SingletonComponent::class)
+interface CameraModule {
 
-    /**
-     * Initializes the camera.
-     */
-    suspend fun initialize(): List<Int>
-
-    /**
-     * Starts the camera preview.
-     */
-    fun startPreview(
-        lifecycleOwner: LifecycleOwner,
-        surfaceProvider: Preview.SurfaceProvider,
-        @CameraSelector.LensFacing lensFacing: Int
-    ): Boolean
+    @Binds
+    fun bindsCameraRepository(
+        cameraXCameraRepository: CameraXCameraRepository
+    ): CameraRepository
 }

@@ -74,7 +74,7 @@ dependencies {
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
 
-    implementation(project(":data:camera"))
+    implementation(project(":domain:camera"))
     implementation(project(":camerax"))
 }
 

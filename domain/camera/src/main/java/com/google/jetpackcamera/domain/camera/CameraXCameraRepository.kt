@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.data.camera
+package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.util.Log

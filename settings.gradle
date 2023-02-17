@@ -15,5 +15,5 @@ dependencyResolutionManagement {
 rootProject.name = "Jetpack Camera"
 include ':app'
 include ':feature:preview'
-include ':data:camera'
+include ':domain:camera'
 include ':camerax'
