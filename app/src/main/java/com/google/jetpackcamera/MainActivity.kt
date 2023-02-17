@@ -31,12 +31,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +68,7 @@ class MainActivity : ComponentActivity() {
                     permissionStateFlow = MutableStateFlow(permissionState)
 
                     if (permissionState.status.isGranted) {
-                        PreviewScreen()
+                        JetpackCameraNavHost(modifier = Modifier.fillMaxSize())
                     } else {
                         CameraPermission(permissionState)
                     }
@@ -88,5 +93,20 @@ private fun CameraPermission(cameraPermissionState: PermissionState) {
         Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
             Text("Request permission")
         }
+    }
+}
+
+@Composable
+fun JetpackCameraNavHost(
+    modifier: Modifier,
+    navController: NavHostController = rememberNavController()
+) {
+    NavHost(navController = navController, startDestination = "preview") {
+        composable("preview") {
+            PreviewScreen(
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        composable("settings") { SettingsScreen() }
     }
 }

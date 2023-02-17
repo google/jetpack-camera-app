@@ -21,6 +21,7 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,7 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.camerax.CameraPreview
 
 private const val TAG = "ViewFinder"
@@ -38,7 +39,8 @@ private const val TAG = "ViewFinder"
  */
 @Composable
 fun PreviewScreen(
-    viewModel: PreviewViewModel = viewModel()
+    onNavigateToSettings : () -> Unit,
+    viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "ViewFinder")
 
@@ -71,6 +73,10 @@ fun PreviewScreen(
                     val bitmap = it.invoke()
                 }
             )
+
+            Button(onClick = onNavigateToSettings) {
+                Text(text = "Settings")
+            }
         }
     }
 }

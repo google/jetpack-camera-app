@@ -85,7 +85,12 @@ dependencies {
     // Accompanist - Permissions
     implementation 'com.google.accompanist:accompanist-permissions:0.26.5-rc'
 
+    // Jetpack Navigation
+    def nav_version = "2.5.3"
+    implementation "androidx.navigation:navigation-compose:$nav_version"
+
     implementation(project(":feature:preview"))
+    implementation(project(":feature:settings"))
 }
 
 // Allow references to generated code
