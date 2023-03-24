@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -78,15 +79,15 @@ class MainActivity : ComponentActivity() {
 private fun CameraPermission(cameraPermissionState: PermissionState) {
     Column {
         val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
-            "The camera is important for this app. Please grant the permission."
+            stringResource(R.string.camera_permission_required_rationale)
         } else {
-            "Camera not available"
+            stringResource(R.string.camera_not_available)
         }
 
         Text(textToShow)
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-            Text("Request permission")
+            Text(stringResource(R.string.request_permission))
         }
     }
 }

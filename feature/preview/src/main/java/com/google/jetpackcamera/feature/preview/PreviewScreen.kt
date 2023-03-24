@@ -28,8 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.jetpackcamera.camerax.CameraPreview
+import com.google.jetpackcamera.viewfinder.CameraPreview
 
 private const val TAG = "ViewFinder"
 
@@ -52,7 +53,7 @@ fun PreviewScreen(
     }
 
     if (previewUiState.cameraState == CameraState.NOT_READY) {
-        Text(text = "Camera Not Ready")
+        Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         Box() {
             CameraPreview(

@@ -44,6 +44,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun initializeCamera() {
+        // TODO(yasith): Handle CameraUnavailableException
         viewModelScope.launch {
             cameraRepository.initialize()
             _previewUiState.emit(
