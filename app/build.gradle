@@ -39,7 +39,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.3.2'
+        kotlinCompilerExtensionVersion '1.4.0'
     }
     packagingOptions {
         resources {
@@ -62,7 +62,7 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
     // Compose - Integration with ViewModels
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1'
 
     // Compose - Integration with Activities
     implementation 'androidx.activity:activity-compose'
