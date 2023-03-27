@@ -55,7 +55,7 @@ fun PreviewScreen(
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
-        Box() {
+        Box {
             CameraPreview(
                 modifier = Modifier
                     .fillMaxSize()

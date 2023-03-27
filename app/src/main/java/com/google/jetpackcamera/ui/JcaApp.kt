@@ -19,11 +19,9 @@ package com.google.jetpackcamera.ui
 import android.Manifest
 import androidx.compose.runtime.Composable
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
