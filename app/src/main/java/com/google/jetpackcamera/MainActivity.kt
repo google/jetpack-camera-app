@@ -48,18 +48,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-@Composable
-fun JetpackCameraNavHost(
-    modifier: Modifier,
-    navController: NavHostController = rememberNavController()
-) {
-    NavHost(navController = navController, startDestination = "preview") {
-        composable("preview") {
-            PreviewScreen(
-                onNavigateToSettings = { navController.navigate("settings") }
-            )
-        }
-        composable("settings") { SettingsScreen() }
-    }
-}

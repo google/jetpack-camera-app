@@ -17,13 +17,18 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.google.jetpackcamera.settings.SettingsScreen
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -32,8 +37,23 @@ fun JcaApp() {
         rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     if (permissionState.status.isGranted) {
-        PreviewScreen()
+        JetpackCameraNavHost(modifier = Modifier.fillMaxSize())
     } else {
         CameraPermission(permissionState)
+    }
+}
+
+@Composable
+private fun JetpackCameraNavHost(
+    modifier: Modifier,
+    navController: NavHostController = rememberNavController()
+) {
+    NavHost(navController = navController, startDestination = "preview") {
+        composable("preview") {
+            PreviewScreen(
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        composable("settings") { SettingsScreen() }
     }
 }
