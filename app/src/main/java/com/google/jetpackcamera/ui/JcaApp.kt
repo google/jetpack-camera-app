@@ -30,6 +30,9 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 
+const val PreviewRoute = "preview"
+const val SettingsRoute = "settings"
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp() {
@@ -48,12 +51,12 @@ private fun JetpackCameraNavHost(
     modifier: Modifier,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = "preview") {
-        composable("preview") {
+    NavHost(navController = navController, startDestination = PreviewRoute) {
+        composable(PreviewRoute) {
             PreviewScreen(
-                onNavigateToSettings = { navController.navigate("settings") }
+                onNavigateToSettings = { navController.navigate(SettingsRoute) }
             )
         }
-        composable("settings") { SettingsScreen() }
+        composable(SettingsRoute) { SettingsScreen() }
     }
 }
