@@ -16,6 +16,6 @@ rootProject.name = "Jetpack Camera"
 include ':app'
 include ':feature:preview'
 include ':domain:camera'
-include ':camerax'
+include ':camera-viewfinder-compose'
 include ':feature:settings'
 include ':data:settings'

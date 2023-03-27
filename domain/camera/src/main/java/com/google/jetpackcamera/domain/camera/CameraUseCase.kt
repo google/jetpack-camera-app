@@ -16,20 +16,26 @@
 
 package com.google.jetpackcamera.domain.camera
 
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.lifecycle.LifecycleOwner
 
 /**
- * Dagger [Module] for camera data layer.
+ * Data layer for camera.
  */
-@Module
-@InstallIn(SingletonComponent::class)
-interface CameraModule {
+interface CameraUseCase {
 
-    @Binds
-    fun bindsCameraUseCase (
-        cameraXCameraUseCase: CameraXCameraUseCase
-    ): CameraUseCase
+    /**
+     * Initializes the camera.
+     */
+    suspend fun initialize(): List<Int>
+
+    /**
+     * Starts the camera preview.
+     */
+    fun startPreview(
+        lifecycleOwner: LifecycleOwner,
+        surfaceProvider: Preview.SurfaceProvider,
+        @CameraSelector.LensFacing lensFacing: Int
+    ): Boolean
 }

@@ -16,45 +16,23 @@
 
 package com.google.jetpackcamera
 
-import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
-import com.google.jetpackcamera.feature.preview.PreviewScreen
-import com.google.jetpackcamera.settings.SettingsScreen
+import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.MutableStateFlow
-
 
 /**
  * Activity for the JetpackCameraApp.
  */
-@OptIn(ExperimentalPermissionsApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private lateinit var permissionStateFlow: MutableStateFlow<PermissionState>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -63,38 +41,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val permissionState =
-                        rememberPermissionState(permission = Manifest.permission.CAMERA)
-                    permissionStateFlow = MutableStateFlow(permissionState)
-
-                    if (permissionState.status.isGranted) {
-                        JetpackCameraNavHost(modifier = Modifier.fillMaxSize())
-                    } else {
-                        CameraPermission(permissionState)
-                    }
+                    JcaApp()
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun CameraPermission(cameraPermissionState: PermissionState) {
-    Column {
-        val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
-            "The camera is important for this app. Please grant the permission."
-        } else {
-            "Camera not available"
-        }
-
-        Text(textToShow)
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-            Text("Request permission")
-        }
-    }
-}
 
 @Composable
 fun JetpackCameraNavHost(
