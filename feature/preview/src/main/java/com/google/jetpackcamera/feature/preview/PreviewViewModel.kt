@@ -20,7 +20,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.camera.core.Preview.SurfaceProvider
-import com.google.jetpackcamera.domain.camera.CameraRepository
+import com.google.jetpackcamera.domain.camera.CameraUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +32,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraRepository: CameraRepository
+    private val cameraUseCase: CameraUseCase
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
@@ -46,7 +46,7 @@ class PreviewViewModel @Inject constructor(
     private fun initializeCamera() {
         // TODO(yasith): Handle CameraUnavailableException
         viewModelScope.launch {
-            cameraRepository.initialize()
+            cameraUseCase.initialize()
             _previewUiState.emit(
                 previewUiState.value.copy(
                     cameraState = CameraState.READY
@@ -59,7 +59,7 @@ class PreviewViewModel @Inject constructor(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: SurfaceProvider
     ) {
-        cameraRepository.startPreview(
+        cameraUseCase.startPreview(
             lifecycleOwner,
             surfaceProvider,
             previewUiState.value.lensFacing

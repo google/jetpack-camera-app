@@ -25,18 +25,18 @@ import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.guava.await
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraRepository"
 
 /**
- * CameraX based implementation for [CameraRepository]
+ * CameraX based implementation for [CameraUseCase]
  */
-class CameraXCameraRepository @Inject constructor(
+class CameraXCameraUseCase @Inject constructor(
     private val application: Application
-) : CameraRepository {
+) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var camera: Camera
 

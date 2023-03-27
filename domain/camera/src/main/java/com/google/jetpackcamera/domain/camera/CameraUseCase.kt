@@ -23,7 +23,7 @@ import androidx.lifecycle.LifecycleOwner
 /**
  * Data layer for camera.
  */
-interface CameraRepository {
+interface CameraUseCase {
 
     /**
      * Initializes the camera.

@@ -18,14 +18,11 @@ package com.google.jetpackcamera.feature.preview
 
 
 import androidx.camera.core.Preview.SurfaceProvider
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.LifecycleOwner
-import com.google.jetpackcamera.domain.camera.CameraRepository
+import com.google.jetpackcamera.domain.camera.CameraUseCase
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -38,14 +35,14 @@ import org.mockito.MockitoAnnotations
 
 class PreviewViewModelTest {
 
-    @Mock private lateinit var mockCameraRepository : CameraRepository
+    @Mock private lateinit var mockCameraUseCase : CameraUseCase
     private lateinit var previewViewModel : PreviewViewModel
 
     @Before
     fun setup() {
         MockitoAnnotations.initMocks(this)
         Dispatchers.setMain(StandardTestDispatcher())
-        previewViewModel = PreviewViewModel(mockCameraRepository)
+        previewViewModel = PreviewViewModel(mockCameraUseCase)
     }
 
 
@@ -66,7 +63,7 @@ class PreviewViewModelTest {
 
         val previewUiState = previewViewModel.previewUiState.value
 
-        verify(mockCameraRepository).startPreview(
+        verify(mockCameraUseCase).startPreview(
             lifecycleOwner,
             surfaceProvider,
             previewUiState.lensFacing

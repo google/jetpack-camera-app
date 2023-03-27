@@ -29,7 +29,7 @@ import dagger.hilt.components.SingletonComponent
 interface CameraModule {
 
     @Binds
-    fun bindsCameraRepository(
-        cameraXCameraRepository: CameraXCameraRepository
-    ): CameraRepository
+    fun bindsCameraUseCase (
+        cameraXCameraUseCase: CameraXCameraUseCase
+    ): CameraUseCase
 }
