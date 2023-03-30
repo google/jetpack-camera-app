@@ -59,6 +59,7 @@ class PreviewViewModel @Inject constructor(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: SurfaceProvider
     ) {
+        // TODO(yasith): Handle Exceptions from binding use cases
         cameraUseCase.startPreview(
             lifecycleOwner,
             surfaceProvider,

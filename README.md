@@ -1,6 +1,24 @@
-# Jetpack Camera App
+# Jetpack Camera App 📸 
 
-This repository contains Jetpack Camera App.
+This repository contains Jetpack Camera App. It's a work in progress 🚧.
+
+Jetpack Camera App is (will be) a fully functional camera app, focused on features used by
+app developers, and built entirely with CameraX, Kotlin and Jetpack Compose. It follows Android 
+design and development best practices and it's intended to be a useful reference for developers.
+
+This repository is currently in early development, and will go through many changes.
+
+# Development Environment ⚒️ 
+
+This project uses the gradle build system, and can be imported directly into Android Studio.
+
+# Architecture 📐
+
+TBD
+
+# Testing 🧪
+
+TBD
 
 
 ## Source Code Headers
