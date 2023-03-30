@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace 'com.google.jetpackcamera.feature.preview'
+    namespace 'com.google.jetpackcamera.settings'
     compileSdk 33
 
     defaultConfig {
@@ -19,7 +19,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -61,23 +61,15 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-    testImplementation "org.mockito:mockito-core:5.2.0"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6"
 
     // Guava
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1'
-
-    // CameraX
-    def camerax_version = "1.3.0-alpha05"
-    implementation "androidx.camera:camera-core:${camerax_version}"
-    implementation "androidx.camera:camera-view:${camerax_version}"
 
     // Hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
 
-    implementation(project(":domain:camera"))
-    implementation(project(':camera-viewfinder-compose'))
+    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code
