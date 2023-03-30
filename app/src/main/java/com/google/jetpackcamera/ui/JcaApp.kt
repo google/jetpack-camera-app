@@ -29,9 +29,8 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.settings.SettingsScreen
-
-const val PreviewRoute = "preview"
-const val SettingsRoute = "settings"
+import com.google.jetpackcamera.ui.Routes.PreviewRoute
+import com.google.jetpackcamera.ui.Routes.SettingsRoute
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
