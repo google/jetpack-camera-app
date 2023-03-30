@@ -27,6 +27,8 @@ interface CameraUseCase {
 
     /**
      * Initializes the camera.
+     *
+     * @return list of available lenses.
      */
     suspend fun initialize(): List<Int>
 
@@ -37,5 +39,5 @@ interface CameraUseCase {
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
         @CameraSelector.LensFacing lensFacing: Int
-    ): Boolean
+    )
 }

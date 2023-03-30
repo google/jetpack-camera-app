@@ -16,13 +16,15 @@
 
 package com.google.jetpackcamera.feature.preview
 
+import androidx.camera.core.CameraSelector
+
 
 /**
  * Defines the current state of the [PreviewScreen].
  */
 data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
-    val lensFacing: Int = 0, // CameraSelector.LENS_FACING_FRONT
+    val lensFacing: Int = CameraSelector.LENS_FACING_FRONT
 )
 
 /**

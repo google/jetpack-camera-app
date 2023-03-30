@@ -66,27 +66,20 @@ class CameraXCameraUseCase @Inject constructor(
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider,
         @LensFacing lensFacing: Int,
-    ): Boolean {
+    ) {
         Log.d(TAG, "startPreview")
 
         val cameraSelector = cameraLensToSelector(lensFacing)
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
-        try {
-            cameraProvider.unbindAll()
-            camera = cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                previewUseCase,
-                imageCaptureUseCase
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "UseCase binding failed", e)
-            return false
-        }
-
-        return true
+        cameraProvider.unbindAll()
+        camera = cameraProvider.bindToLifecycle(
+            lifecycleOwner,
+            cameraSelector,
+            previewUseCase,
+            imageCaptureUseCase
+        )
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
