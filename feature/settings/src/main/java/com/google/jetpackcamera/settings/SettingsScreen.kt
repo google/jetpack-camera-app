@@ -16,10 +16,22 @@
 
 package com.google.jetpackcamera.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,62 +43,243 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.*
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+private const val TAG = "SettingsScreen"
 
 /**
  * Screen used for the Settings feature.
  */
 @Composable
+@Preview
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
-    Column {
-        pageHeader(settingsUiState.text)
-        sectionHeader(title = "general")
-        basicSettingUI(title = "Some setting", description = "some cool description")
-        basicSettingUI(title = "Some setting2", description = "some cool description")
-        basicSettingUI(title = "Some setting3", description = "some cool description")
-        basicSettingUI(title = "Some setting4", description = "some cool description")
+
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+    ) {
+        settingsPageHeader(settingsUiState.text)
+        sectionHeader(title = "General")
+        defaultCameraFacing(settingsUiState = settingsUiState,
+            onClick = { viewModel.setDefaultFrontCamera() }
+        )
+        defaultCameraFacing(settingsUiState = settingsUiState,
+            onClick = { viewModel.setDefaultFrontCamera() }
+        )
+
+        // the settings below are just to help visualize the different setting formats.
+        // switches are non functional bc they arent linked to a ui state value
+        sectionHeader(title = "Another Section")
+
+        basicSettingUI(title = "Foo", description = "fighters that fight foo",
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Face,
+                    contentDescription = null
+                )
+            }, onClick = {/* todo*/ })
+
+        popupSettingUI(title = "Boo", description = null,
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null
+                )
+            }, onClick = {/* todo*/ })
+
+        switchSettingUI(
+            title = "Goo",
+            description = null,
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Place,
+                    contentDescription = null
+                )
+            },
+            onClick = { /*TODO*/ },
+            settingValue = false
+        )
+        switchSettingUI(
+            title = "Too",
+            description = "or did you mean two",
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Create,
+                    contentDescription = null
+                )
+            },
+            onClick = { /*TODO*/ },
+            settingValue = true
+        )
+
     }
 }
 
+/**
+ * MAJOR SETTING UI COMPONENTS
+ * these are ready to be popped into the ui
+ */
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun pageHeader(title:String) {
-    Text(
-        text = title,
-        modifier = Modifier
+fun settingsPageHeader(title: String) {
+    //todo navigation
+    TopAppBar(
+        modifier = Modifier,
+        title = {
+            Text(title)
+        },
+        navigationIcon = {
+            //todo navigate back
+            IconButton(onClick = {/* something */ }) {
+                Icon(Icons.Filled.ArrowBack, "Accessibility text")
+            }
+        }
     )
-    Divider()
+    //Divider()
 }
 
 @Composable
 fun sectionHeader(title: String) {
+    //todo styling
     Text(
         text = title,
         modifier = Modifier
+            .padding(start = 20.dp, top = 10.dp),
+        fontSize = 18.sp
     )
 }
 
+@Composable
+fun defaultCameraFacing(settingsUiState: SettingsUiState, onClick: () -> Unit) {
+    switchSettingUI(
+        title = stringResource(id = settingsUiState.frontCameraTitle),
+        description = null,
+        leadingIcon = {
+            Icon(
+                Icons.Filled.Phone,
+                //todo
+                contentDescription = "Accessibility text"
+            )
+        },
+        onClick = { onClick() },
+        settingValue = settingsUiState.frontCameraValue
+    )
+}
+
+/*
+ * Setting UI sub-Components
+ * small and whimsical :)
+ */
+
+@Composable
+// a setting with no trailing icon (for simple popups)
+fun basicSettingUI(
+    title: String,
+    description: String?,
+    leadingIcon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    settingUI(
+        title = title, description = description, leadingIcon = leadingIcon, onClick = onClick,
+        trailingContent = null
+    )
+}
+
+
+// a setting with an arrow trailing icon (for full page popups?)
+@Composable
+fun popupSettingUI(
+    title: String,
+    description: String?,
+    leadingIcon: @Composable() () -> Unit,
+    onClick: () -> Unit
+) {
+    settingUI(title = title,
+        description = description,
+        leadingIcon = leadingIcon,
+        onClick = onClick,
+        trailingContent = {
+            Icon(
+                Icons.Filled.KeyboardArrowRight,
+                //todo
+                contentDescription = "accessibilityText"
+            )
+        }
+    )
+}
+
+// a setting with a switch
+// the value should correspond to the setting's UI state value. the switch will only change appearance if the UI state has been successfully updated
+@Composable
+fun switchSettingUI(
+    title: String,
+    description: String?,
+    leadingIcon: @Composable () -> Unit,
+    onClick: () -> Unit,
+    settingValue: Boolean
+) {
+    settingUI(
+        title = title,
+        description = description,
+        leadingIcon = leadingIcon,
+        onClick = onClick,
+        trailingContent = {
+            settingSwitch(settingValue, onClick)
+        }
+    )
+}
+
+// template used to construct the other settings
+// style this one to style every setting
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun basicSettingUI(title: String, description:String) {
+fun settingUI(
+    title: String,
+    description: String? = null,
+    leadingIcon: @Composable () -> Unit,
+    trailingContent: @Composable (() -> Unit)?,
+    onClick: () -> Unit
+) {
     Box(modifier = Modifier) {
-        Column {
-            ListItem(
-                headlineText = {Text(title)} ,
-                  supportingText = {Text(description)},
-                  leadingContent = {
-                      Icon(Icons.Filled.Settings, contentDescription = "something" )
-                  },
-                trailingContent = {
-                    Icon(
-                        Icons.Filled.KeyboardArrowRight,
-                        contentDescription = "something"
-                    )
+        ListItem(
+            modifier = Modifier.clickable { onClick() },
+            headlineText = { Text(title) },
+            supportingText = {
+                when (description) {
+                    null -> null
+                    else -> {
+                        Text(description)
+                    }
                 }
+            },
+            leadingContent = leadingIcon,
+            trailingContent = trailingContent
         )
-        }
-        Divider()
     }
+    //Divider()
+
+
+}
+
+//todo popup box frame
+// todo full screen popup frame
+
+// settingValue is a
+@Composable
+fun settingSwitch(settingValue: Boolean, onClick: () -> Unit) {
+    Switch(
+        modifier = Modifier,
+        enabled = true,
+        checked = settingValue,
+        onCheckedChange = {
+            onClick()
+        }
+    )
 }

@@ -16,11 +16,17 @@
 
 package com.google.jetpackcamera.settings
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
+import kotlinx.coroutines.launch
+
+private const val TAG = "SettingsViewModel"
+
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -33,4 +39,23 @@ class SettingsViewModel @Inject constructor(
     private val _settingsUiState = MutableStateFlow(SettingsUiState())
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
+    init {
+        //TODO(kim) set UI state w/ default values from settings repository
+    }
+
+
+    fun setDefaultFrontCamera(){
+        // true means default is front
+        val newLensFacing = when(_settingsUiState.value.frontCameraValue){
+            true -> false
+            false -> true
+        }
+        //todo update data layer
+
+        // update view model
+        viewModelScope.launch {
+            _settingsUiState.emit(settingsUiState.value.copy(frontCameraValue = newLensFacing))
+        }
+        Log.d(TAG, "set camera default facing: " + _settingsUiState.value.frontCameraValue)
+    }
 }
