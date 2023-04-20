@@ -44,9 +44,10 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.*
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+
 
 private const val TAG = "SettingsScreen"
 
@@ -54,9 +55,9 @@ private const val TAG = "SettingsScreen"
  * Screen used for the Settings feature.
  */
 @Composable
-@Preview
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    navController: NavController
 ) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
@@ -64,7 +65,7 @@ fun SettingsScreen(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
     ) {
-        settingsPageHeader(settingsUiState.text)
+        settingsPageHeader(settingsUiState.text, navBack = { navController.popBackStack() })
         sectionHeader(title = "General")
         defaultCameraFacing(settingsUiState = settingsUiState,
             onClick = { viewModel.setDefaultFrontCamera() }
@@ -128,7 +129,7 @@ fun SettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun settingsPageHeader(title: String) {
+fun settingsPageHeader(title: String, navBack: () -> Unit) {
     //todo navigation
     TopAppBar(
         modifier = Modifier,
@@ -137,7 +138,7 @@ fun settingsPageHeader(title: String) {
         },
         navigationIcon = {
             //todo navigate back
-            IconButton(onClick = {/* something */ }) {
+            IconButton(onClick = {navBack()}) {
                 Icon(Icons.Filled.ArrowBack, "Accessibility text")
             }
         }
