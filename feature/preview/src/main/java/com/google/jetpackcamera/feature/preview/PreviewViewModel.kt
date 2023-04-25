@@ -16,6 +16,8 @@
 
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Log
+import androidx.camera.core.ImageCaptureException
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "PreviewViewModel"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -79,5 +83,18 @@ class PreviewViewModel @Inject constructor(
 
     fun flipCamera() {
         // TODO(yasith)
+    }
+
+    fun captureImage() {
+        Log.d(TAG, "captureImage")
+        viewModelScope.launch {
+            try {
+                cameraUseCase.takePicture()
+                Log.d(TAG, "cameraUseCase.takePicture success")
+            } catch (exception: ImageCaptureException) {
+                Log.d(TAG, "cameraUseCase.takePicture error")
+                Log.d(TAG, exception.toString())
+            }
+        }
     }
 }

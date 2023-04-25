@@ -41,4 +41,6 @@ interface CameraUseCase {
         surfaceProvider: Preview.SurfaceProvider,
         @CameraSelector.LensFacing lensFacing: Int
     )
+
+    suspend fun takePicture()
 }

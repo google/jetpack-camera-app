@@ -36,6 +36,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.4.0'
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
