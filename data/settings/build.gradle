@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
+    id 'com.google.protobuf' version "0.9.1"
 }
 
 android {
@@ -41,6 +42,30 @@ dependencies {
     // Hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
+
+    // proto datastore
+    implementation "androidx.datastore:datastore:1.0.0"
+    implementation "com.google.protobuf:protobuf-kotlin-lite:3.21.12"
+
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.12"
+    }
+
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option 'lite'
+                }
+                kotlin {
+                    option 'lite'
+                }
+            }
+        }
+    }
 }
 
 // Allow references to generated code

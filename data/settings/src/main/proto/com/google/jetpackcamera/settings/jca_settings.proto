@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
+
+message JcaSettings {
+  int32 example_counter = 1;
+  bool default_front_camera = 2;
+}
