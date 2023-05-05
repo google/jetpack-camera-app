@@ -16,13 +16,30 @@
 
 package com.google.jetpackcamera.settings
 
+import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.Settings
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
-class LocalSettingsRepository @Inject constructor() : SettingsRepository {
+class LocalSettingsRepository @Inject constructor(
+    private val jcaSettings: DataStore<JcaSettings>
+) : SettingsRepository {
+
+    override val settings = jcaSettings.data
+        .map {
+            Settings(
+                default_front_camera = it.defaultFrontCamera
+            )
+        }
+
+    override suspend fun updateDefaultFrontCamera() {
+        jcaSettings.updateData {
+            it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
+        }
+    }
 
     override fun getSettings(): Settings {
         TODO("Not yet implemented")

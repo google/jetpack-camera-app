@@ -17,12 +17,16 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.Settings
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Data layer for settings.
  */
 interface SettingsRepository {
 
+    val settings : Flow<Settings>
+
+    suspend fun updateDefaultFrontCamera()
     // TODO(yasith@)
     fun getSettings(): Settings
 }

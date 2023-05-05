@@ -20,5 +20,6 @@ package com.google.jetpackcamera.settings.model
  * Data layer representation for settings.
  */
 data class Settings(
+    val default_front_camera : Boolean,
     val field : String = "todo"
 )
