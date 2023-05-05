@@ -21,8 +21,8 @@ private const val TAG ="SettingsUiState"
 /**
  * Defines the current state of the [SettingsScreen].
  */
-data class SettingsUiState(
-    val text: String = "Settings",
-    val frontCameraTitle: Int = R.string.default_facing_camera_title,
-    var frontCameraValue: Boolean = true // Front camera
-)
+sealed interface SettingsUiState {
+    object Loading : SettingsUiState
+    data class Success(val settings: DefaultSettings) : SettingsUiState
+}
+

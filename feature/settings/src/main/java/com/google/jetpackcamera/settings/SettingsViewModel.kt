@@ -20,10 +20,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 
@@ -36,7 +38,20 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _settingsUiState = MutableStateFlow(SettingsUiState())
+    private val _settingsUiState =
+        settingsRepository.settings.map {
+            settings ->
+            SettingsUiState.Success(
+                settings = DefaultSettings(
+                    defaultFrontCamera = settings.default_front_camera
+                )
+            )
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = SettingsUiState.Loading
+            )
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
     init {
@@ -46,16 +61,16 @@ class SettingsViewModel @Inject constructor(
 
     fun setDefaultFrontCamera(){
         // true means default is front
-        val newLensFacing = when(_settingsUiState.value.frontCameraValue){
-            true -> false
-            false -> true
-        }
-        //todo update data layer
 
-        // update view model
         viewModelScope.launch {
-            _settingsUiState.emit(settingsUiState.value.copy(frontCameraValue = newLensFacing))
+            settingsRepository.updateDefaultFrontCamera()
         }
-        Log.d(TAG, "set camera default facing: " + _settingsUiState.value.frontCameraValue)
+        Log.d(TAG, "set camera default facing: " +
+                (_settingsUiState.value as SettingsUiState.Success).settings.defaultFrontCamera)
     }
 }
+
+// class to show what settings the user can set to default
+data class DefaultSettings(
+    val defaultFrontCamera: Boolean
+)

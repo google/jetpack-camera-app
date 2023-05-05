@@ -17,10 +17,8 @@
 package com.google.jetpackcamera.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,23 +28,18 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.material3.*
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.jetpackcamera.settings.SettingsUiState.Loading
+import com.google.jetpackcamera.settings.SettingsUiState.Success
 
 
 private const val TAG = "SettingsScreen"
@@ -65,61 +58,70 @@ fun SettingsScreen(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
     ) {
-        settingsPageHeader(settingsUiState.text, navBack = { navController.popBackStack() })
-        sectionHeader(title = "General")
-        defaultCameraFacing(settingsUiState = settingsUiState,
-            onClick = { viewModel.setDefaultFrontCamera() }
-        )
-        defaultCameraFacing(settingsUiState = settingsUiState,
-            onClick = { viewModel.setDefaultFrontCamera() }
-        )
+        //todo string resource
+        settingsPageHeader("Settings", navBack = { navController.popBackStack() })
 
-        // the settings below are just to help visualize the different setting formats.
-        // switches are non functional bc they arent linked to a ui state value
-        sectionHeader(title = "Another Section")
-
-        basicSettingUI(title = "Foo", description = "fighters that fight foo",
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Face,
-                    contentDescription = null
-                )
-            }, onClick = {/* todo*/ })
-
-        popupSettingUI(title = "Boo", description = null,
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = null
-                )
-            }, onClick = {/* todo*/ })
-
-        switchSettingUI(
-            title = "Goo",
-            description = null,
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Place,
-                    contentDescription = null
-                )
-            },
-            onClick = { /*TODO*/ },
-            settingValue = false
-        )
-        switchSettingUI(
-            title = "Too",
-            description = "or did you mean two",
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Create,
-                    contentDescription = null
-                )
-            },
-            onClick = { /*TODO*/ },
-            settingValue = true
-        )
-
+        when (settingsUiState) {
+            Loading -> Text(text = "loading...")
+            is Success -> BigSettings(uiState = settingsUiState as Success, viewModel = viewModel )
+        }
     }
+}
+
+@Composable
+fun BigSettings(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
+    sectionHeader(title = "General")
+    defaultCameraFacing(settingsUiState = uiState,
+        onClick = viewModel::setDefaultFrontCamera
+    )
+    defaultCameraFacing(settingsUiState = uiState,
+        onClick = viewModel::setDefaultFrontCamera
+    )
+
+    // the settings below are just to help visualize the different setting formats.
+    // switches are non functional bc they arent linked to a ui state value
+    sectionHeader(title = "Another Section")
+
+    basicSettingUI(title = "Foo", description = "fighters that fight foo",
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Face,
+                contentDescription = null
+            )
+        }, onClick = {/* todo*/ })
+
+    popupSettingUI(title = "Boo", description = null,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = null
+            )
+        }, onClick = {/* todo*/ })
+
+    switchSettingUI(
+        title = "Goo",
+        description = null,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Place,
+                contentDescription = null
+            )
+        },
+        onClick = { /*TODO*/ },
+        settingValue = false
+    )
+    switchSettingUI(
+        title = "Too",
+        description = "or did you mean two",
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Create,
+                contentDescription = null
+            )
+        },
+        onClick = { /*TODO*/ },
+        settingValue = true
+    )
 }
 
 /**
@@ -158,19 +160,14 @@ fun sectionHeader(title: String) {
 }
 
 @Composable
-fun defaultCameraFacing(settingsUiState: SettingsUiState, onClick: () -> Unit) {
+fun defaultCameraFacing(settingsUiState: Success, onClick: () -> Unit) {
+    //todo set strign resources
     switchSettingUI(
-        title = stringResource(id = settingsUiState.frontCameraTitle),
+        title = "Set Default Front Camera",
         description = null,
-        leadingIcon = {
-            Icon(
-                Icons.Filled.Phone,
-                //todo
-                contentDescription = "Accessibility text"
-            )
-        },
+        leadingIcon = null,
         onClick = { onClick() },
-        settingValue = settingsUiState.frontCameraValue
+        settingValue = settingsUiState.settings.defaultFrontCamera
     )
 }
 
@@ -222,7 +219,7 @@ fun popupSettingUI(
 fun switchSettingUI(
     title: String,
     description: String?,
-    leadingIcon: @Composable () -> Unit,
+    leadingIcon: @Composable (() -> Unit)?,
     onClick: () -> Unit,
     settingValue: Boolean
 ) {
@@ -244,7 +241,7 @@ fun switchSettingUI(
 fun settingUI(
     title: String,
     description: String? = null,
-    leadingIcon: @Composable () -> Unit,
+    leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
     onClick: () -> Unit
 ) {
@@ -264,9 +261,6 @@ fun settingUI(
             trailingContent = trailingContent
         )
     }
-    //Divider()
-
-
 }
 
 //todo popup box frame
