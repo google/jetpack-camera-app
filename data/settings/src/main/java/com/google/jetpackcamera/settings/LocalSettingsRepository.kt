@@ -17,6 +17,8 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.DEFAULT_ARGS_KEY
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.Settings
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -31,13 +33,34 @@ class LocalSettingsRepository @Inject constructor(
     override val settings = jcaSettings.data
         .map {
             Settings(
-                default_front_camera = it.defaultFrontCamera
+                default_front_camera = it.defaultFrontCamera,
+                //todo
+                dark_mode_status = when (it.darkModeStatus){
+                    DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
+                    DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
+                    DarkModeProto.DARK_MODE_SYSTEM,
+                    DarkModeProto.UNRECOGNIZED,
+                    null  -> DarkModeStatus.SYSTEM
+                }
             )
         }
 
     override suspend fun updateDefaultFrontCamera() {
+        //todo
         jcaSettings.updateData {
             it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
+        }
+    }
+
+    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
+        //todo temporary for demo.
+
+        var newStatus = when (status){
+            DarkModeStatus.LIGHT,DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_DARK
+            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_SYSTEM
+        }
+        jcaSettings.updateData {
+            it.copy { this.darkModeStatus = newStatus }
         }
     }
 

@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.jetpackcamera.settings.SettingsUiState.Loading
 import com.google.jetpackcamera.settings.SettingsUiState.Success
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 
 
 private const val TAG = "SettingsScreen"
@@ -77,6 +78,9 @@ fun BigSettings(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
     defaultCameraFacing(settingsUiState = uiState,
         onClick = viewModel::setDefaultFrontCamera
     )
+    DarkModeSetting(settingsUiState = uiState, setDarkMode = viewModel::setDarkMode)
+
+
 
     // the settings below are just to help visualize the different setting formats.
     // switches are non functional bc they arent linked to a ui state value
@@ -168,6 +172,21 @@ fun defaultCameraFacing(settingsUiState: Success, onClick: () -> Unit) {
         leadingIcon = null,
         onClick = { onClick() },
         settingValue = settingsUiState.settings.defaultFrontCamera
+    )
+}
+
+@Composable
+fun DarkModeSetting(settingsUiState: Success, setDarkMode: () -> Unit) {
+    //todo set strign resources
+    switchSettingUI(
+        title = "Set dark mode",
+        description = null,
+        leadingIcon = null,
+        onClick = { setDarkMode() },
+        settingValue = when (settingsUiState.settings.darkModeStatus){
+            DarkModeStatus.SYSTEM, DarkModeStatus.LIGHT -> false
+            DarkModeStatus.DARK -> true
+        }
     )
 }
 

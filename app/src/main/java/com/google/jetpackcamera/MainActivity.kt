@@ -21,9 +21,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -38,6 +40,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import kotlinx.coroutines.flow.collect
 
 
@@ -65,9 +68,8 @@ class MainActivity : ComponentActivity() {
             when (uiState) {
                 Loading -> {}
                 is Success -> {
-                    Toast.makeText(this, "Success", Toast.LENGTH_LONG).show()
-
-                    JetpackCameraTheme {
+                   // Toast.makeText(this, "Success", Toast.LENGTH_LONG).show()
+                    JetpackCameraTheme( darkTheme = isInDarkMode(uiState = uiState)) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
@@ -80,4 +82,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
+@Composable
+private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
+    when (uiState) {
+        Loading -> isSystemInDarkTheme()
+        is Success -> when (uiState.settings.dark_mode_status) {
+            DarkModeStatus.DARK -> true
+            DarkModeStatus.LIGHT -> false
+            DarkModeStatus.SYSTEM -> isSystemInDarkTheme()
+        }
+    }
+
+
 

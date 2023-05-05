@@ -21,5 +21,6 @@ package com.google.jetpackcamera.settings.model
  */
 data class Settings(
     val default_front_camera : Boolean,
+    val dark_mode_status : DarkModeStatus,
     val field : String = "todo"
 )

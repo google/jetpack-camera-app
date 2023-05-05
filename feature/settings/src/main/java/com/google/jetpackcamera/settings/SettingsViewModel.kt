@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +44,8 @@ class SettingsViewModel @Inject constructor(
             settings ->
             SettingsUiState.Success(
                 settings = DefaultSettings(
-                    defaultFrontCamera = settings.default_front_camera
+                    defaultFrontCamera = settings.default_front_camera,
+                    darkModeStatus = settings.dark_mode_status
                 )
             )
         }
@@ -68,9 +70,18 @@ class SettingsViewModel @Inject constructor(
         Log.d(TAG, "set camera default facing: " +
                 (_settingsUiState.value as SettingsUiState.Success).settings.defaultFrontCamera)
     }
+
+    fun setDarkMode(){
+        viewModelScope.launch {
+            settingsRepository.updateDarkModeStatus(
+                (_settingsUiState.value as SettingsUiState.Success).settings.darkModeStatus
+            )
+        }
+    }
 }
 
 // class to show what settings the user can set to default
 data class DefaultSettings(
-    val defaultFrontCamera: Boolean
+    val defaultFrontCamera: Boolean,
+    val darkModeStatus: DarkModeStatus
 )

@@ -1,9 +1,10 @@
 syntax = "proto3";
+import "com/google/jetpackcamera/settings/dark_mode.proto";
 
 option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
 message JcaSettings {
-  int32 example_counter = 1;
   bool default_front_camera = 2;
+  DarkModeProto dark_mode_status = 3;
 }
