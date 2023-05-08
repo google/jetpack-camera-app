@@ -19,8 +19,14 @@ package com.google.jetpackcamera.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -33,13 +39,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.google.jetpackcamera.settings.SettingsUiState.Loading
-import com.google.jetpackcamera.settings.SettingsUiState.Success
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 
 
@@ -63,38 +72,120 @@ fun SettingsScreen(
         settingsPageHeader("Settings", navBack = { navController.popBackStack() })
 
         when (settingsUiState) {
-            Loading -> Text(text = "loading...")
-            is Success -> BigSettings(uiState = settingsUiState as Success, viewModel = viewModel )
+            SettingsUiState.Loading -> Text(text = "loading...") //todo loading
+            is SettingsUiState.Success -> SettingsList(uiState = settingsUiState as SettingsUiState.Success, viewModel = viewModel )
         }
     }
 }
 
 @Composable
-fun BigSettings(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
+fun SettingsList(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
     sectionHeader(title = "General")
-    defaultCameraFacing(settingsUiState = uiState,
+    defaultCameraFacing(settings = uiState.settings,
         onClick = viewModel::setDefaultFrontCamera
     )
-    defaultCameraFacing(settingsUiState = uiState,
-        onClick = viewModel::setDefaultFrontCamera
+
+    DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)
+
+    sampleSettings()
+
+
+
+}
+
+/**
+ * MAJOR SETTING UI COMPONENTS
+ * these are ready to be popped into the ui
+ */
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun settingsPageHeader(title: String, navBack: () -> Unit) {
+    //todo navigation
+    TopAppBar(
+        modifier = Modifier,
+        title = {
+            Text(title)
+        },
+        navigationIcon = {
+            //todo navigate back
+            IconButton(onClick = {navBack()}) {
+                Icon(Icons.Filled.ArrowBack, "Accessibility text")
+            }
+        }
     )
-    DarkModeSetting(settingsUiState = uiState, setDarkMode = viewModel::setDarkMode)
+}
 
+@Composable
+fun sectionHeader(title: String) {
+    //todo styling
+    Text(
+        text = title,
+        modifier = Modifier
+            .padding(start = 20.dp, top = 10.dp),
+        fontSize = 18.sp
+    )
+}
 
+@Composable
+fun defaultCameraFacing(settings: DefaultSettings, onClick: () -> Unit) {
+    //todo set strign resources
+    switchSettingUI(
+        title = "Set Default Front Camera",
+        description = null,
+        leadingIcon = null,
+        onClick = { onClick() },
+        settingValue = settings.defaultFrontCamera
+    )
+}
 
+@Composable
+fun DarkModeSetting(uiState: SettingsUiState.Success, setDarkMode: (DarkModeStatus) -> Unit) {
+    //todo set string resources
+    basicPopupSetting(
+        title = stringResource(id = R.string.dark_mode_title),
+        leadingIcon = null,
+        description = when (uiState.settings.darkModeStatus) {
+            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
+            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
+            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                choiceRow(text = "dark",
+                    selected = uiState.settings.darkModeStatus == DarkModeStatus.DARK,
+                    onClick = { setDarkMode(DarkModeStatus.DARK) }
+                )
+                choiceRow(text = "light",
+                    selected = uiState.settings.darkModeStatus == DarkModeStatus.LIGHT,
+                    onClick = { setDarkMode(DarkModeStatus.LIGHT) }
+                )
+                choiceRow(text = "system",
+                    selected = uiState.settings.darkModeStatus == DarkModeStatus.SYSTEM,
+                    onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun sampleSettings() {
     // the settings below are just to help visualize the different setting formats.
     // switches are non functional bc they arent linked to a ui state value
     sectionHeader(title = "Another Section")
 
-    basicSettingUI(title = "Foo", description = "fighters that fight foo",
+    basicPopupSetting(title = "Foo", description = "fighters that fight foo",
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Face,
                 contentDescription = null
             )
-        }, onClick = {/* todo*/ })
+        },
+        popupContents = {}
+    )
 
-    popupSettingUI(title = "Boo", description = null,
+    fullPopupSetting(title = "Boo", description = null,
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Favorite,
@@ -128,91 +219,44 @@ fun BigSettings(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
     )
 }
 
-/**
- * MAJOR SETTING UI COMPONENTS
- * these are ready to be popped into the ui
- */
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun settingsPageHeader(title: String, navBack: () -> Unit) {
-    //todo navigation
-    TopAppBar(
-        modifier = Modifier,
-        title = {
-            Text(title)
-        },
-        navigationIcon = {
-            //todo navigate back
-            IconButton(onClick = {navBack()}) {
-                Icon(Icons.Filled.ArrowBack, "Accessibility text")
-            }
-        }
-    )
-    //Divider()
-}
-
-@Composable
-fun sectionHeader(title: String) {
-    //todo styling
-    Text(
-        text = title,
-        modifier = Modifier
-            .padding(start = 20.dp, top = 10.dp),
-        fontSize = 18.sp
-    )
-}
-
-@Composable
-fun defaultCameraFacing(settingsUiState: Success, onClick: () -> Unit) {
-    //todo set strign resources
-    switchSettingUI(
-        title = "Set Default Front Camera",
-        description = null,
-        leadingIcon = null,
-        onClick = { onClick() },
-        settingValue = settingsUiState.settings.defaultFrontCamera
-    )
-}
-
-@Composable
-fun DarkModeSetting(settingsUiState: Success, setDarkMode: () -> Unit) {
-    //todo set strign resources
-    switchSettingUI(
-        title = "Set dark mode",
-        description = null,
-        leadingIcon = null,
-        onClick = { setDarkMode() },
-        settingValue = when (settingsUiState.settings.darkModeStatus){
-            DarkModeStatus.SYSTEM, DarkModeStatus.LIGHT -> false
-            DarkModeStatus.DARK -> true
-        }
-    )
-}
 
 /*
  * Setting UI sub-Components
  * small and whimsical :)
  */
 
+/** a composable for creating a simple popup setting **/
+
 @Composable
-// a setting with no trailing icon (for simple popups)
-fun basicSettingUI(
+fun basicPopupSetting(
     title: String,
     description: String?,
-    leadingIcon: @Composable () -> Unit,
-    onClick: () -> Unit
+    leadingIcon: @Composable (() -> Unit)?,
+    popupContents: @Composable () -> Unit
 ) {
+    val popupStatus = remember { mutableStateOf(false) }
     settingUI(
-        title = title, description = description, leadingIcon = leadingIcon, onClick = onClick,
+        title = title,
+        description = description,
+        leadingIcon = leadingIcon,
+        onClick = { popupStatus.value = true},
         trailingContent = null
     )
+    if (popupStatus.value) {
+        AlertDialog(
+            onDismissRequest = {popupStatus.value = false},
+            confirmButton = { Text(text = "Close", modifier = Modifier.clickable {popupStatus.value = false})},
+            title = { Text(text = title) },
+            text =  popupContents
+            )
+    }
 }
 
 
+//todo
 // a setting with an arrow trailing icon (for full page popups?)
 @Composable
-fun popupSettingUI(
+fun fullPopupSetting(
     title: String,
     description: String?,
     leadingIcon: @Composable() () -> Unit,
@@ -232,8 +276,11 @@ fun popupSettingUI(
     )
 }
 
-// a setting with a switch
-// the value should correspond to the setting's UI state value. the switch will only change appearance if the UI state has been successfully updated
+/** A composable for creating a setting with a Switch.
+ *
+ * <p> the value should correspond to the setting's UI state value. the switch will only change
+ * appearance if the UI state has been successfully updated
+*/
 @Composable
 fun switchSettingUI(
     title: String,
@@ -253,7 +300,8 @@ fun switchSettingUI(
     )
 }
 
-// template used to construct the other settings
+/** A composable used as a template used to construct the other settings */
+
 // style this one to style every setting
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,11 +329,9 @@ fun settingUI(
         )
     }
 }
-
-//todo popup box frame
 // todo full screen popup frame
 
-// settingValue is a
+
 @Composable
 fun settingSwitch(settingValue: Boolean, onClick: () -> Unit) {
     Switch(
@@ -296,4 +342,30 @@ fun settingSwitch(settingValue: Boolean, onClick: () -> Unit) {
             onClick()
         }
     )
+}
+
+@Composable
+fun choiceRow(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick,
+            )
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = null,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(text)
+    }
 }

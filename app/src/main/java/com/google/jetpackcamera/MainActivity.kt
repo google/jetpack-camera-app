@@ -49,12 +49,13 @@ import kotlinx.coroutines.flow.collect
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    val viewModel: MainActivityViewModel by viewModels()
+    private val viewModel: MainActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
+        // update viewmodel
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             when (uiState) {
-                Loading -> {}
+                Loading -> {/* Todo a loading screen */}
                 is Success -> {
                    // Toast.makeText(this, "Success", Toast.LENGTH_LONG).show()
                     JetpackCameraTheme( darkTheme = isInDarkMode(uiState = uiState)) {
@@ -83,7 +84,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
+/**
+ * Determines whether the Theme should be in dark, light, or follow system theme
+ */
 @Composable
 private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
     when (uiState) {

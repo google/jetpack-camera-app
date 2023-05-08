@@ -17,7 +17,6 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.DEFAULT_ARGS_KEY
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.Settings
 import kotlinx.coroutines.flow.map
@@ -53,11 +52,10 @@ class LocalSettingsRepository @Inject constructor(
     }
 
     override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        //todo temporary for demo.
-
-        var newStatus = when (status){
-            DarkModeStatus.LIGHT,DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_DARK
-            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_SYSTEM
+        val newStatus = when (status){
+            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
+            DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
+            DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
         }
         jcaSettings.updateData {
             it.copy { this.darkModeStatus = newStatus }

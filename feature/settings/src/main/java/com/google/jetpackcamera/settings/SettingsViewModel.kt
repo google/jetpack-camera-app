@@ -38,7 +38,6 @@ private const val TAG = "SettingsViewModel"
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
-
     private val _settingsUiState =
         settingsRepository.settings.map {
             settings ->
@@ -56,14 +55,10 @@ class SettingsViewModel @Inject constructor(
             )
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
-    init {
-        //TODO(kim) set UI state w/ default values from settings repository
-    }
-
 
     fun setDefaultFrontCamera(){
         // true means default is front
-
+        //todo run through camerausecase
         viewModelScope.launch {
             settingsRepository.updateDefaultFrontCamera()
         }
@@ -71,11 +66,9 @@ class SettingsViewModel @Inject constructor(
                 (_settingsUiState.value as SettingsUiState.Success).settings.defaultFrontCamera)
     }
 
-    fun setDarkMode(){
+    fun setDarkMode(darkModeStatus: DarkModeStatus){
         viewModelScope.launch {
-            settingsRepository.updateDarkModeStatus(
-                (_settingsUiState.value as SettingsUiState.Success).settings.darkModeStatus
-            )
+            settingsRepository.updateDarkModeStatus(darkModeStatus)
         }
     }
 }
