@@ -31,6 +31,8 @@ class FakeCameraUseCase : CameraUseCase {
     var previewStarted = false
     var numPicturesTaken = 0
 
+    var recordingInProgress = false
+
     override suspend fun initialize(): List<Int> {
         initialized = true
         return availableLenses
@@ -55,5 +57,13 @@ class FakeCameraUseCase : CameraUseCase {
             throw IllegalStateException("Usecases not binded")
         }
         numPicturesTaken += 1
+    }
+
+    override suspend fun startVideoRecording() {
+        recordingInProgress = true
+    }
+
+    override fun stopVideoRecording() {
+        recordingInProgress = false
     }
 }

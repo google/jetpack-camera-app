@@ -16,8 +16,10 @@
 
 package com.google.jetpackcamera.feature.preview
 
+import android.provider.MediaStore.Video
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -123,7 +124,10 @@ fun PreviewScreen(
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 CaptureButton(
-                    onClick = { viewModel.captureImage() }
+                    onClick = { viewModel.captureImage() },
+                    onLongPress = { viewModel.startVideoRecording() },
+                    onRelease = { viewModel.stopVideoRecording() },
+                    state = previewUiState.videoRecordingState
                 )
             }
         }
@@ -131,13 +135,35 @@ fun PreviewScreen(
 }
 
 @Composable
-fun CaptureButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = CircleShape,
+fun CaptureButton(
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    onRelease: () -> Unit,
+    state: VideoRecordingState
+) {
+    Box(
         modifier = Modifier
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = {
+                        onLongPress()
+                    }, onPress = {
+                        awaitRelease()
+                        onRelease()
+                    }, onTap = { onClick() })
+            }
             .size(120.dp)
             .padding(18.dp)
             .border(4.dp, Color.White, CircleShape)
-    ) {}
+    ) {
+        Canvas(modifier = Modifier.size(110.dp), onDraw = {
+            drawCircle(
+                color =
+                when (state) {
+                    VideoRecordingState.INACTIVE -> Color.Transparent
+                    VideoRecordingState.ACTIVE -> Color.Red
+                }
+            )
+        })
+    }
 }

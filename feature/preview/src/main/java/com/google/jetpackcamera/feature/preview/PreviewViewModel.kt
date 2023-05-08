@@ -18,14 +18,12 @@ package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
 import androidx.camera.core.ImageCaptureException
-import androidx.lifecycle.LifecycleOwner
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.camera.core.Preview.SurfaceProvider
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -45,6 +43,8 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState())
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
     var runningCameraJob: Job? = null
+
+    private var recordingJob : Job? = null
 
     init {
         initializeCamera()
@@ -96,5 +96,37 @@ class PreviewViewModel @Inject constructor(
                 Log.d(TAG, exception.toString())
             }
         }
+    }
+
+    fun startVideoRecording() {
+        Log.d(TAG, "startVideoRecording")
+        recordingJob = viewModelScope.launch {
+
+            try {
+                cameraUseCase.startVideoRecording()
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        videoRecordingState = VideoRecordingState.ACTIVE
+                    )
+                )
+                Log.d(TAG, "cameraUseCase.startRecording success")
+            } catch (exception: IllegalStateException) {
+                Log.d(TAG, "cameraUseCase.startVideoRecording error")
+                Log.d(TAG, exception.toString())
+            }
+        }
+    }
+
+    fun stopVideoRecording() {
+        Log.d(TAG, "stopVideoRecording")
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    videoRecordingState = VideoRecordingState.INACTIVE
+                )
+            )
+        }
+        cameraUseCase.stopVideoRecording()
+        recordingJob?.cancel()
     }
 }
