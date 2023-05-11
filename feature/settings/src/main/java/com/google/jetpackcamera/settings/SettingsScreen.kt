@@ -71,15 +71,17 @@ fun SettingsScreen(
         //todo string resource
         settingsPageHeader("Settings", navBack = { navController.popBackStack() })
 
-        when (settingsUiState) {
-            SettingsUiState.Loading -> Text(text = "loading...") //todo loading
-            is SettingsUiState.Success -> SettingsList(uiState = settingsUiState as SettingsUiState.Success, viewModel = viewModel )
+
+        when (settingsUiState.repositoryStatus) {
+            false -> Text(text = "loading...") //todo loading
+            true -> SettingsList(uiState = settingsUiState,  viewModel = viewModel )
         }
     }
 }
 
 @Composable
-fun SettingsList(uiState: SettingsUiState.Success, viewModel: SettingsViewModel){
+
+fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel){
     sectionHeader(title = "General")
     defaultCameraFacing(settings = uiState.settings,
         onClick = viewModel::setDefaultFrontCamera
@@ -140,7 +142,8 @@ fun defaultCameraFacing(settings: DefaultSettings, onClick: () -> Unit) {
 }
 
 @Composable
-fun DarkModeSetting(uiState: SettingsUiState.Success, setDarkMode: (DarkModeStatus) -> Unit) {
+
+fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> Unit) {
     //todo set string resources
     basicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),

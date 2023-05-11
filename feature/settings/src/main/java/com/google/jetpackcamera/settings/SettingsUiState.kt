@@ -16,13 +16,21 @@
 
 package com.google.jetpackcamera.settings
 
-private const val TAG ="SettingsUiState"
+private const val TAG = "SettingsUiState"
 
 /**
  * Defines the current state of the [SettingsScreen].
  */
-sealed interface SettingsUiState {
-    object Loading : SettingsUiState
-    data class Success(val settings: DefaultSettings) : SettingsUiState
+data class SettingsUiState(
+    val repositoryStatus: Boolean,
+    val settings: DefaultSettings,
+    var disabled: Boolean = false
+)
+
+
+sealed interface RepositoryState {
+    object Loading : RepositoryState
+    data class Success(val settings: DefaultSettings) : RepositoryState
+
 }
 
