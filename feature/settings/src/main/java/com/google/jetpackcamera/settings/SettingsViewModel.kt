@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.getDefaultSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,10 +44,7 @@ class SettingsViewModel @Inject constructor(
     private val repositoryState =
         settingsRepository.settings.map { settings ->
             RepositoryState.Success(
-                settings = DefaultSettings(
-                    defaultFrontCamera = settings.default_front_camera,
-                    darkModeStatus = settings.dark_mode_status
-                )
+                settings = settings
             )
         }
             .stateIn(
@@ -61,7 +59,8 @@ class SettingsViewModel @Inject constructor(
             RepositoryState.Loading -> MutableStateFlow(
                 SettingsUiState(
                     repositoryStatus = false,
-                    DefaultSettings()
+                    getDefaultSettings(),
+                    disabled = true
                 )
             )
 
@@ -72,7 +71,6 @@ class SettingsViewModel @Inject constructor(
                 )
             )
         }
-// suspend function
 
     fun setDefaultFrontCamera() {
         // true means default is front
@@ -81,23 +79,22 @@ class SettingsViewModel @Inject constructor(
             settingsUiState.emit(
                 // update the ui
                 settingsUiState.value.copy(
-                    settings = settingsUiState.value.settings.copy(defaultFrontCamera = true),
+                    settings = settingsUiState.value.settings.copy(
+                        default_front_camera = !settingsUiState.value.settings.default_front_camera
+                    ),
                     disabled = true
                 )
             )
-            Log.d(
-                TAG, "set ui default facing: " +
-                        settingsUiState.value.settings.defaultFrontCamera
-            )
-            Log.d(
-                TAG, "set camera default facing: " +
-                        (repositoryState.value as RepositoryState.Success).settings.defaultFrontCamera
-            )
+
             // todo run through camerausecase
 
             // after updating datastore, both should reset. disabled should be false,
             settingsRepository.updateDefaultFrontCamera()
             syncUiStateToRepository()
+            Log.d(
+                TAG, "set camera default facing: " +
+                        (repositoryState.value as RepositoryState.Success).settings.default_front_camera
+            )
         }
     }
 
@@ -106,9 +103,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
             syncUiStateToRepository()
+
+            Log.d(
+                TAG, "set dark mode theme: " +
+                        (repositoryState.value as RepositoryState.Success).settings.dark_mode_status
+            )
         }
     }
 
+
+    // ALWAYS use after attempting to set datastore value
     private suspend fun syncUiStateToRepository() {
         // update UI
         settingsUiState.emit(
@@ -120,8 +124,3 @@ class SettingsViewModel @Inject constructor(
     }
 }
 
-// class to show what settings the user can set to default
-data class DefaultSettings(
-    var defaultFrontCamera: Boolean = false,
-    val darkModeStatus: DarkModeStatus = DarkModeStatus.SYSTEM
-)

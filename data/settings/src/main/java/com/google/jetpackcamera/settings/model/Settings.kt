@@ -24,3 +24,11 @@ data class Settings(
     val dark_mode_status : DarkModeStatus,
     val field : String = "todo"
 )
+
+
+fun getDefaultSettings(): Settings{
+    return Settings(
+        default_front_camera = false,
+        dark_mode_status = DarkModeStatus.SYSTEM
+    )
+}

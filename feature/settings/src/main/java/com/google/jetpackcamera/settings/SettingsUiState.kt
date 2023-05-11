@@ -16,6 +16,8 @@
 
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.settings.model.Settings
+
 private const val TAG = "SettingsUiState"
 
 /**
@@ -23,14 +25,13 @@ private const val TAG = "SettingsUiState"
  */
 data class SettingsUiState(
     val repositoryStatus: Boolean,
-    val settings: DefaultSettings,
+    val settings: Settings,
     var disabled: Boolean = false
 )
 
 
 sealed interface RepositoryState {
     object Loading : RepositoryState
-    data class Success(val settings: DefaultSettings) : RepositoryState
-
+    data class Success(val settings: Settings) : RepositoryState
 }
 

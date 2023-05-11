@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.Settings
 
 
 private const val TAG = "SettingsScreen"
@@ -74,23 +75,23 @@ fun SettingsScreen(
 
         when (settingsUiState.repositoryStatus) {
             false -> Text(text = "loading...") //todo loading
-            true -> SettingsList(uiState = settingsUiState,  viewModel = viewModel )
+            true -> SettingsList(uiState = settingsUiState, viewModel = viewModel)
         }
     }
 }
 
 @Composable
 
-fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel){
+fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     sectionHeader(title = "General")
-    defaultCameraFacing(settings = uiState.settings,
+    defaultCameraFacing(
+        settings = uiState.settings,
         onClick = viewModel::setDefaultFrontCamera
     )
 
     DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)
 
     sampleSettings()
-
 
 
 }
@@ -111,7 +112,7 @@ fun settingsPageHeader(title: String, navBack: () -> Unit) {
         },
         navigationIcon = {
             //todo navigate back
-            IconButton(onClick = {navBack()}) {
+            IconButton(onClick = { navBack() }) {
                 Icon(Icons.Filled.ArrowBack, "Accessibility text")
             }
         }
@@ -130,14 +131,14 @@ fun sectionHeader(title: String) {
 }
 
 @Composable
-fun defaultCameraFacing(settings: DefaultSettings, onClick: () -> Unit) {
+fun defaultCameraFacing(settings: Settings, onClick: () -> Unit) {
     //todo set strign resources
     switchSettingUI(
         title = "Set Default Front Camera",
         description = null,
         leadingIcon = null,
         onClick = { onClick() },
-        settingValue = settings.defaultFrontCamera
+        settingValue = settings.default_front_camera
     )
 }
 
@@ -148,7 +149,7 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
     basicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
-        description = when (uiState.settings.darkModeStatus) {
+        description = when (uiState.settings.dark_mode_status) {
             DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
             DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
             DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
@@ -156,15 +157,15 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 choiceRow(text = "dark",
-                    selected = uiState.settings.darkModeStatus == DarkModeStatus.DARK,
+                    selected = uiState.settings.dark_mode_status == DarkModeStatus.DARK,
                     onClick = { setDarkMode(DarkModeStatus.DARK) }
                 )
                 choiceRow(text = "light",
-                    selected = uiState.settings.darkModeStatus == DarkModeStatus.LIGHT,
+                    selected = uiState.settings.dark_mode_status == DarkModeStatus.LIGHT,
                     onClick = { setDarkMode(DarkModeStatus.LIGHT) }
                 )
                 choiceRow(text = "system",
-                    selected = uiState.settings.darkModeStatus == DarkModeStatus.SYSTEM,
+                    selected = uiState.settings.dark_mode_status == DarkModeStatus.SYSTEM,
                     onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
                 )
             }
@@ -242,16 +243,20 @@ fun basicPopupSetting(
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        onClick = { popupStatus.value = true},
+        onClick = { popupStatus.value = true },
         trailingContent = null
     )
     if (popupStatus.value) {
         AlertDialog(
-            onDismissRequest = {popupStatus.value = false},
-            confirmButton = { Text(text = "Close", modifier = Modifier.clickable {popupStatus.value = false})},
+            onDismissRequest = { popupStatus.value = false },
+            confirmButton = {
+                Text(
+                    text = "Close",
+                    modifier = Modifier.clickable { popupStatus.value = false })
+            },
             title = { Text(text = title) },
-            text =  popupContents
-            )
+            text = popupContents
+        )
     }
 }
 
@@ -283,7 +288,7 @@ fun fullPopupSetting(
  *
  * <p> the value should correspond to the setting's UI state value. the switch will only change
  * appearance if the UI state has been successfully updated
-*/
+ */
 @Composable
 fun switchSettingUI(
     title: String,
