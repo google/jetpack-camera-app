@@ -19,16 +19,21 @@
     settings text
     -->
     <string name="settings_title">Settings Screen</string>
+    <string name="nav_back_accessibility">Button to navigate back out of settings</string>
+
+    <string name="section_title_general">General</string>
+
     <string name="default_facing_camera_title">Set Default Camera</string>
-    <string name="default_facing_camera_description">Set if you want the front camera to open by default</string>
-    <string name="default_facing_camera_description_off">Settings Screen</string>
+    <string name="default_facing_camera_description">Default Front</string>
+    <string name="default_facing_camera_description_off">Default Back</string>
 
     <string name="dark_mode_title">Set Dark Mode</string>
+    <string name="dark_mode_selector_dark">Dark</string>
+    <string name="dark_mode_selector_light">Light</string>
+    <string name="dark_mode_selector_system">System</string>
+
     <string name="dark_mode_status_dark">Dark</string>
     <string name="dark_mode_status_light">Light</string>
     <string name="dark_mode_status_system">System</string>
-
-
-
 
 </resources>

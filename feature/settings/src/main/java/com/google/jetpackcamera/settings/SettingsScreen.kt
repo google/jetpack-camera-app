@@ -61,17 +61,19 @@ private const val TAG = "SettingsScreen"
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    navController: NavController
-) {
+    navController: NavController) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
     ) {
-        //todo string resource
-        settingsPageHeader("Settings", navBack = { navController.popBackStack() })
-
+        settingsPageHeader(
+            title = stringResource(id = R.string.settings_title),
+            navBack = {
+                navController.popBackStack()
+            }
+        )
 
         when (settingsUiState.repositoryStatus) {
             false -> Text(text = "loading...") //todo loading
@@ -81,9 +83,9 @@ fun SettingsScreen(
 }
 
 @Composable
-
 fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-    sectionHeader(title = "General")
+    sectionHeader(title = stringResource(id = R.string.section_title_general))
+
     defaultCameraFacing(
         settings = uiState.settings,
         onClick = viewModel::setDefaultFrontCamera
@@ -92,8 +94,6 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)
 
     sampleSettings()
-
-
 }
 
 /**
@@ -104,16 +104,14 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun settingsPageHeader(title: String, navBack: () -> Unit) {
-    //todo navigation
     TopAppBar(
         modifier = Modifier,
         title = {
             Text(title)
         },
         navigationIcon = {
-            //todo navigate back
             IconButton(onClick = { navBack() }) {
-                Icon(Icons.Filled.ArrowBack, "Accessibility text")
+                Icon(Icons.Filled.ArrowBack, stringResource(id = R.string.nav_back_accessibility))
             }
         }
     )
@@ -121,7 +119,6 @@ fun settingsPageHeader(title: String, navBack: () -> Unit) {
 
 @Composable
 fun sectionHeader(title: String) {
-    //todo styling
     Text(
         text = title,
         modifier = Modifier
@@ -132,10 +129,15 @@ fun sectionHeader(title: String) {
 
 @Composable
 fun defaultCameraFacing(settings: Settings, onClick: () -> Unit) {
-    //todo set strign resources
     switchSettingUI(
-        title = "Set Default Front Camera",
-        description = null,
+        title = stringResource(id = R.string.default_facing_camera_title),
+        description = stringResource(
+            id =
+            when (settings.default_front_camera) {
+                true -> R.string.default_facing_camera_description
+                else -> R.string.default_facing_camera_description_off
+            }
+        ),
         leadingIcon = null,
         onClick = { onClick() },
         settingValue = settings.default_front_camera
@@ -156,15 +158,15 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                choiceRow(text = "dark",
+                choiceRow(text = stringResource(id = R.string.dark_mode_selector_dark),
                     selected = uiState.settings.dark_mode_status == DarkModeStatus.DARK,
                     onClick = { setDarkMode(DarkModeStatus.DARK) }
                 )
-                choiceRow(text = "light",
+                choiceRow(text = stringResource(id = R.string.dark_mode_selector_light),
                     selected = uiState.settings.dark_mode_status == DarkModeStatus.LIGHT,
                     onClick = { setDarkMode(DarkModeStatus.LIGHT) }
                 )
-                choiceRow(text = "system",
+                choiceRow(text = stringResource(id = R.string.dark_mode_selector_system),
                     selected = uiState.settings.dark_mode_status == DarkModeStatus.SYSTEM,
                     onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
                 )
