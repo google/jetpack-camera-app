@@ -75,20 +75,7 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultFrontCamera() {
         // true means default is front
         viewModelScope.launch {
-            // update ui
-            settingsUiState.emit(
-                // update the ui
-                settingsUiState.value.copy(
-                    settings = settingsUiState.value.settings.copy(
-                        default_front_camera = !settingsUiState.value.settings.default_front_camera
-                    ),
-                    disabled = true
-                )
-            )
 
-            // todo run through camerausecase
-
-            // after updating datastore, both should reset. disabled should be false,
             settingsRepository.updateDefaultFrontCamera()
             syncUiStateToRepository()
             Log.d(
@@ -111,8 +98,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-
-    // ALWAYS use after attempting to set datastore value
+    // ALWAYS use after attempting to set datastore values
     private suspend fun syncUiStateToRepository() {
         // update UI
         settingsUiState.emit(

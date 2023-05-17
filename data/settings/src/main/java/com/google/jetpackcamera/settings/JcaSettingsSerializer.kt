@@ -25,8 +25,11 @@ import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
 
+// tells DataStore how to read/write our settings file
+private const val FILE_LOCATION = "app_settings.pb"
 
 object JcaSettingsSerializer : Serializer<JcaSettings> {
+
     override val defaultValue: JcaSettings = JcaSettings.getDefaultInstance()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
@@ -44,6 +47,6 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
 }
 
 val Context.settingsDataStore: DataStore<JcaSettings> by dataStore(
-    fileName = "settings.pb",
+    fileName = FILE_LOCATION,
     serializer = JcaSettingsSerializer
 )

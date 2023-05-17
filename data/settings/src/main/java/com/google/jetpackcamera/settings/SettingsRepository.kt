@@ -32,5 +32,5 @@ interface SettingsRepository {
     suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus)
 
     // TODO(yasith@)
-    fun getSettings(): Settings
+    suspend fun getSettings(): Settings
 }

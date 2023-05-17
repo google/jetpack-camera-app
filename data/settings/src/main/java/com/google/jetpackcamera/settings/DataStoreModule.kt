@@ -30,9 +30,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
+// with hilt will ensure datastore instance access is unique per file
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
+    private const val FILE_LOCATION = "app_settings.pb"
 
     @Provides
     @Singleton
@@ -42,7 +44,7 @@ object DataStoreModule {
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
             serializer = JcaSettingsSerializer,
             produceFile = {
-                context.dataStoreFile("app_settings.pb")
+                context.dataStoreFile(FILE_LOCATION)
             })
 
     }

@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.Settings
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -33,7 +34,6 @@ class LocalSettingsRepository @Inject constructor(
         .map {
             Settings(
                 default_front_camera = it.defaultFrontCamera,
-                //todo
                 dark_mode_status = when (it.darkModeStatus){
                     DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
@@ -45,7 +45,6 @@ class LocalSettingsRepository @Inject constructor(
         }
 
     override suspend fun updateDefaultFrontCamera() {
-        //todo
         jcaSettings.updateData {
             it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
         }
@@ -62,7 +61,7 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override fun getSettings(): Settings {
-        TODO("Not yet implemented")
+    override suspend fun getSettings(): Settings {
+        return settings.first()
     }
 }

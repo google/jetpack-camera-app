@@ -76,7 +76,7 @@ fun SettingsScreen(
         )
 
         when (settingsUiState.repositoryStatus) {
-            false -> Text(text = "loading...") //todo loading
+            false -> Text(text = "loading...") //TODO: loading screen
             true -> SettingsList(uiState = settingsUiState, viewModel = viewModel)
         }
     }
@@ -92,8 +92,6 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     )
 
     DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)
-
-    sampleSettings()
 }
 
 /**
@@ -147,7 +145,6 @@ fun defaultCameraFacing(settings: Settings, onClick: () -> Unit) {
 @Composable
 
 fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> Unit) {
-    //todo set string resources
     basicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
@@ -174,57 +171,6 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
         }
     )
 }
-
-@Composable
-fun sampleSettings() {
-    // the settings below are just to help visualize the different setting formats.
-    // switches are non functional bc they arent linked to a ui state value
-    sectionHeader(title = "Another Section")
-
-    basicPopupSetting(title = "Foo", description = "fighters that fight foo",
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Face,
-                contentDescription = null
-            )
-        },
-        popupContents = {}
-    )
-
-    fullPopupSetting(title = "Boo", description = null,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = null
-            )
-        }, onClick = {/* todo*/ })
-
-    switchSettingUI(
-        title = "Goo",
-        description = null,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Place,
-                contentDescription = null
-            )
-        },
-        onClick = { /*TODO*/ },
-        settingValue = false
-    )
-    switchSettingUI(
-        title = "Too",
-        description = "or did you mean two",
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Create,
-                contentDescription = null
-            )
-        },
-        onClick = { /*TODO*/ },
-        settingValue = true
-    )
-}
-
 
 /*
  * Setting UI sub-Components
@@ -262,30 +208,6 @@ fun basicPopupSetting(
     }
 }
 
-
-//todo
-// a setting with an arrow trailing icon (for full page popups?)
-@Composable
-fun fullPopupSetting(
-    title: String,
-    description: String?,
-    leadingIcon: @Composable() () -> Unit,
-    onClick: () -> Unit
-) {
-    settingUI(title = title,
-        description = description,
-        leadingIcon = leadingIcon,
-        onClick = onClick,
-        trailingContent = {
-            Icon(
-                Icons.Filled.KeyboardArrowRight,
-                //todo
-                contentDescription = "accessibilityText"
-            )
-        }
-    )
-}
-
 /** A composable for creating a setting with a Switch.
  *
  * <p> the value should correspond to the setting's UI state value. the switch will only change
@@ -311,8 +233,6 @@ fun switchSettingUI(
 }
 
 /** A composable used as a template used to construct the other settings */
-
-// style this one to style every setting
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun settingUI(
@@ -328,7 +248,7 @@ fun settingUI(
             headlineText = { Text(title) },
             supportingText = {
                 when (description) {
-                    null -> null
+                    null -> {}
                     else -> {
                         Text(description)
                     }
@@ -339,8 +259,6 @@ fun settingUI(
         )
     }
 }
-// todo full screen popup frame
-
 
 @Composable
 fun settingSwitch(settingValue: Boolean, onClick: () -> Unit) {
