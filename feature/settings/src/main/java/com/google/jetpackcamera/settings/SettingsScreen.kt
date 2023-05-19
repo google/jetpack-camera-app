@@ -30,11 +30,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,10 +70,8 @@ fun SettingsScreen(
             }
         )
 
-        when (settingsUiState.repositoryStatus) {
-            false -> Text(text = "loading...") //TODO: loading screen
-            true -> SettingsList(uiState = settingsUiState, viewModel = viewModel)
-        }
+        SettingsList(uiState = settingsUiState, viewModel = viewModel)
+
     }
 }
 
@@ -88,7 +81,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     defaultCameraFacing(
         settings = uiState.settings,
-        onClick = viewModel::setDefaultFrontCamera
+        onClick = viewModel::setDefaultToFrontCamera
     )
 
     DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)

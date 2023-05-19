@@ -23,9 +23,6 @@ import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.getDefaultSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,47 +37,35 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    // stateflow from repository... can't emit values to this
-    private val repositoryState =
-        settingsRepository.settings.map { settings ->
-            RepositoryState.Success(
-                settings = settings
-            )
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = RepositoryState.Loading
-            )
-
-
     val settingsUiState: MutableStateFlow<SettingsUiState> =
-        when (repositoryState.value) {
-            RepositoryState.Loading -> MutableStateFlow(
-                SettingsUiState(
-                    repositoryStatus = false,
-                    getDefaultSettings(),
-                    disabled = true
-                )
+        MutableStateFlow(
+            SettingsUiState(
+                getDefaultSettings(),
+                disabled = true
             )
+        )
 
-            is RepositoryState.Success -> MutableStateFlow(
-                SettingsUiState(
-                    repositoryStatus = true,
-                    settings = (repositoryState.value as RepositoryState.Success).settings.copy()
+    init {
+        // updates our viewmodel as soon as datastore is updated
+        viewModelScope.launch {
+            settingsRepository.settings.collect { updatedSettings ->
+                settingsUiState.emit(
+                    settingsUiState.value.copy(
+                        settings = updatedSettings,
+                        disabled = false
+                    )
                 )
-            )
+            }
         }
+    }
 
-    fun setDefaultFrontCamera() {
+    fun setDefaultToFrontCamera() {
         // true means default is front
         viewModelScope.launch {
-
             settingsRepository.updateDefaultFrontCamera()
-            syncUiStateToRepository()
             Log.d(
-                TAG, "set camera default facing: " +
-                        (repositoryState.value as RepositoryState.Success).settings.default_front_camera
+                TAG,
+                "set camera default facing: " + settingsRepository.getSettings().default_front_camera
             )
         }
     }
@@ -89,24 +74,10 @@ class SettingsViewModel @Inject constructor(
     fun setDarkMode(darkModeStatus: DarkModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
-            syncUiStateToRepository()
-
             Log.d(
-                TAG, "set dark mode theme: " +
-                        (repositoryState.value as RepositoryState.Success).settings.dark_mode_status
+                TAG, "set dark mode theme: " + settingsRepository.getSettings().dark_mode_status
             )
         }
-    }
-
-    // ALWAYS use after attempting to set datastore values
-    private suspend fun syncUiStateToRepository() {
-        // update UI
-        settingsUiState.emit(
-            settingsUiState.value.copy(
-                settings = (repositoryState.value as RepositoryState.Success).settings.copy(),
-                disabled = false
-            )
-        )
     }
 }
 

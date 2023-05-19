@@ -24,14 +24,6 @@ private const val TAG = "SettingsUiState"
  * Defines the current state of the [SettingsScreen].
  */
 data class SettingsUiState(
-    val repositoryStatus: Boolean,
     val settings: Settings,
     var disabled: Boolean = false
 )
-
-
-sealed interface RepositoryState {
-    object Loading : RepositoryState
-    data class Success(val settings: Settings) : RepositoryState
-}
-
