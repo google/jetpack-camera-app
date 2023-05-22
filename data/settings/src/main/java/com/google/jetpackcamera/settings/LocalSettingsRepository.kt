@@ -44,7 +44,7 @@ class LocalSettingsRepository @Inject constructor(
             )
         }
 
-    override suspend fun updateDefaultFrontCamera() {
+    override suspend fun updateDefaultToFrontCamera() {
         jcaSettings.updateData {
             it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
         }

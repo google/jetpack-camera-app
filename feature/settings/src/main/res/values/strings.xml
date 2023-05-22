@@ -18,22 +18,23 @@
     <!--
     settings text
     -->
-    <string name="settings_title">Settings Screen</string>
+    <string name="settings_title">Settings</string>
     <string name="nav_back_accessibility">Button to navigate back out of settings</string>
 
-    <string name="section_title_general">General</string>
+    <string name="section_title_camera_settings">Camera Settings</string>
+    <string name="section_title_app_settings">App Settings</string>
 
-    <string name="default_facing_camera_title">Set Default Camera</string>
+    <string name="default_facing_camera_title">Default to Front Camera</string>
     <string name="default_facing_camera_description">Default Front</string>
     <string name="default_facing_camera_description_off">Default Back</string>
 
     <string name="dark_mode_title">Set Dark Mode</string>
-    <string name="dark_mode_selector_dark">Dark</string>
-    <string name="dark_mode_selector_light">Light</string>
+    <string name="dark_mode_selector_dark">On</string>
+    <string name="dark_mode_selector_light">Off</string>
     <string name="dark_mode_selector_system">System</string>
 
-    <string name="dark_mode_status_dark">Dark</string>
-    <string name="dark_mode_status_light">Light</string>
+    <string name="dark_mode_status_dark">On</string>
+    <string name="dark_mode_status_light">Off</string>
     <string name="dark_mode_status_system">System</string>
 
 </resources>

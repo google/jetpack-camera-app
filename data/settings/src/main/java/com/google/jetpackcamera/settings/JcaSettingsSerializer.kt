@@ -30,7 +30,10 @@ private const val FILE_LOCATION = "app_settings.pb"
 
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
-    override val defaultValue: JcaSettings = JcaSettings.getDefaultInstance()
+    override val defaultValue: JcaSettings = JcaSettings.newBuilder()
+        .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
+        .setDefaultFrontCamera(false)
+        .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
         try {

@@ -17,7 +17,6 @@
 package com.google.jetpackcamera
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -33,15 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.ui.JcaApp
-import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.ui.JcaApp
+import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 
 /**
@@ -67,10 +66,12 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             when (uiState) {
-                Loading -> {/* Todo a loading screen */}
+                Loading -> {/* TODO:  a loading screen */}
                 is Success -> {
-                   // Toast.makeText(this, "Success", Toast.LENGTH_LONG).show()
-                    JetpackCameraTheme( darkTheme = isInDarkMode(uiState = uiState)) {
+                   //TODO(kimblebee@): add app setting to enable/disable dynamic color
+                    JetpackCameraTheme(
+                        darkTheme = isInDarkMode(uiState = uiState),
+                        dynamicColor = false) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background

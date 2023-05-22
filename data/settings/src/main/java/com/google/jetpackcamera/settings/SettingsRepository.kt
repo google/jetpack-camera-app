@@ -27,10 +27,9 @@ interface SettingsRepository {
 
     val settings : Flow<Settings>
 
-    suspend fun updateDefaultFrontCamera()
+    suspend fun updateDefaultToFrontCamera()
 
     suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus)
 
-    // TODO(yasith@)
     suspend fun getSettings(): Settings
 }

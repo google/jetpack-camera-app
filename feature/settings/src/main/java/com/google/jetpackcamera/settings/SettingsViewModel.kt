@@ -62,7 +62,7 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultToFrontCamera() {
         // true means default is front
         viewModelScope.launch {
-            settingsRepository.updateDefaultFrontCamera()
+            settingsRepository.updateDefaultToFrontCamera()
             Log.d(
                 TAG,
                 "set camera default facing: " + settingsRepository.getSettings().default_front_camera

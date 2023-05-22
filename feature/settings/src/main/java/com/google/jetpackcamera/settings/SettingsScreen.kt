@@ -77,14 +77,17 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-    sectionHeader(title = stringResource(id = R.string.section_title_general))
+    sectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     defaultCameraFacing(
         settings = uiState.settings,
         onClick = viewModel::setDefaultToFrontCamera
     )
 
-    DarkModeSetting(uiState = uiState, setDarkMode = viewModel::setDarkMode)
+    sectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+    DarkModeSetting(
+        uiState = uiState,
+        setDarkMode = viewModel::setDarkMode)
 }
 
 /**
@@ -122,13 +125,7 @@ fun sectionHeader(title: String) {
 fun defaultCameraFacing(settings: Settings, onClick: () -> Unit) {
     switchSettingUI(
         title = stringResource(id = R.string.default_facing_camera_title),
-        description = stringResource(
-            id =
-            when (settings.default_front_camera) {
-                true -> R.string.default_facing_camera_description
-                else -> R.string.default_facing_camera_description_off
-            }
-        ),
+        description = null,
         leadingIcon = null,
         onClick = { onClick() },
         settingValue = settings.default_front_camera
@@ -136,7 +133,6 @@ fun defaultCameraFacing(settings: Settings, onClick: () -> Unit) {
 }
 
 @Composable
-
 fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> Unit) {
     basicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
