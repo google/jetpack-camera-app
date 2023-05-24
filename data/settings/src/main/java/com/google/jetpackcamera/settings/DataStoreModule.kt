@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
 import dagger.Module
 import dagger.Provides
@@ -40,7 +41,7 @@ object DataStoreModule {
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<JcaSettings> =
         DataStoreFactory.create(
-            corruptionHandler = null,
+            corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
             //TODO(kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
             serializer = JcaSettingsSerializer,

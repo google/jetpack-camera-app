@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.getDefaultSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,25 +38,33 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val settingsUiState: MutableStateFlow<SettingsUiState> =
+    private val _settingsUiState: MutableStateFlow<SettingsUiState> =
         MutableStateFlow(
             SettingsUiState(
                 getDefaultSettings(),
                 disabled = true
             )
         )
+    val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
     init {
         // updates our viewmodel as soon as datastore is updated
         viewModelScope.launch {
             settingsRepository.settings.collect { updatedSettings ->
-                settingsUiState.emit(
+                _settingsUiState.emit(
                     settingsUiState.value.copy(
                         settings = updatedSettings,
                         disabled = false
                     )
                 )
             }
+        }
+        viewModelScope.launch {
+            _settingsUiState.emit(
+                settingsUiState.value.copy(
+                    disabled = false
+                )
+            )
         }
     }
 
