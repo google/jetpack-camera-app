@@ -90,4 +90,3 @@ class CameraXCameraUseCase @Inject constructor(
             else -> throw IllegalArgumentException("Invalid lens facing type: $lensFacing")
         }
 }
-
