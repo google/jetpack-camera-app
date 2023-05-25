@@ -22,6 +22,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.camera.core.Preview.SurfaceProvider
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -38,6 +40,7 @@ class PreviewViewModel @Inject constructor(
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState())
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+    var runningCameraJob: Job? = null
 
     init {
         initializeCamera()
@@ -55,16 +58,23 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun startPreview(
-        lifecycleOwner: LifecycleOwner,
-        surfaceProvider: SurfaceProvider
-    ) {
-        // TODO(yasith): Handle Exceptions from binding use cases
-        cameraUseCase.startPreview(
-            lifecycleOwner,
-            surfaceProvider,
-            previewUiState.value.lensFacing
-        )
+    fun runCamera(surfaceProvider: SurfaceProvider) {
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
+            // TODO(yasith): Handle Exceptions from binding use cases
+            cameraUseCase.runCamera(
+                surfaceProvider,
+                previewUiState.value.lensFacing
+            )
+        }
+    }
+
+    fun stopCamera() {
+        runningCameraJob?.apply {
+            if (isActive) {
+                cancel()
+            }
+        }
     }
 
     fun flipCamera() {

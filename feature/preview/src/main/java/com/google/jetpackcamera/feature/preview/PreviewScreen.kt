@@ -24,15 +24,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "ViewFinder"
 
@@ -50,9 +54,22 @@ fun PreviewScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val deferredSurfaceProvider = CompletableDeferred<SurfaceProvider>()
     val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
-        viewModel.startPreview(lifecycleOwner, it)
+        deferredSurfaceProvider.complete(it)
+    }
+
+    LaunchedEffect(previewUiState, lifecycleOwner) {
+        val surfaceProvider = deferredSurfaceProvider.await()
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.runCamera(surfaceProvider)
+            try {
+                awaitCancellation()
+            } finally {
+                viewModel.stopCamera()
+            }
+        }
     }
 
     if (previewUiState.cameraState == CameraState.NOT_READY) {
