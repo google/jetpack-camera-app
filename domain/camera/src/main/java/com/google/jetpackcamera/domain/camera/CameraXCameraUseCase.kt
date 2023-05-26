@@ -18,18 +18,21 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.util.Log
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.Camera
+import android.util.Rational
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.concurrent.futures.await
-import androidx.lifecycle.LifecycleOwner
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraRepository"
+private val ASPECT_RATIO_16_9 = Rational(16, 9)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -38,14 +41,17 @@ class CameraXCameraUseCase @Inject constructor(
     private val application: Application
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
-    private lateinit var camera: Camera
 
     private val imageCaptureUseCase = ImageCapture.Builder()
-        .setTargetAspectRatio(AspectRatio.RATIO_16_9)
         .build()
 
     private val previewUseCase = Preview.Builder()
-        .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+        .build()
+
+    private val useCaseGroup = UseCaseGroup.Builder()
+        .setViewPort(ViewPort.Builder(ASPECT_RATIO_16_9, previewUseCase.targetRotation).build())
+        .addUseCase(previewUseCase)
+        .addUseCase(imageCaptureUseCase)
         .build()
 
     override suspend fun initialize(): List<Int> {
@@ -62,24 +68,19 @@ class CameraXCameraUseCase @Inject constructor(
         return availableCameraLens
     }
 
-    override fun startPreview(
-        lifecycleOwner: LifecycleOwner,
+    override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
         @LensFacing lensFacing: Int,
-    ) {
+    ) = coroutineScope {
         Log.d(TAG, "startPreview")
 
         val cameraSelector = cameraLensToSelector(lensFacing)
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
-        cameraProvider.unbindAll()
-        camera = cameraProvider.bindToLifecycle(
-            lifecycleOwner,
-            cameraSelector,
-            previewUseCase,
-            imageCaptureUseCase
-        )
+        cameraProvider.runWith(cameraSelector, useCaseGroup) {
+            awaitCancellation()
+        }
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =

@@ -33,10 +33,11 @@ interface CameraUseCase {
     suspend fun initialize(): List<Int>
 
     /**
-     * Starts the camera preview.
+     * Starts the camera with [lensFacing] with the provided [Preview.SurfaceProvider].
+     *
+     * The camera will run until the calling coroutine is cancelled.
      */
-    fun startPreview(
-        lifecycleOwner: LifecycleOwner,
+    suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
         @CameraSelector.LensFacing lensFacing: Int
     )
