@@ -46,6 +46,7 @@ import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.feature.quicksettings.QuickSettings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -104,6 +105,10 @@ fun PreviewScreen(
                 onRequestBitmapReady = {
                     val bitmap = it.invoke()
                 }
+            )
+
+            QuickSettings(
+                modifier = Modifier.fillMaxSize()
             )
 
             IconButton(
