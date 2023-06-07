@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             when (uiState) {
-                Loading -> {/* TODO:  a loading screen */}
+                Loading -> {/* TODO(b/283812742):  a loading screen */}
                 is Success -> {
                    //TODO(kimblebee@): add app setting to enable/disable dynamic color
                     JetpackCameraTheme(

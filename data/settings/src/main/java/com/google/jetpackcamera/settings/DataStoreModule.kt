@@ -42,7 +42,7 @@ object DataStoreModule {
     fun provideDataStore(@ApplicationContext context: Context): DataStore<JcaSettings> =
         DataStoreFactory.create(
             corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
-            //TODO(kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
+            //TODO(b/286245619, kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
             serializer = JcaSettingsSerializer,
             produceFile = {
