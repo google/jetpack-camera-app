@@ -22,23 +22,29 @@ import android.util.Rational
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.concurrent.futures.await
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
-private const val TAG = "CameraXCameraRepository"
+private const val TAG = "CameraXCameraUseCase"
 private val ASPECT_RATIO_16_9 = Rational(16, 9)
 
 /**
  * CameraX based implementation for [CameraUseCase]
  */
 class CameraXCameraUseCase @Inject constructor(
-    private val application: Application
+    private val application: Application,
+    private val defaultDispatcher: CoroutineDispatcher
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -81,6 +87,24 @@ class CameraXCameraUseCase @Inject constructor(
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             awaitCancellation()
         }
+    }
+
+    override suspend fun takePicture() {
+        val imageDeferred = CompletableDeferred<ImageProxy>()
+
+        imageCaptureUseCase.takePicture(
+            defaultDispatcher.asExecutor(),
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(imageProxy: ImageProxy) {
+                    Log.d(TAG, "onCaptureSuccess")
+                    imageDeferred.complete(imageProxy)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    super.onError(exception)
+                    Log.d(TAG, "takePicture onError: $exception")
+                }
+            })
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =

@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   ~ Copyright (C) 2023 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +15,6 @@
   ~ limitations under the License.
   -->
 
-<resources>
-    <string name="camera_not_ready">Camera Not Ready</string>
-    <string name="settings_content_description">Settings</string>
-</resources>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+</manifest>

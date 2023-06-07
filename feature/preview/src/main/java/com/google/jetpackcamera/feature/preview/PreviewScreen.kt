@@ -18,18 +18,29 @@ package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,7 +56,7 @@ private const val TAG = "ViewFinder"
  */
 @Composable
 fun PreviewScreen(
-    onNavigateToSettings : () -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "ViewFinder")
@@ -75,7 +86,9 @@ fun PreviewScreen(
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
-        Box {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
             CameraPreview(
                 modifier = Modifier
                     .fillMaxSize()
@@ -93,9 +106,38 @@ fun PreviewScreen(
                 }
             )
 
-            Button(onClick = onNavigateToSettings) {
-                Text(text = "Settings")
+            IconButton(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(12.dp),
+                onClick = onNavigateToSettings,
+            ) {
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = stringResource(R.string.settings_content_description),
+                    modifier = Modifier.size(72.dp)
+                )
+            }
+
+            Box(
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                CaptureButton(
+                    onClick = { viewModel.captureImage() }
+                )
             }
         }
     }
+}
+
+@Composable
+fun CaptureButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        modifier = Modifier
+            .size(120.dp)
+            .padding(18.dp)
+            .border(4.dp, Color.White, CircleShape)
+    ) {}
 }

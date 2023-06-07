@@ -17,8 +17,8 @@
 package com.google.jetpackcamera.feature.preview
 
 
+import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import androidx.camera.core.Preview.SurfaceProvider
-import com.google.jetpackcamera.domain.camera.CameraUseCase
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,44 +28,44 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PreviewViewModelTest {
 
-    @Mock private lateinit var mockCameraUseCase : CameraUseCase
+    private val cameraUseCase = FakeCameraUseCase()
     private lateinit var previewViewModel : PreviewViewModel
 
     @Before
-    fun setup() {
-        MockitoAnnotations.initMocks(this)
+    fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        previewViewModel = PreviewViewModel(mockCameraUseCase)
+        previewViewModel = PreviewViewModel(cameraUseCase)
+        advanceUntilIdle()
     }
 
     @Test
     fun getPreviewUiState() = runTest(StandardTestDispatcher()) {
-        var uiState = previewViewModel.previewUiState.value
-        assertEquals(CameraState.NOT_READY, uiState.cameraState)
         advanceUntilIdle()
-        uiState = previewViewModel.previewUiState.value
+        val uiState = previewViewModel.previewUiState.value
         assertEquals(CameraState.READY, uiState.cameraState)
     }
 
     @Test
-    fun runCamera() = runTest(StandardTestDispatcher()) {
+    fun runCamera() = runTest(StandardTestDispatcher()){
         val surfaceProvider : SurfaceProvider = mock()
         previewViewModel.runCamera(surfaceProvider)
         advanceUntilIdle()
-        val previewUiState = previewViewModel.previewUiState.value
 
-        verify(mockCameraUseCase).runCamera(
-            surfaceProvider,
-            previewUiState.lensFacing
-        )
+        assertEquals(cameraUseCase.previewStarted, true)
+    }
+
+    @Test
+    fun captureImage() = runTest(StandardTestDispatcher()){
+        val surfaceProvider : SurfaceProvider = mock()
+        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.captureImage()
+        advanceUntilIdle()
+        assertEquals(cameraUseCase.numPicturesTaken, 1)
     }
 
     @Test
