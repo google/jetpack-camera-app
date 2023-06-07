@@ -46,6 +46,7 @@ import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.quicksettings.QuickSettings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -118,6 +119,10 @@ fun PreviewScreen(
                     modifier = Modifier.size(72.dp)
                 )
             }
+
+            QuickSettings(
+                modifier = Modifier.fillMaxSize()
+            )
 
             Box(
                 modifier = Modifier.align(Alignment.BottomCenter)

@@ -19,4 +19,8 @@ include ':domain:camera'
 include ':camera-viewfinder-compose'
 include ':feature:settings'
 include ':data:settings'
+<<<<<<< HEAD
 include ':core:common'
+=======
+include ':feature:quicksettings'
+>>>>>>> 996f067 (Quick Settings foundation)
