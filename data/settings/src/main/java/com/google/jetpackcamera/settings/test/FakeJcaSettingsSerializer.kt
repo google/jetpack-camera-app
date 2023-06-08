@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test
+package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer

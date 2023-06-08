@@ -18,24 +18,29 @@ package com.google.jetpackcamera.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.Settings
 import com.google.jetpackcamera.settings.model.getDefaultSettings
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-
-import org.junit.Test
-import org.junit.runner.RunWith
-
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
 
 
 /**
@@ -49,21 +54,38 @@ import org.junit.Before
 class LocalSettingsRepositoryInstrumentedTest {
     private val testContext: Context = ApplicationProvider.getApplicationContext()
     private lateinit var testDataStore: DataStore<JcaSettings>
+    private lateinit var datastoreScope: CoroutineScope
     private lateinit var repository: LocalSettingsRepository
-
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
         testDataStore = provideDataStore(testContext)
+        datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+
+        testDataStore = DataStoreFactory.create(
+            serializer = JcaSettingsSerializer,
+            scope = datastoreScope,
+        ) {
+            testContext.dataStoreFile("test_jca_settings.pb")
+        }
         repository = LocalSettingsRepository(testDataStore)
         advanceUntilIdle()
     }
 
+    @After
+    fun tearDown() {
+        File(
+            ApplicationProvider.getApplicationContext<Context>().filesDir,
+            "datastore"
+        ).deleteRecursively()
+
+        datastoreScope.cancel()
+    }
+
     @Test
     fun repository_can_fetch_initial_datastore() = runTest(StandardTestDispatcher()) {
-        //assertEquals(repository.getSettings(), expectedDefaultSettings)
-         var settings:Settings = repository.getSettings()
+        var settings: Settings = repository.getSettings()
 
         advanceUntilIdle()
         assertTrue(settings == getDefaultSettings())
@@ -71,7 +93,6 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        //assertEquals(repository.getSettings(), expectedDefaultSettings)
         var initialDarkModeStatus = repository.getSettings().dark_mode_status
         repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
         val newDarkModeStatus = repository.getSettings().dark_mode_status
@@ -83,7 +104,7 @@ class LocalSettingsRepositoryInstrumentedTest {
     }
 
     @Test
-    fun can_update_default_to_front_camera() = runTest (StandardTestDispatcher()) {
+    fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
         val initalFrontCameraDefault = repository.getSettings().default_front_camera
         repository.updateDefaultToFrontCamera()

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test
+package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
@@ -26,7 +26,7 @@ import java.io.File
 /** test implementation of DataStoreModule */
 object FakeDataStoreModule {
     
-    fun provideDataStore( scope: CoroutineScope, serializer: FakeJcaSettingsSerializer,  file: File): DataStore<JcaSettings> =
+    fun provideDataStore(scope: CoroutineScope, serializer: FakeJcaSettingsSerializer, file: File): DataStore<JcaSettings> =
         DataStoreFactory.create(
             corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
             scope = scope,
