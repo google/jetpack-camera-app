@@ -56,6 +56,6 @@ private fun JetpackCameraNavHost(
                 onNavigateToSettings = { navController.navigate(SettingsRoute) }
             )
         }
-        composable(SettingsRoute) { SettingsScreen() }
+        composable(SettingsRoute) { SettingsScreen(navController = navController) }
     }
 }

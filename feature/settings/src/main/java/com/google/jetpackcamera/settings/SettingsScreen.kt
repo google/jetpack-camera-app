@@ -16,20 +16,58 @@
 
 package com.google.jetpackcamera.settings
 
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.google.jetpackcamera.settings.ui.DarkModeSetting
+import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
+import com.google.jetpackcamera.settings.ui.SectionHeader
+import com.google.jetpackcamera.settings.ui.SettingsPageHeader
+
+
+private const val TAG = "SettingsScreen"
 
 /**
  * Screen used for the Settings feature.
  */
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel()
-) {
+    viewModel: SettingsViewModel = hiltViewModel(),
+    navController: NavController) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
-    Text(settingsUiState.text)
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+    ) {
+        SettingsPageHeader(
+            title = stringResource(id = R.string.settings_title),
+            navBack = {
+                navController.popBackStack()
+            }
+        )
+        SettingsList(uiState = settingsUiState, viewModel = viewModel)
+    }
+}
+
+@Composable
+fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+    SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
+
+    DefaultCameraFacing(
+        settings = uiState.settings,
+        onClick = viewModel::setDefaultToFrontCamera
+    )
+
+    SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+    DarkModeSetting(
+        uiState = uiState,
+        setDarkMode = viewModel::setDarkMode)
 }

@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.settings.model
+syntax = "proto3";
 
-/**
- * Data layer representation for settings.
- */
-data class Settings(
-    val default_front_camera : Boolean,
-    val dark_mode_status : DarkModeStatus,
-    val field : String = "todo"
-)
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
 
-
-fun getDefaultSettings(): Settings{
-    return Settings(
-        default_front_camera = false,
-        dark_mode_status = DarkModeStatus.SYSTEM
-    )
+enum DarkModeProto {
+  DARK_MODE_SYSTEM = 0;
+  DARK_MODE_LIGHT= 1;
+  DARK_MODE_DARK = 2;
 }

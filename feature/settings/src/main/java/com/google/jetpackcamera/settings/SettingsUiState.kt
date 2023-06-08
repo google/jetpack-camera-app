@@ -16,9 +16,14 @@
 
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.settings.model.Settings
+
+private const val TAG = "SettingsUiState"
+
 /**
  * Defines the current state of the [SettingsScreen].
  */
 data class SettingsUiState(
-    val text: String = "Settings Screen"
+    val settings: Settings,
+    var disabled: Boolean = false
 )
