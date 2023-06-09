@@ -39,6 +39,7 @@ android {
 }
 
 dependencies {
+    implementation project(path: ':feature:settings')
     // Compose
     def composeBom = platform('androidx.compose:compose-bom:2022.12.00')
     implementation composeBom

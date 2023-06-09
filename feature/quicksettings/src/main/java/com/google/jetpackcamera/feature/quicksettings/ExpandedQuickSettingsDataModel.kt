@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.settings.model
+package com.google.jetpackcamera.feature.quicksettings
 
-/**
- * Data layer representation for settings.
- */
-data class Settings(
-    val default_front_camera : Boolean,
-    val dark_mode_status : DarkModeStatus,
-    val field : String = "todo"
-)
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 
-
-fun getDefaultSettings(): Settings{
-    return Settings(
-        default_front_camera = false,
-        dark_mode_status = DarkModeStatus.SYSTEM
-    )
-}
+data class ExpandedQuickSettingsDataModel(
+    @DrawableRes val drawableResIds: List<Int>,
+    @StringRes val textResIds: List<Int>,
+    @StringRes val descriptionResIds: List<Int>,
+    val highlightedIndex: Int,
+    val onClicks: List<() -> Unit>)

@@ -15,5 +15,10 @@
   -->
 
 <resources>
+    <string name="quick_settings_front_camera_text">FRONT</string>
+    <string name="quick_settings_back_camera_text">BACK</string>
+
     <string name="quick_settings_dropdown_description">Quick settings drop down</string>
+    <string name="quick_settings_front_camera_description">Front Camera</string>
+    <string name="quick_settings_back_camera_description">Back Camera</string>
 </resources>

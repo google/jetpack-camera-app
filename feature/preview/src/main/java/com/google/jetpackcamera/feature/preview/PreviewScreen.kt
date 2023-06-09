@@ -46,7 +46,7 @@ import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.feature.quicksettings.QuickSettings
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsUi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -107,7 +107,7 @@ fun PreviewScreen(
                 }
             )
 
-            QuickSettings(
+            QuickSettingsUi(
                 modifier = Modifier.fillMaxSize()
             )
 
