@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
+import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 
@@ -66,8 +67,14 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         onClick = viewModel::setDefaultToFrontCamera
     )
 
+    FlashModeSetting(
+        uiState = uiState,
+        setFlashMode = viewModel::setFlashMode
+    )
+
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
     DarkModeSetting(
         uiState = uiState,
-        setDarkMode = viewModel::setDarkMode)
+        setDarkMode = viewModel::setDarkMode
+    )
 }

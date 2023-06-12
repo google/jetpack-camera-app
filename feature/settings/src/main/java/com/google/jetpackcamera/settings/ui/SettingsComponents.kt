@@ -50,6 +50,7 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SettingsUiState
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 
 /**
@@ -117,6 +118,35 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
                 ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_system),
                     selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.SYSTEM,
                     onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun FlashModeSetting(uiState: SettingsUiState, setFlashMode: (FlashModeStatus) -> Unit) {
+    BasicPopupSetting(
+        title = stringResource(id = R.string.flash_mode_title),
+        leadingIcon = null,
+        description = when (uiState.cameraAppSettings.flash_mode_status) {
+            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
+            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_status_on)
+            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_status_off)
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_auto),
+                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.AUTO,
+                    onClick = { setFlashMode(FlashModeStatus.AUTO) }
+                )
+                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_on),
+                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.ON,
+                    onClick = { setFlashMode(FlashModeStatus.ON) }
+                )
+                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_off),
+                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.OFF,
+                    onClick = { setFlashMode(FlashModeStatus.OFF) }
                 )
             }
         }
