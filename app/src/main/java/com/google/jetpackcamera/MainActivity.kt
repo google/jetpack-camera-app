@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
 private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
     when (uiState) {
         Loading -> isSystemInDarkTheme()
-        is Success -> when (uiState.settings.dark_mode_status) {
+        is Success -> when (uiState.cameraAppSettings.dark_mode_status) {
             DarkModeStatus.DARK -> true
             DarkModeStatus.LIGHT -> false
             DarkModeStatus.SYSTEM -> isSystemInDarkTheme()

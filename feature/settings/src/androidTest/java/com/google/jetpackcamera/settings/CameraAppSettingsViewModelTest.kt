@@ -21,46 +21,39 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.Settings
 import com.google.jetpackcamera.settings.model.getDefaultSettings
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import java.io.File
 
-
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(AndroidJUnit4::class)
-class LocalSettingsRepositoryInstrumentedTest {
-    private val testContext: Context = ApplicationProvider.getApplicationContext()
+internal class CameraAppSettingsViewModelTest {
+    private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var repository: LocalSettingsRepository
+    private lateinit var settingsViewModel: SettingsViewModel
+
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        testDataStore = provideDataStore(testContext)
         datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
 
         testDataStore = DataStoreFactory.create(
@@ -70,6 +63,7 @@ class LocalSettingsRepositoryInstrumentedTest {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
         repository = LocalSettingsRepository(testDataStore)
+        settingsViewModel = SettingsViewModel(repository)
         advanceUntilIdle()
     }
 
@@ -84,35 +78,41 @@ class LocalSettingsRepositoryInstrumentedTest {
     }
 
     @Test
-    fun repository_can_fetch_initial_datastore() = runTest(StandardTestDispatcher()) {
-        var settings: Settings = repository.getSettings()
-
+    fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
+        // giving viewmodel time to call init, otherwise settings will stay disabled
+        delay(100)
+        val uiState = settingsViewModel.settingsUiState.value
         advanceUntilIdle()
-        assertTrue(settings == getDefaultSettings())
+        assertEquals(
+            uiState,
+            SettingsUiState(cameraAppSettings = getDefaultSettings(), disabled = false)
+        )
     }
 
     @Test
-    fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        var initialDarkModeStatus = repository.getSettings().dark_mode_status
-        repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
-        val newDarkModeStatus = repository.getSettings().dark_mode_status
+    fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
+        val initialFrontCameraValue =
+            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+        settingsViewModel.setDefaultToFrontCamera()
 
         advanceUntilIdle()
-        assertFalse(initialDarkModeStatus == newDarkModeStatus)
-        assertTrue(initialDarkModeStatus == DarkModeStatus.SYSTEM)
-        assertTrue(newDarkModeStatus == DarkModeStatus.LIGHT)
+
+        val newFrontCameraValue =
+            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+
+        assertFalse(initialFrontCameraValue)
+        assertTrue(newFrontCameraValue)
     }
 
     @Test
-    fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
-        // default to front camera starts false
-        val initalFrontCameraDefault = repository.getSettings().default_front_camera
-        repository.updateDefaultToFrontCamera()
-        // default to front camera is now true
-        val frontCameraDefault = repository.getSettings().default_front_camera
+    fun setDarkMode() = runTest(StandardTestDispatcher()) {
+        val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
+        settingsViewModel.setDarkMode(DarkModeStatus.DARK)
         advanceUntilIdle()
 
-        assertFalse(initalFrontCameraDefault)
-        assertTrue(frontCameraDefault)
+        val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
+
+        assertEquals(initialDarkMode, DarkModeStatus.SYSTEM)
+        assertEquals(DarkModeStatus.DARK, newDarkMode)
     }
 }

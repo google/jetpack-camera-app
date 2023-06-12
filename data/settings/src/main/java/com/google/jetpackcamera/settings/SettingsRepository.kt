@@ -17,7 +17,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.Settings
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -25,11 +25,11 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
 
-    val settings : Flow<Settings>
+    val cameraAppSettings : Flow<CameraAppSettings>
 
     suspend fun updateDefaultToFrontCamera()
 
     suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus)
 
-    suspend fun getSettings(): Settings
+    suspend fun getSettings(): CameraAppSettings
 }

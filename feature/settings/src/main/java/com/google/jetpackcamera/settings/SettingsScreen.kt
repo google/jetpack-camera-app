@@ -62,7 +62,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        settings = uiState.settings,
+        cameraAppSettings = uiState.cameraAppSettings,
         onClick = viewModel::setDefaultToFrontCamera
     )
 

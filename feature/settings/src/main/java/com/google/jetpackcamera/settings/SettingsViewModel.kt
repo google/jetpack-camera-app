@@ -50,10 +50,10 @@ class SettingsViewModel @Inject constructor(
     init {
         // updates our viewmodel as soon as datastore is updated
         viewModelScope.launch {
-            settingsRepository.settings.collect { updatedSettings ->
+            settingsRepository.cameraAppSettings.collect { updatedSettings ->
                 _settingsUiState.emit(
                     settingsUiState.value.copy(
-                        settings = updatedSettings,
+                        cameraAppSettings = updatedSettings,
                         disabled = false
                     )
                 )

@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SettingsUiState
 import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.Settings
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 
 
 /**
@@ -84,13 +84,13 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun DefaultCameraFacing(settings: Settings, onClick: () -> Unit) {
+fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Unit) {
     SwitchSettingUI(
         title = stringResource(id = R.string.default_facing_camera_title),
         description = null,
         leadingIcon = null,
         onClick = { onClick() },
-        settingValue = settings.default_front_camera
+        settingValue = cameraAppSettings.default_front_camera
     )
 }
 
@@ -99,7 +99,7 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
     BasicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
-        description = when (uiState.settings.dark_mode_status) {
+        description = when (uiState.cameraAppSettings.dark_mode_status) {
             DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
             DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
             DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
@@ -107,15 +107,15 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_dark),
-                    selected = uiState.settings.dark_mode_status == DarkModeStatus.DARK,
+                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.DARK,
                     onClick = { setDarkMode(DarkModeStatus.DARK) }
                 )
                 ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_light),
-                    selected = uiState.settings.dark_mode_status == DarkModeStatus.LIGHT,
+                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.LIGHT,
                     onClick = { setDarkMode(DarkModeStatus.LIGHT) }
                 )
                 ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_system),
-                    selected = uiState.settings.dark_mode_status == DarkModeStatus.SYSTEM,
+                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.SYSTEM,
                     onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
                 )
             }
