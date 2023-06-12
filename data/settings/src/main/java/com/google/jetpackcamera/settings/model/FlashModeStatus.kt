@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-syntax = "proto3";
-import "com/google/jetpackcamera/settings/dark_mode.proto";
-import "com/google/jetpackcamera/settings/flash_mode.proto";
+package com.google.jetpackcamera.settings.model
 
-
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-message JcaSettings {
-  bool default_front_camera = 2;
-  DarkModeProto dark_mode_status = 3;
-  FlashModeProto flash_mode_status = 4;
+enum class FlashModeStatus {
+    OFF, ON, AUTO
 }

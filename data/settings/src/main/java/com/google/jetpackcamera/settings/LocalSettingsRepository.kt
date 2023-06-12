@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -40,6 +41,13 @@ class LocalSettingsRepository @Inject constructor(
                     DarkModeProto.DARK_MODE_SYSTEM,
                     DarkModeProto.UNRECOGNIZED,
                     null  -> DarkModeStatus.SYSTEM
+                },
+                flash_mode_status = when (it.flashModeStatus){
+                    FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
+                    FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
+                    FlashModeProto.FLASH_MODE_OFF,
+                    FlashModeProto.UNRECOGNIZED,
+                    null -> FlashModeStatus.OFF
                 }
             )
         }
@@ -58,6 +66,17 @@ class LocalSettingsRepository @Inject constructor(
         }
         jcaSettings.updateData {
             it.copy { this.darkModeStatus = newStatus }
+        }
+    }
+
+    override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
+        val newStatus = when (flashModeStatus) {
+            FlashModeStatus.AUTO -> FlashModeProto.FLASH_MODE_AUTO
+                FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
+                FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
+        }
+        jcaSettings.updateData {
+            it.copy { this.flashModeStatus = newStatus }
         }
     }
 

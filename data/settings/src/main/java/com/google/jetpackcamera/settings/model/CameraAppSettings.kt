@@ -22,13 +22,14 @@ package com.google.jetpackcamera.settings.model
 data class CameraAppSettings(
     val default_front_camera : Boolean,
     val dark_mode_status : DarkModeStatus,
-    val field : String = "todo"
+    val flash_mode_status : FlashModeStatus
 )
 
 
 fun getDefaultSettings(): CameraAppSettings{
     return CameraAppSettings(
         default_front_camera = false,
-        dark_mode_status = DarkModeStatus.SYSTEM
+        dark_mode_status = DarkModeStatus.SYSTEM,
+        flash_mode_status = FlashModeStatus.OFF
     )
 }
