@@ -37,6 +37,8 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import kotlinx.coroutines.CompletableDeferred
@@ -59,6 +61,7 @@ class CameraXCameraUseCase @Inject constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
+    //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder()
         .build()
 
@@ -78,7 +81,9 @@ class CameraXCameraUseCase @Inject constructor(
     private var recording : Recording? = null
 
     private var camera: Camera? = null
-    override suspend fun initialize(): List<Int> {
+    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
+        setFlashMode(currentCameraSettings.flash_mode_status)
+
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -94,6 +99,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
+        currentCameraSettings: CameraAppSettings,
         @LensFacing lensFacing: Int,
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
@@ -158,6 +164,16 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
+
+     override fun setFlashMode(flashModeStatus: FlashModeStatus){
+        val newFlashMode = when (flashModeStatus) {
+            FlashModeStatus.OFF -> ImageCapture.FLASH_MODE_OFF // 2
+            FlashModeStatus.ON -> ImageCapture.FLASH_MODE_ON // 1
+            FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
+        }
+        imageCaptureUseCase.flashMode = newFlashMode
+        Log.d(TAG, "Set flash mode to: " + imageCaptureUseCase.flashMode)
+    }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
         when (lensFacing) {

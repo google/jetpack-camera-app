@@ -28,6 +28,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.getDefaultSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 private const val TAG = "PreviewViewModel"
 
@@ -36,17 +39,28 @@ private const val TAG = "PreviewViewModel"
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase
+    private val cameraUseCase: CameraUseCase,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
-        MutableStateFlow(PreviewUiState())
+        MutableStateFlow(PreviewUiState(currentCameraSettings = getDefaultSettings()))
+
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
     var runningCameraJob: Job? = null
 
     private var recordingJob : Job? = null
 
     init {
+        viewModelScope.launch {
+            settingsRepository.cameraAppSettings.collect {
+                //TODO: only update settings that were actually changed
+                // currently resets all "quick" settings to stored settings
+                    settings -> _previewUiState
+                .emit(previewUiState.value.copy(currentCameraSettings = settings))
+                setFlash(previewUiState.value.currentCameraSettings.flash_mode_status)
+            }
+        }
         initializeCamera()
     }
 
@@ -54,7 +68,7 @@ class PreviewViewModel @Inject constructor(
         // TODO(yasith): Handle CameraUnavailableException
         Log.d(TAG, "initializeCamera")
         viewModelScope.launch {
-            cameraUseCase.initialize()
+            cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
             _previewUiState.emit(
                 previewUiState.value.copy(
                     cameraState = CameraState.READY
@@ -70,6 +84,7 @@ class PreviewViewModel @Inject constructor(
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
                 surfaceProvider,
+                previewUiState.value.currentCameraSettings,
                 previewUiState.value.lensFacing
             )
         }
@@ -82,6 +97,22 @@ class PreviewViewModel @Inject constructor(
                 cancel()
             }
         }
+    }
+
+    fun setFlash(flashModeStatus: FlashModeStatus){
+        //update viewmodel value
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                        previewUiState.value.currentCameraSettings.copy(
+                            flash_mode_status = flashModeStatus
+                        )
+                )
+            )
+        }
+        // apply to cameraUseCase
+        cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
     }
 
     fun flipCamera() {

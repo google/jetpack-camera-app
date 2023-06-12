@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import androidx.camera.core.CameraSelector
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 
 
 /**
@@ -24,7 +25,8 @@ import androidx.camera.core.CameraSelector
  */
 data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
-    val lensFacing: Int = CameraSelector.LENS_FACING_FRONT,
+    val currentCameraSettings: CameraAppSettings, // "quick" settings
+    val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
 )
 
