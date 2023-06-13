@@ -16,7 +16,6 @@
 
 package com.google.jetpackcamera.domain.camera
 
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -40,8 +39,7 @@ interface CameraUseCase {
      */
     suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings,
-        @CameraSelector.LensFacing lensFacing: Int
+        currentCameraSettings: CameraAppSettings
     )
 
     suspend fun takePicture()

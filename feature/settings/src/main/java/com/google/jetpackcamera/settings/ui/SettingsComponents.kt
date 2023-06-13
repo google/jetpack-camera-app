@@ -91,7 +91,8 @@ fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Uni
         description = null,
         leadingIcon = null,
         onClick = { onClick() },
-        settingValue = cameraAppSettings.default_front_camera
+        settingValue = cameraAppSettings.default_front_camera,
+        enabled =  cameraAppSettings.back_camera_available && cameraAppSettings.front_camera_available
     )
 }
 
@@ -202,15 +203,17 @@ fun SwitchSettingUI(
     description: String?,
     leadingIcon: @Composable (() -> Unit)?,
     onClick: () -> Unit,
-    settingValue: Boolean
+    settingValue: Boolean,
+    enabled: Boolean
 ) {
     SettingUI(
+        enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
         onClick = onClick,
         trailingContent = {
-            SettingSwitch(settingValue, onClick)
+            SettingSwitch(settingValue, onClick, enabled)
         }
     )
 }
@@ -225,11 +228,12 @@ fun SettingUI(
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Box(modifier = Modifier) {
         ListItem(
-            modifier = Modifier.clickable { onClick() },
+            modifier = Modifier.clickable(enabled = enabled) { onClick() },
             headlineText = { Text(title) },
             supportingText = {
                 when (description) {
@@ -249,10 +253,10 @@ fun SettingUI(
  * A component for a switch
  */
 @Composable
-fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit) {
+fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit, enabled: Boolean = true) {
     Switch(
         modifier = Modifier,
-        enabled = true,
+        enabled = enabled,
         checked = settingValue,
         onCheckedChange = {
             onClick()

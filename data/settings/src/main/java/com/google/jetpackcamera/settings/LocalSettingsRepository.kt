@@ -48,7 +48,8 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_OFF,
                     FlashModeProto.UNRECOGNIZED,
                     null -> FlashModeStatus.OFF
-                }
+                }, front_camera_available = it.frontCameraAvailable,
+                back_camera_available = it.backCameraAvailable
             )
         }
 
@@ -81,4 +82,28 @@ class LocalSettingsRepository @Inject constructor(
     }
 
     override suspend fun getSettings(): CameraAppSettings = cameraAppSettings.first()
+
+    override suspend fun updateAvailableCameraLens(
+        frontLensAvailable: Boolean,
+        backLensAvailable: Boolean
+    ) {
+        // if a front or back lens is not present, the option to change
+        // the direction of the camera should be disabled
+        if (!(frontLensAvailable && backLensAvailable)) {
+            jcaSettings.updateData { currentSettings ->
+                currentSettings.toBuilder()
+                    .setDefaultFrontCamera(frontLensAvailable)
+                    .setFrontCameraAvailable(frontLensAvailable)
+                    .setBackCameraAvailable(backLensAvailable)
+                    .build()
+            }
+        } else {
+            jcaSettings.updateData { currentSettings ->
+                currentSettings.toBuilder()
+                    .setFrontCameraAvailable(true)
+                    .setBackCameraAvailable(true)
+                    .build()
+            }
+        }
+    }
 }

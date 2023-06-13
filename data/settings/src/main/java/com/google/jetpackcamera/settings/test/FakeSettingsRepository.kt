@@ -45,4 +45,11 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun getSettings(): CameraAppSettings {
         return currentCameraSettings
     }
+
+    override suspend fun updateAvailableCameraLens(
+        frontLensAvailable: Boolean,
+        backLensAvailable: Boolean
+    ) {
+        TODO("Not yet implemented")
+    }
 }

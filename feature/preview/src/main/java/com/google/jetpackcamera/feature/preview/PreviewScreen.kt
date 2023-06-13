@@ -24,11 +24,13 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -137,12 +139,15 @@ fun PreviewScreen(
             Box(
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                CaptureButton(
-                    onClick = { viewModel.captureImage() },
-                    onLongPress = { viewModel.startVideoRecording() },
-                    onRelease = { viewModel.stopVideoRecording() },
-                    state = previewUiState.videoRecordingState
-                )
+                Row {
+                    // FlipCameraButton(onClick = { viewModel.flipCamera() } )
+                    CaptureButton(
+                        onClick = { viewModel.captureImage() },
+                        onLongPress = { viewModel.startVideoRecording() },
+                        onRelease = { viewModel.stopVideoRecording() },
+                        state = previewUiState.videoRecordingState
+                    )
+                }
             }
         }
     }
@@ -179,5 +184,16 @@ fun CaptureButton(
                 }
             )
         })
+    }
+}
+
+@Composable
+fun FlipCameraButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            Icons.Filled.Refresh,
+            contentDescription = "Flip Camera",
+            modifier = Modifier.size(72.dp)
+        )
     }
 }

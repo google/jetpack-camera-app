@@ -35,4 +35,8 @@ interface SettingsRepository {
     suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus)
 
     suspend fun getSettings(): CameraAppSettings
+
+// set device values from cameraUseCase
+    suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
+
 }
