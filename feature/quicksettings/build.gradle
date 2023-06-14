@@ -40,6 +40,7 @@ android {
 
 dependencies {
     implementation project(path: ':feature:settings')
+
     // Compose
     def composeBom = platform('androidx.compose:compose-bom:2022.12.00')
     implementation composeBom
@@ -65,12 +66,6 @@ dependencies {
 
     // Guava
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1'
-
-    // Hilt
-    implementation "com.google.dagger:hilt-android:2.44"
-    kapt "com.google.dagger:hilt-compiler:2.44"
-
-    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code
