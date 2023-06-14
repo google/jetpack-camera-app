@@ -151,13 +151,13 @@ private fun ExpandedQuickSettingsUi(
                                         if (!settingsUiState.settings.default_front_camera) {
                                             viewModel.setDefaultToFrontCamera()
                                         }
-                                        close
+                                        close()
                                     },
                                     {
                                         if (settingsUiState.settings.default_front_camera) {
                                             viewModel.setDefaultToFrontCamera()
                                         }
-                                        close
+                                        close()
                                     })
                             )
                     }),

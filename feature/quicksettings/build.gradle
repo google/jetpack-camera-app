@@ -39,8 +39,6 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':feature:settings')
-
     // Compose
     def composeBom = platform('androidx.compose:compose-bom:2022.12.00')
     implementation composeBom
@@ -70,6 +68,10 @@ dependencies {
     // Hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
+
+    // Settings
+    implementation project(path: ':feature:settings')
+    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code
