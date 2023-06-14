@@ -66,6 +66,10 @@ dependencies {
 
     // Guava
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1'
+
+    // Hilt
+    implementation "com.google.dagger:hilt-android:2.44"
+    kapt "com.google.dagger:hilt-compiler:2.44"
 }
 
 // Allow references to generated code
