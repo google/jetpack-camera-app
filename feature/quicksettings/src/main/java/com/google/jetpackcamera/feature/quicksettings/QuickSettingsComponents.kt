@@ -34,11 +34,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,15 +51,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.quicksettings.R
-import com.google.jetpackcamera.settings.SettingsViewModel
+import kotlin.math.min
 
+/**
+ * The UI component for quick settings.
+ */
 @Composable
-fun QuickSettingsUi(modifier: Modifier = Modifier) {
+fun QuickSettingsUi(
+    modifier: Modifier = Modifier,
+    quickSettingsUiModels: List<QuickSettingsUiModel>
+) {
     var isOpen by remember {
         mutableStateOf(false)
     }
@@ -106,88 +116,97 @@ fun QuickSettingsUi(modifier: Modifier = Modifier) {
         ) {
             if (isOpen) {
                 ExpandedQuickSettingsUi(
+                    quickSettingsUiModels = quickSettingsUiModels,
                     close = { isOpen = false })
             }
         }
     }
 }
 
+/**
+ * The UI component for quick settings when it is expanded.
+ */
 @Composable
 private fun ExpandedQuickSettingsUi(
-    viewModel: SettingsViewModel = hiltViewModel(),
+    quickSettingsUiModels: List<QuickSettingsUiModel>,
     close: () -> Unit
 ) {
-    var expandedQuickSettingsDataModel by remember {
-        mutableStateOf<ExpandedQuickSettingsDataModel?>(null)
+    var selectedUiModel by remember {
+        mutableStateOf<QuickSettingsUiModel?>(null)
     }
-    val settingsUiState by viewModel.settingsUiState.collectAsState()
+    val initialNumOfColumns =
+        min(
+            quickSettingsUiModels.size,
+            ((LocalConfiguration.current.screenWidthDp.dp - (dimensionResource(
+                id = R.dimen.quick_settings_ui_horizontal_padding
+            ) * 2)) /
+                    (dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2))).toInt()
+        )
     Column(
         modifier = Modifier
-            .wrapContentSize()
+            .fillMaxWidth()
+            .padding(horizontal = dimensionResource(id = R.dimen.quick_settings_ui_horizontal_padding))
     ) {
-        if (expandedQuickSettingsDataModel == null) {
-            Row(modifier = Modifier.wrapContentSize()) {
-                QuickSettingUiItem(
-                    // PreviewUiState dependency
-                    modifier = Modifier.clickable(onClick = {
-                        expandedQuickSettingsDataModel =
-                            ExpandedQuickSettingsDataModel(
-                                drawableResIds = listOf(
-                                    R.drawable.baseline_cameraswitch_72,
-                                    R.drawable.baseline_cameraswitch_72
-                                ),
-                                textResIds = listOf(
-                                    R.string.quick_settings_front_camera_text,
-                                    R.string.quick_settings_back_camera_text
-                                ),
-                                descriptionResIds = listOf(
-                                    R.string.quick_settings_front_camera_description,
-                                    R.string.quick_settings_back_camera_description
-                                ),
-                                highlightedIndex =
-                                if (settingsUiState.settings.default_front_camera) 0 else 1,
-                                onClicks = listOf(
-                                    {
-                                        if (!settingsUiState.settings.default_front_camera) {
-                                            viewModel.setDefaultToFrontCamera()
-                                        }
-                                        close()
-                                    },
-                                    {
-                                        if (settingsUiState.settings.default_front_camera) {
-                                            viewModel.setDefaultToFrontCamera()
-                                        }
-                                        close()
-                                    })
-                            )
-                    }),
-                    drawableResId = R.drawable.baseline_cameraswitch_72,
-                    textRes = if (settingsUiState.settings.default_front_camera)
-                        R.string.quick_settings_front_camera_text else R.string.quick_settings_back_camera_text,
-                    descriptionRes = if (settingsUiState.settings.default_front_camera)
-                        R.string.quick_settings_front_camera_description else R.string.quick_settings_back_camera_description,
-                    isHighLighted = false
-                )
+        if (selectedUiModel == null) {
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxWidth(),
+                columns = GridCells.Fixed(count = initialNumOfColumns)
+            ) {
+                items(items = quickSettingsUiModels) { item ->
+                    QuickSettingUiItem(
+                        modifier = Modifier.clickable(onClick = {
+                            selectedUiModel = item
+                        }),
+                        drawableResId = item
+                            .drawableResIds[item.highlightedIndex],
+                        textRes = item
+                            .textResIds[item.highlightedIndex],
+                        descriptionRes = item
+                            .descriptionResIds[item.highlightedIndex],
+                        isHighLighted = false
+                    )
+
+                }
             }
         } else {
-            Row(modifier = Modifier.wrapContentSize()) {
-                for (i in 0 until expandedQuickSettingsDataModel!!.descriptionResIds.size) {
+            val expandedNumOfColumns =
+                min(
+                    selectedUiModel!!.descriptionResIds.size,
+                    ((LocalConfiguration.current.screenWidthDp.dp - (dimensionResource(
+                        id = R.dimen.quick_settings_ui_horizontal_padding
+                    ) * 2)) /
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                                    (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2))).toInt()
+                )
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxWidth(),
+                columns = GridCells.Fixed(count = expandedNumOfColumns)
+            ) {
+                itemsIndexed(items = selectedUiModel!!.descriptionResIds) { i, _ ->
                     QuickSettingUiItem(
                         modifier = Modifier.clickable(
-                            onClick = expandedQuickSettingsDataModel!!.onClicks[i]
+                            onClick = {
+                                selectedUiModel!!.onClicks[i]
+                                close()
+                            }
                         ),
-                        drawableResId = expandedQuickSettingsDataModel!!.drawableResIds[i],
-                        textRes = expandedQuickSettingsDataModel!!.textResIds[i],
-                        descriptionRes = expandedQuickSettingsDataModel!!.descriptionResIds[i],
-                        isHighLighted = i == expandedQuickSettingsDataModel!!.highlightedIndex
+                        drawableResId = selectedUiModel!!.drawableResIds[i],
+                        textRes = selectedUiModel!!.textResIds[i],
+                        descriptionRes = selectedUiModel!!.descriptionResIds[i],
+                        isHighLighted = i == selectedUiModel!!.highlightedIndex
                     )
+
                 }
             }
         }
-        Spacer(modifier = Modifier.height(170.dp))
+        Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
     }
 }
 
+/**
+ * The itemized UI component representing each button in quick settings.
+ */
 @Composable
 private fun QuickSettingUiItem(
     modifier: Modifier,
@@ -199,7 +218,7 @@ private fun QuickSettingUiItem(
     Column(
         modifier = modifier
             .wrapContentSize()
-            .padding(20.dp),
+            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -209,7 +228,7 @@ private fun QuickSettingUiItem(
             contentDescription = stringResource(descriptionRes),
             tint = tint,
             modifier = Modifier
-                .size(60.dp)
+                .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
         )
 
         Text(text = stringResource(textRes), color = tint)
