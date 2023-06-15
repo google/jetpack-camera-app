@@ -46,7 +46,8 @@ import com.google.jetpackcamera.viewfinder.CameraPreview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.feature.quicksettings.QuickSettingsUi
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsUiModel
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -107,8 +108,83 @@ fun PreviewScreen(
                 }
             )
 
-            QuickSettingsUi(
-                modifier = Modifier.fillMaxSize()
+            QuickSettingsScreen(
+                modifier = Modifier.fillMaxSize(),
+                quickSettingsUiModels = listOf(
+                    QuickSettingsUiModel(
+                        drawableResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_cameraswitch_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_cameraswitch_72
+                        ),
+                        textResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_front_camera_text,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_back_camera_text
+                        ),
+                        descriptionResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_front_camera_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_back_camera_description
+                        ),
+                        highlightedIndex = 0 /*TODO*/,
+                        onClicks = listOf({}, {}) /*TODO*/
+                    ),
+                    QuickSettingsUiModel(
+                        drawableResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_aspect_ratio_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_aspect_ratio_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_aspect_ratio_72,
+                        ),
+                        textResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_3_4,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_16_9,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_1_1,
+                        ),
+                        descriptionResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_3_4_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_16_9_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_aspect_ratio_1_1_description,
+                        ),
+                        highlightedIndex = 0 /*TODO*/,
+                        onClicks = listOf({}, {}, {}) /*TODO*/
+                    ),
+                    QuickSettingsUiModel(
+                        drawableResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_flash_off_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_flash_auto_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_flash_on_72,
+                        ),
+                        textResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_off,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_auto,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_on,
+                        ),
+                        descriptionResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_off_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_auto_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_on_description,
+                        ),
+                        highlightedIndex = 0 /*TODO*/,
+                        onClicks = listOf({}, {}, {}) /*TODO*/
+                    ),
+                    QuickSettingsUiModel(
+                        drawableResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_timer_off_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_timer_3_72,
+                            com.google.jetpackcamera.quicksettings.R.drawable.baseline_timer_10_72,
+                        ),
+                        textResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_off,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_3,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_10,
+                        ),
+                        descriptionResIds = listOf(
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_off_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_3_description,
+                            com.google.jetpackcamera.quicksettings.R.string.quick_settings_timer_10_description,
+                        ),
+                        highlightedIndex = 0 /*TODO*/,
+                        onClicks = listOf({}, {}, {}) /*TODO*/
+                    )
+                )
             )
 
             IconButton(

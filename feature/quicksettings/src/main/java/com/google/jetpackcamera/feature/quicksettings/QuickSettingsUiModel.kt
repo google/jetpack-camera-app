@@ -19,7 +19,18 @@ package com.google.jetpackcamera.feature.quicksettings
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 
-data class ExpandedQuickSettingsDataModel(
+/**
+ * An instance of this class represents the UI of a quick setting feature. A list of instances of
+ * this class should be supplied to [QuickSettingsScreen] to reflect the UI in the quick settings.
+ *
+ * @param drawableResIds    resource ids for the icons corresponding to the options of this feature
+ * @param textResIds        resource ids for the text corresponding to the options of this feature
+ * @param descriptionResIds resource ids for the description corresponding to the options of this
+ *                          feature
+ * @param highlightedIndex  the index of the highlighted option of this feature
+ * @param onClicks          the onClick callbacks for the options of this feature
+ */
+data class QuickSettingsUiModel(
     @DrawableRes val drawableResIds: List<Int>,
     @StringRes val textResIds: List<Int>,
     @StringRes val descriptionResIds: List<Int>,
