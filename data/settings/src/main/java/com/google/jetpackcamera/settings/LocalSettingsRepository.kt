@@ -16,15 +16,52 @@
 
 package com.google.jetpackcamera.settings
 
+import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.Settings
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
-class LocalSettingsRepository @Inject constructor() : SettingsRepository {
+class LocalSettingsRepository @Inject constructor(
+    private val jcaSettings: DataStore<JcaSettings>
+) : SettingsRepository {
 
-    override fun getSettings(): Settings {
-        TODO("Not yet implemented")
+    override val settings = jcaSettings.data
+        .map {
+            Settings(
+                default_front_camera = it.defaultFrontCamera,
+                dark_mode_status = when (it.darkModeStatus){
+                    DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
+                    DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
+                    DarkModeProto.DARK_MODE_SYSTEM,
+                    DarkModeProto.UNRECOGNIZED,
+                    null  -> DarkModeStatus.SYSTEM
+                }
+            )
+        }
+
+    override suspend fun updateDefaultToFrontCamera() {
+        jcaSettings.updateData {
+            it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
+        }
+    }
+
+    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
+        val newStatus = when (status){
+            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
+            DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
+            DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
+        }
+        jcaSettings.updateData {
+            it.copy { this.darkModeStatus = newStatus }
+        }
+    }
+
+    override suspend fun getSettings(): Settings {
+        return settings.first()
     }
 }

@@ -16,11 +16,19 @@
 
 package com.google.jetpackcamera.settings
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.getDefaultSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "SettingsViewModel"
+
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -30,7 +38,55 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _settingsUiState = MutableStateFlow(SettingsUiState())
+    private val _settingsUiState: MutableStateFlow<SettingsUiState> =
+        MutableStateFlow(
+            SettingsUiState(
+                getDefaultSettings(),
+                disabled = true
+            )
+        )
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
+    init {
+        // updates our viewmodel as soon as datastore is updated
+        viewModelScope.launch {
+            settingsRepository.settings.collect { updatedSettings ->
+                _settingsUiState.emit(
+                    settingsUiState.value.copy(
+                        settings = updatedSettings,
+                        disabled = false
+                    )
+                )
+            }
+        }
+        viewModelScope.launch {
+            _settingsUiState.emit(
+                settingsUiState.value.copy(
+                    disabled = false
+                )
+            )
+        }
+    }
+
+    fun setDefaultToFrontCamera() {
+        // true means default is front
+        viewModelScope.launch {
+            settingsRepository.updateDefaultToFrontCamera()
+            Log.d(
+                TAG,
+                "set camera default facing: " + settingsRepository.getSettings().default_front_camera
+            )
+        }
+    }
+
+
+    fun setDarkMode(darkModeStatus: DarkModeStatus) {
+        viewModelScope.launch {
+            settingsRepository.updateDarkModeStatus(darkModeStatus)
+            Log.d(
+                TAG, "set dark mode theme: " + settingsRepository.getSettings().dark_mode_status
+            )
+        }
+    }
 }
+

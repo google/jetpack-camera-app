@@ -19,32 +19,85 @@ package com.google.jetpackcamera
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.MainActivityUiState.Loading
+import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+
 
 /**
  * Activity for the JetpackCameraApp.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var uiState: MainActivityUiState by mutableStateOf(Loading)
+
+        // update viewmodel
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState
+                    .onEach {
+                        uiState = it
+                    }
+                    .collect()
+            }
+        }
         setContent {
-            JetpackCameraTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    JcaApp()
+            when (uiState) {
+                Loading -> {/* TODO(b/283812742):  a loading screen */}
+                is Success -> {
+                   //TODO(kimblebee@): add app setting to enable/disable dynamic color
+                    JetpackCameraTheme(
+                        darkTheme = isInDarkMode(uiState = uiState),
+                        dynamicColor = false) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            JcaApp()
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+/**
+ * Determines whether the Theme should be in dark, light, or follow system theme
+ */
+@Composable
+private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
+    when (uiState) {
+        Loading -> isSystemInDarkTheme()
+        is Success -> when (uiState.settings.dark_mode_status) {
+            DarkModeStatus.DARK -> true
+            DarkModeStatus.LIGHT -> false
+            DarkModeStatus.SYSTEM -> isSystemInDarkTheme()
+        }
+    }
+
+
 
