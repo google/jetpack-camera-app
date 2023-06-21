@@ -50,7 +50,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
-private const val TAG = "ViewFinder"
+private const val TAG = "PreviewScreen"
 
 /**
  * Screen used for the Preview feature.
@@ -60,7 +60,7 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
-    Log.d(TAG, "ViewFinder")
+    Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
@@ -72,7 +72,7 @@ fun PreviewScreen(
         deferredSurfaceProvider.complete(it)
     }
 
-    LaunchedEffect(previewUiState, lifecycleOwner) {
+    LaunchedEffect(previewUiState.cameraState, lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.runCamera(surfaceProvider)
