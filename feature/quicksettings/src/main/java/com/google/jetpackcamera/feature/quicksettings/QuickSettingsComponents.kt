@@ -65,7 +65,14 @@ import kotlin.math.min
 @Composable
 fun QuickSettingsScreen(
     modifier: Modifier = Modifier,
-    quickSettingsUiModels: List<QuickSettingsUiModel>
+    lensFace: CameraLensFace = CameraLensFace.FRONT,
+    flashMode: CameraFlashMode = CameraFlashMode.OFF,
+    aspectRatio: CameraAspectRatio = CameraAspectRatio.NINE_SIXTEEN,
+    timer: CameraTimer = CameraTimer.OFF,
+    onLensFaceClick: (lensFace: CameraLensFace) -> Unit,
+    onFlashModeClick: (flashMode: CameraFlashMode) -> Unit,
+    onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
+    onTimerClick: (timer: CameraTimer) -> Unit
 ) {
     var isOpen by remember {
         mutableStateOf(false)
@@ -116,7 +123,14 @@ fun QuickSettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ExpandedQuickSettingsUi(
-                    quickSettingsUiModels = quickSettingsUiModels,
+                    lensFace = lensFace,
+                    flashMode = flashMode,
+                    aspectRatio = aspectRatio,
+                    timer = timer,
+                    onLensFaceClick = onLensFaceClick,
+                    onFlashModeClick = onFlashModeClick,
+                    onAspectRatioClick = onAspectRatioClick,
+                    onTimerClick = onTimerClick,
                     close = { isOpen = false })
             }
         }
@@ -128,12 +142,29 @@ fun QuickSettingsScreen(
  */
 @Composable
 private fun ExpandedQuickSettingsUi(
-    quickSettingsUiModels: List<QuickSettingsUiModel>,
+    lensFace: CameraLensFace = CameraLensFace.FRONT,
+    flashMode: CameraFlashMode = CameraFlashMode.OFF,
+    aspectRatio: CameraAspectRatio = CameraAspectRatio.NINE_SIXTEEN,
+    timer: CameraTimer = CameraTimer.OFF,
+    onLensFaceClick: (lensFace: CameraLensFace) -> Unit,
+    onFlashModeClick: (flashMode: CameraFlashMode) -> Unit,
+    onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
+    onTimerClick: (timer: CameraTimer) -> Unit,
     close: () -> Unit
 ) {
     var selectedUiModel by remember {
         mutableStateOf<QuickSettingsUiModel?>(null)
     }
+    val quickSettingsUiModels: List<QuickSettingsUiModel> = getQuickSettingsUiModelList(
+        lensFace = lensFace,
+        flashMode = flashMode,
+        aspectRatio = aspectRatio,
+        timer = timer,
+        onLensFaceClick = onLensFaceClick,
+        onFlashModeClick = onFlashModeClick,
+        onAspectRatioClick = onAspectRatioClick,
+        onTimerClick = onTimerClick
+    )
     val initialNumOfColumns =
         min(
             quickSettingsUiModels.size,
@@ -159,11 +190,11 @@ private fun ExpandedQuickSettingsUi(
                             selectedUiModel = item
                         }),
                         drawableResId = item
-                            .drawableResIds[item.highlightedIndex],
+                            .drawableResIds[item.currentQuickSettingEnum.getOrdinal()],
                         textRes = item
-                            .textResIds[item.highlightedIndex],
+                            .textResIds[item.currentQuickSettingEnum.getOrdinal()],
                         descriptionRes = item
-                            .descriptionResIds[item.highlightedIndex],
+                            .descriptionResIds[item.currentQuickSettingEnum.getOrdinal()],
                         isHighLighted = false
                     )
 
@@ -187,14 +218,14 @@ private fun ExpandedQuickSettingsUi(
                     QuickSettingUiItem(
                         modifier = Modifier.clickable(
                             onClick = {
-                                selectedUiModel!!.onClicks[i]
+                                selectedUiModel!!.onClick(selectedUiModel!!.availableQuickSettingsEnums[i])
                                 close()
                             }
                         ),
                         drawableResId = selectedUiModel!!.drawableResIds[i],
                         textRes = selectedUiModel!!.textResIds[i],
                         descriptionRes = selectedUiModel!!.descriptionResIds[i],
-                        isHighLighted = i == selectedUiModel!!.highlightedIndex
+                        isHighLighted = i == selectedUiModel!!.currentQuickSettingEnum.getOrdinal()
                     )
 
                 }
