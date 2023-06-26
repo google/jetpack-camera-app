@@ -51,4 +51,5 @@ interface CameraUseCase {
     fun setZoomScale(scale: Float)
 
     fun setFlashMode(flashModeStatus: FlashModeStatus)
+    suspend fun flipCamera(isFrontFacing: Boolean)
 }

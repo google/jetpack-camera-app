@@ -117,17 +117,19 @@ class PreviewViewModel @Inject constructor(
         // TODO(yasith)
 
         //update viewmodel value
-        /* viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        default_front_camera = !previewUiState.value
-                            .currentCameraSettings.default_front_camera
-                    )
-                )
-            )
-         */
+         viewModelScope.launch {
+             _previewUiState.emit(
+                 previewUiState.value.copy(
+                     currentCameraSettings =
+                     previewUiState.value.currentCameraSettings.copy(
+                         default_front_camera = !previewUiState.value
+                             .currentCameraSettings.default_front_camera
+                     )
+                 )
+             )
+             // apply to cameraUseCase
+             cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
+         }
     }
 
     fun captureImage() {

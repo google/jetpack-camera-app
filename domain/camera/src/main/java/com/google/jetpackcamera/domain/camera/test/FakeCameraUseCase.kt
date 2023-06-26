@@ -81,4 +81,8 @@ class FakeCameraUseCase : CameraUseCase {
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
         flashMode = flashModeStatus
     }
+
+    override suspend fun flipCamera(isFrontFacing: Boolean) {
+        TODO("Not yet implemented")
+    }
 }

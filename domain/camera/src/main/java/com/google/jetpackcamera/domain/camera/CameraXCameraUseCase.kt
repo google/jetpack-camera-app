@@ -111,12 +111,10 @@ class CameraXCameraUseCase @Inject constructor(
         currentCameraSettings: CameraAppSettings,
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
-        val lensFacing = when (currentCameraSettings.default_front_camera) {
-            true -> CameraSelector.LENS_FACING_FRONT
-            false -> CameraSelector.LENS_FACING_BACK
-        }
 
-        val cameraSelector = cameraLensToSelector(lensFacing)
+        val cameraSelector =
+            cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
+
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
@@ -179,6 +177,16 @@ class CameraXCameraUseCase @Inject constructor(
 
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
 
+    // flips the camera to the designated lensFacing direction
+    override suspend fun flipCamera(isFrontFacing: Boolean) {
+        cameraProvider.unbindAll()
+        rebindUseCases(
+            cameraLensToSelector(
+                getLensFacing(isFrontFacing)
+            )
+        )
+    }
+
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
         imageCaptureUseCase.flashMode = when (flashModeStatus) {
             FlashModeStatus.OFF -> ImageCapture.FLASH_MODE_OFF // 2
@@ -186,6 +194,21 @@ class CameraXCameraUseCase @Inject constructor(
             FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
         }
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
+    }
+
+    // converts LensFacing from datastore to @LensFacing Int value
+    private fun getLensFacing(isFrontFacing: Boolean): Int {
+        val newLensFacing = when (isFrontFacing) {
+            true -> CameraSelector.LENS_FACING_FRONT
+            false -> CameraSelector.LENS_FACING_BACK
+        }
+        return newLensFacing
+    }
+
+    private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
+        cameraProvider.runWith(cameraSelector, useCaseGroup) {
+            awaitCancellation()
+        }
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =

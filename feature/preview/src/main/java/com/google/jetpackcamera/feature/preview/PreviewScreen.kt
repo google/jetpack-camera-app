@@ -140,7 +140,7 @@ fun PreviewScreen(
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 Row {
-                    // FlipCameraButton(onClick = { viewModel.flipCamera() } )
+                    FlipCameraButton(onClick = { viewModel.flipCamera() } )
                     CaptureButton(
                         onClick = { viewModel.captureImage() },
                         onLongPress = { viewModel.startVideoRecording() },
