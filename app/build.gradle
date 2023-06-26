@@ -97,9 +97,6 @@ dependencies {
 
     // Settings Screen
     implementation(project(":feature:settings"))
-
-    // Quick Settings
-    implementation(project(":feature:quicksettings"))
 }
 
 // Allow references to generated code

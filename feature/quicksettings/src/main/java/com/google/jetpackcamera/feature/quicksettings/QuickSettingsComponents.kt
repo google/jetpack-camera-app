@@ -42,10 +42,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -69,6 +69,10 @@ fun QuickSettingsScreen(
     flashMode: CameraFlashMode = CameraFlashMode.OFF,
     aspectRatio: CameraAspectRatio = CameraAspectRatio.NINE_SIXTEEN,
     timer: CameraTimer = CameraTimer.OFF,
+    availableLensFace: List<CameraLensFace> = CameraLensFace.values().asList(),
+    availableFlashMode: List<CameraFlashMode> = CameraFlashMode.values().asList(),
+    availableAspectRatio: List<CameraAspectRatio> = CameraAspectRatio.values().asList(),
+    availableTimer: List<CameraTimer> = CameraTimer.values().asList(),
     onLensFaceClick: (lensFace: CameraLensFace) -> Unit,
     onFlashModeClick: (flashMode: CameraFlashMode) -> Unit,
     onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
@@ -127,6 +131,10 @@ fun QuickSettingsScreen(
                     flashMode = flashMode,
                     aspectRatio = aspectRatio,
                     timer = timer,
+                    availableLensFace = availableLensFace,
+                    availableFlashMode = availableFlashMode,
+                    availableAspectRatio = availableAspectRatio,
+                    availableTimer = availableTimer,
                     onLensFaceClick = onLensFaceClick,
                     onFlashModeClick = onFlashModeClick,
                     onAspectRatioClick = onAspectRatioClick,
@@ -142,10 +150,14 @@ fun QuickSettingsScreen(
  */
 @Composable
 private fun ExpandedQuickSettingsUi(
-    lensFace: CameraLensFace = CameraLensFace.FRONT,
-    flashMode: CameraFlashMode = CameraFlashMode.OFF,
-    aspectRatio: CameraAspectRatio = CameraAspectRatio.NINE_SIXTEEN,
-    timer: CameraTimer = CameraTimer.OFF,
+    lensFace: CameraLensFace,
+    flashMode: CameraFlashMode,
+    aspectRatio: CameraAspectRatio,
+    timer: CameraTimer,
+    availableLensFace: List<CameraLensFace>,
+    availableFlashMode: List<CameraFlashMode>,
+    availableAspectRatio: List<CameraAspectRatio>,
+    availableTimer: List<CameraTimer>,
     onLensFaceClick: (lensFace: CameraLensFace) -> Unit,
     onFlashModeClick: (flashMode: CameraFlashMode) -> Unit,
     onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
@@ -160,6 +172,10 @@ private fun ExpandedQuickSettingsUi(
         flashMode = flashMode,
         aspectRatio = aspectRatio,
         timer = timer,
+        availableLensFace = availableLensFace,
+        availableFlashMode = availableFlashMode,
+        availableAspectRatio = availableAspectRatio,
+        availableTimer = availableTimer,
         onLensFaceClick = onLensFaceClick,
         onFlashModeClick = onFlashModeClick,
         onAspectRatioClick = onAspectRatioClick,
@@ -189,12 +205,9 @@ private fun ExpandedQuickSettingsUi(
                         modifier = Modifier.clickable(onClick = {
                             selectedUiModel = item
                         }),
-                        drawableResId = item
-                            .drawableResIds[item.currentQuickSettingEnum.getOrdinal()],
-                        textRes = item
-                            .textResIds[item.currentQuickSettingEnum.getOrdinal()],
-                        descriptionRes = item
-                            .descriptionResIds[item.currentQuickSettingEnum.getOrdinal()],
+                        drawableResId = item.currentQuickSettingEnum.getDrawableResId(),
+                        textRes = item.currentQuickSettingEnum.getTextResId(),
+                        descriptionRes = item.currentQuickSettingEnum.getDescriptionResId(),
                         isHighLighted = false
                     )
 
@@ -203,7 +216,7 @@ private fun ExpandedQuickSettingsUi(
         } else {
             val expandedNumOfColumns =
                 min(
-                    selectedUiModel!!.descriptionResIds.size,
+                    selectedUiModel!!.availableQuickSettingsEnums.size,
                     ((LocalConfiguration.current.screenWidthDp.dp - (dimensionResource(
                         id = R.dimen.quick_settings_ui_horizontal_padding
                     ) * 2)) /
@@ -214,7 +227,7 @@ private fun ExpandedQuickSettingsUi(
                 modifier = Modifier.fillMaxWidth(),
                 columns = GridCells.Fixed(count = expandedNumOfColumns)
             ) {
-                itemsIndexed(items = selectedUiModel!!.descriptionResIds) { i, _ ->
+                itemsIndexed(items = selectedUiModel!!.availableQuickSettingsEnums) { i, _ ->
                     QuickSettingUiItem(
                         modifier = Modifier.clickable(
                             onClick = {
@@ -222,10 +235,10 @@ private fun ExpandedQuickSettingsUi(
                                 close()
                             }
                         ),
-                        drawableResId = selectedUiModel!!.drawableResIds[i],
-                        textRes = selectedUiModel!!.textResIds[i],
-                        descriptionRes = selectedUiModel!!.descriptionResIds[i],
-                        isHighLighted = i == selectedUiModel!!.currentQuickSettingEnum.getOrdinal()
+                        drawableResId = selectedUiModel!!.availableQuickSettingsEnums[i].getDrawableResId(),
+                        textRes = selectedUiModel!!.availableQuickSettingsEnums[i].getTextResId(),
+                        descriptionRes = selectedUiModel!!.availableQuickSettingsEnums[i].getDescriptionResId(),
+                        isHighLighted = selectedUiModel!!.availableQuickSettingsEnums[i] == selectedUiModel!!.currentQuickSettingEnum
                     )
 
                 }
