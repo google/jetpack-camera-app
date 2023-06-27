@@ -24,8 +24,23 @@ import androidx.camera.core.CameraSelector
  */
 data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
-    val lensFacing: Int = CameraSelector.LENS_FACING_FRONT
+    val lensFacing: Int = CameraSelector.LENS_FACING_FRONT,
+    val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
 )
+
+/**
+ * Defines the current state of Video Recording
+ */
+enum class VideoRecordingState {
+    /**
+     * Camera is not currently recording a video
+     */
+    INACTIVE,
+    /**
+     * Camera is currently recording a video
+     */
+    ACTIVE
+}
 
 /**
  * Defines the current state of the camera.
