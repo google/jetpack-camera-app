@@ -16,7 +16,6 @@
 
 package com.google.jetpackcamera.feature.preview
 
-import android.provider.MediaStore.Video
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.Canvas
@@ -36,17 +35,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import com.google.jetpackcamera.viewfinder.CameraPreview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -66,13 +66,13 @@ fun PreviewScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val deferredSurfaceProvider = CompletableDeferred<SurfaceProvider>()
+    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>()}
     val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
     }
 
-    LaunchedEffect(previewUiState.cameraState, lifecycleOwner) {
+    LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.runCamera(surfaceProvider)
