@@ -52,6 +52,7 @@ class PreviewViewModel @Inject constructor(
 
     private fun initializeCamera() {
         // TODO(yasith): Handle CameraUnavailableException
+        Log.d(TAG, "initializeCamera")
         viewModelScope.launch {
             cameraUseCase.initialize()
             _previewUiState.emit(
@@ -63,6 +64,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun runCamera(surfaceProvider: SurfaceProvider) {
+        Log.d(TAG, "runCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
             // TODO(yasith): Handle Exceptions from binding use cases
@@ -74,6 +76,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun stopCamera() {
+        Log.d(TAG, "stopCamera")
         runningCameraJob?.apply {
             if (isActive) {
                 cancel()
