@@ -113,17 +113,20 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    // flips the camera opposite to its current direction
     fun flipCamera() {
-        // TODO(yasith)
-
+        flipCamera(!previewUiState.value
+            .currentCameraSettings.default_front_camera)
+    }
+    // sets the camera to a designated direction
+    fun flipCamera(isFacingFront: Boolean) {
         //update viewmodel value
          viewModelScope.launch {
              _previewUiState.emit(
                  previewUiState.value.copy(
                      currentCameraSettings =
                      previewUiState.value.currentCameraSettings.copy(
-                         default_front_camera = !previewUiState.value
-                             .currentCameraSettings.default_front_camera
+                         default_front_camera = isFacingFront
                      )
                  )
              )
