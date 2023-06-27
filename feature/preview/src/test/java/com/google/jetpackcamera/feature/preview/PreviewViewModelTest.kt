@@ -69,6 +69,24 @@ class PreviewViewModelTest {
     }
 
     @Test
+    fun startVideoRecording() = runTest(StandardTestDispatcher()) {
+        previewViewModel.runCamera(mock())
+        previewViewModel.startVideoRecording()
+        advanceUntilIdle()
+        assertEquals(cameraUseCase.recordingInProgress, true)
+    }
+
+    @Test
+    fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
+        previewViewModel.runCamera(mock())
+        previewViewModel.startVideoRecording()
+        advanceUntilIdle()
+        previewViewModel.stopVideoRecording()
+        assertEquals(cameraUseCase.recordingInProgress, false)
+
+    }
+
+    @Test
     fun flipCamera() {
         // TODO(yasith)
     }

@@ -43,4 +43,8 @@ interface CameraUseCase {
     )
 
     suspend fun takePicture()
+
+    suspend fun startVideoRecording()
+
+    fun stopVideoRecording()
 }
