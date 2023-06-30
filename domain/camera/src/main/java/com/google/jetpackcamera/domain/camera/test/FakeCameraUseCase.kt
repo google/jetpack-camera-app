@@ -33,11 +33,14 @@ class FakeCameraUseCase : CameraUseCase {
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+
+    var isLensFacingFront = false
     private var flashMode = FlashModeStatus.OFF
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
         flashMode = currentCameraSettings.flash_mode_status
+        isLensFacingFront = currentCameraSettings.default_front_camera
         return availableLenses
     }
 
@@ -83,6 +86,6 @@ class FakeCameraUseCase : CameraUseCase {
     }
 
     override suspend fun flipCamera(isFrontFacing: Boolean) {
-        TODO("Not yet implemented")
+        isLensFacingFront = isFrontFacing
     }
 }

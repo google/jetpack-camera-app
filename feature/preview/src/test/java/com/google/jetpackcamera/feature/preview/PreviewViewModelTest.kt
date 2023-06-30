@@ -98,7 +98,15 @@ class PreviewViewModelTest {
     }
 
     @Test
-    fun flipCamera() {
-        // TODO(yasith)
+    fun flipCamera() = runTest(StandardTestDispatcher()) {
+        // initial default value should be back
+        previewViewModel.runCamera(mock())
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.default_front_camera, false)
+        previewViewModel.flipCamera()
+
+        advanceUntilIdle()
+        //ui state and camera should both be true now
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.default_front_camera, true)
+        assertEquals(true, cameraUseCase.isLensFacingFront )
     }
 }
