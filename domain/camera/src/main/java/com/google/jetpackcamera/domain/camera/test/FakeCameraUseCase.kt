@@ -33,9 +33,11 @@ class FakeCameraUseCase : CameraUseCase {
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+    private var flashMode = FlashModeStatus.OFF
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
+        flashMode = currentCameraSettings.flash_mode_status
         return availableLenses
     }
 
@@ -73,6 +75,6 @@ class FakeCameraUseCase : CameraUseCase {
     }
 
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        TODO("Not yet implemented")
+        flashMode = flashModeStatus
     }
 }

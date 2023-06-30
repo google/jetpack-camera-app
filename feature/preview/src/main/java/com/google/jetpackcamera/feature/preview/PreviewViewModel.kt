@@ -58,7 +58,6 @@ class PreviewViewModel @Inject constructor(
                 // currently resets all "quick" settings to stored settings
                     settings -> _previewUiState
                 .emit(previewUiState.value.copy(currentCameraSettings = settings))
-                setFlash(previewUiState.value.currentCameraSettings.flash_mode_status)
             }
         }
         initializeCamera()
