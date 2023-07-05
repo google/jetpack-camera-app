@@ -150,7 +150,7 @@ class CameraXCameraUseCase @Inject constructor(
         recording?.stop()
     }
 
-    override fun setZoomRatio(scale: Float) {
+    override fun setZoomScale(scale: Float) {
         val zoomState = getZoomState()
         if (zoomState != null) {
             val finalScale = (zoomState.zoomRatio * scale).coerceIn(zoomState.minZoomRatio, zoomState.maxZoomRatio)
@@ -159,10 +159,7 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     private fun getZoomState(): ZoomState? {
-        if (camera == null) {
-            return null
-        }
-        return camera!!.cameraInfo.zoomState.value
+        return camera?.cameraInfo?.zoomState?.value
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =

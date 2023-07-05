@@ -67,6 +67,6 @@ class FakeCameraUseCase : CameraUseCase {
         recordingInProgress = false
     }
 
-    override fun setZoomRatio(scale: Float) {
+    override fun setZoomScale(scale: Float) {
     }
 }

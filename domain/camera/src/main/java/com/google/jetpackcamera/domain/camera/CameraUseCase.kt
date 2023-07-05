@@ -47,5 +47,5 @@ interface CameraUseCase {
 
     fun stopVideoRecording()
 
-    fun setZoomRatio(scale: Float)
+    fun setZoomScale(scale: Float)
 }

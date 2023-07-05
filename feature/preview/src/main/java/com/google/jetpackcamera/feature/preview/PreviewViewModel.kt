@@ -133,7 +133,7 @@ class PreviewViewModel @Inject constructor(
         recordingJob?.cancel()
     }
 
-    fun setZoomRatio(scale: Float) {
-        cameraUseCase.setZoomRatio(scale = scale)
+    fun setZoomScale(scale: Float) {
+        cameraUseCase.setZoomScale(scale = scale)
     }
 }
