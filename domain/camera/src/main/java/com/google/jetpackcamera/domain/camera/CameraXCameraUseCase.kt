@@ -158,9 +158,7 @@ class CameraXCameraUseCase @Inject constructor(
         }
     }
 
-    private fun getZoomState(): ZoomState? {
-        return camera?.cameraInfo?.zoomState?.value
-    }
+    private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
         when (lensFacing) {
