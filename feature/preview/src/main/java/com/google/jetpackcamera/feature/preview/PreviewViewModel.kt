@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.getDefaultSettings
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 private const val TAG = "PreviewViewModel"
@@ -44,7 +44,7 @@ class PreviewViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
-        MutableStateFlow(PreviewUiState(currentCameraSettings = getDefaultSettings()))
+        MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
     var runningCameraJob: Job? = null
@@ -109,9 +109,9 @@ class PreviewViewModel @Inject constructor(
                         )
                 )
             )
+            // apply to cameraUseCase
+            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
         }
-        // apply to cameraUseCase
-        cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
     }
 
     fun flipCamera() {

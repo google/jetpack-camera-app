@@ -17,8 +17,8 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -35,14 +35,14 @@ class LocalSettingsRepository @Inject constructor(
         .map {
             CameraAppSettings(
                 default_front_camera = it.defaultFrontCamera,
-                dark_mode_status = when (it.darkModeStatus){
+                dark_mode_status = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM,
                     DarkModeProto.UNRECOGNIZED,
-                    null  -> DarkModeStatus.SYSTEM
+                    null -> DarkModeStatus.SYSTEM
                 },
-                flash_mode_status = when (it.flashModeStatus){
+                flash_mode_status = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
                     FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
                     FlashModeProto.FLASH_MODE_OFF,
@@ -59,7 +59,7 @@ class LocalSettingsRepository @Inject constructor(
     }
 
     override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        val newStatus = when (status){
+        val newStatus = when (status) {
             DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
             DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
@@ -72,15 +72,13 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
         val newStatus = when (flashModeStatus) {
             FlashModeStatus.AUTO -> FlashModeProto.FLASH_MODE_AUTO
-                FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
-                FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
+            FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
+            FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
         }
         jcaSettings.updateData {
             it.copy { this.flashModeStatus = newStatus }
         }
     }
 
-    override suspend fun getSettings(): CameraAppSettings {
-        return cameraAppSettings.first()
-    }
+    override suspend fun getSettings(): CameraAppSettings = cameraAppSettings.first()
 }

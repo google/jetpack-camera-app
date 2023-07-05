@@ -19,9 +19,9 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
-import com.google.jetpackcamera.settings.model.getDefaultSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +42,7 @@ class SettingsViewModel @Inject constructor(
     private val _settingsUiState: MutableStateFlow<SettingsUiState> =
         MutableStateFlow(
             SettingsUiState(
-                getDefaultSettings(),
+                DEFAULT_CAMERA_APP_SETTINGS,
                 disabled = true
             )
         )

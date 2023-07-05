@@ -20,16 +20,9 @@ package com.google.jetpackcamera.settings.model
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
-    val default_front_camera : Boolean,
-    val dark_mode_status : DarkModeStatus,
-    val flash_mode_status : FlashModeStatus
+    val default_front_camera: Boolean = false,
+    val dark_mode_status: DarkModeStatus = DarkModeStatus.SYSTEM,
+    val flash_mode_status: FlashModeStatus = FlashModeStatus.OFF
 )
 
-
-fun getDefaultSettings(): CameraAppSettings{
-    return CameraAppSettings(
-        default_front_camera = false,
-        dark_mode_status = DarkModeStatus.SYSTEM,
-        flash_mode_status = FlashModeStatus.OFF
-    )
-}
+val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

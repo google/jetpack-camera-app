@@ -18,14 +18,14 @@ package com.google.jetpackcamera.settings.test
 
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
-import com.google.jetpackcamera.settings.model.getDefaultSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object FakeSettingsRepository : SettingsRepository {
-    var currentCameraSettings: CameraAppSettings = getDefaultSettings()
+    var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
 
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
