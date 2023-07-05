@@ -21,6 +21,7 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Rational
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.ImageCapture
@@ -29,6 +30,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -37,7 +39,6 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
-import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -76,6 +77,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     private var recording : Recording? = null
 
+    private var camera: Camera? = null
     override suspend fun initialize(): List<Int> {
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
@@ -100,6 +102,7 @@ class CameraXCameraUseCase @Inject constructor(
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
+            camera = it
             awaitCancellation()
         }
     }
@@ -145,6 +148,21 @@ class CameraXCameraUseCase @Inject constructor(
     override fun stopVideoRecording() {
         Log.d(TAG, "stopRecording")
         recording?.stop()
+    }
+
+    override fun setZoomRatio(scale: Float) {
+        val zoomState = getZoomState()
+        if (zoomState != null) {
+            val finalScale = (zoomState.zoomRatio * scale).coerceIn(zoomState.minZoomRatio, zoomState.maxZoomRatio)
+            camera?.cameraControl?.setZoomRatio(finalScale)
+        }
+    }
+
+    private fun getZoomState(): ZoomState? {
+        if (camera == null) {
+            return null
+        }
+        return camera!!.cameraInfo.zoomState.value
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
