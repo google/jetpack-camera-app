@@ -21,6 +21,8 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -72,6 +74,9 @@ fun PreviewScreen(
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
     }
+    val transformableState = rememberTransformableState(onTransformation = { zoomChange, _, _ ->
+        viewModel.setZoomScale(zoomChange)
+    })
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -89,7 +94,7 @@ fun PreviewScreen(
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().transformable(state = transformableState)
         ) {
             CameraPreview(
                 modifier = Modifier

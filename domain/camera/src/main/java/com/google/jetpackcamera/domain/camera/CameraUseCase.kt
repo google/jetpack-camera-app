@@ -18,7 +18,6 @@ package com.google.jetpackcamera.domain.camera
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
-import androidx.lifecycle.LifecycleOwner
 
 /**
  * Data layer for camera.
@@ -47,4 +46,6 @@ interface CameraUseCase {
     suspend fun startVideoRecording()
 
     fun stopVideoRecording()
+
+    fun setZoomScale(scale: Float)
 }
