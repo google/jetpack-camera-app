@@ -183,4 +183,18 @@ class PreviewViewModel @Inject constructor(
     fun setZoomScale(scale: Float) {
         cameraUseCase.setZoomScale(scale = scale)
     }
+
+    // modify ui values
+    fun toggleQuickSettings() {
+        toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
+    }
+    fun toggleQuickSettings(isOpen: Boolean) {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    quickSettingsIsOpen = isOpen
+                )
+            )
+        }
+    }
 }

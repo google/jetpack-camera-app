@@ -72,7 +72,7 @@ fun PreviewScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>()}
+    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
     val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
@@ -118,10 +118,14 @@ fun PreviewScreen(
 
             QuickSettingsScreen(
                 modifier = Modifier.fillMaxSize(),
-                onLensFaceClick = {}/*TODO*/,
-                onFlashModeClick = {}/*TODO*/,
-                onAspectRatioClick = {}/*TODO*/,
-                onTimerClick = {}/*TODO*/
+                isOpen = previewUiState.quickSettingsIsOpen,
+                toggleIsOpen = { viewModel.toggleQuickSettings() },
+                currentCameraSettings = previewUiState.currentCameraSettings,
+                onLensFaceClick = viewModel::flipCamera,/*TODO*/
+                onFlashModeClick = viewModel::setFlash,
+                /*TODO*/
+                //onAspectRatioClick = {}/*TODO*/,
+                //onTimerClick = {}/*TODO*/
             )
 
             IconButton(
