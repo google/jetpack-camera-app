@@ -197,13 +197,11 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
-    private fun getLensFacing(isFrontFacing: Boolean): Int {
-        val newLensFacing = when (isFrontFacing) {
+    private fun getLensFacing(isFrontFacing: Boolean): Int =
+        when (isFrontFacing) {
             true -> CameraSelector.LENS_FACING_FRONT
             false -> CameraSelector.LENS_FACING_BACK
         }
-        return newLensFacing
-    }
 
     private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
         cameraProvider.runWith(cameraSelector, useCaseGroup) {

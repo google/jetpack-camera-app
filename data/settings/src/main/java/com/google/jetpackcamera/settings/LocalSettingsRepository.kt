@@ -48,14 +48,20 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_OFF,
                     FlashModeProto.UNRECOGNIZED,
                     null -> FlashModeStatus.OFF
-                }, front_camera_available = it.frontCameraAvailable,
+                },
+                front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable
             )
         }
 
+    override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
+
+
     override suspend fun updateDefaultToFrontCamera() {
-        jcaSettings.updateData {
-            it.copy { this.defaultFrontCamera = !this.defaultFrontCamera }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDefaultFrontCamera(!currentSettings.defaultFrontCamera)
+                .build()
         }
     }
 
@@ -65,8 +71,10 @@ class LocalSettingsRepository @Inject constructor(
             DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
         }
-        jcaSettings.updateData {
-            it.copy { this.darkModeStatus = newStatus }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDarkModeStatus(newStatus)
+                .build()
         }
     }
 
@@ -76,12 +84,12 @@ class LocalSettingsRepository @Inject constructor(
             FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
             FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
         }
-        jcaSettings.updateData {
-            it.copy { this.flashModeStatus = newStatus }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setFlashModeStatus(newStatus)
+                .build()
         }
     }
-
-    override suspend fun getSettings(): CameraAppSettings = cameraAppSettings.first()
 
     override suspend fun updateAvailableCameraLens(
         frontLensAvailable: Boolean,
@@ -89,21 +97,12 @@ class LocalSettingsRepository @Inject constructor(
     ) {
         // if a front or back lens is not present, the option to change
         // the direction of the camera should be disabled
-        if (!(frontLensAvailable && backLensAvailable)) {
-            jcaSettings.updateData { currentSettings ->
-                currentSettings.toBuilder()
-                    .setDefaultFrontCamera(frontLensAvailable)
-                    .setFrontCameraAvailable(frontLensAvailable)
-                    .setBackCameraAvailable(backLensAvailable)
-                    .build()
-            }
-        } else {
-            jcaSettings.updateData { currentSettings ->
-                currentSettings.toBuilder()
-                    .setFrontCameraAvailable(true)
-                    .setBackCameraAvailable(true)
-                    .build()
-            }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDefaultFrontCamera(frontLensAvailable)
+                .setFrontCameraAvailable(frontLensAvailable)
+                .setBackCameraAvailable(backLensAvailable)
+                .build()
         }
     }
 }

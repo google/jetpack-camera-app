@@ -33,6 +33,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
         .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
+        .setBackCameraAvailable(true)
+        .setFrontCameraAvailable(true)
         .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
         .build()
 

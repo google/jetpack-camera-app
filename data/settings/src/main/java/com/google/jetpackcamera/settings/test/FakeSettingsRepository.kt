@@ -42,7 +42,7 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(flash_mode_status = flashModeStatus)
     }
 
-    override suspend fun getSettings(): CameraAppSettings {
+    override suspend fun getCameraAppSettings(): CameraAppSettings {
         return currentCameraSettings
     }
 

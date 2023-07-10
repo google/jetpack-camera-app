@@ -23,9 +23,10 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
-import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,7 +52,7 @@ import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-class LocalCameraAppSettingsRepositoryInstrumentedTest {
+class LocalSettingsRepositoryInstrumentedTest {
     private val testContext: Context = ApplicationProvider.getApplicationContext()
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
@@ -85,7 +86,10 @@ class LocalCameraAppSettingsRepositoryInstrumentedTest {
 
     @Test
     fun repository_can_fetch_initial_datastore() = runTest(StandardTestDispatcher()) {
-        var cameraAppSettings: CameraAppSettings = repository.getSettings()
+        // if you've created a new setting value and this test is failing, be sure to check that
+        // JcaSettingsSerializer.kt defaultValue has been properly modified :)
+
+        var cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
 
         advanceUntilIdle()
         assertTrue(cameraAppSettings == DEFAULT_CAMERA_APP_SETTINGS)
@@ -93,9 +97,9 @@ class LocalCameraAppSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        var initialDarkModeStatus = repository.getSettings().dark_mode_status
+        var initialDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
         repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
-        val newDarkModeStatus = repository.getSettings().dark_mode_status
+        val newDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
 
         advanceUntilIdle()
         assertFalse(initialDarkModeStatus == newDarkModeStatus)
@@ -106,13 +110,42 @@ class LocalCameraAppSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initalFrontCameraDefault = repository.getSettings().default_front_camera
+        val initalFrontCameraDefault = repository.getCameraAppSettings().default_front_camera
         repository.updateDefaultToFrontCamera()
         // default to front camera is now true
-        val frontCameraDefault = repository.getSettings().default_front_camera
+        val frontCameraDefault = repository.getCameraAppSettings().default_front_camera
         advanceUntilIdle()
 
         assertFalse(initalFrontCameraDefault)
         assertTrue(frontCameraDefault)
+    }
+
+    @Test
+    fun can_update_flash_mode() = runTest(StandardTestDispatcher()) {
+        // default to front camera starts false
+        val initialFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
+        repository.updateFlashModeStatus(FlashModeStatus.ON)
+        // default to front camera is now true
+        val newFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
+        advanceUntilIdle()
+
+        assertEquals(initialFlashModeStatus, FlashModeStatus.OFF)
+        assertEquals(newFlashModeStatus, FlashModeStatus.ON)
+    }
+
+    @Test
+    fun can_update_available_camera_lens() = runTest(StandardTestDispatcher()) {
+        // available cameras start true
+        val initialFrontCamera = repository.getCameraAppSettings().front_camera_available
+        val initialBackCamera = repository.getCameraAppSettings().back_camera_available
+
+        repository.updateAvailableCameraLens(frontLensAvailable = false, backLensAvailable = false)
+        // available cameras now false
+        advanceUntilIdle()
+        val newFrontCamera = repository.getCameraAppSettings().front_camera_available
+        val newBackCamera = repository.getCameraAppSettings().back_camera_available
+
+        assertEquals(true, initialBackCamera && initialBackCamera)
+        assertEquals(false, newFrontCamera || newBackCamera)
     }
 }
