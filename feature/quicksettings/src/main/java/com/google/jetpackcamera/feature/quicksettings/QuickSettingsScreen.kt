@@ -59,8 +59,6 @@ fun QuickSettingsScreen(
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
-    //onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
-    //onTimerClick: (timer: CameraTimer) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -130,8 +128,6 @@ private fun ExpandedQuickSettingsUi(
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
-    // onAspectRatioClick: (aspectRatio: CameraAspectRatio) -> Unit,
-    // onTimerClick: (timer: CameraTimer) -> Unit,
 ) {
 
     Column(
@@ -156,6 +152,8 @@ private fun ExpandedQuickSettingsUi(
                         currentFacingFront = currentCameraSettings.default_front_camera
                     )
                 },
+                //TODO: Implement Set Ratio
+                /*
                 {
                     QuickSetRatio(
                         onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
@@ -163,6 +161,7 @@ private fun ExpandedQuickSettingsUi(
                         currentRatio = 1
                     )
                 },
+                 */
             )
             QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
 

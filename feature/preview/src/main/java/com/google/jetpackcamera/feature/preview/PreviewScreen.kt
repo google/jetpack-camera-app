@@ -121,9 +121,8 @@ fun PreviewScreen(
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = { viewModel.toggleQuickSettings() },
                 currentCameraSettings = previewUiState.currentCameraSettings,
-                onLensFaceClick = viewModel::flipCamera,/*TODO*/
+                onLensFaceClick = viewModel::flipCamera,
                 onFlashModeClick = viewModel::setFlash,
-                /*TODO*/
                 //onAspectRatioClick = {}/*TODO*/,
                 //onTimerClick = {}/*TODO*/
             )
@@ -141,20 +140,11 @@ fun PreviewScreen(
                 )
             }
 
-            //TODO: styling
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Row {
-                    FlipCameraButton(
-                        onClick = { viewModel.flipCamera() },
-                        //enable only when phone has front and rear camera
-                        enabledCondition =
-                        previewUiState.currentCameraSettings.back_camera_available
-                                && previewUiState.currentCameraSettings.front_camera_available
-                    )
-
                     CaptureButton(
                         onClick = { viewModel.captureImage() },
                         onLongPress = { viewModel.startVideoRecording() },
@@ -198,16 +188,5 @@ fun CaptureButton(
                 }
             )
         })
-    }
-}
-
-@Composable
-fun FlipCameraButton(enabledCondition: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick, enabled = enabledCondition) {
-        Icon(
-            Icons.Filled.Refresh,
-            contentDescription = "Flip Camera",
-            modifier = Modifier.size(72.dp)
-        )
     }
 }

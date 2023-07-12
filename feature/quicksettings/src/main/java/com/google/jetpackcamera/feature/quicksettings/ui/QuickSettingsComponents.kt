@@ -51,6 +51,7 @@ import kotlin.math.min
 
 // completed components
 
+//TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
     setRatio: (/*TODO: insert ratio function*/) -> Unit,
@@ -65,6 +66,7 @@ fun ExpandedQuickSetRatio(
     ExpandedQuickSetting(quickSettingButtons = buttons)
 }
 
+//TODO: Implement Set Ratio
 @Composable
 fun QuickSetRatio(onClick: () -> Unit, ratio: Int, currentRatio: Int) {
     val enum = when (ratio) {
