@@ -205,6 +205,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
+            camera = it
             awaitCancellation()
         }
     }
