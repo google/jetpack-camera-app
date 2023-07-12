@@ -22,8 +22,8 @@ import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.getDefaultSettings
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -85,7 +85,7 @@ internal class CameraAppSettingsViewModelTest {
         advanceUntilIdle()
         assertEquals(
             uiState,
-            SettingsUiState(cameraAppSettings = getDefaultSettings(), disabled = false)
+            SettingsUiState(cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS, disabled = false)
         )
     }
 

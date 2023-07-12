@@ -25,7 +25,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.getDefaultSettings
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -88,7 +88,7 @@ class LocalCameraAppSettingsRepositoryInstrumentedTest {
         var cameraAppSettings: CameraAppSettings = repository.getSettings()
 
         advanceUntilIdle()
-        assertTrue(cameraAppSettings == getDefaultSettings())
+        assertTrue(cameraAppSettings == DEFAULT_CAMERA_APP_SETTINGS)
     }
 
     @Test
