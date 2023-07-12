@@ -18,8 +18,9 @@ package com.google.jetpackcamera.domain.camera.test
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
-import androidx.lifecycle.LifecycleOwner
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlin.IllegalStateException
 
 class FakeCameraUseCase : CameraUseCase {
@@ -32,15 +33,18 @@ class FakeCameraUseCase : CameraUseCase {
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+    private var flashMode = FlashModeStatus.OFF
 
-    override suspend fun initialize(): List<Int> {
+    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
+        flashMode = currentCameraSettings.flash_mode_status
         return availableLenses
     }
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        lensFacing: Int
+        currentCameraSettings: CameraAppSettings,
+        @CameraSelector.LensFacing lensFacing: Int
     ) {
         if (!initialized)     {
             throw IllegalStateException("CameraProvider not initialized")
@@ -68,5 +72,9 @@ class FakeCameraUseCase : CameraUseCase {
     }
 
     override fun setZoomScale(scale: Float) {
+    }
+
+    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
+        flashMode = flashModeStatus
     }
 }

@@ -19,7 +19,7 @@ package com.google.jetpackcamera
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.Settings
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -33,7 +33,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 class MainActivityViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel(){
-    val uiState: StateFlow<MainActivityUiState> = settingsRepository.settings.map {
+    val uiState: StateFlow<MainActivityUiState> = settingsRepository.cameraAppSettings.map {
         Success(it)
     }.stateIn(
         scope = viewModelScope,
@@ -43,6 +43,6 @@ class MainActivityViewModel @Inject constructor(
 }
 sealed interface MainActivityUiState {
     object Loading : MainActivityUiState
-    data class Success(val settings: Settings) : MainActivityUiState
+    data class Success(val cameraAppSettings: CameraAppSettings) : MainActivityUiState
 }
 

@@ -19,6 +19,8 @@ package com.google.jetpackcamera.feature.preview
 
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import androidx.camera.core.Preview.SurfaceProvider
+import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.test.FakeSettingsRepository
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,7 +41,7 @@ class PreviewViewModelTest {
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        previewViewModel = PreviewViewModel(cameraUseCase)
+        previewViewModel = PreviewViewModel(cameraUseCase, FakeSettingsRepository)
         advanceUntilIdle()
     }
 
@@ -84,6 +86,15 @@ class PreviewViewModelTest {
         previewViewModel.stopVideoRecording()
         assertEquals(cameraUseCase.recordingInProgress, false)
 
+    }
+
+    @Test
+    fun setFlash() = runTest(StandardTestDispatcher()) {
+        previewViewModel.runCamera(mock())
+        previewViewModel.setFlash(FlashModeStatus.AUTO)
+        advanceUntilIdle()
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.flash_mode_status,
+        FlashModeStatus.AUTO)
     }
 
     @Test

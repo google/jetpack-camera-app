@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-syntax = "proto3";
-import "com/google/jetpackcamera/settings/dark_mode.proto";
-import "com/google/jetpackcamera/settings/flash_mode.proto";
+package com.google.jetpackcamera.settings.model
 
+/**
+ * Data layer representation for settings.
+ */
+data class CameraAppSettings(
+    val default_front_camera: Boolean = false,
+    val dark_mode_status: DarkModeStatus = DarkModeStatus.SYSTEM,
+    val flash_mode_status: FlashModeStatus = FlashModeStatus.OFF
+)
 
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-message JcaSettings {
-  bool default_front_camera = 2;
-  DarkModeProto dark_mode_status = 3;
-  FlashModeProto flash_mode_status = 4;
-}
+val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

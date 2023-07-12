@@ -19,8 +19,9 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.getDefaultSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,7 @@ class SettingsViewModel @Inject constructor(
     private val _settingsUiState: MutableStateFlow<SettingsUiState> =
         MutableStateFlow(
             SettingsUiState(
-                getDefaultSettings(),
+                DEFAULT_CAMERA_APP_SETTINGS,
                 disabled = true
             )
         )
@@ -50,10 +51,10 @@ class SettingsViewModel @Inject constructor(
     init {
         // updates our viewmodel as soon as datastore is updated
         viewModelScope.launch {
-            settingsRepository.settings.collect { updatedSettings ->
+            settingsRepository.cameraAppSettings.collect { updatedSettings ->
                 _settingsUiState.emit(
                     settingsUiState.value.copy(
-                        settings = updatedSettings,
+                        cameraAppSettings = updatedSettings,
                         disabled = false
                     )
                 )
@@ -86,6 +87,12 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG, "set dark mode theme: " + settingsRepository.getSettings().dark_mode_status
             )
+        }
+    }
+
+    fun setFlashMode(flashModeStatus: FlashModeStatus) {
+        viewModelScope.launch {
+            settingsRepository.updateFlashModeStatus(flashModeStatus)
         }
     }
 }

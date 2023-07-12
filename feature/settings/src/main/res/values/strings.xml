@@ -28,6 +28,7 @@
     <string name="default_facing_camera_description">Default Front</string>
     <string name="default_facing_camera_description_off">Default Back</string>
 
+    <!-- Dark mode setting strings -->
     <string name="dark_mode_title">Set Dark Mode</string>
     <string name="dark_mode_selector_dark">On</string>
     <string name="dark_mode_selector_light">Off</string>
@@ -36,5 +37,15 @@
     <string name="dark_mode_status_dark">On</string>
     <string name="dark_mode_status_light">Off</string>
     <string name="dark_mode_status_system">System</string>
+
+    <!-- Flash mode setting strings -->
+    <string name="flash_mode_title">Set Flash Mode</string>
+    <string name="flash_mode_selector_auto">Auto</string>
+    <string name="flash_mode_selector_on">On</string>
+    <string name="flash_mode_selector_off">Off</string>
+
+    <string name="flash_mode_status_auto">Flash is set to Auto</string>
+    <string name="flash_mode_status_on">Flash is On</string>
+    <string name="flash_mode_status_off">Flash is Off</string>
 
 </resources>

@@ -18,6 +18,8 @@ package com.google.jetpackcamera.domain.camera
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 /**
  * Data layer for camera.
@@ -29,7 +31,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(): List<Int>
+    suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
 
     /**
      * Starts the camera with [lensFacing] with the provided [Preview.SurfaceProvider].
@@ -38,6 +40,7 @@ interface CameraUseCase {
      */
     suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
+        currentCameraSettings: CameraAppSettings,
         @CameraSelector.LensFacing lensFacing: Int
     )
 
@@ -48,4 +51,6 @@ interface CameraUseCase {
     fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
+
+    fun setFlashMode(flashModeStatus: FlashModeStatus)
 }

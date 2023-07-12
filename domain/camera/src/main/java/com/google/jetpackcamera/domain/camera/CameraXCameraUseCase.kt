@@ -39,12 +39,14 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
-import java.util.Date
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import java.util.Date
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
@@ -59,6 +61,7 @@ class CameraXCameraUseCase @Inject constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
+    //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder()
         .build()
 
@@ -75,10 +78,12 @@ class CameraXCameraUseCase @Inject constructor(
         .addUseCase(videoCaptureUseCase)
         .build()
 
-    private var recording : Recording? = null
+    private var recording: Recording? = null
 
     private var camera: Camera? = null
-    override suspend fun initialize(): List<Int> {
+    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
+        setFlashMode(currentCameraSettings.flash_mode_status)
+
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -94,6 +99,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
+        currentCameraSettings: CameraAppSettings,
         @LensFacing lensFacing: Int,
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
@@ -131,18 +137,20 @@ class CameraXCameraUseCase @Inject constructor(
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
         }
-        val mediaStoreOutput = MediaStoreOutputOptions.Builder(application.contentResolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-                .setContentValues(contentValues)
-                .build()
+        val mediaStoreOutput = MediaStoreOutputOptions.Builder(
+            application.contentResolver,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        )
+            .setContentValues(contentValues)
+            .build()
 
         recording = videoCaptureUseCase.output
-                .prepareRecording(application, mediaStoreOutput)
-                .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
-                    run {
-                        Log.d(TAG, videoRecordEvent.toString())
-                    }
-                })
+            .prepareRecording(application, mediaStoreOutput)
+            .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
+                run {
+                    Log.d(TAG, videoRecordEvent.toString())
+                }
+            })
     }
 
     override fun stopVideoRecording() {
@@ -158,6 +166,15 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
+
+    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
+        imageCaptureUseCase.flashMode = when (flashModeStatus) {
+            FlashModeStatus.OFF -> ImageCapture.FLASH_MODE_OFF // 2
+            FlashModeStatus.ON -> ImageCapture.FLASH_MODE_ON // 1
+            FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
+        }
+        Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
+    }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
         when (lensFacing) {
