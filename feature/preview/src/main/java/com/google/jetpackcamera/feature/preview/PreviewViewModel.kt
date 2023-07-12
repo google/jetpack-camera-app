@@ -40,7 +40,7 @@ private const val TAG = "PreviewViewModel"
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
     private val cameraUseCase: CameraUseCase,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
@@ -83,8 +83,7 @@ class PreviewViewModel @Inject constructor(
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
                 surfaceProvider,
-                previewUiState.value.currentCameraSettings,
-                previewUiState.value.lensFacing
+                previewUiState.value.currentCameraSettings
             )
         }
     }
@@ -114,8 +113,26 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    // flips the camera opposite to its current direction
     fun flipCamera() {
-        // TODO(yasith)
+        flipCamera(!previewUiState.value
+            .currentCameraSettings.default_front_camera)
+    }
+    // sets the camera to a designated direction
+    fun flipCamera(isFacingFront: Boolean) {
+        //update viewmodel value
+         viewModelScope.launch {
+             _previewUiState.emit(
+                 previewUiState.value.copy(
+                     currentCameraSettings =
+                     previewUiState.value.currentCameraSettings.copy(
+                         default_front_camera = isFacingFront
+                     )
+                 )
+             )
+             // apply to cameraUseCase
+             cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
+         }
     }
 
     fun captureImage() {

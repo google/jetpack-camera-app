@@ -24,6 +24,8 @@ option java_multiple_files = true;
 
 message JcaSettings {
   bool default_front_camera = 2;
-  DarkModeProto dark_mode_status = 3;
-  FlashModeProto flash_mode_status = 4;
+  bool front_camera_available = 3;
+  bool back_camera_available = 4;
+  DarkModeProto dark_mode_status = 5;
+  FlashModeProto flash_mode_status = 6;
 }

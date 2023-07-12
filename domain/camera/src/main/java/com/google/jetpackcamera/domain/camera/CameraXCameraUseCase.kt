@@ -39,6 +39,7 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
@@ -57,7 +58,8 @@ private val ASPECT_RATIO_16_9 = Rational(16, 9)
  */
 class CameraXCameraUseCase @Inject constructor(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher
+    private val defaultDispatcher: CoroutineDispatcher,
+    private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -83,7 +85,6 @@ class CameraXCameraUseCase @Inject constructor(
     private var camera: Camera? = null
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         setFlashMode(currentCameraSettings.flash_mode_status)
-
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -94,17 +95,26 @@ class CameraXCameraUseCase @Inject constructor(
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
 
+        //updates values for available camera lens if necessary
+        coroutineScope {
+            settingsRepository.updateAvailableCameraLens(
+                availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
+                availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
+            )
+        }
+
         return availableCameraLens
     }
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
         currentCameraSettings: CameraAppSettings,
-        @LensFacing lensFacing: Int,
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
 
-        val cameraSelector = cameraLensToSelector(lensFacing)
+        val cameraSelector =
+            cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
+
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
@@ -167,6 +177,16 @@ class CameraXCameraUseCase @Inject constructor(
 
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
 
+    // flips the camera to the designated lensFacing direction
+    override suspend fun flipCamera(isFrontFacing: Boolean) {
+        cameraProvider.unbindAll()
+        rebindUseCases(
+            cameraLensToSelector(
+                getLensFacing(isFrontFacing)
+            )
+        )
+    }
+
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
         imageCaptureUseCase.flashMode = when (flashModeStatus) {
             FlashModeStatus.OFF -> ImageCapture.FLASH_MODE_OFF // 2
@@ -174,6 +194,19 @@ class CameraXCameraUseCase @Inject constructor(
             FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
         }
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
+    }
+
+    // converts LensFacing from datastore to @LensFacing Int value
+    private fun getLensFacing(isFrontFacing: Boolean): Int =
+        when (isFrontFacing) {
+            true -> CameraSelector.LENS_FACING_FRONT
+            false -> CameraSelector.LENS_FACING_BACK
+        }
+
+    private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
+        cameraProvider.runWith(cameraSelector, useCaseGroup) {
+            awaitCancellation()
+        }
     }
 
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
