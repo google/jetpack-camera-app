@@ -72,7 +72,7 @@ fun PreviewScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>()}
+    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
     val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
@@ -118,10 +118,13 @@ fun PreviewScreen(
 
             QuickSettingsScreen(
                 modifier = Modifier.fillMaxSize(),
-                onLensFaceClick = {}/*TODO*/,
-                onFlashModeClick = {}/*TODO*/,
-                onAspectRatioClick = {}/*TODO*/,
-                onTimerClick = {}/*TODO*/
+                isOpen = previewUiState.quickSettingsIsOpen,
+                toggleIsOpen = { viewModel.toggleQuickSettings() },
+                currentCameraSettings = previewUiState.currentCameraSettings,
+                onLensFaceClick = viewModel::flipCamera,
+                onFlashModeClick = viewModel::setFlash,
+                //onAspectRatioClick = {}/*TODO*/,
+                //onTimerClick = {}/*TODO*/
             )
 
             IconButton(
@@ -137,20 +140,11 @@ fun PreviewScreen(
                 )
             }
 
-            //TODO: styling
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Row {
-                    FlipCameraButton(
-                        onClick = { viewModel.flipCamera() },
-                        //enable only when phone has front and rear camera
-                        enabledCondition =
-                        previewUiState.currentCameraSettings.back_camera_available
-                                && previewUiState.currentCameraSettings.front_camera_available
-                    )
-
                     CaptureButton(
                         onClick = { viewModel.captureImage() },
                         onLongPress = { viewModel.startVideoRecording() },
@@ -194,16 +188,5 @@ fun CaptureButton(
                 }
             )
         })
-    }
-}
-
-@Composable
-fun FlipCameraButton(enabledCondition: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick, enabled = enabledCondition) {
-        Icon(
-            Icons.Filled.Refresh,
-            contentDescription = "Flip Camera",
-            modifier = Modifier.size(72.dp)
-        )
     }
 }
