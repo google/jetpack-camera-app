@@ -97,19 +97,21 @@ fun PreviewScreen(
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         Box(
-            modifier = Modifier.fillMaxSize().transformable(state = transformableState)
+            modifier = Modifier
+                .fillMaxSize()
+                .transformable(state = transformableState)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = { offset ->
+                            Log.d(TAG, "onDoubleTap $offset")
+                            viewModel.flipCamera()
+                        }
+                    )
+                }
         ) {
             CameraPreview(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = { offset ->
-                                Log.d(TAG, "onDoubleTap $offset")
-                                viewModel.flipCamera()
-                            }
-                        )
-                    },
+                    .fillMaxSize(),
                 onSurfaceProviderReady = onSurfaceProviderReady,
                 onRequestBitmapReady = {
                     val bitmap = it.invoke()
