@@ -39,6 +39,7 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
+import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -168,11 +169,12 @@ class CameraXCameraUseCase @Inject constructor(
         recording?.stop()
     }
 
-    override fun setZoomScale(scale: Float) {
-        val zoomState = getZoomState() ?: return
+    override fun setZoomScale(scale: Float): Float {
+        val zoomState = getZoomState() ?: return INVALID_ZOOM_SCALE
         val finalScale =
             (zoomState.zoomRatio * scale).coerceIn(zoomState.minZoomRatio, zoomState.maxZoomRatio)
         camera?.cameraControl?.setZoomRatio(finalScale)
+        return finalScale
     }
 
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
