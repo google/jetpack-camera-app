@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -50,7 +51,15 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable
+                back_camera_available = it.backCameraAvailable,
+                demo_switch = it.demoSwitchSetting,
+                demo_multiple = when(it.demoMultipleSetting) {
+                    DemoMultipleProto.DEMO_VALUE_APPLE -> DemoMultipleStatus.APPLE
+                    DemoMultipleProto.DEMO_VALUE_BANANA -> DemoMultipleStatus.BANANA
+                    DemoMultipleProto.DEMO_VALUE_CANTALOUPE -> DemoMultipleStatus.CANTALOUPE
+                    DemoMultipleProto.UNRECOGNIZED,
+                    null -> DemoMultipleStatus.APPLE
+                }
             )
         }
 
@@ -102,6 +111,27 @@ class LocalSettingsRepository @Inject constructor(
                 .setDefaultFrontCamera(frontLensAvailable)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
+                .build()
+        }
+    }
+
+    override suspend fun updateDemoSwitch() {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDemoSwitchSetting(!currentSettings.demoSwitchSetting)
+                .build()
+        }
+    }
+
+    override suspend fun updateDemoMultiple(demoMultiple: DemoMultipleStatus) {
+        val newStatus = when (demoMultiple) {
+            DemoMultipleStatus.APPLE-> DemoMultipleProto.DEMO_VALUE_APPLE
+            DemoMultipleStatus.BANANA -> DemoMultipleProto.DEMO_VALUE_BANANA
+            DemoMultipleStatus.CANTALOUPE -> DemoMultipleProto.DEMO_VALUE_CANTALOUPE
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDemoMultipleSetting(newStatus)
                 .build()
         }
     }

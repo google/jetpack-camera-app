@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -38,5 +39,9 @@ interface SettingsRepository {
 
 // set device values from cameraUseCase
     suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
+
+    suspend fun updateDemoSwitch()
+
+    suspend fun updateDemoMultiple(demoMultiple: DemoMultipleStatus)
 
 }

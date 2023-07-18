@@ -36,6 +36,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
         .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
+        .setDemoSwitchSetting(false)
+        .setDemoMultipleSetting(DemoMultipleProto.DEMO_VALUE_APPLE)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

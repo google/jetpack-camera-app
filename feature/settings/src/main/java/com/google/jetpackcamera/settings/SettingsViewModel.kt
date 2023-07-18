@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +94,17 @@ class SettingsViewModel @Inject constructor(
     fun setFlashMode(flashModeStatus: FlashModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateFlashModeStatus(flashModeStatus)
+        }
+    }
+
+    fun setDemoSwitch() {
+        viewModelScope.launch {
+            settingsRepository.updateDemoSwitch()
+        }
+    }
+    fun setDemoMultiple(demoMultipleStatus: DemoMultipleStatus) {
+        viewModelScope.launch {
+            settingsRepository.updateDemoMultiple(demoMultipleStatus)
         }
     }
 }
