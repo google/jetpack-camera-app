@@ -47,5 +47,9 @@ interface CameraUseCase {
 
     fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float)
+    fun setZoomScale(scale: Float): Float
+
+    companion object {
+        const val INVALID_ZOOM_SCALE = -1f
+    }
 }
