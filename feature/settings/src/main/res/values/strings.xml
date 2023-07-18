@@ -48,4 +48,15 @@
     <string name="flash_mode_status_on">Flash is On</string>
     <string name="flash_mode_status_off">Flash is Off</string>
 
+    <!--Demo Switch Setting-->
+    <string name="demo_switch_title">Demo Switch</string>
+    <string name="demo_switch_description">This is a Description</string>
+
+    <!--Demo Popup Setting-->
+    <string name="demo_multiple_choice_title">Demo Multiple Choice</string>
+    <string name="demo_multiple_choice_description">Current Choice: </string>
+    <string name="demo_choice_apple">Apple</string>
+    <string name="demo_choice_banana">Banana</string>
+    <string name="demo_choice_cantaloupe">Cantaloupe</string>
+
 </resources>

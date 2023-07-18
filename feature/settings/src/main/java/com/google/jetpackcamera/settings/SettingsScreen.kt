@@ -28,6 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
+import com.google.jetpackcamera.settings.ui.DemoMultipleSetting
+import com.google.jetpackcamera.settings.ui.DemoSwitchSetting
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
@@ -76,5 +78,16 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     DarkModeSetting(
         uiState = uiState,
         setDarkMode = viewModel::setDarkMode
+    )
+
+    SectionHeader(title = "Demo Settings")
+
+    DemoSwitchSetting(
+        currentDemoSwitchValue = uiState.cameraAppSettings.demo_switch,
+        viewModelFunction = viewModel::setDemoSwitch
+    )
+    DemoMultipleSetting(
+        currentDemoPopupValue = uiState.cameraAppSettings.demo_multiple,
+        setDemoMultipleStatus = viewModel::setDemoMultiple
     )
 }

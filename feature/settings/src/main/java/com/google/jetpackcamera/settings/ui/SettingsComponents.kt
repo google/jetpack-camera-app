@@ -28,6 +28,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SettingsUiState
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 
@@ -148,6 +150,49 @@ fun FlashModeSetting(uiState: SettingsUiState, setFlashMode: (FlashModeStatus) -
                 ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
+                )
+            }
+        }
+    )
+}
+
+
+@Composable
+fun DemoSwitchSetting(currentDemoSwitchValue: Boolean, viewModelFunction: () -> Unit) {
+    SwitchSettingUI(
+        title = stringResource(id = R.string.demo_switch_title),
+        description = stringResource(id = R.string.demo_switch_description),
+        leadingIcon = null,
+        onClick = viewModelFunction,
+        settingValue = currentDemoSwitchValue,
+        enabled = true
+    )
+}
+
+@Composable
+fun DemoMultipleSetting(currentDemoPopupValue: DemoMultipleStatus, setDemoMultipleStatus: (DemoMultipleStatus) -> Unit) {
+    BasicPopupSetting(title = stringResource(id = R.string.demo_multiple_choice_title),
+        description = stringResource(id = R.string.demo_multiple_choice_description) + currentDemoPopupValue,
+        // use string resources, i just want this to stay short ^^
+        leadingIcon = null,
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                // you can shove another composable object in here, but for now, we'll be putting in single
+                // choice radio buttons to select from
+                ChoiceRow(
+                    text = stringResource(id = R.string.demo_choice_apple),
+                    selected = currentDemoPopupValue == DemoMultipleStatus.APPLE,
+                    onClick = { setDemoMultipleStatus(DemoMultipleStatus.APPLE) }
+                )
+                ChoiceRow(
+                    text = stringResource(id = R.string.demo_choice_banana),
+                    selected = currentDemoPopupValue == DemoMultipleStatus.BANANA,
+                    onClick = { setDemoMultipleStatus(DemoMultipleStatus.BANANA) }
+                )
+                ChoiceRow(
+                    text = stringResource(id = R.string.demo_choice_cantaloupe),
+                    selected = currentDemoPopupValue == DemoMultipleStatus.CANTALOUPE,
+                    onClick = { setDemoMultipleStatus(DemoMultipleStatus.CANTALOUPE) }
                 )
             }
         }
