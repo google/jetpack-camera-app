@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
+import android.view.Display
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
@@ -224,5 +225,15 @@ class PreviewViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float) {
+        cameraUseCase.tapToFocus(
+            display = display,
+            surfaceWidth = surfaceWidth,
+            surfaceHeight = surfaceHeight,
+            x = x,
+            y = y
+        )
     }
 }

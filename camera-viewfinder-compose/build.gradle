@@ -42,6 +42,9 @@ dependencies {
     implementation composeBom
     androidTestImplementation composeBom
 
+    // Compose - Material Design 3
+    implementation 'androidx.compose.material3:material3'
+
     // Compose - Testing
     androidTestImplementation "androidx.compose.ui:ui-test-junit4"
 

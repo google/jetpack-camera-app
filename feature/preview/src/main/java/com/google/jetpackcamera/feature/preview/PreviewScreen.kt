@@ -19,6 +19,7 @@ package com.google.jetpackcamera.feature.preview
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -52,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -73,6 +75,7 @@ private const val TAG = "PreviewScreen"
 /**
  * Screen used for the Preview feature.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
@@ -89,6 +92,7 @@ fun PreviewScreen(
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
     }
+    lateinit var viewInfo: View
     var zoomScale by remember { mutableStateOf(1f) }
     var zoomScaleShow by remember { mutableStateOf(false) }
     val zoomHandler = Handler(Looper.getMainLooper())
@@ -114,7 +118,32 @@ fun PreviewScreen(
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         BoxWithConstraints(
-            Modifier.background(Color.Black),
+            Modifier.background(Color.Black)
+                .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = { offset ->
+                        // double tap to flip camera
+                        Log.d(TAG, "onDoubleTap $offset")
+                        viewModel.flipCamera()
+                    },
+                    onTap = { offset ->
+                        // tap to focus
+                        try {
+                            viewModel.tapToFocus(
+                                viewInfo.display,
+                                viewInfo.width,
+                                viewInfo.height,
+                                offset.x, offset.y
+                            )
+                            Log.d(TAG, "onTap $offset")
+                        } catch (e: UninitializedPropertyAccessException) {
+                            Log.d(TAG, "onTap $offset")
+                            e.printStackTrace()
+                        }
+                    }
+                )
+            },
+
             contentAlignment = Alignment.Center
         ) {
             val maxAspectRatio: Float = maxWidth / maxHeight
@@ -135,18 +164,13 @@ fun PreviewScreen(
                 ) {
                     CameraPreview(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = { offset ->
-                                        Log.d(TAG, "onDoubleTap $offset")
-                                        viewModel.flipCamera()
-                                    }
-                                )
-                            },
+                            .fillMaxSize(),
                         onSurfaceProviderReady = onSurfaceProviderReady,
                         onRequestBitmapReady = {
                             val bitmap = it.invoke()
+                        },
+                        setSurfaceView = { s: View ->
+                            viewInfo = s
                         }
                     )
                 }

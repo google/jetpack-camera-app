@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.domain.camera
 
+import android.view.Display
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -54,7 +55,10 @@ interface CameraUseCase {
     fun setFlashMode(flashModeStatus: FlashModeStatus)
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean)
+
     suspend fun flipCamera(isFrontFacing: Boolean)
+
+    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
