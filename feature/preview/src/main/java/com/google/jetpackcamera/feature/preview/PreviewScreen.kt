@@ -16,8 +16,12 @@
 
 package com.google.jetpackcamera.feature.preview
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,6 +29,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -40,14 +45,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -77,8 +86,13 @@ fun PreviewScreen(
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
     }
+    var zoomScale by remember { mutableStateOf(1f) }
+    var zoomScaleShow by remember { mutableStateOf(false) }
+    val zoomHandler = Handler(Looper.getMainLooper())
     val transformableState = rememberTransformableState(onTransformation = { zoomChange, _, _ ->
-        viewModel.setZoomScale(zoomChange)
+        zoomScale = viewModel.setZoomScale(zoomChange)
+        zoomScaleShow = true
+        zoomHandler.postDelayed({ zoomScaleShow = false }, 3000)
     })
 
     LaunchedEffect(lifecycleOwner) {
@@ -97,7 +111,9 @@ fun PreviewScreen(
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         Box(
-            modifier = Modifier.fillMaxSize().transformable(state = transformableState)
+            modifier = Modifier
+                .fillMaxSize()
+                .transformable(state = transformableState)
         ) {
             CameraPreview(
                 modifier = Modifier
@@ -140,21 +156,43 @@ fun PreviewScreen(
                 )
             }
 
-            Row(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                horizontalArrangement = Arrangement.SpaceAround
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Row {
-                    CaptureButton(
-                        onClick = { viewModel.captureImage() },
-                        onLongPress = { viewModel.startVideoRecording() },
-                        onRelease = { viewModel.stopVideoRecording() },
-                        state = previewUiState.videoRecordingState
-                    )
+                ZoomScaleText(
+                    zoomScale = zoomScale,
+                    show = zoomScaleShow
+                )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Row {
+                        CaptureButton(
+                            onClick = { viewModel.captureImage() },
+                            onLongPress = { viewModel.startVideoRecording() },
+                            onRelease = { viewModel.stopVideoRecording() },
+                            state = previewUiState.videoRecordingState
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun ZoomScaleText(zoomScale: Float, show: Boolean) {
+    val contentAlpha = animateFloatAsState(
+        targetValue = if (show) 1f else 0f, label = "zoomScaleAlphaAnimation",
+        animationSpec = tween()
+    )
+    Text(
+        modifier = Modifier.alpha(contentAlpha.value),
+        text = String.format("%.1fx", zoomScale),
+        fontSize = 20.sp,
+        color = Color.White
+    )
 }
 
 @Composable

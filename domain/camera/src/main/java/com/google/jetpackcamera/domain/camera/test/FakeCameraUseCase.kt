@@ -78,7 +78,8 @@ class FakeCameraUseCase : CameraUseCase {
         recordingInProgress = false
     }
 
-    override fun setZoomScale(scale: Float) {
+    override fun setZoomScale(scale: Float): Float {
+        return -1f
     }
 
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
