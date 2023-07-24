@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.quicksettings.ui
 
+import android.util.Rational
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,13 +55,13 @@ import kotlin.math.min
 //TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
-    setRatio: (/*TODO: insert ratio function*/) -> Unit,
+    setRatio: (aspectRatio: Int) -> Unit,
     currentRatio: Int
 ) {
     val buttons: Array<@Composable () -> Unit> = arrayOf(
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 1, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 2, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 3, currentRatio = currentRatio) }
+        { QuickSetRatio(onClick = { setRatio(1) }, ratio = 1, currentRatio = currentRatio) },
+        { QuickSetRatio(onClick = { setRatio(2) }, ratio = 2, currentRatio = currentRatio) },
+        { QuickSetRatio(onClick = { setRatio(3) }, ratio = 3, currentRatio = currentRatio) }
 
     )
     ExpandedQuickSetting(quickSettingButtons = buttons)

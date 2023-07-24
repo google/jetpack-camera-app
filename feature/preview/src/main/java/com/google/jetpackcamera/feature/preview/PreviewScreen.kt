@@ -23,20 +23,23 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,8 +49,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -61,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.settings.model.getAspectRatioRational
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -110,27 +114,46 @@ fun PreviewScreen(
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .transformable(state = transformableState)
+        BoxWithConstraints(
+            Modifier.background(Color.Black),
+            contentAlignment = Alignment.Center
         ) {
-            CameraPreview(
+            var aspectRatioInt by remember {
+                mutableStateOf(previewUiState.currentCameraSettings.aspect_ratio)
+            }
+            val maxAspectRatio: Float = maxWidth / maxHeight
+            val aspectRatio: Float = getAspectRatioRational(aspectRatioInt).toFloat()
+            val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
+            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
+            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = { offset ->
-                                Log.d(TAG, "onDoubleTap $offset")
-                                viewModel.flipCamera()
-                            }
-                        )
-                    },
-                onSurfaceProviderReady = onSurfaceProviderReady,
-                onRequestBitmapReady = {
-                    val bitmap = it.invoke()
+                    .width(width)
+                    .height(height)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .transformable(state = transformableState)
+                ) {
+                    CameraPreview(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = { offset ->
+                                        Log.d(TAG, "onDoubleTap $offset")
+                                        viewModel.flipCamera()
+                                    }
+                                )
+                            },
+                        onSurfaceProviderReady = onSurfaceProviderReady,
+                        onRequestBitmapReady = {
+                            val bitmap = it.invoke()
+                        }
+                    )
                 }
-            )
+            }
 
             QuickSettingsScreen(
                 modifier = Modifier.fillMaxSize(),
@@ -139,7 +162,10 @@ fun PreviewScreen(
                 currentCameraSettings = previewUiState.currentCameraSettings,
                 onLensFaceClick = viewModel::flipCamera,
                 onFlashModeClick = viewModel::setFlash,
-                //onAspectRatioClick = {}/*TODO*/,
+                onAspectRatioClick = {
+                    aspectRatioInt = it
+                    viewModel.setAspectRatio(it)
+                },
                 //onTimerClick = {}/*TODO*/
             )
 
