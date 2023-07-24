@@ -36,11 +36,13 @@ class FakeCameraUseCase : CameraUseCase {
 
     var isLensFacingFront = false
     private var flashMode = FlashModeStatus.OFF
+    private var aspectRatio = 1
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
         flashMode = currentCameraSettings.flash_mode_status
         isLensFacingFront = currentCameraSettings.default_front_camera
+        aspectRatio = currentCameraSettings.aspect_ratio
         return availableLenses
     }
 
@@ -84,6 +86,10 @@ class FakeCameraUseCase : CameraUseCase {
 
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
         flashMode = flashModeStatus
+    }
+
+    override suspend fun setAspectRatio(aspectRatio: Int, isFrontFacing: Boolean) {
+        this.aspectRatio = aspectRatio
     }
 
     override suspend fun flipCamera(isFrontFacing: Boolean) {

@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
+import android.util.Rational
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
@@ -110,6 +111,21 @@ class PreviewViewModel @Inject constructor(
             )
             // apply to cameraUseCase
             cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
+        }
+    }
+
+    fun setAspectRatio(aspectRatio: Int) {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        aspect_ratio = aspectRatio
+                    )
+                )
+            )
+            cameraUseCase.setAspectRatio(aspectRatio, previewUiState.value
+                .currentCameraSettings.default_front_camera)
         }
     }
 

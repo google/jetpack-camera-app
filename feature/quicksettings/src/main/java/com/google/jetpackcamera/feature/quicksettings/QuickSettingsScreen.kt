@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.quicksettings
 
+import android.util.Rational
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -59,6 +60,7 @@ fun QuickSettingsScreen(
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onAspectRatioClick: (aspectRation: Int) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -104,7 +106,7 @@ fun QuickSettingsScreen(
                     },
                     onLensFaceClick = onLensFaceClick,
                     onFlashModeClick = onFlashModeClick,
-                    //onAspectRatioClick = onAspectRatioClick,
+                    onAspectRatioClick = onAspectRatioClick,
                     //onTimerClick = onTimerClick,
                 )
             }
@@ -127,7 +129,8 @@ private fun ExpandedQuickSettingsUi(
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
-    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
+    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
+    onAspectRatioClick: (aspectRation: Int) -> Unit,
 ) {
 
     Column(
@@ -152,16 +155,13 @@ private fun ExpandedQuickSettingsUi(
                         currentFacingFront = currentCameraSettings.default_front_camera
                     )
                 },
-                //TODO: Implement Set Ratio
-                /*
                 {
                     QuickSetRatio(
                         onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
-                        ratio = 1,
+                        ratio = currentCameraSettings.aspect_ratio,
                         currentRatio = 1
                     )
                 },
-                 */
             )
             QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
 
@@ -169,7 +169,7 @@ private fun ExpandedQuickSettingsUi(
         // if a setting that can be expanded is selected, show it
         else {
             if (shouldShowQuickSetting == IsExpandedQuickSetting.ASPECT_RATIO) {
-                ExpandedQuickSetRatio(setRatio = {}, currentRatio = 1)
+                ExpandedQuickSetRatio(setRatio = onAspectRatioClick, currentRatio = currentCameraSettings.aspect_ratio)
             }
         }
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))

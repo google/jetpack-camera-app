@@ -54,13 +54,34 @@ import kotlin.math.min
 //TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
-    setRatio: (/*TODO: insert ratio function*/) -> Unit,
+    setRatio: (aspectRatio: Int) -> Unit,
     currentRatio: Int
 ) {
     val buttons: Array<@Composable () -> Unit> = arrayOf(
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 1, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 2, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 3, currentRatio = currentRatio) }
+        {
+            QuickSetRatio(
+                onClick = { setRatio(1) },
+                ratio = 1,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                onClick = { setRatio(2) },
+                ratio = 2,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                onClick = { setRatio(3) },
+                ratio = 3,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        }
 
     )
     ExpandedQuickSetting(quickSettingButtons = buttons)
@@ -68,7 +89,12 @@ fun ExpandedQuickSetRatio(
 
 //TODO: Implement Set Ratio
 @Composable
-fun QuickSetRatio(onClick: () -> Unit, ratio: Int, currentRatio: Int) {
+fun QuickSetRatio(
+    onClick: () -> Unit,
+    ratio: Int,
+    currentRatio: Int,
+    isHighlightEnabled: Boolean = false
+) {
     val enum = when (ratio) {
         1 -> CameraAspectRatio.THREE_FOUR
         2 -> CameraAspectRatio.NINE_SIXTEEN
@@ -80,6 +106,7 @@ fun QuickSetRatio(onClick: () -> Unit, ratio: Int, currentRatio: Int) {
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
+        isHighLighted = isHighlightEnabled && (ratio == currentRatio)
     )
 }
 
