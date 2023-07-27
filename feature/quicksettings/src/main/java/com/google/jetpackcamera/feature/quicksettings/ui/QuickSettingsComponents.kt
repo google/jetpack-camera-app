@@ -42,9 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.quicksettings.CameraDemoExpandedSetting
+import com.google.jetpackcamera.feature.quicksettings.CameraDemoSwitch
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlin.math.min
 
@@ -117,6 +120,83 @@ fun QuickFlipCamera(flipCamera: (Boolean) -> Unit, currentFacingFront: Boolean) 
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { flipCamera(!currentFacingFront) }
+    )
+}
+
+@Composable
+fun ExpandedDemoMultiple(
+    onClick: (DemoMultipleStatus) -> Unit,
+    currentDemoMultipleStatus: DemoMultipleStatus
+) {
+    val buttons: Array<@Composable () -> Unit> = arrayOf(
+        {
+            DemoMultiple(
+                onClick = { onClick(DemoMultipleStatus.APPLE) },
+                assignedValue = DemoMultipleStatus.APPLE,
+                currentValue = currentDemoMultipleStatus,
+                isHighlightEnabled = true,
+            )
+        },
+        {
+            DemoMultiple(
+                onClick = { onClick(DemoMultipleStatus.BANANA) },
+                assignedValue = DemoMultipleStatus.BANANA,
+                currentValue = currentDemoMultipleStatus,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            DemoMultiple(
+                onClick = { onClick(DemoMultipleStatus.CANTALOUPE) },
+                assignedValue = DemoMultipleStatus.CANTALOUPE,
+                currentValue = currentDemoMultipleStatus,
+                isHighlightEnabled = true
+            )
+        }
+    )
+    ExpandedQuickSetting(quickSettingButtons = buttons)
+}
+
+@Composable
+fun DemoMultiple(
+    onClick: () -> Unit,
+    assignedValue: DemoMultipleStatus,
+    currentValue: DemoMultipleStatus,
+    isHighlightEnabled: Boolean = false
+) {
+    val enum = when (assignedValue) {
+        DemoMultipleStatus.APPLE -> CameraDemoExpandedSetting.APPLE
+        DemoMultipleStatus.BANANA -> CameraDemoExpandedSetting.BANANA
+        DemoMultipleStatus.CANTALOUPE -> CameraDemoExpandedSetting.CANTALOUPE
+    }
+    QuickSettingUiItem(
+        drawableResId = enum.getDrawableResId(),
+        text = stringResource(id = enum.getTextResId()),
+        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        onClick = { onClick() },
+        isHighLighted = isHighlightEnabled && (assignedValue == currentValue)
+    )
+}
+
+@Composable
+fun DemoSetSwitch(
+    onClick: (Boolean) -> Unit,
+    currentDemoSwitchValue: Boolean,
+    isHighlighted: Boolean = false
+) {
+    val enum = when (currentDemoSwitchValue) {
+        true -> CameraDemoSwitch.TRUE
+        false -> CameraDemoSwitch.FALSE
+    }
+    QuickSettingUiItem(
+        drawableResId = enum.getDrawableResId(),
+        text = stringResource(id = enum.getTextResId()),
+        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        isHighLighted = isHighlighted,
+        onClick =
+        {
+            onClick(!currentDemoSwitchValue)
+        }
     )
 }
 

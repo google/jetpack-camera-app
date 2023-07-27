@@ -123,6 +123,8 @@ fun PreviewScreen(
                 currentCameraSettings = previewUiState.currentCameraSettings,
                 onLensFaceClick = viewModel::flipCamera,
                 onFlashModeClick = viewModel::setFlash,
+                onDemoSwitchClick = viewModel::setDemoSwitch,
+                onDemoMultipleClick = viewModel::setDemoMultiple
                 //onAspectRatioClick = {}/*TODO*/,
                 //onTimerClick = {}/*TODO*/
             )

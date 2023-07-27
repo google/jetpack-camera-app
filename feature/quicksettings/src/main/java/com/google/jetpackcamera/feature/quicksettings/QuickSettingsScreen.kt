@@ -38,7 +38,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
+import com.google.jetpackcamera.feature.quicksettings.ui.DemoMultiple
+import com.google.jetpackcamera.feature.quicksettings.ui.DemoSetSwitch
 import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
+import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedDemoMultiple
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -46,6 +49,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 /**
@@ -59,6 +63,8 @@ fun QuickSettingsScreen(
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onDemoSwitchClick: (Boolean) -> Unit,
+    onDemoMultipleClick: (DemoMultipleStatus) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -104,6 +110,8 @@ fun QuickSettingsScreen(
                     },
                     onLensFaceClick = onLensFaceClick,
                     onFlashModeClick = onFlashModeClick,
+                    onDemoSwitchClick = onDemoSwitchClick,
+                    onDemoMultipleClick = onDemoMultipleClick,
                     //onAspectRatioClick = onAspectRatioClick,
                     //onTimerClick = onTimerClick,
                 )
@@ -116,6 +124,7 @@ fun QuickSettingsScreen(
 private enum class IsExpandedQuickSetting {
     NONE,
     ASPECT_RATIO,
+    DEMO,
 }
 
 /**
@@ -126,6 +135,8 @@ private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onDemoSwitchClick: (Boolean) -> Unit,
+    onDemoMultipleClick: (DemoMultipleStatus) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
 ) {
@@ -152,6 +163,14 @@ private fun ExpandedQuickSettingsUi(
                         currentFacingFront = currentCameraSettings.default_front_camera
                     )
                 },
+                {
+                    DemoSetSwitch(onClick = onDemoSwitchClick, currentDemoSwitchValue = currentCameraSettings.demo_switch)
+                },
+                {
+                    DemoMultiple(onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.DEMO) }, assignedValue = currentCameraSettings.demo_multiple,
+                        currentValue = currentCameraSettings.demo_multiple,
+                    )
+                }
                 //TODO: Implement Set Ratio
                 /*
                 {
@@ -170,6 +189,9 @@ private fun ExpandedQuickSettingsUi(
         else {
             if (shouldShowQuickSetting == IsExpandedQuickSetting.ASPECT_RATIO) {
                 ExpandedQuickSetRatio(setRatio = {}, currentRatio = 1)
+            }
+            else if (shouldShowQuickSetting == IsExpandedQuickSetting.DEMO) {
+                ExpandedDemoMultiple(onClick = onDemoMultipleClick, currentDemoMultipleStatus = currentCameraSettings.demo_multiple)
             }
         }
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
