@@ -46,4 +46,14 @@
     <string name="quick_settings_timer_off_description">Timer off</string>
     <string name="quick_settings_timer_3_description">3 seconds timer</string>
     <string name="quick_settings_timer_10_description">10 seconds timer</string>
+
+    <string name="demo_true">True</string>
+    <string name="demo_false">False</string>
+    <string name="demo_true_description">Setting is true</string>
+    <string name="demo_false_description">Setting is False</string>
+
+    <string name="demo_apple">Apple</string>
+    <string name="demo_banana">Banana</string>
+    <string name="demo_cantaloupe">Cantaloupe</string>
+    <string name="demo_generic_fruit_description">Not a melon</string>
 </resources>

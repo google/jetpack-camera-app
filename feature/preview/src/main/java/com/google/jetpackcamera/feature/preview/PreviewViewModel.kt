@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 private const val TAG = "PreviewViewModel"
@@ -182,6 +183,34 @@ class PreviewViewModel @Inject constructor(
 
     fun setZoomScale(scale: Float) {
         cameraUseCase.setZoomScale(scale = scale)
+    }
+
+    fun setDemoSwitch(isTrue: Boolean) {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        demo_switch = isTrue
+                    )
+                )
+            )
+            // function call to apply new value to cameraUseCase
+        }
+    }
+
+    fun setDemoMultiple(demoMultipleStatus: DemoMultipleStatus) {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        demo_multiple = demoMultipleStatus
+                    )
+                )
+            )
+            // function call to apply new value to cameraUseCase
+        }
     }
 
     // modify ui values

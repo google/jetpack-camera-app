@@ -16,17 +16,6 @@
 
 package com.google.jetpackcamera.settings.model
 
-/**
- * Data layer representation for settings.
- */
-data class CameraAppSettings(
-    val default_front_camera: Boolean = false,
-    val front_camera_available: Boolean = true,
-    val back_camera_available: Boolean = true,
-    val dark_mode_status: DarkModeStatus = DarkModeStatus.SYSTEM,
-    val flash_mode_status: FlashModeStatus = FlashModeStatus.OFF,
-    val demo_switch: Boolean = false,
-    val demo_multiple: DemoMultipleStatus = DemoMultipleStatus.APPLE
-)
-
-val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
+enum class DemoMultipleStatus {
+    APPLE, BANANA, CANTALOUPE
+}
