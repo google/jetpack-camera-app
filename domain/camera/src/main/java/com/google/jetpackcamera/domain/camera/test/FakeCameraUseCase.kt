@@ -19,6 +19,7 @@ package com.google.jetpackcamera.domain.camera.test
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -36,7 +37,7 @@ class FakeCameraUseCase : CameraUseCase {
 
     var isLensFacingFront = false
     private var flashMode = FlashModeStatus.OFF
-    private var aspectRatio = 1
+    private var aspectRatio = AspectRatio.THREE_FOUR
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
@@ -88,7 +89,7 @@ class FakeCameraUseCase : CameraUseCase {
         flashMode = flashModeStatus
     }
 
-    override suspend fun setAspectRatio(aspectRatio: Int, isFrontFacing: Boolean) {
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
     }
 

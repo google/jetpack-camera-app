@@ -46,6 +46,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -60,7 +61,7 @@ fun QuickSettingsScreen(
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
-    onAspectRatioClick: (aspectRation: Int) -> Unit
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -110,6 +111,8 @@ fun QuickSettingsScreen(
                     //onTimerClick = onTimerClick,
                 )
             }
+        } else {
+            shouldShowQuickSetting = IsExpandedQuickSetting.NONE
         }
     }
 }
@@ -130,7 +133,7 @@ private fun ExpandedQuickSettingsUi(
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
-    onAspectRatioClick: (aspectRation: Int) -> Unit,
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
 ) {
 
     Column(
@@ -159,7 +162,7 @@ private fun ExpandedQuickSettingsUi(
                     QuickSetRatio(
                         onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
                         ratio = currentCameraSettings.aspect_ratio,
-                        currentRatio = 1
+                        currentRatio = currentCameraSettings.aspect_ratio
                     )
                 },
             )

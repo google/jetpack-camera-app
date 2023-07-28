@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -114,7 +115,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setAspectRatio(aspectRatio: Int) {
+    fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(

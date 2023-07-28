@@ -16,8 +16,8 @@
 
 package com.google.jetpackcamera.domain.camera
 
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.Preview
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -53,7 +53,7 @@ interface CameraUseCase {
 
     fun setFlashMode(flashModeStatus: FlashModeStatus)
 
-    suspend fun setAspectRatio(aspectRatio: Int, isFrontFacing: Boolean)
+    suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean)
     suspend fun flipCamera(isFrontFacing: Boolean)
 
     companion object {

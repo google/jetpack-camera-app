@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.quicksettings.ui
 
+import android.util.Rational
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +46,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlin.math.min
 
@@ -54,35 +56,34 @@ import kotlin.math.min
 //TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
-    setRatio: (aspectRatio: Int) -> Unit,
-    currentRatio: Int
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
+    currentRatio: AspectRatio
 ) {
     val buttons: Array<@Composable () -> Unit> = arrayOf(
         {
             QuickSetRatio(
-                onClick = { setRatio(1) },
-                ratio = 1,
+                onClick = { setRatio(AspectRatio.THREE_FOUR) },
+                ratio = AspectRatio.THREE_FOUR,
                 currentRatio = currentRatio,
                 isHighlightEnabled = true
             )
         },
         {
             QuickSetRatio(
-                onClick = { setRatio(2) },
-                ratio = 2,
+                onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
+                ratio = AspectRatio.NINE_SIXTEEN,
                 currentRatio = currentRatio,
                 isHighlightEnabled = true
             )
         },
         {
             QuickSetRatio(
-                onClick = { setRatio(3) },
-                ratio = 3,
+                onClick = { setRatio(AspectRatio.ONE_ONE) },
+                ratio = AspectRatio.ONE_ONE,
                 currentRatio = currentRatio,
                 isHighlightEnabled = true
             )
         }
-
     )
     ExpandedQuickSetting(quickSettingButtons = buttons)
 }
@@ -91,14 +92,14 @@ fun ExpandedQuickSetRatio(
 @Composable
 fun QuickSetRatio(
     onClick: () -> Unit,
-    ratio: Int,
-    currentRatio: Int,
+    ratio: AspectRatio,
+    currentRatio: AspectRatio,
     isHighlightEnabled: Boolean = false
 ) {
     val enum = when (ratio) {
-        1 -> CameraAspectRatio.THREE_FOUR
-        2 -> CameraAspectRatio.NINE_SIXTEEN
-        3 -> CameraAspectRatio.ONE_ONE
+        AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+        AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+        AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
         else -> CameraAspectRatio.ONE_ONE
     }
     QuickSettingUiItem(

@@ -118,11 +118,11 @@ fun PreviewScreen(
             Modifier.background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            var aspectRatioInt by remember {
+            var aspectRatioEnum by remember {
                 mutableStateOf(previewUiState.currentCameraSettings.aspect_ratio)
             }
             val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatio: Float = getAspectRatioRational(aspectRatioInt).toFloat()
+            val aspectRatio: Float = aspectRatioEnum.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
@@ -163,7 +163,7 @@ fun PreviewScreen(
                 onLensFaceClick = viewModel::flipCamera,
                 onFlashModeClick = viewModel::setFlash,
                 onAspectRatioClick = {
-                    aspectRatioInt = it
+                    aspectRatioEnum = it
                     viewModel.setAspectRatio(it)
                 },
                 //onTimerClick = {}/*TODO*/

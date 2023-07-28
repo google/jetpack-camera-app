@@ -41,9 +41,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
-import com.google.jetpackcamera.settings.model.getAspectRatioRational
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -195,7 +195,7 @@ class CameraXCameraUseCase @Inject constructor(
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
 
-    override suspend fun setAspectRatio(aspectRatio: Int, isFrontFacing: Boolean) {
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         updateUseCaseGroup(aspectRatio)
         cameraProvider.unbindAll()
         rebindUseCases(
@@ -205,9 +205,9 @@ class CameraXCameraUseCase @Inject constructor(
         )
     }
 
-    private fun updateUseCaseGroup(aspectRatio: Int) {
+    private fun updateUseCaseGroup(aspectRatio: AspectRatio) {
         useCaseGroup = UseCaseGroup.Builder()
-            .setViewPort(ViewPort.Builder(getAspectRatioRational(aspectRatio), previewUseCase.targetRotation).build())
+            .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
             .addUseCase(previewUseCase)
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)
