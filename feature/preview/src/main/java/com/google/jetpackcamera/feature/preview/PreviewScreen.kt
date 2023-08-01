@@ -64,7 +64,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
-import com.google.jetpackcamera.settings.model.getAspectRatioRational
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -118,11 +117,9 @@ fun PreviewScreen(
             Modifier.background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            var aspectRatioEnum by remember {
-                mutableStateOf(previewUiState.currentCameraSettings.aspect_ratio)
-            }
             val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatio: Float = aspectRatioEnum.ratio.toFloat()
+            val aspectRatio: Float =
+                previewUiState.currentCameraSettings.aspect_ratio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
@@ -163,7 +160,6 @@ fun PreviewScreen(
                 onLensFaceClick = viewModel::flipCamera,
                 onFlashModeClick = viewModel::setFlash,
                 onAspectRatioClick = {
-                    aspectRatioEnum = it
                     viewModel.setAspectRatio(it)
                 },
                 //onTimerClick = {}/*TODO*/
