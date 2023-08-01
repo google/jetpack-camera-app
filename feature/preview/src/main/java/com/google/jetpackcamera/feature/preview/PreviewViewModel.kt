@@ -17,22 +17,22 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
-import android.util.Rational
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.FlashModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+
 
 private const val TAG = "PreviewViewModel"
 
@@ -51,15 +51,16 @@ class PreviewViewModel @Inject constructor(
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
     var runningCameraJob: Job? = null
 
-    private var recordingJob : Job? = null
+    private var recordingJob: Job? = null
 
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
                 //TODO: only update settings that were actually changed
                 // currently resets all "quick" settings to stored settings
-                    settings -> _previewUiState
-                .emit(previewUiState.value.copy(currentCameraSettings = settings))
+                    settings ->
+                _previewUiState
+                    .emit(previewUiState.value.copy(currentCameraSettings = settings))
             }
         }
         initializeCamera()
@@ -99,15 +100,15 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setFlash(flashModeStatus: FlashModeStatus){
+    fun setFlash(flashModeStatus: FlashModeStatus) {
         //update viewmodel value
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
-                        previewUiState.value.currentCameraSettings.copy(
-                            flash_mode_status = flashModeStatus
-                        )
+                    previewUiState.value.currentCameraSettings.copy(
+                        flash_mode_status = flashModeStatus
+                    )
                 )
             )
             // apply to cameraUseCase
@@ -132,24 +133,33 @@ class PreviewViewModel @Inject constructor(
 
     // flips the camera opposite to its current direction
     fun flipCamera() {
-        flipCamera(!previewUiState.value
-            .currentCameraSettings.default_front_camera)
+        flipCamera(
+            !previewUiState.value
+                .currentCameraSettings.default_front_camera
+        )
     }
+
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
-        //update viewmodel value
-         viewModelScope.launch {
-             _previewUiState.emit(
-                 previewUiState.value.copy(
-                     currentCameraSettings =
-                     previewUiState.value.currentCameraSettings.copy(
-                         default_front_camera = isFacingFront
-                     )
-                 )
-             )
-             // apply to cameraUseCase
-             cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
-         }
+        // only flip if 2 directions are available
+        if (previewUiState.value.currentCameraSettings.back_camera_available
+            && previewUiState.value.currentCameraSettings.front_camera_available
+        ) {
+
+            //update viewmodel value
+            viewModelScope.launch {
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        currentCameraSettings =
+                        previewUiState.value.currentCameraSettings.copy(
+                            default_front_camera = isFacingFront
+                        )
+                    )
+                )
+                // apply to cameraUseCase
+                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
+            }
+        }
     }
 
     fun captureImage() {
@@ -205,6 +215,7 @@ class PreviewViewModel @Inject constructor(
     fun toggleQuickSettings() {
         toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
     }
+
     fun toggleQuickSettings(isOpen: Boolean) {
         viewModelScope.launch {
             _previewUiState.emit(
