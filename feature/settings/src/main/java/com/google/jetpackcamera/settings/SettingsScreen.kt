@@ -25,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -41,7 +40,7 @@ private const val TAG = "SettingsScreen"
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    navController: NavController) {
+    onNavigateToPreview: () -> Unit ) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -50,9 +49,7 @@ fun SettingsScreen(
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
-            navBack = {
-                navController.popBackStack()
-            }
+            navBack = onNavigateToPreview
         )
         SettingsList(uiState = settingsUiState, viewModel = viewModel)
     }
