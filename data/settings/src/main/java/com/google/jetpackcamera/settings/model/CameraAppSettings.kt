@@ -16,8 +16,6 @@
 
 package com.google.jetpackcamera.settings.model
 
-import android.util.Rational
-
 /**
  * Data layer representation for settings.
  */
@@ -31,12 +29,3 @@ data class CameraAppSettings(
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
-
-fun getAspectRatioRational(aspectRatio: Int): Rational {
-    return when (aspectRatio) {
-        1 -> Rational(3,4)
-        2 -> Rational(9, 16)
-        3 -> Rational(1, 1)
-        else -> Rational(1, 1)
-    }
-}
