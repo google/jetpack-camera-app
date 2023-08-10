@@ -93,7 +93,7 @@ fun Texture(
             }
         }, update = {
             textureView = it
-            setView(textureView!!)
+            setView(it)
             onRequestBitmapReady { -> it.bitmap }
         }
     )
