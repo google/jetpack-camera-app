@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
@@ -74,17 +75,13 @@ class CameraXCameraUseCase @Inject constructor(
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
 
-    private val useCaseGroup = UseCaseGroup.Builder()
-        .setViewPort(ViewPort.Builder(ASPECT_RATIO_16_9, previewUseCase.targetRotation).build())
-        .addUseCase(previewUseCase)
-        .addUseCase(imageCaptureUseCase)
-        .addUseCase(videoCaptureUseCase)
-        .build()
+    private var useCaseGroup: UseCaseGroup? = null
 
     private var recording: Recording? = null
 
     private var camera: Camera? = null
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
+        updateUseCaseGroup(currentCameraSettings.aspect_ratio)
         setFlashMode(currentCameraSettings.flash_mode_status)
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
@@ -118,7 +115,7 @@ class CameraXCameraUseCase @Inject constructor(
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
-        cameraProvider.runWith(cameraSelector, useCaseGroup) {
+        cameraProvider.runWith(cameraSelector, useCaseGroup!!) {
             camera = it
             awaitCancellation()
         }
@@ -198,6 +195,25 @@ class CameraXCameraUseCase @Inject constructor(
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
 
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
+        updateUseCaseGroup(aspectRatio)
+        cameraProvider.unbindAll()
+        rebindUseCases(
+            cameraLensToSelector(
+                getLensFacing(isFrontFacing)
+            )
+        )
+    }
+
+    private fun updateUseCaseGroup(aspectRatio: AspectRatio) {
+        useCaseGroup = UseCaseGroup.Builder()
+            .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
+            .addUseCase(previewUseCase)
+            .addUseCase(imageCaptureUseCase)
+            .addUseCase(videoCaptureUseCase)
+            .build()
+    }
+
     // converts LensFacing from datastore to @LensFacing Int value
     private fun getLensFacing(isFrontFacing: Boolean): Int =
         when (isFrontFacing) {
@@ -206,7 +222,7 @@ class CameraXCameraUseCase @Inject constructor(
         }
 
     private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
-        cameraProvider.runWith(cameraSelector, useCaseGroup) {
+        cameraProvider.runWith(cameraSelector, useCaseGroup!!) {
             camera = it
             awaitCancellation()
         }

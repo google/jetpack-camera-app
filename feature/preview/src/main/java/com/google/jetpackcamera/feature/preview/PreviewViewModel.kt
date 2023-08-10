@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.model.AspectRatio
+
 
 private const val TAG = "PreviewViewModel"
 
@@ -111,6 +113,21 @@ class PreviewViewModel @Inject constructor(
             )
             // apply to cameraUseCase
             cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
+        }
+    }
+
+    fun setAspectRatio(aspectRatio: AspectRatio) {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        aspect_ratio = aspectRatio
+                    )
+                )
+            )
+            cameraUseCase.setAspectRatio(aspectRatio, previewUiState.value
+                .currentCameraSettings.default_front_camera)
         }
     }
 
