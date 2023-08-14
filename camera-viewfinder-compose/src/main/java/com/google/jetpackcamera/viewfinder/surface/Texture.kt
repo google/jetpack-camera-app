@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.util.Log
 import android.view.TextureView
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.runtime.Composable
@@ -34,8 +35,9 @@ private const val TAG = "Texture"
 @Composable
 fun Texture(
     onSurfaceTextureEvent: (SurfaceTextureEvent) -> Boolean = { _ -> true },
-    onRequestBitmapReady: (() -> Bitmap?) -> Unit
-) {
+    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
+    setView: (View) -> Unit,
+    ) {
     Log.d(TAG, "Texture")
 
     var textureView: TextureView? by remember { mutableStateOf(null) }
@@ -91,9 +93,11 @@ fun Texture(
             }
         }, update = {
             textureView = it
+            setView(it)
             onRequestBitmapReady { -> it.bitmap }
         }
     )
+
 }
 
 sealed interface SurfaceTextureEvent {

@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.domain.camera.test
 
+import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
@@ -95,5 +96,15 @@ class FakeCameraUseCase : CameraUseCase {
 
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         isLensFacingFront = isFrontFacing
+    }
+
+    override fun tapToFocus(
+        display: Display,
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        x: Float,
+        y: Float
+    ) {
+        TODO("Not yet implemented")
     }
 }

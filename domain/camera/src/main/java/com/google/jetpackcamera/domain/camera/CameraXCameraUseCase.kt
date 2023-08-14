@@ -21,9 +21,12 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Rational
+import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
+import androidx.camera.core.DisplayOrientedMeteringPointFactory
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -184,6 +187,29 @@ class CameraXCameraUseCase @Inject constructor(
                 getLensFacing(isFrontFacing)
             )
         )
+    }
+
+    override fun tapToFocus(
+        display: Display,
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        x: Float,
+        y: Float
+    ) {
+        if (camera != null) {
+            val meteringPoint = DisplayOrientedMeteringPointFactory(
+                display,
+                camera!!.cameraInfo,
+                surfaceWidth.toFloat(),
+                surfaceHeight.toFloat()
+            )
+                .createPoint(x, y);
+
+            val action = FocusMeteringAction.Builder(meteringPoint).build()
+
+            camera!!.cameraControl.startFocusAndMetering(action)
+            Log.d(TAG, "Tap to focus on: $meteringPoint")
+        }
     }
 
     override fun setFlashMode(flashModeStatus: FlashModeStatus) {
