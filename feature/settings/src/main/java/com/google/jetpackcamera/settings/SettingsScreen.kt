@@ -40,7 +40,8 @@ private const val TAG = "SettingsScreen"
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToPreview: () -> Unit ) {
+    onNavigateToPreview: () -> Unit
+) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -65,13 +66,13 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     )
 
     FlashModeSetting(
-        uiState = uiState,
+        currentFlashMode = uiState.cameraAppSettings.flash_mode_status,
         setFlashMode = viewModel::setFlashMode
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
     DarkModeSetting(
-        uiState = uiState,
+        currentDarkModeStatus = uiState.cameraAppSettings.dark_mode_status,
         setDarkMode = viewModel::setDarkMode
     )
 }

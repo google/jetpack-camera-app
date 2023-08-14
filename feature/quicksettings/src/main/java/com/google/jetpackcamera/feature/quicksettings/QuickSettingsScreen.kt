@@ -16,7 +16,6 @@
 
 package com.google.jetpackcamera.feature.quicksettings
 
-import android.util.Rational
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -143,36 +142,38 @@ private fun ExpandedQuickSettingsUi(
     ) {
         // if no setting is chosen, display the grid of settings
         // to change the order of display just move these lines of code above or below each other
-        if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE) {
-            val displayedQuickSettings: Array<@Composable () -> Unit> = arrayOf(
+        when (shouldShowQuickSetting) {
+            IsExpandedQuickSetting.NONE -> {
+                val displayedQuickSettings: Array<@Composable () -> Unit> = arrayOf(
 
-                {
-                    QuickSetFlash(
-                        onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
-                        currentFlashMode = currentCameraSettings.flash_mode_status
-                    )
-                },
-                {
-                    QuickFlipCamera(
-                        flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                        currentFacingFront = currentCameraSettings.default_front_camera
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
-                        ratio = currentCameraSettings.aspect_ratio,
-                        currentRatio = currentCameraSettings.aspect_ratio
-                    )
-                },
-            )
-            QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
-
-        }
-        // if a setting that can be expanded is selected, show it
-        else {
-            if (shouldShowQuickSetting == IsExpandedQuickSetting.ASPECT_RATIO) {
-                ExpandedQuickSetRatio(setRatio = onAspectRatioClick, currentRatio = currentCameraSettings.aspect_ratio)
+                    {
+                        QuickSetFlash(
+                            onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
+                            currentFlashMode = currentCameraSettings.flash_mode_status
+                        )
+                    },
+                    {
+                        QuickFlipCamera(
+                            flipCamera = { b: Boolean -> onLensFaceClick(b) },
+                            currentFacingFront = currentCameraSettings.default_front_camera
+                        )
+                    },
+                    {
+                        QuickSetRatio(
+                            onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
+                            ratio = currentCameraSettings.aspect_ratio,
+                            currentRatio = currentCameraSettings.aspect_ratio
+                        )
+                    },
+                )
+                QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
+            }
+            // if a setting that can be expanded is selected, show it
+            IsExpandedQuickSetting.ASPECT_RATIO -> {
+                ExpandedQuickSetRatio(
+                    setRatio = onAspectRatioClick,
+                    currentRatio = currentCameraSettings.aspect_ratio
+                )
             }
         }
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))

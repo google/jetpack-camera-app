@@ -47,9 +47,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
-import com.google.jetpackcamera.settings.SettingsUiState
-import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 
@@ -92,32 +91,32 @@ fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Uni
         leadingIcon = null,
         onClick = { onClick() },
         settingValue = cameraAppSettings.default_front_camera,
-        enabled =  cameraAppSettings.back_camera_available && cameraAppSettings.front_camera_available
+        enabled = cameraAppSettings.back_camera_available && cameraAppSettings.front_camera_available
     )
 }
 
 @Composable
-fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> Unit) {
+fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkModeStatus) -> Unit) {
     BasicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
-        description = when (uiState.cameraAppSettings.dark_mode_status) {
+        description = when (currentDarkModeStatus) {
             DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
             DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
             DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_dark),
-                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.DARK,
+                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_dark),
+                    selected = currentDarkModeStatus == DarkModeStatus.DARK,
                     onClick = { setDarkMode(DarkModeStatus.DARK) }
                 )
-                ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_light),
-                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.LIGHT,
+                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_light),
+                    selected = currentDarkModeStatus == DarkModeStatus.LIGHT,
                     onClick = { setDarkMode(DarkModeStatus.LIGHT) }
                 )
-                ChoiceRow(text = stringResource(id = R.string.dark_mode_selector_system),
-                    selected = uiState.cameraAppSettings.dark_mode_status == DarkModeStatus.SYSTEM,
+                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_system),
+                    selected = currentDarkModeStatus == DarkModeStatus.SYSTEM,
                     onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
                 )
             }
@@ -126,27 +125,27 @@ fun DarkModeSetting(uiState: SettingsUiState, setDarkMode: (DarkModeStatus) -> U
 }
 
 @Composable
-fun FlashModeSetting(uiState: SettingsUiState, setFlashMode: (FlashModeStatus) -> Unit) {
+fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashModeStatus) -> Unit) {
     BasicPopupSetting(
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
-        description = when (uiState.cameraAppSettings.flash_mode_status) {
+        description = when (currentFlashMode) {
             FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
             FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_status_on)
             FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_status_off)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_auto),
-                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.AUTO,
+                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_auto),
+                    selected = currentFlashMode == FlashModeStatus.AUTO,
                     onClick = { setFlashMode(FlashModeStatus.AUTO) }
                 )
-                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_on),
-                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.ON,
+                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_on),
+                    selected = currentFlashMode == FlashModeStatus.ON,
                     onClick = { setFlashMode(FlashModeStatus.ON) }
                 )
-                ChoiceRow(text = stringResource(id = R.string.flash_mode_selector_off),
-                    selected = uiState.cameraAppSettings.flash_mode_status == FlashModeStatus.OFF,
+                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
+                    selected = currentFlashMode == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
                 )
             }
@@ -265,13 +264,14 @@ fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit, enabled: Boolean =
 }
 
 /**
- * A component for a single-choice selector
+ * A component for a single-choice selector for a multiple choice list
  */
 @Composable
-fun ChoiceRow(
+fun SingleChoiceSelector(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         Modifier
@@ -287,6 +287,7 @@ fun ChoiceRow(
         RadioButton(
             selected = selected,
             onClick = null,
+            enabled = enabled
         )
         Spacer(Modifier.width(8.dp))
         Text(text)

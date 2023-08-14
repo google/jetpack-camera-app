@@ -16,7 +16,6 @@
 
 package com.google.jetpackcamera.feature.quicksettings.ui
 
-import android.util.Rational
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,13 +44,14 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlin.math.min
 
 
-// completed components
+// completed components ready to go into preview screen
 
 //TODO: Implement Set Ratio
 @Composable
@@ -103,9 +103,7 @@ fun QuickSetRatio(
         else -> CameraAspectRatio.ONE_ONE
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         onClick = { onClick() },
         isHighLighted = isHighlightEnabled && (ratio == currentRatio)
     )
@@ -119,9 +117,7 @@ fun QuickSetFlash(onClick: (FlashModeStatus) -> Unit, currentFlashMode: FlashMod
         FlashModeStatus.ON -> CameraFlashMode.ON
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         isHighLighted = currentFlashMode == FlashModeStatus.ON,
         onClick =
         {
@@ -141,9 +137,7 @@ fun QuickFlipCamera(flipCamera: (Boolean) -> Unit, currentFacingFront: Boolean) 
         false -> CameraLensFace.BACK
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         onClick = { flipCamera(!currentFacingFront) }
     )
 }
@@ -172,7 +166,22 @@ fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
     }
 }
 
-// subcomponents. use these to build up ui
+// subcomponents used to build completed components
+
+@Composable
+fun QuickSettingUiItem(
+    enum: QuickSettingsEnum,
+    onClick: () -> Unit,
+    isHighLighted: Boolean = false
+) {
+    QuickSettingUiItem(
+        drawableResId = enum.getDrawableResId(),
+        text = stringResource(id = enum.getTextResId()),
+        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        onClick = { onClick() },
+        isHighLighted = isHighLighted,
+    )
+}
 
 /**
  * The itemized UI component representing each button in quick settings.
@@ -232,6 +241,9 @@ fun ExpandedQuickSetting(vararg quickSettingButtons: @Composable () -> Unit) {
     }
 }
 
+/**
+ * Algorithm to determine dimensions of QuickSettings Icon layout
+ */
 @Composable
 fun QuickSettingsGrid(vararg quickSettingsButtons: @Composable () -> Unit) {
     val initialNumOfColumns =
