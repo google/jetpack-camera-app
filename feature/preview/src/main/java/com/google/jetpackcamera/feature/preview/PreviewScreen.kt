@@ -238,9 +238,9 @@ fun PreviewScreen(
                 ) {
                     Row {
                         CaptureButton(
-                            onClick = { viewModel.captureImage() },
-                            onLongPress = { viewModel.startVideoRecording() },
-                            onRelease = { viewModel.stopVideoRecording() },
+                            onClick = { onImageCapture(viewModel) },
+                            onLongPress = { onStartRecording(viewModel) },
+                            onRelease = { onStopRecording(viewModel) },
                             state = previewUiState.videoRecordingState
                         )
                     }
@@ -248,6 +248,18 @@ fun PreviewScreen(
             }
         }
     }
+}
+
+fun onStartRecording(viewModel: PreviewViewModel) {
+    viewModel.startVideoRecording()
+}
+
+fun onStopRecording(viewModel: PreviewViewModel) {
+    viewModel.stopVideoRecording()
+}
+
+fun onImageCapture(viewModel: PreviewViewModel) {
+    viewModel.captureImage()
 }
 
 @Composable
