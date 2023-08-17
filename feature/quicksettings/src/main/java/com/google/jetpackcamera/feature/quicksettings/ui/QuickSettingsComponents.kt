@@ -155,7 +155,7 @@ fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
             contentDescription = stringResource(R.string.quick_settings_dropdown_description),
-            tint = if (isOpen) Color.White else LocalContentColor.current,
+            tint = Color.White,
             modifier = Modifier
                 .size(72.dp)
                 .clickable {

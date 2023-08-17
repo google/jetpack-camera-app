@@ -78,12 +78,11 @@ fun QuickSettingsScreen(
 
     Column(
         modifier = modifier
-            .fillMaxSize()
             .background(color = backgroundColor.value),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        DropDownIcon(toggleIsOpen, isOpen = isOpen)
+        DropDownIcon(toggleDropDown = toggleIsOpen, isOpen = isOpen)
 
         if (isOpen) {
             Column(
@@ -91,7 +90,7 @@ fun QuickSettingsScreen(
                     .fillMaxSize()
                     .alpha(alpha = contentAlpha.value)
                     .clickable {
-                        // if a setting is expanded, close it. if no other settings are expanded, then close out of the popup
+                        // if a setting is expanded, click on the background to close it. if no other settings are expanded, then close the popup
                         if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE) toggleIsOpen() else shouldShowQuickSetting =
                             IsExpandedQuickSetting.NONE
                     },
@@ -107,7 +106,6 @@ fun QuickSettingsScreen(
                     onLensFaceClick = onLensFaceClick,
                     onFlashModeClick = onFlashModeClick,
                     onAspectRatioClick = onAspectRatioClick,
-                    //onTimerClick = onTimerClick,
                 )
             }
         } else {
@@ -137,7 +135,6 @@ private fun ExpandedQuickSettingsUi(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
             .padding(horizontal = dimensionResource(id = R.dimen.quick_settings_ui_horizontal_padding))
     ) {
         // if no setting is chosen, display the grid of settings
