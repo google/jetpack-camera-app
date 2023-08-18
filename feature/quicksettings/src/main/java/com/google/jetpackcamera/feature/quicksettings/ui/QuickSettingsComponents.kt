@@ -24,12 +24,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -53,7 +51,6 @@ import kotlin.math.min
 
 // completed components ready to go into preview screen
 
-//TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
@@ -88,7 +85,6 @@ fun ExpandedQuickSetRatio(
     ExpandedQuickSetting(quickSettingButtons = buttons)
 }
 
-//TODO: Implement Set Ratio
 @Composable
 fun QuickSetRatio(
     onClick: () -> Unit,
@@ -143,11 +139,9 @@ fun QuickFlipCamera(flipCamera: (Boolean) -> Unit, currentFacingFront: Boolean) 
 }
 
 @Composable
-fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun DropDownIcon(modifier: Modifier = Modifier, toggleDropDown: () -> Unit, isOpen: Boolean) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -133,13 +133,26 @@ fun PreviewDisplay(
 }
 
 @Composable
-fun FlipCameraButton(enabledCondition: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick, enabled = enabledCondition) {
-        Icon(
-            Icons.Filled.Refresh,
-            contentDescription = "Flip Camera",
-            modifier = Modifier.size(72.dp)
-        )
+fun FlipCameraButton(
+    modifier: Modifier = Modifier,
+    enabledCondition: Boolean,
+    onClick: () -> Unit
+) {
+    Box(modifier = modifier) {
+        IconButton(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(40.dp),
+            onClick = onClick,
+            enabled = enabledCondition
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Refresh,
+                tint = Color.White,
+                contentDescription = stringResource(id = R.string.flip_camera_content_description),
+                modifier = Modifier.size(72.dp)
+            )
+        }
     }
 }
 
@@ -175,13 +188,14 @@ fun ZoomScaleText(zoomScale: Float, show: Boolean) {
 
 @Composable
 fun CaptureButton(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     onRelease: () -> Unit,
     state: VideoRecordingState
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -193,7 +207,9 @@ fun CaptureButton(
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, Color.White, CircleShape)
+            .border(4.dp, Color.White, CircleShape),
+        // verticalArrangement = Arrangement.Bottom,
+        // horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(

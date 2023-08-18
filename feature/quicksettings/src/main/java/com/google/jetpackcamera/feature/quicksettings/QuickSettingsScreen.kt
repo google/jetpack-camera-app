@@ -23,10 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,42 +73,42 @@ fun QuickSettingsScreen(
         animationSpec = tween()
     )
 
-    Column(
-        modifier = modifier
-            .background(color = backgroundColor.value),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        DropDownIcon(toggleDropDown = toggleIsOpen, isOpen = isOpen)
-
-        if (isOpen) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(alpha = contentAlpha.value)
-                    .clickable {
-                        // if a setting is expanded, click on the background to close it. if no other settings are expanded, then close the popup
-                        if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE) toggleIsOpen() else shouldShowQuickSetting =
-                            IsExpandedQuickSetting.NONE
-                    },
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ExpandedQuickSettingsUi(
-                    currentCameraSettings = currentCameraSettings,
-                    shouldShowQuickSetting = shouldShowQuickSetting,
-                    setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
-                        shouldShowQuickSetting = enum
-                    },
-                    onLensFaceClick = onLensFaceClick,
-                    onFlashModeClick = onFlashModeClick,
-                    onAspectRatioClick = onAspectRatioClick,
-                )
-            }
-        } else {
-            shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+    if (isOpen) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = backgroundColor.value)
+                .alpha(alpha = contentAlpha.value)
+                .clickable {
+                    // if a setting is expanded, click on the background to close it.
+                    // if no other settings are expanded, then close the popup
+                    if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE)
+                        toggleIsOpen()
+                    else
+                        shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+                },
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ExpandedQuickSettingsUi(
+                currentCameraSettings = currentCameraSettings,
+                shouldShowQuickSetting = shouldShowQuickSetting,
+                setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
+                    shouldShowQuickSetting = enum
+                },
+                onLensFaceClick = onLensFaceClick,
+                onFlashModeClick = onFlashModeClick,
+                onAspectRatioClick = onAspectRatioClick,
+            )
         }
+    } else {
+        shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+
     }
+    DropDownIcon(
+        modifier = modifier,
+        toggleDropDown = toggleIsOpen,
+        isOpen = isOpen)
 }
 
 // enum representing which individual quick setting is currently expanded
@@ -173,6 +170,6 @@ private fun ExpandedQuickSettingsUi(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
+        //Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
     }
 }
