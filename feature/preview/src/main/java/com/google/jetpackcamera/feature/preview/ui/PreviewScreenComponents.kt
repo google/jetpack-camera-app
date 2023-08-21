@@ -169,7 +169,6 @@ fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
             modifier = Modifier.size(72.dp)
         )
     }
-
 }
 
 @Composable

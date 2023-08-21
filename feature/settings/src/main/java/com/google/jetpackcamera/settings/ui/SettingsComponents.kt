@@ -17,7 +17,6 @@
 package com.google.jetpackcamera.settings.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -79,6 +80,7 @@ fun SectionHeader(title: String) {
         text = title,
         modifier = Modifier
             .padding(start = 20.dp, top = 10.dp),
+        color = MaterialTheme.colorScheme.primary,
         fontSize = 18.sp
     )
 }
@@ -170,10 +172,11 @@ fun BasicPopupSetting(
 ) {
     val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
+        modifier = Modifier.clickable() { popupStatus.value = true },
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        onClick = { popupStatus.value = true },
+        //onClick = { popupStatus.value = true },
         trailingContent = null
     )
     if (popupStatus.value) {
@@ -206,13 +209,25 @@ fun SwitchSettingUI(
     enabled: Boolean
 ) {
     SettingUI(
-        enabled = enabled,
+        modifier = Modifier.toggleable(
+            role = Role.Switch,
+            value = settingValue,
+            onValueChange = { _ -> onClick() }
+        ),
+        //enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        onClick = onClick,
+        //onClick = onClick,
         trailingContent = {
-            SettingSwitch(settingValue, onClick, enabled)
+            Switch(
+                //modifier = Modifier,
+                enabled = enabled,
+                checked = settingValue,
+                onCheckedChange = {
+                    onClick()
+                }
+            )
         }
     )
 }
@@ -223,43 +238,25 @@ fun SwitchSettingUI(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingUI(
+    modifier: Modifier = Modifier,
     title: String,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
-    onClick: () -> Unit,
-    enabled: Boolean = true
+    //onClick: () -> Unit,
+    //enabled: Boolean = true
 ) {
-    Box(modifier = Modifier) {
-        ListItem(
-            modifier = Modifier.clickable(enabled = enabled) { onClick() },
-            headlineText = { Text(title) },
-            supportingText = {
-                when (description) {
-                    null -> {}
-                    else -> {
-                        Text(description)
-                    }
-                }
-            },
-            leadingContent = leadingIcon,
-            trailingContent = trailingContent
-        )
-    }
-}
-
-/**
- * A component for a switch
- */
-@Composable
-fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit, enabled: Boolean = true) {
-    Switch(
-        modifier = Modifier,
-        enabled = enabled,
-        checked = settingValue,
-        onCheckedChange = {
-            onClick()
-        }
+    ListItem(
+        modifier = modifier, //Modifier.clickable(enabled = enabled) { onClick() },
+        headlineText = { Text(title) },
+        supportingText = when (description) {
+            null -> null
+            else -> {
+                { Text(description) }
+            }
+        },
+        leadingContent = leadingIcon,
+        trailingContent = trailingContent
     )
 }
 
@@ -280,13 +277,12 @@ fun SingleChoiceSelector(
                 selected = selected,
                 role = Role.RadioButton,
                 onClick = onClick,
-            )
-            .padding(12.dp),
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = null,
+            onClick = onClick,
             enabled = enabled
         )
         Spacer(Modifier.width(8.dp))
