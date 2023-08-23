@@ -59,6 +59,7 @@ private const val TAG = "PreviewScreen"
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToPostCapture: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -140,6 +141,11 @@ fun PreviewScreen(
                 )
             }
         }
+    }
+
+    if (previewUiState.captureState == CaptureState.COMPLETE) {
+        viewModel.clearCaptureState()
+        onNavigateToPostCapture()
     }
 }
 

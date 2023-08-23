@@ -56,6 +56,7 @@ dependencies {
     kapt "com.google.dagger:hilt-compiler:2.44"
 
     implementation(project(":core:common"))
+    implementation(project(":data:storage"))
 }
 
 // Allow references to generated code

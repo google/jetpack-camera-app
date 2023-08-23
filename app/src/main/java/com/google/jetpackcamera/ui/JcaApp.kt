@@ -27,8 +27,10 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.settings.SettingsScreen
+import com.google.jetpackcamera.ui.Routes.PostCaptureRoute
 import com.google.jetpackcamera.ui.Routes.PreviewRoute
 import com.google.jetpackcamera.ui.Routes.SettingsRoute
 
@@ -53,9 +55,13 @@ private fun JetpackCameraNavHost(
     NavHost(navController = navController, startDestination = PreviewRoute) {
         composable(PreviewRoute) {
             PreviewScreen(
-                onNavigateToSettings = { navController.navigate(SettingsRoute) }
+                onNavigateToSettings = { navController.navigate(SettingsRoute) },
+                onNavigateToPostCapture = { navController.navigate(PostCaptureRoute) }
             )
         }
         composable(SettingsRoute) { SettingsScreen(navController = navController) }
+        composable(PostCaptureRoute) { PostCaptureScreen(
+            onBackPressed = { navController.navigateUp() }
+        ) }
     }
 }

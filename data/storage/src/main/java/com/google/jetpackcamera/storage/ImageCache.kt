@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.storage
 
-object Routes {
-    const val PreviewRoute = "preview"
-    const val SettingsRoute = "settings"
-    const val PostCaptureRoute = "postcapture"
+import android.graphics.Bitmap
+import android.media.Image
+
+/**
+ * Used to store a single [Image].
+ */
+interface ImageCache {
+    /**
+     * Save the image into the cache.
+     */
+    fun setImage(image: Bitmap)
+
+    /**
+     * Retrieve the saved image from cache.
+     */
+    fun getImage() : Bitmap?
 }

@@ -26,6 +26,7 @@ data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
     val lensFacing: Int = CameraSelector.LENS_FACING_FRONT,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
+    val captureState: CaptureState = CaptureState.NOT_STARTED,
 )
 
 /**
@@ -60,4 +61,19 @@ enum class CameraState {
      * Camera is initialized but the preview has been stopped.
      */
     PREVIEW_STOPPED
+}
+
+enum class CaptureState {
+    /**
+     * Capture hasn't started
+     */
+    NOT_STARTED,
+    /**
+     * Capture is pending
+     */
+    PENDING,
+    /**
+     * Capture complete
+     */
+    COMPLETE,
 }

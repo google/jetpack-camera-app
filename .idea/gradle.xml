@@ -17,9 +17,11 @@
             <option value="$PROJECT_DIR$/core/common" />
             <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/data/settings" />
+            <option value="$PROJECT_DIR$/data/storage" />
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/domain/camera" />
             <option value="$PROJECT_DIR$/feature" />
+            <option value="$PROJECT_DIR$/feature/postcapture" />
             <option value="$PROJECT_DIR$/feature/preview" />
             <option value="$PROJECT_DIR$/feature/quicksettings" />
             <option value="$PROJECT_DIR$/feature/settings" />

@@ -18,6 +18,7 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
+import android.graphics.BitmapFactory
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Rational
@@ -37,13 +38,14 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
-import androidx.lifecycle.LifecycleOwner
+import com.google.jetpackcamera.storage.ImageCache
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
-import java.util.Date
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import java.nio.ByteBuffer
+import java.util.Date
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
@@ -54,7 +56,8 @@ private val ASPECT_RATIO_16_9 = Rational(16, 9)
  */
 class CameraXCameraUseCase @Inject constructor(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher
+    private val defaultDispatcher: CoroutineDispatcher,
+    private val imageCache: ImageCache
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -103,8 +106,9 @@ class CameraXCameraUseCase @Inject constructor(
             awaitCancellation()
         }
     }
-
+    @androidx.camera.core.ExperimentalGetImage
     override suspend fun takePicture() {
+
         val imageDeferred = CompletableDeferred<ImageProxy>()
 
         imageCaptureUseCase.takePicture(
@@ -116,10 +120,18 @@ class CameraXCameraUseCase @Inject constructor(
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
                     Log.d(TAG, "takePicture onError: $exception")
                 }
             })
+
+        imageDeferred.await().let {
+            val buffer: ByteBuffer = it.getPlanes().get(0).getBuffer()
+            val bytes = ByteArray(buffer.capacity())
+            buffer[bytes]
+            val bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
+            it.close()
+            imageCache.setImage(bitmapImage)
+        }
     }
 
     override suspend fun startVideoRecording() {

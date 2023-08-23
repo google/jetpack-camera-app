@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.storage
 
-object Routes {
-    const val PreviewRoute = "preview"
-    const val SettingsRoute = "settings"
-    const val PostCaptureRoute = "postcapture"
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+class StorageModule {
+
+    @Provides
+    @Singleton
+    fun provideImageCache() : ImageCache = InMemoryImageCache()
 }

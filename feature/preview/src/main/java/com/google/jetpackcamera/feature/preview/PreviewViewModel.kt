@@ -63,6 +63,16 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    fun clearCaptureState() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    captureState = CaptureState.NOT_STARTED
+                )
+            )
+        }
+    }
+
     fun runCamera(surfaceProvider: SurfaceProvider) {
         Log.d(TAG, "runCamera")
         stopCamera()
@@ -94,6 +104,11 @@ class PreviewViewModel @Inject constructor(
             try {
                 cameraUseCase.takePicture()
                 Log.d(TAG, "cameraUseCase.takePicture success")
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        captureState = CaptureState.COMPLETE
+                    )
+                )
             } catch (exception: ImageCaptureException) {
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
