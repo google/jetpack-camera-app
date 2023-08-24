@@ -63,4 +63,6 @@ interface CameraUseCase {
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
     }
+
+    suspend fun toggleCaptureMode()
 }

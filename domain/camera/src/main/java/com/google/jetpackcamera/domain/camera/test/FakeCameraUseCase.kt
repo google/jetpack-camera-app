@@ -107,4 +107,8 @@ class FakeCameraUseCase : CameraUseCase {
     ) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun toggleCaptureMode() {
+        TODO("Not yet implemented")
+    }
 }
