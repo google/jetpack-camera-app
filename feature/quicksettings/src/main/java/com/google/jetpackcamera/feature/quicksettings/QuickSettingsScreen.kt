@@ -108,7 +108,8 @@ fun QuickSettingsScreen(
     DropDownIcon(
         modifier = modifier,
         toggleDropDown = toggleIsOpen,
-        isOpen = isOpen)
+        isOpen = isOpen
+    )
 }
 
 // enum representing which individual quick setting is currently expanded
@@ -170,6 +171,5 @@ private fun ExpandedQuickSettingsUi(
                 )
             }
         }
-        //Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
     }
 }

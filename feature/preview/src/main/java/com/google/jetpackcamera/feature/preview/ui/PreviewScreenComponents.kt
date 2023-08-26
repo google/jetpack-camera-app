@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.util.Log
+import android.view.Display
 import android.view.View
 import androidx.camera.core.Preview
 import androidx.compose.animation.core.animateFloatAsState
@@ -29,6 +30,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.PreviewUiState
-import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.viewfinder.CameraPreview
@@ -59,10 +60,13 @@ import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
-// this is the preview surface display. It implements tap to focus, tap to zoom, and the
+/** this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
+ * and double tap to flip camera */
 @Composable
 fun PreviewDisplay(
-    viewModel: PreviewViewModel,
+    onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
+    onFlipCamera: () -> Unit,
+
     transformableState: TransformableState,
     previewUiState: PreviewUiState,
     deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
@@ -82,12 +86,12 @@ fun PreviewDisplay(
                     onDoubleTap = { offset ->
                         // double tap to flip camera
                         Log.d(TAG, "onDoubleTap $offset")
-                        viewModel.flipCamera()
+                        onFlipCamera()
                     },
                     onTap = { offset ->
                         // tap to focus
                         try {
-                            viewModel.tapToFocus(
+                            onTapToFocus(
                                 viewInfo.display,
                                 viewInfo.width,
                                 viewInfo.height,
@@ -172,14 +176,15 @@ fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
 }
 
 @Composable
-fun ZoomScaleText(zoomScale: Float, show: Boolean) {
+fun ZoomScaleText(zoomScale: Float) {
     val contentAlpha = animateFloatAsState(
-        targetValue = if (show) 1f else 0f, label = "zoomScaleAlphaAnimation",
+        targetValue = 10f,
+        label = "zoomScaleAlphaAnimation",
         animationSpec = tween()
     )
     Text(
         modifier = Modifier.alpha(contentAlpha.value),
-        text = String.format("%.1fx", zoomScale),
+        text = "%.1fx".format(zoomScale),
         fontSize = 20.sp,
         color = Color.White
     )
@@ -195,6 +200,7 @@ fun CaptureButton(
 ) {
     Box(
         modifier = modifier
+            .fillMaxHeight()
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -207,8 +213,6 @@ fun CaptureButton(
             .size(120.dp)
             .padding(18.dp)
             .border(4.dp, Color.White, CircleShape),
-        // verticalArrangement = Arrangement.Bottom,
-        // horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(

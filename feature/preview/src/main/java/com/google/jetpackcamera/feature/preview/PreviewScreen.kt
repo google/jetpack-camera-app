@@ -68,6 +68,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
+private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 
 /**
  * Screen used for the Preview feature.
@@ -95,7 +96,7 @@ fun PreviewScreen(
         onTransformation = { zoomChange, _, _ ->
             zoomScale = viewModel.setZoomScale(zoomChange)
             zoomScaleShow = true
-            zoomHandler.postDelayed({ zoomScaleShow = false }, 3000)
+            zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
         })
 
     LaunchedEffect(lifecycleOwner) {
@@ -114,7 +115,8 @@ fun PreviewScreen(
     } else if (previewUiState.cameraState == CameraState.READY) {
         // display camera feed. this stays behind everything else
         PreviewDisplay(
-            viewModel = viewModel,
+            onFlipCamera = viewModel::flipCamera,
+            onTapToFocus = viewModel::tapToFocus,
             transformableState = transformableState,
             previewUiState = previewUiState,
             deferredSurfaceProvider = deferredSurfaceProvider
@@ -167,11 +169,9 @@ fun PreviewScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                ZoomScaleText(
-                    zoomScale = zoomScale,
-                    show = zoomScaleShow
-                )
-
+                if (zoomScaleShow) {
+                    ZoomScaleText(zoomScale = zoomScale)
+                }
 
                 Row(
                     modifier =
@@ -191,8 +191,6 @@ fun PreviewScreen(
                     )
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
-                        modifier = Modifier
-                            .fillMaxHeight(),
                         onClick = { onImageCapture(viewModel) },
                         onLongPress = { onStartRecording(viewModel) },
                         onRelease = { onStopRecording(viewModel) },
