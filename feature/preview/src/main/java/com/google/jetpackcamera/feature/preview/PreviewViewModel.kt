@@ -178,21 +178,14 @@ class PreviewViewModel @Inject constructor(
 
     fun startVideoRecording() {
         Log.d(TAG, "startVideoRecording")
-        recordingJob = viewModelScope.launch {
-
-            try {
-                cameraUseCase.startVideoRecording()
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        videoRecordingState = VideoRecordingState.ACTIVE
-                    )
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    videoRecordingState = VideoRecordingState.ACTIVE
                 )
-                Log.d(TAG, "cameraUseCase.startRecording success")
-            } catch (exception: IllegalStateException) {
-                Log.d(TAG, "cameraUseCase.startVideoRecording error")
-                Log.d(TAG, exception.toString())
-            }
+            )
         }
+        recordingJob = cameraUseCase.startVideoRecording(viewModelScope)
     }
 
     fun stopVideoRecording() {
@@ -204,7 +197,6 @@ class PreviewViewModel @Inject constructor(
                 )
             )
         }
-        cameraUseCase.stopVideoRecording()
         recordingJob?.cancel()
     }
 

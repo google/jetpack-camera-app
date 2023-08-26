@@ -21,6 +21,8 @@ import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 
 /**
  * Data layer for camera.
@@ -46,9 +48,7 @@ interface CameraUseCase {
 
     suspend fun takePicture()
 
-    suspend fun startVideoRecording()
-
-    fun stopVideoRecording()
+    fun startVideoRecording(scope: CoroutineScope): Job
 
     fun setZoomScale(scale: Float): Float
 
@@ -63,4 +63,5 @@ interface CameraUseCase {
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
     }
+
 }
