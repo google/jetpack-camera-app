@@ -146,8 +146,8 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(singleStreamCaptureEnabled) "-SingleStream" else ""
-        val name = "JCA-recording-${Date()}$captureTypeString.mp4"
+        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
         }
