@@ -140,6 +140,18 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
+    fun toggleCaptureMode() {
+        val singleStreamCapture = previewUiState.value.singleStreamCapture
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    singleStreamCapture = !singleStreamCapture
+                )
+            )
+            cameraUseCase.setSingleStreamCapture(!singleStreamCapture)
+        }
+    }
+
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
         // only flip if 2 directions are available

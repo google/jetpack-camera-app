@@ -66,26 +66,28 @@ class CameraXCameraUseCase @Inject constructor(
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
+
+    private var camera: Camera? = null
     private lateinit var cameraProvider: ProcessCameraProvider
 
     //TODO apply flash from settings
-    private val imageCaptureUseCase = ImageCapture.Builder()
-        .build()
-
-    private val previewUseCase = Preview.Builder()
-        .build()
+    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private val previewUseCase = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
-
-    private var useCaseGroup: UseCaseGroup? = null
-
     private var recording: Recording? = null
 
-    private var camera: Camera? = null
+    private lateinit var useCaseGroup: UseCaseGroup
+
+    private lateinit var aspectRatio : AspectRatio
+    private var singleStreamCaptureEnabled = false
+    private var isFrontFacing = true
+
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
-        updateUseCaseGroup(currentCameraSettings.aspect_ratio)
+        this.aspectRatio = currentCameraSettings.aspect_ratio
         setFlashMode(currentCameraSettings.flash_mode_status)
+        updateUseCaseGroup()
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
         val availableCameraLens =
@@ -118,7 +120,7 @@ class CameraXCameraUseCase @Inject constructor(
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 
-        cameraProvider.runWith(cameraSelector, useCaseGroup!!) {
+        cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
         }
@@ -144,7 +146,8 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val name = "JCA-recording-${Date()}.mp4"
+        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
         }
@@ -181,11 +184,9 @@ class CameraXCameraUseCase @Inject constructor(
 
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean) {
-        cameraProvider.unbindAll()
+        this.isFrontFacing = isFrontFacing
         rebindUseCases(
-            cameraLensToSelector(
-                getLensFacing(isFrontFacing)
-            )
+
         )
     }
 
@@ -222,22 +223,30 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
-        updateUseCaseGroup(aspectRatio)
-        cameraProvider.unbindAll()
-        rebindUseCases(
-            cameraLensToSelector(
-                getLensFacing(isFrontFacing)
-            )
-        )
+        this.aspectRatio = aspectRatio
+        updateUseCaseGroup()
+        rebindUseCases()
     }
 
-    private fun updateUseCaseGroup(aspectRatio: AspectRatio) {
-        useCaseGroup = UseCaseGroup.Builder()
+    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+        singleStreamCaptureEnabled = singleStreamCapture
+        Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
+        updateUseCaseGroup()
+        rebindUseCases()
+    }
+
+    private fun updateUseCaseGroup() {
+        val useCaseGroupBuilder = UseCaseGroup.Builder()
             .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
             .addUseCase(previewUseCase)
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)
-            .build()
+
+        if (singleStreamCaptureEnabled) {
+            useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
+        }
+
+        useCaseGroup = useCaseGroupBuilder.build()
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
@@ -247,8 +256,12 @@ class CameraXCameraUseCase @Inject constructor(
             false -> CameraSelector.LENS_FACING_BACK
         }
 
-    private suspend fun rebindUseCases(cameraSelector: CameraSelector) {
-        cameraProvider.runWith(cameraSelector, useCaseGroup!!) {
+    private suspend fun rebindUseCases() {
+        val cameraSelector = cameraLensToSelector(
+            getLensFacing(isFrontFacing)
+        )
+        cameraProvider.unbindAll()
+        cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
         }
