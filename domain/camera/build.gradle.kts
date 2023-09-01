@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.data.camera"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -45,7 +45,7 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 
     // CameraX
-    val camerax_version = "1.3.0-alpha05"
+    val camerax_version = "1.3.0-SNAPSHOT"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")

@@ -6,11 +6,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.quicksettings"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -42,7 +42,7 @@ android {
 
 dependencies {
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2022.12.00")
+    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 

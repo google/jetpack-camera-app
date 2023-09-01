@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.google.jetpackcamera"
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -53,7 +53,7 @@ android {
 
 dependencies {
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2022.12.00")
+    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 

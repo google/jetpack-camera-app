@@ -8,6 +8,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven {
+            setUrl("https://androidx.dev/snapshots/builds/10707469/artifacts/repository")
+        }
         google()
         mavenCentral()
     }
