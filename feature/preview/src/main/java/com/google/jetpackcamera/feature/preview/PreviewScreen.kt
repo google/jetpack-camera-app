@@ -213,7 +213,15 @@ fun PreviewScreen(
                         .align(Alignment.TopEnd)
                         .padding(12.dp),
                     label = {
-                        Text(if(previewUiState.singleStreamCapture) "Single Stream" else "Regular")
+                        Text(
+                            stringResource(
+                                if (previewUiState.singleStreamCapture) {
+                                    R.string.capture_mode_single_stream
+                                } else {
+                                    R.string.capture_mode_multi_stream
+                                }
+                            )
+                        )
                     }
                 )
 
