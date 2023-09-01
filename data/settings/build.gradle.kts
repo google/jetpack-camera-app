@@ -65,12 +65,15 @@ protobuf {
     }
 
     generateProtoTasks {
-        ofSourceSet("main").forEach { task ->
+        all().forEach {task ->
             task.builtins {
-                getByName("java") {
+                create("java") {
                     option("lite")
                 }
-                getByName("kotlin") {
+            }
+
+            task.builtins {
+                create("kotlin") {
                     option("lite")
                 }
             }
