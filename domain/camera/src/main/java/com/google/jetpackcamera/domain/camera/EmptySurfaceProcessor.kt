@@ -28,11 +28,14 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.newHandlerExecutor
 import androidx.camera.core.processing.OpenGlRenderer
 import androidx.camera.core.processing.ShaderProvider
-import androidx.core.util.Preconditions.checkState
 import java.util.concurrent.Executor
 
 private const val GL_THREAD_NAME = "EmptySurfaceProcessor"
 
+/**
+ * This is a [SurfaceProcessor] that passes on the same content from the input
+ * surface to the output surface. Used to make a copies of surfaces.
+ */
 @SuppressLint("RestrictedApi")
 class EmptySurfaceProcessor : SurfaceProcessor {
 
@@ -106,6 +109,13 @@ class EmptySurfaceProcessor : SurfaceProcessor {
         outputSurfaces[surfaceOutput] = surface
     }
 
+    /**
+     * Releases associated resources.
+     *
+     * Closes output surfaces.
+     * Releases the [OpenGlRenderer].
+     * Quits the GL HandlerThread.
+     */
     fun release() {
         glExecutor.execute {
             releaseInternal()
@@ -127,6 +137,6 @@ class EmptySurfaceProcessor : SurfaceProcessor {
     }
 
     private fun checkGlThread() {
-        checkState(GL_THREAD_NAME == Thread.currentThread().name)
+        check(GL_THREAD_NAME == Thread.currentThread().name)
     }
 }

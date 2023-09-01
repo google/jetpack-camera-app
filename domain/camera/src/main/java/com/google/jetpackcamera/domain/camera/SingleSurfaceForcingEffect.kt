@@ -23,6 +23,14 @@ private const val TARGETS =
 
 private val emptySurfaceProcessor = EmptySurfaceProcessor()
 
+/**
+ * [CameraEffect] that applies a no-op effect.
+ *
+ * Essentially copying the camera input to the targets,
+ * Preview, VideoCapture and ImageCapture.
+ *
+ * Used as a workaround to force the above 3 use cases to use a single camera stream.
+ */
 class SingleSurfaceForcingEffect : CameraEffect(
     TARGETS,
     emptySurfaceProcessor.glExecutor,
@@ -33,4 +41,3 @@ class SingleSurfaceForcingEffect : CameraEffect(
         emptySurfaceProcessor.release()
     }
 }
-

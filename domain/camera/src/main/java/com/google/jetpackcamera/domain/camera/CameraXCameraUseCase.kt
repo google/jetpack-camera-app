@@ -228,8 +228,8 @@ class CameraXCameraUseCase @Inject constructor(
         rebindUseCases()
     }
 
-    override suspend fun toggleCaptureMode() {
-        singleStreamCaptureEnabled = !singleStreamCaptureEnabled
+    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+        singleStreamCaptureEnabled = singleStreamCapture
         Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
         updateUseCaseGroup()
         rebindUseCases()

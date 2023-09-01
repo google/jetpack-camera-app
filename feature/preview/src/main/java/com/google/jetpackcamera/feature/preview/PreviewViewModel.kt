@@ -148,7 +148,7 @@ class PreviewViewModel @Inject constructor(
                     singleStreamCapture = !singleStreamCapture
                 )
             )
-            cameraUseCase.toggleCaptureMode()
+            cameraUseCase.setSingleStreamCapture(!singleStreamCapture)
         }
     }
 
