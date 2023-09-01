@@ -13,11 +13,11 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Jetpack Camera"
-include ':app'
-include ':feature:preview'
-include ':domain:camera'
-include ':camera-viewfinder-compose'
-include ':feature:settings'
-include ':data:settings'
-include ':core:common'
-include ':feature:quicksettings'
+include(":app")
+include(":feature:preview")
+include(":domain:camera")
+include(":camera-viewfinder-compose")
+include(":feature:settings")
+include(":data:settings")
+include(":core:common")
+include(":feature:quicksettings")
