@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui
 
 import android.Manifest
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -45,6 +46,7 @@ fun JcaApp() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun JetpackCameraNavHost(
     modifier: Modifier,

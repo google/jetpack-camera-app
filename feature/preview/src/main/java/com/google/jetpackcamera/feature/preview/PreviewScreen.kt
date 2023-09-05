@@ -42,8 +42,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ChipColors
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +80,7 @@ private const val TAG = "PreviewScreen"
  * Screen used for the Preview feature.
  */
 @OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalMaterial3Api
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
@@ -118,31 +123,31 @@ fun PreviewScreen(
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         BoxWithConstraints(
-            Modifier.background(Color.Black)
+            Modifier
+                .background(Color.Black)
                 .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = { offset ->
-                        // double tap to flip camera
-                        Log.d(TAG, "onDoubleTap $offset")
-                        viewModel.flipCamera()
-                    },
-                    onTap = { offset ->
-                        // tap to focus
-                        try {
-                            viewModel.tapToFocus(
-                                viewInfo.display,
-                                viewInfo.width,
-                                viewInfo.height,
-                                offset.x, offset.y
-                            )
-                            Log.d(TAG, "onTap $offset")
-                        } catch (e: UninitializedPropertyAccessException) {
-                            Log.d(TAG, "onTap $offset")
-                            e.printStackTrace()
+                    detectTapGestures(
+                        onDoubleTap = { offset ->
+                            Log.d(TAG, "onDoubleTap $offset")
+                            viewModel.flipCamera()
+                        },
+                        onTap = { offset ->
+                            // tap to focus
+                            try {
+                                viewModel.tapToFocus(
+                                    viewInfo.display,
+                                    viewInfo.width,
+                                    viewInfo.height,
+                                    offset.x, offset.y
+                                )
+                                Log.d(TAG, "onTap $offset")
+                            } catch (e: UninitializedPropertyAccessException) {
+                                Log.d(TAG, "onTap $offset")
+                                e.printStackTrace()
+                            }
                         }
-                    }
-                )
-            },
+                    )
+                },
 
             contentAlignment = Alignment.Center
         ) {
@@ -201,6 +206,24 @@ fun PreviewScreen(
                     modifier = Modifier.size(72.dp)
                 )
             }
+
+                SuggestionChip(
+                    onClick = { viewModel.toggleCaptureMode() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp),
+                    label = {
+                        Text(
+                            stringResource(
+                                if (previewUiState.singleStreamCapture) {
+                                    R.string.capture_mode_single_stream
+                                } else {
+                                    R.string.capture_mode_multi_stream
+                                }
+                            )
+                        )
+                    }
+                )
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

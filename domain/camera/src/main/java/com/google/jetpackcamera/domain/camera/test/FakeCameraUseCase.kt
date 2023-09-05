@@ -116,4 +116,8 @@ class FakeCameraUseCase : CameraUseCase {
     ) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+        TODO("Not yet implemented")
+    }
 }

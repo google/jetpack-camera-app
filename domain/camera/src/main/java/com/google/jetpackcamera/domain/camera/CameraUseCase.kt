@@ -60,6 +60,8 @@ interface CameraUseCase {
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
+    suspend fun setSingleStreamCapture(singleStreamCapture: Boolean)
+
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
     }
