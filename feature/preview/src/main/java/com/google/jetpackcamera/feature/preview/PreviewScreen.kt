@@ -31,16 +31,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ChipColors
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -147,23 +137,23 @@ fun PreviewScreen(
                 onNavigateToSettings = onNavigateToSettings
             )
 
-                SuggestionChip(
-                    onClick = { viewModel.toggleCaptureMode() },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp),
-                    label = {
-                        Text(
-                            stringResource(
-                                if (previewUiState.singleStreamCapture) {
-                                    R.string.capture_mode_single_stream
-                                } else {
-                                    R.string.capture_mode_multi_stream
-                                }
-                            )
+            SuggestionChip(
+                onClick = { viewModel.toggleCaptureMode() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp),
+                label = {
+                    Text(
+                        stringResource(
+                            if (previewUiState.singleStreamCapture) {
+                                R.string.capture_mode_single_stream
+                            } else {
+                                R.string.capture_mode_multi_stream
+                            }
                         )
-                    }
-                )
+                    )
+                }
+            )
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -191,9 +181,9 @@ fun PreviewScreen(
                     )
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
-                        onClick = { onImageCapture(viewModel) },
-                        onLongPress = { onStartRecording(viewModel) },
-                        onRelease = { onStopRecording(viewModel) },
+                        onClick = { viewModel.captureImage() },
+                        onLongPress = { viewModel.startVideoRecording() },
+                        onRelease = { viewModel.stopVideoRecording() },
                         state = previewUiState.videoRecordingState
                     )
                     /* spacer is a placeholder to maintain the proportionate location of this row of
@@ -209,16 +199,4 @@ fun PreviewScreen(
             }
         }
     }
-}
-
-fun onStartRecording(viewModel: PreviewViewModel) {
-    viewModel.startVideoRecording()
-}
-
-fun onStopRecording(viewModel: PreviewViewModel) {
-    viewModel.stopVideoRecording()
-}
-
-fun onImageCapture(viewModel: PreviewViewModel) {
-    viewModel.captureImage()
 }
