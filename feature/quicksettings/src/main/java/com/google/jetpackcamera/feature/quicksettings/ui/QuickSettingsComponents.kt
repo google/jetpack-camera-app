@@ -44,42 +44,68 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlin.math.min
 
 
-// completed components
+// completed components ready to go into preview screen
 
 //TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
-    setRatio: (/*TODO: insert ratio function*/) -> Unit,
-    currentRatio: Int
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
+    currentRatio: AspectRatio
 ) {
     val buttons: Array<@Composable () -> Unit> = arrayOf(
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 1, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 2, currentRatio = currentRatio) },
-        { QuickSetRatio(onClick = { setRatio() }, ratio = 3, currentRatio = currentRatio) }
-
+        {
+            QuickSetRatio(
+                onClick = { setRatio(AspectRatio.THREE_FOUR) },
+                ratio = AspectRatio.THREE_FOUR,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
+                ratio = AspectRatio.NINE_SIXTEEN,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                onClick = { setRatio(AspectRatio.ONE_ONE) },
+                ratio = AspectRatio.ONE_ONE,
+                currentRatio = currentRatio,
+                isHighlightEnabled = true
+            )
+        }
     )
     ExpandedQuickSetting(quickSettingButtons = buttons)
 }
 
 //TODO: Implement Set Ratio
 @Composable
-fun QuickSetRatio(onClick: () -> Unit, ratio: Int, currentRatio: Int) {
+fun QuickSetRatio(
+    onClick: () -> Unit,
+    ratio: AspectRatio,
+    currentRatio: AspectRatio,
+    isHighlightEnabled: Boolean = false
+) {
     val enum = when (ratio) {
-        1 -> CameraAspectRatio.THREE_FOUR
-        2 -> CameraAspectRatio.NINE_SIXTEEN
-        3 -> CameraAspectRatio.ONE_ONE
+        AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+        AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+        AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
         else -> CameraAspectRatio.ONE_ONE
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         onClick = { onClick() },
+        isHighLighted = isHighlightEnabled && (ratio == currentRatio)
     )
 }
 
@@ -91,9 +117,7 @@ fun QuickSetFlash(onClick: (FlashModeStatus) -> Unit, currentFlashMode: FlashMod
         FlashModeStatus.ON -> CameraFlashMode.ON
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         isHighLighted = currentFlashMode == FlashModeStatus.ON,
         onClick =
         {
@@ -113,9 +137,7 @@ fun QuickFlipCamera(flipCamera: (Boolean) -> Unit, currentFacingFront: Boolean) 
         false -> CameraLensFace.BACK
     }
     QuickSettingUiItem(
-        drawableResId = enum.getDrawableResId(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        enum = enum,
         onClick = { flipCamera(!currentFacingFront) }
     )
 }
@@ -144,7 +166,22 @@ fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
     }
 }
 
-// subcomponents. use these to build up ui
+// subcomponents used to build completed components
+
+@Composable
+fun QuickSettingUiItem(
+    enum: QuickSettingsEnum,
+    onClick: () -> Unit,
+    isHighLighted: Boolean = false
+) {
+    QuickSettingUiItem(
+        drawableResId = enum.getDrawableResId(),
+        text = stringResource(id = enum.getTextResId()),
+        accessibilityText = stringResource(id = enum.getDescriptionResId()),
+        onClick = { onClick() },
+        isHighLighted = isHighLighted,
+    )
+}
 
 /**
  * The itemized UI component representing each button in quick settings.
@@ -204,6 +241,9 @@ fun ExpandedQuickSetting(vararg quickSettingButtons: @Composable () -> Unit) {
     }
 }
 
+/**
+ * Algorithm to determine dimensions of QuickSettings Icon layout
+ */
 @Composable
 fun QuickSettingsGrid(vararg quickSettingsButtons: @Composable () -> Unit) {
     val initialNumOfColumns =

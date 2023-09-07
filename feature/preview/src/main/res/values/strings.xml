@@ -17,4 +17,6 @@
 <resources>
     <string name="camera_not_ready">Camera Not Ready</string>
     <string name="settings_content_description">Settings</string>
+    <string name="capture_mode_single_stream">Single Stream</string>
+    <string name="capture_mode_multi_stream">Multi Stream</string>
 </resources>

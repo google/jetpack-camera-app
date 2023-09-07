@@ -16,9 +16,11 @@
 
 package com.google.jetpackcamera.domain.camera.test
 
+import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -36,11 +38,13 @@ class FakeCameraUseCase : CameraUseCase {
 
     var isLensFacingFront = false
     private var flashMode = FlashModeStatus.OFF
+    private var aspectRatio = AspectRatio.THREE_FOUR
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
         flashMode = currentCameraSettings.flash_mode_status
         isLensFacingFront = currentCameraSettings.default_front_camera
+        aspectRatio = currentCameraSettings.aspect_ratio
         return availableLenses
     }
 
@@ -86,7 +90,25 @@ class FakeCameraUseCase : CameraUseCase {
         flashMode = flashModeStatus
     }
 
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
+        this.aspectRatio = aspectRatio
+    }
+
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         isLensFacingFront = isFrontFacing
+    }
+
+    override fun tapToFocus(
+        display: Display,
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        x: Float,
+        y: Float
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+        TODO("Not yet implemented")
     }
 }

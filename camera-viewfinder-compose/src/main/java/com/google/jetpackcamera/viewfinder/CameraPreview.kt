@@ -19,9 +19,7 @@ package com.google.jetpackcamera.viewfinder
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType
+import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.view.PreviewView.ImplementationMode
@@ -34,6 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
+import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
+import com.google.jetpackcamera.viewfinder.surface.SurfaceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.mapNotNull
@@ -45,7 +46,8 @@ fun CameraPreview(
     modifier: Modifier,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
     onSurfaceProviderReady: (SurfaceProvider) -> Unit = {},
-    onRequestBitmapReady: (() -> Bitmap?) -> Unit
+    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
+    setSurfaceView: (View) -> Unit
 ) {
     Log.d(TAG, "CameraPreview")
 
@@ -58,6 +60,7 @@ fun CameraPreview(
 
     PreviewSurface(
         surfaceRequest = surfaceRequest,
+        setView = setSurfaceView
     )
 
 }
@@ -68,6 +71,7 @@ fun PreviewSurface(
 //    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     type: SurfaceType = SurfaceType.TEXTURE_VIEW,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
+    setView: (View) -> Unit
 ) {
     Log.d(TAG, "PreviewSurface")
 
@@ -89,6 +93,7 @@ fun PreviewSurface(
     when (implementationMode) {
         ImplementationMode.PERFORMANCE -> TODO()
         ImplementationMode.COMPATIBLE -> CombinedSurface(
+            setView = setView,
             onSurfaceEvent = { event ->
                 surface = when (event) {
                     is CombinedSurfaceEvent.SurfaceAvailable -> {
