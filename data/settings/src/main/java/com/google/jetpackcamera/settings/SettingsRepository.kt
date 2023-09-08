@@ -16,8 +16,9 @@
 
 package com.google.jetpackcamera.settings
 
-import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -26,7 +27,7 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
 
-    val cameraAppSettings : Flow<CameraAppSettings>
+    val cameraAppSettings: Flow<CameraAppSettings>
 
     suspend fun updateDefaultToFrontCamera()
 
@@ -36,7 +37,8 @@ interface SettingsRepository {
 
     suspend fun getCameraAppSettings(): CameraAppSettings
 
-// set device values from cameraUseCase
+    // set device values from cameraUseCase
     suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
 
+    suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 }

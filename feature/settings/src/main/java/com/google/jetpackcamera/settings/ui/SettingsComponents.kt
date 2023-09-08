@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -147,6 +148,35 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = currentFlashMode == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectRatio) -> Unit) {
+    BasicPopupSetting(
+        title = "set aspect ratio",
+        leadingIcon = null,
+        description = when (currentAspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> "9:16"
+            AspectRatio.THREE_FOUR -> "3:4"
+            AspectRatio.ONE_ONE -> "1:1"
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(text = "9:16",
+                    selected = currentAspectRatio == AspectRatio.NINE_SIXTEEN,
+                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
+                )
+                SingleChoiceSelector(text = "3:4",
+                    selected = currentAspectRatio == AspectRatio.THREE_FOUR,
+                    onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
+                )
+                SingleChoiceSelector(text = "1:1",
+                    selected = currentAspectRatio == AspectRatio.ONE_ONE,
+                    onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
                 )
             }
         }

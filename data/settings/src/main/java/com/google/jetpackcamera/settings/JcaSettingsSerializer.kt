@@ -35,6 +35,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDefaultFrontCamera(false)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
+        .setAspectRatioStatus(AspectRatioProto.ASPECT_RATIO_THREE_FOUR)
         .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
         .build()
 

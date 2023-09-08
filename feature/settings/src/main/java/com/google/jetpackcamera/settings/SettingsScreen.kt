@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -68,6 +69,11 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     FlashModeSetting(
         currentFlashMode = uiState.cameraAppSettings.flash_mode_status,
         setFlashMode = viewModel::setFlashMode
+    )
+
+    AspectRatioSetting(
+        currentAspectRatio = uiState.cameraAppSettings.aspect_ratio,
+        setAspectRatio = viewModel::setAspectRatio
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))

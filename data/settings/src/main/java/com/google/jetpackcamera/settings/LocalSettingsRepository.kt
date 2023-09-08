@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -50,7 +51,17 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable
+                back_camera_available = it.backCameraAvailable,
+                aspect_ratio = when (it.aspectRatioStatus) {
+                    AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
+                    AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
+                    // defaults to 3:4 aspect ratio
+                    AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
+                    AspectRatioProto.UNRECOGNIZED,
+                    null -> AspectRatio.THREE_FOUR
+
+
+                }
             )
         }
 
@@ -102,6 +113,19 @@ class LocalSettingsRepository @Inject constructor(
                 .setDefaultFrontCamera(frontLensAvailable)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
+                .build()
+        }
+    }
+
+    override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
+        val newStatus = when (aspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
+            AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
+            AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAspectRatioStatus(newStatus)
                 .build()
         }
     }
