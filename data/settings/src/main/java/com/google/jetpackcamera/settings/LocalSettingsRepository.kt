@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
@@ -49,6 +50,13 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.UNRECOGNIZED,
                     null -> FlashModeStatus.OFF
                 },
+                captureMode = when (it.captureModeStatus) {
+                    CaptureModeProto.CAMERA_MODE_SINGLE_STREAM -> CaptureModeStatus.SINGLE_STREAM
+
+                    CaptureModeProto.CAMERA_MODE_DEFAULT,
+                    CaptureModeProto.UNRECOGNIZED,
+                    null -> CaptureModeStatus.DEFAULT
+                },
                 front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable
             )
@@ -65,8 +73,8 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        val newStatus = when (status) {
+    override suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus) {
+        val newStatus = when (darkModeStatus) {
             DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
             DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
@@ -102,6 +110,18 @@ class LocalSettingsRepository @Inject constructor(
                 .setDefaultFrontCamera(frontLensAvailable)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
+                .build()
+        }
+    }
+
+    override suspend fun updateCaptureMode(captureModeStatus: CaptureModeStatus) {
+        val newStatus = when (captureModeStatus) {
+            CaptureModeStatus.DEFAULT -> CaptureModeProto.CAMERA_MODE_DEFAULT
+            CaptureModeStatus.SINGLE_STREAM -> CaptureModeProto.CAMERA_MODE_SINGLE_STREAM
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setCaptureModeStatus(newStatus)
                 .build()
         }
     }

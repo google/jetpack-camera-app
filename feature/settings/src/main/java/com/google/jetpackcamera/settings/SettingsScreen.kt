@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -63,6 +64,11 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     DefaultCameraFacing(
         cameraAppSettings = uiState.cameraAppSettings,
         onClick = viewModel::setDefaultToFrontCamera
+    )
+
+    CaptureModeSetting(
+        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        setCaptureMode = viewModel::setCaptureMode
     )
 
     FlashModeSetting(

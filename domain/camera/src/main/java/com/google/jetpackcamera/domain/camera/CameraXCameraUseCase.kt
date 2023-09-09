@@ -46,6 +46,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZO
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -81,11 +82,12 @@ class CameraXCameraUseCase @Inject constructor(
     private lateinit var useCaseGroup: UseCaseGroup
 
     private lateinit var aspectRatio : AspectRatio
-    private var singleStreamCaptureEnabled = false
+    private lateinit var captureMode : CaptureModeStatus
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspect_ratio
+        this.captureMode = currentCameraSettings.captureMode
         setFlashMode(currentCameraSettings.flash_mode_status)
         updateUseCaseGroup()
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
@@ -146,7 +148,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val captureTypeString = if(captureMode == CaptureModeStatus.SINGLE_STREAM) "SingleStream" else "MultiStream"
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
@@ -228,12 +230,14 @@ class CameraXCameraUseCase @Inject constructor(
         rebindUseCases()
     }
 
-    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
-        singleStreamCaptureEnabled = singleStreamCapture
-        Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
+    override suspend fun setCaptureMode(newCaptureMode: CaptureModeStatus) {
+        //todo finish changing this to use enum
+        captureMode =  newCaptureMode
+        //Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
         updateUseCaseGroup()
         rebindUseCases()
     }
+
 
     private fun updateUseCaseGroup() {
         val useCaseGroupBuilder = UseCaseGroup.Builder()
@@ -242,7 +246,7 @@ class CameraXCameraUseCase @Inject constructor(
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)
 
-        if (singleStreamCaptureEnabled) {
+        if (captureMode == CaptureModeStatus.SINGLE_STREAM) {
             useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
         }
 

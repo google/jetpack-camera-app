@@ -22,6 +22,7 @@ import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 class FakeCameraUseCase : CameraUseCase {
@@ -108,7 +109,7 @@ class FakeCameraUseCase : CameraUseCase {
         TODO("Not yet implemented")
     }
 
-    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+    override suspend fun setCaptureMode(captureMode: CaptureModeStatus) {
         TODO("Not yet implemented")
     }
 }

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -147,6 +148,34 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = currentFlashMode == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun CaptureModeSetting(
+    currentCaptureMode: CaptureModeStatus,
+    setCaptureMode: (CaptureModeStatus) -> Unit
+) {
+    //todo: string resources
+    BasicPopupSetting(
+        title = "Set Capture Mode",
+        leadingIcon = null,
+        description = when (currentCaptureMode) {
+            CaptureModeStatus.DEFAULT -> "Default"
+            CaptureModeStatus.SINGLE_STREAM -> "Single Stream"
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(text = "Default capture",
+                    selected = currentCaptureMode == CaptureModeStatus.DEFAULT,
+                    onClick = { setCaptureMode(CaptureModeStatus.DEFAULT) }
+                )
+                SingleChoiceSelector(text = "Single stream capture",
+                    selected = currentCaptureMode == CaptureModeStatus.SINGLE_STREAM,
+                    onClick = { setCaptureMode(CaptureModeStatus.SINGLE_STREAM) }
                 )
             }
         }

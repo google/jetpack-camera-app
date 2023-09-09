@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings.test
 
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -34,8 +35,8 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(default_front_camera = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkmodeStatus)
+    override suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus) {
+        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkModeStatus)
     }
 
     override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
@@ -50,6 +51,14 @@ object FakeSettingsRepository : SettingsRepository {
         frontLensAvailable: Boolean,
         backLensAvailable: Boolean
     ) {
-        TODO("Not yet implemented")
+        currentCameraSettings = currentCameraSettings.copy(
+            front_camera_available = frontLensAvailable,
+            back_camera_available = backLensAvailable
+        )
+    }
+
+    override suspend fun updateCaptureMode(captureModeStatus: CaptureModeStatus) {
+        currentCameraSettings =
+            currentCameraSettings.copy(captureMode = captureModeStatus)
     }
 }

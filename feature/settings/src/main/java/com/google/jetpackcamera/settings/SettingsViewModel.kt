@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -58,6 +59,10 @@ class SettingsViewModel @Inject constructor(
                         disabled = false
                     )
                 )
+
+                Log.d(
+                    TAG, "updated setting" + settingsRepository.getCameraAppSettings().captureMode
+                )
             }
         }
         viewModelScope.launch {
@@ -80,12 +85,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-
     fun setDarkMode(darkModeStatus: DarkModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
             Log.d(
-                TAG, "set dark mode theme: " + settingsRepository.getCameraAppSettings().dark_mode_status
+                TAG,
+                "set dark mode theme: " + settingsRepository.getCameraAppSettings().dark_mode_status
             )
         }
     }
@@ -93,6 +98,17 @@ class SettingsViewModel @Inject constructor(
     fun setFlashMode(flashModeStatus: FlashModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateFlashModeStatus(flashModeStatus)
+        }
+    }
+
+    fun setCaptureMode(captureModeStatus: CaptureModeStatus) {
+        viewModelScope.launch {
+            settingsRepository.updateCaptureMode(captureModeStatus)
+
+            Log.d(
+                TAG,
+                "set default capture mode " + settingsRepository.getCameraAppSettings().default_front_camera
+            )
         }
     }
 }

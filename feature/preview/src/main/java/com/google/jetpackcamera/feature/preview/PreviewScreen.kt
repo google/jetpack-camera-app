@@ -70,6 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.settings.model.CaptureModeStatus
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -207,23 +208,23 @@ fun PreviewScreen(
                 )
             }
 
-                SuggestionChip(
-                    onClick = { viewModel.toggleCaptureMode() },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp),
-                    label = {
-                        Text(
-                            stringResource(
-                                if (previewUiState.singleStreamCapture) {
-                                    R.string.capture_mode_single_stream
-                                } else {
-                                    R.string.capture_mode_multi_stream
-                                }
-                            )
+            SuggestionChip(
+                onClick = { viewModel.toggleCaptureMode() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp),
+                label = {
+                    Text(
+                        stringResource(
+                            when (previewUiState.currentCameraSettings.captureMode) {
+                                CaptureModeStatus.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                CaptureModeStatus.DEFAULT ->  R.string.capture_mode_multi_stream
+
+                            }
                         )
-                    }
-                )
+                    )
+                }
+            )
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
