@@ -102,9 +102,9 @@ fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkMod
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         description = when (currentDarkModeStatus) {
-            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
-            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
-            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
+            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_description_system)
+            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_description_dark)
+            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_description_light)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -131,9 +131,9 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         description = when (currentFlashMode) {
-            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
-            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_status_on)
-            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_status_off)
+            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
+            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_description_on)
+            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_description_off)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -161,19 +161,19 @@ fun CaptureModeSetting(
 ) {
     //todo: string resources
     BasicPopupSetting(
-        title = "Set Capture Mode",
+        title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
         description = when (currentCaptureMode) {
-            CaptureModeStatus.DEFAULT -> "Default"
-            CaptureModeStatus.SINGLE_STREAM -> "Single Stream"
+            CaptureModeStatus.DEFAULT -> stringResource(id = R.string.capture_mode_description_default)
+            CaptureModeStatus.SINGLE_STREAM -> stringResource(id = R.string.capture_mode_description_single_stream)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = "Default capture",
+                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_selector_default),
                     selected = currentCaptureMode == CaptureModeStatus.DEFAULT,
                     onClick = { setCaptureMode(CaptureModeStatus.DEFAULT) }
                 )
-                SingleChoiceSelector(text = "Single stream capture",
+                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_description_single_stream),
                     selected = currentCaptureMode == CaptureModeStatus.SINGLE_STREAM,
                     onClick = { setCaptureMode(CaptureModeStatus.SINGLE_STREAM) }
                 )

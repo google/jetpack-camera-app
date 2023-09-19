@@ -81,8 +81,8 @@ class CameraXCameraUseCase @Inject constructor(
 
     private lateinit var useCaseGroup: UseCaseGroup
 
-    private lateinit var aspectRatio : AspectRatio
-    private lateinit var captureMode : CaptureModeStatus
+    private lateinit var aspectRatio: AspectRatio
+    private lateinit var captureMode: CaptureModeStatus
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -148,7 +148,10 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(captureMode == CaptureModeStatus.SINGLE_STREAM) "SingleStream" else "MultiStream"
+        val captureTypeString = when (captureMode) {
+            CaptureModeStatus.DEFAULT -> "SingleStream"
+            CaptureModeStatus.SINGLE_STREAM -> "MultiStream"
+        }
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
@@ -231,9 +234,12 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     override suspend fun setCaptureMode(newCaptureMode: CaptureModeStatus) {
-        //todo finish changing this to use enum
-        captureMode =  newCaptureMode
-        //Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
+        captureMode = newCaptureMode
+        Log.d(
+            TAG,
+            "Changing CaptureMode: singleStreamCaptureEnabled:" +
+                    (captureMode == CaptureModeStatus.SINGLE_STREAM)
+        )
         updateUseCaseGroup()
         rebindUseCases()
     }

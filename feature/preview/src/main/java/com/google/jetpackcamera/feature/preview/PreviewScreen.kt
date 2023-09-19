@@ -42,8 +42,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ChipColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -218,7 +216,7 @@ fun PreviewScreen(
                         stringResource(
                             when (previewUiState.currentCameraSettings.captureMode) {
                                 CaptureModeStatus.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                CaptureModeStatus.DEFAULT ->  R.string.capture_mode_multi_stream
+                                CaptureModeStatus.DEFAULT -> R.string.capture_mode_multi_stream
 
                             }
                         )
