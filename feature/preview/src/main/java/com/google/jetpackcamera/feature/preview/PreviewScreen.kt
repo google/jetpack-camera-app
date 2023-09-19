@@ -20,7 +20,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
-import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -82,12 +81,6 @@ fun PreviewScreen(
 
     val zoomHandler = Handler(Looper.getMainLooper())
 
-    val transformableState = rememberTransformableState(
-        onTransformation = { zoomChange, _, _ ->
-            zoomScale = viewModel.setZoomScale(zoomChange)
-            zoomScaleShow = true
-            zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
-        })
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -107,8 +100,12 @@ fun PreviewScreen(
         PreviewDisplay(
             onFlipCamera = viewModel::flipCamera,
             onTapToFocus = viewModel::tapToFocus,
-            transformableState = transformableState,
-            previewUiState = previewUiState,
+            onZoomChange = { zoomChange: Float ->
+                viewModel.setZoomScale(zoomChange)
+                zoomScaleShow = true
+                zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
+            },
+            aspectRatio = previewUiState.currentCameraSettings.aspect_ratio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
         // overlay
@@ -184,7 +181,7 @@ fun PreviewScreen(
                         onClick = { viewModel.captureImage() },
                         onLongPress = { viewModel.startVideoRecording() },
                         onRelease = { viewModel.stopVideoRecording() },
-                        state = previewUiState.videoRecordingState
+                        videoRecordingState = previewUiState.videoRecordingState
                     )
                     /* spacer is a placeholder to maintain the proportionate location of this row of
                      UI elements. if you want to  add another element, replace it with ONE element.

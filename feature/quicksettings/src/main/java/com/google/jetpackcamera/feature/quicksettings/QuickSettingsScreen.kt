@@ -82,10 +82,10 @@ fun QuickSettingsScreen(
                 .clickable {
                     // if a setting is expanded, click on the background to close it.
                     // if no other settings are expanded, then close the popup
-                    if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE)
-                        toggleIsOpen()
-                    else
-                        shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+                    when (shouldShowQuickSetting) {
+                        IsExpandedQuickSetting.NONE -> toggleIsOpen()
+                        else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+                    }
                 },
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally

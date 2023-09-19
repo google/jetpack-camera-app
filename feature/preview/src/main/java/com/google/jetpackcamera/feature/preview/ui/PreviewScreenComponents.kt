@@ -25,8 +25,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.TransformableState
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -52,9 +52,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
@@ -66,11 +66,16 @@ private const val TAG = "PreviewScreen"
 fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
-
-    transformableState: TransformableState,
-    previewUiState: PreviewUiState,
+    onZoomChange: (Float) -> Unit,
+    aspectRatio: AspectRatio,
     deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
 ) {
+
+    val transformableState = rememberTransformableState(
+        onTransformation = { zoomChange, _, _ ->
+            onZoomChange(zoomChange)
+
+        })
     val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
@@ -109,8 +114,7 @@ fun PreviewDisplay(
         contentAlignment = Alignment.Center
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatio: Float =
-            previewUiState.currentCameraSettings.aspect_ratio.ratio.toFloat()
+        val aspectRatio: Float = aspectRatio.ratio.toFloat()
         val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
         val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
         val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
@@ -196,7 +200,7 @@ fun CaptureButton(
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     onRelease: () -> Unit,
-    state: VideoRecordingState
+    videoRecordingState: VideoRecordingState
 ) {
     Box(
         modifier = modifier
@@ -217,7 +221,7 @@ fun CaptureButton(
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(
                 color =
-                when (state) {
+                when (videoRecordingState) {
                     VideoRecordingState.INACTIVE -> Color.Transparent
                     VideoRecordingState.ACTIVE -> Color.Red
                 }

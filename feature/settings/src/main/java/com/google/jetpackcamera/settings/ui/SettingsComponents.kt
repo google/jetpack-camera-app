@@ -86,7 +86,10 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Unit) {
+fun DefaultCameraFacing(
+    cameraAppSettings: CameraAppSettings,
+    onClick: () -> Unit
+) {
     SwitchSettingUI(
         title = stringResource(id = R.string.default_facing_camera_title),
         description = null,
@@ -98,7 +101,10 @@ fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Uni
 }
 
 @Composable
-fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkModeStatus) -> Unit) {
+fun DarkModeSetting(
+    currentDarkModeStatus: DarkModeStatus,
+    setDarkMode: (DarkModeStatus) -> Unit
+) {
     BasicPopupSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
@@ -127,8 +133,13 @@ fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkMod
 }
 
 @Composable
-fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashModeStatus) -> Unit) {
+fun FlashModeSetting(
+    modifier: Modifier = Modifier,
+    currentFlashMode: FlashModeStatus,
+    setFlashMode: (FlashModeStatus) -> Unit
+) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         description = when (currentFlashMode) {
@@ -165,18 +176,19 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
 
 @Composable
 fun BasicPopupSetting(
+    modifier: Modifier = Modifier,
     title: String,
     description: String?,
+    enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)?,
     popupContents: @Composable () -> Unit
 ) {
     val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
-        modifier = Modifier.clickable() { popupStatus.value = true },
+        modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        //onClick = { popupStatus.value = true },
         trailingContent = null
     )
     if (popupStatus.value) {
@@ -201,6 +213,7 @@ fun BasicPopupSetting(
  */
 @Composable
 fun SwitchSettingUI(
+    modifier: Modifier = Modifier,
     title: String,
     description: String?,
     leadingIcon: @Composable (() -> Unit)?,
@@ -209,19 +222,17 @@ fun SwitchSettingUI(
     enabled: Boolean
 ) {
     SettingUI(
-        modifier = Modifier.toggleable(
+        modifier = modifier.toggleable(
+            enabled = enabled,
             role = Role.Switch,
             value = settingValue,
             onValueChange = { _ -> onClick() }
         ),
-        //enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        //onClick = onClick,
         trailingContent = {
             Switch(
-                //modifier = Modifier,
                 enabled = enabled,
                 checked = settingValue,
                 onCheckedChange = {
@@ -243,11 +254,10 @@ fun SettingUI(
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
-    //onClick: () -> Unit,
-    //enabled: Boolean = true
-) {
+
+    ) {
     ListItem(
-        modifier = modifier, //Modifier.clickable(enabled = enabled) { onClick() },
+        modifier = modifier,
         headlineText = { Text(title) },
         supportingText = when (description) {
             null -> null
