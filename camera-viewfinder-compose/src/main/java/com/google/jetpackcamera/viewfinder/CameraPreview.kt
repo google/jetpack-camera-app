@@ -16,8 +16,10 @@
 
 package com.google.jetpackcamera.viewfinder
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
@@ -31,7 +33,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Modifier
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
 import com.google.jetpackcamera.viewfinder.surface.SurfaceType
@@ -41,13 +42,14 @@ import kotlinx.coroutines.flow.mapNotNull
 
 private const val TAG = "Preview"
 
+@SuppressLint("RestrictedApi")
 @Composable
 fun CameraPreview(
-    modifier: Modifier,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
     onSurfaceProviderReady: (SurfaceProvider) -> Unit = {},
     onRequestBitmapReady: (() -> Bitmap?) -> Unit,
-    setSurfaceView: (View) -> Unit
+    setSurfaceView: (View) -> Unit,
+    parentSize: Size,
 ) {
     Log.d(TAG, "CameraPreview")
 
@@ -60,7 +62,8 @@ fun CameraPreview(
 
     PreviewSurface(
         surfaceRequest = surfaceRequest,
-        setView = setSurfaceView
+        setView = setSurfaceView,
+        parentSize = parentSize
     )
 
 }
@@ -71,7 +74,8 @@ fun PreviewSurface(
 //    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     type: SurfaceType = SurfaceType.TEXTURE_VIEW,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
-    setView: (View) -> Unit
+    setView: (View) -> Unit,
+    parentSize: Size
 ) {
     Log.d(TAG, "PreviewSurface")
 
@@ -104,7 +108,9 @@ fun PreviewSurface(
                         null
                     }
                 }
-            }
+            },
+            surfaceRequest = surfaceRequest,
+            parentSize = parentSize
         )
     }
 }

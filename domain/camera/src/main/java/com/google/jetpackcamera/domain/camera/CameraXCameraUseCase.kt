@@ -21,6 +21,7 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Rational
+import android.util.Size
 import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -31,9 +32,13 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -72,7 +77,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase = Preview.Builder().build()
+    private var previewUseCase: Preview? = null
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
@@ -80,9 +85,11 @@ class CameraXCameraUseCase @Inject constructor(
 
     private lateinit var useCaseGroup: UseCaseGroup
 
-    private lateinit var aspectRatio : AspectRatio
+    private lateinit var aspectRatio: AspectRatio
     private var singleStreamCaptureEnabled = false
     private var isFrontFacing = true
+
+    private var currentSurfaceProvider: SurfaceProvider? = null
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspect_ratio
@@ -117,8 +124,9 @@ class CameraXCameraUseCase @Inject constructor(
 
         val cameraSelector =
             cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
+        currentSurfaceProvider = surfaceProvider
 
-        previewUseCase.setSurfaceProvider(surfaceProvider)
+        previewUseCase?.setSurfaceProvider(currentSurfaceProvider)
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -146,7 +154,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val captureTypeString = if (singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
@@ -236,9 +244,32 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     private fun updateUseCaseGroup() {
+        val aspectRatioStrategy = when (aspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        }
+
+        val previewNeedsUpdate = true || previewUseCase == null ||
+                previewUseCase!!.resolutionSelector!!.aspectRatioStrategy != aspectRatioStrategy
+        if (previewNeedsUpdate) {
+            previewUseCase =
+//                Preview.Builder().setResolutionSelector(
+//                ResolutionSelector.Builder()
+//                    .setAspectRatioStrategy(aspectRatioStrategy)
+//                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build()
+//            ).build()
+                Preview.Builder().setTargetResolution(Size(500,  500)).build()
+        }
         val useCaseGroupBuilder = UseCaseGroup.Builder()
-            .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
-            .addUseCase(previewUseCase)
+            .setViewPort(
+                ViewPort.Builder(
+                    Rational(
+                        aspectRatio.ratio.denominator,
+                        aspectRatio.ratio.numerator
+                    ), previewUseCase!!.targetRotation
+                ).build()
+            )
+            .addUseCase(previewUseCase!!)
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)
 
@@ -247,6 +278,10 @@ class CameraXCameraUseCase @Inject constructor(
         }
 
         useCaseGroup = useCaseGroupBuilder.build()
+
+        if (previewNeedsUpdate) {
+            previewUseCase!!.setSurfaceProvider(currentSurfaceProvider)
+        }
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
