@@ -20,7 +20,6 @@ import android.app.Application
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
-import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -31,9 +30,11 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.UseCaseGroup
-import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -56,7 +57,6 @@ import java.util.Date
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
-private val ASPECT_RATIO_16_9 = Rational(16, 9)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -72,7 +72,10 @@ class CameraXCameraUseCase @Inject constructor(
 
     //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase = Preview.Builder().build()
+    private val previewUseCase: Preview = Preview.Builder().setResolutionSelector(
+        ResolutionSelector.Builder()
+            .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build()
+    ).build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
@@ -80,9 +83,11 @@ class CameraXCameraUseCase @Inject constructor(
 
     private lateinit var useCaseGroup: UseCaseGroup
 
-    private lateinit var aspectRatio : AspectRatio
+    private lateinit var aspectRatio: AspectRatio
     private var singleStreamCaptureEnabled = false
     private var isFrontFacing = true
+
+    private var currentSurfaceProvider: SurfaceProvider? = null
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspect_ratio
@@ -110,15 +115,16 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
+        surfaceProvider: SurfaceProvider,
         currentCameraSettings: CameraAppSettings,
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
 
         val cameraSelector =
             cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
+        currentSurfaceProvider = surfaceProvider
 
-        previewUseCase.setSurfaceProvider(surfaceProvider)
+        previewUseCase.setSurfaceProvider(currentSurfaceProvider)
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -146,7 +152,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val captureTypeString = if (singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
@@ -204,7 +210,7 @@ class CameraXCameraUseCase @Inject constructor(
                 surfaceWidth.toFloat(),
                 surfaceHeight.toFloat()
             )
-                .createPoint(x, y);
+                .createPoint(x, y)
 
             val action = FocusMeteringAction.Builder(meteringPoint).build()
 
@@ -237,7 +243,6 @@ class CameraXCameraUseCase @Inject constructor(
 
     private fun updateUseCaseGroup() {
         val useCaseGroupBuilder = UseCaseGroup.Builder()
-            .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
             .addUseCase(previewUseCase)
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)

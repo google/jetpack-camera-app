@@ -18,10 +18,13 @@ package com.google.jetpackcamera.viewfinder.surface
 
 import android.graphics.Bitmap
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import android.view.View
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.runtime.Composable
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType.*
+import com.google.jetpackcamera.viewfinder.surface.SurfaceType.SURFACE_VIEW
+import com.google.jetpackcamera.viewfinder.surface.SurfaceType.TEXTURE_VIEW
 
 private const val TAG = "CombinedSurface"
 
@@ -30,7 +33,8 @@ fun CombinedSurface(
     onSurfaceEvent: (CombinedSurfaceEvent) -> Unit,
     onRequestBitmapReady: (() -> Bitmap?) -> Unit = {},
     type: SurfaceType = TEXTURE_VIEW,
-    setView: (View) -> Unit
+    setView: (View) -> Unit,
+    surfaceRequest: SurfaceRequest?,
 ) {
     Log.d(TAG, "PreviewTexture")
 
@@ -53,7 +57,6 @@ fun CombinedSurface(
         }
 
         TEXTURE_VIEW -> Texture(
-
             {
                 when (it) {
                     is SurfaceTextureEvent.SurfaceTextureAvailable -> {
@@ -75,7 +78,8 @@ fun CombinedSurface(
                 true
             },
             onRequestBitmapReady,
-            setView = setView
+            setView = setView,
+            surfaceRequest = surfaceRequest,
         )
     }
 }

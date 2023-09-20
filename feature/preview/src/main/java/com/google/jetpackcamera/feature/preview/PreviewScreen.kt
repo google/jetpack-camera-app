@@ -42,8 +42,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ChipColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -168,15 +166,13 @@ fun PreviewScreen(
                         .transformable(state = transformableState)
                 ) {
                     CameraPreview(
-                        modifier = Modifier
-                            .fillMaxSize(),
                         onSurfaceProviderReady = onSurfaceProviderReady,
                         onRequestBitmapReady = {
                             val bitmap = it.invoke()
                         },
                         setSurfaceView = { s: View ->
                             viewInfo = s
-                        }
+                        },
                     )
                 }
             }
