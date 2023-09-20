@@ -16,13 +16,16 @@
 
 package com.google.jetpackcamera.viewfinder
 
-import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
-import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.view.PreviewView.ImplementationMode
+import androidx.compose.foundation.EmbeddedGraphicsSurface
+import androidx.compose.foundation.GraphicsSurface
+import androidx.compose.foundation.GraphicsSurfaceScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,9 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.mapNotNull
@@ -43,11 +43,9 @@ private const val TAG = "Preview"
 
 @Composable
 fun CameraPreview(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
     onSurfaceProviderReady: (SurfaceProvider) -> Unit = {},
-    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
-    setSurfaceView: (View) -> Unit
 ) {
     Log.d(TAG, "CameraPreview")
 
@@ -59,19 +57,17 @@ fun CameraPreview(
     }
 
     PreviewSurface(
+        modifier = modifier,
         surfaceRequest = surfaceRequest,
-        setView = setSurfaceView
+        implementationMode = implementationMode
     )
-
 }
 
 @Composable
 fun PreviewSurface(
+    modifier: Modifier = Modifier,
     surfaceRequest: SurfaceRequest?,
-//    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
-    type: SurfaceType = SurfaceType.TEXTURE_VIEW,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
-    setView: (View) -> Unit
 ) {
     Log.d(TAG, "PreviewSurface")
 
@@ -90,21 +86,30 @@ fun PreviewSurface(
             }
     }
 
-    when (implementationMode) {
-        ImplementationMode.PERFORMANCE -> TODO()
-        ImplementationMode.COMPATIBLE -> CombinedSurface(
-            setView = setView,
-            onSurfaceEvent = { event ->
-                surface = when (event) {
-                    is CombinedSurfaceEvent.SurfaceAvailable -> {
-                        event.surface
-                    }
-
-                    is CombinedSurfaceEvent.SurfaceDestroyed -> {
-                        null
-                    }
-                }
-            }
+    var surfaceModifier : Modifier by remember {
+        mutableStateOf(
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
         )
     }
+
+    val onInit = fun GraphicsSurfaceScope.() {
+        onSurface { newSurface, width, height ->
+            Log.d(TAG, "newSurface width: $width, height:$height")
+            surface = newSurface
+        }
+    }
+
+    when (implementationMode) {
+        ImplementationMode.PERFORMANCE -> GraphicsSurface(
+            modifier = surfaceModifier,
+            onInit = onInit
+        )
+        ImplementationMode.COMPATIBLE -> EmbeddedGraphicsSurface(
+            modifier = surfaceModifier,
+            onInit = onInit
+        )
+    }
+
 }

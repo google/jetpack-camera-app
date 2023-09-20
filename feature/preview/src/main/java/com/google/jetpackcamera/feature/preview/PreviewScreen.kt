@@ -171,12 +171,6 @@ fun PreviewScreen(
                         modifier = Modifier
                             .fillMaxSize(),
                         onSurfaceProviderReady = onSurfaceProviderReady,
-                        onRequestBitmapReady = {
-                            val bitmap = it.invoke()
-                        },
-                        setSurfaceView = { s: View ->
-                            viewInfo = s
-                        }
                     )
                 }
             }
