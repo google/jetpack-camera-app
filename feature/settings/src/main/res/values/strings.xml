@@ -21,7 +21,7 @@
     <string name="settings_title">Settings</string>
     <string name="nav_back_accessibility">Button to navigate back out of settings</string>
 
-    <string name="section_title_camera_settings">Camera Settings</string>
+    <string name="section_title_camera_settings">Default Camera Settings</string>
     <string name="section_title_app_settings">App Settings</string>
 
     <string name="default_facing_camera_title">Default to Front Camera</string>
@@ -47,5 +47,16 @@
     <string name="flash_mode_status_auto">Flash is set to Auto</string>
     <string name="flash_mode_status_on">Flash is On</string>
     <string name="flash_mode_status_off">Flash is Off</string>
+
+    <!-- Aspect Ratio  setting strings -->
+    <string name="aspect_ratio_title">Set Aspect Ratio</string>
+
+    <string name="aspect_ratio_selector_9_16">9:16</string>
+    <string name="aspect_ratio_selector_3_4">3:4</string>
+    <string name="aspect_ratio_selector_1_1">1:1</string>
+
+    <string name="aspect_ratio_description_9_16">Aspect Ratio is 9:16</string>
+    <string name="aspect_ratio_description_3_4">Aspect Ratio is 3:4</string>
+    <string name="aspect_ratio_description_1_1">Aspect Ratio is 1:1</string>
 
 </resources>

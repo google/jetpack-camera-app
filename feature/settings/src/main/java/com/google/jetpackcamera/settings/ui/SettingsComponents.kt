@@ -157,24 +157,24 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
 @Composable
 fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectRatio) -> Unit) {
     BasicPopupSetting(
-        title = "set aspect ratio",
+        title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
         description = when (currentAspectRatio) {
-            AspectRatio.NINE_SIXTEEN -> "9:16"
-            AspectRatio.THREE_FOUR -> "3:4"
-            AspectRatio.ONE_ONE -> "1:1"
+            AspectRatio.NINE_SIXTEEN -> stringResource(id = R.string.aspect_ratio_description_9_16)
+            AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
+            AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = "9:16",
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_9_16),
                     selected = currentAspectRatio == AspectRatio.NINE_SIXTEEN,
                     onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
-                SingleChoiceSelector(text = "3:4",
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = currentAspectRatio == AspectRatio.THREE_FOUR,
                     onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
                 )
-                SingleChoiceSelector(text = "1:1",
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_1_1),
                     selected = currentAspectRatio == AspectRatio.ONE_ONE,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
                 )
