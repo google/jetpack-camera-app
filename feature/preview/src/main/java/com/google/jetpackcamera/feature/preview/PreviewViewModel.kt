@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 
 
 private const val TAG = "PreviewViewModel"
@@ -145,8 +145,8 @@ class PreviewViewModel @Inject constructor(
 
     fun toggleCaptureMode() {
         val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
-            CaptureModeStatus.DEFAULT -> CaptureModeStatus.SINGLE_STREAM
-            CaptureModeStatus.SINGLE_STREAM -> CaptureModeStatus.DEFAULT
+            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
         }
 
         viewModelScope.launch {

@@ -54,10 +54,10 @@
     <!-- Capture mode setting strings -->
     <string name="capture_mode_title">Set Capture Mode</string>
 
-    <string name="capture_mode_selector_default">Default Capture (Multi Stream)</string>
+    <string name="capture_mode_selector_multi_stream">Multi Stream Capture</string>
     <string name="capture_mode_selector_single_stream">Single Stream Capture</string>
 
-    <string name="capture_mode_description_default">Default</string>
+    <string name="capture_mode_description_multi_stream">Multi Stream</string>
     <string name="capture_mode_description_single_stream">Single Stream</string>
 
 </resources>

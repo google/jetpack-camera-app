@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -156,26 +156,26 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
 
 @Composable
 fun CaptureModeSetting(
-    currentCaptureMode: CaptureModeStatus,
-    setCaptureMode: (CaptureModeStatus) -> Unit
+    currentCaptureMode: CaptureMode,
+    setCaptureMode: (CaptureMode) -> Unit
 ) {
     //todo: string resources
     BasicPopupSetting(
         title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
         description = when (currentCaptureMode) {
-            CaptureModeStatus.DEFAULT -> stringResource(id = R.string.capture_mode_description_default)
-            CaptureModeStatus.SINGLE_STREAM -> stringResource(id = R.string.capture_mode_description_single_stream)
+            CaptureMode.MULTI_STREAM -> stringResource(id = R.string.capture_mode_description_multi_stream)
+            CaptureMode.SINGLE_STREAM -> stringResource(id = R.string.capture_mode_description_single_stream)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_selector_default),
-                    selected = currentCaptureMode == CaptureModeStatus.DEFAULT,
-                    onClick = { setCaptureMode(CaptureModeStatus.DEFAULT) }
+                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_selector_multi_stream),
+                    selected = currentCaptureMode == CaptureMode.MULTI_STREAM,
+                    onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_description_single_stream),
-                    selected = currentCaptureMode == CaptureModeStatus.SINGLE_STREAM,
-                    onClick = { setCaptureMode(CaptureModeStatus.SINGLE_STREAM) }
+                    selected = currentCaptureMode == CaptureMode.SINGLE_STREAM,
+                    onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
             }
         }

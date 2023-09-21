@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -37,7 +37,7 @@ interface SettingsRepository {
 
     suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
 
-    suspend fun updateCaptureMode(captureModeStatus: CaptureModeStatus )
+    suspend fun updateCaptureMode(captureMode: CaptureMode)
 
     suspend fun getCameraAppSettings(): CameraAppSettings
 

@@ -20,6 +20,7 @@ option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
 enum CaptureModeProto {
-  CAMERA_MODE_DEFAULT = 0;
-  CAMERA_MODE_SINGLE_STREAM = 1;
+  CAMERA_MODE_UNDEFINED = 0;
+  CAMERA_MODE_MULTI_STREAM = 1;
+  CAMERA_MODE_SINGLE_STREAM = 2;
 }

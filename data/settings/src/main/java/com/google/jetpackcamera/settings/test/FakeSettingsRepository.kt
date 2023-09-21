@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settings.test
 
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -57,8 +57,8 @@ object FakeSettingsRepository : SettingsRepository {
         )
     }
 
-    override suspend fun updateCaptureMode(captureModeStatus: CaptureModeStatus) {
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
         currentCameraSettings =
-            currentCameraSettings.copy(captureMode = captureModeStatus)
+            currentCameraSettings.copy(captureMode = captureMode)
     }
 }

@@ -19,7 +19,7 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -101,9 +101,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCaptureMode(captureModeStatus: CaptureModeStatus) {
+    fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            settingsRepository.updateCaptureMode(captureModeStatus)
+            settingsRepository.updateCaptureMode(captureMode)
 
             Log.d(
                 TAG,

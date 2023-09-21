@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
@@ -51,11 +51,11 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 captureMode = when (it.captureModeStatus) {
-                    CaptureModeProto.CAMERA_MODE_SINGLE_STREAM -> CaptureModeStatus.SINGLE_STREAM
-
-                    CaptureModeProto.CAMERA_MODE_DEFAULT,
+                    CaptureModeProto.CAMERA_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
+                    CaptureModeProto.CAMERA_MODE_MULTI_STREAM,
+                    CaptureModeProto.CAMERA_MODE_UNDEFINED,
                     CaptureModeProto.UNRECOGNIZED,
-                    null -> CaptureModeStatus.DEFAULT
+                    null -> CaptureMode.MULTI_STREAM
                 },
                 front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable
@@ -114,10 +114,10 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateCaptureMode(captureModeStatus: CaptureModeStatus) {
-        val newStatus = when (captureModeStatus) {
-            CaptureModeStatus.DEFAULT -> CaptureModeProto.CAMERA_MODE_DEFAULT
-            CaptureModeStatus.SINGLE_STREAM -> CaptureModeProto.CAMERA_MODE_SINGLE_STREAM
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+        val newStatus = when (captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAMERA_MODE_MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAMERA_MODE_SINGLE_STREAM
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()

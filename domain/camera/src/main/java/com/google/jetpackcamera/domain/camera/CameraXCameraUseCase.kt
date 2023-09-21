@@ -46,7 +46,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZO
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -82,7 +82,7 @@ class CameraXCameraUseCase @Inject constructor(
     private lateinit var useCaseGroup: UseCaseGroup
 
     private lateinit var aspectRatio: AspectRatio
-    private lateinit var captureMode: CaptureModeStatus
+    private lateinit var captureMode: CaptureMode
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -149,8 +149,8 @@ class CameraXCameraUseCase @Inject constructor(
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
         val captureTypeString = when (captureMode) {
-            CaptureModeStatus.DEFAULT -> "SingleStream"
-            CaptureModeStatus.SINGLE_STREAM -> "MultiStream"
+            CaptureMode.MULTI_STREAM -> "SingleStream"
+            CaptureMode.SINGLE_STREAM -> "MultiStream"
         }
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues = ContentValues().apply {
@@ -233,12 +233,12 @@ class CameraXCameraUseCase @Inject constructor(
         rebindUseCases()
     }
 
-    override suspend fun setCaptureMode(newCaptureMode: CaptureModeStatus) {
+    override suspend fun setCaptureMode(newCaptureMode: CaptureMode) {
         captureMode = newCaptureMode
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureModeStatus.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -252,7 +252,7 @@ class CameraXCameraUseCase @Inject constructor(
             .addUseCase(imageCaptureUseCase)
             .addUseCase(videoCaptureUseCase)
 
-        if (captureMode == CaptureModeStatus.SINGLE_STREAM) {
+        if (captureMode == CaptureMode.SINGLE_STREAM) {
             useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
         }
 
