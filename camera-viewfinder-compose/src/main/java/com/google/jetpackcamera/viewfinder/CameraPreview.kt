@@ -19,6 +19,7 @@ package com.google.jetpackcamera.viewfinder
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider

@@ -125,7 +125,6 @@ class CameraXCameraUseCase @Inject constructor(
         currentSurfaceProvider = surfaceProvider
 
         previewUseCase.setSurfaceProvider(currentSurfaceProvider)
-
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
