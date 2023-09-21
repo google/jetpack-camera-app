@@ -19,6 +19,7 @@ package com.google.jetpackcamera.feature.preview
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.util.Size
 import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
@@ -60,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -166,6 +168,7 @@ fun PreviewScreen(
                         .transformable(state = transformableState)
                 ) {
                     CameraPreview(
+                        modifier = Modifier.fillMaxSize(),
                         onSurfaceProviderReady = onSurfaceProviderReady,
                         onRequestBitmapReady = {
                             val bitmap = it.invoke()

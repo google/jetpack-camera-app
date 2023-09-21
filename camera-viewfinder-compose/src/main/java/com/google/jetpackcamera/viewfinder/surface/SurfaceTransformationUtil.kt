@@ -24,6 +24,17 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.impl.utils.TransformUtils
 
+/**
+ * A util class with methods that transform the input viewFinder surface so that its preview fits
+ * the given aspect ratio of its parent view.
+ *
+ * The goal is to transform it in a way so that the entire area of
+ * [SurfaceRequest.TransformationInfo.getCropRect] is 1) visible to end users, and 2)
+ * displayed as large as possible.
+ *
+ * The inputs for the calculation are 1) the dimension of the Surface, 2) the crop rect, 3) the
+ * dimension of the Viewfinder and 4) rotation degrees
+ */
 object SurfaceTransformationUtil {
     @SuppressLint("RestrictedApi", "WrongConstant")
     private fun getRemainingRotationDegrees(transformationInfo: SurfaceRequest.TransformationInfo): Int {

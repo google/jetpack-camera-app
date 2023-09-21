@@ -87,8 +87,6 @@ class CameraXCameraUseCase @Inject constructor(
     private var singleStreamCaptureEnabled = false
     private var isFrontFacing = true
 
-    private var currentSurfaceProvider: SurfaceProvider? = null
-
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspect_ratio
         setFlashMode(currentCameraSettings.flash_mode_status)
@@ -122,10 +120,7 @@ class CameraXCameraUseCase @Inject constructor(
 
         val cameraSelector =
             cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
-        currentSurfaceProvider = surfaceProvider
-
-        previewUseCase.setSurfaceProvider(currentSurfaceProvider)
-
+        previewUseCase.setSurfaceProvider(surfaceProvider)
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
