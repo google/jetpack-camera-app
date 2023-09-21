@@ -52,17 +52,7 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable,
-                aspect_ratio = when (it.aspectRatioStatus) {
-                    AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
-                    AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
-                    // defaults to 3:4 aspect ratio
-                    AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
-                    AspectRatioProto.UNRECOGNIZED,
-                    null -> AspectRatio.THREE_FOUR
-
-
-                }
-            )
+                aspect_ratio = AspectRatio.fromProto(it.aspectRatioStatus))
         }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
