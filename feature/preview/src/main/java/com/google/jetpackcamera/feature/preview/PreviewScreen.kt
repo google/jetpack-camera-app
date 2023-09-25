@@ -42,8 +42,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ChipColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,7 +69,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.viewfinder.CameraPreview
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
@@ -92,11 +89,9 @@ fun PreviewScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
-    val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
-        Log.d(TAG, "onSurfaceProviderReady")
-        deferredSurfaceProvider.complete(it)
-    }
+    val (surfaceProvider, onSurfaceProviderReady) =
+        remember { mutableStateOf<SurfaceProvider?>(null) }
+
     lateinit var viewInfo: View
     var zoomScale by remember { mutableStateOf(1f) }
     var zoomScaleShow by remember { mutableStateOf(false) }
@@ -107,14 +102,15 @@ fun PreviewScreen(
         zoomHandler.postDelayed({ zoomScaleShow = false }, 3000)
     })
 
-    LaunchedEffect(lifecycleOwner) {
-        val surfaceProvider = deferredSurfaceProvider.await()
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.runCamera(surfaceProvider)
-            try {
-                awaitCancellation()
-            } finally {
-                viewModel.stopCamera()
+    LaunchedEffect(lifecycleOwner, surfaceProvider) {
+        if (surfaceProvider != null) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.runCamera(surfaceProvider)
+                try {
+                    awaitCancellation()
+                } finally {
+                    viewModel.stopCamera()
+                }
             }
         }
     }
