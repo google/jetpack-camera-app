@@ -60,9 +60,13 @@ import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(title: String, navBack: () -> Unit) {
+fun SettingsPageHeader(
+    modifier: Modifier = Modifier,
+    title: String,
+    navBack: () -> Unit
+) {
     TopAppBar(
-        modifier = Modifier,
+        modifier = modifier,
         title = {
             Text(title)
         },
@@ -75,11 +79,14 @@ fun SettingsPageHeader(title: String, navBack: () -> Unit) {
 }
 
 @Composable
-fun SectionHeader(title: String) {
+fun SectionHeader(
+    modifier: Modifier = Modifier,
+    title: String
+) {
     Text(
-        text = title,
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 20.dp, top = 10.dp),
+        text = title,
         color = MaterialTheme.colorScheme.primary,
         fontSize = 18.sp
     )
@@ -87,10 +94,12 @@ fun SectionHeader(title: String) {
 
 @Composable
 fun DefaultCameraFacing(
+    modifier: Modifier = Modifier,
     cameraAppSettings: CameraAppSettings,
     onClick: () -> Unit
 ) {
     SwitchSettingUI(
+        modifier = modifier,
         title = stringResource(id = R.string.default_facing_camera_title),
         description = null,
         leadingIcon = null,
@@ -102,10 +111,12 @@ fun DefaultCameraFacing(
 
 @Composable
 fun DarkModeSetting(
+    modifier: Modifier = Modifier,
     currentDarkModeStatus: DarkModeStatus,
     setDarkMode: (DarkModeStatus) -> Unit
 ) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         description = when (currentDarkModeStatus) {
@@ -275,13 +286,14 @@ fun SettingUI(
  */
 @Composable
 fun SingleChoiceSelector(
+    modifier: Modifier = Modifier,
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .selectable(
                 selected = selected,
