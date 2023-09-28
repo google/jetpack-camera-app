@@ -116,7 +116,7 @@ class CameraXCameraUseCase @Inject constructor(
         Log.d(TAG, "startPreview")
 
         val cameraSelector =
-            cameraLensToSelector(getLensFacing(currentCameraSettings.frontCameraFacing))
+            cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 

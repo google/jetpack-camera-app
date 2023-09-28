@@ -20,7 +20,7 @@ package com.google.jetpackcamera.settings.model
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
-    val frontCameraFacing: Boolean = false,
+    val isFrontCameraFacing: Boolean = false,
     val isFrontCameraAvailable: Boolean = true,
     val isBackCameraAvailable: Boolean = true,
     val darkMode: DarkModeStatus = DarkModeStatus.SYSTEM,

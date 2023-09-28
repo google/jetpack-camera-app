@@ -92,13 +92,13 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         val initialFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.frontCameraFacing
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
         settingsViewModel.setDefaultToFrontCamera()
 
         advanceUntilIdle()
 
         val newFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.frontCameraFacing
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
 
         assertFalse(initialFrontCameraValue)
         assertTrue(newFrontCameraValue)

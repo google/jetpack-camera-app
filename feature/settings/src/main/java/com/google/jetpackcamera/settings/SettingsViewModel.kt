@@ -75,7 +75,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.updateDefaultToFrontCamera()
             Log.d(
                 TAG,
-                "set camera default facing: " + settingsRepository.getCameraAppSettings().frontCameraFacing
+                "set camera default facing: " + settingsRepository.getCameraAppSettings().isFrontCameraFacing
             )
         }
     }

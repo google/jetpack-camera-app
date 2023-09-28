@@ -128,7 +128,7 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             cameraUseCase.setAspectRatio(aspectRatio, previewUiState.value
-                .currentCameraSettings.frontCameraFacing)
+                .currentCameraSettings.isFrontCameraFacing)
         }
     }
 
@@ -136,7 +136,7 @@ class PreviewViewModel @Inject constructor(
     fun flipCamera() {
         flipCamera(
             !previewUiState.value
-                .currentCameraSettings.frontCameraFacing
+                .currentCameraSettings.isFrontCameraFacing
         )
     }
 
@@ -165,12 +165,12 @@ class PreviewViewModel @Inject constructor(
                     previewUiState.value.copy(
                         currentCameraSettings =
                         previewUiState.value.currentCameraSettings.copy(
-                            frontCameraFacing = isFacingFront
+                            isFrontCameraFacing = isFacingFront
                         )
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.frontCameraFacing)
+                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
             }
         }
     }

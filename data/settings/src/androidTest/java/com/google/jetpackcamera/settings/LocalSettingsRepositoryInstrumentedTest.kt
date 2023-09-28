@@ -110,10 +110,10 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initalFrontCameraDefault = repository.getCameraAppSettings().frontCameraFacing
+        val initalFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         repository.updateDefaultToFrontCamera()
         // default to front camera is now true
-        val frontCameraDefault = repository.getCameraAppSettings().frontCameraFacing
+        val frontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         advanceUntilIdle()
 
         assertFalse(initalFrontCameraDefault)

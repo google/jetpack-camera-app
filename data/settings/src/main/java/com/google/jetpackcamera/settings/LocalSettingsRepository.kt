@@ -34,7 +34,7 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                frontCameraFacing = it.defaultFrontCamera,
+                isFrontCameraFacing = it.defaultFrontCamera,
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT

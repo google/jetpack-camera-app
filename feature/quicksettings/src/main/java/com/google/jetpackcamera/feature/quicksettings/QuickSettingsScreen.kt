@@ -150,7 +150,7 @@ private fun ExpandedQuickSettingsUi(
                     {
                         QuickFlipCamera(
                             flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                            currentFacingFront = currentCameraSettings.frontCameraFacing
+                            currentFacingFront = currentCameraSettings.isFrontCameraFacing
                         )
                     },
                     {
