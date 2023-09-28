@@ -19,7 +19,7 @@ syntax = "proto3";
 option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
-enum AspectRatioProto {
+enum AspectRatio {
   ASPECT_RATIO_UNDEFINED = 0;
   ASPECT_RATIO_THREE_FOUR = 1;
   ASPECT_RATIO_NINE_SIXTEEN= 2;

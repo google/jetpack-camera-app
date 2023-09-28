@@ -30,5 +30,5 @@ message JcaSettings {
   bool back_camera_available = 4;
   DarkModeProto dark_mode_status = 5;
   FlashModeProto flash_mode_status = 6;
-  AspectRatioProto aspect_ratio_status = 7;
+  AspectRatio aspect_ratio_status = 7;
 }

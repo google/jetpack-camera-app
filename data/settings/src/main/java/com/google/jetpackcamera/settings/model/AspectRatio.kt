@@ -17,7 +17,7 @@
 package com.google.jetpackcamera.settings.model
 
 import android.util.Rational
-import com.google.jetpackcamera.settings.AspectRatioProto
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 
 enum class AspectRatio(val ratio: Rational) {
     THREE_FOUR(Rational(3, 4)),
