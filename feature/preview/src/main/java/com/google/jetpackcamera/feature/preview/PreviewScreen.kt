@@ -115,8 +115,7 @@ fun PreviewScreen(
         ) {
             // hide settings, quickSettings, and quick capture mode button
             when (previewUiState.videoRecordingState) {
-                VideoRecordingState.ACTIVE -> {
-                }
+                VideoRecordingState.ACTIVE -> {}
                VideoRecordingState.INACTIVE -> {
                     QuickSettingsScreen(
                         modifier = Modifier
