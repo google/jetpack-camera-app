@@ -105,7 +105,7 @@ fun PreviewScreen(
                 zoomScaleShow = true
                 zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
             },
-            aspectRatio = previewUiState.currentCameraSettings.aspect_ratio,
+            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
         // overlay
@@ -187,8 +187,8 @@ fun PreviewScreen(
                                 onClick = { viewModel.flipCamera() },
                                 //enable only when phone has front and rear camera
                                 enabledCondition =
-                                previewUiState.currentCameraSettings.back_camera_available
-                                        && previewUiState.currentCameraSettings.front_camera_available
+                                previewUiState.currentCameraSettings.isBackCameraAvailable
+                                        && previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

@@ -144,20 +144,20 @@ private fun ExpandedQuickSettingsUi(
                     {
                         QuickSetFlash(
                             onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
-                            currentFlashMode = currentCameraSettings.flash_mode_status
+                            currentFlashMode = currentCameraSettings.flashMode
                         )
                     },
                     {
                         QuickFlipCamera(
                             flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                            currentFacingFront = currentCameraSettings.default_front_camera
+                            currentFacingFront = currentCameraSettings.isFrontCameraFacing
                         )
                     },
                     {
                         QuickSetRatio(
                             onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
-                            ratio = currentCameraSettings.aspect_ratio,
-                            currentRatio = currentCameraSettings.aspect_ratio
+                            ratio = currentCameraSettings.aspectRatio,
+                            currentRatio = currentCameraSettings.aspectRatio
                         )
                     },
                 )
@@ -167,7 +167,7 @@ private fun ExpandedQuickSettingsUi(
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
                     setRatio = onAspectRatioClick,
-                    currentRatio = currentCameraSettings.aspect_ratio
+                    currentRatio = currentCameraSettings.aspectRatio
                 )
             }
         }
