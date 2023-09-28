@@ -77,6 +77,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+
     DarkModeSetting(
         currentDarkModeStatus = uiState.cameraAppSettings.dark_mode_status,
         setDarkMode = viewModel::setDarkMode

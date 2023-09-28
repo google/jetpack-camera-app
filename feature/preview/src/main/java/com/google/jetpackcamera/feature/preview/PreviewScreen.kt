@@ -19,32 +19,17 @@ package com.google.jetpackcamera.feature.preview
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,31 +40,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.feature.preview.ui.CaptureButton
+import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
+import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
+import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
+import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
+private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 
 /**
  * Screen used for the Preview feature.
  */
-@OptIn(ExperimentalComposeUiApi::class)
-@ExperimentalMaterial3Api
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
@@ -92,19 +75,13 @@ fun PreviewScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
-    val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
-        Log.d(TAG, "onSurfaceProviderReady")
-        deferredSurfaceProvider.complete(it)
-    }
-    lateinit var viewInfo: View
+
     var zoomScale by remember { mutableStateOf(1f) }
+
     var zoomScaleShow by remember { mutableStateOf(false) }
+
     val zoomHandler = Handler(Looper.getMainLooper())
-    val transformableState = rememberTransformableState(onTransformation = { zoomChange, _, _ ->
-        zoomScale = viewModel.setZoomScale(zoomChange)
-        zoomScaleShow = true
-        zoomHandler.postDelayed({ zoomScaleShow = false }, 3000)
-    })
+
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -117,71 +94,29 @@ fun PreviewScreen(
             }
         }
     }
-
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
-        BoxWithConstraints(
-            Modifier
-                .background(Color.Black)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = { offset ->
-                            Log.d(TAG, "onDoubleTap $offset")
-                            viewModel.flipCamera()
-                        },
-                        onTap = { offset ->
-                            // tap to focus
-                            try {
-                                viewModel.tapToFocus(
-                                    viewInfo.display,
-                                    viewInfo.width,
-                                    viewInfo.height,
-                                    offset.x, offset.y
-                                )
-                                Log.d(TAG, "onTap $offset")
-                            } catch (e: UninitializedPropertyAccessException) {
-                                Log.d(TAG, "onTap $offset")
-                                e.printStackTrace()
-                            }
-                        }
-                    )
-                },
-
-            contentAlignment = Alignment.Center
+        // display camera feed. this stays behind everything else
+        PreviewDisplay(
+            onFlipCamera = viewModel::flipCamera,
+            onTapToFocus = viewModel::tapToFocus,
+            onZoomChange = { zoomChange: Float ->
+                viewModel.setZoomScale(zoomChange)
+                zoomScaleShow = true
+                zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
+            },
+            aspectRatio = previewUiState.currentCameraSettings.aspect_ratio,
+            deferredSurfaceProvider = deferredSurfaceProvider
+        )
+        // overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
         ) {
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatio: Float =
-                previewUiState.currentCameraSettings.aspect_ratio.ratio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
-            Box(
-                modifier = Modifier
-                    .width(width)
-                    .height(height)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .transformable(state = transformableState)
-                ) {
-                    CameraPreview(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        onSurfaceProviderReady = onSurfaceProviderReady,
-                        onRequestBitmapReady = {
-                            val bitmap = it.invoke()
-                        },
-                        setSurfaceView = { s: View ->
-                            viewInfo = s
-                        }
-                    )
-                }
-            }
-
             QuickSettingsScreen(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .align(Alignment.TopCenter),
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = { viewModel.toggleQuickSettings() },
                 currentCameraSettings = previewUiState.currentCameraSettings,
@@ -193,18 +128,12 @@ fun PreviewScreen(
                 //onTimerClick = {}/*TODO*/
             )
 
-            IconButton(
+            SettingsNavButton(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp),
-                onClick = onNavigateToSettings,
-            ) {
-                Icon(
-                    Icons.Filled.Settings,
-                    contentDescription = stringResource(R.string.settings_content_description),
-                    modifier = Modifier.size(72.dp)
-                )
-            }
+                onNavigateToSettings = onNavigateToSettings
+            )
 
             SuggestionChip(
                 onClick = { viewModel.toggleCaptureMode() },
@@ -228,71 +157,44 @@ fun PreviewScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                ZoomScaleText(
-                    zoomScale = zoomScale,
-                    show = zoomScaleShow
-                )
+                if (zoomScaleShow) {
+                    ZoomScaleText(zoomScale = zoomScale)
+                }
+
                 Row(
-                    horizontalArrangement = Arrangement.SpaceAround
+                    modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
                 ) {
-                    Row {
-                        CaptureButton(
-                            onClick = { viewModel.captureImage() },
-                            onLongPress = { viewModel.startVideoRecording() },
-                            onRelease = { viewModel.stopVideoRecording() },
-                            state = previewUiState.videoRecordingState
-                        )
-                    }
+                    FlipCameraButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        onClick = { viewModel.flipCamera() },
+                        //enable only when phone has front and rear camera
+                        enabledCondition =
+                        previewUiState.currentCameraSettings.back_camera_available
+                                && previewUiState.currentCameraSettings.front_camera_available
+                    )
+                    /*todo: close quick settings on start record/image capture*/
+                    CaptureButton(
+                        onClick = { viewModel.captureImage() },
+                        onLongPress = { viewModel.startVideoRecording() },
+                        onRelease = { viewModel.stopVideoRecording() },
+                        videoRecordingState = previewUiState.videoRecordingState
+                    )
+                    /* spacer is a placeholder to maintain the proportionate location of this row of
+                     UI elements. if you want to  add another element, replace it with ONE element.
+                     If you want to add multiple components, use a container (Box, Row, Column, etc.)
+                    */
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun ZoomScaleText(zoomScale: Float, show: Boolean) {
-    val contentAlpha = animateFloatAsState(
-        targetValue = if (show) 1f else 0f, label = "zoomScaleAlphaAnimation",
-        animationSpec = tween()
-    )
-    Text(
-        modifier = Modifier.alpha(contentAlpha.value),
-        text = String.format("%.1fx", zoomScale),
-        fontSize = 20.sp,
-        color = Color.White
-    )
-}
-
-@Composable
-fun CaptureButton(
-    onClick: () -> Unit,
-    onLongPress: () -> Unit,
-    onRelease: () -> Unit,
-    state: VideoRecordingState
-) {
-    Box(
-        modifier = Modifier
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        onLongPress()
-                    }, onPress = {
-                        awaitRelease()
-                        onRelease()
-                    }, onTap = { onClick() })
-            }
-            .size(120.dp)
-            .padding(18.dp)
-            .border(4.dp, Color.White, CircleShape)
-    ) {
-        Canvas(modifier = Modifier.size(110.dp), onDraw = {
-            drawCircle(
-                color =
-                when (state) {
-                    VideoRecordingState.INACTIVE -> Color.Transparent
-                    VideoRecordingState.ACTIVE -> Color.Red
-                }
-            )
-        })
     }
 }
