@@ -75,7 +75,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.updateDefaultToFrontCamera()
             Log.d(
                 TAG,
-                "set camera default facing: " + settingsRepository.getCameraAppSettings().default_front_camera
+                "set camera default facing: " + settingsRepository.getCameraAppSettings().frontCameraFacing
             )
         }
     }
@@ -85,7 +85,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
             Log.d(
-                TAG, "set dark mode theme: " + settingsRepository.getCameraAppSettings().dark_mode_status
+                TAG, "set dark mode theme: " + settingsRepository.getCameraAppSettings().darkMode
             )
         }
     }

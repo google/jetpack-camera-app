@@ -97,9 +97,9 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        var initialDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
+        var initialDarkModeStatus = repository.getCameraAppSettings().darkMode
         repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
-        val newDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
+        val newDarkModeStatus = repository.getCameraAppSettings().darkMode
 
         advanceUntilIdle()
         assertFalse(initialDarkModeStatus == newDarkModeStatus)
@@ -110,10 +110,10 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initalFrontCameraDefault = repository.getCameraAppSettings().default_front_camera
+        val initalFrontCameraDefault = repository.getCameraAppSettings().frontCameraFacing
         repository.updateDefaultToFrontCamera()
         // default to front camera is now true
-        val frontCameraDefault = repository.getCameraAppSettings().default_front_camera
+        val frontCameraDefault = repository.getCameraAppSettings().frontCameraFacing
         advanceUntilIdle()
 
         assertFalse(initalFrontCameraDefault)
@@ -123,10 +123,10 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_flash_mode() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initialFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
+        val initialFlashModeStatus = repository.getCameraAppSettings().flashMode
         repository.updateFlashModeStatus(FlashModeStatus.ON)
         // default to front camera is now true
-        val newFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
+        val newFlashModeStatus = repository.getCameraAppSettings().flashMode
         advanceUntilIdle()
 
         assertEquals(initialFlashModeStatus, FlashModeStatus.OFF)
@@ -136,14 +136,14 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_available_camera_lens() = runTest(StandardTestDispatcher()) {
         // available cameras start true
-        val initialFrontCamera = repository.getCameraAppSettings().front_camera_available
-        val initialBackCamera = repository.getCameraAppSettings().back_camera_available
+        val initialFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
+        val initialBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
 
         repository.updateAvailableCameraLens(frontLensAvailable = false, backLensAvailable = false)
         // available cameras now false
         advanceUntilIdle()
-        val newFrontCamera = repository.getCameraAppSettings().front_camera_available
-        val newBackCamera = repository.getCameraAppSettings().back_camera_available
+        val newFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
+        val newBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
 
         assertEquals(true, initialBackCamera && initialBackCamera)
         assertEquals(false, newFrontCamera || newBackCamera)

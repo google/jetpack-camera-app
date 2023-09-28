@@ -66,14 +66,14 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         )
 
         FlashModeSetting(
-            currentFlashMode = uiState.cameraAppSettings.flash_mode_status,
+            currentFlashMode = uiState.cameraAppSettings.flashMode,
             setFlashMode = viewModel::setFlashMode
         )
 
         SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
         DarkModeSetting(
-            currentDarkModeStatus = uiState.cameraAppSettings.dark_mode_status,
+            currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
             setDarkMode = viewModel::setDarkMode
         )
 }

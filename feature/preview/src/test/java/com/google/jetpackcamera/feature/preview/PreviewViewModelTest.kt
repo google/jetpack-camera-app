@@ -93,7 +93,7 @@ class PreviewViewModelTest {
         previewViewModel.runCamera(mock())
         previewViewModel.setFlash(FlashModeStatus.AUTO)
         advanceUntilIdle()
-        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.flash_mode_status,
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.flashMode,
         FlashModeStatus.AUTO)
     }
 
@@ -101,12 +101,12 @@ class PreviewViewModelTest {
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
         previewViewModel.runCamera(mock())
-        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.default_front_camera, false)
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.frontCameraFacing, false)
         previewViewModel.flipCamera()
 
         advanceUntilIdle()
         //ui state and camera should both be true now
-        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.default_front_camera, true)
+        assertEquals(previewViewModel.previewUiState.value.currentCameraSettings.frontCameraFacing, true)
         assertEquals(true, cameraUseCase.isLensFacingFront )
     }
 }
