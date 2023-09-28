@@ -25,8 +25,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -98,13 +98,13 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
         var initialDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
-        repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
+        repository.updateDarkModeStatus(DarkMode.LIGHT)
         val newDarkModeStatus = repository.getCameraAppSettings().dark_mode_status
 
         advanceUntilIdle()
         assertFalse(initialDarkModeStatus == newDarkModeStatus)
-        assertTrue(initialDarkModeStatus == DarkModeStatus.SYSTEM)
-        assertTrue(newDarkModeStatus == DarkModeStatus.LIGHT)
+        assertTrue(initialDarkModeStatus == DarkMode.SYSTEM)
+        assertTrue(newDarkModeStatus == DarkMode.LIGHT)
     }
 
     @Test
@@ -124,13 +124,13 @@ class LocalSettingsRepositoryInstrumentedTest {
     fun can_update_flash_mode() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
         val initialFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
-        repository.updateFlashModeStatus(FlashModeStatus.ON)
+        repository.updateFlashModeStatus(FlashMode.ON)
         // default to front camera is now true
         val newFlashModeStatus = repository.getCameraAppSettings().flash_mode_status
         advanceUntilIdle()
 
-        assertEquals(initialFlashModeStatus, FlashModeStatus.OFF)
-        assertEquals(newFlashModeStatus, FlashModeStatus.ON)
+        assertEquals(initialFlashModeStatus, FlashMode.OFF)
+        assertEquals(newFlashModeStatus, FlashMode.ON)
     }
 
     @Test

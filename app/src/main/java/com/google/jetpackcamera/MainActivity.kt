@@ -34,7 +34,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
-import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,9 +93,9 @@ private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
     when (uiState) {
         Loading -> isSystemInDarkTheme()
         is Success -> when (uiState.cameraAppSettings.dark_mode_status) {
-            DarkModeStatus.DARK -> true
-            DarkModeStatus.LIGHT -> false
-            DarkModeStatus.SYSTEM -> isSystemInDarkTheme()
+            DarkMode.DARK -> true
+            DarkMode.LIGHT -> false
+            DarkMode.SYSTEM -> isSystemInDarkTheme()
         }
     }
 

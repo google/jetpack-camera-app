@@ -23,7 +23,7 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -107,12 +107,12 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun setDarkMode() = runTest(StandardTestDispatcher()) {
         val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
-        settingsViewModel.setDarkMode(DarkModeStatus.DARK)
+        settingsViewModel.setDarkMode(DarkMode.DARK)
         advanceUntilIdle()
 
         val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
 
-        assertEquals(initialDarkMode, DarkModeStatus.SYSTEM)
-        assertEquals(DarkModeStatus.DARK, newDarkMode)
+        assertEquals(initialDarkMode, DarkMode.SYSTEM)
+        assertEquals(DarkMode.DARK, newDarkMode)
     }
 }

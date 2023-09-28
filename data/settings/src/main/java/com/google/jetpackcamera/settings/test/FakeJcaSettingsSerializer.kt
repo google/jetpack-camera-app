@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import com.google.jetpackcamera.settings.DarkModeProto
+import com.google.jetpackcamera.settings.DarkMode
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
@@ -31,7 +31,7 @@ class FakeJcaSettingsSerializer(
 ) : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
+        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
         .build()
 

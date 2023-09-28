@@ -16,6 +16,6 @@
 
 package com.google.jetpackcamera.settings.model
 
-enum class DarkModeStatus {
-    SYSTEM, DARK, LIGHT
+enum class FlashMode {
+    OFF, ON, AUTO
 }

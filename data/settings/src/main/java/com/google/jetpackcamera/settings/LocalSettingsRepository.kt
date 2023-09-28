@@ -18,11 +18,14 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -36,18 +39,18 @@ class LocalSettingsRepository @Inject constructor(
             CameraAppSettings(
                 default_front_camera = it.defaultFrontCamera,
                 dark_mode_status = when (it.darkModeStatus) {
-                    DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
-                    DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
+                    DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
+                    DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM,
                     DarkModeProto.UNRECOGNIZED,
-                    null -> DarkModeStatus.SYSTEM
+                    null -> DarkMode.SYSTEM
                 },
                 flash_mode_status = when (it.flashModeStatus) {
-                    FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
-                    FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
+                    FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
+                    FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
                     FlashModeProto.FLASH_MODE_OFF,
                     FlashModeProto.UNRECOGNIZED,
-                    null -> FlashModeStatus.OFF
+                    null -> FlashMode.OFF
                 },
                 front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable
@@ -65,11 +68,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
+    override suspend fun updateDarkModeStatus(status: DarkMode) {
         val newStatus = when (status) {
-            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
-            DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
-            DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
+            DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
+            DarkMode.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
+            DarkMode.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -78,11 +81,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
-        val newStatus = when (flashModeStatus) {
-            FlashModeStatus.AUTO -> FlashModeProto.FLASH_MODE_AUTO
-            FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
-            FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
+    override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
+        val newStatus = when (flashMode) {
+            FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
+            FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
+            FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()

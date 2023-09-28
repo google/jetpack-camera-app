@@ -19,8 +19,8 @@ package com.google.jetpackcamera.settings.test
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -34,12 +34,12 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(default_front_camera = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkmodeStatus)
+    override suspend fun updateDarkModeStatus(darkmode: DarkMode) {
+        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkmode)
     }
 
-    override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(flash_mode_status = flashModeStatus)
+    override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
+        currentCameraSettings = currentCameraSettings.copy(flash_mode_status = flashMode)
     }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings {

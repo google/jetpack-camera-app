@@ -49,8 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 
 
 /**
@@ -112,31 +112,31 @@ fun DefaultCameraFacing(
 @Composable
 fun DarkModeSetting(
     modifier: Modifier = Modifier,
-    currentDarkModeStatus: DarkModeStatus,
-    setDarkMode: (DarkModeStatus) -> Unit
+    currentDarkMode: DarkMode,
+    setDarkMode: (DarkMode) -> Unit
 ) {
     BasicPopupSetting(
         modifier = modifier,
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
-        description = when (currentDarkModeStatus) {
-            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
-            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
-            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
+        description = when (currentDarkMode) {
+            DarkMode.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
+            DarkMode.DARK -> stringResource(id = R.string.dark_mode_status_dark)
+            DarkMode.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_dark),
-                    selected = currentDarkModeStatus == DarkModeStatus.DARK,
-                    onClick = { setDarkMode(DarkModeStatus.DARK) }
+                    selected = currentDarkMode == DarkMode.DARK,
+                    onClick = { setDarkMode(DarkMode.DARK) }
                 )
                 SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_light),
-                    selected = currentDarkModeStatus == DarkModeStatus.LIGHT,
-                    onClick = { setDarkMode(DarkModeStatus.LIGHT) }
+                    selected = currentDarkMode == DarkMode.LIGHT,
+                    onClick = { setDarkMode(DarkMode.LIGHT) }
                 )
                 SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_system),
-                    selected = currentDarkModeStatus == DarkModeStatus.SYSTEM,
-                    onClick = { setDarkMode(DarkModeStatus.SYSTEM) }
+                    selected = currentDarkMode == DarkMode.SYSTEM,
+                    onClick = { setDarkMode(DarkMode.SYSTEM) }
                 )
             }
         }
@@ -146,31 +146,31 @@ fun DarkModeSetting(
 @Composable
 fun FlashModeSetting(
     modifier: Modifier = Modifier,
-    currentFlashMode: FlashModeStatus,
-    setFlashMode: (FlashModeStatus) -> Unit
+    currentFlashMode: FlashMode,
+    setFlashMode: (FlashMode) -> Unit
 ) {
     BasicPopupSetting(
         modifier = modifier,
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         description = when (currentFlashMode) {
-            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
-            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_status_on)
-            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_status_off)
+            FlashMode.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
+            FlashMode.ON -> stringResource(id = R.string.flash_mode_status_on)
+            FlashMode.OFF -> stringResource(id = R.string.flash_mode_status_off)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_auto),
-                    selected = currentFlashMode == FlashModeStatus.AUTO,
-                    onClick = { setFlashMode(FlashModeStatus.AUTO) }
+                    selected = currentFlashMode == FlashMode.AUTO,
+                    onClick = { setFlashMode(FlashMode.AUTO) }
                 )
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_on),
-                    selected = currentFlashMode == FlashModeStatus.ON,
-                    onClick = { setFlashMode(FlashModeStatus.ON) }
+                    selected = currentFlashMode == FlashMode.ON,
+                    onClick = { setFlashMode(FlashMode.ON) }
                 )
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
-                    selected = currentFlashMode == FlashModeStatus.OFF,
-                    onClick = { setFlashMode(FlashModeStatus.OFF) }
+                    selected = currentFlashMode == FlashMode.OFF,
+                    onClick = { setFlashMode(FlashMode.OFF) }
                 )
             }
         }

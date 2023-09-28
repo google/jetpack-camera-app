@@ -25,7 +25,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,14 +101,14 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setFlash(flashModeStatus: FlashModeStatus) {
+    fun setFlash(flashMode: FlashMode) {
         //update viewmodel value
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        flash_mode_status = flashModeStatus
+                        flash_mode_status = flashMode
                     )
                 )
             )
