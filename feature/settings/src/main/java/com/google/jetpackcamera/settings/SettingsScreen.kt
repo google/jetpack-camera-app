@@ -58,21 +58,22 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-    SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
+        SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
-    DefaultCameraFacing(
-        cameraAppSettings = uiState.cameraAppSettings,
-        onClick = viewModel::setDefaultToFrontCamera
-    )
+        DefaultCameraFacing(
+            cameraAppSettings = uiState.cameraAppSettings,
+            onClick = viewModel::setDefaultToFrontCamera
+        )
 
-    FlashModeSetting(
-        currentFlashMode = uiState.cameraAppSettings.flash_mode_status,
-        setFlashMode = viewModel::setFlashMode
-    )
+        FlashModeSetting(
+            currentFlashMode = uiState.cameraAppSettings.flash_mode_status,
+            setFlashMode = viewModel::setFlashMode
+        )
 
-    SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
-    DarkModeSetting(
-        currentDarkModeStatus = uiState.cameraAppSettings.dark_mode_status,
-        setDarkMode = viewModel::setDarkMode
-    )
+        SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+
+        DarkModeSetting(
+            currentDarkModeStatus = uiState.cameraAppSettings.dark_mode_status,
+            setDarkMode = viewModel::setDarkMode
+        )
 }

@@ -19,4 +19,5 @@
     <string name="settings_content_description">Settings</string>
     <string name="capture_mode_single_stream">Single Stream</string>
     <string name="capture_mode_multi_stream">Multi Stream</string>
+    <string name="flip_camera_content_description">Flip Camera</string>
 </resources>

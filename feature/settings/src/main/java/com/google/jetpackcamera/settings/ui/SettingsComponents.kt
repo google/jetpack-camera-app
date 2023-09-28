@@ -17,7 +17,6 @@
 package com.google.jetpackcamera.settings.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -59,9 +60,13 @@ import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(title: String, navBack: () -> Unit) {
+fun SettingsPageHeader(
+    modifier: Modifier = Modifier,
+    title: String,
+    navBack: () -> Unit
+) {
     TopAppBar(
-        modifier = Modifier,
+        modifier = modifier,
         title = {
             Text(title)
         },
@@ -74,18 +79,27 @@ fun SettingsPageHeader(title: String, navBack: () -> Unit) {
 }
 
 @Composable
-fun SectionHeader(title: String) {
+fun SectionHeader(
+    modifier: Modifier = Modifier,
+    title: String
+) {
     Text(
-        text = title,
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 20.dp, top = 10.dp),
+        text = title,
+        color = MaterialTheme.colorScheme.primary,
         fontSize = 18.sp
     )
 }
 
 @Composable
-fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Unit) {
+fun DefaultCameraFacing(
+    modifier: Modifier = Modifier,
+    cameraAppSettings: CameraAppSettings,
+    onClick: () -> Unit
+) {
     SwitchSettingUI(
+        modifier = modifier,
         title = stringResource(id = R.string.default_facing_camera_title),
         description = null,
         leadingIcon = null,
@@ -96,8 +110,13 @@ fun DefaultCameraFacing(cameraAppSettings: CameraAppSettings, onClick: () -> Uni
 }
 
 @Composable
-fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkModeStatus) -> Unit) {
+fun DarkModeSetting(
+    modifier: Modifier = Modifier,
+    currentDarkModeStatus: DarkModeStatus,
+    setDarkMode: (DarkModeStatus) -> Unit
+) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         description = when (currentDarkModeStatus) {
@@ -125,8 +144,13 @@ fun DarkModeSetting(currentDarkModeStatus: DarkModeStatus, setDarkMode: (DarkMod
 }
 
 @Composable
-fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashModeStatus) -> Unit) {
+fun FlashModeSetting(
+    modifier: Modifier = Modifier,
+    currentFlashMode: FlashModeStatus,
+    setFlashMode: (FlashModeStatus) -> Unit
+) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         description = when (currentFlashMode) {
@@ -163,17 +187,19 @@ fun FlashModeSetting(currentFlashMode: FlashModeStatus, setFlashMode: (FlashMode
 
 @Composable
 fun BasicPopupSetting(
+    modifier: Modifier = Modifier,
     title: String,
     description: String?,
+    enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)?,
     popupContents: @Composable () -> Unit
 ) {
     val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
+        modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        onClick = { popupStatus.value = true },
         trailingContent = null
     )
     if (popupStatus.value) {
@@ -198,6 +224,7 @@ fun BasicPopupSetting(
  */
 @Composable
 fun SwitchSettingUI(
+    modifier: Modifier = Modifier,
     title: String,
     description: String?,
     leadingIcon: @Composable (() -> Unit)?,
@@ -206,13 +233,23 @@ fun SwitchSettingUI(
     enabled: Boolean
 ) {
     SettingUI(
-        enabled = enabled,
+        modifier = modifier.toggleable(
+            enabled = enabled,
+            role = Role.Switch,
+            value = settingValue,
+            onValueChange = { _ -> onClick() }
+        ),
         title = title,
         description = description,
         leadingIcon = leadingIcon,
-        onClick = onClick,
         trailingContent = {
-            SettingSwitch(settingValue, onClick, enabled)
+            Switch(
+                enabled = enabled,
+                checked = settingValue,
+                onCheckedChange = {
+                    onClick()
+                }
+            )
         }
     )
 }
@@ -223,43 +260,24 @@ fun SwitchSettingUI(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingUI(
+    modifier: Modifier = Modifier,
     title: String,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
-    onClick: () -> Unit,
-    enabled: Boolean = true
-) {
-    Box(modifier = Modifier) {
-        ListItem(
-            modifier = Modifier.clickable(enabled = enabled) { onClick() },
-            headlineText = { Text(title) },
-            supportingText = {
-                when (description) {
-                    null -> {}
-                    else -> {
-                        Text(description)
-                    }
-                }
-            },
-            leadingContent = leadingIcon,
-            trailingContent = trailingContent
-        )
-    }
-}
 
-/**
- * A component for a switch
- */
-@Composable
-fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit, enabled: Boolean = true) {
-    Switch(
-        modifier = Modifier,
-        enabled = enabled,
-        checked = settingValue,
-        onCheckedChange = {
-            onClick()
-        }
+    ) {
+    ListItem(
+        modifier = modifier,
+        headlineText = { Text(title) },
+        supportingText = when (description) {
+            null -> null
+            else -> {
+                { Text(description) }
+            }
+        },
+        leadingContent = leadingIcon,
+        trailingContent = trailingContent
     )
 }
 
@@ -268,25 +286,25 @@ fun SettingSwitch(settingValue: Boolean, onClick: () -> Unit, enabled: Boolean =
  */
 @Composable
 fun SingleChoiceSelector(
+    modifier: Modifier = Modifier,
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
                 onClick = onClick,
-            )
-            .padding(12.dp),
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = null,
+            onClick = onClick,
             enabled = enabled
         )
         Spacer(Modifier.width(8.dp))
