@@ -24,6 +24,7 @@ import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -51,11 +52,9 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 captureMode = when (it.captureModeStatus) {
-                    CaptureModeProto.CAMERA_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
-                    CaptureModeProto.CAMERA_MODE_MULTI_STREAM,
-                    CaptureModeProto.CAMERA_MODE_UNDEFINED,
-                    CaptureModeProto.UNRECOGNIZED,
-                    null -> CaptureMode.MULTI_STREAM
+                    CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
+                    CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
+                    else -> CaptureMode.MULTI_STREAM
                 },
                 front_camera_available = it.frontCameraAvailable,
                 back_camera_available = it.backCameraAvailable
@@ -116,8 +115,8 @@ class LocalSettingsRepository @Inject constructor(
 
     override suspend fun updateCaptureMode(captureMode: CaptureMode) {
         val newStatus = when (captureMode) {
-            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAMERA_MODE_MULTI_STREAM
-            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAMERA_MODE_SINGLE_STREAM
+            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAPTURE_MODE_MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
