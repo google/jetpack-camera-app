@@ -76,7 +76,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1")
 
     // CameraX
-    val camerax_version = "1.3.0-SNAPSHOT"
+    val camerax_version = "1.4.0-alpha01"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 

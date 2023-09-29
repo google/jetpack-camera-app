@@ -219,6 +219,7 @@ class CameraXCameraUseCase @Inject constructor(
             FlashModeStatus.ON -> ImageCapture.FLASH_MODE_ON // 1
             FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
         }
+
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
 

@@ -45,7 +45,7 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 
     // CameraX
-    val camerax_version = "1.3.0-SNAPSHOT"
+    val camerax_version = "1.4.0-alpha01"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
