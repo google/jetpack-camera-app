@@ -30,16 +30,16 @@ object FakeSettingsRepository : SettingsRepository {
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
     override suspend fun updateDefaultToFrontCamera() {
-        val newLensFacing = !currentCameraSettings.default_front_camera
-        currentCameraSettings = currentCameraSettings.copy(default_front_camera = newLensFacing)
+        val newLensFacing = !currentCameraSettings.isFrontCameraFacing
+        currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
     }
 
     override suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkmodeStatus)
+        currentCameraSettings = currentCameraSettings.copy(darkMode = darkmodeStatus)
     }
 
     override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(flash_mode_status = flashModeStatus)
+        currentCameraSettings = currentCameraSettings.copy(flashMode = flashModeStatus)
     }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings {

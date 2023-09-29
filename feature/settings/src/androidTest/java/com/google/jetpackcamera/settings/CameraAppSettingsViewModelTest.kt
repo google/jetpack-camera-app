@@ -92,13 +92,13 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         val initialFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
         settingsViewModel.setDefaultToFrontCamera()
 
         advanceUntilIdle()
 
         val newFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
 
         assertFalse(initialFrontCameraValue)
         assertTrue(newFrontCameraValue)
@@ -106,11 +106,11 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun setDarkMode() = runTest(StandardTestDispatcher()) {
-        val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
+        val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.darkMode
         settingsViewModel.setDarkMode(DarkModeStatus.DARK)
         advanceUntilIdle()
 
-        val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
+        val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.darkMode
 
         assertEquals(initialDarkMode, DarkModeStatus.SYSTEM)
         assertEquals(DarkModeStatus.DARK, newDarkMode)
