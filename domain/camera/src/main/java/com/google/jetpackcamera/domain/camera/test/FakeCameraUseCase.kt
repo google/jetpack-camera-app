@@ -23,6 +23,10 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 
 class FakeCameraUseCase : CameraUseCase {
 
@@ -74,13 +78,18 @@ class FakeCameraUseCase : CameraUseCase {
         numPicturesTaken += 1
     }
 
-    override suspend fun startVideoRecording() {
-        recordingInProgress = true
+    override fun startVideoRecording(scope: CoroutineScope): Job {
+        val job =  scope.launch {
+            recordingInProgress = true
+            awaitCancellation()
+        }
+        job.invokeOnCompletion {
+            recordingInProgress = false
+        }
+
+        return job
     }
 
-    override fun stopVideoRecording() {
-        recordingInProgress = false
-    }
 
     override fun setZoomScale(scale: Float): Float {
         return -1f

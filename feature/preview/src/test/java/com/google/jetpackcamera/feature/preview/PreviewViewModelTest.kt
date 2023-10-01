@@ -84,6 +84,7 @@ class PreviewViewModelTest {
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
+        advanceUntilIdle()
         assertEquals(cameraUseCase.recordingInProgress, false)
 
     }

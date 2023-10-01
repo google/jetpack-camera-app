@@ -49,9 +49,12 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
@@ -144,7 +147,7 @@ class CameraXCameraUseCase @Inject constructor(
             })
     }
 
-    override suspend fun startVideoRecording() {
+    override fun startVideoRecording(scope: CoroutineScope): Job {
         Log.d(TAG, "recordVideo")
         val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
@@ -158,19 +161,25 @@ class CameraXCameraUseCase @Inject constructor(
             .setContentValues(contentValues)
             .build()
 
-        recording = videoCaptureUseCase.output
-            .prepareRecording(application, mediaStoreOutput)
-            .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
-                run {
-                    Log.d(TAG, videoRecordEvent.toString())
-                }
-            })
+        return videoCaptureUseCase.startIn(mediaStoreOutput, scope)
     }
 
-    override fun stopVideoRecording() {
-        Log.d(TAG, "stopRecording")
-        recording?.stop()
-    }
+    private fun VideoCapture<Recorder>.startIn(
+        outputOptions: MediaStoreOutputOptions,
+        scope: CoroutineScope
+    ): Job =
+        scope.launch {
+            output
+                .prepareRecording(application, outputOptions)
+                .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
+                    run {
+                        Log.d(TAG, videoRecordEvent.toString())
+                    }
+                })
+                .use {
+                    awaitCancellation()
+                }
+        }
 
     override fun setZoomScale(scale: Float): Float {
         val zoomState = getZoomState() ?: return INVALID_ZOOM_SCALE
