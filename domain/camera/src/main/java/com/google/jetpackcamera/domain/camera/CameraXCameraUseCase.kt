@@ -74,10 +74,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase: Preview = Preview.Builder().setResolutionSelector(
-        ResolutionSelector.Builder()
-            .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build()
-    ).build()
+    private val previewUseCase: Preview = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)

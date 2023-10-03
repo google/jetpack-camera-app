@@ -72,14 +72,14 @@ object SurfaceTransformationUtil {
     }
 
     @SuppressLint("RestrictedApi")
-    fun isViewportAspectRatioMatchPreviewView(
+    fun isViewportAspectRatioMatchViewFinder(
         transformationInfo: SurfaceRequest.TransformationInfo,
-        previewViewSize: Size
+        viewFinderSize: Size
     ): Boolean {
         // Using viewport rect to check if the viewport is based on the PreviewView.
         val rotatedViewportSize: Size = getRotatedViewportSize(transformationInfo)
         return TransformUtils.isAspectRatioMatchingWithRoundingError(
-            previewViewSize,  /* isAccurate1= */true,
+            viewFinderSize,  /* isAccurate1= */true,
             rotatedViewportSize,  /* isAccurate2= */false
         )
     }
@@ -94,13 +94,13 @@ object SurfaceTransformationUtil {
         matrix.invert(matrix)
     }
 
-    private fun getPreviewViewViewportRectForMismatchedAspectRatios(
+    private fun getViewFinderViewportRectForMismatchedAspectRatios(
         transformationInfo: SurfaceRequest.TransformationInfo,
-        previewViewSize: Size,
+        viewFinderSize: Size,
     ): RectF {
-        val previewViewRect = RectF(
-            0f, 0f, previewViewSize.width.toFloat(),
-            previewViewSize.height.toFloat()
+        val viewFinderRect = RectF(
+            0f, 0f, viewFinderSize.width.toFloat(),
+            viewFinderSize.height.toFloat()
         )
         val rotatedViewportSize = getRotatedViewportSize(transformationInfo)
         val rotatedViewportRect = RectF(
@@ -111,37 +111,37 @@ object SurfaceTransformationUtil {
         setMatrixRectToRect(
             matrix,
             rotatedViewportRect,
-            previewViewRect,
+            viewFinderRect,
         )
         matrix.mapRect(rotatedViewportRect)
         return rotatedViewportRect
     }
 
     @SuppressLint("RestrictedApi")
-    fun getSurfaceToPreviewViewMatrix(
-        previewViewSize: Size,
+    fun getSurfaceToViewFinderMatrix(
+        viewFinderSize: Size,
         transformationInfo: SurfaceRequest.TransformationInfo,
         isFrontCamera: Boolean
     ): Matrix {
         // Get the target of the mapping, the coordinates of the crop rect in PreviewView.
-        val previewViewCropRect: RectF =
-            if (isViewportAspectRatioMatchPreviewView(transformationInfo, previewViewSize)) {
+        val viewFinderCropRect: RectF =
+            if (isViewportAspectRatioMatchViewFinder(transformationInfo, viewFinderSize)) {
                 // If crop rect has the same aspect ratio as PreviewView, scale the crop rect to fill
                 // the entire PreviewView. This happens if the scale type is FILL_* AND a
                 // PreviewView-based viewport is used.
                 RectF(
-                    0f, 0f, previewViewSize.width.toFloat(),
-                    previewViewSize.height.toFloat()
+                    0f, 0f, viewFinderSize.width.toFloat(),
+                    viewFinderSize.height.toFloat()
                 )
             } else {
                 // If the aspect ratios don't match, it could be 1) scale type is FIT_*, 2) the
                 // Viewport is not based on the PreviewView or 3) both.
-                getPreviewViewViewportRectForMismatchedAspectRatios(
-                    transformationInfo, previewViewSize
+                getViewFinderViewportRectForMismatchedAspectRatios(
+                    transformationInfo, viewFinderSize
                 )
             }
         val matrix = TransformUtils.getRectToRect(
-            RectF(transformationInfo.cropRect), previewViewCropRect,
+            RectF(transformationInfo.cropRect), viewFinderCropRect,
             transformationInfo.rotationDegrees
         )
         if (isFrontCamera && transformationInfo.hasCameraTransform()) {
@@ -179,12 +179,12 @@ object SurfaceTransformationUtil {
     fun getTransformedSurfaceRect(
         resolution: Size,
         transformationInfo: SurfaceRequest.TransformationInfo,
-        previewViewSize: Size,
+        viewFinderSize: Size,
         isFrontCamera: Boolean
     ): RectF {
         val surfaceToPreviewView: Matrix =
-            getSurfaceToPreviewViewMatrix(
-                previewViewSize,
+            getSurfaceToViewFinderMatrix(
+                viewFinderSize,
                 transformationInfo,
                 isFrontCamera
             )

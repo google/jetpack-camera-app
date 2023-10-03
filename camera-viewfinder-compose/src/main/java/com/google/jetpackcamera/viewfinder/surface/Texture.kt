@@ -47,7 +47,7 @@ fun Texture(
     onSurfaceTextureEvent: (SurfaceTextureEvent) -> Boolean = { _ -> true },
     onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     setView: (View) -> Unit,
-    surfaceRequest: SurfaceRequest?
+    surfaceRequest: SurfaceRequest?,
     ) {
     Log.d(TAG, "Texture")
 
@@ -62,6 +62,17 @@ fun Texture(
                 return@setTransformationInfoListener
             }
             val viewFinder = textureView!!
+            if (!transformationInfo.hasCameraTransform()) {
+                viewFinder.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            } else {
+                viewFinder.layoutParams = FrameLayout.LayoutParams(
+                    resolution.width,
+                    resolution.height
+                )
+            }
 
             // For TextureView, correct the orientation to match the target rotation.
             val correctionMatrix = SurfaceTransformationUtil.getTextureViewCorrectionMatrix(
