@@ -62,10 +62,17 @@ fun Texture(
                 return@setTransformationInfoListener
             }
             val viewFinder = textureView!!
+            val surfaceRectInViewFinder: RectF =
+                SurfaceTransformationUtil.getTransformedSurfaceRect(
+                    resolution,
+                    transformationInfo,
+                    parentViewSize,
+                    surfaceRequest.camera.isFrontFacing
+                )
             if (!transformationInfo.hasCameraTransform()) {
                 viewFinder.layoutParams = FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                    surfaceRectInViewFinder.width().toInt(),
+                    surfaceRectInViewFinder.height().toInt()
                 )
             } else {
                 viewFinder.layoutParams = FrameLayout.LayoutParams(
@@ -73,26 +80,19 @@ fun Texture(
                     resolution.height
                 )
             }
-
             // For TextureView, correct the orientation to match the target rotation.
             val correctionMatrix = SurfaceTransformationUtil.getTextureViewCorrectionMatrix(
                 transformationInfo,
                 resolution
             )
             viewFinder.setTransform(correctionMatrix)
-            val surfaceRectInPreviewView: RectF =
-                SurfaceTransformationUtil.getTransformedSurfaceRect(
-                    resolution,
-                    transformationInfo,
-                    parentViewSize,
-                    surfaceRequest.camera.isFrontFacing
-                )
+
             viewFinder.pivotX = 0f
             viewFinder.pivotY = 0f
-            viewFinder.scaleX = surfaceRectInPreviewView.width() / resolution.width
-            viewFinder.scaleY = surfaceRectInPreviewView.height() / resolution.height
-            viewFinder.translationX = surfaceRectInPreviewView.left - viewFinder.left
-            viewFinder.translationY = surfaceRectInPreviewView.top - viewFinder.top
+            viewFinder.scaleX = surfaceRectInViewFinder.width() / resolution.width
+            viewFinder.scaleY = surfaceRectInViewFinder.height() / resolution.height
+            viewFinder.translationX = surfaceRectInViewFinder.left - viewFinder.left
+            viewFinder.translationY = surfaceRectInViewFinder.top - viewFinder.top
         }
     }
 

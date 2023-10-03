@@ -48,7 +48,7 @@ object SurfaceTransformationUtil {
         } else {
             // If the Surface is connected to the camera, then the SurfaceView/TextureView
             // will be the one to apply the camera orientation. In that case, only the Surface
-            // rotation needs to be applied by PreviewView.
+            // rotation needs to be applied.
             -CameraOrientationUtil.surfaceRotationToDegrees(transformationInfo.targetRotation)
         }
     }
@@ -76,7 +76,7 @@ object SurfaceTransformationUtil {
         transformationInfo: SurfaceRequest.TransformationInfo,
         viewFinderSize: Size
     ): Boolean {
-        // Using viewport rect to check if the viewport is based on the PreviewView.
+        // Using viewport rect to check if the viewport is based on the view finder.
         val rotatedViewportSize: Size = getRotatedViewportSize(transformationInfo)
         return TransformUtils.isAspectRatioMatchingWithRoundingError(
             viewFinderSize,  /* isAccurate1= */true,
@@ -123,19 +123,19 @@ object SurfaceTransformationUtil {
         transformationInfo: SurfaceRequest.TransformationInfo,
         isFrontCamera: Boolean
     ): Matrix {
-        // Get the target of the mapping, the coordinates of the crop rect in PreviewView.
+        // Get the target of the mapping, the coordinates of the crop rect in view finder.
         val viewFinderCropRect: RectF =
             if (isViewportAspectRatioMatchViewFinder(transformationInfo, viewFinderSize)) {
-                // If crop rect has the same aspect ratio as PreviewView, scale the crop rect to fill
-                // the entire PreviewView. This happens if the scale type is FILL_* AND a
-                // PreviewView-based viewport is used.
+                // If crop rect has the same aspect ratio as view finder, scale the crop rect to
+                // fill the entire view finder. This happens if the scale type is FILL_* AND a
+                // view-finder-based viewport is used.
                 RectF(
                     0f, 0f, viewFinderSize.width.toFloat(),
                     viewFinderSize.height.toFloat()
                 )
             } else {
                 // If the aspect ratios don't match, it could be 1) scale type is FIT_*, 2) the
-                // Viewport is not based on the PreviewView or 3) both.
+                // Viewport is not based on the view finder or 3) both.
                 getViewFinderViewportRectForMismatchedAspectRatios(
                     transformationInfo, viewFinderSize
                 )
@@ -182,14 +182,14 @@ object SurfaceTransformationUtil {
         viewFinderSize: Size,
         isFrontCamera: Boolean
     ): RectF {
-        val surfaceToPreviewView: Matrix =
+        val surfaceToViewFinder: Matrix =
             getSurfaceToViewFinderMatrix(
                 viewFinderSize,
                 transformationInfo,
                 isFrontCamera
             )
         val rect = RectF(0f, 0f, resolution.width.toFloat(), resolution.height.toFloat())
-        surfaceToPreviewView.mapRect(rect)
+        surfaceToViewFinder.mapRect(rect)
         return rect
     }
 }
