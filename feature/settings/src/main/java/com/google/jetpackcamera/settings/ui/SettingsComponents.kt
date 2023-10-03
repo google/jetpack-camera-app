@@ -105,8 +105,8 @@ fun DefaultCameraFacing(
         description = null,
         leadingIcon = null,
         onClick = { onClick() },
-        settingValue = cameraAppSettings.default_front_camera,
-        enabled = cameraAppSettings.back_camera_available && cameraAppSettings.front_camera_available
+        settingValue = cameraAppSettings.isFrontCameraFacing,
+        enabled = cameraAppSettings.isBackCameraAvailable && cameraAppSettings.isFrontCameraAvailable
     )
 }
 

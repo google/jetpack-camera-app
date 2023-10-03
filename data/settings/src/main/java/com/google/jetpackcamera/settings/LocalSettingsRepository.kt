@@ -36,28 +36,28 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                default_front_camera = it.defaultFrontCamera,
-                dark_mode_status = when (it.darkModeStatus) {
+                isFrontCameraFacing = it.defaultFrontCamera,
+                darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM,
                     DarkModeProto.UNRECOGNIZED,
                     null -> DarkModeStatus.SYSTEM
                 },
-                flash_mode_status = when (it.flashModeStatus) {
+                flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
                     FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
                     FlashModeProto.FLASH_MODE_OFF,
                     FlashModeProto.UNRECOGNIZED,
                     null -> FlashModeStatus.OFF
                 },
+                isFrontCameraAvailable = it.frontCameraAvailable,
+                isBackCameraAvailable = it.backCameraAvailable,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable
             )
         }
 

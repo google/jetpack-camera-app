@@ -24,6 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,8 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 
 
 private const val TAG = "PreviewViewModel"
@@ -109,12 +109,12 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        flash_mode_status = flashModeStatus
+                        flashMode = flashModeStatus
                     )
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
+            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
         }
     }
 
@@ -124,13 +124,13 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        aspect_ratio = aspectRatio
+                        aspectRatio = aspectRatio
                     )
                 )
             )
             cameraUseCase.setAspectRatio(
                 aspectRatio, previewUiState.value
-                    .currentCameraSettings.default_front_camera
+                    .currentCameraSettings.isFrontCameraFacing
             )
         }
     }
@@ -139,7 +139,7 @@ class PreviewViewModel @Inject constructor(
     fun flipCamera() {
         flipCamera(
             !previewUiState.value
-                .currentCameraSettings.default_front_camera
+                .currentCameraSettings.isFrontCameraFacing
         )
     }
 
@@ -154,7 +154,7 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                       captureMode = newCaptureMode
+                        captureMode = newCaptureMode
                     )
                 )
             )
@@ -166,8 +166,8 @@ class PreviewViewModel @Inject constructor(
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
         // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.back_camera_available
-            && previewUiState.value.currentCameraSettings.front_camera_available
+        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
+            && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
 
             //update viewmodel value
@@ -176,12 +176,12 @@ class PreviewViewModel @Inject constructor(
                     previewUiState.value.copy(
                         currentCameraSettings =
                         previewUiState.value.currentCameraSettings.copy(
-                            default_front_camera = isFacingFront
+                            isFrontCameraFacing = isFacingFront
                         )
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
+                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
             }
         }
     }

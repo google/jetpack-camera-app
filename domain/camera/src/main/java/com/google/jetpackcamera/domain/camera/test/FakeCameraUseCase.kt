@@ -43,9 +43,9 @@ class FakeCameraUseCase : CameraUseCase {
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
-        flashMode = currentCameraSettings.flash_mode_status
-        isLensFacingFront = currentCameraSettings.default_front_camera
-        aspectRatio = currentCameraSettings.aspect_ratio
+        flashMode = currentCameraSettings.flashMode
+        isLensFacingFront = currentCameraSettings.isFrontCameraFacing
+        aspectRatio = currentCameraSettings.aspectRatio
         return availableLenses
     }
 
@@ -53,7 +53,7 @@ class FakeCameraUseCase : CameraUseCase {
         surfaceProvider: Preview.SurfaceProvider,
         currentCameraSettings: CameraAppSettings,
     ) {
-        val lensFacing = when (currentCameraSettings.default_front_camera) {
+        val lensFacing = when (currentCameraSettings.isFrontCameraFacing) {
             true -> CameraSelector.LENS_FACING_FRONT
             false -> CameraSelector.LENS_FACING_BACK
         }

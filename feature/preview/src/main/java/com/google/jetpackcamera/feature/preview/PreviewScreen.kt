@@ -106,7 +106,7 @@ fun PreviewScreen(
                 zoomScaleShow = true
                 zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
             },
-            aspectRatio = previewUiState.currentCameraSettings.aspect_ratio,
+            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
         // overlay
@@ -114,44 +114,50 @@ fun PreviewScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            QuickSettingsScreen(
-                modifier = Modifier
-                    .align(Alignment.TopCenter),
-                isOpen = previewUiState.quickSettingsIsOpen,
-                toggleIsOpen = { viewModel.toggleQuickSettings() },
-                currentCameraSettings = previewUiState.currentCameraSettings,
-                onLensFaceClick = viewModel::flipCamera,
-                onFlashModeClick = viewModel::setFlash,
-                onAspectRatioClick = {
-                    viewModel.setAspectRatio(it)
-                },
-                //onTimerClick = {}/*TODO*/
-            )
+            // hide settings, quickSettings, and quick capture mode button
+            when (previewUiState.videoRecordingState) {
+                VideoRecordingState.ACTIVE -> {}
+                VideoRecordingState.INACTIVE -> {
+                    QuickSettingsScreen(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter),
+                        isOpen = previewUiState.quickSettingsIsOpen,
+                        toggleIsOpen = { viewModel.toggleQuickSettings() },
+                        currentCameraSettings = previewUiState.currentCameraSettings,
+                        onLensFaceClick = viewModel::flipCamera,
+                        onFlashModeClick = viewModel::setFlash,
+                        onAspectRatioClick = {
+                            viewModel.setAspectRatio(it)
+                        },
+                        //onTimerClick = {}/*TODO*/
+                    )
 
-            SettingsNavButton(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp),
-                onNavigateToSettings = onNavigateToSettings
-            )
+                    SettingsNavButton(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp),
+                        onNavigateToSettings = onNavigateToSettings
+                    )
 
-            SuggestionChip(
-                onClick = { viewModel.toggleCaptureMode() },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp),
-                label = {
-                    Text(
-                        stringResource(
-                            when (previewUiState.currentCameraSettings.captureMode) {
-                                CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                    SuggestionChip(
+                        onClick = { viewModel.toggleCaptureMode() },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp),
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (previewUiState.currentCameraSettings.captureMode) {
+                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
 
-                            }
-                        )
+                                    }
+                                )
+                            )
+                        }
                     )
                 }
-            )
+            }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,23 +166,34 @@ fun PreviewScreen(
                 if (zoomScaleShow) {
                     ZoomScaleText(zoomScale = zoomScale)
                 }
-
                 Row(
                     modifier =
                     Modifier
                         .fillMaxWidth()
                         .height(IntrinsicSize.Min),
                 ) {
-                    FlipCameraButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        onClick = { viewModel.flipCamera() },
-                        //enable only when phone has front and rear camera
-                        enabledCondition =
-                        previewUiState.currentCameraSettings.back_camera_available
-                                && previewUiState.currentCameraSettings.front_camera_available
-                    )
+                    when (previewUiState.videoRecordingState) {
+                        VideoRecordingState.ACTIVE -> {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                            )
+                        }
+
+                        VideoRecordingState.INACTIVE -> {
+                            FlipCameraButton(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                                onClick = { viewModel.flipCamera() },
+                                //enable only when phone has front and rear camera
+                                enabledCondition =
+                                previewUiState.currentCameraSettings.isBackCameraAvailable
+                                        && previewUiState.currentCameraSettings.isFrontCameraAvailable
+                            )
+                        }
+                    }
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
                         onClick = { viewModel.captureImage() },
