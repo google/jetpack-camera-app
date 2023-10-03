@@ -24,12 +24,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -53,7 +51,6 @@ import kotlin.math.min
 
 // completed components ready to go into preview screen
 
-//TODO: Implement Set Ratio
 @Composable
 fun ExpandedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
@@ -88,9 +85,9 @@ fun ExpandedQuickSetRatio(
     ExpandedQuickSetting(quickSettingButtons = buttons)
 }
 
-//TODO: Implement Set Ratio
 @Composable
 fun QuickSetRatio(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     ratio: AspectRatio,
     currentRatio: AspectRatio,
@@ -103,6 +100,7 @@ fun QuickSetRatio(
         else -> CameraAspectRatio.ONE_ONE
     }
     QuickSettingUiItem(
+        modifier = modifier,
         enum = enum,
         onClick = { onClick() },
         isHighLighted = isHighlightEnabled && (ratio == currentRatio)
@@ -110,13 +108,17 @@ fun QuickSetRatio(
 }
 
 @Composable
-fun QuickSetFlash(onClick: (FlashModeStatus) -> Unit, currentFlashMode: FlashModeStatus) {
+fun QuickSetFlash(
+    modifier: Modifier = Modifier,
+    onClick: (FlashModeStatus) -> Unit, currentFlashMode: FlashModeStatus
+) {
     val enum = when (currentFlashMode) {
         FlashModeStatus.OFF -> CameraFlashMode.OFF
         FlashModeStatus.AUTO -> CameraFlashMode.AUTO
         FlashModeStatus.ON -> CameraFlashMode.ON
     }
     QuickSettingUiItem(
+        modifier = modifier,
         enum = enum,
         isHighLighted = currentFlashMode == FlashModeStatus.ON,
         onClick =
@@ -131,23 +133,30 @@ fun QuickSetFlash(onClick: (FlashModeStatus) -> Unit, currentFlashMode: FlashMod
 }
 
 @Composable
-fun QuickFlipCamera(flipCamera: (Boolean) -> Unit, currentFacingFront: Boolean) {
+fun QuickFlipCamera(
+    modifier: Modifier = Modifier,
+    flipCamera: (Boolean) -> Unit,
+    currentFacingFront: Boolean
+) {
     val enum = when (currentFacingFront) {
         true -> CameraLensFace.FRONT
         false -> CameraLensFace.BACK
     }
     QuickSettingUiItem(
+        modifier = modifier,
         enum = enum,
         onClick = { flipCamera(!currentFacingFront) }
     )
 }
 
 @Composable
-fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun DropDownIcon(
+    modifier: Modifier = Modifier,
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -155,7 +164,7 @@ fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
             contentDescription = stringResource(R.string.quick_settings_dropdown_description),
-            tint = if (isOpen) Color.White else LocalContentColor.current,
+            tint = Color.White,
             modifier = Modifier
                 .size(72.dp)
                 .clickable {
@@ -170,11 +179,13 @@ fun DropDownIcon(toggleDropDown: () -> Unit, isOpen: Boolean) {
 
 @Composable
 fun QuickSettingUiItem(
+    modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
     isHighLighted: Boolean = false
 ) {
     QuickSettingUiItem(
+        modifier = modifier,
         drawableResId = enum.getDrawableResId(),
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
@@ -188,6 +199,7 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
+    modifier: Modifier = Modifier,
     @DrawableRes drawableResId: Int,
     text: String,
     accessibilityText: String,
@@ -195,7 +207,7 @@ fun QuickSettingUiItem(
     isHighLighted: Boolean = false
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .wrapContentSize()
             .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
             .clickable {
@@ -221,7 +233,10 @@ fun QuickSettingUiItem(
  * Should you want to have an expanded view of a single quick setting
  */
 @Composable
-fun ExpandedQuickSetting(vararg quickSettingButtons: @Composable () -> Unit) {
+fun ExpandedQuickSetting(
+    modifier: Modifier = Modifier,
+    vararg quickSettingButtons: @Composable () -> Unit
+) {
     val expandedNumOfColumns =
         min(
             quickSettingButtons.size,
@@ -232,7 +247,7 @@ fun ExpandedQuickSetting(vararg quickSettingButtons: @Composable () -> Unit) {
                             (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2))).toInt()
         )
     LazyVerticalGrid(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         columns = GridCells.Fixed(count = expandedNumOfColumns)
     ) {
         items(quickSettingButtons.size) { i ->
@@ -245,7 +260,10 @@ fun ExpandedQuickSetting(vararg quickSettingButtons: @Composable () -> Unit) {
  * Algorithm to determine dimensions of QuickSettings Icon layout
  */
 @Composable
-fun QuickSettingsGrid(vararg quickSettingsButtons: @Composable () -> Unit) {
+fun QuickSettingsGrid(
+    modifier: Modifier = Modifier,
+    vararg quickSettingsButtons: @Composable () -> Unit
+) {
     val initialNumOfColumns =
         min(
             quickSettingsButtons.size,
@@ -257,7 +275,7 @@ fun QuickSettingsGrid(vararg quickSettingsButtons: @Composable () -> Unit) {
         )
 
     LazyVerticalGrid(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         columns = GridCells.Fixed(count = initialNumOfColumns)
     ) {
         items(quickSettingsButtons.size) { i ->

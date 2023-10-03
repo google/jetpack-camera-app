@@ -17,8 +17,8 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -36,24 +36,25 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                default_front_camera = it.defaultFrontCamera,
-                dark_mode_status = when (it.darkModeStatus) {
+                isFrontCameraFacing = it.defaultFrontCamera,
+                darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM,
                     DarkModeProto.UNRECOGNIZED,
                     null -> DarkModeStatus.SYSTEM
                 },
-                flash_mode_status = when (it.flashModeStatus) {
+                flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
                     FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
                     FlashModeProto.FLASH_MODE_OFF,
                     FlashModeProto.UNRECOGNIZED,
                     null -> FlashModeStatus.OFF
                 },
-                front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable,
-                aspect_ratio = AspectRatio.fromProto(it.aspectRatioStatus))
+                isFrontCameraAvailable = it.frontCameraAvailable,
+                isBackCameraAvailable = it.backCameraAvailable,
+                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus)
+            )
         }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()

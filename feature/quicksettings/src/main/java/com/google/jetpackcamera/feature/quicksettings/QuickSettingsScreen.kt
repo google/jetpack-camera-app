@@ -23,10 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,44 +73,43 @@ fun QuickSettingsScreen(
         animationSpec = tween()
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = backgroundColor.value),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        DropDownIcon(toggleIsOpen, isOpen = isOpen)
-
-        if (isOpen) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(alpha = contentAlpha.value)
-                    .clickable {
-                        // if a setting is expanded, close it. if no other settings are expanded, then close out of the popup
-                        if (shouldShowQuickSetting == IsExpandedQuickSetting.NONE) toggleIsOpen() else shouldShowQuickSetting =
-                            IsExpandedQuickSetting.NONE
-                    },
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ExpandedQuickSettingsUi(
-                    currentCameraSettings = currentCameraSettings,
-                    shouldShowQuickSetting = shouldShowQuickSetting,
-                    setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
-                        shouldShowQuickSetting = enum
-                    },
-                    onLensFaceClick = onLensFaceClick,
-                    onFlashModeClick = onFlashModeClick,
-                    onAspectRatioClick = onAspectRatioClick,
-                    //onTimerClick = onTimerClick,
-                )
-            }
-        } else {
-            shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+    if (isOpen) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = backgroundColor.value)
+                .alpha(alpha = contentAlpha.value)
+                .clickable {
+                    // if a setting is expanded, click on the background to close it.
+                    // if no other settings are expanded, then close the popup
+                    when (shouldShowQuickSetting) {
+                        IsExpandedQuickSetting.NONE -> toggleIsOpen()
+                        else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+                    }
+                },
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ExpandedQuickSettingsUi(
+                currentCameraSettings = currentCameraSettings,
+                shouldShowQuickSetting = shouldShowQuickSetting,
+                setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
+                    shouldShowQuickSetting = enum
+                },
+                onLensFaceClick = onLensFaceClick,
+                onFlashModeClick = onFlashModeClick,
+                onAspectRatioClick = onAspectRatioClick,
+            )
         }
+    } else {
+        shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+
     }
+    DropDownIcon(
+        modifier = modifier,
+        toggleDropDown = toggleIsOpen,
+        isOpen = isOpen
+    )
 }
 
 // enum representing which individual quick setting is currently expanded
@@ -137,7 +133,6 @@ private fun ExpandedQuickSettingsUi(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
             .padding(horizontal = dimensionResource(id = R.dimen.quick_settings_ui_horizontal_padding))
     ) {
         // if no setting is chosen, display the grid of settings
@@ -149,20 +144,20 @@ private fun ExpandedQuickSettingsUi(
                     {
                         QuickSetFlash(
                             onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
-                            currentFlashMode = currentCameraSettings.flash_mode_status
+                            currentFlashMode = currentCameraSettings.flashMode
                         )
                     },
                     {
                         QuickFlipCamera(
                             flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                            currentFacingFront = currentCameraSettings.default_front_camera
+                            currentFacingFront = currentCameraSettings.isFrontCameraFacing
                         )
                     },
                     {
                         QuickSetRatio(
                             onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
-                            ratio = currentCameraSettings.aspect_ratio,
-                            currentRatio = currentCameraSettings.aspect_ratio
+                            ratio = currentCameraSettings.aspectRatio,
+                            currentRatio = currentCameraSettings.aspectRatio
                         )
                     },
                 )
@@ -172,10 +167,9 @@ private fun ExpandedQuickSettingsUi(
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
                     setRatio = onAspectRatioClick,
-                    currentRatio = currentCameraSettings.aspect_ratio
+                    currentRatio = currentCameraSettings.aspectRatio
                 )
             }
         }
-        Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.quick_settings_spacer_height)))
     }
 }

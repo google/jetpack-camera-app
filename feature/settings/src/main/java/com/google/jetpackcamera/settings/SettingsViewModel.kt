@@ -76,7 +76,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.updateDefaultToFrontCamera()
             Log.d(
                 TAG,
-                "set camera default facing: " + settingsRepository.getCameraAppSettings().default_front_camera
+                "set camera default facing: " + settingsRepository.getCameraAppSettings().isFrontCameraFacing
             )
         }
     }
@@ -86,8 +86,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
             Log.d(
-                TAG,
-                "set dark mode theme: " + settingsRepository.getCameraAppSettings().dark_mode_status
+                TAG, "set dark mode theme: " + settingsRepository.getCameraAppSettings().darkMode
             )
         }
     }
@@ -101,7 +100,7 @@ class SettingsViewModel @Inject constructor(
     fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             settingsRepository.updateAspectRatio(aspectRatio)
-            Log.d(TAG, "set aspect ratio ${settingsRepository.getCameraAppSettings().aspect_ratio}")
+            Log.d(TAG, "set aspect ratio ${settingsRepository.getCameraAppSettings().aspectRatio}")
         }
     }
 }

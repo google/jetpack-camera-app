@@ -108,12 +108,12 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        flash_mode_status = flashModeStatus
+                        flashMode = flashModeStatus
                     )
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
+            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
         }
     }
 
@@ -123,12 +123,12 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        aspect_ratio = aspectRatio
+                        aspectRatio = aspectRatio
                     )
                 )
             )
             cameraUseCase.setAspectRatio(aspectRatio, previewUiState.value
-                .currentCameraSettings.default_front_camera)
+                .currentCameraSettings.isFrontCameraFacing)
         }
     }
 
@@ -136,7 +136,7 @@ class PreviewViewModel @Inject constructor(
     fun flipCamera() {
         flipCamera(
             !previewUiState.value
-                .currentCameraSettings.default_front_camera
+                .currentCameraSettings.isFrontCameraFacing
         )
     }
 
@@ -155,8 +155,8 @@ class PreviewViewModel @Inject constructor(
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
         // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.back_camera_available
-            && previewUiState.value.currentCameraSettings.front_camera_available
+        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
+            && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
 
             //update viewmodel value
@@ -165,12 +165,12 @@ class PreviewViewModel @Inject constructor(
                     previewUiState.value.copy(
                         currentCameraSettings =
                         previewUiState.value.currentCameraSettings.copy(
-                            default_front_camera = isFacingFront
+                            isFrontCameraFacing = isFacingFront
                         )
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
+                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
             }
         }
     }
