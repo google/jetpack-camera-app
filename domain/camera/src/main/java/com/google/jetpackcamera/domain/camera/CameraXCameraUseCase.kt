@@ -47,6 +47,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -75,7 +76,7 @@ class CameraXCameraUseCase @Inject constructor(
     private val previewUseCase = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
-    private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
+    private lateinit var videoCaptureUseCase : VideoCapture<Recorder>
     private var recording: Recording? = null
 
     private lateinit var useCaseGroup: UseCaseGroup
@@ -87,6 +88,12 @@ class CameraXCameraUseCase @Inject constructor(
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         setFlashMode(currentCameraSettings.flashMode)
+        videoCaptureUseCase  = when (currentCameraSettings.targetFrameRate) {
+            TargetFrameRate.TARGET_FPS_NONE -> VideoCapture.withOutput(recorder)
+            else -> VideoCapture.Builder(recorder)
+                .setTargetFrameRate(currentCameraSettings.targetFrameRate.range)
+                .build()
+        }
         updateUseCaseGroup()
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 

@@ -184,7 +184,7 @@ fun TargetFpsSetting(
     currentTargetFps: TargetFrameRate,
     setTargetFps: (TargetFrameRate) -> Unit
 ) {
-    val str = "surface resolution will be optimized for a target fps of "
+    val str = "surfaces will be set for a target fps of "
 
     BasicPopupSetting(
         modifier = modifier,

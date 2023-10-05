@@ -21,7 +21,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import com.google.jetpackcamera.settings.model.TargetFrameRate
-import com.google.jetpackcamera.settings.TargetFrameRate as TargetFrameRateProto
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -102,7 +101,8 @@ class LocalSettingsRepository @Inject constructor(
         // the direction of the camera should be disabled
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(frontLensAvailable)
+                //todo for some reason this is causing it to be false. didnt use to act like this
+                // .setDefaultFrontCamera(frontLensAvailable)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
                 .build()

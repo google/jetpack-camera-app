@@ -19,8 +19,8 @@ package com.google.jetpackcamera.settings.model
 import android.util.Range
 import com.google.jetpackcamera.settings.TargetFrameRate as TargetFrameRateProto
 
-enum class TargetFrameRate(range: Range<Int>?) {
-    TARGET_FPS_NONE(null),
+enum class TargetFrameRate(val range: Range<Int>) {
+    TARGET_FPS_NONE(Range(0,0)),
     TARGET_FPS_15(Range(15, 15)),
     TARGET_FPS_30(Range(30, 30)),
     TARGET_FPS_60(Range(60, 60)),
