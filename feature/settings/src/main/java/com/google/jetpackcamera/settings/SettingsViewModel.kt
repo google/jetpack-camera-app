@@ -17,11 +17,13 @@
 package com.google.jetpackcamera.settings
 
 import android.util.Log
+import android.util.Range
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -93,6 +95,12 @@ class SettingsViewModel @Inject constructor(
     fun setFlashMode(flashModeStatus: FlashModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateFlashModeStatus(flashModeStatus)
+        }
+    }
+
+    fun setTargetFrameRate(targetFrameRate: TargetFrameRate) {
+        viewModelScope.launch {
+            settingsRepository.updateTargetFrameRate(targetFrameRate)
         }
     }
 }

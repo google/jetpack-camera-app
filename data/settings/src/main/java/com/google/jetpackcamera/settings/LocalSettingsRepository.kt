@@ -20,6 +20,8 @@ import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.TargetFrameRate
+import com.google.jetpackcamera.settings.TargetFrameRate as TargetFrameRateProto
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -50,7 +52,8 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 isFrontCameraAvailable = it.frontCameraAvailable,
-                isBackCameraAvailable = it.backCameraAvailable
+                isBackCameraAvailable = it.backCameraAvailable,
+                targetFrameRate = TargetFrameRate.fromProto(it.targetFrameRate),
             )
         }
 
@@ -103,6 +106,15 @@ class LocalSettingsRepository @Inject constructor(
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
                 .build()
+        }
+    }
+
+    override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setTargetFrameRate(TargetFrameRate.toProto(targetFrameRate))
+                .build()
+
         }
     }
 }

@@ -30,6 +30,7 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
+import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 
 private const val TAG = "SettingsScreen"
@@ -58,22 +59,26 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-        SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
+    SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
-        DefaultCameraFacing(
-            cameraAppSettings = uiState.cameraAppSettings,
-            onClick = viewModel::setDefaultToFrontCamera
-        )
+    DefaultCameraFacing(
+        cameraAppSettings = uiState.cameraAppSettings,
+        onClick = viewModel::setDefaultToFrontCamera
+    )
 
-        FlashModeSetting(
-            currentFlashMode = uiState.cameraAppSettings.flashMode,
-            setFlashMode = viewModel::setFlashMode
-        )
+    FlashModeSetting(
+        currentFlashMode = uiState.cameraAppSettings.flashMode,
+        setFlashMode = viewModel::setFlashMode
+    )
+    TargetFpsSetting(
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        setTargetFps = viewModel::setTargetFrameRate
+    )
 
-        SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+    SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
-        DarkModeSetting(
-            currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
-            setDarkMode = viewModel::setDarkMode
-        )
+    DarkModeSetting(
+        currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
+        setDarkMode = viewModel::setDarkMode
+    )
 }

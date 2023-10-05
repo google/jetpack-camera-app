@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.settings.model
+syntax = "proto3";
 
-/**
- * Data layer representation for settings.
- */
-data class CameraAppSettings(
-    val isFrontCameraFacing: Boolean = false,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
-    val darkMode: DarkModeStatus = DarkModeStatus.SYSTEM,
-    val flashMode: FlashModeStatus = FlashModeStatus.OFF,
-    val aspectRatio: AspectRatio = AspectRatio.THREE_FOUR,
-    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE
-)
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
 
-val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
+enum TargetFrameRate {
+  TARGET_FRAME_RATE_UNDEFINED = 0;
+  TARGET_FRAME_RATE_NONE = 1;
+  TARGET_FRAME_RATE_15 = 2;
+  TARGET_FRAME_RATE_30 = 3;
+  TARGET_FRAME_RATE_60 = 4;
+  TARGET_FRAME_RATE_100 = 5;
+
+}

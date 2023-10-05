@@ -21,6 +21,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -50,6 +51,10 @@ object FakeSettingsRepository : SettingsRepository {
         frontLensAvailable: Boolean,
         backLensAvailable: Boolean
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
         TODO("Not yet implemented")
     }
 }

@@ -51,6 +51,7 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.TargetFrameRate
 
 
 /**
@@ -171,6 +172,49 @@ fun FlashModeSetting(
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = currentFlashMode == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun TargetFpsSetting(
+    modifier: Modifier = Modifier,
+    currentTargetFps: TargetFrameRate,
+    setTargetFps: (TargetFrameRate) -> Unit
+) {
+    val str = "surface resolution will be optimized for a target fps of "
+
+    BasicPopupSetting(
+        modifier = modifier,
+        title = "set target fps",
+        leadingIcon = null,
+        description = when (currentTargetFps) {
+            TargetFrameRate.TARGET_FPS_NONE-> "None" //stringResource(id = )
+            TargetFrameRate.TARGET_FPS_15-> str + "15"
+            TargetFrameRate.TARGET_FPS_30-> str + "30"
+            TargetFrameRate.TARGET_FPS_60-> str + "60"
+            TargetFrameRate.TARGET_FPS_100-> str + "100"
+
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(text = "none",
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_NONE,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_NONE) }
+                )
+                SingleChoiceSelector(text = "15",
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
+                )
+                SingleChoiceSelector(text = "30",
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
+                )
+                SingleChoiceSelector(text = "60",
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
                 )
             }
         }
