@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
 import android.view.Display
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
@@ -34,6 +35,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 
 
 private const val TAG = "PreviewViewModel"
@@ -56,6 +59,7 @@ class PreviewViewModel @Inject constructor(
     private var recordingJob: Job? = null
 
     init {
+        lateinit var initialCameraAppSettings : CameraAppSettings
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
                 //TODO: only update settings that were actually changed
@@ -63,16 +67,34 @@ class PreviewViewModel @Inject constructor(
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
+                initialCameraAppSettings = settings
             }
         }
-        initializeCamera()
+        initializeCamera(initialCameraAppSettings)
+
+        viewModelScope.launch {
+            cameraUseCase.config.collect {
+                _previewUiState.emit(
+                    it.toUiStateWith(previewUiState.value)
+                )
+            }
+        }
     }
 
-    private fun initializeCamera() {
+    private fun initializeCamera(cameraAppSettings: CameraAppSettings) {
         // TODO(yasith): Handle CameraUnavailableException
         Log.d(TAG, "initializeCamera")
+
+        val lensFacing = if (cameraAppSettings.isFrontCameraFacing) {
+            CameraUseCase.LensFacing.FRONT
+        } else {
+            CameraUseCase.LensFacing.BACK
+        }
+
         viewModelScope.launch {
-            cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+            cameraUseCase.initialize(
+                CameraUseCase.Config(lensFacing = lensFacing)
+            )
             _previewUiState.emit(
                 previewUiState.value.copy(
                     cameraState = CameraState.READY
@@ -86,10 +108,7 @@ class PreviewViewModel @Inject constructor(
         stopCamera()
         runningCameraJob = viewModelScope.launch {
             // TODO(yasith): Handle Exceptions from binding use cases
-            cameraUseCase.runCamera(
-                surfaceProvider,
-                previewUiState.value.currentCameraSettings
-            )
+            cameraUseCase.runCamera(surfaceProvider)
         }
     }
 
@@ -112,8 +131,9 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
             )
-            // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
+            val flashMode =
+                previewUiState.value.currentCameraSettings.flashMode.toCameraUseCaseFlashMode()
+            cameraUseCase.setFlashMode(flashMode)
         }
     }
 
@@ -127,10 +147,7 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
             )
-            cameraUseCase.setAspectRatio(
-                aspectRatio, previewUiState.value
-                    .currentCameraSettings.isFrontCameraFacing
-            )
+            cameraUseCase.setAspectRatio(aspectRatio.toCameraUseCaseAspectRatio())
         }
     }
 
@@ -157,8 +174,12 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
             )
-            // apply to cameraUseCase
-            cameraUseCase.setCaptureMode(newCaptureMode)
+            val captureMode = if(singleStreamCapture) {
+                CameraUseCase.CaptureMode.SINGLE_STREAM
+            } else {
+                CameraUseCase.CaptureMode.MULTI_STREAM
+            }
+            cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
@@ -179,7 +200,7 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+                cameraUseCase.setLensFacing(cameraUseCase.config.value.lensFacing.next())
             }
         }
     }
@@ -257,4 +278,34 @@ class PreviewViewModel @Inject constructor(
             y = y
         )
     }
+}
+
+private fun CameraUseCase.Config.toUiStateWith(
+    currentUiState: PreviewUiState
+) = currentUiState.copy(
+    // TODO(yasith): Remove dependency on CameraX CameraSelector
+    lensFacing = this.lensFacing.toCameraSelector()
+)
+
+private inline fun <reified T: Enum<T>> T.next(): T {
+    val values = enumValues<T>()
+    val nextOrdinal = (ordinal + 1) % values.size
+    return values[nextOrdinal]
+}
+
+private fun AspectRatio.toCameraUseCaseAspectRatio() = when(this) {
+    AspectRatio.THREE_FOUR -> CameraUseCase.AspectRatio.ASPECT_RATIO_4_3
+    AspectRatio.NINE_SIXTEEN -> CameraUseCase.AspectRatio.ASPECT_RATIO_16_9
+    AspectRatio.ONE_ONE -> CameraUseCase.AspectRatio.ASPECT_RATIO_1_1
+}
+
+private fun FlashModeStatus.toCameraUseCaseFlashMode() = when(this) {
+    FlashModeStatus.OFF -> CameraUseCase.FlashMode.OFF
+    FlashModeStatus.ON -> CameraUseCase.FlashMode.ON
+    FlashModeStatus.AUTO -> CameraUseCase.FlashMode.AUTO
+}
+
+private fun CameraUseCase.LensFacing.toCameraSelector() = when(this) {
+    CameraUseCase.LensFacing.FRONT -> CameraSelector.LENS_FACING_FRONT
+    CameraUseCase.LensFacing.BACK -> CameraSelector.LENS_FACING_BACK
 }

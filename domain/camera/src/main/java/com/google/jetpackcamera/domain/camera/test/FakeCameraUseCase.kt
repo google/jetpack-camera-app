@@ -19,10 +19,7 @@ import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeCameraUseCase : CameraUseCase {
     private val availableLenses =
@@ -35,34 +32,24 @@ class FakeCameraUseCase : CameraUseCase {
 
     var recordingInProgress = false
 
-    var isLensFacingFront = false
-    private var flashMode = FlashModeStatus.OFF
-    private var aspectRatio = AspectRatio.THREE_FOUR
+    override val config = MutableStateFlow(CameraUseCase.Config())
 
-    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
+    private var lensFacing = CameraUseCase.LensFacing.FRONT
+    private var flashMode = CameraUseCase.FlashMode.OFF
+    private var aspectRatio = CameraUseCase.AspectRatio.ASPECT_RATIO_4_3
+
+    override suspend fun initialize(initialConfig: CameraUseCase.Config) {
         initialized = true
-        flashMode = currentCameraSettings.flashMode
-        isLensFacingFront = currentCameraSettings.isFrontCameraFacing
-        aspectRatio = currentCameraSettings.aspectRatio
-        return availableLenses
+        flashMode = initialConfig.flashMode
+        lensFacing = initialConfig.lensFacing
+        aspectRatio = initialConfig.aspectRatio
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) {
-        val lensFacing =
-            when (currentCameraSettings.isFrontCameraFacing) {
-                true -> CameraSelector.LENS_FACING_FRONT
-                false -> CameraSelector.LENS_FACING_BACK
-            }
-
+    override suspend fun runCamera(surfaceProvider: Preview.SurfaceProvider) {
         if (!initialized) {
             throw IllegalStateException("CameraProvider not initialized")
         }
-        if (!availableLenses.contains(lensFacing)) {
-            throw IllegalStateException("Requested lens not available")
-        }
+
         useCasesBinded = true
         previewStarted = true
     }
@@ -86,16 +73,19 @@ class FakeCameraUseCase : CameraUseCase {
         return -1f
     }
 
-    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        flashMode = flashModeStatus
+    override suspend fun setFlashMode(flashMode: CameraUseCase.FlashMode) {
+        this.flashMode = flashMode
     }
 
-    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
+    override suspend fun setAspectRatio(aspectRatio: CameraUseCase.AspectRatio) {
         this.aspectRatio = aspectRatio
     }
 
-    override suspend fun flipCamera(isFrontFacing: Boolean) {
-        isLensFacingFront = isFrontFacing
+    override suspend fun setLensFacing(lensFacing: CameraUseCase.LensFacing) {
+        this.lensFacing = lensFacing
+    }
+
+    override suspend fun setCaptureMode(captureMode: CameraUseCase.CaptureMode) {
     }
 
     override fun tapToFocus(
@@ -105,10 +95,6 @@ class FakeCameraUseCase : CameraUseCase {
         x: Float,
         y: Float
     ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
         TODO("Not yet implemented")
     }
 }

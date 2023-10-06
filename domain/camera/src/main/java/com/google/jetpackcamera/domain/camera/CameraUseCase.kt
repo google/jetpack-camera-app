@@ -18,31 +18,28 @@ package com.google.jetpackcamera.domain.camera
 import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Preview
-import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Data layer for camera.
  */
 interface CameraUseCase {
     /**
-     * Initializes the camera.
-     *
-     * @return list of available lenses.
+     * Current configuration used by CameraUseCase
      */
-    suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
+    val config : StateFlow<Config>
+
+    /**
+     * Initializes the camera with given [CameraUseCase.Config]
+     */
+    suspend fun initialize(initialConfig: Config)
 
     /**
      * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    )
+    suspend fun runCamera(surfaceProvider: Preview.SurfaceProvider)
 
     suspend fun takePicture()
 
@@ -52,15 +49,36 @@ interface CameraUseCase {
 
     fun setZoomScale(scale: Float): Float
 
-    fun setFlashMode(flashModeStatus: FlashModeStatus)
+    /**
+     * Sets the flash mode for the camera to use.
+     *
+     * @param flashMode [FlashMode] to use.
+     */
+    suspend fun setFlashMode(flashMode: FlashMode)
 
-    suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
+    /**
+     * Sets the aspect ratio of the camera.
+     *
+     * @param aspectRatio [AspectRatio] to use.
+     */
+    suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun flipCamera(isFrontFacing: Boolean)
+    /**
+     * Sets the capture mode used by the camera.
+     *
+     * @param captureMode [CaptureMode] to use.
+     */
+    suspend fun setCaptureMode(captureMode: CaptureMode)
+
+    /**
+     * Sets the lens facing direction for the camera
+     *
+     * @param lensFacing [LensFacing] to use.
+     */
+    suspend fun setLensFacing(lensFacing: LensFacing)
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
-    suspend fun setCaptureMode(captureMode: SettingsCaptureMode)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
