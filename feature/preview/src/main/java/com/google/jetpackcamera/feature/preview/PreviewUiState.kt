@@ -28,7 +28,8 @@ data class PreviewUiState(
     val currentCameraSettings: CameraAppSettings, // "quick" settings
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
-    val quickSettingsIsOpen: Boolean = false
+    val quickSettingsIsOpen: Boolean = false,
+    val captureMode: CaptureMode = CaptureMode.SINGLE_STREAM,
 )
 
 /**
@@ -59,4 +60,19 @@ enum class CameraState {
      */
     READY
 
+}
+
+/**
+ * Different capture modes used by the camera.
+ */
+enum class CaptureMode {
+    /**
+     * Camera is using single stream capture.
+     */
+    SINGLE_STREAM,
+
+    /**
+     * Camera is using multi stream capture.
+     */
+    MULTI_STREAM,
 }
