@@ -121,87 +121,47 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the flash mode used by the camera.
+     *
+     * @param flashModeStatus new flash mode to be used.
+     */
     fun setFlash(flashModeStatus: FlashModeStatus) {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        flashMode = flashModeStatus
-                    )
-                )
-            )
-            val flashMode =
-                previewUiState.value.currentCameraSettings.flashMode.toCameraUseCaseFlashMode()
-            cameraUseCase.setFlashMode(flashMode)
+            cameraUseCase.setFlashMode(flashModeStatus.toCameraUseCaseFlashMode())
         }
     }
 
+    /**
+     * Updates the aspect ratio for the camera.
+     *
+     * @param aspectRatio new aspect ratio to be used.
+     */
     fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        aspectRatio = aspectRatio
-                    )
-                )
-            )
             cameraUseCase.setAspectRatio(aspectRatio.toCameraUseCaseAspectRatio())
         }
     }
 
-    // flips the camera opposite to its current direction
+    /**
+     * Flips camera to use the lens that's the opposite of the current lens.
+     */
     fun flipCamera() {
-        flipCamera(
-            !previewUiState.value
-                .currentCameraSettings.isFrontCameraFacing
-        )
-    }
-
-    fun toggleCaptureMode() {
-        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
-            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
-            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
-        }
-
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        captureMode = newCaptureMode
-                    )
-                )
+            cameraUseCase.setLensFacing(
+                cameraUseCase.config.value.lensFacing.next()
             )
-            val captureMode = if(singleStreamCapture) {
-                CameraUseCase.CaptureMode.SINGLE_STREAM
-            } else {
-                CameraUseCase.CaptureMode.MULTI_STREAM
-            }
-            cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
-    // sets the camera to a designated direction
-    fun flipCamera(isFacingFront: Boolean) {
-        // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
-            && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
-        ) {
-            stopCamera()
-            runningCameraJob = viewModelScope.launch {
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        currentCameraSettings =
-                        previewUiState.value.currentCameraSettings.copy(
-                            isFrontCameraFacing = isFacingFront
-                        )
-                    )
-                )
-                // apply to cameraUseCase
-                cameraUseCase.setLensFacing(cameraUseCase.config.value.lensFacing.next())
-            }
+    /**
+     * Toggles capture mode between single stream and multi stream capture.
+     */
+    fun toggleCaptureMode() {
+        viewModelScope.launch {
+            cameraUseCase.setCaptureMode(
+                cameraUseCase.config.value.captureMode.next()
+            )
         }
     }
 
@@ -280,13 +240,25 @@ class PreviewViewModel @Inject constructor(
     }
 }
 
+/**
+ * Converts [CameraUseCase.Config] to [PreviewUiState], taking current UiState into account.
+ */
 private fun CameraUseCase.Config.toUiStateWith(
     currentUiState: PreviewUiState
 ) = currentUiState.copy(
     // TODO(yasith): Remove dependency on CameraX CameraSelector
-    lensFacing = this.lensFacing.toCameraSelector()
+    lensFacing = this.lensFacing.toCameraSelector(),
+    singleStreamCapture = this.captureMode == CameraUseCase.CaptureMode.SINGLE_STREAM,
+    currentCameraSettings = currentUiState.currentCameraSettings.copy(
+        isFrontCameraFacing = this.lensFacing == CameraUseCase.LensFacing.FRONT,
+        flashMode = this.flashMode.toUiState(),
+        aspectRatio = this.aspectRatio.toUiState(),
+    )
 )
 
+/**
+ * Picks the next value in an Enum, rotates through values.
+ */
 private inline fun <reified T: Enum<T>> T.next(): T {
     val values = enumValues<T>()
     val nextOrdinal = (ordinal + 1) % values.size
@@ -308,4 +280,16 @@ private fun FlashModeStatus.toCameraUseCaseFlashMode() = when(this) {
 private fun CameraUseCase.LensFacing.toCameraSelector() = when(this) {
     CameraUseCase.LensFacing.FRONT -> CameraSelector.LENS_FACING_FRONT
     CameraUseCase.LensFacing.BACK -> CameraSelector.LENS_FACING_BACK
+}
+
+private fun CameraUseCase.FlashMode.toUiState() = when(this) {
+    CameraUseCase.FlashMode.OFF -> FlashModeStatus.OFF
+    CameraUseCase.FlashMode.ON -> FlashModeStatus.ON
+    CameraUseCase.FlashMode.AUTO -> FlashModeStatus.AUTO
+}
+
+private fun CameraUseCase.AspectRatio.toUiState() = when(this) {
+    CameraUseCase.AspectRatio.ASPECT_RATIO_4_3 -> AspectRatio.THREE_FOUR
+    CameraUseCase.AspectRatio.ASPECT_RATIO_16_9 -> AspectRatio.NINE_SIXTEEN
+    CameraUseCase.AspectRatio.ASPECT_RATIO_1_1 -> AspectRatio.ONE_ONE
 }
