@@ -32,8 +32,6 @@ import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 
 
-private const val TAG = "SettingsScreen"
-
 /**
  * Screen used for the Settings feature.
  */
