@@ -28,6 +28,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,7 @@ private const val TAG = "Texture"
 @SuppressLint("RestrictedApi")
 @Composable
 fun Texture(
+    modifier: Modifier,
     onSurfaceTextureEvent: (SurfaceTextureEvent) -> Boolean = { _ -> true },
     onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     setView: (View) -> Unit,
@@ -98,7 +100,7 @@ fun Texture(
 
     if (resolution != null) {
         AndroidView(
-            modifier = Modifier.clipToBounds(),
+            modifier = modifier.clipToBounds(),
             factory = { context ->
                 FrameLayout(context).apply {
                     layoutParams = LinearLayout.LayoutParams(
@@ -161,7 +163,7 @@ fun Texture(
                 parentView = it
                 textureView = it.getChildAt(0) as TextureView?
                 setView(it)
-                onRequestBitmapReady { -> textureView!!.bitmap }
+                onRequestBitmapReady { textureView!!.bitmap }
             }
         )
     }

@@ -114,10 +114,10 @@ fun PreviewDisplay(
         contentAlignment = Alignment.Center
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatio: Float = aspectRatio.ratio.toFloat()
-        val shouldUseMaxWidth = maxAspectRatio <= aspectRatio
-        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatio
-        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatio
+        val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
         Box(
             modifier = Modifier
                 .width(width)
@@ -130,7 +130,7 @@ fun PreviewDisplay(
                     .fillMaxSize(),
                 onSurfaceProviderReady = onSurfaceProviderReady,
                 onRequestBitmapReady = {
-                    val bitmap = it.invoke()
+                    it.invoke()
                 },
                 setSurfaceView = { s: View ->
                     viewInfo = s

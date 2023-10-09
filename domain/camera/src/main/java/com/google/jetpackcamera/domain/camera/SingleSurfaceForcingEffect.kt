@@ -36,8 +36,4 @@ class SingleSurfaceForcingEffect : CameraEffect(
     emptySurfaceProcessor.glExecutor,
     emptySurfaceProcessor,
     {}
-) {
-    fun release() {
-        emptySurfaceProcessor.release()
-    }
-}
+)

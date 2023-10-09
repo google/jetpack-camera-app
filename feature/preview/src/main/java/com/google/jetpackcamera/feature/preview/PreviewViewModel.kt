@@ -50,7 +50,7 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
-    var runningCameraJob: Job? = null
+    private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
 
@@ -102,7 +102,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun setFlash(flashModeStatus: FlashModeStatus) {
-        //update viewmodel value
+        //update view model value
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
@@ -159,7 +159,7 @@ class PreviewViewModel @Inject constructor(
             && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
 
-            //update viewmodel value
+            //update view model value
             viewModelScope.launch {
                 _previewUiState.emit(
                     previewUiState.value.copy(
@@ -229,7 +229,7 @@ class PreviewViewModel @Inject constructor(
         toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
     }
 
-    fun toggleQuickSettings(isOpen: Boolean) {
+    private fun toggleQuickSettings(isOpen: Boolean) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(

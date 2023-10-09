@@ -30,7 +30,7 @@ interface SettingsRepository {
 
     suspend fun updateDefaultToFrontCamera()
 
-    suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus)
+    suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus)
 
     suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus)
 

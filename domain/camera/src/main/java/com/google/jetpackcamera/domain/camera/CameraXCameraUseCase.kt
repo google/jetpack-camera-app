@@ -20,7 +20,6 @@ import android.app.Application
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
-import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -34,8 +33,6 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -43,7 +40,6 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -58,7 +54,6 @@ import java.util.Date
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
-private val ASPECT_RATIO_16_9 = Rational(16, 9)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -162,11 +157,11 @@ class CameraXCameraUseCase @Inject constructor(
 
         recording = videoCaptureUseCase.output
             .prepareRecording(application, mediaStoreOutput)
-            .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
+            .start(ContextCompat.getMainExecutor(application)) { videoRecordEvent ->
                 run {
                     Log.d(TAG, videoRecordEvent.toString())
                 }
-            })
+            }
     }
 
     override fun stopVideoRecording() {
@@ -206,7 +201,7 @@ class CameraXCameraUseCase @Inject constructor(
                 surfaceWidth.toFloat(),
                 surfaceHeight.toFloat()
             )
-                .createPoint(x, y);
+                .createPoint(x, y)
 
             val action = FocusMeteringAction.Builder(meteringPoint).build()
 

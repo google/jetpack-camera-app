@@ -79,7 +79,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
-        // giving viewmodel time to call init, otherwise settings will stay disabled
+        // giving view model time to call init, otherwise settings will stay disabled
         delay(100)
         val uiState = settingsViewModel.settingsUiState.value
         advanceUntilIdle()

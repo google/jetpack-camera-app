@@ -65,8 +65,8 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        val newStatus = when (status) {
+    override suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus) {
+        val newStatus = when (darkModeStatus) {
             DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
             DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
