@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -58,22 +59,26 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-        SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
+    SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
-        DefaultCameraFacing(
-            cameraAppSettings = uiState.cameraAppSettings,
-            onClick = viewModel::setDefaultToFrontCamera
-        )
+    DefaultCameraFacing(
+        cameraAppSettings = uiState.cameraAppSettings,
+        onClick = viewModel::setDefaultToFrontCamera
+    )
 
-        FlashModeSetting(
-            currentFlashMode = uiState.cameraAppSettings.flashMode,
-            setFlashMode = viewModel::setFlashMode
-        )
+    FlashModeSetting(
+        currentFlashMode = uiState.cameraAppSettings.flashMode,
+        setFlashMode = viewModel::setFlashMode
+    )
 
-        SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+    AspectRatioSetting(
+        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        setAspectRatio = viewModel::setAspectRatio
+    )
+    SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
-        DarkModeSetting(
-            currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
-            setDarkMode = viewModel::setDarkMode
-        )
+    DarkModeSetting(
+        currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
+        setDarkMode = viewModel::setDarkMode
+    )
 }

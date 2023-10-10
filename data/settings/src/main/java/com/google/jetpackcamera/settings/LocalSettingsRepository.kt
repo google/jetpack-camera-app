@@ -17,6 +17,8 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -50,7 +52,8 @@ class LocalSettingsRepository @Inject constructor(
                     null -> FlashModeStatus.OFF
                 },
                 isFrontCameraAvailable = it.frontCameraAvailable,
-                isBackCameraAvailable = it.backCameraAvailable
+                isBackCameraAvailable = it.backCameraAvailable,
+                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus)
             )
         }
 
@@ -102,6 +105,19 @@ class LocalSettingsRepository @Inject constructor(
                 .setDefaultFrontCamera(frontLensAvailable)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
+                .build()
+        }
+    }
+
+    override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
+        val newStatus = when (aspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
+            AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
+            AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAspectRatioStatus(newStatus)
                 .build()
         }
     }
