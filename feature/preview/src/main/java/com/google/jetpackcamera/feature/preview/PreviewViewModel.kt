@@ -24,6 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,7 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.google.jetpackcamera.settings.model.AspectRatio
 
 
 private const val TAG = "PreviewViewModel"
@@ -126,8 +127,10 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
             )
-            cameraUseCase.setAspectRatio(aspectRatio, previewUiState.value
-                .currentCameraSettings.isFrontCameraFacing)
+            cameraUseCase.setAspectRatio(
+                aspectRatio, previewUiState.value
+                    .currentCameraSettings.isFrontCameraFacing
+            )
         }
     }
 
@@ -140,14 +143,22 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun toggleCaptureMode() {
-        val singleStreamCapture = previewUiState.value.singleStreamCapture
+        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
+        }
+
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
-                    singleStreamCapture = !singleStreamCapture
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        captureMode = newCaptureMode
+                    )
                 )
             )
-            cameraUseCase.setSingleStreamCapture(!singleStreamCapture)
+            // apply to cameraUseCase
+            cameraUseCase.setCaptureMode(newCaptureMode)
         }
     }
 

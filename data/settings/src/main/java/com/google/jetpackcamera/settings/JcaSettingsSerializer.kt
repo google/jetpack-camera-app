@@ -30,7 +30,9 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDefaultFrontCamera(false)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
+        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_THREE_FOUR)
         .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
+        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
