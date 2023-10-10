@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkModeStatus
@@ -172,6 +173,35 @@ fun FlashModeSetting(
                 SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = currentFlashMode == FlashModeStatus.OFF,
                     onClick = { setFlashMode(FlashModeStatus.OFF) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectRatio) -> Unit) {
+    BasicPopupSetting(
+        title = stringResource(id = R.string.aspect_ratio_title),
+        leadingIcon = null,
+        description = when (currentAspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> stringResource(id = R.string.aspect_ratio_description_9_16)
+            AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
+            AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_9_16),
+                    selected = currentAspectRatio == AspectRatio.NINE_SIXTEEN,
+                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
+                )
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_3_4),
+                    selected = currentAspectRatio == AspectRatio.THREE_FOUR,
+                    onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
+                )
+                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_1_1),
+                    selected = currentAspectRatio == AspectRatio.ONE_ONE,
+                    onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
                 )
             }
         }

@@ -17,6 +17,7 @@
 package com.google.jetpackcamera.settings.test
 
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -60,5 +61,9 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateCaptureMode(captureMode: CaptureMode) {
         currentCameraSettings =
             currentCameraSettings.copy(captureMode = captureMode)
+    }
+
+    override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
+        TODO("Not yet implemented")
     }
 }
