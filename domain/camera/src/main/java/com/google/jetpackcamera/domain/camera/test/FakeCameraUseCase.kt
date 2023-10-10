@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.test
 
 import android.view.Display
@@ -26,7 +25,6 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 class FakeCameraUseCase : CameraUseCase {
-
     private val availableLenses =
         listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
     private var initialized = false
@@ -51,12 +49,13 @@ class FakeCameraUseCase : CameraUseCase {
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings,
+        currentCameraSettings: CameraAppSettings
     ) {
-        val lensFacing = when (currentCameraSettings.isFrontCameraFacing) {
-            true -> CameraSelector.LENS_FACING_FRONT
-            false -> CameraSelector.LENS_FACING_BACK
-        }
+        val lensFacing =
+            when (currentCameraSettings.isFrontCameraFacing) {
+                true -> CameraSelector.LENS_FACING_FRONT
+                false -> CameraSelector.LENS_FACING_BACK
+            }
 
         if (!initialized) {
             throw IllegalStateException("CameraProvider not initialized")

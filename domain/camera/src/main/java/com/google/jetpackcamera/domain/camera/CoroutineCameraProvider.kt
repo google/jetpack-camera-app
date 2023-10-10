@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import androidx.camera.core.Camera
@@ -23,9 +22,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Runs a camera for the duration of a coroutine.
@@ -52,9 +51,10 @@ suspend fun <R> ProcessCameraProvider.runWith(
  */
 private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
     LifecycleOwner {
-    private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this).apply {
-        currentState = Lifecycle.State.INITIALIZED
-    }
+    private val lifecycleRegistry: LifecycleRegistry =
+        LifecycleRegistry(this).apply {
+            currentState = Lifecycle.State.INITIALIZED
+        }
 
     init {
         if (coroutineContext[Job]?.isActive == true) {
@@ -72,5 +72,4 @@ private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
     }
 
     override fun getLifecycle() = lifecycleRegistry
-
 }

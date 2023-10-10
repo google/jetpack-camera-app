@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import android.view.Display
@@ -27,7 +26,6 @@ import com.google.jetpackcamera.settings.model.FlashModeStatus
  * Data layer for camera.
  */
 interface CameraUseCase {
-
     /**
      * Initializes the camera.
      *
