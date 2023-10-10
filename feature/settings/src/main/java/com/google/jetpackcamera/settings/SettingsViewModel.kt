@@ -51,7 +51,7 @@ class SettingsViewModel @Inject constructor(
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
     init {
-        // updates our viewmodel as soon as datastore is updated
+        // updates our view model as soon as datastore is updated
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect { updatedSettings ->
                 _settingsUiState.emit(
