@@ -216,6 +216,11 @@ fun TargetFpsSetting(
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
                 )
+
+                SingleChoiceSelector(text = "100",
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_100,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_100) }
+                )
             }
         }
     )

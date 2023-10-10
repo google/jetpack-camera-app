@@ -131,6 +131,7 @@ class CameraXCameraUseCase @Inject constructor(
             camera = it
             awaitCancellation()
         }
+
     }
 
     override suspend fun takePicture() {
