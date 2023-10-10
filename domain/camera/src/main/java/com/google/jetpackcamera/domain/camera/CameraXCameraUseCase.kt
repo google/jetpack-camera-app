@@ -34,6 +34,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -73,7 +75,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase = Preview.Builder().build()
+    private val previewUseCase: Preview = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
