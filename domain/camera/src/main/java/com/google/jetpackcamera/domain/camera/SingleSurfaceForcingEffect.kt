@@ -43,3 +43,4 @@ class SingleSurfaceForcingEffect : CameraEffect(
         emptySurfaceProcessor.release()
     }
 }
+
