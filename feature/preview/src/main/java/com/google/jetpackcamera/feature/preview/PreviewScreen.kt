@@ -94,6 +94,7 @@ fun PreviewScreen(
         }
     }
     if (previewUiState.cameraState == CameraState.NOT_READY) {
+        //todo: loading screen
         Text(text = stringResource(R.string.camera_not_ready))
     } else if (previewUiState.cameraState == CameraState.READY) {
         // display camera feed. this stays behind everything else

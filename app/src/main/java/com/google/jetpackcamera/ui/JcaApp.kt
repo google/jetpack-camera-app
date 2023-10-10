@@ -42,7 +42,10 @@ fun JcaApp() {
     if (permissionState.status.isGranted) {
         JetpackCameraNavHost(modifier = Modifier.fillMaxSize())
     } else {
-        CameraPermission(permissionState)
+        CameraPermission(
+            modifier = Modifier.fillMaxSize(),
+            cameraPermissionState = permissionState
+        )
     }
 }
 

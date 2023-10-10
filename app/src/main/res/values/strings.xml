@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Jetpack Camera</string>
-    <string name="camera_permission_required_rationale">The camera is important for this app. Please grant the permission.</string>
-    <string name="camera_not_available">Camera not available</string>
-    <string name="request_permission">Request permission</string>
+    <string name="camera_permission_screen_title">Jetpack Camera</string>
+    <string name="camera_permission_required_rationale">Please provide access to the camera, which is necessary for this app to function.</string>
+    <string name="image_accessibility_text">A symbol representing a camera</string>
+    <string name="request_permission">Allow Access</string>
 </resources>
