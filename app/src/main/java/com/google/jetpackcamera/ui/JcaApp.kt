@@ -17,10 +17,7 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,7 +37,7 @@ fun JcaApp() {
         rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     if (permissionState.status.isGranted) {
-        JetpackCameraNavHost(modifier = Modifier.fillMaxSize())
+        JetpackCameraNavHost()
     } else {
         CameraPermission(
             modifier = Modifier.fillMaxSize(),
@@ -49,10 +46,8 @@ fun JcaApp() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun JetpackCameraNavHost(
-    modifier: Modifier,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(navController = navController, startDestination = PreviewRoute) {

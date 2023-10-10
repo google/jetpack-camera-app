@@ -37,7 +37,10 @@ class SingleSurfaceForcingEffect : CameraEffect(
     emptySurfaceProcessor,
     {}
 ) {
+    // TODO(b/304547401): Invoke this to release the processor properly
+    @SuppressWarnings("unused")
     fun release() {
         emptySurfaceProcessor.release()
     }
 }
+

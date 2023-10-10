@@ -20,11 +20,13 @@ import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -53,7 +55,12 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 isFrontCameraAvailable = it.frontCameraAvailable,
                 isBackCameraAvailable = it.backCameraAvailable,
-                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus)
+                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
+                captureMode = when (it.captureModeStatus) {
+                    CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
+                    CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
+                    else -> CaptureMode.MULTI_STREAM
+                },
             )
         }
 
@@ -68,8 +75,8 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        val newStatus = when (status) {
+    override suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus) {
+        val newStatus = when (darkModeStatus) {
             DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
             DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
@@ -118,6 +125,18 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setAspectRatioStatus(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+        val newStatus = when (captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAPTURE_MODE_MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setCaptureModeStatus(newStatus)
                 .build()
         }
     }

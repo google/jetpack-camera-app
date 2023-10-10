@@ -19,6 +19,7 @@ package com.google.jetpackcamera.settings.test
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -51,7 +52,15 @@ object FakeSettingsRepository : SettingsRepository {
         frontLensAvailable: Boolean,
         backLensAvailable: Boolean
     ) {
-        TODO("Not yet implemented")
+        currentCameraSettings = currentCameraSettings.copy(
+            isFrontCameraAvailable = frontLensAvailable,
+            isBackCameraAvailable = backLensAvailable
+        )
+    }
+
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+        currentCameraSettings =
+            currentCameraSettings.copy(captureMode = captureMode)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

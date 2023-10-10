@@ -22,12 +22,14 @@ import android.view.Surface
 import android.view.View
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.google.jetpackcamera.viewfinder.surface.SurfaceType.*
 
 private const val TAG = "CombinedSurface"
 
 @Composable
 fun CombinedSurface(
+    modifier: Modifier,
     onSurfaceEvent: (CombinedSurfaceEvent) -> Unit,
     onRequestBitmapReady: (() -> Bitmap?) -> Unit = {},
     type: SurfaceType = TEXTURE_VIEW,
@@ -55,8 +57,8 @@ fun CombinedSurface(
         }
 
         TEXTURE_VIEW -> Texture(
-
-            {
+            modifier = modifier,
+            onSurfaceTextureEvent = {
                 when (it) {
                     is SurfaceTextureEvent.SurfaceTextureAvailable -> {
                         onSurfaceEvent(CombinedSurfaceEvent.SurfaceAvailable(Surface(it.surface)))
