@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 
@@ -121,9 +122,9 @@ fun DarkModeSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         description = when (currentDarkModeStatus) {
-            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_status_system)
-            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_status_dark)
-            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_status_light)
+            DarkModeStatus.SYSTEM -> stringResource(id = R.string.dark_mode_description_system)
+            DarkModeStatus.DARK -> stringResource(id = R.string.dark_mode_description_dark)
+            DarkModeStatus.LIGHT -> stringResource(id = R.string.dark_mode_description_light)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -155,9 +156,9 @@ fun FlashModeSetting(
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         description = when (currentFlashMode) {
-            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_status_auto)
-            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_status_on)
-            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_status_off)
+            FlashModeStatus.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
+            FlashModeStatus.ON -> stringResource(id = R.string.flash_mode_description_on)
+            FlashModeStatus.OFF -> stringResource(id = R.string.flash_mode_description_off)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -201,6 +202,34 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
                 SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_1_1),
                     selected = currentAspectRatio == AspectRatio.ONE_ONE,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun CaptureModeSetting(
+    currentCaptureMode: CaptureMode,
+    setCaptureMode: (CaptureMode) -> Unit
+) {
+    //todo: string resources
+    BasicPopupSetting(
+        title = stringResource(R.string.capture_mode_title),
+        leadingIcon = null,
+        description = when (currentCaptureMode) {
+            CaptureMode.MULTI_STREAM -> stringResource(id = R.string.capture_mode_description_multi_stream)
+            CaptureMode.SINGLE_STREAM -> stringResource(id = R.string.capture_mode_description_single_stream)
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_selector_multi_stream),
+                    selected = currentCaptureMode == CaptureMode.MULTI_STREAM,
+                    onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
+                )
+                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_description_single_stream),
+                    selected = currentCaptureMode == CaptureMode.SINGLE_STREAM,
+                    onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
             }
         }

@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkModeStatus
 import com.google.jetpackcamera.settings.model.FlashModeStatus
@@ -59,6 +60,10 @@ class SettingsViewModel @Inject constructor(
                         disabled = false
                     )
                 )
+
+                Log.d(
+                    TAG, "updated setting" + settingsRepository.getCameraAppSettings().captureMode
+                )
             }
         }
         viewModelScope.launch {
@@ -81,7 +86,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-
     fun setDarkMode(darkModeStatus: DarkModeStatus) {
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkModeStatus)
@@ -101,6 +105,17 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateAspectRatio(aspectRatio)
             Log.d(TAG, "set aspect ratio ${settingsRepository.getCameraAppSettings().aspectRatio}")
+        }
+    }
+
+    fun setCaptureMode(captureMode: CaptureMode) {
+        viewModelScope.launch {
+            settingsRepository.updateCaptureMode(captureMode)
+
+            Log.d(
+                TAG,
+                "set default capture mode " + settingsRepository.getCameraAppSettings().captureMode
+            )
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -75,6 +76,12 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
         setAspectRatio = viewModel::setAspectRatio
     )
+
+    CaptureModeSetting(
+        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        setCaptureMode = viewModel::setCaptureMode
+    )
+
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
