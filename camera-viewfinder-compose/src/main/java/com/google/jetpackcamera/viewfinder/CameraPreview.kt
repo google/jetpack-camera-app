@@ -104,7 +104,8 @@ fun PreviewSurface(
                         null
                     }
                 }
-            }
+            },
+            surfaceRequest = surfaceRequest
         )
     }
 }

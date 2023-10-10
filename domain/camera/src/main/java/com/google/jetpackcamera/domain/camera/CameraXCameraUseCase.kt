@@ -34,6 +34,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -72,7 +74,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     //TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase = Preview.Builder().build()
+    private val previewUseCase: Preview = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
@@ -85,8 +87,8 @@ class CameraXCameraUseCase @Inject constructor(
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
-        this.aspectRatio = currentCameraSettings.aspect_ratio
-        setFlashMode(currentCameraSettings.flash_mode_status)
+        this.aspectRatio = currentCameraSettings.aspectRatio
+        setFlashMode(currentCameraSettings.flashMode)
         updateUseCaseGroup()
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
@@ -116,7 +118,7 @@ class CameraXCameraUseCase @Inject constructor(
         Log.d(TAG, "startPreview")
 
         val cameraSelector =
-            cameraLensToSelector(getLensFacing(currentCameraSettings.default_front_camera))
+            cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
 

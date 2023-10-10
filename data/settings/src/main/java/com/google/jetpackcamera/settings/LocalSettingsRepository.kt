@@ -37,23 +37,21 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                default_front_camera = it.defaultFrontCamera,
-                dark_mode_status = when (it.darkModeStatus) {
+                isFrontCameraFacing = it.defaultFrontCamera,
+                darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
-                    DarkModeProto.DARK_MODE_SYSTEM,
-                    DarkModeProto.UNRECOGNIZED,
-                    null -> DarkMode.SYSTEM
+                    DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
+                    else -> DarkMode.SYSTEM
                 },
-                flash_mode_status = when (it.flashModeStatus) {
+                flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
                     FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
-                    FlashModeProto.FLASH_MODE_OFF,
-                    FlashModeProto.UNRECOGNIZED,
-                    null -> FlashMode.OFF
+                    FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
+                    else -> FlashMode.OFF
                 },
-                front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable
+                isFrontCameraAvailable = it.frontCameraAvailable,
+                isBackCameraAvailable = it.backCameraAvailable
             )
         }
 
@@ -68,8 +66,8 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkMode) {
-        val newStatus = when (status) {
+    override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
+        val newStatus = when (darkMode) {
             DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
             DarkMode.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
             DarkMode.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
