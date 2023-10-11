@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import androidx.camera.core.CameraEffect
@@ -43,4 +42,3 @@ class SingleSurfaceForcingEffect : CameraEffect(
         emptySurfaceProcessor.release()
     }
 }
-
