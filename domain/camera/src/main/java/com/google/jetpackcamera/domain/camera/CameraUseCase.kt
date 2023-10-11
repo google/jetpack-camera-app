@@ -43,6 +43,8 @@ interface CameraUseCase {
         currentCameraSettings: CameraAppSettings
     )
 
+    suspend fun unbindAll()
+
     suspend fun takePicture()
 
     suspend fun startVideoRecording()
