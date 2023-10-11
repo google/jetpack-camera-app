@@ -54,7 +54,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
-        // update viewmodel
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState
@@ -66,12 +65,15 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             when (uiState) {
-                Loading -> {/* TODO(b/283812742):  a loading screen */}
+                Loading -> {/* TODO(b/283812742):  a loading screen */
+                }
+
                 is Success -> {
-                   //TODO(kimblebee@): add app setting to enable/disable dynamic color
+                    //TODO(kimblebee@): add app setting to enable/disable dynamic color
                     JetpackCameraTheme(
                         darkTheme = isInDarkMode(uiState = uiState),
-                        dynamicColor = false) {
+                        dynamicColor = false
+                    ) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
@@ -89,7 +91,7 @@ class MainActivity : ComponentActivity() {
  * Determines whether the Theme should be in dark, light, or follow system theme
  */
 @Composable
-private fun isInDarkMode(uiState: MainActivityUiState):Boolean =
+private fun isInDarkMode(uiState: MainActivityUiState): Boolean =
     when (uiState) {
         Loading -> isSystemInDarkTheme()
         is Success -> when (uiState.cameraAppSettings.darkMode) {

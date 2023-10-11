@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +54,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -75,7 +77,7 @@ fun PreviewScreen(
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
 
-    var zoomScale by remember { mutableStateOf(1f) }
+    val zoomScale by remember { mutableFloatStateOf(1f) }
 
     var zoomScaleShow by remember { mutableStateOf(false) }
 
@@ -116,7 +118,7 @@ fun PreviewScreen(
             // hide settings, quickSettings, and quick capture mode button
             when (previewUiState.videoRecordingState) {
                 VideoRecordingState.ACTIVE -> {}
-               VideoRecordingState.INACTIVE -> {
+                VideoRecordingState.INACTIVE -> {
                     QuickSettingsScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter),
@@ -146,10 +148,10 @@ fun PreviewScreen(
                         label = {
                             Text(
                                 stringResource(
-                                    if (previewUiState.singleStreamCapture) {
-                                        R.string.capture_mode_single_stream
-                                    } else {
-                                        R.string.capture_mode_multi_stream
+                                    when (previewUiState.currentCameraSettings.captureMode) {
+                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+
                                     }
                                 )
                             )
@@ -179,6 +181,7 @@ fun PreviewScreen(
                                     .weight(1f)
                             )
                         }
+
                         VideoRecordingState.INACTIVE -> {
                             FlipCameraButton(
                                 modifier = Modifier

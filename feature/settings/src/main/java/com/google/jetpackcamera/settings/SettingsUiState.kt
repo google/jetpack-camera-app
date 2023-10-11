@@ -18,8 +18,6 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 
-private const val TAG = "SettingsUiState"
-
 /**
  * Defines the current state of the [SettingsScreen].
  */
