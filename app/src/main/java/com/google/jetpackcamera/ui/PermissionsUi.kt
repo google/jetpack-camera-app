@@ -64,7 +64,6 @@ fun CameraPermission(
     )
 }
 
-// todo: Styling
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionTemplate(
