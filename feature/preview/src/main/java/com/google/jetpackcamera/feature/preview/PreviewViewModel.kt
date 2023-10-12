@@ -185,12 +185,15 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun captureImage() {
+        Log.d("DJTEST", "captureImage")
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             try {
                 cameraUseCase.takePicture()
+                Log.d("DJTEST", "cameraUseCase.takePicture success")
                 Log.d(TAG, "cameraUseCase.takePicture success")
             } catch (exception: ImageCaptureException) {
+                Log.d("DJTEST", "cameraUseCase.takePicture error")
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
             }
