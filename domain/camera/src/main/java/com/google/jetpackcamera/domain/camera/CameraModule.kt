@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import dagger.Binds
@@ -27,9 +26,6 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 interface CameraModule {
-
     @Binds
-    fun bindsCameraUseCase (
-        cameraXCameraUseCase: CameraXCameraUseCase
-    ): CameraUseCase
+    fun bindsCameraUseCase(cameraXCameraUseCase: CameraXCameraUseCase): CameraUseCase
 }

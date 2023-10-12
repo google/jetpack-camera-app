@@ -13,20 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.common
-
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineDispatcher
-
-/**
- * Dagger [Module] for Common dependencies.
- */
-@Module
-@InstallIn(SingletonComponent::class)
-class CommonModule {
-    @Provides
-    fun provideDefaultDispatcher(): CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default
-}
