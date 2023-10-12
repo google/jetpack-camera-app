@@ -135,11 +135,13 @@ constructor(
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
+                    Log.d("DJTEST", "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
+                    Log.d("DJTEST", "takePicture onError: $exception")
                     Log.d(TAG, "takePicture onError: $exception")
                 }
             }
