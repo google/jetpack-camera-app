@@ -67,6 +67,11 @@ class FakeCameraUseCase : CameraUseCase {
         previewStarted = true
     }
 
+    override suspend fun unbindAll() {
+        useCasesBinded = false
+        previewStarted = false
+    }
+
     override suspend fun takePicture() {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not binded")

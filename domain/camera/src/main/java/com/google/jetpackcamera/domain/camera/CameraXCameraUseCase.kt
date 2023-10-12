@@ -127,6 +127,10 @@ constructor(
         }
     }
 
+    override suspend fun unbindAll() {
+        cameraProvider.unbindAll()
+    }
+
     override suspend fun takePicture() {
         val imageDeferred = CompletableDeferred<ImageProxy>()
 

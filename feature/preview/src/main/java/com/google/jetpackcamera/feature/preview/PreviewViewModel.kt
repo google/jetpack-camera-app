@@ -100,6 +100,9 @@ class PreviewViewModel @Inject constructor(
                 cancel()
             }
         }
+        viewModelScope.launch {
+            cameraUseCase.unbindAll()
+        }
     }
 
     fun setFlash(flashModeStatus: FlashModeStatus) {
