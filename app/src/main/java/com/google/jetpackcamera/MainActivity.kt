@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             when (uiState) {
-                Loading -> {/* TODO(b/283812742):  a loading screen */
+                Loading -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
