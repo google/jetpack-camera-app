@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -163,6 +164,7 @@ fun DropDownIcon(modifier: Modifier = Modifier, toggleDropDown: () -> Unit, isOp
             tint = Color.White,
             modifier =
             Modifier
+                .testTag("QuickSettingDropDown")
                 .size(72.dp)
                 .clickable {
                     toggleDropDown()

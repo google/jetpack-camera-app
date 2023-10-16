@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import android.os.Handler
@@ -41,9 +40,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -64,8 +66,10 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 /**
  * Screen used for the Preview feature.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
@@ -83,6 +87,7 @@ fun PreviewScreen(
 
     val zoomHandler = Handler(Looper.getMainLooper())
 
+    onPreviewViewModel(viewModel)
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -113,6 +118,9 @@ fun PreviewScreen(
         // overlay
         Box(
             modifier = Modifier
+                .semantics {
+                    testTagsAsResourceId = true
+                }
                 .fillMaxSize()
         ) {
             // hide settings, quickSettings, and quick capture mode button
@@ -123,14 +131,16 @@ fun PreviewScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter),
                         isOpen = previewUiState.quickSettingsIsOpen,
-                        toggleIsOpen = { viewModel.toggleQuickSettings() },
+                        toggleIsOpen = {
+                            viewModel.toggleQuickSettings()
+                        },
                         currentCameraSettings = previewUiState.currentCameraSettings,
                         onLensFaceClick = viewModel::flipCamera,
                         onFlashModeClick = viewModel::setFlash,
                         onAspectRatioClick = {
                             viewModel.setAspectRatio(it)
-                        },
-                        //onTimerClick = {}/*TODO*/
+                        }
+                        // onTimerClick = {}/*TODO*/
                     )
 
                     SettingsNavButton(
@@ -149,9 +159,10 @@ fun PreviewScreen(
                             Text(
                                 stringResource(
                                     when (previewUiState.currentCameraSettings.captureMode) {
-                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
-
+                                        CaptureMode.SINGLE_STREAM ->
+                                            R.string.capture_mode_single_stream
+                                        CaptureMode.MULTI_STREAM ->
+                                            R.string.capture_mode_multi_stream
                                     }
                                 )
                             )
@@ -171,7 +182,7 @@ fun PreviewScreen(
                     modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
+                        .height(IntrinsicSize.Min)
                 ) {
                     when (previewUiState.videoRecordingState) {
                         VideoRecordingState.ACTIVE -> {
@@ -188,10 +199,10 @@ fun PreviewScreen(
                                     .weight(1f)
                                     .fillMaxHeight(),
                                 onClick = { viewModel.flipCamera() },
-                                //enable only when phone has front and rear camera
+                                // enable only when phone has front and rear camera
                                 enabledCondition =
-                                previewUiState.currentCameraSettings.isBackCameraAvailable
-                                        && previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                previewUiState.currentCameraSettings.isBackCameraAvailable &&
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -205,7 +216,7 @@ fun PreviewScreen(
                     /* spacer is a placeholder to maintain the proportionate location of this row of
                      UI elements. if you want to  add another element, replace it with ONE element.
                      If you want to add multiple components, use a container (Box, Row, Column, etc.)
-                    */
+                     */
                     Spacer(
                         modifier = Modifier
                             .fillMaxHeight()

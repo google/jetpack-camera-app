@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import androidx.compose.foundation.layout.Column
@@ -22,18 +21,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.R
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun CameraPermission(cameraPermissionState: PermissionState) {
-    Column {
+    Column(modifier = Modifier.semantics { testTagsAsResourceId = true }) {
         val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
             stringResource(R.string.camera_permission_required_rationale)
         } else {
@@ -42,7 +45,10 @@ fun CameraPermission(cameraPermissionState: PermissionState) {
 
         Text(textToShow)
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
+        Button(
+            modifier = Modifier.testTag("CameraPermissionButton"),
+            onClick = { cameraPermissionState.launchPermissionRequest() }
+        ) {
             Text(stringResource(R.string.request_permission))
         }
     }
