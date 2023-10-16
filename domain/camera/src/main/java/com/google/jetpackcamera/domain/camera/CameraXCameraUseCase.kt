@@ -86,6 +86,7 @@ constructor(
 
     private lateinit var aspectRatio: AspectRatio
     private lateinit var captureMode: CaptureMode
+    private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -125,6 +126,7 @@ constructor(
             cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
+        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -203,6 +205,7 @@ constructor(
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         this.isFrontFacing = isFrontFacing
         updateUseCaseGroup()
+        previewUseCase.setSurfaceProvider(surfaceProvider)
         rebindUseCases()
     }
 
@@ -299,7 +302,6 @@ constructor(
         val previewUseCaseBuilder = Preview.Builder()
         // Enable preview stabilization if device capability supports
         if (isPreviewStabilizationSupported) {
-            Log.d("JCA-CameraX", "PreviewStabilization enabled");
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
         return previewUseCaseBuilder.build()
