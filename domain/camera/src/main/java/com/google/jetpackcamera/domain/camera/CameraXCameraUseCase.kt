@@ -17,9 +17,13 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
+import android.hardware.camera2.CameraCharacteristics
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
@@ -45,13 +49,13 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashModeStatus
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -70,7 +74,6 @@ constructor(
 
     // TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase: Preview = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(
         defaultDispatcher.asExecutor()
@@ -78,6 +81,7 @@ constructor(
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
     private var recording: Recording? = null
 
+    private lateinit var previewUseCase: Preview
     private lateinit var useCaseGroup: UseCaseGroup
 
     private lateinit var aspectRatio: AspectRatio
@@ -88,8 +92,9 @@ constructor(
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
         setFlashMode(currentCameraSettings.flashMode)
-        updateUseCaseGroup()
+
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
+        updateUseCaseGroup()
 
         val availableCameraLens =
             listOf(
@@ -197,6 +202,7 @@ constructor(
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         this.isFrontFacing = isFrontFacing
+        updateUseCaseGroup()
         rebindUseCases()
     }
 
@@ -252,6 +258,8 @@ constructor(
     }
 
     private fun updateUseCaseGroup() {
+        previewUseCase = createPreviewUseCase()
+
         val useCaseGroupBuilder =
             UseCaseGroup.Builder()
                 .setViewPort(
@@ -268,6 +276,35 @@ constructor(
         useCaseGroup = useCaseGroupBuilder.build()
     }
 
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun createPreviewUseCase() : Preview {
+        var isPreviewStabilizationSupported = false
+
+        // TODO: find a better way to access camera info of front/back camera before binding
+        //  use cases
+        val availableCameraInfo = cameraProvider.availableCameraInfos
+        if (availableCameraInfo.isNotEmpty()) {
+            for (cameraInfo in availableCameraInfo) {
+                val lensFacing = Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
+                    CameraCharacteristics.LENS_FACING)
+                if ((isFrontFacing && CameraCharacteristics.LENS_FACING_FRONT == lensFacing)
+                    || (!isFrontFacing && CameraCharacteristics.LENS_FACING_BACK == lensFacing)) {
+                    isPreviewStabilizationSupported =
+                        Preview.getPreviewCapabilities(cameraInfo)
+                            .isStabilizationSupported
+                }
+            }
+        }
+
+        val previewUseCaseBuilder = Preview.Builder()
+        // Enable preview stabilization if device capability supports
+        if (isPreviewStabilizationSupported) {
+            Log.d("JCA-CameraX", "PreviewStabilization enabled");
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
+        }
+        return previewUseCaseBuilder.build()
+    }
+
     // converts LensFacing from datastore to @LensFacing Int value
     private fun getLensFacing(isFrontFacing: Boolean): Int = when (isFrontFacing) {
         true -> CameraSelector.LENS_FACING_FRONT
@@ -280,6 +317,7 @@ constructor(
                 getLensFacing(isFrontFacing)
             )
         cameraProvider.unbindAll()
+
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
