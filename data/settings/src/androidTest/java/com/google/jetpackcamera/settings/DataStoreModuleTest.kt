@@ -37,7 +37,7 @@ import org.junit.Rule
 class DataStoreModuleTest {
     @get:Rule
      val tempFolder = TemporaryFolder()
-    lateinit var testFile: File
+    private lateinit var testFile: File
 
     @Before
     fun setUp() {

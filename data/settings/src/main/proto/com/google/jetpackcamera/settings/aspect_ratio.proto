@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.settings.model
+syntax = "proto3";
 
-/**
- * Data layer representation for settings.
- */
-data class CameraAppSettings(
-    val isFrontCameraFacing: Boolean = false,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
-    val darkMode: DarkMode = DarkMode.SYSTEM,
-    val flashMode: FlashMode = FlashMode.OFF,
-    val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
-    val aspectRatio: AspectRatio = AspectRatio.THREE_FOUR
-)
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
 
-val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
+enum AspectRatio {
+  ASPECT_RATIO_UNDEFINED = 0;
+  ASPECT_RATIO_THREE_FOUR = 1;
+  ASPECT_RATIO_NINE_SIXTEEN= 2;
+  ASPECT_RATIO_ONE_ONE = 3;
+}

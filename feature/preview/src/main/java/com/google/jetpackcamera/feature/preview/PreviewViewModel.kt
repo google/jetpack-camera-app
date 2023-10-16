@@ -25,6 +25,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,7 +51,7 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
-    var runningCameraJob: Job? = null
+    private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
 
@@ -102,7 +103,6 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun setFlash(flashMode: FlashMode) {
-        //update viewmodel value
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
@@ -143,14 +143,22 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun toggleCaptureMode() {
-        val singleStreamCapture = previewUiState.value.singleStreamCapture
+        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
+        }
+
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
-                    singleStreamCapture = !singleStreamCapture
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        captureMode = newCaptureMode
+                    )
                 )
             )
-            cameraUseCase.setSingleStreamCapture(!singleStreamCapture)
+            // apply to cameraUseCase
+            cameraUseCase.setCaptureMode(newCaptureMode)
         }
     }
 
@@ -160,9 +168,8 @@ class PreviewViewModel @Inject constructor(
         if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
             && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
-
-            //update viewmodel value
-            viewModelScope.launch {
+            stopCamera()
+            runningCameraJob = viewModelScope.launch {
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         currentCameraSettings =
@@ -231,7 +238,7 @@ class PreviewViewModel @Inject constructor(
         toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
     }
 
-    fun toggleQuickSettings(isOpen: Boolean) {
+    private fun toggleQuickSettings(isOpen: Boolean) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(

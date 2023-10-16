@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
-import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -34,8 +32,6 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -43,11 +39,11 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -58,36 +54,39 @@ import java.util.Date
 import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
-private val ASPECT_RATIO_16_9 = Rational(16, 9)
 
 /**
  * CameraX based implementation for [CameraUseCase]
  */
-class CameraXCameraUseCase @Inject constructor(
+class CameraXCameraUseCase
+@Inject
+constructor(
     private val application: Application,
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
-
     private var camera: Camera? = null
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    //TODO apply flash from settings
+    // TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
     private val previewUseCase: Preview = Preview.Builder().build()
 
-    private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
+    private val recorder = Recorder.Builder().setExecutor(
+        defaultDispatcher.asExecutor()
+    ).build()
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
     private var recording: Recording? = null
 
     private lateinit var useCaseGroup: UseCaseGroup
 
-    private lateinit var aspectRatio : AspectRatio
-    private var singleStreamCaptureEnabled = false
+    private lateinit var aspectRatio: AspectRatio
+    private lateinit var captureMode: CaptureMode
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
+        this.captureMode = currentCameraSettings.captureMode
         setFlashMode(currentCameraSettings.flashMode)
         updateUseCaseGroup()
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
@@ -100,7 +99,7 @@ class CameraXCameraUseCase @Inject constructor(
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
 
-        //updates values for available camera lens if necessary
+        // updates values for available camera lens if necessary
         coroutineScope {
             settingsRepository.updateAvailableCameraLens(
                 availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
@@ -113,7 +112,7 @@ class CameraXCameraUseCase @Inject constructor(
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings,
+        currentCameraSettings: CameraAppSettings
     ) = coroutineScope {
         Log.d(TAG, "startPreview")
 
@@ -143,30 +142,38 @@ class CameraXCameraUseCase @Inject constructor(
                     super.onError(exception)
                     Log.d(TAG, "takePicture onError: $exception")
                 }
-            })
+            }
+        )
     }
 
     override suspend fun startVideoRecording() {
         Log.d(TAG, "recordVideo")
-        val captureTypeString = if(singleStreamCaptureEnabled) "SingleStream" else "MultiStream"
+        val captureTypeString =
+            when (captureMode) {
+                CaptureMode.MULTI_STREAM -> "SingleStream"
+                CaptureMode.SINGLE_STREAM -> "MultiStream"
+            }
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, name)
-        }
-        val mediaStoreOutput = MediaStoreOutputOptions.Builder(
-            application.contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        )
-            .setContentValues(contentValues)
-            .build()
+        val contentValues =
+            ContentValues().apply {
+                put(MediaStore.Video.Media.DISPLAY_NAME, name)
+            }
+        val mediaStoreOutput =
+            MediaStoreOutputOptions.Builder(
+                application.contentResolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            )
+                .setContentValues(contentValues)
+                .build()
 
-        recording = videoCaptureUseCase.output
-            .prepareRecording(application, mediaStoreOutput)
-            .start(ContextCompat.getMainExecutor(application), Consumer { videoRecordEvent ->
-                run {
-                    Log.d(TAG, videoRecordEvent.toString())
+        recording =
+            videoCaptureUseCase.output
+                .prepareRecording(application, mediaStoreOutput)
+                .start(ContextCompat.getMainExecutor(application)) { videoRecordEvent ->
+                    run {
+                        Log.d(TAG, videoRecordEvent.toString())
+                    }
                 }
-            })
     }
 
     override fun stopVideoRecording() {
@@ -177,7 +184,10 @@ class CameraXCameraUseCase @Inject constructor(
     override fun setZoomScale(scale: Float): Float {
         val zoomState = getZoomState() ?: return INVALID_ZOOM_SCALE
         val finalScale =
-            (zoomState.zoomRatio * scale).coerceIn(zoomState.minZoomRatio, zoomState.maxZoomRatio)
+            (zoomState.zoomRatio * scale).coerceIn(
+                zoomState.minZoomRatio,
+                zoomState.maxZoomRatio
+            )
         camera?.cameraControl?.setZoomRatio(finalScale)
         return finalScale
     }
@@ -187,9 +197,7 @@ class CameraXCameraUseCase @Inject constructor(
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         this.isFrontFacing = isFrontFacing
-        rebindUseCases(
-
-        )
+        rebindUseCases()
     }
 
     override fun tapToFocus(
@@ -200,13 +208,14 @@ class CameraXCameraUseCase @Inject constructor(
         y: Float
     ) {
         if (camera != null) {
-            val meteringPoint = DisplayOrientedMeteringPointFactory(
-                display,
-                camera!!.cameraInfo,
-                surfaceWidth.toFloat(),
-                surfaceHeight.toFloat()
-            )
-                .createPoint(x, y);
+            val meteringPoint =
+                DisplayOrientedMeteringPointFactory(
+                    display,
+                    camera!!.cameraInfo,
+                    surfaceWidth.toFloat(),
+                    surfaceHeight.toFloat()
+                )
+                    .createPoint(x, y)
 
             val action = FocusMeteringAction.Builder(meteringPoint).build()
 
@@ -230,21 +239,28 @@ class CameraXCameraUseCase @Inject constructor(
         rebindUseCases()
     }
 
-    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
-        singleStreamCaptureEnabled = singleStreamCapture
-        Log.d(TAG, "Changing CaptureMode: singleStreamCaptureEnabled: $singleStreamCaptureEnabled")
+    override suspend fun setCaptureMode(newCaptureMode: CaptureMode) {
+        captureMode = newCaptureMode
+        Log.d(
+            TAG,
+            "Changing CaptureMode: singleStreamCaptureEnabled:" +
+                    (captureMode == CaptureMode.SINGLE_STREAM)
+        )
         updateUseCaseGroup()
         rebindUseCases()
     }
 
     private fun updateUseCaseGroup() {
-        val useCaseGroupBuilder = UseCaseGroup.Builder()
-            .setViewPort(ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build())
-            .addUseCase(previewUseCase)
-            .addUseCase(imageCaptureUseCase)
-            .addUseCase(videoCaptureUseCase)
+        val useCaseGroupBuilder =
+            UseCaseGroup.Builder()
+                .setViewPort(
+                    ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build()
+                )
+                .addUseCase(previewUseCase)
+                .addUseCase(imageCaptureUseCase)
+                .addUseCase(videoCaptureUseCase)
 
-        if (singleStreamCaptureEnabled) {
+        if (captureMode == CaptureMode.SINGLE_STREAM) {
             useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
         }
 
@@ -252,16 +268,16 @@ class CameraXCameraUseCase @Inject constructor(
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
-    private fun getLensFacing(isFrontFacing: Boolean): Int =
-        when (isFrontFacing) {
-            true -> CameraSelector.LENS_FACING_FRONT
-            false -> CameraSelector.LENS_FACING_BACK
-        }
+    private fun getLensFacing(isFrontFacing: Boolean): Int = when (isFrontFacing) {
+        true -> CameraSelector.LENS_FACING_FRONT
+        false -> CameraSelector.LENS_FACING_BACK
+    }
 
     private suspend fun rebindUseCases() {
-        val cameraSelector = cameraLensToSelector(
-            getLensFacing(isFrontFacing)
-        )
+        val cameraSelector =
+            cameraLensToSelector(
+                getLensFacing(isFrontFacing)
+            )
         cameraProvider.unbindAll()
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it

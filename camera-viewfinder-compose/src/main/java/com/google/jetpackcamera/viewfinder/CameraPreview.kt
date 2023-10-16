@@ -34,7 +34,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.mapNotNull
@@ -59,17 +58,20 @@ fun CameraPreview(
     }
 
     PreviewSurface(
+        modifier = modifier,
         surfaceRequest = surfaceRequest,
-        setView = setSurfaceView
+        setView = setSurfaceView,
+        onRequestBitmapReady = onRequestBitmapReady,
+        implementationMode = implementationMode
     )
 
 }
 
 @Composable
 fun PreviewSurface(
+    modifier: Modifier,
     surfaceRequest: SurfaceRequest?,
-//    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
-    type: SurfaceType = SurfaceType.TEXTURE_VIEW,
+    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
     setView: (View) -> Unit
 ) {
@@ -93,6 +95,7 @@ fun PreviewSurface(
     when (implementationMode) {
         ImplementationMode.PERFORMANCE -> TODO()
         ImplementationMode.COMPATIBLE -> CombinedSurface(
+            modifier = modifier,
             setView = setView,
             onSurfaceEvent = { event ->
                 surface = when (event) {
@@ -105,7 +108,8 @@ fun PreviewSurface(
                     }
                 }
             },
-            surfaceRequest = surfaceRequest
+            surfaceRequest = surfaceRequest,
+            onRequestBitmapReady = onRequestBitmapReady
         )
     }
 }

@@ -16,17 +16,6 @@
 
 package com.google.jetpackcamera.settings.model
 
-/**
- * Data layer representation for settings.
- */
-data class CameraAppSettings(
-    val isFrontCameraFacing: Boolean = false,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
-    val darkMode: DarkMode = DarkMode.SYSTEM,
-    val flashMode: FlashMode = FlashMode.OFF,
-    val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
-    val aspectRatio: AspectRatio = AspectRatio.THREE_FOUR
-)
-
-val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
+enum class CaptureMode {
+    MULTI_STREAM, SINGLE_STREAM
+}

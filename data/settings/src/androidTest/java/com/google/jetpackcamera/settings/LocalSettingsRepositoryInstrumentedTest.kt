@@ -89,7 +89,7 @@ class LocalSettingsRepositoryInstrumentedTest {
         // if you've created a new setting value and this test is failing, be sure to check that
         // JcaSettingsSerializer.kt defaultValue has been properly modified :)
 
-        var cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
+        val cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
 
         advanceUntilIdle()
         assertTrue(cameraAppSettings == DEFAULT_CAMERA_APP_SETTINGS)
@@ -97,7 +97,7 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        var initialDarkModeStatus = repository.getCameraAppSettings().darkMode
+        val initialDarkModeStatus = repository.getCameraAppSettings().darkMode
         repository.updateDarkModeStatus(DarkMode.LIGHT)
         val newDarkModeStatus = repository.getCameraAppSettings().darkMode
 
@@ -110,13 +110,13 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initalFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
+        val initialFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         repository.updateDefaultToFrontCamera()
         // default to front camera is now true
         val frontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         advanceUntilIdle()
 
-        assertFalse(initalFrontCameraDefault)
+        assertFalse(initialFrontCameraDefault)
         assertTrue(frontCameraDefault)
     }
 
@@ -145,7 +145,7 @@ class LocalSettingsRepositoryInstrumentedTest {
         val newFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
         val newBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
 
-        assertEquals(true, initialBackCamera && initialBackCamera)
+        assertEquals(true, initialFrontCamera && initialBackCamera)
         assertEquals(false, newFrontCamera || newBackCamera)
     }
 }

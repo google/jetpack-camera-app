@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import android.annotation.SuppressLint
@@ -38,8 +37,7 @@ private const val GL_THREAD_NAME = "EmptySurfaceProcessor"
  */
 @SuppressLint("RestrictedApi")
 class EmptySurfaceProcessor : SurfaceProcessor {
-
-    private val glThread : HandlerThread = HandlerThread(GL_THREAD_NAME)
+    private val glThread: HandlerThread = HandlerThread(GL_THREAD_NAME)
     private var glHandler: Handler
     var glExecutor: Executor
         private set
@@ -62,6 +60,7 @@ class EmptySurfaceProcessor : SurfaceProcessor {
             )
         }
     }
+
     override fun onInputSurface(surfaceRequest: SurfaceRequest) {
         checkGlThread()
         if (isReleased) {
@@ -70,7 +69,8 @@ class EmptySurfaceProcessor : SurfaceProcessor {
         }
         val surfaceTexture = SurfaceTexture(glRenderer.textureName)
         surfaceTexture.setDefaultBufferSize(
-            surfaceRequest.resolution.width, surfaceRequest.resolution.height
+            surfaceRequest.resolution.width,
+            surfaceRequest.resolution.height
         )
         val surface = Surface(surfaceTexture)
         surfaceRequest.provideSurface(surface, glExecutor) {
@@ -83,7 +83,7 @@ class EmptySurfaceProcessor : SurfaceProcessor {
             if (!isReleased) {
                 surfaceTexture.updateTexImage()
                 surfaceTexture.getTransformMatrix(textureTransform)
-                outputSurfaces.forEach {(surfaceOutput, surface) ->
+                outputSurfaces.forEach { (surfaceOutput, surface) ->
                     run {
                         surfaceOutput.updateTransformMatrix(surfaceTransform, textureTransform)
                         glRenderer.render(surfaceTexture.timestamp, surfaceTransform, surface)
@@ -99,12 +99,13 @@ class EmptySurfaceProcessor : SurfaceProcessor {
             surfaceOutput.close()
             return
         }
-        val surface = surfaceOutput.getSurface(glExecutor) {
-            surfaceOutput.close()
-            outputSurfaces.remove(surfaceOutput)?.let { removedSurface ->
-                glRenderer.unregisterOutputSurface(removedSurface)
+        val surface =
+            surfaceOutput.getSurface(glExecutor) {
+                surfaceOutput.close()
+                outputSurfaces.remove(surfaceOutput)?.let { removedSurface ->
+                    glRenderer.unregisterOutputSurface(removedSurface)
+                }
             }
-        }
         glRenderer.registerOutputSurface(surface)
         outputSurfaces[surfaceOutput] = surface
     }

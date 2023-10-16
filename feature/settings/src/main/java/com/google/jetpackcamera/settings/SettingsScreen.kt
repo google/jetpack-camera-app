@@ -25,14 +25,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 
-
-private const val TAG = "SettingsScreen"
 
 /**
  * Screen used for the Settings feature.
@@ -68,6 +68,16 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     FlashModeSetting(
         currentFlashMode = uiState.cameraAppSettings.flashMode,
         setFlashMode = viewModel::setFlashMode
+    )
+
+    AspectRatioSetting(
+        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        setAspectRatio = viewModel::setAspectRatio
+    )
+
+    CaptureModeSetting(
+        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        setCaptureMode = viewModel::setCaptureMode
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))

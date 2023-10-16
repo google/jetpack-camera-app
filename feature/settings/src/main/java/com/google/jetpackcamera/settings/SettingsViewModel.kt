@@ -19,6 +19,8 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -49,7 +51,7 @@ class SettingsViewModel @Inject constructor(
     val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
 
     init {
-        // updates our viewmodel as soon as datastore is updated
+        // updates our view model as soon as datastore is updated
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect { updatedSettings ->
                 _settingsUiState.emit(
@@ -57,6 +59,10 @@ class SettingsViewModel @Inject constructor(
                         cameraAppSettings = updatedSettings,
                         disabled = false
                     )
+                )
+
+                Log.d(
+                    TAG, "updated setting" + settingsRepository.getCameraAppSettings().captureMode
                 )
             }
         }
@@ -93,6 +99,24 @@ class SettingsViewModel @Inject constructor(
     fun setFlashMode(flashMode: FlashMode) {
         viewModelScope.launch {
             settingsRepository.updateFlashModeStatus(flashMode)
+        }
+    }
+
+    fun setAspectRatio(aspectRatio: AspectRatio) {
+        viewModelScope.launch {
+            settingsRepository.updateAspectRatio(aspectRatio)
+            Log.d(TAG, "set aspect ratio ${settingsRepository.getCameraAppSettings().aspectRatio}")
+        }
+    }
+
+    fun setCaptureMode(captureMode: CaptureMode) {
+        viewModelScope.launch {
+            settingsRepository.updateCaptureMode(captureMode)
+
+            Log.d(
+                TAG,
+                "set default capture mode " + settingsRepository.getCameraAppSettings().captureMode
+            )
         }
     }
 }

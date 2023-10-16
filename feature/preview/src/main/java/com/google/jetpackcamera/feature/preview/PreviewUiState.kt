@@ -28,8 +28,7 @@ data class PreviewUiState(
     val currentCameraSettings: CameraAppSettings, // "quick" settings
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
-    val quickSettingsIsOpen: Boolean = false,
-    val singleStreamCapture: Boolean = false,
+    val quickSettingsIsOpen: Boolean = false
 )
 
 /**
@@ -58,10 +57,6 @@ enum class CameraState {
     /**
      * Camera is open and presenting a preview stream.
      */
-    READY,
+    READY
 
-    /**
-     * Camera is initialized but the preview has been stopped.
-     */
-    PREVIEW_STOPPED
 }

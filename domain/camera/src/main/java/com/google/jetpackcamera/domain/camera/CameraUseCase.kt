@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera
 
 import android.view.Display
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
  * Data layer for camera.
  */
 interface CameraUseCase {
-
     /**
      * Initializes the camera.
      *
@@ -35,7 +34,7 @@ interface CameraUseCase {
     suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
 
     /**
-     * Starts the camera with [lensFacing] with the provided [Preview.SurfaceProvider].
+     * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
      *
      * The camera will run until the calling coroutine is cancelled.
      */
@@ -60,7 +59,7 @@ interface CameraUseCase {
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
-    suspend fun setSingleStreamCapture(singleStreamCapture: Boolean)
+    suspend fun setCaptureMode(captureMode: CaptureMode)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f
