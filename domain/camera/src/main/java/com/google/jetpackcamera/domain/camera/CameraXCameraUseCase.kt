@@ -45,13 +45,13 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashModeStatus
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
-import java.util.Date
-import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -275,7 +275,7 @@ constructor(
         useCaseGroup = useCaseGroupBuilder.build()
     }
 
-    private fun createPreviewUseCase() : Preview {
+    private fun createPreviewUseCase(): Preview {
         val availableCameraInfo = cameraProvider.availableCameraInfos
         val cameraSelector = if (isFrontFacing) {
             CameraSelector.DEFAULT_FRONT_CAMERA
