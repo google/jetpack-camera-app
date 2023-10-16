@@ -17,13 +17,9 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
-import android.hardware.camera2.CameraCharacteristics
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
-import androidx.annotation.OptIn
-import androidx.camera.camera2.interop.Camera2CameraInfo
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
