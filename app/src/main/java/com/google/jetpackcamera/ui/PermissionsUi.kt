@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -57,7 +58,7 @@ fun CameraPermission(
         modifier = modifier,
         permissionState = cameraPermissionState,
         painter = painterResource(id = R.drawable.photo_camera),
-        iconAccessibilityText = stringResource(id = R.string.image_accessibility_text),
+        iconAccessibilityText = stringResource(id = R.string.camera_permission_accessibility_text),
         title = stringResource(id = R.string.camera_permission_screen_title),
         bodyText = stringResource(id = R.string.camera_permission_required_rationale),
         requestButtonText = stringResource(R.string.request_permission)
@@ -81,21 +82,13 @@ fun PermissionTemplate(
         verticalArrangement = Arrangement.Bottom
     ) {
         // permission image / top half
-        Box(
+        PermissionImage(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
-                .align(Alignment.CenterHorizontally)
-
-        ) {
-            Icon(
-                modifier = Modifier
-                    .size(300.dp)
-                    .align(Alignment.BottomCenter),
-                painter = painter,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                contentDescription = iconAccessibilityText
-            )
-        }
+                .align(Alignment.CenterHorizontally),
+            painter = painter,
+            accessibilityText = iconAccessibilityText
+        )
         Spacer(modifier = Modifier.fillMaxHeight(.1f))
         // bottom half
         Column(
@@ -106,38 +99,65 @@ fun PermissionTemplate(
             PermissionText(title = title, bodyText = bodyText)
             Spacer(modifier = Modifier.fillMaxHeight(.1f))
             // permission button section
-            Box(
+            PermissionButtonSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
-                    .height(IntrinsicSize.Min)
-            ) {
-                // permission buttons
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                ) {
-                    PermissionButton(
-                        //modifier = Modifier.align(Alignment.Start),
-                        permissionState = permissionState,
-                        requestButtonText = requestButtonText
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    if (onSkipPermission != null) {
-                        //todo: skip permission button for optional permissions
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .clickable {onSkipPermission()},
-                            text = "Maybe Later",
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.inversePrimary
-                        )
-                    }
-                }
-            }
+                    .height(IntrinsicSize.Min),
+                permissionState = permissionState,
+                requestButtonText = requestButtonText,
+                onSkipPermission = onSkipPermission
+            )
         }
         Spacer(modifier = Modifier.fillMaxHeight(.2f))
+    }
+}
+
+@Composable
+
+fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
+    Box(modifier = modifier) {
+        Icon(
+            modifier = Modifier
+                .size(300.dp)
+                .align(Alignment.BottomCenter),
+            painter = painter,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            contentDescription = accessibilityText
+        )
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun PermissionButtonSection(
+    modifier: Modifier = Modifier,
+    permissionState: PermissionState,
+    requestButtonText: String,
+    onSkipPermission: (() -> Unit)?
+) {
+    Box(modifier = modifier) {
+        // permission buttons
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+        ) {
+            PermissionButton(
+                permissionState = permissionState,
+                requestButtonText = requestButtonText
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            if (onSkipPermission != null) {
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .clickable { onSkipPermission() },
+                    text = "Maybe Later",
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.inversePrimary
+                )
+            }
+        }
     }
 }
 
@@ -177,26 +197,53 @@ fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: Strin
                 .align(Alignment.Center)
         ) {
             // permission title
-            Text(
+
+            PermissionTitleText(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
-                color = MaterialTheme.colorScheme.onPrimary,
                 text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.onPrimary
             )
             Spacer(modifier = Modifier.height(10.dp))
             // permission body text
-            Text(
+            PermissionBodyText(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(horizontal = 50.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
                 text = bodyText,
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
+}
+
+@Composable
+fun PermissionTitleText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color
+) {
+    Text(
+        modifier = modifier,
+        color = color,
+        text = text,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
+}
+
+@Composable
+fun PermissionBodyText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color
+) {
+    Text(
+        modifier = modifier,
+        color = color,
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        textAlign = TextAlign.Center
+    )
 }
 
