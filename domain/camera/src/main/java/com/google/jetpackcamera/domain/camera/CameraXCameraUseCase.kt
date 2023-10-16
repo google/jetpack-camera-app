@@ -279,28 +279,19 @@ constructor(
         useCaseGroup = useCaseGroupBuilder.build()
     }
 
-    @OptIn(ExperimentalCamera2Interop::class)
     private fun createPreviewUseCase() : Preview {
-        var isPreviewStabilizationSupported = false
-
-        // TODO: find a better way to access camera info of front/back camera before binding
-        //  use cases
         val availableCameraInfo = cameraProvider.availableCameraInfos
-        if (availableCameraInfo.isNotEmpty()) {
-            for (cameraInfo in availableCameraInfo) {
-                val lensFacing = Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
-                    CameraCharacteristics.LENS_FACING)
-                if ((isFrontFacing && CameraCharacteristics.LENS_FACING_FRONT == lensFacing)
-                    || (!isFrontFacing && CameraCharacteristics.LENS_FACING_BACK == lensFacing)) {
-                    isPreviewStabilizationSupported =
-                        Preview.getPreviewCapabilities(cameraInfo)
-                            .isStabilizationSupported
-                }
-            }
+        val cameraSelector = if (isFrontFacing) {
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        } else {
+            CameraSelector.DEFAULT_BACK_CAMERA
         }
+        val isPreviewStabilizationSupported =
+            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
+                Preview.getPreviewCapabilities(it).isStabilizationSupported
+            } ?: false
 
         val previewUseCaseBuilder = Preview.Builder()
-        // Enable preview stabilization if device capability supports
         if (isPreviewStabilizationSupported) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
@@ -319,7 +310,6 @@ constructor(
                 getLensFacing(isFrontFacing)
             )
         cameraProvider.unbindAll()
-
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
             awaitCancellation()
