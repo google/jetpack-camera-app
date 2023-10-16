@@ -30,9 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
@@ -48,6 +50,7 @@ import com.google.jetpackcamera.settings.model.FlashModeStatus
 /**
  * The UI component for quick settings.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun QuickSettingsScreen(
     modifier: Modifier = Modifier,
@@ -123,6 +126,7 @@ private enum class IsExpandedQuickSetting {
 /**
  * The UI component for quick settings when it is expanded.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
@@ -149,6 +153,7 @@ private fun ExpandedQuickSettingsUi(
                     arrayOf(
                         {
                             QuickSetFlash(
+                                modifier = Modifier.testTag("QuickSetFlash"),
                                 onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )

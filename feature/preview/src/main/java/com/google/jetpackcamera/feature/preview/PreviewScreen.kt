@@ -41,9 +41,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -64,8 +68,10 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 /**
  * Screen used for the Preview feature.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
@@ -83,6 +89,7 @@ fun PreviewScreen(
 
     val zoomHandler = Handler(Looper.getMainLooper())
 
+    onPreviewViewModel(viewModel)
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -113,6 +120,9 @@ fun PreviewScreen(
         // overlay
         Box(
             modifier = Modifier
+                .semantics {
+                    testTagsAsResourceId = true
+                }
                 .fillMaxSize()
         ) {
             // hide settings, quickSettings, and quick capture mode button
@@ -123,7 +133,9 @@ fun PreviewScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter),
                         isOpen = previewUiState.quickSettingsIsOpen,
-                        toggleIsOpen = { viewModel.toggleQuickSettings() },
+                        toggleIsOpen = {
+                            viewModel.toggleQuickSettings()
+                        },
                         currentCameraSettings = previewUiState.currentCameraSettings,
                         onLensFaceClick = viewModel::flipCamera,
                         onFlashModeClick = viewModel::setFlash,
@@ -135,6 +147,7 @@ fun PreviewScreen(
 
                     SettingsNavButton(
                         modifier = Modifier
+
                             .align(Alignment.TopStart)
                             .padding(12.dp),
                         onNavigateToSettings = onNavigateToSettings

@@ -68,6 +68,8 @@ android {
 }
 
 dependencies {
+    implementation("androidx.test:rules:1.5.0")
+    implementation("androidx.test.uiautomator:uiautomator:2.2.0")
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
