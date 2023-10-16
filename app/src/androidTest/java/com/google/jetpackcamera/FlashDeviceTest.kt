@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetpackcamera
+package com.google.jetpackcamera
 
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,7 +21,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.settings.model.FlashModeStatus
 import kotlinx.coroutines.test.runTest
 import org.junit.Before

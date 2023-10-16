@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package jetpackcamera
+package com.google.jetpackcamera
 
 import androidx.test.core.app.ActivityScenario
-import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import java.util.concurrent.atomic.AtomicReference
 

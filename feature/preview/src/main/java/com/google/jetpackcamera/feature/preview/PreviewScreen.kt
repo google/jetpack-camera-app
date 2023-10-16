@@ -131,9 +131,7 @@ fun PreviewScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter),
                         isOpen = previewUiState.quickSettingsIsOpen,
-                        toggleIsOpen = {
-                            viewModel.toggleQuickSettings()
-                        },
+                        toggleIsOpen = { viewModel.toggleQuickSettings() },
                         currentCameraSettings = previewUiState.currentCameraSettings,
                         onLensFaceClick = viewModel::flipCamera,
                         onFlashModeClick = viewModel::setFlash,
