@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import android.Manifest
@@ -49,9 +48,7 @@ fun JcaApp() {
 }
 
 @Composable
-private fun JetpackCameraNavHost(
-    navController: NavHostController = rememberNavController()
-) {
+private fun JetpackCameraNavHost(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = PreviewRoute) {
         composable(PreviewRoute) {
             PreviewScreen(
@@ -59,7 +56,8 @@ private fun JetpackCameraNavHost(
             )
         }
         composable(SettingsRoute) {
-            SettingsScreen(onNavigateToPreview = { navController.navigate(PreviewRoute) }
+            SettingsScreen(
+                onNavigateToPreview = { navController.navigate(PreviewRoute) }
             )
         }
     }

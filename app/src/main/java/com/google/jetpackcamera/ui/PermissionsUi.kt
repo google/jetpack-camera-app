@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import androidx.compose.foundation.background
@@ -50,10 +49,7 @@ import com.google.jetpackcamera.R
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPermission(
-    modifier: Modifier = Modifier,
-    cameraPermissionState: PermissionState
-) {
+fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: PermissionState) {
     PermissionTemplate(
         modifier = modifier,
         permissionState = cameraPermissionState,
@@ -217,11 +213,7 @@ fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: Strin
 }
 
 @Composable
-fun PermissionTitleText(
-    modifier: Modifier = Modifier,
-    text: String,
-    color: Color
-) {
+fun PermissionTitleText(modifier: Modifier = Modifier, text: String, color: Color) {
     Text(
         modifier = modifier,
         color = color,
@@ -232,11 +224,7 @@ fun PermissionTitleText(
 }
 
 @Composable
-fun PermissionBodyText(
-    modifier: Modifier = Modifier,
-    text: String,
-    color: Color
-) {
+fun PermissionBodyText(modifier: Modifier = Modifier, text: String, color: Color) {
     Text(
         modifier = modifier,
         color = color,
@@ -245,4 +233,3 @@ fun PermissionBodyText(
         textAlign = TextAlign.Center
     )
 }
-
