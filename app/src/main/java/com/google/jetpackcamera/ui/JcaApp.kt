@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,14 +40,15 @@ fun JcaApp() {
     if (permissionState.status.isGranted) {
         JetpackCameraNavHost()
     } else {
-        CameraPermission(permissionState)
+        CameraPermission(
+            modifier = Modifier.fillMaxSize(),
+            cameraPermissionState = permissionState
+        )
     }
 }
 
 @Composable
-private fun JetpackCameraNavHost(
-    navController: NavHostController = rememberNavController()
-) {
+private fun JetpackCameraNavHost(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = PreviewRoute) {
         composable(PreviewRoute) {
             PreviewScreen(
@@ -54,7 +56,8 @@ private fun JetpackCameraNavHost(
             )
         }
         composable(SettingsRoute) {
-            SettingsScreen(onNavigateToPreview = { navController.navigate(PreviewRoute) }
+            SettingsScreen(
+                onNavigateToPreview = { navController.navigate(PreviewRoute) }
             )
         }
     }

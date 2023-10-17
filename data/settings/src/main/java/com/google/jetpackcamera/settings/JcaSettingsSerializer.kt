@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
@@ -22,16 +21,15 @@ import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
 
-
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
+        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
+        .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_THREE_FOUR)
-        .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .build()
 
@@ -43,8 +41,5 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         }
     }
 
-    override suspend fun writeTo(
-        t: JcaSettings,
-        output: OutputStream
-    ) = t.writeTo(output)
+    override suspend fun writeTo(t: JcaSettings, output: OutputStream) = t.writeTo(output)
 }

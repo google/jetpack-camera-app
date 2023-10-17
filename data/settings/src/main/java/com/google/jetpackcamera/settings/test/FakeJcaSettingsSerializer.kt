@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import com.google.jetpackcamera.settings.DarkModeProto
+import com.google.jetpackcamera.settings.DarkMode
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-
 class FakeJcaSettingsSerializer(
     var failReadWithCorruptionException: Boolean = false
 ) : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
+        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
         .build()
 
@@ -49,9 +47,5 @@ class FakeJcaSettingsSerializer(
         }
     }
 
-    override suspend fun writeTo(
-        t: JcaSettings,
-        output: OutputStream
-    ) = t.writeTo(output)
+    override suspend fun writeTo(t: JcaSettings, output: OutputStream) = t.writeTo(output)
 }
-

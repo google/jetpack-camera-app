@@ -44,7 +44,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -229,13 +229,12 @@ constructor(
         }
     }
 
-    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        imageCaptureUseCase.flashMode =
-            when (flashModeStatus) {
-                FlashModeStatus.OFF -> ImageCapture.FLASH_MODE_OFF // 2
-                FlashModeStatus.ON -> ImageCapture.FLASH_MODE_ON // 1
-                FlashModeStatus.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
-            }
+    override fun setFlashMode(flashMode: FlashMode) {
+        imageCaptureUseCase.flashMode = when (flashMode) {
+            FlashMode.OFF -> ImageCapture.FLASH_MODE_OFF // 2
+            FlashMode.ON -> ImageCapture.FLASH_MODE_ON // 1
+            FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
+        }
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
 
