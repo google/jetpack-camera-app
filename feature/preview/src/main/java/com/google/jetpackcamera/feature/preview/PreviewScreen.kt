@@ -134,8 +134,7 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
                         isOpen = previewUiState.quickSettingsIsOpen,
                         toggleIsOpen = { viewModel.toggleQuickSettings() },
                         currentCameraSettings = previewUiState.currentCameraSettings,
-                        // TODO(yasith): Remove boolean from onLensFaceClick
-                        onLensFaceClick = { _ -> viewModel.flipCamera()},
+                        onLensFaceClick = viewModel::flipCamera,
                         onFlashModeClick = viewModel::setFlash,
                         onAspectRatioClick = {
                             viewModel.setAspectRatio(it)

@@ -54,7 +54,7 @@ fun QuickSettingsScreen(
     currentCameraSettings: CameraAppSettings,
     isOpen: Boolean = false,
     toggleIsOpen: () -> Unit,
-    onLensFaceClick: (lensFace: Boolean) -> Unit,
+    onLensFaceClick: () -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
 ) {
@@ -126,7 +126,7 @@ private enum class IsExpandedQuickSetting {
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
-    onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
+    onLensFaceClick: () -> Unit,
     onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
@@ -155,7 +155,7 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickFlipCamera(
-                                flipCamera = { b: Boolean -> onLensFaceClick(b) },
+                                flipCamera = onLensFaceClick,
                                 currentFacingFront = currentCameraSettings.isFrontCameraFacing
                             )
                         },
