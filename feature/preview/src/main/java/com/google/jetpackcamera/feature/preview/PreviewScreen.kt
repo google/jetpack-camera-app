@@ -19,6 +19,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -29,7 +31,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.SuggestionChip
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,6 +55,7 @@ import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
+import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -91,7 +96,16 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
         }
     }
     if (previewUiState.cameraState == CameraState.NOT_READY) {
-        Text(text = stringResource(R.string.camera_not_ready))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(50.dp))
+            Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
+        }
     } else if (previewUiState.cameraState == CameraState.READY) {
         // display camera feed. this stays behind everything else
         PreviewDisplay(
@@ -135,24 +149,17 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
                         onNavigateToSettings = onNavigateToSettings
                     )
 
-                    SuggestionChip(
-                        onClick = { viewModel.toggleCaptureMode() },
+                    TestingButton(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(12.dp),
-                        label = {
-                            Text(
-                                stringResource(
-                                    when (previewUiState.currentCameraSettings.captureMode) {
-                                        CaptureMode.SINGLE_STREAM ->
-                                            R.string.capture_mode_single_stream
-
-                                        CaptureMode.MULTI_STREAM ->
-                                            R.string.capture_mode_multi_stream
-                                    }
-                                )
-                            )
-                        }
+                        onClick = { viewModel.toggleCaptureMode() },
+                        text = stringResource(
+                            when (previewUiState.currentCameraSettings.captureMode) {
+                                CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                            }
+                        )
                     )
                 }
             }
