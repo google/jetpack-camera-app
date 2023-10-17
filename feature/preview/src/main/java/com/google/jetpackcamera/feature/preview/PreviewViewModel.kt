@@ -168,8 +168,8 @@ class PreviewViewModel @Inject constructor(
         if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
             && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
-
-            viewModelScope.launch {
+            stopCamera()
+            runningCameraJob = viewModelScope.launch {
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         currentCameraSettings =

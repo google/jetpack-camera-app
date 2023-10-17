@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import android.os.Handler
@@ -65,10 +64,7 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
  * Screen used for the Preview feature.
  */
 @Composable
-fun PreviewScreen(
-    onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel()
-) {
+fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel = hiltViewModel()) {
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
@@ -82,7 +78,6 @@ fun PreviewScreen(
     var zoomScaleShow by remember { mutableStateOf(false) }
 
     val zoomHandler = Handler(Looper.getMainLooper())
-
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -129,8 +124,8 @@ fun PreviewScreen(
                         onFlashModeClick = viewModel::setFlash,
                         onAspectRatioClick = {
                             viewModel.setAspectRatio(it)
-                        },
-                        //onTimerClick = {}/*TODO*/
+                        }
+                        // onTimerClick = {}/*TODO*/
                     )
 
                     SettingsNavButton(
@@ -149,9 +144,11 @@ fun PreviewScreen(
                             Text(
                                 stringResource(
                                     when (previewUiState.currentCameraSettings.captureMode) {
-                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                                        CaptureMode.SINGLE_STREAM ->
+                                            R.string.capture_mode_single_stream
 
+                                        CaptureMode.MULTI_STREAM ->
+                                            R.string.capture_mode_multi_stream
                                     }
                                 )
                             )
@@ -171,7 +168,7 @@ fun PreviewScreen(
                     modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
+                        .height(IntrinsicSize.Min)
                 ) {
                     when (previewUiState.videoRecordingState) {
                         VideoRecordingState.ACTIVE -> {
@@ -188,10 +185,10 @@ fun PreviewScreen(
                                     .weight(1f)
                                     .fillMaxHeight(),
                                 onClick = { viewModel.flipCamera() },
-                                //enable only when phone has front and rear camera
+                                // enable only when phone has front and rear camera
                                 enabledCondition =
-                                previewUiState.currentCameraSettings.isBackCameraAvailable
-                                        && previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                previewUiState.currentCameraSettings.isBackCameraAvailable &&
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -208,7 +205,7 @@ fun PreviewScreen(
                     /* spacer is a placeholder to maintain the proportionate location of this row of
                      UI elements. if you want to  add another element, replace it with ONE element.
                      If you want to add multiple components, use a container (Box, Row, Column, etc.)
-                    */
+                     */
                     Spacer(
                         modifier = Modifier
                             .fillMaxHeight()
