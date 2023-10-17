@@ -21,3 +21,18 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.8.0" apply false
     id("com.google.dagger.hilt.android") version "2.44" apply false
 }
+
+tasks.register<Copy>("installGitHooks") {
+    println("Installing git hooks")
+    from(rootProject.rootDir.resolve("hooks/pre-commit"))
+    into(rootProject.rootDir.resolve(".git/hooks"))
+    fileMode = 7 * 64 + 7 * 8 + 5 // 0775 in decimal
+}
+
+gradle.taskGraph.whenReady {
+    allTasks.forEach { task ->
+        if (task != tasks["installGitHooks"]) {
+            task.dependsOn(tasks["installGitHooks"])
+        }
+    }
+}
