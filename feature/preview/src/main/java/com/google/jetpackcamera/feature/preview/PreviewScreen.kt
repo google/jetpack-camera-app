@@ -199,9 +199,12 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
                             )
                         }
                     }
+                    val multipleEventsCutter = remember { MultipleEventsCutter() }
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
-                        onClick = { viewModel.captureImage() },
+                        onClick = {
+                            multipleEventsCutter.processEvent { viewModel.captureImage() }
+                        },
                         onLongPress = { viewModel.startVideoRecording() },
                         onRelease = { viewModel.stopVideoRecording() },
                         videoRecordingState = previewUiState.videoRecordingState
