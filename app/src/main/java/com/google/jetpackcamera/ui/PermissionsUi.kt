@@ -114,7 +114,6 @@ fun PermissionTemplate(
 }
 
 @Composable
-
 fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
     Box(modifier = modifier) {
         Icon(
