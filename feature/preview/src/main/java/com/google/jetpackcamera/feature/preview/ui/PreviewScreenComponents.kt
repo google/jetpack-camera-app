@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
@@ -138,6 +140,21 @@ fun PreviewDisplay(
             )
         }
     }
+}
+
+/**
+ * A temporary button that can be added to preview for quick testing purposes
+ */
+@Composable
+fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: String){
+    SuggestionChip(
+        onClick = { onClick()},
+        modifier = modifier,
+        label = {
+            Text(text = text)
+
+        }
+    )
 }
 
 @Composable

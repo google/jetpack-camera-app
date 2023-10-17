@@ -57,6 +57,7 @@ import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
+import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -154,22 +155,18 @@ fun PreviewScreen(
                         onNavigateToSettings = onNavigateToSettings
                     )
 
-                    SuggestionChip(
-                        onClick = { viewModel.toggleCaptureMode() },
+                    TestingButton(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(12.dp),
-                        label = {
-                            Text(
-                                stringResource(
-                                    when (previewUiState.currentCameraSettings.captureMode) {
-                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                        onClick = { viewModel.toggleCaptureMode() },
+                        text = stringResource(
+                            when (previewUiState.currentCameraSettings.captureMode) {
+                                CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
 
-                                    }
-                                )
-                            )
-                        }
+                            }
+                        )
                     )
                 }
             }
