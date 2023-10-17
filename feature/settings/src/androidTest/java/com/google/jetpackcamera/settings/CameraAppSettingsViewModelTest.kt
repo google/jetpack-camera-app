@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import android.content.Context
@@ -24,6 +23,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
+import java.io.File
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -40,7 +40,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CameraAppSettingsViewModelTest {
@@ -50,7 +49,6 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var repository: LocalSettingsRepository
     private lateinit var settingsViewModel: SettingsViewModel
 
-
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
@@ -58,7 +56,7 @@ internal class CameraAppSettingsViewModelTest {
 
         testDataStore = DataStoreFactory.create(
             serializer = JcaSettingsSerializer,
-            scope = datastoreScope,
+            scope = datastoreScope
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }

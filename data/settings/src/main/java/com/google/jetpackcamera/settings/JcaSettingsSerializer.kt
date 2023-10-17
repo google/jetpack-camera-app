@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
@@ -21,7 +20,6 @@ import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-
 
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
@@ -43,8 +41,5 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         }
     }
 
-    override suspend fun writeTo(
-        t: JcaSettings,
-        output: OutputStream
-    ) = t.writeTo(output)
+    override suspend fun writeTo(t: JcaSettings, output: OutputStream) = t.writeTo(output)
 }

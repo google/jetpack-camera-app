@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
-
 
 import androidx.camera.core.Preview.SurfaceProvider
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
@@ -85,7 +83,6 @@ class PreviewViewModelTest {
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
         assertEquals(cameraUseCase.recordingInProgress, false)
-
     }
 
     @Test
@@ -110,7 +107,7 @@ class PreviewViewModelTest {
         previewViewModel.flipCamera()
 
         advanceUntilIdle()
-        //ui state and camera should both be true now
+        // ui state and camera should both be true now
         assertEquals(
             previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing,
             true

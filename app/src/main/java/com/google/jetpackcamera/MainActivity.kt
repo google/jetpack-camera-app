@@ -109,12 +109,11 @@ class MainActivity : ComponentActivity() {
  * Determines whether the Theme should be in dark, light, or follow system theme
  */
 @Composable
-private fun isInDarkMode(uiState: MainActivityUiState): Boolean =
-    when (uiState) {
-        Loading -> isSystemInDarkTheme()
-        is Success -> when (uiState.cameraAppSettings.darkMode) {
-            DarkMode.DARK -> true
-            DarkMode.LIGHT -> false
-            DarkMode.SYSTEM -> isSystemInDarkTheme()
-        }
+private fun isInDarkMode(uiState: MainActivityUiState): Boolean = when (uiState) {
+    Loading -> isSystemInDarkTheme()
+    is Success -> when (uiState.cameraAppSettings.darkMode) {
+        DarkMode.DARK -> true
+        DarkMode.LIGHT -> false
+        DarkMode.SYSTEM -> isSystemInDarkTheme()
     }
+}

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -44,6 +43,4 @@ interface SettingsRepository {
     suspend fun updateCaptureMode(captureMode: CaptureMode)
 
     suspend fun getCameraAppSettings(): CameraAppSettings
-
-
 }

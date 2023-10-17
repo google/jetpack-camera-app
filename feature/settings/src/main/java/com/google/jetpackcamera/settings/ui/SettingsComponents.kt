@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.ui
 
 import androidx.compose.foundation.clickable
@@ -54,7 +53,6 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 
-
 /**
  * MAJOR SETTING UI COMPONENTS
  * these are ready to be popped into the ui
@@ -62,11 +60,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(
-    modifier: Modifier = Modifier,
-    title: String,
-    navBack: () -> Unit
-) {
+fun SettingsPageHeader(modifier: Modifier = Modifier, title: String, navBack: () -> Unit) {
     TopAppBar(
         modifier = modifier,
         title = {
@@ -81,10 +75,7 @@ fun SettingsPageHeader(
 }
 
 @Composable
-fun SectionHeader(
-    modifier: Modifier = Modifier,
-    title: String
-) {
+fun SectionHeader(modifier: Modifier = Modifier, title: String) {
     Text(
         modifier = modifier
             .padding(start = 20.dp, top = 10.dp),
@@ -107,7 +98,8 @@ fun DefaultCameraFacing(
         leadingIcon = null,
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
-        enabled = cameraAppSettings.isBackCameraAvailable && cameraAppSettings.isFrontCameraAvailable
+        enabled = cameraAppSettings.isBackCameraAvailable &&
+            cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -128,15 +120,18 @@ fun DarkModeSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_dark),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.dark_mode_selector_dark),
                     selected = currentDarkMode == DarkMode.DARK,
                     onClick = { setDarkMode(DarkMode.DARK) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_light),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.dark_mode_selector_light),
                     selected = currentDarkMode == DarkMode.LIGHT,
                     onClick = { setDarkMode(DarkMode.LIGHT) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.dark_mode_selector_system),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.dark_mode_selector_system),
                     selected = currentDarkMode == DarkMode.SYSTEM,
                     onClick = { setDarkMode(DarkMode.SYSTEM) }
                 )
@@ -162,15 +157,18 @@ fun FlashModeSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_auto),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_auto),
                     selected = currentFlashMode == FlashMode.AUTO,
                     onClick = { setFlashMode(FlashMode.AUTO) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_on),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_on),
                     selected = currentFlashMode == FlashMode.ON,
                     onClick = { setFlashMode(FlashMode.ON) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_off),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = currentFlashMode == FlashMode.OFF,
                     onClick = { setFlashMode(FlashMode.OFF) }
                 )
@@ -191,15 +189,18 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_9_16),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
                     selected = currentAspectRatio == AspectRatio.NINE_SIXTEEN,
                     onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_3_4),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = currentAspectRatio == AspectRatio.THREE_FOUR,
                     onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.aspect_ratio_selector_1_1),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.aspect_ratio_selector_1_1),
                     selected = currentAspectRatio == AspectRatio.ONE_ONE,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
                 )
@@ -209,25 +210,28 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
 }
 
 @Composable
-fun CaptureModeSetting(
-    currentCaptureMode: CaptureMode,
-    setCaptureMode: (CaptureMode) -> Unit
-) {
-    //todo: string resources
+fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (CaptureMode) -> Unit) {
+    // todo: string resources
     BasicPopupSetting(
         title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
         description = when (currentCaptureMode) {
-            CaptureMode.MULTI_STREAM -> stringResource(id = R.string.capture_mode_description_multi_stream)
-            CaptureMode.SINGLE_STREAM -> stringResource(id = R.string.capture_mode_description_single_stream)
+            CaptureMode.MULTI_STREAM -> stringResource(
+                id = R.string.capture_mode_description_multi_stream
+            )
+            CaptureMode.SINGLE_STREAM -> stringResource(
+                id = R.string.capture_mode_description_single_stream
+            )
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_selector_multi_stream),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.capture_mode_selector_multi_stream),
                     selected = currentCaptureMode == CaptureMode.MULTI_STREAM,
                     onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.capture_mode_description_single_stream),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.capture_mode_description_single_stream),
                     selected = currentCaptureMode == CaptureMode.SINGLE_STREAM,
                     onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
@@ -267,7 +271,8 @@ fun BasicPopupSetting(
             confirmButton = {
                 Text(
                     text = "Close",
-                    modifier = Modifier.clickable { popupStatus.value = false })
+                    modifier = Modifier.clickable { popupStatus.value = false }
+                )
             },
             title = { Text(text = title) },
             text = popupContents
@@ -323,9 +328,8 @@ fun SettingUI(
     title: String,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
-    trailingContent: @Composable (() -> Unit)?,
-
-    ) {
+    trailingContent: @Composable (() -> Unit)?
+) {
     ListItem(
         modifier = modifier,
         headlineText = { Text(title) },
@@ -357,9 +361,9 @@ fun SingleChoiceSelector(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick,
+                onClick = onClick
             ),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(
             selected = selected,

@@ -239,18 +239,18 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
-                            (
-                                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                                    )
-                    ).toInt()
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -274,18 +274,18 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
-                            (
-                                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                                    )
-                    ).toInt()
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(

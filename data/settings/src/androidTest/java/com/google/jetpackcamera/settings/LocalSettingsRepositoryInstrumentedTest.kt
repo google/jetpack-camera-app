@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import android.content.Context
@@ -27,6 +26,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,8 +43,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -68,7 +66,7 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         testDataStore = DataStoreFactory.create(
             serializer = JcaSettingsSerializer,
-            scope = datastoreScope,
+            scope = datastoreScope
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
