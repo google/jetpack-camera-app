@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import android.os.Bundle
@@ -52,7 +51,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-
 /**
  * Activity for the JetpackCameraApp.
  */
@@ -89,7 +87,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 is Success -> {
-                    //TODO(kimblebee@): add app setting to enable/disable dynamic color
+                    // TODO(kimblebee@): add app setting to enable/disable dynamic color
                     JetpackCameraTheme(
                         darkTheme = isInDarkMode(uiState = uiState),
                         dynamicColor = false
@@ -111,15 +109,11 @@ class MainActivity : ComponentActivity() {
  * Determines whether the Theme should be in dark, light, or follow system theme
  */
 @Composable
-private fun isInDarkMode(uiState: MainActivityUiState): Boolean =
-    when (uiState) {
-        Loading -> isSystemInDarkTheme()
-        is Success -> when (uiState.cameraAppSettings.darkMode) {
-            DarkModeStatus.DARK -> true
-            DarkModeStatus.LIGHT -> false
-            DarkModeStatus.SYSTEM -> isSystemInDarkTheme()
-        }
+private fun isInDarkMode(uiState: MainActivityUiState): Boolean = when (uiState) {
+    Loading -> isSystemInDarkTheme()
+    is Success -> when (uiState.cameraAppSettings.darkMode) {
+        DarkModeStatus.DARK -> true
+        DarkModeStatus.LIGHT -> false
+        DarkModeStatus.SYSTEM -> isSystemInDarkTheme()
     }
-
-
-
+}
