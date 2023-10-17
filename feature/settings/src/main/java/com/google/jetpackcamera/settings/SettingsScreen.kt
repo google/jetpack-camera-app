@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,6 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
-
 
 /**
  * Screen used for the Settings feature.
@@ -83,7 +81,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
-        currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
+        currentDarkMode = uiState.cameraAppSettings.darkMode,
         setDarkMode = viewModel::setDarkMode
     )
 }

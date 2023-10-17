@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
 
 /**
@@ -23,9 +22,9 @@ data class CameraAppSettings(
     val isFrontCameraFacing: Boolean = false,
     val isFrontCameraAvailable: Boolean = true,
     val isBackCameraAvailable: Boolean = true,
+    val darkMode: DarkMode = DarkMode.SYSTEM,
+    val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
-    val darkMode: DarkModeStatus = DarkModeStatus.SYSTEM,
-    val flashMode: FlashModeStatus = FlashModeStatus.OFF,
     val aspectRatio: AspectRatio = AspectRatio.THREE_FOUR
 )
 
