@@ -32,7 +32,10 @@ import com.google.jetpackcamera.ui.Routes.SettingsRoute
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun JcaApp(onPreviewViewModel: (PreviewViewModel) -> Unit) {
+fun JcaApp(
+    onPreviewViewModel: (PreviewViewModel) -> Unit
+    /*TODO(b/306236646): remove after still capture*/
+) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
 
