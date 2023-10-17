@@ -70,7 +70,6 @@ constructor(
 
     // TODO apply flash from settings
     private val imageCaptureUseCase = ImageCapture.Builder().build()
-    private val previewUseCase: Preview = Preview.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(
         defaultDispatcher.asExecutor()
@@ -78,18 +77,21 @@ constructor(
     private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
     private var recording: Recording? = null
 
+    private lateinit var previewUseCase: Preview
     private lateinit var useCaseGroup: UseCaseGroup
 
     private lateinit var aspectRatio: AspectRatio
     private lateinit var captureMode: CaptureMode
+    private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
         setFlashMode(currentCameraSettings.flashMode)
-        updateUseCaseGroup()
+
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
+        updateUseCaseGroup()
 
         val availableCameraLens =
             listOf(
@@ -120,6 +122,7 @@ constructor(
             cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
 
         previewUseCase.setSurfaceProvider(surfaceProvider)
+        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -197,6 +200,8 @@ constructor(
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         this.isFrontFacing = isFrontFacing
+        updateUseCaseGroup()
+        previewUseCase.setSurfaceProvider(surfaceProvider)
         rebindUseCases()
     }
 
@@ -251,6 +256,8 @@ constructor(
     }
 
     private fun updateUseCaseGroup() {
+        previewUseCase = createPreviewUseCase()
+
         val useCaseGroupBuilder =
             UseCaseGroup.Builder()
                 .setViewPort(
@@ -265,6 +272,25 @@ constructor(
         }
 
         useCaseGroup = useCaseGroupBuilder.build()
+    }
+
+    private fun createPreviewUseCase(): Preview {
+        val availableCameraInfo = cameraProvider.availableCameraInfos
+        val cameraSelector = if (isFrontFacing) {
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        } else {
+            CameraSelector.DEFAULT_BACK_CAMERA
+        }
+        val isPreviewStabilizationSupported =
+            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
+                Preview.getPreviewCapabilities(it).isStabilizationSupported
+            } ?: false
+
+        val previewUseCaseBuilder = Preview.Builder()
+        if (isPreviewStabilizationSupported) {
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
+        }
+        return previewUseCaseBuilder.build()
     }
 
     // converts LensFacing from datastore to @LensFacing Int value

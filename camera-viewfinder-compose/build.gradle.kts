@@ -77,7 +77,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 
     // CameraX
-    val camerax_version = "1.3.0-SNAPSHOT"
+    val camerax_version = "1.4.0-SNAPSHOT"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 
