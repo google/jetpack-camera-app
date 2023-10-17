@@ -154,13 +154,8 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(12.dp),
-                        onClick = { viewModel.toggleCaptureMode() },
-                        text = stringResource(
-                            when (previewUiState.currentCameraSettings.captureMode) {
-                                CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
-                            }
-                        )
+                        onClick = viewModel::toggleCaptureMode,
+                        text = stringResource(previewUiState.captureMode.toStringResourceId())
                     )
                 }
             }
@@ -220,4 +215,9 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
             }
         }
     }
+}
+
+private fun com.google.jetpackcamera.feature.preview.CaptureMode.toStringResourceId() = when(this) {
+    com.google.jetpackcamera.feature.preview.CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+    com.google.jetpackcamera.feature.preview.CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
 }

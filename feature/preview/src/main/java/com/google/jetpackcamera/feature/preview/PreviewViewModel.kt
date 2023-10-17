@@ -248,7 +248,7 @@ private fun CameraUseCase.Config.toUiStateWith(
 ) = currentUiState.copy(
     // TODO(yasith): Remove dependency on CameraX CameraSelector
     lensFacing = this.lensFacing.toCameraSelector(),
-    singleStreamCapture = this.captureMode == CameraUseCase.CaptureMode.SINGLE_STREAM,
+    captureMode = this.captureMode.toUiState(),
     currentCameraSettings = currentUiState.currentCameraSettings.copy(
         isFrontCameraFacing = this.lensFacing == CameraUseCase.LensFacing.FRONT,
         flashMode = this.flashMode.toUiState(),
@@ -292,4 +292,9 @@ private fun CameraUseCase.AspectRatio.toUiState() = when(this) {
     CameraUseCase.AspectRatio.ASPECT_RATIO_4_3 -> AspectRatio.THREE_FOUR
     CameraUseCase.AspectRatio.ASPECT_RATIO_16_9 -> AspectRatio.NINE_SIXTEEN
     CameraUseCase.AspectRatio.ASPECT_RATIO_1_1 -> AspectRatio.ONE_ONE
+}
+
+private fun CameraUseCase.CaptureMode.toUiState() = when(this) {
+    CameraUseCase.CaptureMode.MULTI_STREAM -> CaptureMode.MULTI_STREAM
+    CameraUseCase.CaptureMode.SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
 }
