@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -32,9 +31,9 @@ interface SettingsRepository {
 
     suspend fun updateDefaultToFrontCamera()
 
-    suspend fun updateDarkModeStatus(darkModeStatus: DarkModeStatus)
+    suspend fun updateDarkModeStatus(darkMode: DarkMode)
 
-    suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus)
+    suspend fun updateFlashModeStatus(flashMode: FlashMode)
 
     // set device values from cameraUseCase
     suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
@@ -44,6 +43,4 @@ interface SettingsRepository {
     suspend fun updateCaptureMode(captureMode: CaptureMode)
 
     suspend fun getCameraAppSettings(): CameraAppSettings
-
-
 }

@@ -21,7 +21,7 @@ import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 
 /**
  * Data layer for camera.
@@ -52,7 +52,7 @@ interface CameraUseCase {
 
     fun setZoomScale(scale: Float): Float
 
-    fun setFlashMode(flashModeStatus: FlashModeStatus)
+    fun setFlashMode(flashMode: SettingsFlashMode)
 
     suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
 
