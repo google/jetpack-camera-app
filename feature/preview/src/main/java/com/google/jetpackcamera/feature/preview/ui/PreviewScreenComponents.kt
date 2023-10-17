@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.util.Log
@@ -42,6 +41,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -70,12 +70,11 @@ fun PreviewDisplay(
     aspectRatio: AspectRatio,
     deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
 ) {
-
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
-
-        })
+        }
+    )
     val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
@@ -100,7 +99,8 @@ fun PreviewDisplay(
                                 viewInfo.display,
                                 viewInfo.width,
                                 viewInfo.height,
-                                offset.x, offset.y
+                                offset.x,
+                                offset.y
                             )
                             Log.d(TAG, "onTap $offset")
                         } catch (e: UninitializedPropertyAccessException) {
@@ -140,6 +140,20 @@ fun PreviewDisplay(
     }
 }
 
+/**
+ * A temporary button that can be added to preview for quick testing purposes
+ */
+@Composable
+fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: String) {
+    SuggestionChip(
+        onClick = { onClick() },
+        modifier = modifier,
+        label = {
+            Text(text = text)
+        }
+    )
+}
+
 @Composable
 fun FlipCameraButton(
     modifier: Modifier = Modifier,
@@ -168,7 +182,7 @@ fun FlipCameraButton(
 fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
     IconButton(
         modifier = modifier,
-        onClick = onNavigateToSettings,
+        onClick = onNavigateToSettings
     ) {
         Icon(
             imageVector = Icons.Filled.Settings,
@@ -209,14 +223,17 @@ fun CaptureButton(
                 detectTapGestures(
                     onLongPress = {
                         onLongPress()
-                    }, onPress = {
+                    },
+                    onPress = {
                         awaitRelease()
                         onRelease()
-                    }, onTap = { onClick() })
+                    },
+                    onTap = { onClick() }
+                )
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, Color.White, CircleShape),
+            .border(4.dp, Color.White, CircleShape)
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(
