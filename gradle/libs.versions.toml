@@ -1,0 +1,78 @@
+[versions]
+
+androidxCore = "1.12.0"
+androidxAppCompat = "1.6.1"
+androidLibrary = "8.1.1"
+coreKtx = "1.5.0"
+datastore = "1.0.0"
+espressoCore = "3.5.1"
+hilt = "2.44"
+
+junit = "4.13.2"
+ext-junit = "1.1.5"
+mockitoCore = "5.2.0"
+coroutinesTest = "1.6"
+coroutinesCore = "1.6.4"
+guava = "1.4.1"
+
+protobuf = "3.21.12"
+
+hilt-nav-compose = "1.0.0"
+composeBom = "2023.10.00"
+material = "1.10.0"
+camerax = "1.2.3"
+
+futures = "1.1.0"
+kotlinPlugin = "1.8.0"
+protobuf-plugin = "0.9.1"
+
+[libraries]
+
+androidx-core = { module = "androidx.core:core", version.ref = "androidxCore"}
+androidx-appcommpat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat"}
+core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtx" }
+kotlinx-coroutines-core = {module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore"}
+kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+
+datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
+protobuf-protoc = {module = "com.google.protobuf:protoc", version.ref = "protobuf"}
+
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
+junit = { module = "junit:junit", version.ref = "junit" }
+ext-junit = { module = "androidx.test.ext:junit", version.ref = "ext-junit" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
+
+
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+
+
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt-nav-compose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+android-material = { module = "com.google.android.material:material", version.ref = "material" }
+
+
+camera-core = {module = "androidx.camera:camera-core", version.ref = "camerax"}
+camera-view = {module = "androidx.camera:camera-view", version.ref = "camerax"}
+camera-camera2 = {module = "androidx.camera:camera-camera2", version.ref = "camerax"}
+camera-extensions = {module = "androidx.camera:camera-extensions", version.ref = "camerax"}
+camera-lifecycle = {module = "androidx.camera:camera-lifecycle", version.ref = "camerax"}
+camera-video = {module = "androidx.camera:camera-video", version.ref = "camerax"}
+futures-ktx = {module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "futures"}
+
+
+
+
+
+
+[plugins]
+android-application = {id = "com.android.application", version.ref = "androidLibrary"}
+android-library = {id = "com.android.library", version.ref = "androidLibrary"}
+protobuf = {id = "com.google.protobuf", version.ref = "protobuf-plugin"}
+kotlin-android = {id = "org.jetbrains.kotlin.android", version.ref = "kotlinPlugin"}
+hilt-android =  {id = "com.google.dagger.hilt.android", version.ref = "hilt"}
+
+
+
