@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import androidx.lifecycle.ViewModel
@@ -23,15 +22,15 @@ import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    settingsRepository: SettingsRepository
+    val settingsRepository: SettingsRepository
 ) : ViewModel() {
     val uiState: StateFlow<MainActivityUiState> = settingsRepository.cameraAppSettings.map {
         Success(it)
@@ -46,4 +45,3 @@ sealed interface MainActivityUiState {
     object Loading : MainActivityUiState
     data class Success(val cameraAppSettings: CameraAppSettings) : MainActivityUiState
 }
-
