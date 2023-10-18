@@ -44,7 +44,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
  * The UI component for quick settings.
@@ -56,7 +56,7 @@ fun QuickSettingsScreen(
     isOpen: Boolean = false,
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
-    onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
@@ -128,7 +128,7 @@ private enum class IsExpandedQuickSetting {
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
-    onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
@@ -151,7 +151,7 @@ private fun ExpandedQuickSettingsUi(
                         {
                             QuickSetFlash(
                                 modifier = Modifier.testTag("QuickSetFlash"),
-                                onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
+                                onClick = { f: FlashMode -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )
                         },

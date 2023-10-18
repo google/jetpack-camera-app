@@ -29,8 +29,8 @@ message JcaSettings {
   bool default_front_camera = 2;
   bool front_camera_available = 3;
   bool back_camera_available = 4;
-  DarkModeProto dark_mode_status = 5;
-  FlashModeProto flash_mode_status = 6;
+  DarkMode dark_mode_status = 5;
+  FlashMode flash_mode_status = 6;
   AspectRatio aspect_ratio_status = 7;
   CaptureMode capture_mode_status = 8;
 }

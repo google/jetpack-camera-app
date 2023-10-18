@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
@@ -27,14 +26,13 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-
 
 private const val TAG = "PreviewViewModel"
 
@@ -44,7 +42,8 @@ private const val TAG = "PreviewViewModel"
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
     private val cameraUseCase: CameraUseCase,
-    private val settingsRepository: SettingsRepository // only reads from settingsRepository. do not push changes to repository from here
+    private val settingsRepository: SettingsRepository
+    // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
@@ -58,8 +57,8 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                //TODO: only update settings that were actually changed
-                // currently resets all "quick" settings to stored settings
+                    // TODO: only update settings that were actually changed
+                    // currently resets all "quick" settings to stored settings
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
@@ -102,13 +101,13 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setFlash(flashModeStatus: FlashModeStatus) {
+    fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        flashMode = flashModeStatus
+                        flashMode = flashMode
                     )
                 )
             )
@@ -128,7 +127,8 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             cameraUseCase.setAspectRatio(
-                aspectRatio, previewUiState.value
+                aspectRatio,
+                previewUiState.value
                     .currentCameraSettings.isFrontCameraFacing
             )
         }
@@ -165,8 +165,8 @@ class PreviewViewModel @Inject constructor(
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
         // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable
-            && previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
+            previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
             stopCamera()
             runningCameraJob = viewModelScope.launch {
@@ -179,7 +179,8 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+                cameraUseCase
+                    .flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
             }
         }
     }
@@ -200,7 +201,6 @@ class PreviewViewModel @Inject constructor(
     fun startVideoRecording() {
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
-
             try {
                 cameraUseCase.startVideoRecording()
                 _previewUiState.emit(

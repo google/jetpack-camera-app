@@ -22,7 +22,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 
 class FakeCameraUseCase : CameraUseCase {
     private val availableLenses =
@@ -36,7 +36,7 @@ class FakeCameraUseCase : CameraUseCase {
     var recordingInProgress = false
 
     var isLensFacingFront = false
-    private var flashMode = FlashModeStatus.OFF
+    private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -86,8 +86,8 @@ class FakeCameraUseCase : CameraUseCase {
         return -1f
     }
 
-    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        flashMode = flashModeStatus
+    override fun setFlashMode(flashMode: FlashMode) {
+        this.flashMode = flashMode
     }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
