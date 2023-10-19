@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import androidx.test.core.app.ActivityScenario
@@ -38,18 +37,17 @@ class BackgroundDeviceTest {
 
     private fun backgroundThenForegroundApp() {
         uiDevice.pressHome()
-        Thread.sleep(1500)
+        uiDevice.waitForIdle(1500)
         uiDevice.pressRecentApps()
-        Thread.sleep(1500)
+        uiDevice.waitForIdle(1500)
         uiDevice.click(uiDevice.displayWidth / 2, uiDevice.displayHeight / 2)
-        Thread.sleep(2000)
-
+        uiDevice.waitForIdle(1500)
     }
 
     @Before
     fun setUp() {
         ActivityScenario.launch(MainActivity::class.java)
-        Thread.sleep(2000)
+        uiDevice.waitForIdle(2000)
     }
 
     @Test
@@ -62,7 +60,7 @@ class BackgroundDeviceTest {
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         uiDevice.findObject(By.res("QuickSetFlipCamera")).click()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }
 
@@ -72,14 +70,14 @@ class BackgroundDeviceTest {
         uiDevice.findObject(By.res("QuickSetAspectRatio")).click()
         uiDevice.findObject(By.res("QuickSetAspectRatio1:1")).click()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }
 
     @Test
     fun toggleCaptureMode_then_background_foreground() {
         uiDevice.findObject(By.res("ToggleCaptureMode")).click()
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }
 }
