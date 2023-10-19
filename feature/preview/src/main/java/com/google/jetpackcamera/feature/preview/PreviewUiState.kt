@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import androidx.camera.core.CameraSelector
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-
 
 /**
  * Defines the current state of the [PreviewScreen].
  */
 data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
-    val currentCameraSettings: CameraAppSettings, // "quick" settings
+    // "quick" settings
+    val currentCameraSettings: CameraAppSettings,
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
     val quickSettingsIsOpen: Boolean = false
@@ -39,6 +38,7 @@ enum class VideoRecordingState {
      * Camera is not currently recording a video
      */
     INACTIVE,
+
     /**
      * Camera is currently recording a video
      */
@@ -58,5 +58,4 @@ enum class CameraState {
      * Camera is open and presenting a preview stream.
      */
     READY
-
 }
