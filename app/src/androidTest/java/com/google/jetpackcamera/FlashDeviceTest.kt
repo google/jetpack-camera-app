@@ -21,7 +21,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -41,37 +41,40 @@ internal class FlashDeviceTest {
     @Before
     fun setUp() {
         activityScenario = ActivityScenario.launch(MainActivity::class.java)
+        Thread.sleep(2000)
     }
 
     @Test
     fun set_flash_on() = runTest {
+        uiDevice.waitForIdle()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         uiDevice.findObject(By.res("QuickSetFlash")).click()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
-                FlashModeStatus.ON
+                FlashMode.ON
         )
     }
 
     @Test
     fun set_flash_auto() = runTest {
+        uiDevice.waitForIdle()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         uiDevice.findObject(By.res("QuickSetFlash")).click()
         uiDevice.findObject(By.res("QuickSetFlash")).click()
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
-                FlashModeStatus.AUTO
+                    FlashMode.AUTO
         )
     }
 
     @Test
     fun set_flash_off() = runTest {
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        uiDevice.waitForIdle()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
-                FlashModeStatus.OFF
+                    FlashMode.OFF
         )
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         uiDevice.findObject(By.res("QuickSetFlash")).click()
@@ -80,7 +83,7 @@ internal class FlashDeviceTest {
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
-                FlashModeStatus.OFF
+                    FlashMode.OFF
         )
     }
 }
