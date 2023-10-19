@@ -201,7 +201,6 @@ constructor(
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         this.isFrontFacing = isFrontFacing
         updateUseCaseGroup()
-        previewUseCase.setSurfaceProvider(surfaceProvider)
         rebindUseCases()
     }
 
@@ -257,6 +256,9 @@ constructor(
 
     private fun updateUseCaseGroup() {
         previewUseCase = createPreviewUseCase()
+        if (this::surfaceProvider.isInitialized) {
+            previewUseCase.setSurfaceProvider(surfaceProvider)
+        }
 
         val useCaseGroupBuilder =
             UseCaseGroup.Builder()
