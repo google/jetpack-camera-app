@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.jetpackcamera
+
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import com.google.jetpackcamera.settings.model.FlashModeStatus
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+internal class FlashDeviceTest {
+    @get:Rule
+    val cameraPermissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private var activityScenario: ActivityScenario<MainActivity>? = null
+    private val uiDevice = UiDevice.getInstance(instrumentation)
+
+    @Before
+    fun setUp() {
+        activityScenario = ActivityScenario.launch(MainActivity::class.java)
+    }
+
+    @Test
+    fun set_flash_on() = runTest {
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        assert(
+            UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
+                FlashModeStatus.ON
+        )
+    }
+
+    @Test
+    fun set_flash_auto() = runTest {
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        assert(
+            UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
+                FlashModeStatus.AUTO
+        )
+    }
+
+    @Test
+    fun set_flash_off() = runTest {
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        assert(
+            UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
+                FlashModeStatus.OFF
+        )
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        assert(
+            UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
+                FlashModeStatus.OFF
+        )
+    }
+}

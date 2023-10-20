@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,35 +27,45 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.ui.Routes.PreviewRoute
 import com.google.jetpackcamera.ui.Routes.SettingsRoute
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun JcaApp() {
+fun JcaApp(
+    onPreviewViewModel: (PreviewViewModel) -> Unit
+    /*TODO(b/306236646): remove after still capture*/
+) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     if (permissionState.status.isGranted) {
-        JetpackCameraNavHost()
+        JetpackCameraNavHost(onPreviewViewModel)
     } else {
-        CameraPermission(permissionState)
+        CameraPermission(
+            modifier = Modifier.fillMaxSize(),
+            cameraPermissionState = permissionState
+        )
     }
 }
 
 @Composable
 private fun JetpackCameraNavHost(
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(navController = navController, startDestination = PreviewRoute) {
         composable(PreviewRoute) {
             PreviewScreen(
+                onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SettingsRoute) }
             )
         }
         composable(SettingsRoute) {
-            SettingsScreen(onNavigateToPreview = { navController.navigate(PreviewRoute) }
+            SettingsScreen(
+                onNavigateToPreview = { navController.navigate(PreviewRoute) }
             )
         }
     }

@@ -43,10 +43,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -68,8 +72,13 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 /**
  * Screen used for the Preview feature.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel = hiltViewModel()) {
+fun PreviewScreen(
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
+    onNavigateToSettings: () -> Unit,
+    viewModel: PreviewViewModel = hiltViewModel()
+) {
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
@@ -83,6 +92,8 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
     var zoomScaleShow by remember { mutableStateOf(false) }
 
     val zoomHandler = Handler(Looper.getMainLooper())
+
+    onPreviewViewModel(viewModel)
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
@@ -122,6 +133,9 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
         // overlay
         Box(
             modifier = Modifier
+                .semantics {
+                    testTagsAsResourceId = true
+                }
                 .fillMaxSize()
         ) {
             // hide settings, quickSettings, and quick capture mode button
@@ -151,6 +165,7 @@ fun PreviewScreen(onNavigateToSettings: () -> Unit, viewModel: PreviewViewModel 
 
                     TestingButton(
                         modifier = Modifier
+                            .testTag("ToggleCaptureMode")
                             .align(Alignment.TopEnd)
                             .padding(12.dp),
                         onClick = { viewModel.toggleCaptureMode() },

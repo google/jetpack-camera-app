@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,7 +45,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -71,6 +72,7 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             },
             {
                 QuickSetRatio(
+                    modifier = Modifier.testTag("QuickSetAspectRatio1:1"),
                     onClick = { setRatio(AspectRatio.ONE_ONE) },
                     ratio = AspectRatio.ONE_ONE,
                     currentRatio = currentRatio,
@@ -107,25 +109,24 @@ fun QuickSetRatio(
 @Composable
 fun QuickSetFlash(
     modifier: Modifier = Modifier,
-    onClick: (FlashModeStatus) -> Unit,
-    currentFlashMode: FlashModeStatus
+    onClick: (FlashMode) -> Unit,
+    currentFlashMode: FlashMode
 ) {
-    val enum =
-        when (currentFlashMode) {
-            FlashModeStatus.OFF -> CameraFlashMode.OFF
-            FlashModeStatus.AUTO -> CameraFlashMode.AUTO
-            FlashModeStatus.ON -> CameraFlashMode.ON
-        }
+    val enum = when (currentFlashMode) {
+        FlashMode.OFF -> CameraFlashMode.OFF
+        FlashMode.AUTO -> CameraFlashMode.AUTO
+        FlashMode.ON -> CameraFlashMode.ON
+    }
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
-        isHighLighted = currentFlashMode == FlashModeStatus.ON,
+        isHighLighted = currentFlashMode == FlashMode.ON,
         onClick =
         {
             when (currentFlashMode) {
-                FlashModeStatus.OFF -> onClick(FlashModeStatus.ON)
-                FlashModeStatus.ON -> onClick(FlashModeStatus.AUTO)
-                FlashModeStatus.AUTO -> onClick(FlashModeStatus.OFF)
+                FlashMode.OFF -> onClick(FlashMode.ON)
+                FlashMode.ON -> onClick(FlashMode.AUTO)
+                FlashMode.AUTO -> onClick(FlashMode.OFF)
             }
         }
     )
@@ -163,6 +164,7 @@ fun DropDownIcon(modifier: Modifier = Modifier, toggleDropDown: () -> Unit, isOp
             tint = Color.White,
             modifier =
             Modifier
+                .testTag("QuickSettingDropDown")
                 .size(72.dp)
                 .clickable {
                     toggleDropDown()
