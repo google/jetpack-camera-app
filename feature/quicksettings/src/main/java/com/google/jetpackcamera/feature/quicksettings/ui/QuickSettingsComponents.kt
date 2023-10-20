@@ -72,6 +72,7 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             },
             {
                 QuickSetRatio(
+                    modifier = Modifier.testTag("QuickSetAspectRatio1:1"),
                     onClick = { setRatio(AspectRatio.ONE_ONE) },
                     ratio = AspectRatio.ONE_ONE,
                     currentRatio = currentRatio,
