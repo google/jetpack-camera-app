@@ -117,7 +117,8 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun setAspectRatio(aspectRatio: AspectRatio) {
-        viewModelScope.launch {
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
@@ -148,7 +149,8 @@ class PreviewViewModel @Inject constructor(
             CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
         }
 
-        viewModelScope.launch {
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
