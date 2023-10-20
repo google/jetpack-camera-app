@@ -41,7 +41,7 @@ internal class FlashDeviceTest {
     @Before
     fun setUp() {
         activityScenario = ActivityScenario.launch(MainActivity::class.java)
-        Thread.sleep(2000)
+        uiDevice.waitForIdle(2000)
     }
 
     @Test
