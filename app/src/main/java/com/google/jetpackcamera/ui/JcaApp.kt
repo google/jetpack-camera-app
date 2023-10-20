@@ -29,8 +29,8 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
-import com.google.jetpackcamera.ui.Routes.PreviewRoute
-import com.google.jetpackcamera.ui.Routes.SettingsRoute
+import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
+import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -56,16 +56,16 @@ private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = PreviewRoute) {
-        composable(PreviewRoute) {
+    NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
+        composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
-                onNavigateToSettings = { navController.navigate(SettingsRoute) }
+                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) }
             )
         }
-        composable(SettingsRoute) {
+        composable(SETTINGS_ROUTE) {
             SettingsScreen(
-                onNavigateToPreview = { navController.navigate(PreviewRoute) }
+                onNavigateToPreview = { navController.navigate(PREVIEW_ROUTE) }
             )
         }
     }

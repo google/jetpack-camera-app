@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder.surface
 
 import android.annotation.SuppressLint
@@ -28,7 +27,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,16 +47,17 @@ fun Texture(
     onSurfaceTextureEvent: (SurfaceTextureEvent) -> Boolean = { _ -> true },
     onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     setView: (View) -> Unit,
-    surfaceRequest: SurfaceRequest?,
-    ) {
+    surfaceRequest: SurfaceRequest?
+) {
     Log.d(TAG, "Texture")
 
     val resolution = surfaceRequest?.resolution
     var textureView: TextureView? by remember { mutableStateOf(null) }
     var parentView: FrameLayout? by remember { mutableStateOf(null) }
     if (parentView != null && surfaceRequest != null && resolution != null) {
-        surfaceRequest.setTransformationInfoListener(Dispatchers.Main.asExecutor())
-        { transformationInfo ->
+        surfaceRequest.setTransformationInfoListener(
+            Dispatchers.Main.asExecutor()
+        ) { transformationInfo ->
             val parentViewSize = Size(parentView!!.width, parentView!!.height)
             if (parentViewSize.height == 0 || parentViewSize.width == 0) {
                 return@setTransformationInfoListener
@@ -72,21 +71,24 @@ fun Texture(
                     surfaceRequest.camera.isFrontFacing
                 )
             if (!transformationInfo.hasCameraTransform()) {
-                viewFinder.layoutParams = FrameLayout.LayoutParams(
-                    surfaceRectInViewFinder.width().toInt(),
-                    surfaceRectInViewFinder.height().toInt()
-                )
+                viewFinder.layoutParams =
+                    FrameLayout.LayoutParams(
+                        surfaceRectInViewFinder.width().toInt(),
+                        surfaceRectInViewFinder.height().toInt()
+                    )
             } else {
-                viewFinder.layoutParams = FrameLayout.LayoutParams(
-                    resolution.width,
-                    resolution.height
-                )
+                viewFinder.layoutParams =
+                    FrameLayout.LayoutParams(
+                        resolution.width,
+                        resolution.height
+                    )
             }
             // For TextureView, correct the orientation to match the target rotation.
-            val correctionMatrix = SurfaceTransformationUtil.getTextureViewCorrectionMatrix(
-                transformationInfo,
-                resolution
-            )
+            val correctionMatrix =
+                SurfaceTransformationUtil.getTextureViewCorrectionMatrix(
+                    transformationInfo,
+                    resolution
+                )
             viewFinder.setTransform(correctionMatrix)
 
             viewFinder.pivotX = 0f
@@ -103,63 +105,71 @@ fun Texture(
             modifier = modifier.clipToBounds(),
             factory = { context ->
                 FrameLayout(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    addView(TextureView(context).apply {
-                        layoutParams = FrameLayout.LayoutParams(
-                            resolution.width,
-                            resolution.height
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
                         )
-                        surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-                            override fun onSurfaceTextureAvailable(
-                                surface: SurfaceTexture,
-                                width: Int,
-                                height: Int
-                            ) {
-                                onSurfaceTextureEvent(
-                                    SurfaceTextureEvent.SurfaceTextureAvailable(
-                                        surface,
-                                        width,
-                                        height
-                                    )
+                    addView(
+                        TextureView(context).apply {
+                            layoutParams =
+                                FrameLayout.LayoutParams(
+                                    resolution.width,
+                                    resolution.height
                                 )
-                            }
+                            surfaceTextureListener =
+                                object : TextureView.SurfaceTextureListener {
+                                    override fun onSurfaceTextureAvailable(
+                                        surface: SurfaceTexture,
+                                        width: Int,
+                                        height: Int
+                                    ) {
+                                        onSurfaceTextureEvent(
+                                            SurfaceTextureEvent.SurfaceTextureAvailable(
+                                                surface,
+                                                width,
+                                                height
+                                            )
+                                        )
+                                    }
 
-                            override fun onSurfaceTextureSizeChanged(
-                                surface: SurfaceTexture,
-                                width: Int,
-                                height: Int
-                            ) {
-                                onSurfaceTextureEvent(
-                                    SurfaceTextureEvent.SurfaceTextureSizeChanged(
-                                        surface,
-                                        width,
-                                        height
-                                    )
-                                )
-                            }
+                                    override fun onSurfaceTextureSizeChanged(
+                                        surface: SurfaceTexture,
+                                        width: Int,
+                                        height: Int
+                                    ) {
+                                        onSurfaceTextureEvent(
+                                            SurfaceTextureEvent.SurfaceTextureSizeChanged(
+                                                surface,
+                                                width,
+                                                height
+                                            )
+                                        )
+                                    }
 
-                            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-                                return onSurfaceTextureEvent(
-                                    SurfaceTextureEvent.SurfaceTextureDestroyed(
-                                        surface
-                                    )
-                                )
-                            }
+                                    override fun onSurfaceTextureDestroyed(
+                                        surface: SurfaceTexture
+                                    ): Boolean {
+                                        return onSurfaceTextureEvent(
+                                            SurfaceTextureEvent.SurfaceTextureDestroyed(
+                                                surface
+                                            )
+                                        )
+                                    }
 
-                            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-                                onSurfaceTextureEvent(
-                                    SurfaceTextureEvent.SurfaceTextureUpdated(
-                                        surface
-                                    )
-                                )
-                            }
+                                    override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+                                        onSurfaceTextureEvent(
+                                            SurfaceTextureEvent.SurfaceTextureUpdated(
+                                                surface
+                                            )
+                                        )
+                                    }
+                                }
                         }
-                    })
+                    )
                 }
-            }, update = {
+            },
+            update = {
                 parentView = it
                 textureView = it.getChildAt(0) as TextureView?
                 setView(it)
@@ -167,7 +177,6 @@ fun Texture(
             }
         )
     }
-
 }
 
 sealed interface SurfaceTextureEvent {

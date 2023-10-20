@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import android.content.Context
@@ -26,10 +25,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import javax.inject.Singleton
 
 // with hilt will ensure datastore instance access is unique per file
 @Module
@@ -42,12 +41,11 @@ object DataStoreModule {
     fun provideDataStore(@ApplicationContext context: Context): DataStore<JcaSettings> =
         DataStoreFactory.create(
             corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
-            //TODO(b/286245619, kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
+            // TODO(b/286245619, kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
             serializer = JcaSettingsSerializer,
             produceFile = {
                 context.dataStoreFile(FILE_LOCATION)
-            })
-
-    }
-
+            }
+        )
+}
