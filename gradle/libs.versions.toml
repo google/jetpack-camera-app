@@ -20,7 +20,7 @@ protobuf = "3.21.12"
 hilt-nav-compose = "1.0.0"
 composeBom = "2023.10.00"
 material = "1.10.0"
-camerax = "1.2.3"
+camerax = "1.4.0-SNAPSHOT"
 
 futures = "1.1.0"
 kotlinPlugin = "1.8.0"

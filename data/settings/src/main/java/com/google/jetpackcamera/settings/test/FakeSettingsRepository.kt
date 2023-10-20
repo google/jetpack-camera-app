@@ -35,7 +35,7 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmode: DarkMode) {
+    override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
         currentCameraSettings = currentCameraSettings.copy(darkMode = darkmode)
     }
 
