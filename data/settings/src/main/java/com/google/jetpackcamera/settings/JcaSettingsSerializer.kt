@@ -29,7 +29,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
-        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_THREE_FOUR)
+        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .build()
 
