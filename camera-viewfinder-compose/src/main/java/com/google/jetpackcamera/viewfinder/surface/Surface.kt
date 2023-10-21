@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder.surface
 
 import android.util.Log
@@ -23,26 +22,24 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.jetpackcamera.viewfinder.surface.SurfaceHolderEvent.*
 
 private const val TAG = "Surface"
 
 @Composable
-fun Surface(
-    onSurfaceHolderEvent: (SurfaceHolderEvent) -> Unit = { _ -> }
-) {
+fun Surface(onSurfaceHolderEvent: (SurfaceHolderEvent) -> Unit = { _ -> }) {
     Log.d(TAG, "Surface")
 
     AndroidView(factory = { context ->
         SurfaceView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
             holder.addCallback(
                 object : SurfaceHolder.Callback {
                     override fun surfaceCreated(holder: SurfaceHolder) {
-                        onSurfaceHolderEvent(SurfaceCreated(holder))
+                        onSurfaceHolderEvent(SurfaceHolderEvent.SurfaceCreated(holder))
                     }
 
                     override fun surfaceChanged(
@@ -51,18 +48,23 @@ fun Surface(
                         width: Int,
                         height: Int
                     ) {
-                        onSurfaceHolderEvent(SurfaceChanged(holder, width, height))
+                        onSurfaceHolderEvent(
+                            SurfaceHolderEvent.SurfaceChanged(
+                                holder,
+                                width,
+                                height
+                            )
+                        )
                     }
 
                     override fun surfaceDestroyed(holder: SurfaceHolder) {
-                        onSurfaceHolderEvent(SurfaceDestroyed(holder))
+                        onSurfaceHolderEvent(SurfaceHolderEvent.SurfaceDestroyed(holder))
                     }
                 }
             )
         }
     })
 }
-
 
 sealed interface SurfaceHolderEvent {
     data class SurfaceCreated(
