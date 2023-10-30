@@ -157,12 +157,14 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickFlipCamera(
+                                modifier = Modifier.testTag("QuickSetFlipCamera"),
                                 flipCamera = { b: Boolean -> onLensFaceClick(b) },
                                 currentFacingFront = currentCameraSettings.isFrontCameraFacing
                             )
                         },
                         {
                             QuickSetRatio(
+                                modifier = Modifier.testTag("QuickSetAspectRatio"),
                                 onClick = {
                                     setVisibleQuickSetting(
                                         IsExpandedQuickSetting.ASPECT_RATIO
@@ -178,6 +180,7 @@ private fun ExpandedQuickSettingsUi(
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
+
                     setRatio = onAspectRatioClick,
                     currentRatio = currentCameraSettings.aspectRatio
                 )

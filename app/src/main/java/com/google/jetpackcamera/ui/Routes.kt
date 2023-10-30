@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 object Routes {
-    const val PreviewRoute = "preview"
-    const val SettingsRoute = "settings"
+    const val PREVIEW_ROUTE = "preview"
+    const val SETTINGS_ROUTE = "settings"
 }
