@@ -67,7 +67,6 @@ class LocalSettingsRepository @Inject constructor(
                 ),
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
-                    CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 }
             )

@@ -33,6 +33,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
 import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
+import com.google.jetpackcamera.viewfinder.surface.SurfaceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.mapNotNull
@@ -95,26 +96,26 @@ fun PreviewSurface(
             }
     }
 
-    when (implementationMode) {
-        ImplementationMode.PERFORMANCE -> TODO()
-        ImplementationMode.COMPATIBLE ->
-            CombinedSurface(
-                modifier = modifier,
-                setView = setView,
-                onSurfaceEvent = { event ->
-                    surface =
-                        when (event) {
-                            is CombinedSurfaceEvent.SurfaceAvailable -> {
-                                event.surface
-                            }
+    CombinedSurface(
+        modifier = modifier,
+        setView = setView,
+        onSurfaceEvent = { event ->
+            surface =
+                when (event) {
+                    is CombinedSurfaceEvent.SurfaceAvailable -> {
+                        event.surface
+                    }
 
-                            is CombinedSurfaceEvent.SurfaceDestroyed -> {
-                                null
-                            }
-                        }
-                },
-                surfaceRequest = surfaceRequest,
-                onRequestBitmapReady = onRequestBitmapReady
-            )
-    }
+                    is CombinedSurfaceEvent.SurfaceDestroyed -> {
+                        null
+                    }
+                }
+        },
+        type = when (implementationMode) {
+            ImplementationMode.PERFORMANCE -> SurfaceType.SURFACE_VIEW
+            ImplementationMode.COMPATIBLE -> SurfaceType.TEXTURE_VIEW
+        },
+        surfaceRequest = surfaceRequest,
+        onRequestBitmapReady = onRequestBitmapReady
+    )
 }

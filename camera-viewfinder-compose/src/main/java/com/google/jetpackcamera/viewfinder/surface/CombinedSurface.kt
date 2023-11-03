@@ -38,7 +38,11 @@ fun CombinedSurface(
 
     when (type) {
         SurfaceType.SURFACE_VIEW ->
-            Surface {
+            Surface(
+                modifier = modifier,
+                setView = setView,
+                surfaceRequest = surfaceRequest
+            ) {
                 when (it) {
                     is SurfaceHolderEvent.SurfaceCreated -> {
                         onSurfaceEvent(CombinedSurfaceEvent.SurfaceAvailable(it.holder.surface))

@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.content.pm.ActivityInfo.COLOR_MODE_HDR
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -113,6 +114,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            window.colorMode = COLOR_MODE_HDR
         }
     }
 

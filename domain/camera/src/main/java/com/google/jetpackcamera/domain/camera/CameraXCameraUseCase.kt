@@ -24,9 +24,11 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
 import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -55,11 +57,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.lang.RuntimeException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -69,6 +66,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -107,6 +108,8 @@ constructor(
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
     private var isFrontFacing = true
+    private var dynamicRange = DynamicRange.UNSPECIFIED
+    private lateinit var cameraInfo: CameraInfo
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
@@ -377,7 +380,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -390,7 +393,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -402,20 +405,38 @@ constructor(
             previewUseCase.setSurfaceProvider(surfaceProvider)
         }
 
-        val useCaseGroupBuilder =
-            UseCaseGroup.Builder()
-                .setViewPort(
-                    ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build()
-                )
-                .addUseCase(previewUseCase)
-                .addUseCase(imageCaptureUseCase)
-                .addUseCase(videoCaptureUseCase)
+        val videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
+        val newDynamicRange =
+            if (videoCapabilities.supportedDynamicRanges.contains(DynamicRange.HLG_10_BIT)) {
+                DynamicRange.HLG_10_BIT
+            } else {
+                DynamicRange.SDR
+            }
 
-        if (captureMode == CaptureMode.SINGLE_STREAM) {
-            useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
+        if (newDynamicRange != dynamicRange) {
+            videoCaptureUseCase =
+                VideoCapture.Builder(recorder).setDynamicRange(newDynamicRange).build()
+            dynamicRange = newDynamicRange
         }
 
-        useCaseGroup = useCaseGroupBuilder.build()
+        useCaseGroup =
+            UseCaseGroup.Builder().apply {
+                setViewPort(
+                    ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build()
+                )
+                addUseCase(previewUseCase)
+
+                // HDR doesn't support ImageCapture, so only add it if the dynamic range is SDR
+                if (dynamicRange == DynamicRange.SDR) {
+                    addUseCase(imageCaptureUseCase)
+                }
+
+                addUseCase(videoCaptureUseCase)
+
+                if (captureMode == CaptureMode.SINGLE_STREAM) {
+                    addEffect(SingleSurfaceForcingEffect(coroutineScope))
+                }
+            }.build()
     }
 
     /**
