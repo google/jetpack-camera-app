@@ -61,6 +61,8 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
+    implementation("androidx.compose.foundation:foundation:1.6.0-SNAPSHOT")
+
     // Compose - Material Design 3
     implementation("androidx.compose.material3:material3")
 

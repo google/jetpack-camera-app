@@ -155,13 +155,7 @@ fun PreviewDisplay(
             CameraPreview(
                 modifier = Modifier
                     .fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady,
-                onRequestBitmapReady = {
-                    it.invoke()
-                },
-                setSurfaceView = { s: View ->
-                    viewInfo = s
-                }
+                onSurfaceProviderReady = onSurfaceProviderReady
             )
         }
     }
