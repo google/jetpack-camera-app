@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
 
 import android.util.Rational
@@ -35,7 +34,7 @@ enum class AspectRatio(val ratio: Rational) {
                 // defaults to 3:4 aspect ratio
                 AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
                 AspectRatioProto.ASPECT_RATIO_UNDEFINED,
-                AspectRatioProto.UNRECOGNIZED,
+                AspectRatioProto.UNRECOGNIZED
                 -> AspectRatio.THREE_FOUR
             }
         }

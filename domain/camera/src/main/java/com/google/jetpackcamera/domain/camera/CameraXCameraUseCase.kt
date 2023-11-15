@@ -153,8 +153,8 @@ constructor(
         Log.d(TAG, "recordVideo")
         val captureTypeString =
             when (captureMode) {
-                CaptureMode.MULTI_STREAM -> "SingleStream"
-                CaptureMode.SINGLE_STREAM -> "MultiStream"
+                CaptureMode.MULTI_STREAM -> "MultiStream"
+                CaptureMode.SINGLE_STREAM -> "SingleStream"
             }
         val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
         val contentValues =

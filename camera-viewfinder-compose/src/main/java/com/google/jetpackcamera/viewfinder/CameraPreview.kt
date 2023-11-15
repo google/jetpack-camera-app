@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder
 
 import android.graphics.Bitmap
@@ -51,10 +50,12 @@ fun CameraPreview(
     Log.d(TAG, "CameraPreview")
 
     val surfaceRequest by produceState<SurfaceRequest?>(initialValue = null) {
-        onSurfaceProviderReady(SurfaceProvider { request ->
-            value?.willNotProvideSurface()
-            value = request
-        })
+        onSurfaceProviderReady(
+            SurfaceProvider { request ->
+                value?.willNotProvideSurface()
+                value = request
+            }
+        )
     }
 
     PreviewSurface(
@@ -64,7 +65,6 @@ fun CameraPreview(
         onRequestBitmapReady = onRequestBitmapReady,
         implementationMode = implementationMode
     )
-
 }
 
 @Composable
@@ -82,8 +82,11 @@ fun PreviewSurface(
     LaunchedEffect(surfaceRequest, surface) {
         Log.d(TAG, "LaunchedEffect")
         snapshotFlow {
-            if (surfaceRequest == null || surface == null) null
-            else Pair(surfaceRequest, surface)
+            if (surfaceRequest == null || surface == null) {
+                null
+            } else {
+                Pair(surfaceRequest, surface)
+            }
         }.mapNotNull { it }
             .collect { (request, surface) ->
                 Log.d(TAG, "Collect: Providing surface")
@@ -94,22 +97,24 @@ fun PreviewSurface(
 
     when (implementationMode) {
         ImplementationMode.PERFORMANCE -> TODO()
-        ImplementationMode.COMPATIBLE -> CombinedSurface(
-            modifier = modifier,
-            setView = setView,
-            onSurfaceEvent = { event ->
-                surface = when (event) {
-                    is CombinedSurfaceEvent.SurfaceAvailable -> {
-                        event.surface
-                    }
+        ImplementationMode.COMPATIBLE ->
+            CombinedSurface(
+                modifier = modifier,
+                setView = setView,
+                onSurfaceEvent = { event ->
+                    surface =
+                        when (event) {
+                            is CombinedSurfaceEvent.SurfaceAvailable -> {
+                                event.surface
+                            }
 
-                    is CombinedSurfaceEvent.SurfaceDestroyed -> {
-                        null
-                    }
-                }
-            },
-            surfaceRequest = surfaceRequest,
-            onRequestBitmapReady = onRequestBitmapReady
-        )
+                            is CombinedSurfaceEvent.SurfaceDestroyed -> {
+                                null
+                            }
+                        }
+                },
+                surfaceRequest = surfaceRequest,
+                onRequestBitmapReady = onRequestBitmapReady
+            )
     }
 }

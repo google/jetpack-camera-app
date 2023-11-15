@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder.surface
 
 import android.annotation.SuppressLint
@@ -37,7 +36,9 @@ import androidx.camera.core.impl.utils.TransformUtils
  */
 object SurfaceTransformationUtil {
     @SuppressLint("RestrictedApi", "WrongConstant")
-    private fun getRemainingRotationDegrees(transformationInfo: SurfaceRequest.TransformationInfo): Int {
+    private fun getRemainingRotationDegrees(
+        transformationInfo: SurfaceRequest.TransformationInfo
+    ): Int {
         return if (!transformationInfo.hasCameraTransform()) {
             // If the Surface is not connected to the camera, then the SurfaceView/TextureView will
             // not apply any transformation. In that case, we need to apply the rotation
@@ -65,10 +66,14 @@ object SurfaceTransformationUtil {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun getRotatedViewportSize(transformationInfo: SurfaceRequest.TransformationInfo): Size {
+    private fun getRotatedViewportSize(
+        transformationInfo: SurfaceRequest.TransformationInfo
+    ): Size {
         return if (TransformUtils.is90or270(transformationInfo.rotationDegrees)) {
             Size(transformationInfo.cropRect.height(), transformationInfo.cropRect.width())
-        } else Size(transformationInfo.cropRect.width(), transformationInfo.cropRect.height())
+        } else {
+            Size(transformationInfo.cropRect.width(), transformationInfo.cropRect.height())
+        }
     }
 
     @SuppressLint("RestrictedApi")
@@ -79,14 +84,14 @@ object SurfaceTransformationUtil {
         // Using viewport rect to check if the viewport is based on the view finder.
         val rotatedViewportSize: Size = getRotatedViewportSize(transformationInfo)
         return TransformUtils.isAspectRatioMatchingWithRoundingError(
-            viewFinderSize,  /* isAccurate1= */true,
-            rotatedViewportSize,  /* isAccurate2= */false
+            viewFinderSize,
+            true,
+            rotatedViewportSize,
+            false
         )
     }
 
-    private fun setMatrixRectToRect(
-        matrix: Matrix, source: RectF, destination: RectF,
-    ) {
+    private fun setMatrixRectToRect(matrix: Matrix, source: RectF, destination: RectF) {
         val matrixScaleType = Matrix.ScaleToFit.CENTER
         // android.graphics.Matrix doesn't support fill scale types. The workaround is
         // mapping inversely from destination to source, then invert the matrix.
@@ -96,22 +101,28 @@ object SurfaceTransformationUtil {
 
     private fun getViewFinderViewportRectForMismatchedAspectRatios(
         transformationInfo: SurfaceRequest.TransformationInfo,
-        viewFinderSize: Size,
+        viewFinderSize: Size
     ): RectF {
-        val viewFinderRect = RectF(
-            0f, 0f, viewFinderSize.width.toFloat(),
-            viewFinderSize.height.toFloat()
-        )
+        val viewFinderRect =
+            RectF(
+                0f,
+                0f,
+                viewFinderSize.width.toFloat(),
+                viewFinderSize.height.toFloat()
+            )
         val rotatedViewportSize = getRotatedViewportSize(transformationInfo)
-        val rotatedViewportRect = RectF(
-            0f, 0f, rotatedViewportSize.width.toFloat(),
-            rotatedViewportSize.height.toFloat()
-        )
+        val rotatedViewportRect =
+            RectF(
+                0f,
+                0f,
+                rotatedViewportSize.width.toFloat(),
+                rotatedViewportSize.height.toFloat()
+            )
         val matrix = Matrix()
         setMatrixRectToRect(
             matrix,
             rotatedViewportRect,
-            viewFinderRect,
+            viewFinderRect
         )
         matrix.mapRect(rotatedViewportRect)
         return rotatedViewportRect
@@ -130,20 +141,25 @@ object SurfaceTransformationUtil {
                 // fill the entire view finder. This happens if the scale type is FILL_* AND a
                 // view-finder-based viewport is used.
                 RectF(
-                    0f, 0f, viewFinderSize.width.toFloat(),
+                    0f,
+                    0f,
+                    viewFinderSize.width.toFloat(),
                     viewFinderSize.height.toFloat()
                 )
             } else {
                 // If the aspect ratios don't match, it could be 1) scale type is FIT_*, 2) the
                 // Viewport is not based on the view finder or 3) both.
                 getViewFinderViewportRectForMismatchedAspectRatios(
-                    transformationInfo, viewFinderSize
+                    transformationInfo,
+                    viewFinderSize
                 )
             }
-        val matrix = TransformUtils.getRectToRect(
-            RectF(transformationInfo.cropRect), viewFinderCropRect,
-            transformationInfo.rotationDegrees
-        )
+        val matrix =
+            TransformUtils.getRectToRect(
+                RectF(transformationInfo.cropRect),
+                viewFinderCropRect,
+                transformationInfo.rotationDegrees
+            )
         if (isFrontCamera && transformationInfo.hasCameraTransform()) {
             // SurfaceView/TextureView automatically mirrors the Surface for front camera, which
             // needs to be compensated by mirroring the Surface around the upright direction of the

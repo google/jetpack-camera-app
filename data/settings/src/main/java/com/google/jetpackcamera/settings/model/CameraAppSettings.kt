@@ -25,7 +25,7 @@ data class CameraAppSettings(
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
-    val aspectRatio: AspectRatio = AspectRatio.THREE_FOUR
+    val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
