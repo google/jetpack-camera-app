@@ -21,6 +21,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -84,6 +85,34 @@ internal class FlashDeviceTest {
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.OFF
+        )
+    }
+
+    @Test
+    fun set_screen_flash_and_capture_successfully() = runTest {
+        uiDevice.waitForIdle()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        // flash on with front camera will automatically enable screen flash
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("CaptureButton")).click()
+        uiDevice.wait(
+            Until.findObject(By.res("Image capture success!")),
+            5000
+        )
+    }
+
+    @Test
+    fun set_screen_flash_and_capture_with_screen_change_overlay_shown() = runTest {
+        uiDevice.waitForIdle()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        // flash on with front camera will automatically enable screen flash
+        uiDevice.findObject(By.res("QuickSetFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("CaptureButton")).click()
+        uiDevice.wait(
+            Until.findObject(By.res("ScreenFlashOverlay")),
+            5000
         )
     }
 }

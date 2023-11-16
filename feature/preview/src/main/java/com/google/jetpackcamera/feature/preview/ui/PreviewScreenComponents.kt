@@ -44,11 +44,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -218,6 +220,7 @@ fun CaptureButton(
 ) {
     Box(
         modifier = modifier
+            .testTag("CaptureButton")
             .fillMaxHeight()
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -244,5 +247,42 @@ fun CaptureButton(
                 }
             )
         })
+    }
+}
+
+@Composable
+fun CaptureSuccessMessage(
+    showMessage: Boolean,
+    onMessageShown: () -> Unit,
+) {
+    MessageAnimation(stringResource(id = R.string.image_capture_success), showMessage, onMessageShown)
+}
+
+@Composable
+fun MessageAnimation(
+    messageText: String,
+    showMessage: Boolean,
+    onMessageShown: () -> Unit,
+) {
+    // TODO: using scaffold + snackbar will probably better this custom composable, not using toasts
+    //  since their states are harder to maintain and harder to test
+    val alpha by animateFloatAsState(
+        targetValue = if (showMessage) 1f else 0f,
+        label = "messageText",
+        animationSpec = tween(durationMillis = 500),
+        finishedListener = { onMessageShown() }
+    )
+
+    Box(
+        modifier = Modifier
+            .background(color = Color.Black.copy(alpha = alpha))
+    ) {
+        Text(
+            text = messageText,
+            modifier = Modifier
+                .testTag(messageText)
+                .padding(4.dp),
+            color = Color.White.copy(alpha = alpha)
+        )
     }
 }

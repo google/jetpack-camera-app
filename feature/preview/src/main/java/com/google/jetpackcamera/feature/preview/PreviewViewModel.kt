@@ -28,11 +28,11 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 
@@ -112,7 +112,10 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
+            cameraUseCase.setFlashMode(
+                previewUiState.value.currentCameraSettings.flashMode,
+                previewUiState.value.currentCameraSettings.isFrontCameraFacing
+            )
         }
     }
 
@@ -181,8 +184,10 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase
-                    .flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+                cameraUseCase.flipCamera(
+                    previewUiState.value.currentCameraSettings.isFrontCameraFacing,
+                    previewUiState.value.currentCameraSettings.flashMode
+                )
             }
         }
     }
@@ -193,6 +198,11 @@ class PreviewViewModel @Inject constructor(
             try {
                 cameraUseCase.takePicture()
                 Log.d(TAG, "cameraUseCase.takePicture success")
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        captureIsSuccessful = true
+                    )
+                )
             } catch (exception: ImageCaptureException) {
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
@@ -258,5 +268,15 @@ class PreviewViewModel @Inject constructor(
             x = x,
             y = y
         )
+    }
+
+    fun onCaptureSuccessMessageShown() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    captureIsSuccessful = false
+                )
+            )
+        }
     }
 }

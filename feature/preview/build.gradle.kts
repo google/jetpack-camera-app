@@ -58,6 +58,7 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -79,6 +80,8 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
     // Compose - Testing
+    testImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // Testing
@@ -87,6 +90,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
     testImplementation("org.mockito:mockito-core:5.2.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6")
+    testImplementation("org.robolectric:robolectric:4.11.1")
 
     // Guava
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1")

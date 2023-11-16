@@ -56,12 +56,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
+import com.google.jetpackcamera.feature.preview.ui.CaptureSuccessMessage
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
+import com.google.jetpackcamera.feature.preview.ui.ScreenFlash
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -156,12 +159,23 @@ fun PreviewScreen(
                         // onTimerClick = {}/*TODO*/
                     )
 
-                    SettingsNavButton(
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                        onNavigateToSettings = onNavigateToSettings
-                    )
+                            .align(Alignment.TopStart),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SettingsNavButton(
+                            modifier = Modifier
+                                .padding(12.dp),
+                            onNavigateToSettings = onNavigateToSettings
+                        )
+
+                        QuickSettingsIndicators(
+                            currentCameraSettings = previewUiState.currentCameraSettings,
+                            onFlashModeClick = viewModel::setFlash,
+                        )
+                    }
 
                     TestingButton(
                         modifier = Modifier
@@ -185,6 +199,9 @@ fun PreviewScreen(
             ) {
                 if (zoomScaleShow) {
                     ZoomScaleText(zoomScale = zoomScale)
+                }
+                CaptureSuccessMessage(previewUiState.captureIsSuccessful) {
+                    viewModel.onCaptureSuccessMessageShown()
                 }
                 Row(
                     modifier =
@@ -236,5 +253,8 @@ fun PreviewScreen(
                 }
             }
         }
+
+        // Screen flash overlay that stays on top of everything but invisible normally
+        ScreenFlash()
     }
 }
