@@ -1,3 +1,14 @@
+import com.github.jk1.license.LicenseReportExtension.ALL
+import com.github.jk1.license.render.ReportRenderer
+import com.github.jk1.license.render.InventoryHtmlReportRenderer
+import com.github.jk1.license.filter.DependencyFilter
+import com.github.jk1.license.filter.ExcludeTransitiveDependenciesFilter
+import com.github.jk1.license.filter.LicenseBundleNormalizer
+import com.github.jk1.license.filter.ReduceDuplicateLicensesFilter
+import com.github.jk1.license.importer.XmlReportImporter
+import com.github.jk1.license.render.TextReportRenderer
+import com.github.jk1.license.render.XmlReportRenderer
+
 /*
  * Copyright (C) 2023 The Android Open Source Project
  *
@@ -20,6 +31,37 @@ plugins {
     id("com.android.library") version "8.1.1" apply false
     id("org.jetbrains.kotlin.android") version "1.8.0" apply false
     id("com.google.dagger.hilt.android") version "2.44" apply false
+    id("com.github.jk1.dependency-license-report") version "2.5"
+}
+
+licenseReport {
+    // By default this plugin will collect the union of all licenses from
+    // the immediate pom and the parent poms. If your legal team thinks this
+    // is too liberal, you can restrict collected licenses to only include the
+    // those found in the immediate pom file
+    // Defaults to: true
+    unionParentPomLicenses = false
+    // Select projects to examine for dependencies.
+    // Defaults to current project and all its subprojects
+    projects = arrayOf(project) + project.subprojects
+    // Adjust the configurations to fetch dependencies. Default is 'runtimeClasspath'
+    // For Android projects use 'releaseRuntimeClasspath' or 'yourFlavorNameReleaseRuntimeClasspath'
+    // Use 'ALL' to dynamically resolve all configurations:
+    // configurations = ALL
+    configurations = ALL
+
+    // Don't include artifacts of project's own group into the report
+    excludeOwnGroup = true
+
+    // Set custom report renderer, implementing ReportRenderer.
+    // Yes, you can write your own to support any format necessary.
+    renderers = arrayOf(TextReportRenderer())
+
+    filters = arrayOf<DependencyFilter>(
+        LicenseBundleNormalizer(),
+        ReduceDuplicateLicensesFilter(),
+//        ExcludeTransitiveDependenciesFilter()
+    )
 }
 
 tasks.register<Copy>("installGitHooks") {
