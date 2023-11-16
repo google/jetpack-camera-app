@@ -38,7 +38,7 @@ android {
         targetSdk = 34
 
         // allows the benchmark to be run on an emulator
-        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,LOW-BATTERY,NOT-PROFILEABLE"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
