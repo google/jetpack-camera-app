@@ -151,6 +151,7 @@ constructor(
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
+                    imageProxy.close()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
