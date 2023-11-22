@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import androidx.camera.core.Preview
@@ -95,7 +94,7 @@ class ScreenFlashViewModelTest {
             advanceUntilIdle()
             assertEquals(
                 5.0f,
-                screenFlashViewModel.screenFlashUiState.value.screenBrightnessToRestore,
+                screenFlashViewModel.screenFlashUiState.value.screenBrightnessToRestore
             )
         }
 
@@ -113,7 +112,7 @@ class ScreenFlashViewModelTest {
             advanceUntilIdle()
             assertEquals(
                 ScreenFlashViewModel.ScreenFlashUiState(),
-                screenFlashViewModel.screenFlashUiState.value,
+                screenFlashViewModel.screenFlashUiState.value
             )
         }
 }

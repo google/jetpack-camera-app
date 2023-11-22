@@ -302,10 +302,7 @@ fun QuickSettingsGrid(
  * The top bar indicators for quick settings items.
  */
 @Composable
-fun Indicator(
-    enum: QuickSettingsEnum,
-    onClick: () -> Unit,
-) {
+fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
     Icon(
         painter = painterResource(enum.getDrawableResId()),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
@@ -317,10 +314,7 @@ fun Indicator(
 }
 
 @Composable
-fun FlashModeIndicator(
-    currentFlashMode: FlashMode,
-    onClick: (flashMode: FlashMode) -> Unit,
-) {
+fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMode) -> Unit) {
     val enum = when (currentFlashMode) {
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.AUTO -> CameraFlashMode.AUTO
@@ -330,14 +324,14 @@ fun FlashModeIndicator(
         enum = enum,
         onClick = {
             onClick(currentFlashMode.getNextFlashMode())
-        },
+        }
     )
 }
 
 @Composable
 fun QuickSettingsIndicators(
     currentCameraSettings: CameraAppSettings,
-    onFlashModeClick: (flashMode: FlashMode) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit
 ) {
     Row {
         FlashModeIndicator(currentCameraSettings.flashMode, onFlashModeClick)

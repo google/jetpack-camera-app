@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.workaround
 
 import android.app.Activity
@@ -43,7 +42,6 @@ import androidx.test.platform.graphics.HardwareRendererCompat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
-
 
 /**
  * Workaround captureToImage method.
@@ -125,9 +123,7 @@ private fun SemanticsNode.findClosestParentNode(
 
 @ExperimentalTestApi
 @RequiresApi(Build.VERSION_CODES.O)
-private fun processMultiWindowScreenshot(
-    node: SemanticsNode
-): ImageBitmap {
+private fun processMultiWindowScreenshot(node: SemanticsNode): ImageBitmap {
     val nodePositionInScreen = findNodePosition(node)
     val nodeBoundsInRoot = node.boundsInRoot
 
@@ -143,9 +139,7 @@ private fun processMultiWindowScreenshot(
     return finalBitmap.asImageBitmap()
 }
 
-private fun findNodePosition(
-    node: SemanticsNode
-): Offset {
+private fun findNodePosition(node: SemanticsNode): Offset {
     val view = (node.root as ViewRootForTest).view
     val locationOnScreen = intArrayOf(0, 0)
     view.getLocationOnScreen(locationOnScreen)
@@ -173,7 +167,7 @@ private fun Context.getActivityWindow(): Window {
             is ContextWrapper -> this.baseContext.getActivity()
             else -> throw IllegalStateException(
                 "Context is not an Activity context, but a ${javaClass.simpleName} context. " +
-                        "An Activity context is required to get a Window instance"
+                    "An Activity context is required to get a Window instance"
             )
         }
     }
@@ -181,9 +175,7 @@ private fun Context.getActivityWindow(): Window {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-private fun Window.captureRegionToImage(
-    boundsInWindow: Rect,
-): ImageBitmap {
+private fun Window.captureRegionToImage(boundsInWindow: Rect): ImageBitmap {
     // Turn on hardware rendering, if necessary
     return withDrawingEnabled {
         // Then we generate the bitmap

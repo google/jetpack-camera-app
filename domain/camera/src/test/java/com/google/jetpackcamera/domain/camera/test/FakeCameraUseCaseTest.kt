@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.test
 
 import androidx.camera.core.Preview
@@ -49,7 +48,6 @@ class FakeCameraUseCaseTest {
     @Before
     fun setup() = runTest(testDispatcher) {
         Dispatchers.setMain(testDispatcher)
-
     }
 
     @After
@@ -113,7 +111,9 @@ class FakeCameraUseCaseTest {
     }
 
     @Test
-    fun captureScreenFlashImage_screenFlashEventsEmittedInCorrectSequence() = runTest(testDispatcher) {
+    fun captureScreenFlashImage_screenFlashEventsEmittedInCorrectSequence() = runTest(
+        testDispatcher
+    ) {
         initAndRunCamera()
         val events = mutableListOf<CameraUseCase.ScreenFlashEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

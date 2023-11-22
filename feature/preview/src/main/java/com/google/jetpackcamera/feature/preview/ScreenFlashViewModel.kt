@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "ScreenFlashViewModel"
 
@@ -32,12 +31,13 @@ private const val TAG = "ScreenFlashViewModel"
  */
 @HiltViewModel
 class ScreenFlashViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase,
+    private val cameraUseCase: CameraUseCase
 ) : ViewModel() {
     data class ScreenFlashUiState(
         val enabled: Boolean = false,
         val onChangeComplete: () -> Unit = {},
-        val screenBrightnessToRestore: Float? = null, // restored during CLEAR_UI event
+        // restored during CLEAR_UI event
+        val screenBrightnessToRestore: Float? = null
     )
 
     private val _screenFlashUiState: MutableStateFlow<ScreenFlashUiState> =

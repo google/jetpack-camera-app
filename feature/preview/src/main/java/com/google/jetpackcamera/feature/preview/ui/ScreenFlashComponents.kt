@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.app.Activity
@@ -40,11 +39,9 @@ import com.google.jetpackcamera.feature.preview.ScreenFlashViewModel
 private const val TAG = "ScreenFlashComponents"
 
 @Composable
-fun ScreenFlash(
-    viewModel: ScreenFlashViewModel = hiltViewModel(),
-) {
+fun ScreenFlash(viewModel: ScreenFlashViewModel = hiltViewModel()) {
     val screenFlashUiState: ScreenFlashViewModel.ScreenFlashUiState
-            by viewModel.screenFlashUiState.collectAsState()
+        by viewModel.screenFlashUiState.collectAsState()
 
     ScreenFlashOverlay(screenFlashUiState)
 
@@ -58,16 +55,14 @@ fun ScreenFlash(
         screenFlashUiState.screenBrightnessToRestore?.let {
             // non-null brightness value means there is a value to restore
             BrightnessRestoration(
-                brightness = it,
+                brightness = it
             )
         }
     }
 }
 
 @Composable
-fun ScreenFlashOverlay(
-    screenFlashUiState: ScreenFlashViewModel.ScreenFlashUiState,
-) {
+fun ScreenFlashOverlay(screenFlashUiState: ScreenFlashViewModel.ScreenFlashUiState) {
     // Update overlay transparency gradually
     val alpha by animateFloatAsState(
         targetValue = if (screenFlashUiState.enabled) 1f else 0f,
@@ -90,9 +85,7 @@ fun ScreenFlashOverlay(
 }
 
 @Composable
-fun BrightnessMaximization(
-    onInitialBrightnessCalculated: (Float) -> Unit
-) {
+fun BrightnessMaximization(onInitialBrightnessCalculated: (Float) -> Unit) {
     // This Composable is attached to Activity in current code, so will have Activity context.
     // If the Composable is attached to somewhere else in future, this needs to be updated too.
     val activity = LocalContext.current as? Activity ?: run {
@@ -113,9 +106,7 @@ fun BrightnessMaximization(
 }
 
 @Composable
-fun BrightnessRestoration(
-    brightness: Float,
-) {
+fun BrightnessRestoration(brightness: Float) {
     // This Composable is attached to Activity right now, so will have Activity context.
     // If the Composable is attached to somewhere else in future, this needs to be updated too.
     val activity = LocalContext.current as? Activity ?: run {

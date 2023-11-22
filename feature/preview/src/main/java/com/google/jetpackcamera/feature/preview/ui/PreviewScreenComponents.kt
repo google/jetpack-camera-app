@@ -251,19 +251,16 @@ fun CaptureButton(
 }
 
 @Composable
-fun CaptureSuccessMessage(
-    showMessage: Boolean,
-    onMessageShown: () -> Unit,
-) {
-    MessageAnimation(stringResource(id = R.string.image_capture_success), showMessage, onMessageShown)
+fun CaptureSuccessMessage(showMessage: Boolean, onMessageShown: () -> Unit) {
+    MessageAnimation(
+        stringResource(id = R.string.image_capture_success),
+        showMessage,
+        onMessageShown
+    )
 }
 
 @Composable
-fun MessageAnimation(
-    messageText: String,
-    showMessage: Boolean,
-    onMessageShown: () -> Unit,
-) {
+fun MessageAnimation(messageText: String, showMessage: Boolean, onMessageShown: () -> Unit) {
     // TODO: using scaffold + snackbar will probably better this custom composable, not using toasts
     //  since their states are harder to maintain and harder to test
     val alpha by animateFloatAsState(

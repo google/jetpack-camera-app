@@ -28,7 +28,7 @@ data class PreviewUiState(
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
     val quickSettingsIsOpen: Boolean = false,
-    val captureIsSuccessful: Boolean = false,
+    val captureIsSuccessful: Boolean = false
 )
 
 /**

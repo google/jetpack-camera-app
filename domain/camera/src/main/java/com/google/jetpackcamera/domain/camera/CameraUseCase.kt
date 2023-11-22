@@ -18,11 +18,11 @@ package com.google.jetpackcamera.domain.camera
 import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Preview
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import kotlinx.coroutines.flow.SharedFlow
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * Data layer for camera.
@@ -119,7 +119,7 @@ interface CameraUseCase {
     data class ScreenFlashEvent(val type: Type, val onComplete: () -> Unit) {
         enum class Type {
             APPLY_UI,
-            CLEAR_UI,
+            CLEAR_UI
         }
     }
 }

@@ -163,7 +163,7 @@ fun PreviewScreen(
                         modifier = Modifier
                             .align(Alignment.TopStart),
                         horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         SettingsNavButton(
                             modifier = Modifier
@@ -173,7 +173,7 @@ fun PreviewScreen(
 
                         QuickSettingsIndicators(
                             currentCameraSettings = previewUiState.currentCameraSettings,
-                            onFlashModeClick = viewModel::setFlash,
+                            onFlashModeClick = viewModel::setFlash
                         )
                     }
 
