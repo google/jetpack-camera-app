@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
  * Before running this benchmark:
  * 1) switch your app's active build variant in the Studio (affects Studio runs only)
  * 2) add `<profileable android:shell="true" />` to your app's manifest, within the `<application>` tag
- *
+ *hot
  * Run this benchmark from Studio to see startup measurements, and captured system traces
  * for investigating your app's performance.
  */
@@ -42,24 +42,47 @@ class StartupBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun startupNoCameraPermission() {
+    fun startupColdWithoutCameraPermission() {
         benchmarkStartup()
     }
 
+    // startup from scratch
     @Test
-    fun startupWithCameraPermission() {
+    fun startupCold() {
         benchmarkStartup(
             setupBlock =
             { allowCamera() }
         )
     }
 
-    private fun benchmarkStartup(setupBlock: MacrobenchmarkScope.() -> Unit = {}) {
+    //
+    @Test
+    fun startupWarm() {
+        benchmarkStartup(
+            startupMode = StartupMode.WARM,
+            setupBlock =
+            { allowCamera() }
+        )
+    }
+
+    @Test
+    fun startupHot() {
+        benchmarkStartup(
+            startupMode = StartupMode.HOT,
+            setupBlock =
+            { allowCamera() }
+        )
+    }
+
+    private fun benchmarkStartup(
+        setupBlock: MacrobenchmarkScope.() -> Unit = {},
+        startupMode: StartupMode? = StartupMode.COLD
+    ) {
         benchmarkRule.measureRepeated(
             packageName = "com.google.jetpackcamera",
             metrics = listOf(StartupTimingMetric()),
             iterations = 5,
-            startupMode = StartupMode.COLD,
+            startupMode = startupMode,
             setupBlock = setupBlock
 
         ) {
