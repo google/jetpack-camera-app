@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import android.util.Log
-import android.util.Range
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.AspectRatio

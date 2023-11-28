@@ -32,7 +32,6 @@ import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
-import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 /**
  * Screen used for the Settings feature.

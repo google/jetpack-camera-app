@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
 
 import android.util.Range
 import com.google.jetpackcamera.settings.TargetFrameRate as TargetFrameRateProto
 
 enum class TargetFrameRate(val range: Range<Int>) {
-    TARGET_FPS_NONE(Range(0,0)),
+    TARGET_FPS_NONE(Range(0, 0)),
     TARGET_FPS_15(Range(15, 15)),
     TARGET_FPS_30(Range(30, 30)),
     TARGET_FPS_60(Range(60, 60)),
@@ -35,7 +34,6 @@ enum class TargetFrameRate(val range: Range<Int>) {
                 TARGET_FPS_30 -> TargetFrameRateProto.TARGET_FRAME_RATE_30
                 TARGET_FPS_60 -> TargetFrameRateProto.TARGET_FRAME_RATE_60
                 TARGET_FPS_100 -> TargetFrameRateProto.TARGET_FRAME_RATE_100
-
             }
         }
 
