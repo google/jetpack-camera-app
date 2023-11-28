@@ -59,7 +59,7 @@
     <string name="capture_mode_description_multi_stream">Multi Stream</string>
     <string name="capture_mode_description_single_stream">Single Stream</string>
 
-    <!-- Aspect Ratio  setting strings -->
+    <!-- Aspect Ratio setting strings -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>
 
     <string name="aspect_ratio_selector_9_16">9:16</string>
@@ -69,5 +69,18 @@
     <string name="aspect_ratio_description_9_16">Aspect Ratio is 9:16</string>
     <string name="aspect_ratio_description_3_4">Aspect Ratio is 3:4</string>
     <string name="aspect_ratio_description_1_1">Aspect Ratio is 1:1</string>
+
+    <!-- Stabilization setting strings -->
+    <string name="preview_stabilization_title">Set Preview Stabilization</string>
+    <string name="video_stabilization_title">Set Video Stabilization</string>
+    <string name="stabilization_popup_disclaimer">*Stabilization will be applied only to supported devices"</string>
+
+    <string name="stabilization_selector_on">On</string>
+    <string name="stabilization_selector_off">Off</string>
+    <string name="stabilization_selector_undefined">Unspecified</string>
+
+    <string name="stabilization_description_on">Stabilization On</string>
+    <string name="stabilization_description_off">Stabilization Off</string>
+    <string name="stabilization_description_undefined">Stabilization Unspecified</string>
 
 </resources>

@@ -248,41 +248,36 @@ fun PreviewStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
-    // todo string resources
     BasicPopupSetting(
-        title = "Set Preview Stabilization",
-        // stringResource(R.string.),
+        title = stringResource(R.string.preview_stabilization_title),
         leadingIcon = null,
         description = when (currentPreviewStabilization) {
-            Stabilization.UNDEFINED -> "stabilization undefined"
-            // stringResource(id = )
-            Stabilization.OFF -> "stabilization off"
-            // stringResource(id =)
-            Stabilization.ON -> "stabilization on"
+            Stabilization.UNDEFINED -> stringResource(
+                id = R.string.stabilization_description_undefined
+            )
+            Stabilization.OFF -> stringResource(id = R.string.stabilization_description_off)
+            Stabilization.ON -> stringResource(id = R.string.stabilization_description_on)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 Text(
-                    text = "*Stabilization will be applied only to supported devices",
+                    text = stringResource(id = R.string.stabilization_popup_disclaimer),
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
-                    text = "stabilization on",
-                    // stringResource(id = ),
+                    text = stringResource(id = R.string.stabilization_selector_on),
                     selected = currentPreviewStabilization == Stabilization.ON,
                     onClick = { setPreviewStabilization(Stabilization.ON) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization off",
-                    // stringResource(id = ),
+                    text = stringResource(id = R.string.stabilization_selector_off),
                     selected = currentPreviewStabilization == Stabilization.OFF,
                     onClick = { setPreviewStabilization(Stabilization.OFF) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization undefined",
-                    // stringResource(id = ),
+                    text = stringResource(id = R.string.stabilization_selector_undefined),
                     selected = currentPreviewStabilization == Stabilization.UNDEFINED,
                     onClick = { setPreviewStabilization(Stabilization.UNDEFINED) }
                 )
@@ -296,41 +291,36 @@ fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     setVideoStabilization: (Stabilization) -> Unit
 ) {
-    // todo string resources
     BasicPopupSetting(
-        title = "Set Video Stabilization",
-        // stringResource(R.string.),
+        title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
         description = when (currentPreviewStabilization) {
-            Stabilization.UNDEFINED -> "stabilization undefined"
-            // stringResource(id = )
-            Stabilization.OFF -> "stabilization off"
-            // stringResource(id =)
-            Stabilization.ON -> "stabilization on"
+            Stabilization.UNDEFINED -> stringResource(
+                id = R.string.stabilization_description_undefined
+            )
+            Stabilization.OFF -> stringResource(id = R.string.stabilization_description_off)
+            Stabilization.ON -> stringResource(id = R.string.stabilization_description_on)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 Text(
-                    text = "*Stabilization will be applied only to supported devices",
+                    text = stringResource(id = R.string.stabilization_popup_disclaimer),
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
-                    text = "stabilization on",
-                    // stringResource(id = R.string. ),
+                    text = stringResource(id = R.string.stabilization_selector_on),
                     selected = currentPreviewStabilization == Stabilization.ON,
                     onClick = { setVideoStabilization(Stabilization.ON) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization off",
-                    // stringResource(id = R.string.),
+                    text = stringResource(id = R.string.stabilization_selector_off),
                     selected = currentPreviewStabilization == Stabilization.OFF,
                     onClick = { setVideoStabilization(Stabilization.OFF) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization undefined",
-                    // stringResource(id = R.string.),
+                    text = stringResource(id = R.string.stabilization_selector_undefined),
                     selected = currentPreviewStabilization == Stabilization.UNDEFINED,
                     onClick = { setVideoStabilization(Stabilization.UNDEFINED) }
                 )
