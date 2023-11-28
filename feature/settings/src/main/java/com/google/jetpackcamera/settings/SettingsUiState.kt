@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-
-private const val TAG = "SettingsUiState"
 
 /**
  * Defines the current state of the [SettingsScreen].

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import android.content.Context
@@ -25,8 +24,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,12 +37,12 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -66,7 +66,7 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         testDataStore = DataStoreFactory.create(
             serializer = JcaSettingsSerializer,
-            scope = datastoreScope,
+            scope = datastoreScope
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
@@ -89,7 +89,7 @@ class LocalSettingsRepositoryInstrumentedTest {
         // if you've created a new setting value and this test is failing, be sure to check that
         // JcaSettingsSerializer.kt defaultValue has been properly modified :)
 
-        var cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
+        val cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
 
         advanceUntilIdle()
         assertTrue(cameraAppSettings == DEFAULT_CAMERA_APP_SETTINGS)
@@ -97,26 +97,26 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest(StandardTestDispatcher()) {
-        var initialDarkModeStatus = repository.getCameraAppSettings().darkMode
-        repository.updateDarkModeStatus(DarkModeStatus.LIGHT)
+        val initialDarkModeStatus = repository.getCameraAppSettings().darkMode
+        repository.updateDarkModeStatus(DarkMode.LIGHT)
         val newDarkModeStatus = repository.getCameraAppSettings().darkMode
 
         advanceUntilIdle()
         assertFalse(initialDarkModeStatus == newDarkModeStatus)
-        assertTrue(initialDarkModeStatus == DarkModeStatus.SYSTEM)
-        assertTrue(newDarkModeStatus == DarkModeStatus.LIGHT)
+        assertTrue(initialDarkModeStatus == DarkMode.SYSTEM)
+        assertTrue(newDarkModeStatus == DarkMode.LIGHT)
     }
 
     @Test
     fun can_update_default_to_front_camera() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
-        val initalFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
+        val initialFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         repository.updateDefaultToFrontCamera()
         // default to front camera is now true
         val frontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
         advanceUntilIdle()
 
-        assertFalse(initalFrontCameraDefault)
+        assertFalse(initialFrontCameraDefault)
         assertTrue(frontCameraDefault)
     }
 
@@ -124,13 +124,13 @@ class LocalSettingsRepositoryInstrumentedTest {
     fun can_update_flash_mode() = runTest(StandardTestDispatcher()) {
         // default to front camera starts false
         val initialFlashModeStatus = repository.getCameraAppSettings().flashMode
-        repository.updateFlashModeStatus(FlashModeStatus.ON)
+        repository.updateFlashModeStatus(FlashMode.ON)
         // default to front camera is now true
         val newFlashModeStatus = repository.getCameraAppSettings().flashMode
         advanceUntilIdle()
 
-        assertEquals(initialFlashModeStatus, FlashModeStatus.OFF)
-        assertEquals(newFlashModeStatus, FlashModeStatus.ON)
+        assertEquals(initialFlashModeStatus, FlashMode.OFF)
+        assertEquals(newFlashModeStatus, FlashMode.ON)
     }
 
     @Test
@@ -145,7 +145,7 @@ class LocalSettingsRepositoryInstrumentedTest {
         val newFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
         val newBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
 
-        assertEquals(true, initialBackCamera && initialBackCamera)
+        assertEquals(true, initialFrontCamera && initialBackCamera)
         assertEquals(false, newFrontCamera || newBackCamera)
     }
 }

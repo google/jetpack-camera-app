@@ -13,70 +13,76 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder.surface
 
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
 import android.view.View
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.runtime.Composable
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType.*
+import androidx.compose.ui.Modifier
 
 private const val TAG = "CombinedSurface"
 
 @Composable
 fun CombinedSurface(
+    modifier: Modifier,
     onSurfaceEvent: (CombinedSurfaceEvent) -> Unit,
     onRequestBitmapReady: (() -> Bitmap?) -> Unit = {},
-    type: SurfaceType = TEXTURE_VIEW,
-    setView: (View) -> Unit
+    type: SurfaceType = SurfaceType.TEXTURE_VIEW,
+    setView: (View) -> Unit,
+    surfaceRequest: SurfaceRequest?
 ) {
     Log.d(TAG, "PreviewTexture")
 
     when (type) {
-        SURFACE_VIEW -> Surface {
-            when (it) {
-                is SurfaceHolderEvent.SurfaceCreated -> {
-                    onSurfaceEvent(CombinedSurfaceEvent.SurfaceAvailable(it.holder.surface))
-                }
-
-                is SurfaceHolderEvent.SurfaceDestroyed -> {
-                    onSurfaceEvent(CombinedSurfaceEvent.SurfaceDestroyed)
-                }
-
-                is SurfaceHolderEvent.SurfaceChanged -> {
-                    // TODO(yasith@)
-                }
-
-            }
-        }
-
-        TEXTURE_VIEW -> Texture(
-
-            {
+        SurfaceType.SURFACE_VIEW ->
+            Surface {
                 when (it) {
-                    is SurfaceTextureEvent.SurfaceTextureAvailable -> {
-                        onSurfaceEvent(CombinedSurfaceEvent.SurfaceAvailable(Surface(it.surface)))
+                    is SurfaceHolderEvent.SurfaceCreated -> {
+                        onSurfaceEvent(CombinedSurfaceEvent.SurfaceAvailable(it.holder.surface))
                     }
 
-                    is SurfaceTextureEvent.SurfaceTextureDestroyed -> {
+                    is SurfaceHolderEvent.SurfaceDestroyed -> {
                         onSurfaceEvent(CombinedSurfaceEvent.SurfaceDestroyed)
                     }
 
-                    is SurfaceTextureEvent.SurfaceTextureSizeChanged -> {
-                        // TODO(yasith@)
-                    }
-
-                    is SurfaceTextureEvent.SurfaceTextureUpdated -> {
+                    is SurfaceHolderEvent.SurfaceChanged -> {
                         // TODO(yasith@)
                     }
                 }
-                true
-            },
-            onRequestBitmapReady,
-            setView = setView
-        )
+            }
+
+        SurfaceType.TEXTURE_VIEW ->
+            Texture(
+                modifier = modifier,
+                onSurfaceTextureEvent = {
+                    when (it) {
+                        is SurfaceTextureEvent.SurfaceTextureAvailable -> {
+                            onSurfaceEvent(
+                                CombinedSurfaceEvent.SurfaceAvailable(Surface(it.surface))
+                            )
+                        }
+
+                        is SurfaceTextureEvent.SurfaceTextureDestroyed -> {
+                            onSurfaceEvent(CombinedSurfaceEvent.SurfaceDestroyed)
+                        }
+
+                        is SurfaceTextureEvent.SurfaceTextureSizeChanged -> {
+                            // TODO(yasith@)
+                        }
+
+                        is SurfaceTextureEvent.SurfaceTextureUpdated -> {
+                            // TODO(yasith@)
+                        }
+                    }
+                    true
+                },
+                onRequestBitmapReady,
+                setView = setView,
+                surfaceRequest = surfaceRequest
+            )
     }
 }
 
@@ -89,6 +95,6 @@ sealed interface CombinedSurfaceEvent {
 }
 
 enum class SurfaceType {
-    SURFACE_VIEW, TEXTURE_VIEW
+    SURFACE_VIEW,
+    TEXTURE_VIEW
 }
-

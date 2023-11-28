@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.test
 
 import android.view.Display
@@ -22,10 +21,10 @@ import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.FlashMode
 
 class FakeCameraUseCase : CameraUseCase {
-
     private val availableLenses =
         listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
     private var initialized = false
@@ -37,7 +36,7 @@ class FakeCameraUseCase : CameraUseCase {
     var recordingInProgress = false
 
     var isLensFacingFront = false
-    private var flashMode = FlashModeStatus.OFF
+    private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -50,12 +49,13 @@ class FakeCameraUseCase : CameraUseCase {
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings,
+        currentCameraSettings: CameraAppSettings
     ) {
-        val lensFacing = when (currentCameraSettings.isFrontCameraFacing) {
-            true -> CameraSelector.LENS_FACING_FRONT
-            false -> CameraSelector.LENS_FACING_BACK
-        }
+        val lensFacing =
+            when (currentCameraSettings.isFrontCameraFacing) {
+                true -> CameraSelector.LENS_FACING_FRONT
+                false -> CameraSelector.LENS_FACING_BACK
+            }
 
         if (!initialized) {
             throw IllegalStateException("CameraProvider not initialized")
@@ -86,8 +86,8 @@ class FakeCameraUseCase : CameraUseCase {
         return -1f
     }
 
-    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        flashMode = flashModeStatus
+    override fun setFlashMode(flashMode: FlashMode) {
+        this.flashMode = flashMode
     }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
@@ -108,7 +108,7 @@ class FakeCameraUseCase : CameraUseCase {
         TODO("Not yet implemented")
     }
 
-    override suspend fun setSingleStreamCapture(singleStreamCapture: Boolean) {
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
         TODO("Not yet implemented")
     }
 }

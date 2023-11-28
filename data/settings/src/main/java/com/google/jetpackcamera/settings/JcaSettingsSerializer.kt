@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
-import android.content.Context
 import androidx.datastore.core.CorruptionException
-import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
-import androidx.datastore.dataStore
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
 
-// tells DataStore how to read/write our settings file
-const val FILE_LOCATION = "app_settings.pb"
-
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkModeProto.DARK_MODE_SYSTEM)
+        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
-        .setFlashModeStatus(FlashModeProto.FLASH_MODE_OFF)
+        .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
+        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
+        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
@@ -46,13 +41,5 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         }
     }
 
-    override suspend fun writeTo(
-        t: JcaSettings,
-        output: OutputStream
-    ) = t.writeTo(output)
+    override suspend fun writeTo(t: JcaSettings, output: OutputStream) = t.writeTo(output)
 }
-
-val Context.settingsDataStore: DataStore<JcaSettings> by dataStore(
-    fileName = FILE_LOCATION,
-    serializer = JcaSettingsSerializer
-)

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.quicksettings
 
 import androidx.compose.animation.animateColorAsState
@@ -34,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
@@ -44,7 +44,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
  * The UI component for quick settings.
@@ -56,26 +56,30 @@ fun QuickSettingsScreen(
     isOpen: Boolean = false,
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
-    onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
     }
 
-    val backgroundColor = animateColorAsState(
-        targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
-        label = "backgroundColorAnimation"
-    )
+    val backgroundColor =
+        animateColorAsState(
+            targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
+            label = "backgroundColorAnimation"
+        )
 
-    val contentAlpha = animateFloatAsState(
-        targetValue = if (isOpen) 1f else 0f, label = "contentAlphaAnimation",
-        animationSpec = tween()
-    )
+    val contentAlpha =
+        animateFloatAsState(
+            targetValue = if (isOpen) 1f else 0f,
+            label = "contentAlphaAnimation",
+            animationSpec = tween()
+        )
 
     if (isOpen) {
         Column(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
@@ -98,12 +102,11 @@ fun QuickSettingsScreen(
                 },
                 onLensFaceClick = onLensFaceClick,
                 onFlashModeClick = onFlashModeClick,
-                onAspectRatioClick = onAspectRatioClick,
+                onAspectRatioClick = onAspectRatioClick
             )
         }
     } else {
         shouldShowQuickSetting = IsExpandedQuickSetting.NONE
-
     }
     DropDownIcon(
         modifier = modifier,
@@ -115,7 +118,7 @@ fun QuickSettingsScreen(
 // enum representing which individual quick setting is currently expanded
 private enum class IsExpandedQuickSetting {
     NONE,
-    ASPECT_RATIO,
+    ASPECT_RATIO
 }
 
 /**
@@ -125,47 +128,59 @@ private enum class IsExpandedQuickSetting {
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
-    onFlashModeClick: (flashMode: FlashModeStatus) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
-    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
 ) {
-
     Column(
-        modifier = Modifier
-            .padding(horizontal = dimensionResource(id = R.dimen.quick_settings_ui_horizontal_padding))
+        modifier =
+        Modifier
+            .padding(
+                horizontal = dimensionResource(
+                    id = R.dimen.quick_settings_ui_horizontal_padding
+                )
+            )
     ) {
         // if no setting is chosen, display the grid of settings
         // to change the order of display just move these lines of code above or below each other
         when (shouldShowQuickSetting) {
             IsExpandedQuickSetting.NONE -> {
-                val displayedQuickSettings: Array<@Composable () -> Unit> = arrayOf(
-
-                    {
-                        QuickSetFlash(
-                            onClick = { f: FlashModeStatus -> onFlashModeClick(f) },
-                            currentFlashMode = currentCameraSettings.flashMode
-                        )
-                    },
-                    {
-                        QuickFlipCamera(
-                            flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                            currentFacingFront = currentCameraSettings.isFrontCameraFacing
-                        )
-                    },
-                    {
-                        QuickSetRatio(
-                            onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.ASPECT_RATIO) },
-                            ratio = currentCameraSettings.aspectRatio,
-                            currentRatio = currentCameraSettings.aspectRatio
-                        )
-                    },
-                )
+                val displayedQuickSettings: Array<@Composable () -> Unit> =
+                    arrayOf(
+                        {
+                            QuickSetFlash(
+                                modifier = Modifier.testTag("QuickSetFlash"),
+                                onClick = { f: FlashMode -> onFlashModeClick(f) },
+                                currentFlashMode = currentCameraSettings.flashMode
+                            )
+                        },
+                        {
+                            QuickFlipCamera(
+                                modifier = Modifier.testTag("QuickSetFlipCamera"),
+                                flipCamera = { b: Boolean -> onLensFaceClick(b) },
+                                currentFacingFront = currentCameraSettings.isFrontCameraFacing
+                            )
+                        },
+                        {
+                            QuickSetRatio(
+                                modifier = Modifier.testTag("QuickSetAspectRatio"),
+                                onClick = {
+                                    setVisibleQuickSetting(
+                                        IsExpandedQuickSetting.ASPECT_RATIO
+                                    )
+                                },
+                                ratio = currentCameraSettings.aspectRatio,
+                                currentRatio = currentCameraSettings.aspectRatio
+                            )
+                        }
+                    )
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
             }
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
+
                     setRatio = onAspectRatioClick,
                     currentRatio = currentCameraSettings.aspectRatio
                 )

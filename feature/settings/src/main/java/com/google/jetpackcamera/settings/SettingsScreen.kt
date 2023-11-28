@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.compose.foundation.layout.Column
@@ -25,15 +24,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
-
-
-private const val TAG = "SettingsScreen"
+import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 /**
  * Screen used for the Settings feature.
@@ -70,15 +69,26 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         currentFlashMode = uiState.cameraAppSettings.flashMode,
         setFlashMode = viewModel::setFlashMode
     )
+
     TargetFpsSetting(
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         setTargetFps = viewModel::setTargetFrameRate
     )
 
+    AspectRatioSetting(
+        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        setAspectRatio = viewModel::setAspectRatio
+    )
+
+    CaptureModeSetting(
+        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        setCaptureMode = viewModel::setCaptureMode
+    )
+
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
-        currentDarkModeStatus = uiState.cameraAppSettings.darkMode,
+        currentDarkMode = uiState.cameraAppSettings.darkMode,
         setDarkMode = viewModel::setDarkMode
     )
 }

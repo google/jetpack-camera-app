@@ -13,35 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-
-import org.junit.Before
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
 import com.google.jetpackcamera.settings.test.FakeDataStoreModule
 import com.google.jetpackcamera.settings.test.FakeJcaSettingsSerializer
 import java.io.File
-import org.junit.Assert.*
+import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class DataStoreModuleTest {
     @get:Rule
-     val tempFolder = TemporaryFolder()
-    lateinit var testFile: File
+    val tempFolder = TemporaryFolder()
+    private lateinit var testFile: File
 
     @Before
     fun setUp() {
-       testFile = tempFolder.newFile()
+        testFile = tempFolder.newFile()
     }
 
     @Test
