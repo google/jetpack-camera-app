@@ -102,7 +102,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-                cameraAppSettings.isFrontCameraAvailable
+            cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -248,15 +248,16 @@ fun PreviewStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
-    //todo string resources
+    // todo string resources
     BasicPopupSetting(
-        title = "Set Preview Stabilization", //stringResource(R.string.),
+        title = "Set Preview Stabilization",
+        // stringResource(R.string.),
         leadingIcon = null,
         description = when (currentPreviewStabilization) {
             Stabilization.UNDEFINED -> "stabilization undefined"
-            //stringResource(id = )
+            // stringResource(id = )
             Stabilization.OFF -> "stabilization off"
-            //stringResource(id =)
+            // stringResource(id =)
             Stabilization.ON -> "stabilization on"
         },
         popupContents = {
@@ -268,22 +269,23 @@ fun PreviewStabilizeSetting(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
-                    text = "stabilization on",//stringResource(id = ),
+                    text = "stabilization on",
+                    // stringResource(id = ),
                     selected = currentPreviewStabilization == Stabilization.ON,
                     onClick = { setPreviewStabilization(Stabilization.ON) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization off",//stringResource(id = ),
+                    text = "stabilization off",
+                    // stringResource(id = ),
                     selected = currentPreviewStabilization == Stabilization.OFF,
                     onClick = { setPreviewStabilization(Stabilization.OFF) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization undefined",//stringResource(id = ),
+                    text = "stabilization undefined",
+                    // stringResource(id = ),
                     selected = currentPreviewStabilization == Stabilization.UNDEFINED,
                     onClick = { setPreviewStabilization(Stabilization.UNDEFINED) }
                 )
-
-
             }
         }
     )
@@ -294,15 +296,16 @@ fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     setVideoStabilization: (Stabilization) -> Unit
 ) {
-    //todo string resources
+    // todo string resources
     BasicPopupSetting(
-        title = "Set Video Stabilization", //stringResource(R.string.),
+        title = "Set Video Stabilization",
+        // stringResource(R.string.),
         leadingIcon = null,
         description = when (currentPreviewStabilization) {
             Stabilization.UNDEFINED -> "stabilization undefined"
-            //stringResource(id = )
+            // stringResource(id = )
             Stabilization.OFF -> "stabilization off"
-            //stringResource(id =)
+            // stringResource(id =)
             Stabilization.ON -> "stabilization on"
         },
         popupContents = {
@@ -314,17 +317,20 @@ fun VideoStabilizeSetting(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
-                    text = "stabilization on",//stringResource(id = R.string. ),
+                    text = "stabilization on",
+                    // stringResource(id = R.string. ),
                     selected = currentPreviewStabilization == Stabilization.ON,
                     onClick = { setVideoStabilization(Stabilization.ON) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization off",//stringResource(id = R.string.),
+                    text = "stabilization off",
+                    // stringResource(id = R.string.),
                     selected = currentPreviewStabilization == Stabilization.OFF,
                     onClick = { setVideoStabilization(Stabilization.OFF) }
                 )
                 SingleChoiceSelector(
-                    text = "stabilization undefined",//stringResource(id = R.string.),
+                    text = "stabilization undefined",
+                    // stringResource(id = R.string.),
                     selected = currentPreviewStabilization == Stabilization.UNDEFINED,
                     onClick = { setVideoStabilization(Stabilization.UNDEFINED) }
                 )

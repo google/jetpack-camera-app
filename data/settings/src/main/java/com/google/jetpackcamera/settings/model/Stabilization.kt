@@ -15,11 +15,12 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import android.util.Rational
 import com.google.jetpackcamera.settings.Stabilization as StabilizationProto
 
 enum class Stabilization {
-    UNDEFINED, OFF, ON;
+    UNDEFINED,
+    OFF,
+    ON;
 
     companion object {
         /** returns the Stabilization enum equivalent of a provided StabilizationProto */

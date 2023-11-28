@@ -80,13 +80,13 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setCaptureMode = viewModel::setCaptureMode
     )
 
-    //todo(b/313647247): query device and disable setting if stabilization isn't supported
+    // todo(b/313647247): query device and disable setting if stabilization isn't supported
     PreviewStabilizeSetting(
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization
     )
 
-    //todo(b/313647809): query device and disable setting if stabilization isn't supported
+    // todo(b/313647809): query device and disable setting if stabilization isn't supported
     VideoStabilizeSetting(
         currentPreviewStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         setVideoStabilization = viewModel::setVideoStabilization
