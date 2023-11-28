@@ -46,6 +46,11 @@ android {
                 "proguard-rules.pro"
             )
         }
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -118,6 +123,10 @@ dependencies {
 
     // Settings Screen
     implementation(project(":feature:settings"))
+
+    // benchmark
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+
 }
 
 // Allow references to generated code
