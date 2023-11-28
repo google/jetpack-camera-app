@@ -45,6 +45,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -74,7 +75,7 @@ constructor(
     private val recorder = Recorder.Builder().setExecutor(
         defaultDispatcher.asExecutor()
     ).build()
-    private val videoCaptureUseCase = VideoCapture.withOutput(recorder)
+    private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
     private var recording: Recording? = null
 
     private lateinit var previewUseCase: Preview
@@ -82,15 +83,19 @@ constructor(
 
     private lateinit var aspectRatio: AspectRatio
     private lateinit var captureMode: CaptureMode
+    private lateinit var shouldStabilizePreview: Stabilization
+    private lateinit var shouldStabilizeVideo: Stabilization
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
+        this.shouldStabilizePreview = currentCameraSettings.previewStabilization
+        this.shouldStabilizeVideo = currentCameraSettings.videoCaptureStabilization
         setFlashMode(currentCameraSettings.flashMode)
-
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
+        videoCaptureUseCase = createVideoUseCase()
         updateUseCaseGroup()
 
         val availableCameraLens =
@@ -248,7 +253,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -276,6 +281,31 @@ constructor(
         useCaseGroup = useCaseGroupBuilder.build()
     }
 
+    private fun createVideoUseCase(): VideoCapture<Recorder> {
+        val availableCameraInfo = cameraProvider.availableCameraInfos
+        val cameraSelector = if (isFrontFacing) {
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        } else {
+            CameraSelector.DEFAULT_BACK_CAMERA
+        }
+        val videoCaptureBuilder = VideoCapture.Builder(recorder)
+
+        val isVideoStabilizationSupported =
+            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
+                Recorder.getVideoCapabilities(it).isStabilizationSupported
+            } ?: false
+
+        // set video stabilization
+        if (isVideoStabilizationSupported && shouldStabilizeVideo != Stabilization.UNDEFINED) {
+            val isStabilized = when (shouldStabilizeVideo) {
+                Stabilization.ON -> true
+                else -> false
+            }
+            videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
+        }
+        return videoCaptureBuilder.build()
+    }
+
     private fun createPreviewUseCase(): Preview {
         val availableCameraInfo = cameraProvider.availableCameraInfos
         val cameraSelector = if (isFrontFacing) {
@@ -289,8 +319,12 @@ constructor(
             } ?: false
 
         val previewUseCaseBuilder = Preview.Builder()
-        if (isPreviewStabilizationSupported) {
-            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
+        if (isPreviewStabilizationSupported && shouldStabilizePreview != Stabilization.UNDEFINED) {
+            val isStabilized = when (shouldStabilizePreview) {
+                Stabilization.ON -> true
+                else -> false
+            }
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
         }
         return previewUseCaseBuilder.build()
     }

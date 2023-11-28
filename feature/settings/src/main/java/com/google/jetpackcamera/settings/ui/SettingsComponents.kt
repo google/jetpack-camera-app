@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -259,6 +261,12 @@ fun PreviewStabilizeSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
+                Text(
+                    text = "*Stabilization will be applied only to supported devices",
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
                     text = "stabilization on",//stringResource(id = ),
                     selected = currentPreviewStabilization == Stabilization.ON,
@@ -274,6 +282,8 @@ fun PreviewStabilizeSetting(
                     selected = currentPreviewStabilization == Stabilization.UNDEFINED,
                     onClick = { setPreviewStabilization(Stabilization.UNDEFINED) }
                 )
+
+
             }
         }
     )
@@ -297,6 +307,12 @@ fun VideoStabilizeSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
+                Text(
+                    text = "*Stabilization will be applied only to supported devices",
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(10.dp))
                 SingleChoiceSelector(
                     text = "stabilization on",//stringResource(id = R.string. ),
                     selected = currentPreviewStabilization == Stabilization.ON,
