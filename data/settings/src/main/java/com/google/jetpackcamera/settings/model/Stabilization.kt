@@ -15,19 +15,21 @@
  */
 package com.google.jetpackcamera.settings.model
 
-/**
- * Data layer representation for settings.
- */
-data class CameraAppSettings(
-    val isFrontCameraFacing: Boolean = false,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
-    val darkMode: DarkMode = DarkMode.SYSTEM,
-    val flashMode: FlashMode = FlashMode.OFF,
-    val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
-    val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
-    val previewStabilization: Stabilization = Stabilization.UNDEFINED,
-    val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED
-)
+import android.util.Rational
+import com.google.jetpackcamera.settings.Stabilization as StabilizationProto
 
-val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
+enum class Stabilization {
+    UNDEFINED, OFF, ON;
+
+    companion object {
+        /** returns the Stabilization enum equivalent of a provided StabilizationProto */
+        fun fromProto(stabilizationProto: StabilizationProto): Stabilization {
+            return when (stabilizationProto) {
+                StabilizationProto.STABILIZATION_UNDEFINED -> UNDEFINED
+                StabilizationProto.STABILIZATION_OFF -> OFF
+                StabilizationProto.STABILIZATION_ON -> ON
+                else -> UNDEFINED
+            }
+        }
+    }
+}

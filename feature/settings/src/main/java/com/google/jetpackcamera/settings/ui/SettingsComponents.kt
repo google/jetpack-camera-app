@@ -52,6 +52,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -99,7 +100,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+                cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -211,7 +212,6 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
 
 @Composable
 fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (CaptureMode) -> Unit) {
-    // todo: string resources
     BasicPopupSetting(
         title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
@@ -219,6 +219,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
             CaptureMode.MULTI_STREAM -> stringResource(
                 id = R.string.capture_mode_description_multi_stream
             )
+
             CaptureMode.SINGLE_STREAM -> stringResource(
                 id = R.string.capture_mode_description_single_stream
             )
@@ -234,6 +235,82 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
                     text = stringResource(id = R.string.capture_mode_description_single_stream),
                     selected = currentCaptureMode == CaptureMode.SINGLE_STREAM,
                     onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun PreviewStabilizeSetting(
+    currentPreviewStabilization: Stabilization,
+    setPreviewStabilization: (Stabilization) -> Unit
+) {
+    //todo string resources
+    BasicPopupSetting(
+        title = "Set Preview Stabilization", //stringResource(R.string.),
+        leadingIcon = null,
+        description = when (currentPreviewStabilization) {
+            Stabilization.UNDEFINED -> "stabilization undefined"
+            //stringResource(id = )
+            Stabilization.OFF -> "stabilization off"
+            //stringResource(id =)
+            Stabilization.ON -> "stabilization on"
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    text = "stabilization on",//stringResource(id = ),
+                    selected = currentPreviewStabilization == Stabilization.ON,
+                    onClick = { setPreviewStabilization(Stabilization.ON) }
+                )
+                SingleChoiceSelector(
+                    text = "stabilization off",//stringResource(id = ),
+                    selected = currentPreviewStabilization == Stabilization.OFF,
+                    onClick = { setPreviewStabilization(Stabilization.OFF) }
+                )
+                SingleChoiceSelector(
+                    text = "stabilization undefined",//stringResource(id = ),
+                    selected = currentPreviewStabilization == Stabilization.UNDEFINED,
+                    onClick = { setPreviewStabilization(Stabilization.UNDEFINED) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun VideoStabilizeSetting(
+    currentPreviewStabilization: Stabilization,
+    setVideoStabilization: (Stabilization) -> Unit
+) {
+    //todo string resources
+    BasicPopupSetting(
+        title = "Set Video Stabilization", //stringResource(R.string.),
+        leadingIcon = null,
+        description = when (currentPreviewStabilization) {
+            Stabilization.UNDEFINED -> "stabilization undefined"
+            //stringResource(id = )
+            Stabilization.OFF -> "stabilization off"
+            //stringResource(id =)
+            Stabilization.ON -> "stabilization on"
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    text = "stabilization on",//stringResource(id = R.string. ),
+                    selected = currentPreviewStabilization == Stabilization.ON,
+                    onClick = { setVideoStabilization(Stabilization.ON) }
+                )
+                SingleChoiceSelector(
+                    text = "stabilization off",//stringResource(id = R.string.),
+                    selected = currentPreviewStabilization == Stabilization.OFF,
+                    onClick = { setVideoStabilization(Stabilization.OFF) }
+                )
+                SingleChoiceSelector(
+                    text = "stabilization undefined",//stringResource(id = R.string.),
+                    selected = currentPreviewStabilization == Stabilization.UNDEFINED,
+                    onClick = { setVideoStabilization(Stabilization.UNDEFINED) }
                 )
             }
         }

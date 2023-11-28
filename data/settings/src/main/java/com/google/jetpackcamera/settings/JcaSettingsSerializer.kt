@@ -31,6 +31,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
+        .setStabilizePreview(Stabilization.STABILIZATION_UNDEFINED)
+        .setStabilizeVideo(Stabilization.STABILIZATION_UNDEFINED)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

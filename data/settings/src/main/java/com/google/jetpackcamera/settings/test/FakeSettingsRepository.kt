@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -60,6 +61,14 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateCaptureMode(captureMode: CaptureMode) {
         currentCameraSettings =
             currentCameraSettings.copy(captureMode = captureMode)
+    }
+
+    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
+        TODO("Not yet implemented")
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

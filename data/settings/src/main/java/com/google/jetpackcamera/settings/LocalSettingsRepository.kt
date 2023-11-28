@@ -16,18 +16,20 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
-import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import javax.inject.Inject
+import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+import com.google.jetpackcamera.settings.Stabilization as StabilizationProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -55,6 +57,8 @@ class LocalSettingsRepository @Inject constructor(
                 isFrontCameraAvailable = it.frontCameraAvailable,
                 isBackCameraAvailable = it.backCameraAvailable,
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
+                previewStabilization = Stabilization.fromProto(it.stabilizePreview),
+                videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
@@ -143,4 +147,32 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
+
+    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
+        val newStatus = when (stabilization) {
+            Stabilization.ON -> StabilizationProto.STABILIZATION_ON
+            Stabilization.OFF -> StabilizationProto.STABILIZATION_OFF
+            else -> StabilizationProto.STABILIZATION_UNDEFINED
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizePreview(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
+        val newStatus = when (stabilization) {
+            Stabilization.ON -> StabilizationProto.STABILIZATION_ON
+            Stabilization.OFF -> StabilizationProto.STABILIZATION_OFF
+            else -> StabilizationProto.STABILIZATION_UNDEFINED
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizeVideo(newStatus)
+                .build()
+        }
+    }
+
+
 }
