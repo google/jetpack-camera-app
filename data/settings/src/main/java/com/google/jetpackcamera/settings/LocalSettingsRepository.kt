@@ -106,8 +106,13 @@ class LocalSettingsRepository @Inject constructor(
         // if a front or back lens is not present, the option to change
         // the direction of the camera should be disabled
         jcaSettings.updateData { currentSettings ->
+            val newLensFacing = if (currentSettings.defaultFrontCamera) {
+                frontLensAvailable
+            } else {
+                false
+            }
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(frontLensAvailable)
+                .setDefaultFrontCamera(newLensFacing)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
                 .build()

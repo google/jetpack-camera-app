@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
  * Before running this benchmark:
  * 1) switch your app's active build variant in the Studio (affects Studio runs only)
  * 2) add `<profileable android:shell="true" />` to your app's manifest, within the `<application>` tag
- *hot
+ *
  * Run this benchmark from Studio to see startup measurements, and captured system traces
  * for investigating your app's performance.
  */
@@ -46,7 +46,6 @@ class StartupBenchmark {
         benchmarkStartup()
     }
 
-    // startup from scratch
     @Test
     fun startupCold() {
         benchmarkStartup(
@@ -55,7 +54,6 @@ class StartupBenchmark {
         )
     }
 
-    //
     @Test
     fun startupWarm() {
         benchmarkStartup(
