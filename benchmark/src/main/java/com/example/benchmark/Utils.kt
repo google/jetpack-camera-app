@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.example.benchmark
 
 import androidx.test.uiautomator.By
@@ -28,7 +27,6 @@ enum class FlashMode {
     AUTO
 }
 
-
 // open or close quick settings menu on device
 fun toggleQuickSettings(device: UiDevice) {
     device.findObject(By.res("QuickSettingDropDown")).click()
@@ -42,7 +40,6 @@ fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
     if (isFrontFacing != shouldFaceFront) {
         device.findObject(By.res("QuickSetFlipCamera")).click()
     }
-
 }
 
 // set device flash mode using quick setting
@@ -58,5 +55,3 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
         device.findObject(By.res("QuickSetFlash")).click()
     }
 }
-
-

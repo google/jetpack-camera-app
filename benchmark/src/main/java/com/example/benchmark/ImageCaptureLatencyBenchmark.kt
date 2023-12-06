@@ -49,12 +49,11 @@ class ImageCaptureLatencyBenchmark {
     }
      */
 
-    //Flash test needs extra time at the end to ensure the trace is closed
+    // Flash test needs extra time at the end to ensure the trace is closed
     @Test
     fun rearCameraWithFlashLatency() {
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON, sleepInterval = 5000)
     }
-
 
     // Measures the time between an onClick event on the Capture Button and onImageCapture callback being fired
     // added sleep interval option due to flash taking extra time
