@@ -38,6 +38,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
@@ -118,7 +120,15 @@ fun QuickSetFlash(
         FlashMode.ON -> CameraFlashMode.ON
     }
     QuickSettingUiItem(
-        modifier = modifier,
+        modifier = modifier
+            .semantics {
+                contentDescription =
+                    when (enum) {
+                        CameraFlashMode.OFF -> "QuickSetFlash_is_off"
+                        CameraFlashMode.AUTO -> "QuickSetFlash_is_auto"
+                        CameraFlashMode.ON -> "QuickSetFlash_is_on"
+                    }
+            },
         enum = enum,
         isHighLighted = currentFlashMode == FlashMode.ON,
         onClick =
@@ -144,7 +154,14 @@ fun QuickFlipCamera(
             false -> CameraLensFace.BACK
         }
     QuickSettingUiItem(
-        modifier = modifier,
+        modifier = modifier
+            .semantics {
+                contentDescription =
+                    when (enum) {
+                        CameraLensFace.FRONT -> "QuickSetFlip_is_front"
+                        CameraLensFace.BACK -> "QuickSetFlip_is_back"
+                    }
+            },
         enum = enum,
         onClick = { flipCamera(!currentFacingFront) }
     )

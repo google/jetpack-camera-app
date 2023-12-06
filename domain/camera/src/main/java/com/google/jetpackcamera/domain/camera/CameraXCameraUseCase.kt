@@ -17,9 +17,12 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
+import android.os.Build
+import android.os.Trace
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
+import androidx.annotation.RequiresApi
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
@@ -130,6 +133,7 @@ constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override suspend fun takePicture() {
         val imageDeferred = CompletableDeferred<ImageProxy>()
 
@@ -139,6 +143,7 @@ constructor(
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
+                    Trace.endAsyncSection("JCA Image Capture", 0)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -168,7 +173,6 @@ constructor(
             )
                 .setContentValues(contentValues)
                 .build()
-
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)

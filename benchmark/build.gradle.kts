@@ -65,7 +65,7 @@ android {
 
 dependencies {
     implementation("androidx.test.ext:junit:1.1.5")
-    implementation("androidx.benchmark:benchmark-macro-junit4:1.2.1")
+    implementation("androidx.benchmark:benchmark-macro-junit4:1.2.2")
 }
 
 androidComponents {

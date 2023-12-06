@@ -25,14 +25,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * This is an example startup benchmark.
- *
- * It navigates to the device's home screen, and launches the default activity.
- *
- * Before running this benchmark:
- * 1) switch your app's active build variant in the Studio (affects Studio runs only)
- * 2) add `<profileable android:shell="true" />` to your app's manifest, within the `<application>` tag
- *
  * Run this benchmark from Studio to see startup measurements, and captured system traces
  * for investigating your app's performance.
  */
@@ -77,9 +69,9 @@ class StartupBenchmark {
         startupMode: StartupMode? = StartupMode.COLD
     ) {
         benchmarkRule.measureRepeated(
-            packageName = "com.google.jetpackcamera",
+            packageName = JCA_PACKAGE,
             metrics = listOf(StartupTimingMetric()),
-            iterations = 5,
+            iterations = DEFAULT_ITERATIONS,
             startupMode = startupMode,
             setupBlock = setupBlock
 
