@@ -26,13 +26,14 @@ enum class FlashMode {
     OFF,
     AUTO
 }
+//todo: designate "default testing settings" to ensure consistency of benchmarks
 
 // open or close quick settings menu on device
 fun toggleQuickSettings(device: UiDevice) {
     device.findObject(By.res("QuickSettingDropDown")).click()
 }
 
-// set device direction using quick seting
+// set device direction using quick setting
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
     // flash on with front camera will automatically enable screen flash
 

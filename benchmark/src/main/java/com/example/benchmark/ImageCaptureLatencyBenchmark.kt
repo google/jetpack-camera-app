@@ -33,21 +33,14 @@ class ImageCaptureLatencyBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun frontCameraNoFlashLatency() {
-        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.OFF)
-    }
-
-    @Test
     fun rearCameraNoFlashLatency() {
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.OFF)
     }
 
-    /*
     @Test
-    fun frontCameraWithFlashLatency() {
-        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.ON)
+    fun frontCameraNoFlashLatency() {
+        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.OFF)
     }
-     */
 
     // Flash test needs extra time at the end to ensure the trace is closed
     @Test
@@ -55,13 +48,22 @@ class ImageCaptureLatencyBenchmark {
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON, sleepInterval = 5000)
     }
 
+
+    //todo: front flash latency test
+    /*
+    @Test
+    fun frontCameraWithFlashLatency() {
+        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.ON)
+    }
+     */
+
     // Measures the time between an onClick event on the Capture Button and onImageCapture callback being fired
     // added sleep interval option due to flash taking extra time
     @OptIn(ExperimentalMetricApi::class)
     private fun imageCaptureLatency(
         shouldFaceFront: Boolean,
         flashMode: FlashMode,
-        sleepInterval: Long = 100
+        sleepInterval: Long = 500
     ) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE,
@@ -83,7 +85,6 @@ class ImageCaptureLatencyBenchmark {
             }
 
         ) {
-            Thread.sleep(100)
             val selector = By.res("CaptureButton")
 
             if (!device.wait(Until.hasObject(selector), 2_500)) {
@@ -92,6 +93,8 @@ class ImageCaptureLatencyBenchmark {
             device
                 .findObject(selector)
                 .click()
+
+            // ensure trace is closed
             Thread.sleep(sleepInterval)
         }
     }
