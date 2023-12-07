@@ -83,16 +83,23 @@ constructor(
     private lateinit var captureMode: CaptureMode
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
+    private var shouldStabilize = true
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
         setFlashMode(currentCameraSettings.flashMode)
-        videoCaptureUseCase = when (currentCameraSettings.targetFrameRate) {
-            TargetFrameRate.TARGET_FPS_NONE -> VideoCapture.withOutput(recorder)
-            else -> VideoCapture.Builder(recorder)
-                .setTargetFrameRate(currentCameraSettings.targetFrameRate.range)
-                .build()
+        when (currentCameraSettings.targetFrameRate) {
+            TargetFrameRate.TARGET_FPS_NONE -> {
+                videoCaptureUseCase = VideoCapture.withOutput(recorder)
+                shouldStabilize = true
+            }
+            else -> {
+                videoCaptureUseCase = VideoCapture.Builder(recorder)
+                    .setTargetFrameRate(currentCameraSettings.targetFrameRate.range)
+                    .build()
+                shouldStabilize = false
+            }
         }
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
         updateUseCaseGroup()
@@ -294,7 +301,7 @@ constructor(
             } ?: false
 
         val previewUseCaseBuilder = Preview.Builder()
-        if (isPreviewStabilizationSupported) {
+        if (isPreviewStabilizationSupported && shouldStabilize) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
         return previewUseCaseBuilder.build()
