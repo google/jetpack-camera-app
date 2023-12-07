@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -247,44 +248,47 @@ fun TargetFpsSetting(
     currentTargetFps: TargetFrameRate,
     setTargetFps: (TargetFrameRate) -> Unit
 ) {
-    val str = "surfaces will be set for a target fps of "
-
     BasicPopupSetting(
         modifier = modifier,
-        title = "set target fps",
+        title = stringResource(id = R.string.fps_title),
         leadingIcon = null,
         description = when (currentTargetFps) {
-            TargetFrameRate.TARGET_FPS_NONE -> "None" // stringResource(id = )
-            TargetFrameRate.TARGET_FPS_15 -> str + "15"
-            TargetFrameRate.TARGET_FPS_30 -> str + "30"
-            TargetFrameRate.TARGET_FPS_60 -> str + "60"
-            TargetFrameRate.TARGET_FPS_100 -> str + "100"
+            TargetFrameRate.TARGET_FPS_NONE -> stringResource(id = R.string.fps_description_none)
+            TargetFrameRate.TARGET_FPS_15 -> stringResource(id = R.string.fps_description_15)
+            TargetFrameRate.TARGET_FPS_30 -> stringResource(id = R.string.fps_description_30)
+            TargetFrameRate.TARGET_FPS_60 -> stringResource(id = R.string.fps_description_60)
+            TargetFrameRate.TARGET_FPS_100 -> stringResource(id = R.string.fps_selector_100)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
+                Text(
+                    text = stringResource(id = R.string.fps_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
                 SingleChoiceSelector(
-                    text = "none",
+                    text = stringResource(id = R.string.fps_selector_none),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_NONE,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_NONE) }
                 )
                 SingleChoiceSelector(
-                    text = "15",
+                    text = stringResource(id = R.string.fps_selector_15),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
                 )
                 SingleChoiceSelector(
-                    text = "30",
+                    text = stringResource(id = R.string.fps_selector_30),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
                 )
                 SingleChoiceSelector(
-                    text = "60",
+                    text = stringResource(id = R.string.fps_selector_60),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
                 )
 
                 SingleChoiceSelector(
-                    text = "100",
+                    text = stringResource(id = R.string.fps_selector_100),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_100,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_100) }
                 )
