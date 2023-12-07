@@ -57,6 +57,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 
 private const val TAG = "CameraXCameraUseCase"
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -143,7 +144,7 @@ constructor(
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
-                    Trace.endAsyncSection("JCA Image Capture", 0)
+                    Trace.endAsyncSection(IMAGE_CAPTURE_TRACE, 0)
                 }
 
                 override fun onError(exception: ImageCaptureException) {

@@ -13,37 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.benchmark
+package com.google.jetpackcamera.benchmark
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 
-const val JCA_PACKAGE = "com.google.jetpackcamera"
-const val DEFAULT_ITERATIONS = 5
+const val JCA_PACKAGE_NAME = "com.google.jetpackcamera"
+const val DEFAULT_TEST_ITERATIONS = 5
 
+// trace tags
+const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
+
+// enums
 enum class FlashMode {
     ON,
     OFF,
     AUTO
 }
-//todo: designate "default testing settings" to ensure consistency of benchmarks
+//todo(kimblebee): designate "default testing settings" to ensure consistency of benchmarks
 
 // open or close quick settings menu on device
+/**
+ * Toggle open or close quick settings menu on a device.
+ *
+ */
 fun toggleQuickSettings(device: UiDevice) {
     device.findObject(By.res("QuickSettingDropDown")).click()
 }
 
-// set device direction using quick setting
+/**
+ * Set device direction using quick settings.
+ *
+ * Quick Settings must first be opened with a call to [toggleQuickSettings]
+ *
+ *  @param shouldFaceFront the direction the camera should be facing
+ *
+ *
+ */
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
-    // flash on with front camera will automatically enable screen flash
-
     val isFrontFacing = device.findObject(By.desc("QuickSetFlip_is_front")) != null
     if (isFrontFacing != shouldFaceFront) {
         device.findObject(By.res("QuickSetFlipCamera")).click()
     }
 }
 
-// set device flash mode using quick setting
+/**
+ * Set device flash mode using quick settings.
+ * @param flashMode the designated [FlashMode] for the camera
+ *
+ */
+
 fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
     val selector =
         when (flashMode) {

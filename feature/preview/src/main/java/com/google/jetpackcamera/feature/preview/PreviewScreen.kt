@@ -72,7 +72,7 @@ import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
-
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * Screen used for the Preview feature.
  */
@@ -226,7 +226,7 @@ fun PreviewScreen(
                             .testTag(CAPTURE_BUTTON),
                         onClick = {
                             // this trace is closed at the imageCaptureUseCase callback in CameraxCameraUseCase
-                            Trace.beginAsyncSection("JCA Image Capture", 0)
+                            Trace.beginAsyncSection(IMAGE_CAPTURE_TRACE, 0)
                             multipleEventsCutter.processEvent { viewModel.captureImage() }
                         },
                         onLongPress = { viewModel.startVideoRecording() },

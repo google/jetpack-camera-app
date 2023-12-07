@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.benchmark"
+    namespace = "com.google.jetpackcamera.benchmark"
     compileSdk = 34
 
     compileOptions {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.benchmark
+package com.google.jetpackcamera.benchmark
 
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.StartupMode
@@ -42,23 +42,26 @@ class ImageCaptureLatencyBenchmark {
         imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.OFF)
     }
 
-    // Flash test needs extra time at the end to ensure the trace is closed
     @Test
     fun rearCameraWithFlashLatency() {
+        // Flash test needs extra time at the end to ensure the trace is closed
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON, sleepInterval = 5000)
     }
 
 
-    //todo: front flash latency test
-    /*
-    @Test
-    fun frontCameraWithFlashLatency() {
-        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.ON)
-    }
-     */
+    //todo(kimblebee): front flash latency test
 
-    // Measures the time between an onClick event on the Capture Button and onImageCapture callback being fired
-    // added sleep interval option due to flash taking extra time
+    /**
+     * Measures the time between an onClick event on the Capture Button and onImageCapture
+     * callback being fired from
+     * [takePicture][com.google.jetpackcamera.domain.camera.CameraXCameraUseCase.takePicture].
+     *
+     *  @param shouldFaceFront the direction the camera should be facing.
+     *  @param flashMode the designated [FlashMode] for the camera.
+     *  @param sleepInterval option to change the default sleep interval after performing clicking
+     *  the Image Capture button.
+     *
+     */
     @OptIn(ExperimentalMetricApi::class)
     private fun imageCaptureLatency(
         shouldFaceFront: Boolean,
@@ -66,11 +69,11 @@ class ImageCaptureLatencyBenchmark {
         sleepInterval: Long = 500
     ) {
         benchmarkRule.measureRepeated(
-            packageName = JCA_PACKAGE,
+            packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
-                TraceSectionMetric(sectionName = "JCA Image Capture", targetPackageOnly = false)
+                TraceSectionMetric(sectionName = IMAGE_CAPTURE_TRACE, targetPackageOnly = false)
             ),
-            iterations = DEFAULT_ITERATIONS,
+            iterations = DEFAULT_TEST_ITERATIONS,
             startupMode = StartupMode.WARM,
             setupBlock = {
                 allowCamera()

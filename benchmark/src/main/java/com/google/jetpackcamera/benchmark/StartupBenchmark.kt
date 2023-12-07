@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.benchmark
+package com.google.jetpackcamera.benchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.StartupMode
@@ -69,9 +69,9 @@ class StartupBenchmark {
         startupMode: StartupMode? = StartupMode.COLD
     ) {
         benchmarkRule.measureRepeated(
-            packageName = JCA_PACKAGE,
+            packageName = JCA_PACKAGE_NAME,
             metrics = listOf(StartupTimingMetric()),
-            iterations = DEFAULT_ITERATIONS,
+            iterations = DEFAULT_TEST_ITERATIONS,
             startupMode = startupMode,
             setupBlock = setupBlock
 
