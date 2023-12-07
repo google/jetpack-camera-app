@@ -77,7 +77,6 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * Screen used for the Preview feature.
  */
-@RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
@@ -216,7 +215,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -226,8 +225,10 @@ fun PreviewScreen(
                         modifier = Modifier
                             .testTag(CAPTURE_BUTTON),
                         onClick = {
-                            // this trace is closed at the imageCaptureUseCase callback in CameraxCameraUseCase
-                            Trace.beginAsyncSection(IMAGE_CAPTURE_TRACE, 0)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                // this trace is closed at the imageCaptureUseCase callback in CameraxCameraUseCase
+                                Trace.beginAsyncSection(IMAGE_CAPTURE_TRACE, 0)
+                            }
                             multipleEventsCutter.processEvent { viewModel.captureImage() }
                         },
                         onLongPress = { viewModel.startVideoRecording() },

@@ -134,7 +134,6 @@ constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     override suspend fun takePicture() {
         val imageDeferred = CompletableDeferred<ImageProxy>()
 
@@ -144,7 +143,9 @@ constructor(
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
-                    Trace.endAsyncSection(IMAGE_CAPTURE_TRACE, 0)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        Trace.endAsyncSection(IMAGE_CAPTURE_TRACE, 0)
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -253,7 +254,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
