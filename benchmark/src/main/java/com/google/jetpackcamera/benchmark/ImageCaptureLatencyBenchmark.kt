@@ -48,8 +48,7 @@ class ImageCaptureLatencyBenchmark {
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON, sleepInterval = 5000)
     }
 
-
-    //todo(kimblebee): front flash latency test
+    // todo(kimblebee): front flash latency test
 
     /**
      * Measures the time between an onClick event on the Capture Button and onImageCapture

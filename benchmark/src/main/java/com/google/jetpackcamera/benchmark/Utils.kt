@@ -30,7 +30,7 @@ enum class FlashMode {
     OFF,
     AUTO
 }
-//todo(kimblebee): designate "default testing settings" to ensure consistency of benchmarks
+// todo(kimblebee): designate "default testing settings" to ensure consistency of benchmarks
 
 // open or close quick settings menu on device
 /**

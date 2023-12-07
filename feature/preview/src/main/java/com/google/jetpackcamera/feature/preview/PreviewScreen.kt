@@ -73,6 +73,7 @@ import kotlinx.coroutines.awaitCancellation
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
+
 /**
  * Screen used for the Preview feature.
  */

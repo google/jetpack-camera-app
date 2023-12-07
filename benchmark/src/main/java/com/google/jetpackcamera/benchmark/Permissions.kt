@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.benchmark
 
 import android.Manifest.permission
-import android.os.Build
 import androidx.benchmark.macro.MacrobenchmarkScope
 import org.junit.Assert
 
