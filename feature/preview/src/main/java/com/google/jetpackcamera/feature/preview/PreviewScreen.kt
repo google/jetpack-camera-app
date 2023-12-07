@@ -20,7 +20,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Trace
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -215,7 +214,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

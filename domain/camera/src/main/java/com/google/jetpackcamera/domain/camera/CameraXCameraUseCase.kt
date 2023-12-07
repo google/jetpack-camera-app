@@ -22,7 +22,6 @@ import android.os.Trace
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
-import androidx.annotation.RequiresApi
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
@@ -254,7 +253,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
