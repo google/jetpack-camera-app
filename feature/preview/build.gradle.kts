@@ -63,6 +63,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.tracing:tracing-ktx:1.2.0")
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)

@@ -15,10 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.Trace
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
@@ -57,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.tracing.Trace
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
@@ -71,7 +70,6 @@ import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
-private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * Screen used for the Preview feature.
@@ -214,7 +212,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -224,10 +222,6 @@ fun PreviewScreen(
                         modifier = Modifier
                             .testTag(CAPTURE_BUTTON),
                         onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                // this trace is closed at the imageCaptureUseCase callback in CameraxCameraUseCase
-                                Trace.beginAsyncSection(IMAGE_CAPTURE_TRACE, 0)
-                            }
                             multipleEventsCutter.processEvent { viewModel.captureImage() }
                         },
                         onLongPress = { viewModel.startVideoRecording() },

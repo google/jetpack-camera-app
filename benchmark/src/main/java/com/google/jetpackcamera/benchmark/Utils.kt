@@ -17,6 +17,9 @@ package com.google.jetpackcamera.benchmark
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
+import org.junit.Assert
 
 const val JCA_PACKAGE_NAME = "com.google.jetpackcamera"
 const val DEFAULT_TEST_ITERATIONS = 5
@@ -32,10 +35,17 @@ enum class FlashMode {
 }
 // todo(kimblebee): designate "default testing settings" to ensure consistency of benchmarks
 
-// open or close quick settings menu on device
+/**
+ * function to click capture button on device.
+ *
+ * @param duration length of the click.
+ */
+fun clickCaptureButton(device: UiDevice, duration: Long = 0) {
+    findObjectByResOrFail(device, "CaptureButton")!!.click(duration)
+}
+
 /**
  * Toggle open or close quick settings menu on a device.
- *
  */
 fun toggleQuickSettings(device: UiDevice) {
     device.findObject(By.res("QuickSettingDropDown")).click()
@@ -53,7 +63,7 @@ fun toggleQuickSettings(device: UiDevice) {
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
     val isFrontFacing = device.findObject(By.desc("QuickSetFlip_is_front")) != null
     if (isFrontFacing != shouldFaceFront) {
-        device.findObject(By.res("QuickSetFlipCamera")).click()
+        findObjectByResOrFail(device, "QuickSetFlipCamera")!!.click()
     }
 }
 
@@ -70,8 +80,18 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
             FlashMode.ON -> By.desc("QuickSetFlash_is_on")
             FlashMode.OFF -> By.desc("QuickSetFlash_is_off")
         }
-
     while (device.findObject(selector) == null) {
-        device.findObject(By.res("QuickSetFlash")).click()
+
+        findObjectByResOrFail(device, "QuickSetFlash")!!.click()
     }
+}
+
+fun findObjectByResOrFail(device: UiDevice, testTag: String): UiObject2? {
+    val selector = By.res(testTag)
+
+    return if (!device.wait(Until.hasObject(selector), 2_500)) {
+        Assert.fail("Did not find object with id $testTag")
+        null
+    } else
+        device.findObject(selector)
 }

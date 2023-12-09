@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -57,8 +59,8 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                    // TODO: only update settings that were actually changed
-                    // currently resets all "quick" settings to stored settings
+                // TODO: only update settings that were actually changed
+                // currently resets all "quick" settings to stored settings
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
@@ -190,12 +192,14 @@ class PreviewViewModel @Inject constructor(
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            try {
-                cameraUseCase.takePicture()
-                Log.d(TAG, "cameraUseCase.takePicture success")
-            } catch (exception: ImageCaptureException) {
-                Log.d(TAG, "cameraUseCase.takePicture error")
-                Log.d(TAG, exception.toString())
+            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
+                try {
+                    cameraUseCase.takePicture()
+                    Log.d(TAG, "cameraUseCase.takePicture success")
+                } catch (exception: ImageCaptureException) {
+                    Log.d(TAG, "cameraUseCase.takePicture error")
+                    Log.d(TAG, exception.toString())
+                }
             }
         }
     }

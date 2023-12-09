@@ -73,7 +73,6 @@ class ImageCaptureLatencyBenchmark {
                 TraceSectionMetric(sectionName = IMAGE_CAPTURE_TRACE, targetPackageOnly = false)
             ),
             iterations = DEFAULT_TEST_ITERATIONS,
-            startupMode = StartupMode.WARM,
             setupBlock = {
                 allowCamera()
                 pressHome()
@@ -81,22 +80,16 @@ class ImageCaptureLatencyBenchmark {
                 toggleQuickSettings(device)
                 setQuickFrontFacingCamera(shouldFaceFront = shouldFaceFront, device = device)
                 setQuickSetFlash(flashMode = flashMode, device = device)
-
                 toggleQuickSettings(device)
                 device.waitForIdle()
             }
 
         ) {
-            val selector = By.res("CaptureButton")
-
-            if (!device.wait(Until.hasObject(selector), 2_500)) {
-                fail("Did not find object with id CaptureButton")
-            }
-            device
-                .findObject(selector)
-                .click()
+            clickCaptureButton(device)
 
             // ensure trace is closed
+            //todo(kimblebee): replace sleep with findObject tied to successful image capture
+            // with a long timeout.
             Thread.sleep(sleepInterval)
         }
     }

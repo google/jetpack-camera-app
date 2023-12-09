@@ -17,8 +17,6 @@ package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
 import android.content.ContentValues
-import android.os.Build
-import android.os.Trace
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
@@ -41,19 +39,20 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
+import androidx.tracing.Trace
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -142,9 +141,6 @@ constructor(
                 override fun onCaptureSuccess(imageProxy: ImageProxy) {
                     Log.d(TAG, "onCaptureSuccess")
                     imageDeferred.complete(imageProxy)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        Trace.endAsyncSection(IMAGE_CAPTURE_TRACE, 0)
-                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -253,7 +249,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
