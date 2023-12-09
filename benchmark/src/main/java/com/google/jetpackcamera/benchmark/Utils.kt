@@ -81,7 +81,6 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
             FlashMode.OFF -> By.desc("QuickSetFlash_is_off")
         }
     while (device.findObject(selector) == null) {
-
         findObjectByResOrFail(device, "QuickSetFlash")!!.click()
     }
 }
@@ -92,6 +91,7 @@ fun findObjectByResOrFail(device: UiDevice, testTag: String): UiObject2? {
     return if (!device.wait(Until.hasObject(selector), 2_500)) {
         Assert.fail("Did not find object with id $testTag")
         null
-    } else
+    } else {
         device.findObject(selector)
+    }
 }

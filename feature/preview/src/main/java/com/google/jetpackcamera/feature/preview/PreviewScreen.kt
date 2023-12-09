@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.tracing.Trace
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
@@ -212,7 +211,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

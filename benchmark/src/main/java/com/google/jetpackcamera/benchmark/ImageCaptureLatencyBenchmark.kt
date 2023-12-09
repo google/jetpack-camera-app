@@ -16,13 +16,9 @@
 package com.google.jetpackcamera.benchmark
 
 import androidx.benchmark.macro.ExperimentalMetricApi
-import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Until
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,7 +84,7 @@ class ImageCaptureLatencyBenchmark {
             clickCaptureButton(device)
 
             // ensure trace is closed
-            //todo(kimblebee): replace sleep with findObject tied to successful image capture
+            // todo(kimblebee): replace sleep with findObject tied to successful image capture
             // with a long timeout.
             Thread.sleep(sleepInterval)
         }

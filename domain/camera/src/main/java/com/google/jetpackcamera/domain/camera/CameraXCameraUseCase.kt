@@ -39,20 +39,19 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import androidx.tracing.Trace
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
-import java.util.Date
-import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -249,7 +248,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
