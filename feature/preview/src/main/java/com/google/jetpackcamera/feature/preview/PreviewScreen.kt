@@ -55,11 +55,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
-import com.google.jetpackcamera.feature.preview.ui.CaptureSuccessMessage
+import com.google.jetpackcamera.feature.preview.ui.CaptureStatusMessage
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
-import com.google.jetpackcamera.feature.preview.ui.ScreenFlash
+import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
@@ -68,6 +69,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
@@ -85,6 +87,9 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+
+    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -200,7 +205,7 @@ fun PreviewScreen(
                 if (zoomScaleShow) {
                     ZoomScaleText(zoomScale = zoomScale)
                 }
-                CaptureSuccessMessage(previewUiState.captureIsSuccessful) {
+                CaptureStatusMessage(previewUiState.captureState) {
                     viewModel.onCaptureSuccessMessageShown()
                 }
                 Row(
@@ -254,7 +259,20 @@ fun PreviewScreen(
             }
         }
 
-        // Screen flash overlay that stays on top of everything but invisible normally
-        ScreenFlash()
+        if (viewModel.screenFlash.isEnabled(
+                previewUiState.currentCameraSettings.flashMode,
+                previewUiState.currentCameraSettings.isFrontCameraFacing
+            )
+        ) {
+            // Screen flash overlay that stays on top of everything but invisible normally
+            ScreenFlashScreen(
+                screenFlashUiState = screenFlashUiState,
+                onInitialBrightnessCalculated = { value ->
+                    viewModel.viewModelScope.launch {
+                        viewModel.screenFlash.setClearUiScreenBrightness(value)
+                    }
+                }
+            )
+        }
     }
 }

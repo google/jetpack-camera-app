@@ -47,9 +47,9 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import dagger.hilt.android.scopes.ViewModelScoped
 import java.util.Date
 import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -65,7 +65,7 @@ private const val TAG = "CameraXCameraUseCase"
 /**
  * CameraX based implementation for [CameraUseCase]
  */
-@Singleton
+@ViewModelScoped
 class CameraXCameraUseCase
 @Inject
 constructor(
@@ -249,8 +249,7 @@ constructor(
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
 
     override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
-        val isScreenFlashRequired =
-            isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
+        val isScreenFlashRequired = isScreenFlash(flashMode, isFrontFacing)
 
         if (isScreenFlashRequired) {
             imageCaptureUseCase.screenFlashUiControl = object : ScreenFlashUiControl {
@@ -295,6 +294,9 @@ constructor(
         }
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
+
+    override fun isScreenFlash(flashMode: FlashMode, isFrontFacing: Boolean) =
+        isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio

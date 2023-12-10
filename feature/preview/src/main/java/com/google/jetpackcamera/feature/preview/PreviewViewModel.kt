@@ -54,6 +54,8 @@ class PreviewViewModel @Inject constructor(
 
     private var recordingJob: Job? = null
 
+    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
@@ -199,13 +201,25 @@ class PreviewViewModel @Inject constructor(
                 cameraUseCase.takePicture()
                 Log.d(TAG, "cameraUseCase.takePicture success")
                 _previewUiState.emit(
+                    // TODO: Handle new capture result if showing the previous is not completed yet
                     previewUiState.value.copy(
-                        captureIsSuccessful = true
+                        captureState = CaptureState(
+                            isShown = false,
+                            CaptureStatus.SUCCESS
+                        )
                     )
                 )
             } catch (exception: ImageCaptureException) {
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        captureState = CaptureState(
+                            isShown = false,
+                            CaptureStatus.FAILED
+                        )
+                    )
+                )
             }
         }
     }
@@ -274,7 +288,10 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
-                    captureIsSuccessful = false
+                    captureState = CaptureState(
+                        isShown = true,
+                        captureStatus = previewUiState.value.captureState.captureStatus
+                    )
                 )
             )
         }

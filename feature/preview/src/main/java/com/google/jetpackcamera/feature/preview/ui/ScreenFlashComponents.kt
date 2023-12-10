@@ -26,31 +26,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.jetpackcamera.feature.preview.ScreenFlashViewModel
+import com.google.jetpackcamera.feature.preview.ScreenFlash
 
 private const val TAG = "ScreenFlashComponents"
 
 @Composable
-fun ScreenFlash(viewModel: ScreenFlashViewModel = hiltViewModel()) {
-    val screenFlashUiState: ScreenFlashViewModel.ScreenFlashUiState
-        by viewModel.screenFlashUiState.collectAsState()
-
+fun ScreenFlashScreen(
+    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    onInitialBrightnessCalculated: (Float) -> Unit
+) {
     ScreenFlashOverlay(screenFlashUiState)
 
     if (screenFlashUiState.enabled) {
-        BrightnessMaximization(
-            onInitialBrightnessCalculated = { value ->
-                viewModel.setClearUiScreenBrightness(value)
-            }
-        )
+        BrightnessMaximization(onInitialBrightnessCalculated = onInitialBrightnessCalculated)
     } else {
         screenFlashUiState.screenBrightnessToRestore?.let {
             // non-null brightness value means there is a value to restore
@@ -62,7 +56,7 @@ fun ScreenFlash(viewModel: ScreenFlashViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun ScreenFlashOverlay(screenFlashUiState: ScreenFlashViewModel.ScreenFlashUiState) {
+fun ScreenFlashOverlay(screenFlashUiState: ScreenFlash.ScreenFlashUiState) {
     // Update overlay transparency gradually
     val alpha by animateFloatAsState(
         targetValue = if (screenFlashUiState.enabled) 1f else 0f,

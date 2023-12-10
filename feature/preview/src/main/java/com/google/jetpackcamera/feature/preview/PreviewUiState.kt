@@ -28,7 +28,10 @@ data class PreviewUiState(
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
     val quickSettingsIsOpen: Boolean = false,
-    val captureIsSuccessful: Boolean = false
+    val captureState: CaptureState = CaptureState(
+        isShown = true,
+        captureStatus = CaptureStatus.SUCCESS
+    )
 )
 
 /**
@@ -59,4 +62,17 @@ enum class CameraState {
      * Camera is open and presenting a preview stream.
      */
     READY
+}
+
+/**
+ * Defines the UI state related to the last capture.
+ */
+data class CaptureState(val isShown: Boolean, val captureStatus: CaptureStatus)
+
+/**
+ * Status of last capture.
+ */
+enum class CaptureStatus {
+    SUCCESS,
+    FAILED
 }

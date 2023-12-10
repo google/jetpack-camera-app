@@ -32,7 +32,7 @@ import kotlinx.coroutines.SupervisorJob
 @InstallIn(SingletonComponent::class)
 class CommonModule {
     @Provides
-    fun provideDefaultDispatcher(): CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default
+    fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
 
     @Singleton
     @Provides

@@ -15,24 +15,24 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import com.google.jetpackcamera.settings.model.FlashMode
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-private const val TAG = "ScreenFlashViewModel"
+private const val TAG = "ScreenFlash"
 
 /**
- * [ViewModel] for [ScreenFlash].
+ * Contains the UI state maintaining logic for screen flash feature.
  */
-@HiltViewModel
-class ScreenFlashViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase
-) : ViewModel() {
+// TODO: Add this to ViewModelScoped so that it can be injected automatically. However, the current
+//  ViewModel and Hilt APIs probably don't support injecting the viewModelScope.
+class ScreenFlash(
+    private val cameraUseCase: CameraUseCase,
+    private val scope: CoroutineScope
+) {
     data class ScreenFlashUiState(
         val enabled: Boolean = false,
         val onChangeComplete: () -> Unit = {},
@@ -45,7 +45,7 @@ class ScreenFlashViewModel @Inject constructor(
     val screenFlashUiState: StateFlow<ScreenFlashUiState> = _screenFlashUiState
 
     init {
-        viewModelScope.launch {
+        scope.launch {
             cameraUseCase.getScreenFlashEvents().collect { event ->
                 _screenFlashUiState.emit(
                     when (event.type) {
@@ -61,7 +61,7 @@ class ScreenFlashViewModel @Inject constructor(
                                 onChangeComplete = {
                                     event.onComplete()
                                     // reset ui state on CLEAR_UI event completion
-                                    viewModelScope.launch {
+                                    scope.launch {
                                         _screenFlashUiState.emit(
                                             ScreenFlashUiState()
                                         )
@@ -76,13 +76,18 @@ class ScreenFlashViewModel @Inject constructor(
 
     /**
      * Sets the screenBrightness value to the value right before APPLY_UI event for the next
-     * CLEAR_UI event, will be set to unknown (null) again after CLEAR_UI event is completed
+     * CLEAR_UI event, will be set to unknown (null) again after CLEAR_UI event is completed.
      */
-    fun setClearUiScreenBrightness(brightness: Float) {
-        viewModelScope.launch {
-            _screenFlashUiState.emit(
-                screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
-            )
-        }
+    suspend fun setClearUiScreenBrightness(brightness: Float) {
+        _screenFlashUiState.emit(
+            screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
+        )
     }
+
+    /**
+     * Returns if screen flash is supposed to be enabled based on the given [FlashMode] and camera
+     * facing state.
+     */
+    fun isEnabled(flashMode: FlashMode, isFrontCameraFacing: Boolean) =
+        cameraUseCase.isScreenFlash(flashMode, isFrontCameraFacing)
 }

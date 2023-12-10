@@ -36,7 +36,7 @@ import org.junit.Test
 import org.mockito.Mockito
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ScreenFlashViewModelTest {
+class ScreenFlashTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
 
@@ -44,11 +44,11 @@ class ScreenFlashViewModelTest {
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
     private val cameraUseCase = FakeCameraUseCase(testScope)
-    private lateinit var screenFlashViewModel: ScreenFlashViewModel
+    private lateinit var screenFlash: ScreenFlash
 
     @Before
     fun setup() = runTest(testDispatcher) {
-        screenFlashViewModel = ScreenFlashViewModel(cameraUseCase)
+        screenFlash = ScreenFlash(cameraUseCase, testScope)
 
         val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
         cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
@@ -57,15 +57,15 @@ class ScreenFlashViewModelTest {
 
     @Test
     fun initialScreenFlashUiState_disabledByDefault() {
-        assertEquals(false, screenFlashViewModel.screenFlashUiState.value.enabled)
+        assertEquals(false, screenFlash.screenFlashUiState.value.enabled)
     }
 
     @Test
     fun captureScreenFlashImage_screenFlashUiStateChangedInCorrectSequence() =
         runTest(testDispatcher) {
-            val states = mutableListOf<ScreenFlashViewModel.ScreenFlashUiState>()
+            val states = mutableListOf<ScreenFlash.ScreenFlashUiState>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                screenFlashViewModel.screenFlashUiState.toList(states)
+                screenFlash.screenFlashUiState.toList(states)
             }
 
             // FlashMode.ON in front facing camera automatically enables screen flash
@@ -86,7 +86,7 @@ class ScreenFlashViewModelTest {
     @Test
     fun emitClearUiEvent_screenFlashUiStateContainsClearUiScreenBrightness() =
         runTest(testDispatcher) {
-            screenFlashViewModel.setClearUiScreenBrightness(5.0f)
+            screenFlash.setClearUiScreenBrightness(5.0f)
             cameraUseCase.emitScreenFlashEvent(
                 CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
             )
@@ -94,25 +94,25 @@ class ScreenFlashViewModelTest {
             advanceUntilIdle()
             assertEquals(
                 5.0f,
-                screenFlashViewModel.screenFlashUiState.value.screenBrightnessToRestore
+                screenFlash.screenFlashUiState.value.screenBrightnessToRestore
             )
         }
 
     @Test
     fun invokeOnChangeCompleteAfterClearUiEvent_screenFlashUiStateReset() =
         runTest(testDispatcher) {
-            screenFlashViewModel.setClearUiScreenBrightness(5.0f)
+            screenFlash.setClearUiScreenBrightness(5.0f)
             cameraUseCase.emitScreenFlashEvent(
                 CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
             )
 
             advanceUntilIdle()
-            screenFlashViewModel.screenFlashUiState.value.onChangeComplete()
+            screenFlash.screenFlashUiState.value.onChangeComplete()
 
             advanceUntilIdle()
             assertEquals(
-                ScreenFlashViewModel.ScreenFlashUiState(),
-                screenFlashViewModel.screenFlashUiState.value
+                ScreenFlash.ScreenFlashUiState(),
+                screenFlash.screenFlashUiState.value
             )
         }
 }

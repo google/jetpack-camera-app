@@ -18,13 +18,13 @@ package com.google.jetpackcamera.domain.camera
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.components.ViewModelComponent
 
 /**
  * Dagger [Module] for camera data layer.
  */
 @Module
-@InstallIn(SingletonComponent::class)
+@InstallIn(ViewModelComponent::class)
 interface CameraModule {
     @Binds
     fun bindsCameraUseCase(cameraXCameraUseCase: CameraXCameraUseCase): CameraUseCase

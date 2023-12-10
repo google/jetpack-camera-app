@@ -21,41 +21,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.feature.preview.ScreenFlash
-import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
-import com.google.jetpackcamera.feature.preview.workaround.captureToImage
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowPixelCopy
 
-// TODO: After device tests are added to github workflow, remove the tests here since they are
-//  duplicated in androidTest and fits there better
-@OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 class ScreenFlashComponentsKtTest {
-    private val testScope = TestScope()
-    private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
-
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -74,7 +57,7 @@ class ScreenFlashComponentsKtTest {
 
     @Test
     fun screenFlashOverlay_doesNotExistByDefault() = runTest {
-        advanceUntilIdle()
+        composeTestRule.awaitIdle()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).assertDoesNotExist()
     }
 
@@ -82,7 +65,7 @@ class ScreenFlashComponentsKtTest {
     fun screenFlashOverlay_existsAfterStateIsEnabled() = runTest {
         screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
 
-        advanceUntilIdle()
+        composeTestRule.awaitIdle()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).assertExists()
     }
 
@@ -91,7 +74,7 @@ class ScreenFlashComponentsKtTest {
         screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
         screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = false)
 
-        advanceUntilIdle()
+        composeTestRule.awaitIdle()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).assertDoesNotExist()
     }
 
@@ -99,7 +82,7 @@ class ScreenFlashComponentsKtTest {
     fun screenFlashOverlay_sizeFillsMaxSize() = runTest {
         screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
 
-        advanceUntilIdle()
+        composeTestRule.awaitIdle()
         val rootBounds = composeTestRule.onRoot().getBoundsInRoot()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay"))
             .assertWidthIsAtLeast(rootBounds.width)
@@ -108,12 +91,10 @@ class ScreenFlashComponentsKtTest {
     }
 
     @Test
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    @Config(shadows = [ShadowPixelCopy::class])
     fun screenFlashOverlay_fullWhiteWhenEnabled() = runTest {
         screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
 
-        advanceUntilIdle()
+        composeTestRule.awaitIdle()
         val overlayScreenShot =
             composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).captureToImage()
 

@@ -54,6 +54,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.feature.preview.CaptureState
+import com.google.jetpackcamera.feature.preview.CaptureStatus
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -251,18 +253,23 @@ fun CaptureButton(
 }
 
 @Composable
-fun CaptureSuccessMessage(showMessage: Boolean, onMessageShown: () -> Unit) {
+fun CaptureStatusMessage(captureState: CaptureState, onMessageShown: () -> Unit) {
     MessageAnimation(
-        stringResource(id = R.string.image_capture_success),
-        showMessage,
+        stringResource(
+            id = when (captureState.captureStatus) {
+                CaptureStatus.SUCCESS -> R.string.image_capture_success
+                CaptureStatus.FAILED -> R.string.image_capture_failure
+            }
+        ),
+        !captureState.isShown,
         onMessageShown
     )
 }
 
 @Composable
 fun MessageAnimation(messageText: String, showMessage: Boolean, onMessageShown: () -> Unit) {
-    // TODO: using scaffold + snackbar will probably better this custom composable, not using toasts
-    //  since their states are harder to maintain and harder to test
+    // TODO: using scaffold + snackbar will probably be better than this custom composable, not
+    //  using toasts since their states are harder to maintain and harder to test
     val alpha by animateFloatAsState(
         targetValue = if (showMessage) 1f else 0f,
         label = "messageText",

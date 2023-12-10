@@ -123,6 +123,9 @@ class FakeCameraUseCase(
             isLensFacingFront && (flashMode == FlashMode.AUTO || flashMode == FlashMode.ON)
     }
 
+    override fun isScreenFlash(flashMode: FlashMode, isFrontFacing: Boolean) =
+        isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
+
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
     }
