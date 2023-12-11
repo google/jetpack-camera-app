@@ -58,7 +58,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.ToastMessage
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.viewfinder.CameraPreview
@@ -68,10 +67,10 @@ private const val TAG = "PreviewScreen"
 
 
 /**
- * Displays a [Toast] with specifications set by a [ToastMessage]
+ * Displays a [Toast] with specifications set by a [ToastMessage].
  *
- * @param toastMessage the specifications for the [Toast]
- * @param onToastShown called once the toast has been displayed
+ * @param toastMessage the specifications for the [Toast].
+ * @param onToastShown called once the Toast has been displayed.
  */
 @Composable
 fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown : () -> Unit){

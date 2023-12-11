@@ -22,6 +22,7 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -192,6 +193,7 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 cameraUseCase.takePicture()
+                //todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         toastMessageToShow = ToastMessage(message = "Image Capture Success", testDesc = "ImageCaptureSuccessToast")
@@ -199,6 +201,7 @@ class PreviewViewModel @Inject constructor(
                 )
                 Log.d(TAG, "cameraUseCase.takePicture success")
             } catch (exception: ImageCaptureException) {
+                //todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         toastMessageToShow = ToastMessage(message = "Image Capture Failure", testDesc = "ImageCaptureFailureToast")
