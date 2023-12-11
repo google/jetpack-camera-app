@@ -76,9 +76,12 @@ fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToast
     Box(
         modifier
             .testTag(toastMessage.testTag)
-            .semantics { contentDescription = toastMessage.testDesc }
     ) {
-        Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength).show()
+        Toast.makeText(
+            LocalContext.current,
+            stringResource(id = toastMessage.stringResource),
+            toastMessage.toastLength
+        ).show()
         onToastShown()
     }
 }
