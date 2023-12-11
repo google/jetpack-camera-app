@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 
@@ -27,8 +28,32 @@ data class PreviewUiState(
     val currentCameraSettings: CameraAppSettings,
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
-    val quickSettingsIsOpen: Boolean = false
+    val quickSettingsIsOpen: Boolean = false,
+    //todo: remove after implementing post capture screen
+    val toastMessageToShow: ToastMessage? = null
 )
+
+/**
+ * Helper class containing information used to create a toast.
+ *
+ * @param message the text to be displayed.
+ * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT]
+ * @param testDesc the *unique* description for toast message. i.e. *captureFailedToast* vs *captureSuccessToast*.
+ * @property testTag the identifiable resource ID of a Toast on screen.
+ */
+class ToastMessage(
+    val message: String,
+    isLongToast: Boolean = false,
+    val testDesc: String = "Toast Message"
+) {
+    val testTag: String = "Toast Message"
+    val toastLength: Int = when (isLongToast) {
+        true -> Toast.LENGTH_LONG
+        false -> Toast.LENGTH_SHORT
+    }
+}
+
+
 
 /**
  * Defines the current state of Video Recording

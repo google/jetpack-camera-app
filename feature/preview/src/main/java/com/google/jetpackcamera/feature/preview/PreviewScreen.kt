@@ -59,6 +59,7 @@ import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
+import com.google.jetpackcamera.feature.preview.ui.ShowToast
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
@@ -235,6 +236,10 @@ fun PreviewScreen(
                     )
                 }
             }
+        }
+        // displays toast when there is a message to show
+        if (previewUiState.toastMessageToShow != null){
+            ShowToast(toastMessage = previewUiState.toastMessageToShow!!, onToastShown = viewModel::onToastShown)
         }
     }
 }

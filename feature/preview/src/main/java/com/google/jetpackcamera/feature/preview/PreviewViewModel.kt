@@ -192,8 +192,18 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 cameraUseCase.takePicture()
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        toastMessageToShow = ToastMessage(message = "Image Capture Success", testDesc = "ImageCaptureSuccessToast")
+                    )
+                )
                 Log.d(TAG, "cameraUseCase.takePicture success")
             } catch (exception: ImageCaptureException) {
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        toastMessageToShow = ToastMessage(message = "Image Capture Failure", testDesc = "ImageCaptureFailureToast")
+                    )
+                )
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
             }
@@ -258,5 +268,15 @@ class PreviewViewModel @Inject constructor(
             x = x,
             y = y
         )
+    }
+
+    fun onToastShown() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    toastMessageToShow = null
+                )
+            )
+        }
     }
 }
