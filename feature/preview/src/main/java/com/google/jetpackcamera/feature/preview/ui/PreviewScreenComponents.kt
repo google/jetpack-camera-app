@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.util.Log
 import android.view.Display
 import android.view.View
+import android.widget.Toast
 import androidx.camera.core.Preview
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -49,7 +50,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
@@ -60,8 +65,28 @@ import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
-/** this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
- * and double tap to flip camera */
+/**
+ * Displays a [Toast] with specifications set by a [ToastMessage].
+ *
+ * @param toastMessage the specifications for the [Toast].
+ * @param onToastShown called once the Toast has been displayed.
+ */
+@Composable
+fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown: () -> Unit) {
+    Box(
+        modifier
+            .testTag(toastMessage.testTag)
+            .semantics { contentDescription = toastMessage.testDesc }
+    ) {
+        Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength).show()
+        onToastShown()
+    }
+}
+
+/**
+ * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
+ * and double-tap to flip camera
+ */
 @Composable
 fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
