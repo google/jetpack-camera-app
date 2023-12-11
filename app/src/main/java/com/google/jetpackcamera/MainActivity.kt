@@ -15,7 +15,12 @@
  */
 package com.google.jetpackcamera
 
+import android.content.ContentValues
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -44,7 +49,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.domain.camera.TakePictureCallback
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
+import com.google.jetpackcamera.receiver.ImageCaptureReceiver
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
@@ -65,6 +72,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val externalContentValues: ContentValues? =
+            if (intent.extras == null) null
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.extras!!.getParcelable(
+                    MediaStore.EXTRA_OUTPUT, ContentValues::class.java
+                )
+            } else {
+                intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
+            }
+        val shouldFinishAfterCapture =
+            if (intent.extras == null) false
+            else intent.extras!!.getBoolean(ImageCaptureReceiver.EXTRA_SHOULD_FINISH_AFTER_CAPTURE)
+        Log.d("DJTEST", intent.extras.toString())
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
         lifecycleScope.launch {
@@ -101,7 +121,27 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            JcaApp(onPreviewViewModel = { previewViewModel = it })
+                            JcaApp(
+                                onPreviewViewModel = { previewViewModel = it },
+                                contentResolver = contentResolver,
+                                contentValues = externalContentValues,
+                                takePictureCallback = object : TakePictureCallback {
+                                    override fun onPictureTaken(savedUri: Uri?) {
+                                        if (shouldFinishAfterCapture) {
+                                            setResult(RESULT_OK)
+                                            finish()
+                                        }
+                                    }
+
+                                    override fun onError() {
+                                        if (shouldFinishAfterCapture) {
+                                            setResult(RESULT_CANCELED)
+                                            finish()
+                                        }
+                                    }
+
+                                }
+                            )
                         }
                     }
                 }

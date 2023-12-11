@@ -15,19 +15,22 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.R.attr.duration
 import android.app.Application
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
+import android.widget.Toast
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -45,13 +48,14 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import java.util.Date
-import javax.inject.Inject
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
+
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -130,23 +134,63 @@ constructor(
         }
     }
 
-    override suspend fun takePicture() {
-        val imageDeferred = CompletableDeferred<ImageProxy>()
-
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        contentValues: ContentValues?,
+        takePictureCallback: TakePictureCallback
+    ) {
+        val outputFileOptions = OutputFileOptions.Builder(
+            contentResolver,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            getEligibleContentValues(contentValues)
+        ).build()
         imageCaptureUseCase.takePicture(
+            outputFileOptions,
             defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageCapturedCallback() {
-                override fun onCaptureSuccess(imageProxy: ImageProxy) {
-                    Log.d(TAG, "onCaptureSuccess")
-                    imageDeferred.complete(imageProxy)
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    Log.d(TAG, "Saved image to " + outputFileResults.savedUri)
+                    takePictureCallback.onPictureTaken(outputFileResults.savedUri)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
-                    Log.d(TAG, "takePicture onError: $exception")
+                    Log.e(TAG, "Failed to save image.", exception)
+                    takePictureCallback.onError()
                 }
             }
         )
+    }
+
+    private fun getEligibleContentValues(contentValues: ContentValues?): ContentValues {
+        val eligibleContentValues = ContentValues()
+        if (contentValues != null) {
+            for (key in contentValues.keySet()) {
+                val value = contentValues.get(key)
+                if (value == null) {
+                    continue;
+                } else if (value is String) {
+                    eligibleContentValues.put(key, value)
+                } else if (value is Int) {
+                    eligibleContentValues.put(key, value)
+                } else if (value is Boolean) {
+                    eligibleContentValues.put(key, value)
+                } else if (value is Long) {
+                    eligibleContentValues.put(key, value)
+                } else if (value is Float) {
+                    eligibleContentValues.put(key, value)
+                }
+            }
+        }
+        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
+            eligibleContentValues.put(
+                MediaStore.MediaColumns.DISPLAY_NAME,
+                Calendar.getInstance().time.toString()
+            )
+        }
+        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.MIME_TYPE)) {
+            eligibleContentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        }
+        return eligibleContentValues
     }
 
     override suspend fun startVideoRecording() {
@@ -248,7 +292,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()

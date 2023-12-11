@@ -15,11 +15,13 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Preview
-import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 
@@ -44,7 +46,11 @@ interface CameraUseCase {
         currentCameraSettings: CameraAppSettings
     )
 
-    suspend fun takePicture()
+    suspend fun takePicture(
+        contentResolver: ContentResolver,
+        contentValues: ContentValues?,
+        takePictureCallback: TakePictureCallback
+    )
 
     suspend fun startVideoRecording()
 

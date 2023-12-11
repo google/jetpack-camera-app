@@ -73,6 +73,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain:camera"))
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)

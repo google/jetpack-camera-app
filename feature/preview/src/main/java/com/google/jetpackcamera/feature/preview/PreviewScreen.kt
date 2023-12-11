@@ -15,6 +15,9 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.domain.camera.TakePictureCallback
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -77,7 +81,10 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel()
+    viewModel: PreviewViewModel = hiltViewModel(),
+    contentResolver: ContentResolver,
+    contentValues: ContentValues?,
+    takePictureCallback: TakePictureCallback,
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -210,7 +217,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -218,7 +225,13 @@ fun PreviewScreen(
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
                         onClick = {
-                            multipleEventsCutter.processEvent { viewModel.captureImage() }
+                            multipleEventsCutter.processEvent {
+                                viewModel.captureImage(
+                                    contentResolver,
+                                    contentValues,
+                                    takePictureCallback
+                                )
+                            }
                         },
                         onLongPress = { viewModel.startVideoRecording() },
                         onRelease = { viewModel.stopVideoRecording() },

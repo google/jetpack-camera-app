@@ -25,6 +25,7 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:name=".JetpackCameraApplication"
@@ -49,6 +50,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
 
+        <receiver android:name=".receiver.ImageCaptureReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.action.IMAGE_CAPTURE" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

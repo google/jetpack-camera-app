@@ -15,6 +15,10 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
 import androidx.camera.core.ImageCaptureException
@@ -22,17 +26,19 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.domain.camera.TakePictureCallback
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+
 
 private const val TAG = "PreviewViewModel"
 
@@ -57,8 +63,8 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                    // TODO: only update settings that were actually changed
-                    // currently resets all "quick" settings to stored settings
+                // TODO: only update settings that were actually changed
+                // currently resets all "quick" settings to stored settings
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
@@ -187,11 +193,15 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage() {
+    fun captureImage(
+        contentResolver: ContentResolver,
+        contentValues: ContentValues?,
+        takePictureCallback: TakePictureCallback
+    ) {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             try {
-                cameraUseCase.takePicture()
+                cameraUseCase.takePicture(contentResolver, contentValues, takePictureCallback)
                 Log.d(TAG, "cameraUseCase.takePicture success")
             } catch (exception: ImageCaptureException) {
                 Log.d(TAG, "cameraUseCase.takePicture error")
