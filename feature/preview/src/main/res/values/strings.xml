@@ -23,6 +23,4 @@
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_capture_failure">Image Capture Failure</string>
-
-
 </resources>

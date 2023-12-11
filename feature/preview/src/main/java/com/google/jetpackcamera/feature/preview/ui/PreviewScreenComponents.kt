@@ -65,7 +65,6 @@ import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
-
 /**
  * Displays a [Toast] with specifications set by a [ToastMessage].
  *
@@ -73,9 +72,11 @@ private const val TAG = "PreviewScreen"
  * @param onToastShown called once the Toast has been displayed.
  */
 @Composable
-fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown : () -> Unit){
+fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown: () -> Unit) {
     Box(
-        modifier.testTag(toastMessage.testTag).semantics { contentDescription = toastMessage.testDesc }
+        modifier
+            .testTag(toastMessage.testTag)
+            .semantics { contentDescription = toastMessage.testDesc }
     ) {
         Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength).show()
         onToastShown()

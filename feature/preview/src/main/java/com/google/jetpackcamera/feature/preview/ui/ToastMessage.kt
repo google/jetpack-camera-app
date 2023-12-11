@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.widget.Toast
@@ -22,8 +21,8 @@ import android.widget.Toast
  * Helper class containing information used to create a [Toast].
  *
  * @param message the text to be displayed.
- * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT]
- * @param testDesc the *unique* description for toast message. i.e. *captureFailedToast* vs *captureSuccessToast*.
+ * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
+ * @param testDesc the *unique* description to identify a specific toast message.
  * @property testTag the identifiable resource ID of a Toast on screen.
  */
 class ToastMessage(

@@ -225,9 +225,10 @@ fun PreviewScreen(
                         onRelease = { viewModel.stopVideoRecording() },
                         videoRecordingState = previewUiState.videoRecordingState
                     )
-                    /* spacer is a placeholder to maintain the proportionate location of this row of
-                     UI elements. if you want to  add another element, replace it with ONE element.
-                     If you want to add multiple components, use a container (Box, Row, Column, etc.)
+                    /* spacer is a placeholder to maintain the proportionate location of this
+                     row of UI elements. if you want to  add another element, replace it with ONE
+                     element. If you want to add multiple components, use a container
+                     (Box, Row, Column, etc.)
                      */
                     Spacer(
                         modifier = Modifier
@@ -238,8 +239,11 @@ fun PreviewScreen(
             }
         }
         // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null){
-            ShowToast(toastMessage = previewUiState.toastMessageToShow!!, onToastShown = viewModel::onToastShown)
+        if (previewUiState.toastMessageToShow != null) {
+            ShowToast(
+                toastMessage = previewUiState.toastMessageToShow!!,
+                onToastShown = viewModel::onToastShown
+            )
         }
     }
 }
