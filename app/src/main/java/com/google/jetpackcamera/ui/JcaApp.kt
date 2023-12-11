@@ -28,7 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.jetpackcamera.domain.camera.TakePictureCallback
+import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
@@ -42,7 +42,7 @@ fun JcaApp(
     /*TODO(b/306236646): remove after still capture*/
     contentResolver: ContentResolver,
     contentValues: ContentValues?,
-    takePictureCallback: TakePictureCallback
+    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -52,7 +52,7 @@ fun JcaApp(
             onPreviewViewModel = onPreviewViewModel,
             contentResolver = contentResolver,
             contentValues = contentValues,
-            takePictureCallback = takePictureCallback
+            onImageCapture = onImageCapture
         )
     } else {
         CameraPermission(
@@ -68,7 +68,7 @@ private fun JetpackCameraNavHost(
     navController: NavHostController = rememberNavController(),
     contentResolver: ContentResolver,
     contentValues: ContentValues?,
-    takePictureCallback: TakePictureCallback
+    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
         composable(PREVIEW_ROUTE) {
@@ -77,7 +77,7 @@ private fun JetpackCameraNavHost(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 contentResolver = contentResolver,
                 contentValues = contentValues,
-                takePictureCallback = takePictureCallback
+                onImageCapture = onImageCapture
             )
         }
         composable(SETTINGS_ROUTE) {

@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import android.content.ContentValues
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -48,7 +47,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
-import com.google.jetpackcamera.domain.camera.TakePictureCallback
+import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.receiver.ImageCaptureReceiver
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -129,18 +128,19 @@ class MainActivity : ComponentActivity() {
                                 onPreviewViewModel = { previewViewModel = it },
                                 contentResolver = contentResolver,
                                 contentValues = externalContentValues,
-                                takePictureCallback = object : TakePictureCallback {
-                                    override fun onPictureTaken(savedUri: Uri?) {
-                                        if (shouldFinishAfterCapture) {
-                                            setResult(RESULT_OK)
-                                            finish()
+                                onImageCapture = { event ->
+                                    when (event) {
+                                        is CameraUseCase.ImageCaptureEvent.ImageSaved -> {
+                                            if (shouldFinishAfterCapture) {
+                                                setResult(RESULT_OK)
+                                                finish()
+                                            }
                                         }
-                                    }
-
-                                    override fun onError() {
-                                        if (shouldFinishAfterCapture) {
-                                            setResult(RESULT_CANCELED)
-                                            finish()
+                                        is CameraUseCase.ImageCaptureEvent.ImageCaptureError -> {
+                                            if (shouldFinishAfterCapture) {
+                                                setResult(RESULT_CANCELED)
+                                                finish()
+                                            }
                                         }
                                     }
                                 }

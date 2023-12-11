@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -57,7 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.domain.camera.TakePictureCallback
+import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -84,7 +85,7 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel(),
     contentResolver: ContentResolver,
     contentValues: ContentValues?,
-    takePictureCallback: TakePictureCallback
+    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -222,14 +223,16 @@ fun PreviewScreen(
                         }
                     }
                     val multipleEventsCutter = remember { MultipleEventsCutter() }
+                    val context = LocalContext.current
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
+                        modifier = Modifier.testTag("CaptureButton"),
                         onClick = {
                             multipleEventsCutter.processEvent {
                                 viewModel.captureImage(
-                                    contentResolver,
+                                    context.contentResolver,
                                     contentValues,
-                                    takePictureCallback
+                                    onImageCapture
                                 )
                             }
                         },

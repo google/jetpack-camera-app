@@ -18,6 +18,7 @@ package com.google.jetpackcamera.domain.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
@@ -49,6 +50,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
@@ -134,8 +136,9 @@ constructor(
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         contentValues: ContentValues?,
-        takePictureCallback: TakePictureCallback
+        onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
+        val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val outputFileOptions = OutputFileOptions.Builder(
             contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -147,12 +150,13 @@ constructor(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.d(TAG, "Saved image to " + outputFileResults.savedUri)
-                    takePictureCallback.onPictureTaken(outputFileResults.savedUri)
+                    imageDeferred.complete(outputFileResults)
+                    onImageCapture(CameraUseCase.ImageCaptureEvent.ImageSaved(outputFileResults))
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     Log.e(TAG, "Failed to save image.", exception)
-                    takePictureCallback.onError()
+                    onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(exception))
                 }
             }
         )
@@ -186,6 +190,12 @@ constructor(
         }
         if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.MIME_TYPE)) {
             eligibleContentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        }
+        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.RELATIVE_PATH)) {
+            eligibleContentValues.put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                Environment.DIRECTORY_PICTURES
+            )
         }
         return eligibleContentValues
     }

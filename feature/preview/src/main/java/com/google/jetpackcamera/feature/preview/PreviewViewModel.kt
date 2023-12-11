@@ -24,7 +24,6 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.domain.camera.TakePictureCallback
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -198,12 +197,12 @@ class PreviewViewModel @Inject constructor(
     fun captureImage(
         contentResolver: ContentResolver,
         contentValues: ContentValues?,
-        takePictureCallback: TakePictureCallback
+        onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             try {
-                cameraUseCase.takePicture(contentResolver, contentValues, takePictureCallback)
+                cameraUseCase.takePicture(contentResolver, contentValues, onImageCapture)
                 // todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
                     previewUiState.value.copy(

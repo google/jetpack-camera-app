@@ -19,6 +19,8 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.util.Rational
 import android.view.Display
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -49,7 +51,7 @@ interface CameraUseCase {
     suspend fun takePicture(
         contentResolver: ContentResolver,
         contentValues: ContentValues?,
-        takePictureCallback: TakePictureCallback
+        onImageCapture: (ImageCaptureEvent) -> Unit
     )
 
     suspend fun startVideoRecording()
@@ -114,5 +116,15 @@ interface CameraUseCase {
         OFF,
         ON,
         AUTO
+    }
+
+    sealed interface ImageCaptureEvent {
+        data class ImageSaved(
+            val outputFileResults: ImageCapture.OutputFileResults
+        ) : ImageCaptureEvent
+
+        data class ImageCaptureError(
+            val exception: ImageCaptureException
+        ) : ImageCaptureEvent
     }
 }

@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":domain:camera"))
+    implementation("androidx.test.ext:junit-ktx:1.1.5")
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
@@ -124,6 +124,9 @@ dependencies {
 
     // Settings Screen
     implementation(project(":feature:settings"))
+
+    // Domain Camera
+    implementation(project(":domain:camera"))
 
     // benchmark
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")

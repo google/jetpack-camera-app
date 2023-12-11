@@ -21,7 +21,6 @@ import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.domain.camera.TakePictureCallback
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -73,7 +72,7 @@ class FakeCameraUseCase : CameraUseCase {
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         contentValues: ContentValues?,
-        takePictureCallback: TakePictureCallback
+        onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not binded")
