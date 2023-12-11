@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import androidx.camera.core.CameraSelector
+import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 
 /**
@@ -27,7 +28,9 @@ data class PreviewUiState(
     val currentCameraSettings: CameraAppSettings,
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
-    val quickSettingsIsOpen: Boolean = false
+    val quickSettingsIsOpen: Boolean = false,
+    // todo: remove after implementing post capture screen
+    val toastMessageToShow: ToastMessage? = null
 )
 
 /**
