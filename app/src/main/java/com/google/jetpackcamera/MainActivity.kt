@@ -20,7 +20,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -73,18 +72,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val externalContentValues: ContentValues? =
-            if (intent.extras == null) null
-            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (intent.extras == null) {
+                null
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.extras!!.getParcelable(
-                    MediaStore.EXTRA_OUTPUT, ContentValues::class.java
+                    MediaStore.EXTRA_OUTPUT,
+                    ContentValues::class.java
                 )
             } else {
+                @Suppress("DEPRECATION")
                 intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
             }
         val shouldFinishAfterCapture =
-            if (intent.extras == null) false
-            else intent.extras!!.getBoolean(ImageCaptureReceiver.EXTRA_SHOULD_FINISH_AFTER_CAPTURE)
-        Log.d("DJTEST", intent.extras.toString())
+            if (intent.extras == null) {
+                false
+            } else {
+                intent.extras!!.getBoolean(ImageCaptureReceiver.EXTRA_SHOULD_FINISH_AFTER_CAPTURE)
+            }
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
         lifecycleScope.launch {
@@ -139,7 +143,6 @@ class MainActivity : ComponentActivity() {
                                             finish()
                                         }
                                     }
-
                                 }
                             )
                         }

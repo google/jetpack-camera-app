@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui
 import android.Manifest
 import android.content.ContentResolver
 import android.content.ContentValues
-import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

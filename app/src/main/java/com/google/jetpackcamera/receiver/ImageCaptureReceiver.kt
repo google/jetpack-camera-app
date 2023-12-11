@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.receiver
 
 import android.content.BroadcastReceiver
@@ -24,13 +23,13 @@ import android.os.Build
 import android.provider.MediaStore
 import com.google.jetpackcamera.MainActivity
 
-
 class ImageCaptureReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val activityIntent = Intent(context, MainActivity::class.java)
         val externalContentValues = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(MediaStore.EXTRA_OUTPUT, ContentValues::class.java)
         } else {
+            @Suppress("DEPRECATION")
             intent.getParcelableExtra(MediaStore.EXTRA_OUTPUT)
         }
         if (externalContentValues != null) {

@@ -20,4 +20,7 @@
     <string name="capture_mode_single_stream">Single Stream</string>
     <string name="capture_mode_multi_stream">Multi Stream</string>
     <string name="flip_camera_content_description">Flip Camera</string>
+
+    <string name="toast_image_capture_success">Image Capture Success</string>
+    <string name="toast_capture_failure">Image Capture Failure</string>
 </resources>

@@ -15,14 +15,12 @@
  */
 package com.google.jetpackcamera.domain.camera
 
-import android.R.attr.duration
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
-import android.widget.Toast
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
@@ -48,14 +46,13 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
-
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -167,7 +164,7 @@ constructor(
             for (key in contentValues.keySet()) {
                 val value = contentValues.get(key)
                 if (value == null) {
-                    continue;
+                    continue
                 } else if (value is String) {
                     eligibleContentValues.put(key, value)
                 } else if (value is Int) {
@@ -292,7 +289,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
