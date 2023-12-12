@@ -62,8 +62,8 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                // TODO: only update settings that were actually changed
-                // currently resets all "quick" settings to stored settings
+                    // TODO: only update settings that were actually changed
+                    // currently resets all "quick" settings to stored settings
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
