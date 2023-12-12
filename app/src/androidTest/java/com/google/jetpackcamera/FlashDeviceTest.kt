@@ -97,7 +97,7 @@ internal class FlashDeviceTest {
         uiDevice.findObject(By.res("QuickSettingDropDown")).click()
         uiDevice.findObject(By.res("CaptureButton")).click()
         uiDevice.wait(
-            Until.findObject(By.res("Image capture success!")),
+            Until.findObject(By.res("ImageCaptureSuccessToast")),
             5000
         )
     }

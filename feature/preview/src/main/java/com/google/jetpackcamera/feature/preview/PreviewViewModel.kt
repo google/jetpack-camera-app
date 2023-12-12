@@ -22,6 +22,7 @@ import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -35,6 +36,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
+
+// toast test descriptions
+const val IMAGE_CAPTURE_SUCCESS_TOAST_DESC = "ImageCaptureSuccessToast"
+const val IMAGE_CAPTURE_FAIL_TOAST_DESC = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -199,24 +204,22 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 cameraUseCase.takePicture()
-                Log.d(TAG, "cameraUseCase.takePicture success")
+                // todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
-                    // TODO: Handle new capture result if showing the previous is not completed yet
                     previewUiState.value.copy(
-                        captureState = CaptureState(
-                            isShown = false,
-                            CaptureStatus.SUCCESS
+                        toastMessageToShow = ToastMessage(
+                            message = R.string.toast_image_capture_success.toString(),
+                            testDesc = IMAGE_CAPTURE_SUCCESS_TOAST_DESC
                         )
                     )
                 )
             } catch (exception: ImageCaptureException) {
-                Log.d(TAG, "cameraUseCase.takePicture error")
-                Log.d(TAG, exception.toString())
+                // todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
                     previewUiState.value.copy(
-                        captureState = CaptureState(
-                            isShown = false,
-                            CaptureStatus.FAILED
+                        toastMessageToShow = ToastMessage(
+                            message = R.string.toast_capture_failure.toString(),
+                            testDesc = IMAGE_CAPTURE_FAIL_TOAST_DESC
                         )
                     )
                 )
@@ -284,14 +287,11 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
-    fun onCaptureSuccessMessageShown() {
+    fun onToastShown() {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
-                    captureState = CaptureState(
-                        isShown = true,
-                        captureStatus = previewUiState.value.captureState.captureStatus
-                    )
+                    toastMessageToShow = null
                 )
             )
         }

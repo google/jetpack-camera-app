@@ -37,6 +37,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JetpackCamera"
         tools:targetApi="33">
+        <profileable android:shell="true"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
