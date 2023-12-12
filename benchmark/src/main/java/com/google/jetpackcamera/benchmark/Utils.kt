@@ -61,7 +61,7 @@ fun toggleQuickSettings(device: UiDevice) {
  *
  */
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
-    //if object description quicksetflip_is_front exists, then it is currently facing front
+    // if object description quicksetflip_is_front exists, then it is currently facing front
     val isFrontFacing = findObjectByDesc(device, "QUICK SETTINGS LENS FACING FRONT") != null
 
     if (isFrontFacing != shouldFaceFront) {
@@ -79,8 +79,8 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
     val selector =
         when (flashMode) {
             FlashMode.AUTO -> By.desc("QUICK SETTINGS FLASH IS AUTO")
-            FlashMode.ON -> By.desc( "QUICK SETTINGS FLASH IS ON")
-            FlashMode.OFF -> By.desc( "QUICK SETTINGS FLASH IS OFF")
+            FlashMode.ON -> By.desc("QUICK SETTINGS FLASH IS ON")
+            FlashMode.OFF -> By.desc("QUICK SETTINGS FLASH IS OFF")
         }
     while (device.findObject(selector) == null) {
         findObjectByRes(device, "QuickSetFlash", true)!!.click()
@@ -98,8 +98,9 @@ fun findObjectByRes(
     val selector = By.res(testTag)
 
     return if (!device.wait(Until.hasObject(selector), 2_500)) {
-        if (shouldFailIfNotFound)
+        if (shouldFailIfNotFound) {
             Assert.fail("Did not find object with id $testTag")
+        }
         null
     } else {
         device.findObject(selector)
@@ -118,8 +119,9 @@ fun findObjectByDesc(
     val selector = By.desc(testDesc)
 
     return if (!device.wait(Until.hasObject(selector), timeout)) {
-        if (shouldFailIfNotFound)
+        if (shouldFailIfNotFound) {
             Assert.fail("Did not find object with id $testDesc in $timeout ms")
+        }
         null
     } else {
         device.findObject(selector)

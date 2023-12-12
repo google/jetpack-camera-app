@@ -213,7 +213,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

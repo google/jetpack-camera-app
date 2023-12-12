@@ -74,11 +74,11 @@ private const val TAG = "PreviewScreen"
 fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown: () -> Unit) {
     val toastShownStatus = remember { mutableStateOf(false) }
     Box(
-        //box seems to need to have some size to be detected by UiAutomator
+        // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier.size(20.dp)
     ) {
         // prevents toast from being spammed
-        if(!toastShownStatus.value) {
+        if (!toastShownStatus.value) {
             Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength)
                 .show()
             toastShownStatus.value = true
