@@ -124,9 +124,9 @@ fun QuickSetFlash(
             .semantics {
                 contentDescription =
                     when (enum) {
-                        CameraFlashMode.OFF -> "QuickSetFlash_is_off"
-                        CameraFlashMode.AUTO -> "QuickSetFlash_is_auto"
-                        CameraFlashMode.ON -> "QuickSetFlash_is_on"
+                        CameraFlashMode.OFF -> "QUICK SETTINGS FLASH IS OFF"
+                        CameraFlashMode.AUTO -> "QUICK SETTINGS FLASH IS AUTO"
+                        CameraFlashMode.ON -> "QUICK SETTINGS FLASH IS ON"
                     }
             },
         enum = enum,
@@ -158,8 +158,8 @@ fun QuickFlipCamera(
             .semantics {
                 contentDescription =
                     when (enum) {
-                        CameraLensFace.FRONT -> "QuickSetFlip_is_front"
-                        CameraLensFace.BACK -> "QuickSetFlip_is_back"
+                        CameraLensFace.FRONT -> "QUICK SETTINGS LENS FACING FRONT"
+                        CameraLensFace.BACK -> "QUICK SETTINGS LENS FACING BACK"
                     }
             },
         enum = enum,

@@ -62,7 +62,7 @@ fun toggleQuickSettings(device: UiDevice) {
  */
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
     //if object description quicksetflip_is_front exists, then it is currently facing front
-    val isFrontFacing = findObjectByDesc(device, "QuickSetFlip_is_front") != null
+    val isFrontFacing = findObjectByDesc(device, "QUICK SETTINGS LENS FACING FRONT") != null
 
     if (isFrontFacing != shouldFaceFront) {
         findObjectByRes(device, "QuickSetFlipCamera", true)!!.click()
@@ -78,9 +78,9 @@ fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
 fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
     val selector =
         when (flashMode) {
-            FlashMode.AUTO -> By.desc("QuickSetFlash_is_auto")
-            FlashMode.ON -> By.desc("QuickSetFlash_is_on")
-            FlashMode.OFF -> By.desc("QuickSetFlash_is_off")
+            FlashMode.AUTO -> By.desc("QUICK SETTINGS FLASH IS AUTO")
+            FlashMode.ON -> By.desc( "QUICK SETTINGS FLASH IS ON")
+            FlashMode.OFF -> By.desc( "QUICK SETTINGS FLASH IS OFF")
         }
     while (device.findObject(selector) == null) {
         findObjectByRes(device, "QuickSetFlash", true)!!.click()
