@@ -41,14 +41,14 @@ enum class FlashMode {
  * @param duration length of the click.
  */
 fun clickCaptureButton(device: UiDevice, duration: Long = 0) {
-    findObjectByResOrFail(device, "CaptureButton")!!.click(duration)
+    findObjectByRes(device, "CaptureButton")!!.click(duration)
 }
 
 /**
  * Toggle open or close quick settings menu on a device.
  */
 fun toggleQuickSettings(device: UiDevice) {
-    device.findObject(By.res("QuickSettingDropDown")).click()
+    findObjectByRes(device, "QuickSettingDropDown", true)!!.click()
 }
 
 /**
@@ -61,9 +61,11 @@ fun toggleQuickSettings(device: UiDevice) {
  *
  */
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
-    val isFrontFacing = device.findObject(By.desc("QuickSetFlip_is_front")) != null
+    //if object description quicksetflip_is_front exists, then it is currently facing front
+    val isFrontFacing = findObjectByDesc(device, "QuickSetFlip_is_front") != null
+
     if (isFrontFacing != shouldFaceFront) {
-        findObjectByResOrFail(device, "QuickSetFlipCamera")!!.click()
+        findObjectByRes(device, "QuickSetFlipCamera", true)!!.click()
     }
 }
 
@@ -81,15 +83,43 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
             FlashMode.OFF -> By.desc("QuickSetFlash_is_off")
         }
     while (device.findObject(selector) == null) {
-        findObjectByResOrFail(device, "QuickSetFlash")!!.click()
+        findObjectByRes(device, "QuickSetFlash", true)!!.click()
     }
 }
 
-fun findObjectByResOrFail(device: UiDevice, testTag: String): UiObject2? {
+/**
+ * Find an object by its test tag.
+ */
+fun findObjectByRes(
+    device: UiDevice,
+    testTag: String,
+    shouldFailIfNotFound: Boolean = false
+): UiObject2? {
     val selector = By.res(testTag)
 
     return if (!device.wait(Until.hasObject(selector), 2_500)) {
-        Assert.fail("Did not find object with id $testTag")
+        if (shouldFailIfNotFound)
+            Assert.fail("Did not find object with id $testTag")
+        null
+    } else {
+        device.findObject(selector)
+    }
+}
+
+/**
+ * Find an object by its test description.
+ */
+fun findObjectByDesc(
+    device: UiDevice,
+    testDesc: String,
+    timeout: Long = 2_500,
+    shouldFailIfNotFound: Boolean = false
+): UiObject2? {
+    val selector = By.desc(testDesc)
+
+    return if (!device.wait(Until.hasObject(selector), timeout)) {
+        if (shouldFailIfNotFound)
+            Assert.fail("Did not find object with id $testDesc in $timeout ms")
         null
     } else {
         device.findObject(selector)

@@ -45,16 +45,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
@@ -66,21 +65,27 @@ import kotlinx.coroutines.CompletableDeferred
 private const val TAG = "PreviewScreen"
 
 /**
- * Displays a [Toast] with specifications set by a [ToastMessage].
+ * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *
  * @param toastMessage the specifications for the [Toast].
  * @param onToastShown called once the Toast has been displayed.
  */
 @Composable
 fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown: () -> Unit) {
+    val toastShownStatus = remember { mutableStateOf(false) }
     Box(
-        modifier
-            .testTag(toastMessage.testTag)
-            .semantics { contentDescription = toastMessage.testDesc }
+        //box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier.size(20.dp)
     ) {
-        Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength).show()
-        onToastShown()
+        // prevents toast from being spammed
+        if(!toastShownStatus.value) {
+            Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength)
+                .show()
+            toastShownStatus.value = true
+            onToastShown()
+        }
     }
+    Log.d(TAG, "Toast Displayed with message: ${toastMessage.message}")
 }
 
 /**

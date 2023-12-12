@@ -32,9 +32,11 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -290,6 +292,8 @@ class PreviewViewModel @Inject constructor(
 
     fun onToastShown() {
         viewModelScope.launch {
+            // keeps the composable up on screen longer to be detected by UiAutomator
+            delay(2.seconds)
             _previewUiState.emit(
                 previewUiState.value.copy(
                     toastMessageToShow = null

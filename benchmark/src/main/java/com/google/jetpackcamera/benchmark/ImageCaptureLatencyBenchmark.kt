@@ -40,8 +40,7 @@ class ImageCaptureLatencyBenchmark {
 
     @Test
     fun rearCameraWithFlashLatency() {
-        // Flash test needs extra time at the end to ensure the trace is closed
-        imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON, sleepInterval = 5000)
+        imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON)
     }
 
     // todo(kimblebee): front flash latency test
@@ -53,15 +52,15 @@ class ImageCaptureLatencyBenchmark {
      *
      *  @param shouldFaceFront the direction the camera should be facing.
      *  @param flashMode the designated [FlashMode] for the camera.
-     *  @param sleepInterval option to change the default sleep interval after performing clicking
-     *  the Image Capture button.
+     *  @param timeout option to change the default timeout length after clicking the Image Capture
+     *  button.
      *
      */
     @OptIn(ExperimentalMetricApi::class)
     private fun imageCaptureLatency(
         shouldFaceFront: Boolean,
         flashMode: FlashMode,
-        sleepInterval: Long = 500
+        timeout: Long = 15000
     ) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
@@ -81,12 +80,13 @@ class ImageCaptureLatencyBenchmark {
             }
 
         ) {
+            device.waitForIdle()
+
             clickCaptureButton(device)
 
+            val str = "ImageCaptureSuccessToast"
             // ensure trace is closed
-            // todo(kimblebee): replace sleep with findObject tied to successful image capture
-            // with a long timeout.
-            Thread.sleep(sleepInterval)
+            findObjectByDesc(device, str, timeout, true)
         }
     }
 }
