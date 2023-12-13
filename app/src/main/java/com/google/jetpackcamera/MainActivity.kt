@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import android.content.ContentValues
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.receiver.ImageCaptureReceiver
+import com.google.jetpackcamera.receiver.ImageCaptureReceiver.Companion.INTENT_IMAGE_CAPTURE_RESULT
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
@@ -133,9 +135,21 @@ class MainActivity : ComponentActivity() {
                                         is CameraUseCase.ImageCaptureEvent.ImageSaved -> {
                                             if (shouldFinishAfterCapture) {
                                                 setResult(RESULT_OK)
+                                                val resultIntent =
+                                                    Intent(INTENT_IMAGE_CAPTURE_RESULT)
+                                                resultIntent.putExtra(
+                                                    MediaStore.Images.Media.RELATIVE_PATH,
+                                                    event.relativePath
+                                                )
+                                                resultIntent.putExtra(
+                                                    MediaStore.Images.Media.DISPLAY_NAME,
+                                                    event.displayName
+                                                )
+                                                sendBroadcast(resultIntent)
                                                 finish()
                                             }
                                         }
+
                                         is CameraUseCase.ImageCaptureEvent.ImageCaptureError -> {
                                             if (shouldFinishAfterCapture) {
                                                 setResult(RESULT_CANCELED)

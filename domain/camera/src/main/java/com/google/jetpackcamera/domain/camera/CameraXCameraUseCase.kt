@@ -139,19 +139,31 @@ constructor(
         onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
+        val eligibleContentValues = getEligibleContentValues(contentValues)
         val outputFileOptions = OutputFileOptions.Builder(
             contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            getEligibleContentValues(contentValues)
+            eligibleContentValues
         ).build()
         imageCaptureUseCase.takePicture(
             outputFileOptions,
             defaultDispatcher.asExecutor(),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    Log.d(TAG, "Saved image to " + outputFileResults.savedUri)
+                    val relativePath =
+                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+                    val displayName = eligibleContentValues.getAsString(
+                        MediaStore.Images.Media.DISPLAY_NAME
+                    )
+                    Log.d(TAG, "Saved image to $relativePath/$displayName")
                     imageDeferred.complete(outputFileResults)
-                    onImageCapture(CameraUseCase.ImageCaptureEvent.ImageSaved(outputFileResults))
+                    onImageCapture(
+                        CameraUseCase.ImageCaptureEvent.ImageSaved(
+                            outputFileResults,
+                            relativePath,
+                            displayName
+                        )
+                    )
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -182,18 +194,18 @@ constructor(
                 }
             }
         }
-        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
+        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.DISPLAY_NAME)) {
             eligibleContentValues.put(
-                MediaStore.MediaColumns.DISPLAY_NAME,
+                MediaStore.Images.Media.DISPLAY_NAME,
                 Calendar.getInstance().time.toString()
             )
         }
-        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.MIME_TYPE)) {
-            eligibleContentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.MIME_TYPE)) {
+            eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         }
-        if (!eligibleContentValues.containsKey(MediaStore.MediaColumns.RELATIVE_PATH)) {
+        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.RELATIVE_PATH)) {
             eligibleContentValues.put(
-                MediaStore.MediaColumns.RELATIVE_PATH,
+                MediaStore.Images.Media.RELATIVE_PATH,
                 Environment.DIRECTORY_PICTURES
             )
         }

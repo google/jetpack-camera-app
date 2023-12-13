@@ -42,5 +42,6 @@ class ImageCaptureReceiver : BroadcastReceiver() {
 
     companion object {
         const val EXTRA_SHOULD_FINISH_AFTER_CAPTURE = "EXTRA_SHOULD_FINISH_AFTER_CAPTURE"
+        const val INTENT_IMAGE_CAPTURE_RESULT = "INTENT_IMAGE_CAPTURE_RESULT"
     }
 }

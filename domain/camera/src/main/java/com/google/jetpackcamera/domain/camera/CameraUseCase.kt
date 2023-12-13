@@ -120,7 +120,9 @@ interface CameraUseCase {
 
     sealed interface ImageCaptureEvent {
         data class ImageSaved(
-            val outputFileResults: ImageCapture.OutputFileResults
+            val outputFileResults: ImageCapture.OutputFileResults,
+            val relativePath: String,
+            val displayName: String
         ) : ImageCaptureEvent
 
         data class ImageCaptureError(
