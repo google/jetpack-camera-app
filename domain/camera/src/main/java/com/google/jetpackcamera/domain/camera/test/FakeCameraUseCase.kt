@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.domain.camera.test
 
 import android.content.ContentResolver
-import android.content.ContentValues
+import android.net.Uri
 import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -71,7 +71,7 @@ class FakeCameraUseCase : CameraUseCase {
 
     override suspend fun takePicture(
         contentResolver: ContentResolver,
-        contentValues: ContentValues?,
+        imageCaptureUri: Uri?,
         onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         if (!useCasesBinded) {

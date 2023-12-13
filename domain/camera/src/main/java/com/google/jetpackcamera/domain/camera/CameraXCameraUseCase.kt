@@ -18,6 +18,7 @@ package com.google.jetpackcamera.domain.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
@@ -47,6 +48,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import java.io.FileNotFoundException
+import java.lang.RuntimeException
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
@@ -135,80 +138,81 @@ constructor(
 
     override suspend fun takePicture(
         contentResolver: ContentResolver,
-        contentValues: ContentValues?,
+        imageCaptureUri: Uri?,
         onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
-        val eligibleContentValues = getEligibleContentValues(contentValues)
-        val outputFileOptions = OutputFileOptions.Builder(
-            contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            eligibleContentValues
-        ).build()
-        imageCaptureUseCase.takePicture(
-            outputFileOptions,
-            defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val relativePath =
-                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
-                    val displayName = eligibleContentValues.getAsString(
-                        MediaStore.Images.Media.DISPLAY_NAME
-                    )
-                    Log.d(TAG, "Saved image to $relativePath/$displayName")
-                    imageDeferred.complete(outputFileResults)
+        val eligibleContentValues = getEligibleContentValues()
+        var outputFileOptions: OutputFileOptions? = null
+        if (imageCaptureUri == null) {
+            outputFileOptions = OutputFileOptions.Builder(
+                contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                eligibleContentValues
+            ).build()
+        } else {
+            try {
+                val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                if (outputStream != null) {
+                    outputFileOptions =
+                        OutputFileOptions.Builder(
+                            contentResolver.openOutputStream(imageCaptureUri)!!
+                        ).build()
+                } else {
+                    val e = RuntimeException("Output stream is null.")
+                    Log.e(TAG, "Failed to save image.", e)
                     onImageCapture(
-                        CameraUseCase.ImageCaptureEvent.ImageSaved(
-                            outputFileResults,
-                            relativePath,
-                            displayName
-                        )
+                        CameraUseCase.ImageCaptureEvent.ImageCaptureError(e)
                     )
                 }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.e(TAG, "Failed to save image.", exception)
-                    onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(exception))
-                }
+            } catch (e: FileNotFoundException) {
+                Log.e(TAG, "Failed to save image.", e)
+                onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(e))
             }
-        )
+        }
+
+        if (outputFileOptions != null) {
+            imageCaptureUseCase.takePicture(
+                outputFileOptions,
+                defaultDispatcher.asExecutor(),
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        val relativePath =
+                            eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+                        val displayName = eligibleContentValues.getAsString(
+                            MediaStore.Images.Media.DISPLAY_NAME
+                        )
+                        Log.d(TAG, "Saved image to $relativePath/$displayName")
+                        imageDeferred.complete(outputFileResults)
+                        onImageCapture(
+                            CameraUseCase.ImageCaptureEvent.ImageSaved(
+                                outputFileResults,
+                                relativePath,
+                                displayName
+                            )
+                        )
+                    }
+
+                    override fun onError(exception: ImageCaptureException) {
+                        Log.e(TAG, "Failed to save image.", exception)
+                        onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(exception))
+                    }
+                }
+            )
+        }
     }
 
-    private fun getEligibleContentValues(contentValues: ContentValues?): ContentValues {
+    private fun getEligibleContentValues(): ContentValues {
         val eligibleContentValues = ContentValues()
-        if (contentValues != null) {
-            for (key in contentValues.keySet()) {
-                val value = contentValues.get(key)
-                if (value == null) {
-                    continue
-                } else if (value is String) {
-                    eligibleContentValues.put(key, value)
-                } else if (value is Int) {
-                    eligibleContentValues.put(key, value)
-                } else if (value is Boolean) {
-                    eligibleContentValues.put(key, value)
-                } else if (value is Long) {
-                    eligibleContentValues.put(key, value)
-                } else if (value is Float) {
-                    eligibleContentValues.put(key, value)
-                }
-            }
-        }
-        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.DISPLAY_NAME)) {
-            eligibleContentValues.put(
-                MediaStore.Images.Media.DISPLAY_NAME,
-                Calendar.getInstance().time.toString()
-            )
-        }
-        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.MIME_TYPE)) {
-            eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        }
-        if (!eligibleContentValues.containsKey(MediaStore.Images.Media.RELATIVE_PATH)) {
-            eligibleContentValues.put(
-                MediaStore.Images.Media.RELATIVE_PATH,
-                Environment.DIRECTORY_PICTURES
-            )
-        }
+        eligibleContentValues.put(
+            MediaStore.Images.Media.DISPLAY_NAME,
+            Calendar.getInstance().time.toString()
+        )
+        eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        eligibleContentValues.put(
+            MediaStore.Images.Media.RELATIVE_PATH,
+            Environment.DIRECTORY_PICTURES
+        )
         return eligibleContentValues
     }
 

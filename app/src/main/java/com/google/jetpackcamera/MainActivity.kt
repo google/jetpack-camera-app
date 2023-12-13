@@ -15,8 +15,7 @@
  */
 package com.google.jetpackcamera
 
-import android.content.ContentValues
-import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -50,8 +49,6 @@ import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
-import com.google.jetpackcamera.receiver.ImageCaptureReceiver
-import com.google.jetpackcamera.receiver.ImageCaptureReceiver.Companion.INTENT_IMAGE_CAPTURE_RESULT
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
@@ -72,24 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val externalContentValues: ContentValues? =
-            if (intent.extras == null) {
-                null
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.extras!!.getParcelable(
-                    MediaStore.EXTRA_OUTPUT,
-                    ContentValues::class.java
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
-            }
-        val shouldFinishAfterCapture =
-            if (intent.extras == null) {
-                false
-            } else {
-                intent.extras!!.getBoolean(ImageCaptureReceiver.EXTRA_SHOULD_FINISH_AFTER_CAPTURE)
-            }
+        val uri = getImageCaptureUriIfExists()
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
         lifecycleScope.launch {
@@ -129,29 +109,19 @@ class MainActivity : ComponentActivity() {
                             JcaApp(
                                 onPreviewViewModel = { previewViewModel = it },
                                 contentResolver = contentResolver,
-                                contentValues = externalContentValues,
+                                imageCaptureUri = uri,
                                 onImageCapture = { event ->
+                                    val shouldFinishWithResult = isExternalImageCapture()
                                     when (event) {
                                         is CameraUseCase.ImageCaptureEvent.ImageSaved -> {
-                                            if (shouldFinishAfterCapture) {
+                                            if (shouldFinishWithResult) {
                                                 setResult(RESULT_OK)
-                                                val resultIntent =
-                                                    Intent(INTENT_IMAGE_CAPTURE_RESULT)
-                                                resultIntent.putExtra(
-                                                    MediaStore.Images.Media.RELATIVE_PATH,
-                                                    event.relativePath
-                                                )
-                                                resultIntent.putExtra(
-                                                    MediaStore.Images.Media.DISPLAY_NAME,
-                                                    event.displayName
-                                                )
-                                                sendBroadcast(resultIntent)
                                                 finish()
                                             }
                                         }
 
                                         is CameraUseCase.ImageCaptureEvent.ImageCaptureError -> {
-                                            if (shouldFinishAfterCapture) {
+                                            if (shouldFinishWithResult) {
                                                 setResult(RESULT_CANCELED)
                                                 finish()
                                             }
@@ -164,6 +134,32 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun getImageCaptureUriIfExists(): Uri? {
+        val isExternalImageCapture = isExternalImageCapture()
+        val uri = if (!isExternalImageCapture) {
+            null
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.extras!!.getParcelable(
+                MediaStore.EXTRA_OUTPUT,
+                Uri::class.java
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
+        }
+        if (isExternalImageCapture && uri == null) {
+            setResult(RESULT_CANCELED)
+            finish()
+        }
+
+        return uri
+    }
+
+    private fun isExternalImageCapture(): Boolean {
+        return intent != null && MediaStore.ACTION_IMAGE_CAPTURE == intent.action &&
+            intent.extras != null && intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
     }
 }
 

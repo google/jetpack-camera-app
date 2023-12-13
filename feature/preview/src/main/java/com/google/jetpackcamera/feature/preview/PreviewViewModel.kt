@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
-import android.content.ContentValues
+import android.net.Uri
 import android.util.Log
 import android.view.Display
 import androidx.camera.core.ImageCaptureException
@@ -196,13 +196,13 @@ class PreviewViewModel @Inject constructor(
 
     fun captureImage(
         contentResolver: ContentResolver,
-        contentValues: ContentValues?,
+        imageCaptureUri: Uri?,
         onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
     ) {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             try {
-                cameraUseCase.takePicture(contentResolver, contentValues, onImageCapture)
+                cameraUseCase.takePicture(contentResolver, imageCaptureUri, onImageCapture)
                 // todo: remove toast after postcapture screen implemented
                 _previewUiState.emit(
                     previewUiState.value.copy(

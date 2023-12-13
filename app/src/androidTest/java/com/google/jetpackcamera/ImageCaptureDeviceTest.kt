@@ -15,17 +15,14 @@
  */
 package com.google.jetpackcamera
 
-import android.content.ContentValues
-import android.content.Intent
 import android.os.Environment
-import android.provider.MediaStore
 import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -54,49 +51,19 @@ internal class ImageCaptureDeviceTest {
             .toString() + "/" + Environment.DIRECTORY_PICTURES
         var directory = File(dirPath)
         val files = directory.listFiles()
-        activityScenario = ActivityScenario.launch(MainActivity::class.java)
-        uiDevice.waitForIdle(2000)
+        activityScenario = ActivityScenario.launchActivityForResult(MainActivity::class.java)
+        uiDevice.wait(
+            Until.findObject(By.res("CaptureButton")),
+            5000
+        )
         uiDevice.findObject(By.res("CaptureButton")).click()
-        Thread.sleep(2000)
+        uiDevice.wait(
+            Until.findObject(By.res("ImageCaptureSuccessToast")),
+            5000
+        )
         directory = File(dirPath)
         val pictureTaken = (files.size + 1) == directory.listFiles().size
         assert(pictureTaken)
-        if (pictureTaken) {
-            deleteFilesInDirAfterTimestamp(directory, timeStamp)
-        }
-    }
-
-    @Test
-    fun image_capture_external() = runTest {
-        val timeStamp = System.currentTimeMillis()
-        val dirPath = Environment.getExternalStorageDirectory()
-            .toString() + "/" + Environment.DIRECTORY_PICTURES
-        var directory = File(dirPath)
-        val files = directory.listFiles()
-        val displayName = timeStamp.toString()
-        val contentValues = ContentValues()
-        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        val intent =
-            Intent(ApplicationProvider.getApplicationContext(), MainActivity::class.java).putExtra(
-                MediaStore.EXTRA_OUTPUT,
-                contentValues
-            )
-        activityScenario = ActivityScenario.launch(intent)
-        uiDevice.waitForIdle(5000)
-        uiDevice.findObject(By.res("CaptureButton")).click()
-        Thread.sleep(2000)
-        directory = File(dirPath)
-        val pictureTaken = (files.size + 1) == directory.listFiles().size
-        assert(pictureTaken)
-        var fileExists = false
-        for (file in directory.listFiles()) {
-            if (file.name.contains(displayName)) {
-                fileExists = true
-                break
-            }
-        }
-        assert(fileExists)
         if (pictureTaken) {
             deleteFilesInDirAfterTimestamp(directory, timeStamp)
         }

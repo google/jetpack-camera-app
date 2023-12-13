@@ -17,7 +17,7 @@ package com.google.jetpackcamera.ui
 
 import android.Manifest
 import android.content.ContentResolver
-import android.content.ContentValues
+import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -41,7 +41,7 @@ fun JcaApp(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     contentResolver: ContentResolver,
-    contentValues: ContentValues?,
+    imageCaptureUri: Uri?,
     onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     val permissionState =
@@ -51,7 +51,7 @@ fun JcaApp(
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             contentResolver = contentResolver,
-            contentValues = contentValues,
+            imageCaptureUri = imageCaptureUri,
             onImageCapture = onImageCapture
         )
     } else {
@@ -67,7 +67,7 @@ private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     navController: NavHostController = rememberNavController(),
     contentResolver: ContentResolver,
-    contentValues: ContentValues?,
+    imageCaptureUri: Uri?,
     onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
@@ -76,7 +76,7 @@ private fun JetpackCameraNavHost(
                 onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 contentResolver = contentResolver,
-                contentValues = contentValues,
+                imageCaptureUri = imageCaptureUri,
                 onImageCapture = onImageCapture
             )
         }

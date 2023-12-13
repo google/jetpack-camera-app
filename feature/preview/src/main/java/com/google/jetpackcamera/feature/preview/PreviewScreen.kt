@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
-import android.content.ContentValues
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -84,7 +84,7 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel(),
     contentResolver: ContentResolver,
-    contentValues: ContentValues?,
+    imageCaptureUri: Uri?,
     onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -231,7 +231,7 @@ fun PreviewScreen(
                             multipleEventsCutter.processEvent {
                                 viewModel.captureImage(
                                     context.contentResolver,
-                                    contentValues,
+                                    imageCaptureUri,
                                     onImageCapture
                                 )
                             }

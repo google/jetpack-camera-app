@@ -16,16 +16,16 @@
 package com.google.jetpackcamera.domain.camera
 
 import android.content.ContentResolver
-import android.content.ContentValues
+import android.net.Uri
 import android.util.Rational
 import android.view.Display
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
+import java.lang.Exception
 
 /**
  * Data layer for camera.
@@ -50,7 +50,7 @@ interface CameraUseCase {
 
     suspend fun takePicture(
         contentResolver: ContentResolver,
-        contentValues: ContentValues?,
+        imageCaptureUri: Uri?,
         onImageCapture: (ImageCaptureEvent) -> Unit
     )
 
@@ -126,7 +126,7 @@ interface CameraUseCase {
         ) : ImageCaptureEvent
 
         data class ImageCaptureError(
-            val exception: ImageCaptureException
+            val exception: Exception
         ) : ImageCaptureEvent
     }
 }
