@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,11 +82,4 @@ class ScreenFlash(
             screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
         )
     }
-
-    /**
-     * Returns if screen flash is supposed to be enabled based on the given [FlashMode] and camera
-     * facing state.
-     */
-    fun isEnabled(flashMode: FlashMode, isFrontCameraFacing: Boolean) =
-        cameraUseCase.isScreenFlash(flashMode, isFrontCameraFacing)
 }

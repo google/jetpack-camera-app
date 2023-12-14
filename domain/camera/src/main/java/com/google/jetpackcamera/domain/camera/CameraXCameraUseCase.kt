@@ -249,7 +249,8 @@ constructor(
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
 
     override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
-        val isScreenFlashRequired = isScreenFlash(flashMode, isFrontFacing)
+        val isScreenFlashRequired =
+            isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
         if (isScreenFlashRequired) {
             imageCaptureUseCase.screenFlashUiControl = object : ScreenFlashUiControl {
@@ -295,8 +296,18 @@ constructor(
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
 
-    override fun isScreenFlash(flashMode: FlashMode, isFrontFacing: Boolean) =
-        isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
+    override fun isScreenFlashEnabled() =
+        imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+            imageCaptureUseCase.screenFlashUiControl != null
+
+    override fun clearScreenFlash() {
+        // In case a screen flash capture is already ongoing, first set screenFlashUiControl to null
+        // to stop receiving new events and then send a clearScreenFlashUi event in case an apply
+        // event already came through for the capture.
+        val prevScreenFlashUiControl = imageCaptureUseCase.screenFlashUiControl
+        imageCaptureUseCase.screenFlashUiControl = null
+        prevScreenFlashUiControl?.clearScreenFlashUi()
+    }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio

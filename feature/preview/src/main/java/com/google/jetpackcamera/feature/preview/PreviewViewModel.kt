@@ -50,7 +50,6 @@ class PreviewViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
     // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
-
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
@@ -89,7 +88,7 @@ class PreviewViewModel @Inject constructor(
 
     fun runCamera(surfaceProvider: SurfaceProvider) {
         Log.d(TAG, "runCamera")
-        stopCamera()
+        stopCameraJob()
         runningCameraJob = viewModelScope.launch {
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
@@ -101,6 +100,12 @@ class PreviewViewModel @Inject constructor(
 
     fun stopCamera() {
         Log.d(TAG, "stopCamera")
+        stopCameraJob()
+        cameraUseCase.clearScreenFlash()
+    }
+
+    private fun stopCameraJob() {
+        Log.d(TAG, "stopCameraJob")
         runningCameraJob?.apply {
             if (isActive) {
                 cancel()
@@ -127,7 +132,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun setAspectRatio(aspectRatio: AspectRatio) {
-        stopCamera()
+        stopCameraJob()
         runningCameraJob = viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
@@ -159,7 +164,7 @@ class PreviewViewModel @Inject constructor(
             CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
         }
 
-        stopCamera()
+        stopCameraJob()
         runningCameraJob = viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
@@ -180,7 +185,7 @@ class PreviewViewModel @Inject constructor(
         if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
             previewUiState.value.currentCameraSettings.isFrontCameraAvailable
         ) {
-            stopCamera()
+            stopCameraJob()
             runningCameraJob = viewModelScope.launch {
                 _previewUiState.emit(
                     previewUiState.value.copy(

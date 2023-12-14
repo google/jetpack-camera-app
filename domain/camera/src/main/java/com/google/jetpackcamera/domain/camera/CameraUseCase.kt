@@ -57,7 +57,9 @@ interface CameraUseCase {
 
     fun setFlashMode(flashMode: SettingsFlashMode, isFrontFacing: Boolean)
 
-    fun isScreenFlash(flashMode: SettingsFlashMode, isFrontFacing: Boolean): Boolean
+    fun isScreenFlashEnabled(): Boolean
+
+    fun clearScreenFlash()
 
     suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
 

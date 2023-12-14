@@ -47,7 +47,7 @@ class FakeCameraUseCase(
     private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
 
-    var isScreenFlash = true
+    private var isScreenFlash = true
     private var screenFlashEvents = MutableSharedFlow<CameraUseCase.ScreenFlashEvent>()
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
@@ -123,8 +123,11 @@ class FakeCameraUseCase(
             isLensFacingFront && (flashMode == FlashMode.AUTO || flashMode == FlashMode.ON)
     }
 
-    override fun isScreenFlash(flashMode: FlashMode, isFrontFacing: Boolean) =
-        isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
+    override fun isScreenFlashEnabled() = isScreenFlash
+
+    override fun clearScreenFlash() {
+        isScreenFlash = false
+    }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio

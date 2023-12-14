@@ -265,20 +265,17 @@ fun PreviewScreen(
             )
         }
 
-        if (viewModel.screenFlash.isEnabled(
-                previewUiState.currentCameraSettings.flashMode,
-                previewUiState.currentCameraSettings.isFrontCameraFacing
-            )
-        ) {
-            // Screen flash overlay that stays on top of everything but invisible normally
-            ScreenFlashScreen(
-                screenFlashUiState = screenFlashUiState,
-                onInitialBrightnessCalculated = { value ->
-                    viewModel.viewModelScope.launch {
-                        viewModel.screenFlash.setClearUiScreenBrightness(value)
-                    }
+        // Screen flash overlay that stays on top of everything but invisible normally. This should
+        // not be enabled based on whether screen flash is enabled so that disabling is properly
+        // handled (e.g. brightness restored). Compose should be able to optimize this if the
+        // screenFlashUiState is no longer changing.
+        ScreenFlashScreen(
+            screenFlashUiState = screenFlashUiState,
+            onInitialBrightnessCalculated = { value ->
+                viewModel.viewModelScope.launch {
+                    viewModel.screenFlash.setClearUiScreenBrightness(value)
                 }
-            )
-        }
+            }
+        )
     }
 }

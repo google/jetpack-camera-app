@@ -71,7 +71,7 @@ class FakeCameraUseCaseTest {
 
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
 
-        assertEquals(false, cameraUseCase.isScreenFlash)
+        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
     }
 
     @Test
@@ -80,7 +80,7 @@ class FakeCameraUseCaseTest {
 
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
 
-        assertEquals(false, cameraUseCase.isScreenFlash)
+        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
     }
 
     @Test
@@ -89,7 +89,7 @@ class FakeCameraUseCaseTest {
 
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
 
-        assertEquals(false, cameraUseCase.isScreenFlash)
+        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
     }
 
     @Test
@@ -98,7 +98,7 @@ class FakeCameraUseCaseTest {
 
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = true)
 
-        assertEquals(true, cameraUseCase.isScreenFlash)
+        assertEquals(true, cameraUseCase.isScreenFlashEnabled())
     }
 
     @Test
@@ -107,7 +107,7 @@ class FakeCameraUseCaseTest {
 
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = true)
 
-        assertEquals(true, cameraUseCase.isScreenFlash)
+        assertEquals(true, cameraUseCase.isScreenFlashEnabled())
     }
 
     @Test
