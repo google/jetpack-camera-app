@@ -305,7 +305,6 @@ constructor(
         // to stop receiving new events and then send a clearScreenFlashUi event in case an apply
         // event already came through for the capture.
         val prevScreenFlashUiControl = imageCaptureUseCase.screenFlashUiControl
-        imageCaptureUseCase.screenFlashUiControl = null
         prevScreenFlashUiControl?.clearScreenFlashUi()
     }
 
