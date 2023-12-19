@@ -38,8 +38,8 @@ import kotlinx.coroutines.launch
 private const val TAG = "PreviewViewModel"
 
 // toast test descriptions
-const val IMAGE_CAPTURE_SUCCESS_TOAST_DESC = "ImageCaptureSuccessToast"
-const val IMAGE_CAPTURE_FAIL_TOAST_DESC = "ImageCaptureFailureToast"
+const val IMAGE_CAPTURE_SUCCESS_TOAST_TAG = "ImageCaptureSuccessToast"
+const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -201,8 +201,8 @@ class PreviewViewModel @Inject constructor(
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         toastMessageToShow = ToastMessage(
-                            message = R.string.toast_image_capture_success.toString(),
-                            testDesc = IMAGE_CAPTURE_SUCCESS_TOAST_DESC
+                            stringResource = R.string.toast_image_capture_success,
+                            testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
                         )
                     )
                 )
@@ -212,8 +212,8 @@ class PreviewViewModel @Inject constructor(
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         toastMessageToShow = ToastMessage(
-                            message = R.string.toast_capture_failure.toString(),
-                            testDesc = IMAGE_CAPTURE_FAIL_TOAST_DESC
+                            stringResource = R.string.toast_capture_failure,
+                            testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
                         )
                     )
                 )
