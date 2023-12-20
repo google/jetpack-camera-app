@@ -18,7 +18,6 @@ package com.google.jetpackcamera.settings.model
 import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
 import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 
-
 enum class Stabilization {
     UNDEFINED,
     OFF,
