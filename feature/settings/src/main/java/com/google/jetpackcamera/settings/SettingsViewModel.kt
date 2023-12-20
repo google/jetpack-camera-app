@@ -25,10 +25,10 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 
@@ -62,8 +62,7 @@ class SettingsViewModel @Inject constructor(
 
                 Log.d(
                     TAG,
-                    "updated setting" +
-                        settingsRepository.getCameraAppSettings().captureMode
+                    "updated setting ${settingsRepository.getCameraAppSettings().captureMode}"
                 )
             }
         }
@@ -83,7 +82,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set camera default facing: " +
-                    settingsRepository.getCameraAppSettings().isFrontCameraFacing
+                        "${settingsRepository.getCameraAppSettings().isFrontCameraFacing}"
             )
         }
     }
@@ -93,8 +92,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.updateDarkModeStatus(darkMode)
             Log.d(
                 TAG,
-                "set dark mode theme: " +
-                    settingsRepository.getCameraAppSettings().darkMode
+                "set dark mode theme: ${settingsRepository.getCameraAppSettings().darkMode}"
             )
         }
     }
@@ -110,8 +108,8 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.updateAspectRatio(aspectRatio)
             Log.d(
                 TAG,
-                "set aspect ratio " +
-                    "${settingsRepository.getCameraAppSettings().aspectRatio}"
+                "set aspect ratio: " +
+                        "${settingsRepository.getCameraAppSettings().aspectRatio}"
             )
         }
     }
@@ -122,8 +120,8 @@ class SettingsViewModel @Inject constructor(
 
             Log.d(
                 TAG,
-                "set default capture mode " +
-                    settingsRepository.getCameraAppSettings().captureMode
+                "set default capture mode: " +
+                        "${settingsRepository.getCameraAppSettings().captureMode}"
             )
         }
     }
@@ -135,7 +133,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set preview stabilization: " +
-                    settingsRepository.getCameraAppSettings().previewStabilization
+                        "${settingsRepository.getCameraAppSettings().previewStabilization}"
             )
         }
     }
@@ -147,7 +145,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set video stabilization: " +
-                    settingsRepository.getCameraAppSettings().previewStabilization
+                        "${settingsRepository.getCameraAppSettings().previewStabilization}"
             )
         }
     }
