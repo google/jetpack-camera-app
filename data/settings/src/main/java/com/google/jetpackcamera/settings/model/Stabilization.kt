@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import com.google.jetpackcamera.settings.Stabilization as StabilizationProto
+import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
+import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
+
 
 enum class Stabilization {
     UNDEFINED,
@@ -23,12 +25,23 @@ enum class Stabilization {
     ON;
 
     companion object {
-        /** returns the Stabilization enum equivalent of a provided StabilizationProto */
-        fun fromProto(stabilizationProto: StabilizationProto): Stabilization {
+        /** returns the Stabilization enum equivalent of a provided [PreviewStabilizationProto]. */
+        fun fromProto(stabilizationProto: PreviewStabilizationProto): Stabilization {
             return when (stabilizationProto) {
-                StabilizationProto.STABILIZATION_UNDEFINED -> UNDEFINED
-                StabilizationProto.STABILIZATION_OFF -> OFF
-                StabilizationProto.STABILIZATION_ON -> ON
+                PreviewStabilizationProto.PREVIEW_STABILIZATION_UNDEFINED -> UNDEFINED
+                PreviewStabilizationProto.PREVIEW_STABILIZATION_OFF -> OFF
+                PreviewStabilizationProto.PREVIEW_STABILIZATION_ON -> ON
+                else -> UNDEFINED
+            }
+        }
+
+        /** returns the Stabilization enum equivalent of a provided [VideoStabilizationProto]. */
+
+        fun fromProto(stabilizationProto: VideoStabilizationProto): Stabilization {
+            return when (stabilizationProto) {
+                VideoStabilizationProto.VIDEO_STABILIZATION_UNDEFINED -> UNDEFINED
+                VideoStabilizationProto.VIDEO_STABILIZATION_OFF -> OFF
+                VideoStabilizationProto.VIDEO_STABILIZATION_ON -> ON
                 else -> UNDEFINED
             }
         }
