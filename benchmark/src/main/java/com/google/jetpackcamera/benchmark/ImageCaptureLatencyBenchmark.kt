@@ -86,7 +86,12 @@ class ImageCaptureLatencyBenchmark {
 
             val str = "ImageCaptureSuccessToast"
             // ensure trace is closed
-            findObjectByDesc(device, str, timeout, true)
+            findObjectByRes(
+                device = device,
+                testTag = str,
+                timeout = timeout,
+                shouldFailIfNotFound = true
+            )
         }
     }
 }

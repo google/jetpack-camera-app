@@ -48,7 +48,11 @@ fun clickCaptureButton(device: UiDevice, duration: Long = 0) {
  * Toggle open or close quick settings menu on a device.
  */
 fun toggleQuickSettings(device: UiDevice) {
-    findObjectByRes(device, "QuickSettingDropDown", true)!!.click()
+    findObjectByRes(
+        device = device,
+        testTag = "QuickSettingDropDown",
+        shouldFailIfNotFound = true
+    )!!.click()
 }
 
 /**
@@ -65,7 +69,11 @@ fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
     val isFrontFacing = findObjectByDesc(device, "QUICK SETTINGS LENS FACING FRONT") != null
 
     if (isFrontFacing != shouldFaceFront) {
-        findObjectByRes(device, "QuickSetFlipCamera", true)!!.click()
+        findObjectByRes(
+            device = device,
+            testTag = "QuickSetFlipCamera",
+            shouldFailIfNotFound = true
+        )!!.click()
     }
 }
 
@@ -83,21 +91,26 @@ fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
             FlashMode.OFF -> By.desc("QUICK SETTINGS FLASH IS OFF")
         }
     while (device.findObject(selector) == null) {
-        findObjectByRes(device, "QuickSetFlash", true)!!.click()
+        findObjectByRes(
+            device = device,
+            testTag = "QuickSetFlash",
+            shouldFailIfNotFound = true
+        )!!.click()
     }
 }
 
 /**
- * Find an object by its test tag.
+ * Find a composable by its test tag.
  */
 fun findObjectByRes(
     device: UiDevice,
     testTag: String,
+    timeout: Long = 2_500,
     shouldFailIfNotFound: Boolean = false
 ): UiObject2? {
     val selector = By.res(testTag)
 
-    return if (!device.wait(Until.hasObject(selector), 2_500)) {
+    return if (!device.wait(Until.hasObject(selector), timeout)) {
         if (shouldFailIfNotFound) {
             Assert.fail("Did not find object with id $testTag")
         }

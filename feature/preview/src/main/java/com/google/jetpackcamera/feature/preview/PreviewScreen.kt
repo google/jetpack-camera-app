@@ -49,7 +49,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
@@ -213,7 +212,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
@@ -245,10 +244,7 @@ fun PreviewScreen(
             if (previewUiState.toastMessageToShow != null) {
                 ShowToast(
                     modifier = Modifier
-                        .testTag(previewUiState.toastMessageToShow!!.testTag)
-                        .semantics {
-                            contentDescription = previewUiState.toastMessageToShow!!.testDesc
-                        },
+                        .testTag(previewUiState.toastMessageToShow!!.testTag),
                     toastMessage = previewUiState.toastMessageToShow!!,
                     onToastShown = viewModel::onToastShown
                 )

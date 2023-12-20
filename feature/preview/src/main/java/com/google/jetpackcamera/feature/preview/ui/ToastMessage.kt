@@ -20,17 +20,15 @@ import android.widget.Toast
 /**
  * Helper class containing information used to create a [Toast].
  *
- * @param message the text to be displayed.
+ * @param stringResource the resource ID of to be displayed.
  * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
- * @param testDesc the *unique* description to identify a specific toast message.
- * @property testTag the identifiable resource ID of a Toast on screen.
+ * @property testTag the identifiable resource ID of a [ShowToast] on screen.
  */
 class ToastMessage(
-    val message: String,
+    val stringResource: Int,
     isLongToast: Boolean = false,
-    val testDesc: String = "Toast Message"
+    val testTag: String = ""
 ) {
-    val testTag: String = "Toast Message"
     val toastLength: Int = when (isLongToast) {
         true -> Toast.LENGTH_LONG
         false -> Toast.LENGTH_SHORT

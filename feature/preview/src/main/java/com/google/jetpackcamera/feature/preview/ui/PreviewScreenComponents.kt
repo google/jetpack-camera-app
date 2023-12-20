@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,17 +76,23 @@ fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToast
     val toastShownStatus = remember { mutableStateOf(false) }
     Box(
         // box seems to need to have some size to be detected by UiAutomator
-        modifier = modifier.size(20.dp)
+        modifier = modifier
+            .size(20.dp)
+            .testTag(toastMessage.testTag)
     ) {
         // prevents toast from being spammed
         if (!toastShownStatus.value) {
-            Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength)
+            Toast.makeText(
+                LocalContext.current,
+                stringResource(id = toastMessage.stringResource),
+                toastMessage.toastLength
+            )
                 .show()
             toastShownStatus.value = true
             onToastShown()
         }
     }
-    Log.d(TAG, "Toast Displayed with message: ${toastMessage.message}")
+    Log.d(TAG, "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}")
 }
 
 /**
