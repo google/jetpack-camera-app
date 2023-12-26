@@ -77,13 +77,11 @@
     <string name="fps_description_15">Target 15 fps </string>
     <string name="fps_description_30">Target 30 fps</string>
     <string name="fps_description_60">Target 60 fps</string>
-    <string name="fps_description_100">Target 100 fps</string>
 
     <string name="fps_selector_none">None</string>
     <string name="fps_selector_15">15</string>
     <string name="fps_selector_30">30</string>
     <string name="fps_selector_60">60</string>
-    <string name="fps_selector_100">100</string>
 
     <string name="fps_stabilization_disclaimer">*Stabilization will be disabled when selecting a target frame rate other than none.</string>
 

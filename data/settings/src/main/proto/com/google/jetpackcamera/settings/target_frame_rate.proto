@@ -25,6 +25,4 @@ enum TargetFrameRate {
   TARGET_FRAME_RATE_15 = 2;
   TARGET_FRAME_RATE_30 = 3;
   TARGET_FRAME_RATE_60 = 4;
-  TARGET_FRAME_RATE_100 = 5; // excessively high option to target the supported upper ranges
-
 }

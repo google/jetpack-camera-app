@@ -257,7 +257,6 @@ fun TargetFpsSetting(
             TargetFrameRate.TARGET_FPS_15 -> stringResource(id = R.string.fps_description_15)
             TargetFrameRate.TARGET_FPS_30 -> stringResource(id = R.string.fps_description_30)
             TargetFrameRate.TARGET_FPS_60 -> stringResource(id = R.string.fps_description_60)
-            TargetFrameRate.TARGET_FPS_100 -> stringResource(id = R.string.fps_selector_100)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -285,12 +284,6 @@ fun TargetFpsSetting(
                     text = stringResource(id = R.string.fps_selector_60),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
-                )
-
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_100),
-                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_100,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_100) }
                 )
             }
         }

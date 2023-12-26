@@ -22,8 +22,7 @@ enum class TargetFrameRate(val range: Range<Int>) {
     TARGET_FPS_NONE(Range(0, 0)),
     TARGET_FPS_15(Range(15, 15)),
     TARGET_FPS_30(Range(30, 30)),
-    TARGET_FPS_60(Range(60, 60)),
-    TARGET_FPS_100(Range(100, 100)); // excessively high option to target the supported upper ranges
+    TARGET_FPS_60(Range(60, 60));
 
     companion object {
         // converts our kotlin enum to a proto enum
@@ -33,7 +32,6 @@ enum class TargetFrameRate(val range: Range<Int>) {
                 TARGET_FPS_15 -> TargetFrameRateProto.TARGET_FRAME_RATE_15
                 TARGET_FPS_30 -> TargetFrameRateProto.TARGET_FRAME_RATE_30
                 TARGET_FPS_60 -> TargetFrameRateProto.TARGET_FRAME_RATE_60
-                TARGET_FPS_100 -> TargetFrameRateProto.TARGET_FRAME_RATE_100
             }
         }
 
@@ -44,8 +42,6 @@ enum class TargetFrameRate(val range: Range<Int>) {
                 TargetFrameRateProto.TARGET_FRAME_RATE_15 -> TARGET_FPS_15
                 TargetFrameRateProto.TARGET_FRAME_RATE_30 -> TARGET_FPS_30
                 TargetFrameRateProto.TARGET_FRAME_RATE_60 -> TARGET_FPS_60
-                TargetFrameRateProto.TARGET_FRAME_RATE_100 -> TARGET_FPS_100
-
                 else -> TARGET_FPS_NONE
             }
         }
