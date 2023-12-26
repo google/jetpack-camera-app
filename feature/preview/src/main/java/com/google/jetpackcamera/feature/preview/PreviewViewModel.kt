@@ -30,13 +30,13 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -66,8 +66,8 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                // TODO: only update settings that were actually changed
-                // currently resets all "quick" settings to stored settings
+                    // TODO: only update settings that were actually changed
+                    // currently resets all "quick" settings to stored settings
                     settings ->
                 _previewUiState
                     .emit(previewUiState.value.copy(currentCameraSettings = settings))
