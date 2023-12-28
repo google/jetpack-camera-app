@@ -26,7 +26,8 @@ import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.ScreenFlashUiControl
+import androidx.camera.core.ImageCapture.ScreenFlash
+import androidx.camera.core.ImageCapture.ScreenFlashUiCompleter
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -253,11 +254,9 @@ constructor(
             isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
         if (isScreenFlashRequired) {
-            imageCaptureUseCase.screenFlashUiControl = object : ScreenFlashUiControl {
-                override fun applyScreenFlashUi(
-                    screenFlashUiCompleter: ImageCapture.ScreenFlashUiCompleter
-                ) {
-                    Log.d(TAG, "applyScreenFlashUi")
+            imageCaptureUseCase.screenFlash = object : ScreenFlash {
+                override fun apply(screenFlashUiCompleter: ScreenFlashUiCompleter) {
+                    Log.d(TAG, "ImageCapture.ScreenFlash: apply")
                     coroutineScope.launch {
                         screenFlashEvents.emit(
                             CameraUseCase.ScreenFlashEvent(Type.APPLY_UI) {
@@ -267,8 +266,8 @@ constructor(
                     }
                 }
 
-                override fun clearScreenFlashUi() {
-                    Log.d(TAG, "clearScreenFlashUi")
+                override fun clear() {
+                    Log.d(TAG, "ImageCapture.ScreenFlash: clear")
                     coroutineScope.launch {
                         screenFlashEvents.emit(
                             CameraUseCase.ScreenFlashEvent(Type.CLEAR_UI) {}
@@ -298,14 +297,14 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlashUiControl != null
+            imageCaptureUseCase.screenFlash != null
 
     override fun clearScreenFlash() {
         // In case a screen flash capture is already ongoing, first set screenFlashUiControl to null
         // to stop receiving new events and then send a clearScreenFlashUi event in case an apply
         // event already came through for the capture.
-        val prevScreenFlashUiControl = imageCaptureUseCase.screenFlashUiControl
-        prevScreenFlashUiControl?.clearScreenFlashUi()
+        val prevScreenFlashUiControl = imageCaptureUseCase.screenFlash
+        prevScreenFlashUiControl?.clear()
     }
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
