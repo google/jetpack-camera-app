@@ -125,10 +125,6 @@ class FakeCameraUseCase(
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
-    override fun clearScreenFlash() {
-        isScreenFlash = false
-    }
-
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
     }

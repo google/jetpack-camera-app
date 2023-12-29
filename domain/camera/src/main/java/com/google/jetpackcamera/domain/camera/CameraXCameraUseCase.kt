@@ -299,14 +299,6 @@ constructor(
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
             imageCaptureUseCase.screenFlash != null
 
-    override fun clearScreenFlash() {
-        // In case a screen flash capture is already ongoing, first set screenFlashUiControl to null
-        // to stop receiving new events and then send a clearScreenFlashUi event in case an apply
-        // event already came through for the capture.
-        val prevScreenFlashUiControl = imageCaptureUseCase.screenFlash
-        prevScreenFlashUiControl?.clear()
-    }
-
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
         updateUseCaseGroup()

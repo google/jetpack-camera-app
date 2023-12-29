@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -69,7 +68,6 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
@@ -266,16 +264,13 @@ fun PreviewScreen(
         }
 
         // Screen flash overlay that stays on top of everything but invisible normally. This should
-        // not be enabled based on whether screen flash is enabled so that disabling is properly
-        // handled (e.g. brightness restored). Compose should be able to optimize this if the
-        // screenFlashUiState is no longer changing.
+        // not be enabled based on whether screen flash is enabled because a previous image capture
+        // may still be running after flash mode change and clear actions (e.g. brightness restore)
+        // may need to be handled later. Compose smart recomposition should be able to optimize this
+        // if the relevant states are no longer changing.
         ScreenFlashScreen(
             screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = { value ->
-                viewModel.viewModelScope.launch {
-                    viewModel.screenFlash.setClearUiScreenBrightness(value)
-                }
-            }
+            onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
         )
     }
 }

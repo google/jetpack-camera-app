@@ -77,9 +77,11 @@ class ScreenFlash(
      * Sets the screenBrightness value to the value right before APPLY_UI event for the next
      * CLEAR_UI event, will be set to unknown (null) again after CLEAR_UI event is completed.
      */
-    suspend fun setClearUiScreenBrightness(brightness: Float) {
-        _screenFlashUiState.emit(
-            screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
-        )
+    fun setClearUiScreenBrightness(brightness: Float) {
+        scope.launch {
+            _screenFlashUiState.emit(
+                screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
+            )
+        }
     }
 }
