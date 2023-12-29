@@ -55,7 +55,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
@@ -77,9 +76,12 @@ fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToast
     Box(
         modifier
             .testTag(toastMessage.testTag)
-            .semantics { contentDescription = toastMessage.testDesc }
     ) {
-        Toast.makeText(LocalContext.current, toastMessage.message, toastMessage.toastLength).show()
+        Toast.makeText(
+            LocalContext.current,
+            stringResource(id = toastMessage.stringResource),
+            toastMessage.toastLength
+        ).show()
         onToastShown()
     }
 }
