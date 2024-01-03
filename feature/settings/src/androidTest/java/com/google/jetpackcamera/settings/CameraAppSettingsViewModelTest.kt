@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import android.content.Context
@@ -23,7 +22,8 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import java.io.File
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -40,7 +40,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CameraAppSettingsViewModelTest {
@@ -50,7 +49,6 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var repository: LocalSettingsRepository
     private lateinit var settingsViewModel: SettingsViewModel
 
-
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
@@ -58,7 +56,7 @@ internal class CameraAppSettingsViewModelTest {
 
         testDataStore = DataStoreFactory.create(
             serializer = JcaSettingsSerializer,
-            scope = datastoreScope,
+            scope = datastoreScope
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
@@ -79,7 +77,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
-        // giving viewmodel time to call init, otherwise settings will stay disabled
+        // giving ViewModel time to call init, otherwise settings will stay disabled
         delay(100)
         val uiState = settingsViewModel.settingsUiState.value
         advanceUntilIdle()
@@ -92,13 +90,13 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         val initialFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
         settingsViewModel.setDefaultToFrontCamera()
 
         advanceUntilIdle()
 
         val newFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.default_front_camera
+            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
 
         assertFalse(initialFrontCameraValue)
         assertTrue(newFrontCameraValue)
@@ -106,13 +104,13 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun setDarkMode() = runTest(StandardTestDispatcher()) {
-        val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
-        settingsViewModel.setDarkMode(DarkModeStatus.DARK)
+        val initialDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.darkMode
+        settingsViewModel.setDarkMode(DarkMode.DARK)
         advanceUntilIdle()
 
-        val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.dark_mode_status
+        val newDarkMode = settingsViewModel.settingsUiState.value.cameraAppSettings.darkMode
 
-        assertEquals(initialDarkMode, DarkModeStatus.SYSTEM)
-        assertEquals(DarkModeStatus.DARK, newDarkMode)
+        assertEquals(initialDarkMode, DarkMode.SYSTEM)
+        assertEquals(DarkMode.DARK, newDarkMode)
     }
 }

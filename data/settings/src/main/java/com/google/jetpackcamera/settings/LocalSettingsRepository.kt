@@ -13,17 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+import com.google.jetpackcamera.settings.DemoMultiple as DemoMultipleProto
+
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.DemoMultiple
+
+import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -35,36 +43,40 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                default_front_camera = it.defaultFrontCamera,
-                dark_mode_status = when (it.darkModeStatus) {
-                    DarkModeProto.DARK_MODE_DARK -> DarkModeStatus.DARK
-                    DarkModeProto.DARK_MODE_LIGHT -> DarkModeStatus.LIGHT
-                    DarkModeProto.DARK_MODE_SYSTEM,
-                    DarkModeProto.UNRECOGNIZED,
-                    null -> DarkModeStatus.SYSTEM
+                isFrontCameraFacing = it.defaultFrontCamera,
+                darkMode = when (it.darkModeStatus) {
+                    DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
+                    DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
+                    DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
+                    else -> DarkMode.SYSTEM
                 },
-                flash_mode_status = when (it.flashModeStatus) {
-                    FlashModeProto.FLASH_MODE_AUTO -> FlashModeStatus.AUTO
-                    FlashModeProto.FLASH_MODE_ON -> FlashModeStatus.ON
-                    FlashModeProto.FLASH_MODE_OFF,
-                    FlashModeProto.UNRECOGNIZED,
-                    null -> FlashModeStatus.OFF
+                flashMode = when (it.flashModeStatus) {
+                    FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
+                    FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
+                    FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
+                    else -> FlashMode.OFF
                 },
-                front_camera_available = it.frontCameraAvailable,
-                back_camera_available = it.backCameraAvailable,
-                demo_switch = it.demoSwitchSetting,
-                demo_multiple = when(it.demoMultipleSetting) {
-                    DemoMultipleProto.DEMO_VALUE_APPLE -> DemoMultipleStatus.APPLE
-                    DemoMultipleProto.DEMO_VALUE_BANANA -> DemoMultipleStatus.BANANA
-                    DemoMultipleProto.DEMO_VALUE_CANTALOUPE -> DemoMultipleStatus.CANTALOUPE
+                isFrontCameraAvailable = it.frontCameraAvailable,
+                isBackCameraAvailable = it.backCameraAvailable,
+                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
+                captureMode = when (it.captureModeStatus) {
+                    CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
+                    CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
+                    else -> CaptureMode.MULTI_STREAM
+                },
+
+                demoSwitch = it.demoSwitchSetting,
+                demoMultiple = when (it.demoMultipleSetting) {
+                    DemoMultipleProto.DEMO_VALUE_APPLE -> DemoMultiple.APPLE
+                    DemoMultipleProto.DEMO_VALUE_BANANA -> DemoMultiple.BANANA
+                    DemoMultipleProto.DEMO_VALUE_CANTALOUPE -> DemoMultiple.CANTALOUPE
                     DemoMultipleProto.UNRECOGNIZED,
-                    null -> DemoMultipleStatus.APPLE
-                }
+                    null -> DemoMultiple.APPLE
+                },
             )
         }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
-
 
     override suspend fun updateDefaultToFrontCamera() {
         jcaSettings.updateData { currentSettings ->
@@ -74,11 +86,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDarkModeStatus(status: DarkModeStatus) {
-        val newStatus = when (status) {
-            DarkModeStatus.DARK -> DarkModeProto.DARK_MODE_DARK
-            DarkModeStatus.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
-            DarkModeStatus.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
+    override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
+        val newStatus = when (darkMode) {
+            DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
+            DarkMode.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
+            DarkMode.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -87,11 +99,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
-        val newStatus = when (flashModeStatus) {
-            FlashModeStatus.AUTO -> FlashModeProto.FLASH_MODE_AUTO
-            FlashModeStatus.ON -> FlashModeProto.FLASH_MODE_ON
-            FlashModeStatus.OFF -> FlashModeProto.FLASH_MODE_OFF
+    override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
+        val newStatus = when (flashMode) {
+            FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
+            FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
+            FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -107,10 +119,40 @@ class LocalSettingsRepository @Inject constructor(
         // if a front or back lens is not present, the option to change
         // the direction of the camera should be disabled
         jcaSettings.updateData { currentSettings ->
+            val newLensFacing = if (currentSettings.defaultFrontCamera) {
+                frontLensAvailable
+            } else {
+                false
+            }
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(frontLensAvailable)
+                .setDefaultFrontCamera(newLensFacing)
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
+                .build()
+        }
+    }
+
+    override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
+        val newStatus = when (aspectRatio) {
+            AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
+            AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
+            AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAspectRatioStatus(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+        val newStatus = when (captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAPTURE_MODE_MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setCaptureModeStatus(newStatus)
                 .build()
         }
     }
@@ -123,11 +165,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateDemoMultiple(demoMultiple: DemoMultipleStatus) {
+    override suspend fun updateDemoMultiple(demoMultiple: DemoMultiple) {
         val newStatus = when (demoMultiple) {
-            DemoMultipleStatus.APPLE-> DemoMultipleProto.DEMO_VALUE_APPLE
-            DemoMultipleStatus.BANANA -> DemoMultipleProto.DEMO_VALUE_BANANA
-            DemoMultipleStatus.CANTALOUPE -> DemoMultipleProto.DEMO_VALUE_CANTALOUPE
+            DemoMultiple.APPLE -> DemoMultipleProto.DEMO_VALUE_APPLE
+            DemoMultiple.BANANA -> DemoMultipleProto.DEMO_VALUE_BANANA
+            DemoMultiple.CANTALOUPE -> DemoMultipleProto.DEMO_VALUE_CANTALOUPE
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
-import com.google.jetpackcamera.settings.model.DarkModeStatus
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.DemoMultiple
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -27,21 +28,25 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
 
-    val cameraAppSettings : Flow<CameraAppSettings>
+    val cameraAppSettings: Flow<CameraAppSettings>
 
     suspend fun updateDefaultToFrontCamera()
 
-    suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus)
+    suspend fun updateDarkModeStatus(darkMode: DarkMode)
 
-    suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus)
+    suspend fun updateFlashModeStatus(flashMode: FlashMode)
+
+    // set device values from cameraUseCase
+    suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
+
+    suspend fun updateAspectRatio(aspectRatio: AspectRatio)
+
+    suspend fun updateCaptureMode(captureMode: CaptureMode)
 
     suspend fun getCameraAppSettings(): CameraAppSettings
 
-// set device values from cameraUseCase
-    suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
-
     suspend fun updateDemoSwitch()
 
-    suspend fun updateDemoMultiple(demoMultiple: DemoMultipleStatus)
+    suspend fun updateDemoMultiple(demoMultiple: DemoMultiple)
 
 }

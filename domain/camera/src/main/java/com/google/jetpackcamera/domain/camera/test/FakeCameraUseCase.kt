@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.test
 
+import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.FlashMode
 
 class FakeCameraUseCase : CameraUseCase {
-
     private val availableLenses =
         listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
     private var initialized = false
@@ -35,23 +36,26 @@ class FakeCameraUseCase : CameraUseCase {
     var recordingInProgress = false
 
     var isLensFacingFront = false
-    private var flashMode = FlashModeStatus.OFF
+    private var flashMode = FlashMode.OFF
+    private var aspectRatio = AspectRatio.THREE_FOUR
 
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         initialized = true
-        flashMode = currentCameraSettings.flash_mode_status
-        isLensFacingFront = currentCameraSettings.default_front_camera
+        flashMode = currentCameraSettings.flashMode
+        isLensFacingFront = currentCameraSettings.isFrontCameraFacing
+        aspectRatio = currentCameraSettings.aspectRatio
         return availableLenses
     }
 
     override suspend fun runCamera(
         surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings,
+        currentCameraSettings: CameraAppSettings
     ) {
-        val lensFacing = when (currentCameraSettings.default_front_camera) {
-            true -> CameraSelector.LENS_FACING_FRONT
-            false -> CameraSelector.LENS_FACING_BACK
-        }
+        val lensFacing =
+            when (currentCameraSettings.isFrontCameraFacing) {
+                true -> CameraSelector.LENS_FACING_FRONT
+                false -> CameraSelector.LENS_FACING_BACK
+            }
 
         if (!initialized) {
             throw IllegalStateException("CameraProvider not initialized")
@@ -78,14 +82,33 @@ class FakeCameraUseCase : CameraUseCase {
         recordingInProgress = false
     }
 
-    override fun setZoomScale(scale: Float) {
+    override fun setZoomScale(scale: Float): Float {
+        return -1f
     }
 
-    override fun setFlashMode(flashModeStatus: FlashModeStatus) {
-        flashMode = flashModeStatus
+    override fun setFlashMode(flashMode: FlashMode) {
+        this.flashMode = flashMode
+    }
+
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
+        this.aspectRatio = aspectRatio
     }
 
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         isLensFacingFront = isFrontFacing
+    }
+
+    override fun tapToFocus(
+        display: Display,
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        x: Float,
+        y: Float
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        TODO("Not yet implemented")
     }
 }

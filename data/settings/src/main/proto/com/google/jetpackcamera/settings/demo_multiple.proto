@@ -19,7 +19,7 @@ syntax = "proto3";
 option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
-enum DemoMultipleProto {
+enum DemoMultiple {
   DEMO_VALUE_APPLE = 0;
   DEMO_VALUE_BANANA = 1;
   DEMO_VALUE_CANTALOUPE = 2;

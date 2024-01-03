@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   ~ Copyright (C) 2023 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +14,13 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <resources>
-    <string name="camera_not_ready">Camera Not Ready</string>
+    <string name="camera_not_ready">Camera Loading…</string>
     <string name="settings_content_description">Settings</string>
+    <string name="capture_mode_single_stream">Single Stream</string>
+    <string name="capture_mode_multi_stream">Multi Stream</string>
+    <string name="flip_camera_content_description">Flip Camera</string>
+
+    <string name="toast_image_capture_success">Image Capture Success</string>
+    <string name="toast_capture_failure">Image Capture Failure</string>
 </resources>
