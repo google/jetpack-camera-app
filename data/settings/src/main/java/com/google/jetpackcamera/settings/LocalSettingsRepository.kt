@@ -19,16 +19,14 @@ import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.DemoMultiple as DemoMultipleProto
-
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.DemoMultiple
-
+import com.google.jetpackcamera.settings.model.FlashMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -72,7 +70,7 @@ class LocalSettingsRepository @Inject constructor(
                     DemoMultipleProto.DEMO_VALUE_CANTALOUPE -> DemoMultiple.CANTALOUPE
                     DemoMultipleProto.UNRECOGNIZED,
                     null -> DemoMultiple.APPLE
-                },
+                }
             )
         }
 

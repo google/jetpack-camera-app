@@ -21,8 +21,8 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.DemoMultiple
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 

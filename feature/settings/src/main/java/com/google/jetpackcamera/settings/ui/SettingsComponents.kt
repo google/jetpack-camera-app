@@ -27,7 +27,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -52,8 +51,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.DemoMultiple
+import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -221,6 +220,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
             CaptureMode.MULTI_STREAM -> stringResource(
                 id = R.string.capture_mode_description_multi_stream
             )
+
             CaptureMode.SINGLE_STREAM -> stringResource(
                 id = R.string.capture_mode_description_single_stream
             )
@@ -242,7 +242,6 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
     )
 }
 
-
 @Composable
 fun DemoSwitchSetting(currentDemoSwitchValue: Boolean, viewModelFunction: () -> Unit) {
     SwitchSettingUI(
@@ -256,15 +255,20 @@ fun DemoSwitchSetting(currentDemoSwitchValue: Boolean, viewModelFunction: () -> 
 }
 
 @Composable
-fun DemoMultipleSetting(currentDemoPopupValue: DemoMultiple, setDemoMultipleStatus: (DemoMultiple) -> Unit) {
-    BasicPopupSetting(title = stringResource(id = R.string.demo_multiple_choice_title),
-        description = stringResource(id = R.string.demo_multiple_choice_description) + currentDemoPopupValue,
+fun DemoMultipleSetting(
+    currentDemoPopupValue: DemoMultiple,
+    setDemoMultipleStatus: (DemoMultiple) -> Unit
+) {
+    BasicPopupSetting(
+        title = stringResource(id = R.string.demo_multiple_choice_title),
+        description = stringResource(id = R.string.demo_multiple_choice_description) +
+            currentDemoPopupValue,
         // use string resources, i just want this to stay short ^^
         leadingIcon = null,
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                // you can shove another composable object in here, but for now, we'll be putting in single
-                // choice radio buttons to select from
+                // you can shove another composable object in here, but for now, we'll be putting
+                // in single choice radio buttons to select from
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.demo_choice_apple),
                     selected = currentDemoPopupValue == DemoMultiple.APPLE,

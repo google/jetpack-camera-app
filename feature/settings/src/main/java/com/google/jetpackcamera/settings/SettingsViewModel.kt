@@ -22,9 +22,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.DemoMultiple
-
+import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,8 +62,7 @@ class SettingsViewModel @Inject constructor(
 
                 Log.d(
                     TAG,
-                    "updated setting" +
-                            settingsRepository.getCameraAppSettings().captureMode
+                    "updated setting ${settingsRepository.getCameraAppSettings().captureMode}"
                 )
             }
         }
@@ -84,7 +82,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set camera default facing: " +
-                        settingsRepository.getCameraAppSettings().isFrontCameraFacing
+                    "${settingsRepository.getCameraAppSettings().isFrontCameraFacing}"
             )
         }
     }
@@ -95,7 +93,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set dark mode theme: " +
-                        settingsRepository.getCameraAppSettings().darkMode
+                    "${settingsRepository.getCameraAppSettings().darkMode}"
             )
         }
     }
@@ -112,7 +110,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set aspect ratio " +
-                        "${settingsRepository.getCameraAppSettings().aspectRatio}"
+                    "${settingsRepository.getCameraAppSettings().aspectRatio}"
             )
         }
     }
@@ -124,7 +122,7 @@ class SettingsViewModel @Inject constructor(
             Log.d(
                 TAG,
                 "set default capture mode " +
-                        settingsRepository.getCameraAppSettings().captureMode
+                    "${settingsRepository.getCameraAppSettings().captureMode}"
             )
         }
     }
