@@ -68,10 +68,14 @@ object FakeSettingsRepository : SettingsRepository {
     }
 
     override suspend fun updateDemoSwitch() {
-        TODO("Not yet implemented")
+        currentCameraSettings = currentCameraSettings.copy(
+            demoSwitch = !currentCameraSettings.demoSwitch
+        )
     }
 
     override suspend fun updateDemoMultiple(demoMultiple: DemoMultiple) {
-        TODO("Not yet implemented")
+        currentCameraSettings = currentCameraSettings.copy(
+            demoMultiple = demoMultiple
+        )
     }
 }

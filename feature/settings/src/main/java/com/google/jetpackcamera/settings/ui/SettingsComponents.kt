@@ -261,14 +261,15 @@ fun DemoMultipleSetting(
 ) {
     BasicPopupSetting(
         title = stringResource(id = R.string.demo_multiple_choice_title),
-        description = stringResource(id = R.string.demo_multiple_choice_description) +
-            currentDemoPopupValue,
-        // use string resources, i just want this to stay short ^^
+        // description that changes depending on the current datastore value.
+        description = when (currentDemoPopupValue) {
+            DemoMultiple.APPLE -> stringResource(id = R.string.demo_choice_description_apple)
+            DemoMultiple.BANANA -> stringResource(id = R.string.demo_choice_description_apple)
+            DemoMultiple.CANTALOUPE -> stringResource(id = R.string.demo_choice_description_apple)
+        },
         leadingIcon = null,
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                // you can shove another composable object in here, but for now, we'll be putting
-                // in single choice radio buttons to select from
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.demo_choice_apple),
                     selected = currentDemoPopupValue == DemoMultiple.APPLE,

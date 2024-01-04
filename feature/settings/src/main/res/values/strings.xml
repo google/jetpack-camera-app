@@ -76,7 +76,10 @@
 
     <!--Demo Popup Setting-->
     <string name="demo_multiple_choice_title">Demo Multiple Choice</string>
-    <string name="demo_multiple_choice_description">Current Choice: </string>
+    <string name="demo_choice_description_apple">Current choice is apple</string>
+    <string name="demo_choice_description_banana">Current choice is banana</string>
+    <string name="demo_choice_description_cantaloupe">Current choice is cantaloupe</string>
+
     <string name="demo_choice_apple">Apple</string>
     <string name="demo_choice_banana">Banana</string>
     <string name="demo_choice_cantaloupe">Cantaloupe</string>
