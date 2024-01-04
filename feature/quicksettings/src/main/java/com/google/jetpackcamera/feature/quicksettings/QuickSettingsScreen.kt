@@ -110,7 +110,7 @@ fun QuickSettingsScreen(
                 onFlashModeClick = onFlashModeClick,
                 onAspectRatioClick = onAspectRatioClick,
                 onDemoSwitchClick = onDemoSwitchClick,
-                onDemoMultipleClick = onDemoMultipleClick,
+                onDemoMultipleClick = onDemoMultipleClick
             )
         }
     } else {
@@ -127,7 +127,7 @@ fun QuickSettingsScreen(
 private enum class IsExpandedQuickSetting {
     NONE,
     ASPECT_RATIO,
-    DEMO,
+    DEMO
 }
 
 /**
@@ -195,9 +195,9 @@ private fun ExpandedQuickSettingsUi(
                             DemoMultiple(
                                 onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.DEMO) },
                                 assignedValue = currentCameraSettings.demo_multiple,
-                                currentValue = currentCameraSettings.demo_multiple,
+                                currentValue = currentCameraSettings.demo_multiple
                             )
-                        },
+                        }
                     )
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
             }

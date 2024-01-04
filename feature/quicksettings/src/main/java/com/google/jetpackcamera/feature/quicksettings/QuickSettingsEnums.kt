@@ -98,19 +98,16 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-
 enum class CameraDemoSwitch : QuickSettingsEnum {
     TRUE {
         override fun getDrawableResId(): Int = R.drawable.option_true
         override fun getTextResId(): Int = R.string.demo_true
-        override fun getDescriptionResId(): Int =
-            R.string.demo_true_description
+        override fun getDescriptionResId(): Int = R.string.demo_true_description
     },
     FALSE {
         override fun getDrawableResId(): Int = R.drawable.option_false
         override fun getTextResId(): Int = R.string.demo_false
-        override fun getDescriptionResId(): Int =
-            R.string.demo_false_description
+        override fun getDescriptionResId(): Int = R.string.demo_false_description
     }
 }
 
@@ -129,5 +126,5 @@ enum class CameraDemoExpandedSetting : QuickSettingsEnum {
         override fun getDrawableResId(): Int = R.drawable.option_three
         override fun getTextResId(): Int = R.string.demo_cantaloupe
         override fun getDescriptionResId(): Int = R.string.demo_generic_fruit_description
-    };
+    }
 }

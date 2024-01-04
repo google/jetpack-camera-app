@@ -156,7 +156,7 @@ fun PreviewScreen(
                         },
 
                         onDemoSwitchClick = viewModel::setDemoSwitch,
-                        onDemoMultipleClick = viewModel::setDemoMultiple,
+                        onDemoMultipleClick = viewModel::setDemoMultiple
                         // onTimerClick = {}/*TODO*/
                     )
 
@@ -214,7 +214,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
