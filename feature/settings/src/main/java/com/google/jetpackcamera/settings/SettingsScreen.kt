@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import androidx.compose.foundation.layout.Column
@@ -25,15 +24,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
-
-
-private const val TAG = "SettingsScreen"
 
 /**
  * Screen used for the Settings feature.
@@ -41,7 +38,8 @@ private const val TAG = "SettingsScreen"
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    navController: NavController) {
+    onNavigateToPreview: () -> Unit
+) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -50,9 +48,7 @@ fun SettingsScreen(
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
-            navBack = {
-                navController.popBackStack()
-            }
+            navBack = onNavigateToPreview
         )
         SettingsList(uiState = settingsUiState, viewModel = viewModel)
     }
@@ -68,13 +64,24 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     )
 
     FlashModeSetting(
-        uiState = uiState,
+        currentFlashMode = uiState.cameraAppSettings.flashMode,
         setFlashMode = viewModel::setFlashMode
     )
 
+    AspectRatioSetting(
+        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        setAspectRatio = viewModel::setAspectRatio
+    )
+
+    CaptureModeSetting(
+        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        setCaptureMode = viewModel::setCaptureMode
+    )
+
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+
     DarkModeSetting(
-        uiState = uiState,
+        currentDarkMode = uiState.cameraAppSettings.darkMode,
         setDarkMode = viewModel::setDarkMode
     )
 }

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
 
-enum class FlashModeStatus {
-    OFF, ON, AUTO
+enum class CaptureMode {
+    MULTI_STREAM,
+    SINGLE_STREAM
 }

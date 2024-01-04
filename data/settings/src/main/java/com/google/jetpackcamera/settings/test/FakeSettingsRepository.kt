@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.test
 
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkModeStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -30,16 +31,16 @@ object FakeSettingsRepository : SettingsRepository {
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
     override suspend fun updateDefaultToFrontCamera() {
-        val newLensFacing = !currentCameraSettings.default_front_camera
-        currentCameraSettings = currentCameraSettings.copy(default_front_camera = newLensFacing)
+        val newLensFacing = !currentCameraSettings.isFrontCameraFacing
+        currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmodeStatus: DarkModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(dark_mode_status = darkmodeStatus)
+    override suspend fun updateDarkModeStatus(darkmode: DarkMode) {
+        currentCameraSettings = currentCameraSettings.copy(darkMode = darkmode)
     }
 
-    override suspend fun updateFlashModeStatus(flashModeStatus: FlashModeStatus) {
-        currentCameraSettings = currentCameraSettings.copy(flash_mode_status = flashModeStatus)
+    override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
+        currentCameraSettings = currentCameraSettings.copy(flashMode = flashMode)
     }
 
     override suspend fun getCameraAppSettings(): CameraAppSettings {
@@ -50,6 +51,18 @@ object FakeSettingsRepository : SettingsRepository {
         frontLensAvailable: Boolean,
         backLensAvailable: Boolean
     ) {
+        currentCameraSettings = currentCameraSettings.copy(
+            isFrontCameraAvailable = frontLensAvailable,
+            isBackCameraAvailable = backLensAvailable
+        )
+    }
+
+    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+        currentCameraSettings =
+            currentCameraSettings.copy(captureMode = captureMode)
+    }
+
+    override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
         TODO("Not yet implemented")
     }
 }

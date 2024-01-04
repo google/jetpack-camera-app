@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.viewfinder
 
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
-import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
-import com.google.jetpackcamera.viewfinder.surface.SurfaceType
+import android.view.View
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.view.PreviewView.ImplementationMode
@@ -34,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import com.google.jetpackcamera.viewfinder.surface.CombinedSurface
+import com.google.jetpackcamera.viewfinder.surface.CombinedSurfaceEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.mapNotNull
@@ -45,29 +44,36 @@ fun CameraPreview(
     modifier: Modifier,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
     onSurfaceProviderReady: (SurfaceProvider) -> Unit = {},
-    onRequestBitmapReady: (() -> Bitmap?) -> Unit
+    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
+    setSurfaceView: (View) -> Unit
 ) {
     Log.d(TAG, "CameraPreview")
 
     val surfaceRequest by produceState<SurfaceRequest?>(initialValue = null) {
-        onSurfaceProviderReady(SurfaceProvider { request ->
-            value?.willNotProvideSurface()
-            value = request
-        })
+        onSurfaceProviderReady(
+            SurfaceProvider { request ->
+                value?.willNotProvideSurface()
+                value = request
+            }
+        )
     }
 
     PreviewSurface(
+        modifier = modifier,
         surfaceRequest = surfaceRequest,
+        setView = setSurfaceView,
+        onRequestBitmapReady = onRequestBitmapReady,
+        implementationMode = implementationMode
     )
-
 }
 
 @Composable
 fun PreviewSurface(
+    modifier: Modifier,
     surfaceRequest: SurfaceRequest?,
-//    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
-    type: SurfaceType = SurfaceType.TEXTURE_VIEW,
+    onRequestBitmapReady: (() -> Bitmap?) -> Unit,
     implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
+    setView: (View) -> Unit
 ) {
     Log.d(TAG, "PreviewSurface")
 
@@ -76,8 +82,11 @@ fun PreviewSurface(
     LaunchedEffect(surfaceRequest, surface) {
         Log.d(TAG, "LaunchedEffect")
         snapshotFlow {
-            if (surfaceRequest == null || surface == null) null
-            else Pair(surfaceRequest, surface)
+            if (surfaceRequest == null || surface == null) {
+                null
+            } else {
+                Pair(surfaceRequest, surface)
+            }
         }.mapNotNull { it }
             .collect { (request, surface) ->
                 Log.d(TAG, "Collect: Providing surface")
@@ -88,18 +97,24 @@ fun PreviewSurface(
 
     when (implementationMode) {
         ImplementationMode.PERFORMANCE -> TODO()
-        ImplementationMode.COMPATIBLE -> CombinedSurface(
-            onSurfaceEvent = { event ->
-                surface = when (event) {
-                    is CombinedSurfaceEvent.SurfaceAvailable -> {
-                        event.surface
-                    }
+        ImplementationMode.COMPATIBLE ->
+            CombinedSurface(
+                modifier = modifier,
+                setView = setView,
+                onSurfaceEvent = { event ->
+                    surface =
+                        when (event) {
+                            is CombinedSurfaceEvent.SurfaceAvailable -> {
+                                event.surface
+                            }
 
-                    is CombinedSurfaceEvent.SurfaceDestroyed -> {
-                        null
-                    }
-                }
-            }
-        )
+                            is CombinedSurfaceEvent.SurfaceDestroyed -> {
+                                null
+                            }
+                        }
+                },
+                surfaceRequest = surfaceRequest,
+                onRequestBitmapReady = onRequestBitmapReady
+            )
     }
 }

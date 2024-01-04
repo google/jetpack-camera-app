@@ -13,27 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
+import android.view.Display
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.ToastMessage
+import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DemoMultipleStatus
+import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
-import com.google.jetpackcamera.settings.model.FlashModeStatus
 
 private const val TAG = "PreviewViewModel"
+
+// toast test descriptions
+const val IMAGE_CAPTURE_SUCCESS_TOAST_TAG = "ImageCaptureSuccessToast"
+const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -41,24 +48,26 @@ private const val TAG = "PreviewViewModel"
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
     private val cameraUseCase: CameraUseCase,
-    private val settingsRepository: SettingsRepository // only reads from settingsRepository. do not push changes to repository from here
+    private val settingsRepository: SettingsRepository
+    // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
 
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
-    var runningCameraJob: Job? = null
+    private var runningCameraJob: Job? = null
 
-    private var recordingJob : Job? = null
+    private var recordingJob: Job? = null
 
     init {
         viewModelScope.launch {
             settingsRepository.cameraAppSettings.collect {
-                //TODO: only update settings that were actually changed
+                // TODO: only update settings that were actually changed
                 // currently resets all "quick" settings to stored settings
-                    settings -> _previewUiState
-                .emit(previewUiState.value.copy(currentCameraSettings = settings))
+                    settings ->
+                _previewUiState
+                    .emit(previewUiState.value.copy(currentCameraSettings = settings))
             }
         }
         initializeCamera()
@@ -98,42 +107,90 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setFlash(flashModeStatus: FlashModeStatus){
-        //update viewmodel value
+    fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
-                        previewUiState.value.currentCameraSettings.copy(
-                            flash_mode_status = flashModeStatus
-                        )
+                    previewUiState.value.currentCameraSettings.copy(
+                        flashMode = flashMode
+                    )
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flash_mode_status)
+            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
+        }
+    }
+
+    fun setAspectRatio(aspectRatio: AspectRatio) {
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        aspectRatio = aspectRatio
+                    )
+                )
+            )
+            cameraUseCase.setAspectRatio(
+                aspectRatio,
+                previewUiState.value
+                    .currentCameraSettings.isFrontCameraFacing
+            )
         }
     }
 
     // flips the camera opposite to its current direction
     fun flipCamera() {
-        flipCamera(!previewUiState.value
-            .currentCameraSettings.default_front_camera)
+        flipCamera(
+            !previewUiState.value
+                .currentCameraSettings.isFrontCameraFacing
+        )
     }
+
+    fun toggleCaptureMode() {
+        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
+            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
+            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
+        }
+
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    currentCameraSettings =
+                    previewUiState.value.currentCameraSettings.copy(
+                        captureMode = newCaptureMode
+                    )
+                )
+            )
+            // apply to cameraUseCase
+            cameraUseCase.setCaptureMode(newCaptureMode)
+        }
+    }
+
     // sets the camera to a designated direction
     fun flipCamera(isFacingFront: Boolean) {
-        //update viewmodel value
-         viewModelScope.launch {
-             _previewUiState.emit(
-                 previewUiState.value.copy(
-                     currentCameraSettings =
-                     previewUiState.value.currentCameraSettings.copy(
-                         default_front_camera = isFacingFront
-                     )
-                 )
-             )
-             // apply to cameraUseCase
-             cameraUseCase.flipCamera(previewUiState.value.currentCameraSettings.default_front_camera)
-         }
+        // only flip if 2 directions are available
+        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
+            previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+        ) {
+            stopCamera()
+            runningCameraJob = viewModelScope.launch {
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        currentCameraSettings =
+                        previewUiState.value.currentCameraSettings.copy(
+                            isFrontCameraFacing = isFacingFront
+                        )
+                    )
+                )
+                // apply to cameraUseCase
+                cameraUseCase
+                    .flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+            }
+        }
     }
 
     fun captureImage() {
@@ -141,8 +198,26 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 cameraUseCase.takePicture()
+                // todo: remove toast after postcapture screen implemented
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        toastMessageToShow = ToastMessage(
+                            stringResource = R.string.toast_image_capture_success,
+                            testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
+                        )
+                    )
+                )
                 Log.d(TAG, "cameraUseCase.takePicture success")
             } catch (exception: ImageCaptureException) {
+                // todo: remove toast after postcapture screen implemented
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        toastMessageToShow = ToastMessage(
+                            stringResource = R.string.toast_capture_failure,
+                            testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                        )
+                    )
+                )
                 Log.d(TAG, "cameraUseCase.takePicture error")
                 Log.d(TAG, exception.toString())
             }
@@ -152,7 +227,6 @@ class PreviewViewModel @Inject constructor(
     fun startVideoRecording() {
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
-
             try {
                 cameraUseCase.startVideoRecording()
                 _previewUiState.emit(
@@ -181,8 +255,8 @@ class PreviewViewModel @Inject constructor(
         recordingJob?.cancel()
     }
 
-    fun setZoomScale(scale: Float) {
-        cameraUseCase.setZoomScale(scale = scale)
+    fun setZoomScale(scale: Float): Float {
+        return cameraUseCase.setZoomScale(scale = scale)
     }
 
     fun setDemoSwitch(isTrue: Boolean) {
@@ -217,11 +291,32 @@ class PreviewViewModel @Inject constructor(
     fun toggleQuickSettings() {
         toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
     }
-    fun toggleQuickSettings(isOpen: Boolean) {
+
+    private fun toggleQuickSettings(isOpen: Boolean) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     quickSettingsIsOpen = isOpen
+                )
+            )
+        }
+    }
+
+    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float) {
+        cameraUseCase.tapToFocus(
+            display = display,
+            surfaceWidth = surfaceWidth,
+            surfaceHeight = surfaceHeight,
+            x = x,
+            y = y
+        )
+    }
+
+    fun onToastShown() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    toastMessageToShow = null
                 )
             )
         }

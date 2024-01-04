@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import com.google.jetpackcamera.settings.JcaSettings
-import kotlinx.coroutines.CoroutineScope
 import java.io.File
+import kotlinx.coroutines.CoroutineScope
 
 /** test implementation of DataStoreModule */
 object FakeDataStoreModule {
-    
-    fun provideDataStore(scope: CoroutineScope, serializer: FakeJcaSettingsSerializer, file: File): DataStore<JcaSettings> =
-        DataStoreFactory.create(
-            corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
-            scope = scope,
-            serializer = serializer,
-            produceFile = { file })
+
+    fun provideDataStore(
+        scope: CoroutineScope,
+        serializer: FakeJcaSettingsSerializer,
+        file: File
+    ): DataStore<JcaSettings> = DataStoreFactory.create(
+        corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
+        scope = scope,
+        serializer = serializer,
+        produceFile = { file }
+    )
 }
