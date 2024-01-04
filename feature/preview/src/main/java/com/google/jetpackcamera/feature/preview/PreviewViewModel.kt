@@ -27,7 +27,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
+import com.google.jetpackcamera.settings.model.DemoMultiple
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -265,7 +265,7 @@ class PreviewViewModel @Inject constructor(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        demo_switch = isTrue
+                        demoSwitch = isTrue
                     )
                 )
             )
@@ -273,13 +273,13 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setDemoMultiple(demoMultipleStatus: DemoMultipleStatus) {
+    fun setDemoMultiple(demoMultiple: DemoMultiple) {
         viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        demo_multiple = demoMultipleStatus
+                        demoMultiple = demoMultiple
                     )
                 )
             )

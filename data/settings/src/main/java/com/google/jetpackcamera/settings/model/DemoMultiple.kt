@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.settings.model
 
-enum class DemoMultipleStatus {
+enum class DemoMultiple {
     APPLE,
     BANANA,
     CANTALOUPE

@@ -35,10 +35,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import com.google.jetpackcamera.feature.quicksettings.ui.DemoMultiple
-import com.google.jetpackcamera.feature.quicksettings.ui.DemoSetSwitch
+import com.google.jetpackcamera.feature.quicksettings.ui.DemoQuickMultiple
+import com.google.jetpackcamera.feature.quicksettings.ui.DemoQuickSwitch
 import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
-import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedDemoMultiple
+import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedDemoQuickMultiple
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -47,7 +47,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
+import com.google.jetpackcamera.settings.model.DemoMultiple
 import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
@@ -63,7 +63,7 @@ fun QuickSettingsScreen(
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onDemoSwitchClick: (Boolean) -> Unit,
-    onDemoMultipleClick: (DemoMultipleStatus) -> Unit
+    onDemoMultipleClick: (DemoMultiple) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -139,7 +139,7 @@ private fun ExpandedQuickSettingsUi(
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onDemoSwitchClick: (Boolean) -> Unit,
-    onDemoMultipleClick: (DemoMultipleStatus) -> Unit,
+    onDemoMultipleClick: (DemoMultiple) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
@@ -186,16 +186,16 @@ private fun ExpandedQuickSettingsUi(
                             )
                         },
                         {
-                            DemoSetSwitch(
+                            DemoQuickSwitch(
                                 onClick = onDemoSwitchClick,
-                                currentDemoSwitchValue = currentCameraSettings.demo_switch
+                                currentDemoSwitchValue = currentCameraSettings.demoSwitch
                             )
                         },
                         {
-                            DemoMultiple(
+                            DemoQuickMultiple(
                                 onClick = { setVisibleQuickSetting(IsExpandedQuickSetting.DEMO) },
-                                assignedValue = currentCameraSettings.demo_multiple,
-                                currentValue = currentCameraSettings.demo_multiple
+                                assignedValue = currentCameraSettings.demoMultiple,
+                                currentValue = currentCameraSettings.demoMultiple
                             )
                         }
                     )
@@ -210,9 +210,9 @@ private fun ExpandedQuickSettingsUi(
             }
             // if an expandable setting is selected, its options should be the only ones on screen
             IsExpandedQuickSetting.DEMO -> {
-                ExpandedDemoMultiple(
+                ExpandedDemoQuickMultiple(
                     onClick = onDemoMultipleClick,
-                    currentDemoMultipleStatus = currentCameraSettings.demo_multiple
+                    currentDemoMultiple = currentCameraSettings.demoMultiple
                 )
             }
         }

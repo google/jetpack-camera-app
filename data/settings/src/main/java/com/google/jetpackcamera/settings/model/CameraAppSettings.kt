@@ -26,8 +26,8 @@ data class CameraAppSettings(
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
-    val demo_switch: Boolean = false,
-    val demo_multiple: DemoMultipleStatus = DemoMultipleStatus.APPLE
+    val demoSwitch: Boolean = false,
+    val demoMultiple: DemoMultiple = DemoMultiple.APPLE
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

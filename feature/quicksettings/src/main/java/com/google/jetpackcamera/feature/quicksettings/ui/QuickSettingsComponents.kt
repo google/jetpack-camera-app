@@ -47,7 +47,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.DemoMultipleStatus
+import com.google.jetpackcamera.settings.model.DemoMultiple
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -154,32 +154,32 @@ fun QuickFlipCamera(
 }
 
 @Composable
-fun ExpandedDemoMultiple(
-    onClick: (DemoMultipleStatus) -> Unit,
-    currentDemoMultipleStatus: DemoMultipleStatus
+fun ExpandedDemoQuickMultiple(
+    onClick: (DemoMultiple) -> Unit,
+    currentDemoMultiple: DemoMultiple
 ) {
     val buttons: Array<@Composable () -> Unit> = arrayOf(
         {
-            DemoMultiple(
-                onClick = { onClick(DemoMultipleStatus.APPLE) },
-                assignedValue = DemoMultipleStatus.APPLE,
-                currentValue = currentDemoMultipleStatus,
+            DemoQuickMultiple(
+                onClick = { onClick(DemoMultiple.APPLE) },
+                assignedValue = DemoMultiple.APPLE,
+                currentValue = currentDemoMultiple,
                 isHighlightEnabled = true
             )
         },
         {
-            DemoMultiple(
-                onClick = { onClick(DemoMultipleStatus.BANANA) },
-                assignedValue = DemoMultipleStatus.BANANA,
-                currentValue = currentDemoMultipleStatus,
+            DemoQuickMultiple(
+                onClick = { onClick(DemoMultiple.BANANA) },
+                assignedValue = DemoMultiple.BANANA,
+                currentValue = currentDemoMultiple,
                 isHighlightEnabled = true
             )
         },
         {
-            DemoMultiple(
-                onClick = { onClick(DemoMultipleStatus.CANTALOUPE) },
-                assignedValue = DemoMultipleStatus.CANTALOUPE,
-                currentValue = currentDemoMultipleStatus,
+            DemoQuickMultiple(
+                onClick = { onClick(DemoMultiple.CANTALOUPE) },
+                assignedValue = DemoMultiple.CANTALOUPE,
+                currentValue = currentDemoMultiple,
                 isHighlightEnabled = true
             )
         }
@@ -188,16 +188,16 @@ fun ExpandedDemoMultiple(
 }
 
 @Composable
-fun DemoMultiple(
+fun DemoQuickMultiple(
     onClick: () -> Unit,
-    assignedValue: DemoMultipleStatus,
-    currentValue: DemoMultipleStatus,
+    assignedValue: DemoMultiple,
+    currentValue: DemoMultiple,
     isHighlightEnabled: Boolean = false
 ) {
     val enum = when (assignedValue) {
-        DemoMultipleStatus.APPLE -> CameraDemoExpandedSetting.APPLE
-        DemoMultipleStatus.BANANA -> CameraDemoExpandedSetting.BANANA
-        DemoMultipleStatus.CANTALOUPE -> CameraDemoExpandedSetting.CANTALOUPE
+        DemoMultiple.APPLE -> CameraDemoExpandedSetting.APPLE
+        DemoMultiple.BANANA -> CameraDemoExpandedSetting.BANANA
+        DemoMultiple.CANTALOUPE -> CameraDemoExpandedSetting.CANTALOUPE
     }
     QuickSettingUiItem(
         drawableResId = enum.getDrawableResId(),
@@ -209,7 +209,7 @@ fun DemoMultiple(
 }
 
 @Composable
-fun DemoSetSwitch(
+fun DemoQuickSwitch(
     onClick: (Boolean) -> Unit,
     currentDemoSwitchValue: Boolean,
     isHighlighted: Boolean = false
