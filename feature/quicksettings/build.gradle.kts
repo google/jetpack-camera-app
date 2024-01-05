@@ -58,27 +58,27 @@ android {
 
 dependencies {
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
+    val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
     // Compose - Material Design 3
-    implementation("androidx.compose.material3:material3")
+    implementation(libs.compose.material3)
 
     // Compose - Android Studio Preview support
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
 
     // Compose - Testing
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation(libs.compose.junit)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.espresso.core)
 
     // Guava
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1")
+    implementation(libs.kotlinx.coroutines.guava)
 
     implementation(project(":data:settings"))
 }

@@ -53,26 +53,22 @@ android {
 }
 
 dependencies {
-    implementation("androidx.test:core-ktx:1.4.0")
+    implementation(libs.androidx.test.core.ktx)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
-
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
-
+    testImplementation(libs.junit)
+    implementation(libs.kotlinx.coroutines.core)
+    androidTestImplementation(libs.kotlinx.coroutines.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.espresso.core)
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.44")
-    kapt("com.google.dagger:hilt-compiler:2.44")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 
     // proto datastore
-    implementation("androidx.datastore:datastore:1.0.0")
-    implementation("com.google.protobuf:protobuf-kotlin-lite:3.21.12")
-
+    implementation(libs.datastore)
+    implementation(libs.protobuf.kotlin.lite)
 }
 
 protobuf {

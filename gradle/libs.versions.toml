@@ -1,29 +1,37 @@
 [versions]
 
+accompanistPermissions = "0.26.5-rc"
 androidxCore = "1.12.0"
+androidXCoreKtx = "1.12.0"
 androidxAppCompat = "1.6.1"
 androidLibrary = "8.1.4"
+benchmarkMacroJunit4 = "1.2.2"
 coreKtx = "1.5.0"
 datastore = "1.0.0"
 espressoCore = "3.5.1"
-hilt = "2.44"
-
-jetbrainsKotlinAndroid = "1.8.0"
-
+hilt = "2.48"
 
 junit = "4.13.2"
-ext-junit = "1.1.5"
+androidJunit = "1.1.5"
+lifecycleRuntimeKtx = "2.6.2"
 mockitoCore = "5.2.0"
-coroutinesTest = "1.6"
+coroutinesTest = "1.7.3"
 coroutinesCore = "1.6.4"
-guava = "1.4.1"
+guava = "1.7.3"
 
+navigationCompose = "2.7.6"
+profileinstaller = "1.3.1"
 protobuf = "3.21.12"
 
 hilt-nav-compose = "1.1.0"
 composeBom = "2023.10.01"
-material = "1.11.0"
-camerax = "1.3.1"
+compose = "1.5.4"
+material = "1.8.0"
+material3 = "1.1.2"
+camerax = "1.4.0-SNAPSHOT"
+uiautomator = "2.2.0"
+viewmodelCompose = "2.6.2"
+androidxActivityCompose = "1.8.2"
 
 futures = "1.1.0"
 kotlinPlugin = "1.8.0"
@@ -31,20 +39,28 @@ protobuf-plugin = "0.9.1"
 
 [libraries]
 
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
 androidx-core = { module = "androidx.core:core", version.ref = "androidxCore"}
-androidx-appcommpat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat"}
-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtx" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidXCoreKtx"}
+
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat"}
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
+androidx-rules = { module = "androidx.test:rules", version.ref = "coreKtx" }
+androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtx" }
+androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 kotlinx-coroutines-core = {module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore"}
-kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava" }
+kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "guava" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
 datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
-protobuf-protoc = {module = "com.google.protobuf:protoc", version.ref = "protobuf"}
 
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 junit = { module = "junit:junit", version.ref = "junit" }
-ext-junit = { module = "androidx.test.ext:junit", version.ref = "ext-junit" }
+androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidJunit" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 
 
@@ -54,8 +70,13 @@ hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hil
 
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt-nav-compose" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-junit = {module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose"}
+compose-ui-tooling = {module = "androidx.compose.ui:ui-tooling", version.ref = "compose"}
+compose-ui-tooling-preview = {module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose"}
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodelCompose" }
 android-material = { module = "com.google.android.material:material", version.ref = "material" }
-
+compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose"}
 
 camera-core = {module = "androidx.camera:camera-core", version.ref = "camerax"}
 camera-view = {module = "androidx.camera:camera-view", version.ref = "camerax"}
