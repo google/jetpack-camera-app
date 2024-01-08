@@ -81,22 +81,19 @@ dependencies {
 
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.compose.test.manifest)
     // noinspection TestManifestGradleConfiguration: required for release build unit tests
-    testImplementation("androidx.compose.ui:ui-test-manifest")
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
 
     // Testing
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation("org.robolectric:robolectric:4.11.1")
-    debugImplementation("androidx.test:monitor:1.6.1")
-
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.test.monitor)
 
     // Guava
     implementation(libs.kotlinx.coroutines.guava)
@@ -110,7 +107,7 @@ dependencies {
     kapt(libs.dagger.hilt.compiler)
 
     //Tracing
-    implementation("androidx.tracing:tracing-ktx:1.2.0")
+    implementation(libs.androidx.tracing)
 
     // Project dependencies
     implementation(project(":data:settings"))
