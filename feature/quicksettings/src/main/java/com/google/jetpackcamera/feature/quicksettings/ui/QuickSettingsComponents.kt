@@ -47,6 +47,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -133,11 +134,7 @@ fun QuickSetFlash(
         isHighLighted = currentFlashMode == FlashMode.ON,
         onClick =
         {
-            when (currentFlashMode) {
-                FlashMode.OFF -> onClick(FlashMode.ON)
-                FlashMode.ON -> onClick(FlashMode.AUTO)
-                FlashMode.AUTO -> onClick(FlashMode.OFF)
-            }
+            onClick(currentFlashMode.getNextFlashMode())
         }
     )
 }
@@ -315,5 +312,53 @@ fun QuickSettingsGrid(
         items(quickSettingsButtons.size) { i ->
             quickSettingsButtons[i]()
         }
+    }
+}
+
+/**
+ * The top bar indicators for quick settings items.
+ */
+@Composable
+fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
+    Icon(
+        painter = painterResource(enum.getDrawableResId()),
+        contentDescription = stringResource(id = enum.getDescriptionResId()),
+        tint = Color.White,
+        modifier = Modifier
+            .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
+            .clickable { onClick() }
+    )
+}
+
+@Composable
+fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMode) -> Unit) {
+    val enum = when (currentFlashMode) {
+        FlashMode.OFF -> CameraFlashMode.OFF
+        FlashMode.AUTO -> CameraFlashMode.AUTO
+        FlashMode.ON -> CameraFlashMode.ON
+    }
+    Indicator(
+        enum = enum,
+        onClick = {
+            onClick(currentFlashMode.getNextFlashMode())
+        }
+    )
+}
+
+@Composable
+fun QuickSettingsIndicators(
+    currentCameraSettings: CameraAppSettings,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit
+) {
+    Row {
+        FlashModeIndicator(currentCameraSettings.flashMode, onFlashModeClick)
+    }
+}
+
+fun FlashMode.getNextFlashMode(): FlashMode {
+    return when (this) {
+        FlashMode.OFF -> FlashMode.ON
+        FlashMode.ON -> FlashMode.AUTO
+        FlashMode.AUTO -> FlashMode.OFF
     }
 }

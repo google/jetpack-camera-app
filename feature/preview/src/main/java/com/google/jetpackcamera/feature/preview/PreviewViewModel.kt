@@ -54,7 +54,6 @@ class PreviewViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
     // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
-
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
@@ -62,6 +61,8 @@ class PreviewViewModel @Inject constructor(
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
+
+    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -121,7 +122,10 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
+            cameraUseCase.setFlashMode(
+                previewUiState.value.currentCameraSettings.flashMode,
+                previewUiState.value.currentCameraSettings.isFrontCameraFacing
+            )
         }
     }
 
@@ -190,8 +194,10 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase
-                    .flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+                cameraUseCase.flipCamera(
+                    previewUiState.value.currentCameraSettings.isFrontCameraFacing,
+                    previewUiState.value.currentCameraSettings.flashMode
+                )
             }
         }
     }
