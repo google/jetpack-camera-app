@@ -53,8 +53,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.test.core.ktx)
-
     // Testing
     testImplementation(libs.junit)
     implementation(libs.kotlinx.coroutines.core)

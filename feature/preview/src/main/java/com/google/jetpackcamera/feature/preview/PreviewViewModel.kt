@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.SettingsRepository
@@ -30,12 +31,15 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 // toast test descriptions
 const val IMAGE_CAPTURE_SUCCESS_TOAST_TAG = "ImageCaptureSuccessToast"
@@ -50,7 +54,6 @@ class PreviewViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
     // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
-
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
@@ -58,6 +61,8 @@ class PreviewViewModel @Inject constructor(
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
+
+    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -117,7 +122,10 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(previewUiState.value.currentCameraSettings.flashMode)
+            cameraUseCase.setFlashMode(
+                previewUiState.value.currentCameraSettings.flashMode,
+                previewUiState.value.currentCameraSettings.isFrontCameraFacing
+            )
         }
     }
 
@@ -186,8 +194,10 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
                 // apply to cameraUseCase
-                cameraUseCase
-                    .flipCamera(previewUiState.value.currentCameraSettings.isFrontCameraFacing)
+                cameraUseCase.flipCamera(
+                    previewUiState.value.currentCameraSettings.isFrontCameraFacing,
+                    previewUiState.value.currentCameraSettings.flashMode
+                )
             }
         }
     }
@@ -195,30 +205,32 @@ class PreviewViewModel @Inject constructor(
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            try {
-                cameraUseCase.takePicture()
-                // todo: remove toast after postcapture screen implemented
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        toastMessageToShow = ToastMessage(
-                            stringResource = R.string.toast_image_capture_success,
-                            testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
+            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
+                try {
+                    cameraUseCase.takePicture()
+                    // todo: remove toast after postcapture screen implemented
+                    _previewUiState.emit(
+                        previewUiState.value.copy(
+                            toastMessageToShow = ToastMessage(
+                                stringResource = R.string.toast_image_capture_success,
+                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
+                            )
                         )
                     )
-                )
-                Log.d(TAG, "cameraUseCase.takePicture success")
-            } catch (exception: ImageCaptureException) {
-                // todo: remove toast after postcapture screen implemented
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        toastMessageToShow = ToastMessage(
-                            stringResource = R.string.toast_capture_failure,
-                            testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                    Log.d(TAG, "cameraUseCase.takePicture success")
+                } catch (exception: ImageCaptureException) {
+                    // todo: remove toast after postcapture screen implemented
+                    _previewUiState.emit(
+                        previewUiState.value.copy(
+                            toastMessageToShow = ToastMessage(
+                                stringResource = R.string.toast_capture_failure,
+                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                            )
                         )
                     )
-                )
-                Log.d(TAG, "cameraUseCase.takePicture error")
-                Log.d(TAG, exception.toString())
+                    Log.d(TAG, "cameraUseCase.takePicture error")
+                    Log.d(TAG, exception.toString())
+                }
             }
         }
     }
@@ -285,6 +297,8 @@ class PreviewViewModel @Inject constructor(
 
     fun onToastShown() {
         viewModelScope.launch {
+            // keeps the composable up on screen longer to be detected by UiAutomator
+            delay(2.seconds)
             _previewUiState.emit(
                 previewUiState.value.copy(
                     toastMessageToShow = null

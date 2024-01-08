@@ -22,7 +22,7 @@ import android.widget.Toast
  *
  * @param stringResource the resource ID of to be displayed.
  * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
- * @property testTag the identifiable resource ID of a [ShowToast] on screen.
+ * @property testTag the identifiable resource ID of a [ShowTestableToast] on screen.
  */
 class ToastMessage(
     val stringResource: Int,
