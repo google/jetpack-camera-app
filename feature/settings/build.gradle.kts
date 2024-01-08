@@ -79,7 +79,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
@@ -89,11 +89,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.guava)
 
     // Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
 
     // Proto Datastore
-    implementation(libs.datastore)
+    implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
 
     implementation(project(":data:settings"))

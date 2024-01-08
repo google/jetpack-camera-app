@@ -60,14 +60,14 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     androidTestImplementation(libs.kotlinx.coroutines.core)
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.core)
 
     // Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
 
     // proto datastore
-    implementation(libs.datastore)
+    implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
 }
 
