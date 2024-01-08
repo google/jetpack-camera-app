@@ -15,22 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
-import android.widget.Toast
-
-/**
- * Helper class containing information used to create a [Toast].
- *
- * @param stringResource the resource ID of to be displayed.
- * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
- * @property testTag the identifiable resource ID of a [ShowTestableToast] on screen.
- */
-class ToastMessage(
-    val stringResource: Int,
-    isLongToast: Boolean = false,
-    val testTag: String = ""
-) {
-    val toastLength: Int = when (isLongToast) {
-        true -> Toast.LENGTH_LONG
-        false -> Toast.LENGTH_SHORT
-    }
-}
+const val CAPTURE_BUTTON = "CaptureButton"
+const val SETTINGS_BUTTON = "SettingsButton"
+const val DEFAULT_CAMERA_FACING_SETTING = "SetDefaultCameraFacingSwitch"

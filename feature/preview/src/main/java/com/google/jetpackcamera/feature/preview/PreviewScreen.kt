@@ -55,12 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
-import com.google.jetpackcamera.feature.preview.ui.ShowToast
+import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
@@ -234,6 +235,8 @@ fun PreviewScreen(
                     val multipleEventsCutter = remember { MultipleEventsCutter() }
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
+                        modifier = Modifier
+                            .testTag(CAPTURE_BUTTON),
                         onClick = {
                             multipleEventsCutter.processEvent { viewModel.captureImage() }
                         },
@@ -253,14 +256,15 @@ fun PreviewScreen(
                     )
                 }
             }
-        }
-
-        // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null) {
-            ShowToast(
-                toastMessage = previewUiState.toastMessageToShow!!,
-                onToastShown = viewModel::onToastShown
-            )
+            // displays toast when there is a message to show
+            if (previewUiState.toastMessageToShow != null) {
+                ShowTestableToast(
+                    modifier = Modifier
+                        .testTag(previewUiState.toastMessageToShow!!.testTag),
+                    toastMessage = previewUiState.toastMessageToShow!!,
+                    onToastShown = viewModel::onToastShown
+                )
+            }
         }
 
         // Screen flash overlay that stays on top of everything but invisible normally. This should

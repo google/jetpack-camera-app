@@ -62,6 +62,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -185,7 +186,6 @@ constructor(
             )
                 .setContentValues(contentValues)
                 .build()
-
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)

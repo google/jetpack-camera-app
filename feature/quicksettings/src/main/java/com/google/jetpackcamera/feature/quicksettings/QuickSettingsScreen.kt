@@ -30,11 +30,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
@@ -49,6 +52,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 /**
  * The UI component for quick settings.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun QuickSettingsScreen(
     modifier: Modifier = Modifier,
@@ -83,6 +87,9 @@ fun QuickSettingsScreen(
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
+                .semantics {
+                    testTagsAsResourceId = true
+                }
                 .clickable {
                     // if a setting is expanded, click on the background to close it.
                     // if no other settings are expanded, then close the popup
