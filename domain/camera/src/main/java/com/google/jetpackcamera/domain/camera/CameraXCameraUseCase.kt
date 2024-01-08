@@ -94,8 +94,8 @@ constructor(
 
     private lateinit var aspectRatio: AspectRatio
     private lateinit var captureMode: CaptureMode
-    private lateinit var shouldStabilizePreview: Stabilization
-    private lateinit var shouldStabilizeVideo: Stabilization
+    private lateinit var stabilizePreviewMode: Stabilization
+    private lateinit var stabilizeVideoMode: Stabilization
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
 
@@ -105,8 +105,8 @@ constructor(
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
-        this.shouldStabilizePreview = currentCameraSettings.previewStabilization
-        this.shouldStabilizeVideo = currentCameraSettings.videoCaptureStabilization
+        this.stabilizePreviewMode = currentCameraSettings.previewStabilization
+        this.stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
         setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
         videoCaptureUseCase = createVideoUseCase()
@@ -358,8 +358,8 @@ constructor(
             } ?: false
 
         // set video stabilization
-        if (isVideoStabilizationSupported && shouldStabilizeVideo != Stabilization.UNDEFINED) {
-            val isStabilized = when (shouldStabilizeVideo) {
+        if (isVideoStabilizationSupported && stabilizeVideoMode != Stabilization.UNDEFINED) {
+            val isStabilized = when (stabilizeVideoMode) {
                 Stabilization.ON -> true
                 Stabilization.OFF, Stabilization.UNDEFINED -> false
             }
@@ -381,8 +381,8 @@ constructor(
             } ?: false
 
         val previewUseCaseBuilder = Preview.Builder()
-        if (isPreviewStabilizationSupported && shouldStabilizePreview != Stabilization.UNDEFINED) {
-            val isStabilized = when (shouldStabilizePreview) {
+        if (isPreviewStabilizationSupported && stabilizePreviewMode != Stabilization.UNDEFINED) {
+            val isStabilized = when (stabilizePreviewMode) {
                 Stabilization.ON -> true
                 else -> false
             }

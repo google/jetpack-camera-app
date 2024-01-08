@@ -55,6 +55,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import java.time.format.TextStyle
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -102,7 +103,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+                cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -243,64 +244,46 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
     )
 }
 
-@Composable
-fun PreviewStabilizeSetting(
-    currentPreviewStabilization: Stabilization,
-    setPreviewStabilization: (Stabilization) -> Unit
-) {
-    BasicPopupSetting(
-        title = stringResource(R.string.preview_stabilization_title),
-        leadingIcon = null,
-        description = when (currentPreviewStabilization) {
-            Stabilization.UNDEFINED -> stringResource(
-                id = R.string.stabilization_description_undefined
-            )
-            Stabilization.OFF -> stringResource(id = R.string.stabilization_description_off)
-            Stabilization.ON -> stringResource(id = R.string.stabilization_description_on)
-        },
-        popupContents = {
-            Column(Modifier.selectableGroup()) {
-                Text(
-                    text = stringResource(id = R.string.stabilization_popup_disclaimer),
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.stabilization_selector_on),
-                    selected = currentPreviewStabilization == Stabilization.ON,
-                    onClick = { setPreviewStabilization(Stabilization.ON) }
-                )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.stabilization_selector_off),
-                    selected = currentPreviewStabilization == Stabilization.OFF,
-                    onClick = { setPreviewStabilization(Stabilization.OFF) }
-                )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.stabilization_selector_undefined),
-                    selected = currentPreviewStabilization == Stabilization.UNDEFINED,
-                    onClick = { setPreviewStabilization(Stabilization.UNDEFINED) }
-                )
-            }
-        }
+private fun getStabilizationStringRes(
+    previewStabilization: Stabilization,
+    videoStabilization: Stabilization
+): Int {
+    return if (previewStabilization == Stabilization.ON &&
+        videoStabilization != Stabilization.OFF
     )
+        R.string.stabilization_description_on
+    else if (previewStabilization == Stabilization.UNDEFINED &&
+        videoStabilization == Stabilization.ON
+    )
+        R.string.stabilization_description_high_quality
+    else
+        R.string.stabilization_description_off
 }
 
+/**
+ * A Setting to set preview and video stabilization.
+ *
+ * ON - Both preview and video are stabilized.
+ * HIGH_QUALITY - Video will be stabilized, preview might be stabilized, depending on the device.
+ * OFF - Preview and video stabilization is disabled.
+ */
 @Composable
 fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
-    setVideoStabilization: (Stabilization) -> Unit
+    currentVideoStabilization: Stabilization,
+    setVideoStabilization: (Stabilization) -> Unit,
+    setPreviewStabilization: (Stabilization) -> Unit
+
 ) {
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        description = when (currentPreviewStabilization) {
-            Stabilization.UNDEFINED -> stringResource(
-                id = R.string.stabilization_description_undefined
+        description = stringResource(
+            id = getStabilizationStringRes(
+                previewStabilization = currentPreviewStabilization,
+                videoStabilization = currentVideoStabilization
             )
-            Stabilization.OFF -> stringResource(id = R.string.stabilization_description_off)
-            Stabilization.ON -> stringResource(id = R.string.stabilization_description_on)
-        },
+        ),
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 Text(
@@ -308,21 +291,51 @@ fun VideoStabilizeSetting(
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 Spacer(modifier = Modifier.height(10.dp))
+
+                // on selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
-                    selected = currentPreviewStabilization == Stabilization.ON,
-                    onClick = { setVideoStabilization(Stabilization.ON) }
+                   /* secondaryText = "Both Preview and Video will be stabilized, but is not " +
+                            "necessarily the highest quality video stabilization. The preview will " +
+                            "be congruent with the recording.",
+
+                    */
+                    selected = (currentPreviewStabilization == Stabilization.ON) &&
+                            (currentVideoStabilization != Stabilization.OFF),
+                    onClick = {
+                        setVideoStabilization(Stabilization.ON)
+                        setPreviewStabilization(Stabilization.ON)
+                    }
                 )
+
+                // high quality selector
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.stabilization_selector_high_quality),
+                   /* secondaryText = "Video will be stabilized but preview might be stabilized," +
+                            "depending on the device. This mode ensure the highest quality video" +
+                            " stabilization, although the preview may not be congruent with the " +
+                            "actual recording.",
+
+                    */
+                    selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
+                            (currentVideoStabilization == Stabilization.ON),
+                    onClick = {
+                        setVideoStabilization(Stabilization.ON)
+                        setPreviewStabilization(Stabilization.UNDEFINED)
+                    }
+                )
+
+                // off selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
-                    selected = currentPreviewStabilization == Stabilization.OFF,
-                    onClick = { setVideoStabilization(Stabilization.OFF) }
-                )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.stabilization_selector_undefined),
-                    selected = currentPreviewStabilization == Stabilization.UNDEFINED,
-                    onClick = { setVideoStabilization(Stabilization.UNDEFINED) }
+                    selected = (currentPreviewStabilization != Stabilization.ON) &&
+                            (currentVideoStabilization != Stabilization.ON),
+                    onClick = {
+                        setVideoStabilization(Stabilization.OFF)
+                        setPreviewStabilization(Stabilization.OFF)
+                    }
                 )
             }
         }
@@ -440,6 +453,7 @@ fun SettingUI(
 fun SingleChoiceSelector(
     modifier: Modifier = Modifier,
     text: String,
+    secondaryText: String? = null,
     selected: Boolean,
     onClick: () -> Unit,
     enabled: Boolean = true
@@ -460,6 +474,7 @@ fun SingleChoiceSelector(
             enabled = enabled
         )
         Spacer(Modifier.width(8.dp))
+        //todo(kimblebee@): properly format secondary text
         Text(text)
     }
 }
