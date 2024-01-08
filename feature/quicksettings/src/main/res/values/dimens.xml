@@ -18,5 +18,6 @@
     <dimen name="quick_settings_ui_horizontal_padding">30dp</dimen>
     <dimen name="quick_settings_ui_item_icon_size">60dp</dimen>
     <dimen name="quick_settings_ui_item_padding">20dp</dimen>
+    <dimen name="quick_settings_indicator_size">36dp</dimen>
     <dimen name="quick_settings_spacer_height">170dp</dimen>
 </resources>

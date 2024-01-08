@@ -58,11 +58,13 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            isIncludeAndroidResources = true
         }
     }
 }
 
 dependencies {
+    implementation("androidx.tracing:tracing-ktx:1.2.0")
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
@@ -79,14 +81,20 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
     // Compose - Testing
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    // noinspection TestManifestGradleConfiguration: required for release build unit tests
+    testImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
     testImplementation("org.mockito:mockito-core:5.2.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    debugImplementation("androidx.test:monitor:1.6.1")
 
     // Guava
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1")
