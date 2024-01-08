@@ -73,7 +73,11 @@ private const val TAG = "PreviewScreen"
  * @param onToastShown called once the Toast has been displayed.
  */
 @Composable
-fun ShowToast(modifier: Modifier = Modifier, toastMessage: ToastMessage, onToastShown: () -> Unit) {
+fun ShowTestableToast(
+    modifier: Modifier = Modifier,
+    toastMessage: ToastMessage,
+    onToastShown: () -> Unit
+) {
     val toastShownStatus = remember { mutableStateOf(false) }
     Box(
         // box seems to need to have some size to be detected by UiAutomator

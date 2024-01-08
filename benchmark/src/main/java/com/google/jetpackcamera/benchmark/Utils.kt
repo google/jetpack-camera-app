@@ -24,6 +24,19 @@ import org.junit.Assert
 const val JCA_PACKAGE_NAME = "com.google.jetpackcamera"
 const val DEFAULT_TEST_ITERATIONS = 5
 
+// test tags
+const val CAPTURE_BUTTON = "CaptureButton"
+const val QUICK_SETTINGS_DROP_DOWN_BUTTON = "QuickSettingDropDown"
+const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSetFlash"
+const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSetFlipCamera"
+const val IMAGE_CAPTURE_SUCCESS_TOAST = "ImageCaptureSuccessToast"
+
+// test descriptions
+const val QUICK_SETTINGS_FLASH_OFF = "QUICK SETTINGS FLASH IS OFF"
+const val QUICK_SETTINGS_FLASH_ON = "QUICK SETTINGS FLASH IS ON"
+const val QUICK_SETTINGS_FLASH_AUTO = "QUICK SETTINGS FLASH IS AUTO"
+const val QUICK_SETTINGS_LENS_FRONT = "QUICK SETTINGS LENS FACING FRONT"
+
 // trace tags
 const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
@@ -41,7 +54,7 @@ enum class FlashMode {
  * @param duration length of the click.
  */
 fun clickCaptureButton(device: UiDevice, duration: Long = 0) {
-    findObjectByRes(device, "CaptureButton")!!.click(duration)
+    findObjectByRes(device, CAPTURE_BUTTON)!!.click(duration)
 }
 
 /**
@@ -50,7 +63,7 @@ fun clickCaptureButton(device: UiDevice, duration: Long = 0) {
 fun toggleQuickSettings(device: UiDevice) {
     findObjectByRes(
         device = device,
-        testTag = "QuickSettingDropDown",
+        testTag = QUICK_SETTINGS_DROP_DOWN_BUTTON,
         shouldFailIfNotFound = true
     )!!.click()
 }
@@ -61,17 +74,14 @@ fun toggleQuickSettings(device: UiDevice) {
  * Quick Settings must first be opened with a call to [toggleQuickSettings]
  *
  *  @param shouldFaceFront the direction the camera should be facing
- *
- *
  */
 fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
-    // if object description quicksetflip_is_front exists, then it is currently facing front
-    val isFrontFacing = findObjectByDesc(device, "QUICK SETTINGS LENS FACING FRONT") != null
+    val isFrontFacing = findObjectByDesc(device, QUICK_SETTINGS_LENS_FRONT) != null
 
     if (isFrontFacing != shouldFaceFront) {
         findObjectByRes(
             device = device,
-            testTag = "QuickSetFlipCamera",
+            testTag = QUICK_SETTINGS_FLIP_CAMERA_BUTTON,
             shouldFailIfNotFound = true
         )!!.click()
     }
@@ -86,14 +96,14 @@ fun setQuickFrontFacingCamera(shouldFaceFront: Boolean, device: UiDevice) {
 fun setQuickSetFlash(flashMode: FlashMode, device: UiDevice) {
     val selector =
         when (flashMode) {
-            FlashMode.AUTO -> By.desc("QUICK SETTINGS FLASH IS AUTO")
-            FlashMode.ON -> By.desc("QUICK SETTINGS FLASH IS ON")
-            FlashMode.OFF -> By.desc("QUICK SETTINGS FLASH IS OFF")
+            FlashMode.AUTO -> By.desc(QUICK_SETTINGS_FLASH_AUTO)
+            FlashMode.ON -> By.desc(QUICK_SETTINGS_FLASH_ON)
+            FlashMode.OFF -> By.desc(QUICK_SETTINGS_FLASH_OFF)
         }
     while (device.findObject(selector) == null) {
         findObjectByRes(
             device = device,
-            testTag = "QuickSetFlash",
+            testTag = QUICK_SETTINGS_FLASH_BUTTON,
             shouldFailIfNotFound = true
         )!!.click()
     }

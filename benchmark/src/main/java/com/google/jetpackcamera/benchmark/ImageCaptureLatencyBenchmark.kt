@@ -43,7 +43,10 @@ class ImageCaptureLatencyBenchmark {
         imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.ON)
     }
 
-    // todo(kimblebee): front flash latency test
+    @Test
+    fun frontCameraWithFlashLatency() {
+        imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.ON)
+    }
 
     /**
      * Measures the time between an onClick event on the Capture Button and onImageCapture
@@ -84,11 +87,10 @@ class ImageCaptureLatencyBenchmark {
 
             clickCaptureButton(device)
 
-            val str = "ImageCaptureSuccessToast"
             // ensure trace is closed
             findObjectByRes(
                 device = device,
-                testTag = str,
+                testTag = IMAGE_CAPTURE_SUCCESS_TOAST,
                 timeout = timeout,
                 shouldFailIfNotFound = true
             )
