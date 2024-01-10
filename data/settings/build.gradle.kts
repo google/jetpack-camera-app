@@ -53,8 +53,6 @@ android {
 }
 
 dependencies {
-    implementation("androidx.test:core-ktx:1.4.0")
-
     // Testing
     testImplementation("junit:junit:4.13.2")
 

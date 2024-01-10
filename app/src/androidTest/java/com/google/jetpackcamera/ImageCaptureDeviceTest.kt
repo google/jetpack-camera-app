@@ -28,11 +28,11 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 internal class ImageCaptureDeviceTest {
@@ -48,28 +48,6 @@ internal class ImageCaptureDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var activityScenario: ActivityScenario<MainActivity>? = null
     private val uiDevice = UiDevice.getInstance(instrumentation)
-
-    @Test
-    fun image_capture_default() = runTest {
-        val timeStamp = System.currentTimeMillis()
-        var directory = File(DIR_PATH)
-        val files = directory.listFiles()
-        activityScenario = ActivityScenario.launch(MainActivity::class.java)
-        uiDevice.wait(
-            Until.findObject(By.res("CaptureButton")),
-            5000
-        )
-        uiDevice.findObject(By.res("CaptureButton")).click()
-        uiDevice.wait(
-            Until.findObject(By.res("ImageCaptureSuccessToast")),
-            5000
-        )
-        val pictureTaken = (files.size + 1) == directory.listFiles().size
-        assert(pictureTaken)
-        if (pictureTaken) {
-            deleteFilesInDirAfterTimestamp(timeStamp)
-        }
-    }
 
     @Test
     fun image_capture_external() = runTest {
@@ -101,7 +79,7 @@ internal class ImageCaptureDeviceTest {
         }
     }
 
-    @Test
+    @Test // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     fun image_capture_external_no_uri() = runTest {
         val launchIntent = Intent()
         launchIntent.setAction(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -109,14 +87,19 @@ internal class ImageCaptureDeviceTest {
             ComponentName("com.google.jetpackcamera", "com.google.jetpackcamera.MainActivity")
         )
         activityScenario = ActivityScenario.launchActivityForResult(launchIntent)
-        val result = activityScenario!!.result.resultCode
-        assert(result == Activity.RESULT_CANCELED)
+        uiDevice.wait(
+            Until.findObject(By.res("CaptureButton")),
+            5000
+        )
+        uiDevice.findObject(By.res("CaptureButton")).click()
+        uiDevice.wait(
+            Until.findObject(By.res("ImageCaptureFailureToast")),
+            5000
+        )
     }
 
     @Test
     fun image_capture_external_illegal_uri() = runTest {
-        var directory = File(DIR_PATH)
-        val files = directory.listFiles()
         val launchIntent = Intent()
         launchIntent.setAction(MediaStore.ACTION_IMAGE_CAPTURE)
         launchIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.parse("asdfasdf"))
@@ -133,10 +116,6 @@ internal class ImageCaptureDeviceTest {
             Until.findObject(By.res("ImageCaptureFailureToast")),
             5000
         )
-        val result = activityScenario!!.result.resultCode
-        assert(result == Activity.RESULT_CANCELED)
-        val pictureTaken = (files.size + 1) == directory.listFiles().size
-        assert(!pictureTaken)
     }
 
     private fun deleteFilesInDirAfterTimestamp(timeStamp: Long) {

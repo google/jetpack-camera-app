@@ -63,6 +63,15 @@ class PreviewViewModelTest {
     @Test
     fun captureImage() = runTest(StandardTestDispatcher()) {
         val surfaceProvider: SurfaceProvider = mock()
+        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.captureImage()
+        advanceUntilIdle()
+        assertEquals(cameraUseCase.numPicturesTaken, 1)
+    }
+
+    @Test
+    fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
+        val surfaceProvider: SurfaceProvider = mock()
         val contentResolver: ContentResolver = mock()
         previewViewModel.runCamera(surfaceProvider)
         previewViewModel.captureImage(contentResolver, null) {}

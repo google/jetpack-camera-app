@@ -19,13 +19,12 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Rational
 import android.view.Display
-import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
-import java.lang.Exception
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * Data layer for camera.
@@ -48,11 +47,9 @@ interface CameraUseCase {
         currentCameraSettings: CameraAppSettings
     )
 
-    suspend fun takePicture(
-        contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        onImageCapture: (ImageCaptureEvent) -> Unit
-    )
+    suspend fun takePicture()
+
+    suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
 
     suspend fun startVideoRecording()
 
@@ -60,11 +57,15 @@ interface CameraUseCase {
 
     fun setZoomScale(scale: Float): Float
 
-    fun setFlashMode(flashMode: SettingsFlashMode)
+    fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
+
+    fun setFlashMode(flashMode: SettingsFlashMode, isFrontFacing: Boolean)
+
+    fun isScreenFlashEnabled(): Boolean
 
     suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
 
-    suspend fun flipCamera(isFrontFacing: Boolean)
+    suspend fun flipCamera(isFrontFacing: Boolean, flashMode: SettingsFlashMode)
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
@@ -118,15 +119,13 @@ interface CameraUseCase {
         AUTO
     }
 
-    sealed interface ImageCaptureEvent {
-        data class ImageSaved(
-            val outputFileResults: ImageCapture.OutputFileResults,
-            val relativePath: String,
-            val displayName: String
-        ) : ImageCaptureEvent
-
-        data class ImageCaptureError(
-            val exception: Exception
-        ) : ImageCaptureEvent
+    /**
+     * Represents the events required for screen flash.
+     */
+    data class ScreenFlashEvent(val type: Type, val onComplete: () -> Unit) {
+        enum class Type {
+            APPLY_UI,
+            CLEAR_UI
+        }
     }
 }

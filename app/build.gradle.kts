@@ -125,9 +125,6 @@ dependencies {
     // Settings Screen
     implementation(project(":feature:settings"))
 
-    // Domain Camera
-    implementation(project(":domain:camera"))
-
     // benchmark
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 

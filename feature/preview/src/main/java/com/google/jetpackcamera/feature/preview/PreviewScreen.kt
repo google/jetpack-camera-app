@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.content.ContentResolver
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -58,15 +57,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
+import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
-import com.google.jetpackcamera.feature.preview.ui.ShowToast
+import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -83,13 +84,14 @@ fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel = hiltViewModel(),
-    contentResolver: ContentResolver,
-    imageCaptureUri: Uri?,
-    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
+    previewMode: PreviewMode
 ) {
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+
+    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -164,12 +166,23 @@ fun PreviewScreen(
                         // onTimerClick = {}/*TODO*/
                     )
 
-                    SettingsNavButton(
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                        onNavigateToSettings = onNavigateToSettings
-                    )
+                            .align(Alignment.TopStart),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SettingsNavButton(
+                            modifier = Modifier
+                                .padding(12.dp),
+                            onNavigateToSettings = onNavigateToSettings
+                        )
+
+                        QuickSettingsIndicators(
+                            currentCameraSettings = previewUiState.currentCameraSettings,
+                            onFlashModeClick = viewModel::setFlash
+                        )
+                    }
 
                     TestingButton(
                         modifier = Modifier
@@ -226,14 +239,23 @@ fun PreviewScreen(
                     val context = LocalContext.current
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
-                        modifier = Modifier.testTag("CaptureButton"),
+                        modifier = Modifier
+                            .testTag(CAPTURE_BUTTON),
                         onClick = {
                             multipleEventsCutter.processEvent {
-                                viewModel.captureImage(
-                                    context.contentResolver,
-                                    imageCaptureUri,
-                                    onImageCapture
-                                )
+                                when (previewMode) {
+                                    is PreviewMode.StandardMode -> {
+                                        viewModel.captureImage()
+                                    }
+
+                                    is PreviewMode.ExternalImageCaptureMode -> {
+                                        viewModel.captureImage(
+                                            context.contentResolver,
+                                            previewMode.imageCaptureUri,
+                                            previewMode.onImageCapture
+                                        )
+                                    }
+                                }
                             }
                         },
                         onLongPress = { viewModel.startVideoRecording() },
@@ -252,13 +274,44 @@ fun PreviewScreen(
                     )
                 }
             }
+            // displays toast when there is a message to show
+            if (previewUiState.toastMessageToShow != null) {
+                ShowTestableToast(
+                    modifier = Modifier
+                        .testTag(previewUiState.toastMessageToShow!!.testTag),
+                    toastMessage = previewUiState.toastMessageToShow!!,
+                    onToastShown = viewModel::onToastShown
+                )
+            }
         }
-        // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null) {
-            ShowToast(
-                toastMessage = previewUiState.toastMessageToShow!!,
-                onToastShown = viewModel::onToastShown
-            )
-        }
+
+        // Screen flash overlay that stays on top of everything but invisible normally. This should
+        // not be enabled based on whether screen flash is enabled because a previous image capture
+        // may still be running after flash mode change and clear actions (e.g. brightness restore)
+        // may need to be handled later. Compose smart recomposition should be able to optimize this
+        // if the relevant states are no longer changing.
+        ScreenFlashScreen(
+            screenFlashUiState = screenFlashUiState,
+            onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
+        )
     }
+}
+
+/**
+ * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
+ * UX differs depends on which mode the Preview is launched under.
+ */
+sealed interface PreviewMode {
+    /**
+     * The default mode for the app.
+     */
+    object StandardMode : PreviewMode
+
+    /**
+     * Under this mode, the app is launched by an external intent to capture an image.
+     */
+    data class ExternalImageCaptureMode(
+        val imageCaptureUri: Uri?,
+        val onImageCapture: (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) : PreviewMode
 }

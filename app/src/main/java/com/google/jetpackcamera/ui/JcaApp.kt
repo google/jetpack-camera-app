@@ -16,8 +16,6 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
-import android.content.ContentResolver
-import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -28,7 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
@@ -40,9 +38,7 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 fun JcaApp(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     /*TODO(b/306236646): remove after still capture*/
-    contentResolver: ContentResolver,
-    imageCaptureUri: Uri?,
-    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
+    previewMode: PreviewMode
 ) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -50,9 +46,7 @@ fun JcaApp(
     if (permissionState.status.isGranted) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
-            contentResolver = contentResolver,
-            imageCaptureUri = imageCaptureUri,
-            onImageCapture = onImageCapture
+            previewMode = previewMode
         )
     } else {
         CameraPermission(
@@ -66,18 +60,14 @@ fun JcaApp(
 private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     navController: NavHostController = rememberNavController(),
-    contentResolver: ContentResolver,
-    imageCaptureUri: Uri?,
-    onImageCapture: (CameraUseCase.ImageCaptureEvent) -> Unit
+    previewMode: PreviewMode
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
-                contentResolver = contentResolver,
-                imageCaptureUri = imageCaptureUri,
-                onImageCapture = onImageCapture
+                previewMode = previewMode
             )
         }
         composable(SETTINGS_ROUTE) {
