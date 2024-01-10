@@ -30,6 +30,8 @@ import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
+import androidx.camera.core.ImageCapture.ScreenFlash
+import androidx.camera.core.ImageCapture.ScreenFlashUiCompleter
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
@@ -43,6 +45,7 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
+import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -51,23 +54,31 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import java.io.FileNotFoundException
 import java.lang.RuntimeException
 import java.util.Calendar
+import dagger.hilt.android.scopes.ViewModelScoped
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
+private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * CameraX based implementation for [CameraUseCase]
  */
+@ViewModelScoped
 class CameraXCameraUseCase
 @Inject
 constructor(
     private val application: Application,
+    private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
@@ -91,10 +102,13 @@ constructor(
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private var isFrontFacing = true
 
+    private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
+        MutableSharedFlow()
+
     override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
         this.aspectRatio = currentCameraSettings.aspectRatio
         this.captureMode = currentCameraSettings.captureMode
-        setFlashMode(currentCameraSettings.flashMode)
+        setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
 
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
         updateUseCaseGroup()
@@ -160,13 +174,13 @@ constructor(
                         ).build()
                 } else {
                     val e = RuntimeException("Output stream is null.")
-                    Log.e(TAG, "Failed to save image.", e)
+                    Log.d(TAG, "takePicture onError: $e")
                     onImageCapture(
                         CameraUseCase.ImageCaptureEvent.ImageCaptureError(e)
                     )
                 }
             } catch (e: FileNotFoundException) {
-                Log.e(TAG, "Failed to save image.", e)
+                Log.d(TAG, "takePicture onError: $e")
                 onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(e))
             }
         }
@@ -194,11 +208,12 @@ constructor(
                     }
 
                     override fun onError(exception: ImageCaptureException) {
-                        Log.e(TAG, "Failed to save image.", exception)
+                        Log.d(TAG, "takePicture onError: $exception")
                         onImageCapture(CameraUseCase.ImageCaptureEvent.ImageCaptureError(exception))
                     }
                 }
             )
+            imageDeferred.await()
         }
     }
 
@@ -235,7 +250,6 @@ constructor(
             )
                 .setContentValues(contentValues)
                 .build()
-
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)
@@ -265,8 +279,10 @@ constructor(
     private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
 
     // flips the camera to the designated lensFacing direction
-    override suspend fun flipCamera(isFrontFacing: Boolean) {
+    override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
         this.isFrontFacing = isFrontFacing
+        // screen flash needs to be reset during switching camera
+        setFlashMode(flashMode, isFrontFacing)
         updateUseCaseGroup()
         rebindUseCases()
     }
@@ -295,14 +311,57 @@ constructor(
         }
     }
 
-    override fun setFlashMode(flashMode: FlashMode) {
+    override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
+
+    override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
+        val isScreenFlashRequired =
+            isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
+
+        if (isScreenFlashRequired) {
+            imageCaptureUseCase.screenFlash = object : ScreenFlash {
+                override fun apply(screenFlashUiCompleter: ScreenFlashUiCompleter) {
+                    Log.d(TAG, "ImageCapture.ScreenFlash: apply")
+                    coroutineScope.launch {
+                        screenFlashEvents.emit(
+                            CameraUseCase.ScreenFlashEvent(Type.APPLY_UI) {
+                                screenFlashUiCompleter.complete()
+                            }
+                        )
+                    }
+                }
+
+                override fun clear() {
+                    Log.d(TAG, "ImageCapture.ScreenFlash: clear")
+                    coroutineScope.launch {
+                        screenFlashEvents.emit(
+                            CameraUseCase.ScreenFlashEvent(Type.CLEAR_UI) {}
+                        )
+                    }
+                }
+            }
+        }
+
         imageCaptureUseCase.flashMode = when (flashMode) {
             FlashMode.OFF -> ImageCapture.FLASH_MODE_OFF // 2
-            FlashMode.ON -> ImageCapture.FLASH_MODE_ON // 1
-            FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO // 0
+
+            FlashMode.ON -> if (isScreenFlashRequired) {
+                ImageCapture.FLASH_MODE_SCREEN // 3
+            } else {
+                ImageCapture.FLASH_MODE_ON // 1
+            }
+
+            FlashMode.AUTO -> if (isScreenFlashRequired) {
+                ImageCapture.FLASH_MODE_SCREEN // 3
+            } else {
+                ImageCapture.FLASH_MODE_AUTO // 0
+            }
         }
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
     }
+
+    override fun isScreenFlashEnabled() =
+        imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
