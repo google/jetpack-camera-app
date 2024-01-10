@@ -19,6 +19,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -138,7 +139,9 @@ class MainActivity : ComponentActivity() {
 
     private fun getImageCaptureUriIfExists(): Uri? {
         val isExternalImageCapture = isExternalImageCapture()
-        val uri = if (!isExternalImageCapture) {
+        val uri = if (!isExternalImageCapture || intent.extras == null ||
+            !intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
+        ) {
             null
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.extras!!.getParcelable(
@@ -150,6 +153,11 @@ class MainActivity : ComponentActivity() {
             intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
         }
         if (isExternalImageCapture && uri == null) {
+            Toast.makeText(
+                this.baseContext,
+                R.string.external_capture_uri_not_supplied,
+                Toast.LENGTH_SHORT
+            ).show()
             setResult(RESULT_CANCELED)
             finish()
         }
@@ -158,8 +166,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun isExternalImageCapture(): Boolean {
-        return intent != null && MediaStore.ACTION_IMAGE_CAPTURE == intent.action &&
-            intent.extras != null && intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
+        return intent != null && MediaStore.ACTION_IMAGE_CAPTURE == intent.action
     }
 }
 

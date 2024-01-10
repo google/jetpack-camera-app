@@ -22,4 +22,5 @@
     <string name="request_permission">Allow Access</string>
     <string name="jca_loading">Loading App…</string>
     <string name="camera_not_available">Camera not available</string>
+    <string name="external_capture_uri_not_supplied">No parcelable URI is supplied for external capture.</string>
 </resources>
