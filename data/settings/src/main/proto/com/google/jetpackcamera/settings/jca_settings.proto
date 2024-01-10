@@ -39,4 +39,5 @@ message JcaSettings {
   CaptureMode capture_mode_status = 8;
   PreviewStabilization stabilize_preview = 9;
   VideoStabilization stabilize_video = 10;
+  bool stabilization_supported = 11;
 }

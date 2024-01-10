@@ -36,8 +36,8 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmode: DarkMode) {
-        currentCameraSettings = currentCameraSettings.copy(darkMode = darkmode)
+    override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
+        currentCameraSettings = currentCameraSettings.copy(darkMode = darkMode)
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
@@ -64,14 +64,14 @@ object FakeSettingsRepository : SettingsRepository {
     }
 
     override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
-        TODO("Not yet implemented")
-    }
+        currentCameraSettings =
+            currentCameraSettings.copy(previewStabilization = stabilization )  }
 
     override suspend fun updateVideoStabilization(stabilization: Stabilization) {
-        TODO("Not yet implemented")
-    }
+        currentCameraSettings =
+            currentCameraSettings.copy(videoCaptureStabilization = stabilization)    }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
-        TODO("Not yet implemented")
-    }
+        currentCameraSettings =
+            currentCameraSettings.copy(aspectRatio = aspectRatio)    }
 }

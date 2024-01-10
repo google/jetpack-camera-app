@@ -46,5 +46,6 @@ interface SettingsRepository {
     suspend fun updatePreviewStabilization(stabilization: Stabilization)
     suspend fun updateVideoStabilization(stabilization: Stabilization)
 
+    suspend fun updateStabilizationSupported(isSupported: Boolean)
     suspend fun getCameraAppSettings(): CameraAppSettings
 }

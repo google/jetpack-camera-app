@@ -27,7 +27,8 @@ data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
-    val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED
+    val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
+    val isStabilizationSupported: Boolean = false,
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

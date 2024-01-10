@@ -174,4 +174,12 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
+
+    override suspend fun updateStabilizationSupported(isSupported: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDefaultFrontCamera(isSupported)
+                .build()
+        }
+    }
 }

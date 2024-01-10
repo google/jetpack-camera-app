@@ -97,6 +97,7 @@ constructor(
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
     private lateinit var surfaceProvider: Preview.SurfaceProvider
+    private var isStabilizationSupported: Boolean = false
     private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
@@ -107,10 +108,9 @@ constructor(
         this.captureMode = currentCameraSettings.captureMode
         this.stabilizePreviewMode = currentCameraSettings.previewStabilization
         this.stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
+        this.isStabilizationSupported = currentCameraSettings.isStabilizationSupported
         setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
-        videoCaptureUseCase = createVideoUseCase()
-        updateUseCaseGroup()
 
         val availableCameraLens =
             listOf(
@@ -119,15 +119,16 @@ constructor(
             ).filter { lensFacing ->
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
-
         // updates values for available camera lens if necessary
         coroutineScope {
             settingsRepository.updateAvailableCameraLens(
                 availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
                 availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
             )
+            settingsRepository.updateStabilizationSupported(isStabilizationSupported())
         }
-
+        videoCaptureUseCase = createVideoUseCase()
+        updateUseCaseGroup()
         return availableCameraLens
     }
 
@@ -343,22 +344,38 @@ constructor(
         useCaseGroup = useCaseGroupBuilder.build()
     }
 
-    private fun createVideoUseCase(): VideoCapture<Recorder> {
+    /**
+     * Checks if video stabilization is supported by the device.
+     *
+     */
+    private fun isStabilizationSupported(): Boolean {
         val availableCameraInfo = cameraProvider.availableCameraInfos
         val cameraSelector = if (isFrontFacing) {
             CameraSelector.DEFAULT_FRONT_CAMERA
         } else {
             CameraSelector.DEFAULT_BACK_CAMERA
         }
-        val videoCaptureBuilder = VideoCapture.Builder(recorder)
-
         val isVideoStabilizationSupported =
             cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
                 Recorder.getVideoCapabilities(it).isStabilizationSupported
             } ?: false
 
+        //if video stabilization is supported, do we still need to check for preview?
+/*
+        val isPreviewStabilizationSupported =
+            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
+                Preview.getPreviewCapabilities(it).isStabilizationSupported
+            } ?: false
+
+ */
+
+        return isVideoStabilizationSupported
+    }
+    private fun createVideoUseCase(): VideoCapture<Recorder> {
+        val videoCaptureBuilder = VideoCapture.Builder(recorder)
+
         // set video stabilization
-        if (isVideoStabilizationSupported && stabilizeVideoMode != Stabilization.UNDEFINED) {
+        if (isStabilizationSupported && stabilizeVideoMode != Stabilization.UNDEFINED) {
             val isStabilized = when (stabilizeVideoMode) {
                 Stabilization.ON -> true
                 Stabilization.OFF, Stabilization.UNDEFINED -> false
@@ -369,19 +386,8 @@ constructor(
     }
 
     private fun createPreviewUseCase(): Preview {
-        val availableCameraInfo = cameraProvider.availableCameraInfos
-        val cameraSelector = if (isFrontFacing) {
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        } else {
-            CameraSelector.DEFAULT_BACK_CAMERA
-        }
-        val isPreviewStabilizationSupported =
-            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
-                Preview.getPreviewCapabilities(it).isStabilizationSupported
-            } ?: false
-
         val previewUseCaseBuilder = Preview.Builder()
-        if (isPreviewStabilizationSupported && stabilizePreviewMode != Stabilization.UNDEFINED) {
+        if (isStabilizationSupported && stabilizePreviewMode != Stabilization.UNDEFINED) {
             val isStabilized = when (stabilizePreviewMode) {
                 Stabilization.ON -> true
                 else -> false
