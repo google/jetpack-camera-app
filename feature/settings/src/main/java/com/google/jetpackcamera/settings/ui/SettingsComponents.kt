@@ -244,6 +244,12 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
     )
 }
 
+/**
+ * Returns the description text depending on the preview/video stabilization configuration.
+ * On - preview is on and video is NOT off.
+ * High Quality - preview is unspecified and video is ON.
+ * Off - Every other configuration.
+ */
 private fun getStabilizationStringRes(
     previewStabilization: Stabilization,
     videoStabilization: Stabilization
@@ -297,11 +303,7 @@ fun VideoStabilizeSetting(
                 // on selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
-                   /* secondaryText = "Both Preview and Video will be stabilized, but is not " +
-                            "necessarily the highest quality video stabilization. The preview will " +
-                            "be congruent with the recording.",
-
-                    */
+                    secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                             (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -313,12 +315,9 @@ fun VideoStabilizeSetting(
                 // high quality selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
-                   /* secondaryText = "Video will be stabilized but preview might be stabilized," +
-                            "depending on the device. This mode ensure the highest quality video" +
-                            " stabilization, although the preview may not be congruent with the " +
-                            "actual recording.",
+                    secondaryText = stringResource(id = R.string.stabilization_selector_high_quality_info),
 
-                    */
+
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                             (currentVideoStabilization == Stabilization.ON),
                     onClick = {
@@ -342,7 +341,7 @@ fun VideoStabilizeSetting(
     )
 }
 
-/**
+/*
  * Setting UI sub-Components
  * small and whimsical :)
  * don't use these directly, use them to build the ready-to-use setting components
@@ -468,13 +467,17 @@ fun SingleChoiceSelector(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-            enabled = enabled
+        SettingUI(
+            title = text,
+            description = secondaryText,
+            leadingIcon = {
+                RadioButton(
+                    selected = selected,
+                    onClick = onClick,
+                    enabled = enabled
+                )
+            },
+            trailingContent = null
         )
-        Spacer(Modifier.width(8.dp))
-        //todo(kimblebee@): properly format secondary text
-        Text(text)
     }
 }
