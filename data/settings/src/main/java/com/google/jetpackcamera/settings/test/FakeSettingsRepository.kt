@@ -65,17 +65,21 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
         currentCameraSettings =
-            currentCameraSettings.copy(previewStabilization = stabilization )  }
+            currentCameraSettings.copy(previewStabilization = stabilization)
+    }
 
     override suspend fun updateVideoStabilization(stabilization: Stabilization) {
         currentCameraSettings =
-            currentCameraSettings.copy(videoCaptureStabilization = stabilization)    }
+            currentCameraSettings.copy(videoCaptureStabilization = stabilization)
+    }
 
     override suspend fun updateStabilizationSupported(isSupported: Boolean) {
         currentCameraSettings =
-            currentCameraSettings.copy(isStabilizationSupported = isSupported)    }
+            currentCameraSettings.copy(isStabilizationSupported = isSupported)
+    }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
         currentCameraSettings =
-            currentCameraSettings.copy(aspectRatio = aspectRatio)    }
+            currentCameraSettings.copy(aspectRatio = aspectRatio)
+    }
 }

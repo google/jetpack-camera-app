@@ -360,7 +360,7 @@ constructor(
                 Recorder.getVideoCapabilities(it).isStabilizationSupported
             } ?: false
 
-        //if video stabilization is supported, do we still need to check for preview?
+        // if video stabilization is supported, do we still need to check for preview?
 /*
         val isPreviewStabilizationSupported =
             cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
