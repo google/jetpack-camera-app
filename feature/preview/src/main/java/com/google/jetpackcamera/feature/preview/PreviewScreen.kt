@@ -21,7 +21,6 @@ import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -138,8 +137,21 @@ fun PreviewScreen(
             aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
-        // overlay
-        Box(
+        //quick settings screen overlay
+        QuickSettingsScreen(
+            modifier = Modifier,
+            isOpen = previewUiState.quickSettingsIsOpen,
+            toggleIsOpen = { viewModel.toggleQuickSettings() },
+            currentCameraSettings = previewUiState.currentCameraSettings,
+            onLensFaceClick = viewModel::flipCamera,
+            onFlashModeClick = viewModel::setFlash,
+            onAspectRatioClick = {
+                viewModel.setAspectRatio(it)
+            }
+            // onTimerClick = {}/*TODO*/
+        )
+        // relative-grid style overlay on top of preview display
+        Column(
             modifier = Modifier
                 .semantics {
                     testTagsAsResourceId = true
@@ -150,25 +162,12 @@ fun PreviewScreen(
             when (previewUiState.videoRecordingState) {
                 VideoRecordingState.ACTIVE -> {}
                 VideoRecordingState.INACTIVE -> {
-                    //quick settings screen overlay
-                    QuickSettingsScreen(
-                        modifier = Modifier,
-                        isOpen = previewUiState.quickSettingsIsOpen,
-                        toggleIsOpen = { viewModel.toggleQuickSettings() },
-                        currentCameraSettings = previewUiState.currentCameraSettings,
-                        onLensFaceClick = viewModel::flipCamera,
-                        onFlashModeClick = viewModel::setFlash,
-                        onAspectRatioClick = {
-                            viewModel.setAspectRatio(it)
-                        }
-                        // onTimerClick = {}/*TODO*/
-                    )
 
                     // 3-segmented row to keep quick settings button centered
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                        //.height(IntrinsicSize.Min)
+                            .height(IntrinsicSize.Min)
                     ) {
                         // row to left of quick settings button
                         Row(
@@ -197,7 +196,9 @@ fun PreviewScreen(
 
                         // Row to right of quick settings
                         Row(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -217,39 +218,43 @@ fun PreviewScreen(
                 }
             }
 
-            // column containing zoom scale text and bottom row of buttons
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                if (zoomScaleShow) {
-                    ZoomScaleText(zoomScale = zoomScale)
-                }
-                // 3-segmented row to keep capture button centered
-                Row(
-                    modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min)
-                ) {
-                    when (previewUiState.videoRecordingState) {
-                        // hide first segment while recording in progress
-                        VideoRecordingState.ACTIVE -> {
-                            Spacer(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .weight(1f)
-                            )
-                        }
+            // this component places a gap in the center of the column that will push out the top and
+            // bottom edges. This will also allow the addition of vertical button bars on the
+            // sides of the screen
+            Row(modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()) {}
 
-                        VideoRecordingState.INACTIVE -> {
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+            if (zoomScaleShow) {
+                ZoomScaleText(zoomScale = zoomScale)
+            }
+
+            // 3-segmented row to keep capture button centered
+            Row(
+                modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+            ) {
+                when (previewUiState.videoRecordingState) {
+                    // hide first segment while recording in progress
+                    VideoRecordingState.ACTIVE -> {
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(1f)
+                        )
+                    }
+                    // show first segment when not recording
+                    VideoRecordingState.INACTIVE -> {
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (!previewUiState.quickSettingsIsOpen)
                                 FlipCameraButton(
                                     onClick = { viewModel.flipCamera() },
                                     // enable only when phone has front and rear camera
@@ -257,42 +262,47 @@ fun PreviewScreen(
                                     previewUiState.currentCameraSettings.isBackCameraAvailable &&
                                             previewUiState.currentCameraSettings.isFrontCameraAvailable
                                 )
-                            }
                         }
                     }
-                    val multipleEventsCutter = remember { MultipleEventsCutter() }
-                    /*todo: close quick settings on start record/image capture*/
-                    CaptureButton(
-                        modifier = Modifier
-                            .testTag(CAPTURE_BUTTON),
-                        onClick = {
-                            multipleEventsCutter.processEvent { viewModel.captureImage() }
-                        },
-                        onLongPress = { viewModel.startVideoRecording() },
-                        onRelease = { viewModel.stopVideoRecording() },
-                        videoRecordingState = previewUiState.videoRecordingState
-                    )
-                    // You can replace this box so long as the weight of the component is 1f to
-                    // ensure the capture button remains centered.
-                    Box(
-                        modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                    ) {
-                        /*TODO("Place other components here") */
-                    }
+                }
+                val multipleEventsCutter = remember { MultipleEventsCutter() }
+                /*todo: close quick settings on start record/image capture*/
+                CaptureButton(
+                    modifier = Modifier
+                        .testTag(CAPTURE_BUTTON),
+                    onClick = {
+                        multipleEventsCutter.processEvent { viewModel.captureImage() }
+                        if (previewUiState.quickSettingsIsOpen)
+                            viewModel.toggleQuickSettings()
+                    },
+                    onLongPress = {
+                        viewModel.startVideoRecording()
+                        if (previewUiState.quickSettingsIsOpen)
+                            viewModel.toggleQuickSettings()
+                    },
+                    onRelease = { viewModel.stopVideoRecording() },
+                    videoRecordingState = previewUiState.videoRecordingState
+                )
+                // You can replace this row so long as the weight of the component is 1f to
+                // ensure the capture button remains centered.
+                Row(
+                    modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .weight(1f)
+                ) {
+                    /*TODO("Place other components here") */
                 }
             }
-            // displays toast when there is a message to show
-            if (previewUiState.toastMessageToShow != null) {
-                ShowTestableToast(
-                    modifier = Modifier
-                        .testTag(previewUiState.toastMessageToShow!!.testTag),
-                    toastMessage = previewUiState.toastMessageToShow!!,
-                    onToastShown = viewModel::onToastShown
-                )
-            }
+        }
+        // displays toast when there is a message to show
+        if (previewUiState.toastMessageToShow != null) {
+            ShowTestableToast(
+                modifier = Modifier
+                    .testTag(previewUiState.toastMessageToShow!!.testTag),
+                toastMessage = previewUiState.toastMessageToShow!!,
+                onToastShown = viewModel::onToastShown
+            )
         }
 
         // Screen flash overlay that stays on top of everything but invisible normally. This should
