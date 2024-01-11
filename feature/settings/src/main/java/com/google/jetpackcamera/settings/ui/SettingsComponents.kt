@@ -101,7 +101,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+                cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -294,7 +294,7 @@ fun VideoStabilizeSetting(
                 )
             )
 
-            false -> "Stabilization not supported by device." // todo(kimblebee@): stringResource
+            false -> stringResource(id = R.string.stabilization_description_unsupported)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -311,7 +311,7 @@ fun VideoStabilizeSetting(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                        (currentVideoStabilization != Stabilization.OFF),
+                            (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.ON)
@@ -326,7 +326,7 @@ fun VideoStabilizeSetting(
                     ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                        (currentVideoStabilization == Stabilization.ON),
+                            (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -337,7 +337,7 @@ fun VideoStabilizeSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                        (currentVideoStabilization != Stabilization.ON),
+                            (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
