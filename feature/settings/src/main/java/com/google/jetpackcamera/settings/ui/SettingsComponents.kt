@@ -272,24 +272,31 @@ private fun getStabilizationStringRes(
  * ON - Both preview and video are stabilized.
  * HIGH_QUALITY - Video will be stabilized, preview might be stabilized, depending on the device.
  * OFF - Preview and video stabilization is disabled.
+ *
+ * @param isStabilizationSupported the enabled condition for this setting.
  */
 @Composable
 fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
+    isStabilizationSupported: Boolean = false,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
-
 ) {
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        description = stringResource(
-            id = getStabilizationStringRes(
-                previewStabilization = currentPreviewStabilization,
-                videoStabilization = currentVideoStabilization
+        enabled = isStabilizationSupported,
+        description = when (isStabilizationSupported) {
+            true -> stringResource(
+                id = getStabilizationStringRes(
+                    previewStabilization = currentPreviewStabilization,
+                    videoStabilization = currentVideoStabilization
+                )
             )
-        ),
+
+            false -> "Stabilization not supported by device." //todo(kimblebee@): stringResource
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 Text(
@@ -362,6 +369,7 @@ fun BasicPopupSetting(
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
+        enabled = enabled,
         description = description,
         leadingIcon = leadingIcon,
         trailingContent = null
@@ -404,6 +412,7 @@ fun SwitchSettingUI(
             value = settingValue,
             onValueChange = { _ -> onClick() }
         ),
+        enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
@@ -427,17 +436,31 @@ fun SwitchSettingUI(
 fun SettingUI(
     modifier: Modifier = Modifier,
     title: String,
+    enabled: Boolean = true,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?
 ) {
     ListItem(
         modifier = modifier,
-        headlineText = { Text(title) },
-        supportingText = when (description) {
-            null -> null
-            else -> {
-                { Text(description) }
+        headlineText = {
+            when (enabled) {
+                true -> Text(title)
+                false -> {
+                    Text(text = title, color = MaterialTheme.colorScheme.secondary)
+                }
+            }
+        },
+        supportingText = {
+            if (description != null) {
+                when (enabled) {
+                    true -> Text(description)
+                    false -> Text(
+                        text = description,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                }
             }
         },
         leadingContent = leadingIcon,
