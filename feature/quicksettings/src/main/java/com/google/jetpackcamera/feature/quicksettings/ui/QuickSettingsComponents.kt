@@ -38,6 +38,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
@@ -45,6 +47,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -118,16 +121,20 @@ fun QuickSetFlash(
         FlashMode.ON -> CameraFlashMode.ON
     }
     QuickSettingUiItem(
-        modifier = modifier,
+        modifier = modifier
+            .semantics {
+                contentDescription =
+                    when (enum) {
+                        CameraFlashMode.OFF -> "QUICK SETTINGS FLASH IS OFF"
+                        CameraFlashMode.AUTO -> "QUICK SETTINGS FLASH IS AUTO"
+                        CameraFlashMode.ON -> "QUICK SETTINGS FLASH IS ON"
+                    }
+            },
         enum = enum,
         isHighLighted = currentFlashMode == FlashMode.ON,
         onClick =
         {
-            when (currentFlashMode) {
-                FlashMode.OFF -> onClick(FlashMode.ON)
-                FlashMode.ON -> onClick(FlashMode.AUTO)
-                FlashMode.AUTO -> onClick(FlashMode.OFF)
-            }
+            onClick(currentFlashMode.getNextFlashMode())
         }
     )
 }
@@ -144,7 +151,14 @@ fun QuickFlipCamera(
             false -> CameraLensFace.BACK
         }
     QuickSettingUiItem(
-        modifier = modifier,
+        modifier = modifier
+            .semantics {
+                contentDescription =
+                    when (enum) {
+                        CameraLensFace.FRONT -> "QUICK SETTINGS LENS FACING FRONT"
+                        CameraLensFace.BACK -> "QUICK SETTINGS LENS FACING BACK"
+                    }
+            },
         enum = enum,
         onClick = { flipCamera(!currentFacingFront) }
     )
@@ -298,5 +312,53 @@ fun QuickSettingsGrid(
         items(quickSettingsButtons.size) { i ->
             quickSettingsButtons[i]()
         }
+    }
+}
+
+/**
+ * The top bar indicators for quick settings items.
+ */
+@Composable
+fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
+    Icon(
+        painter = painterResource(enum.getDrawableResId()),
+        contentDescription = stringResource(id = enum.getDescriptionResId()),
+        tint = Color.White,
+        modifier = Modifier
+            .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
+            .clickable { onClick() }
+    )
+}
+
+@Composable
+fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMode) -> Unit) {
+    val enum = when (currentFlashMode) {
+        FlashMode.OFF -> CameraFlashMode.OFF
+        FlashMode.AUTO -> CameraFlashMode.AUTO
+        FlashMode.ON -> CameraFlashMode.ON
+    }
+    Indicator(
+        enum = enum,
+        onClick = {
+            onClick(currentFlashMode.getNextFlashMode())
+        }
+    )
+}
+
+@Composable
+fun QuickSettingsIndicators(
+    currentCameraSettings: CameraAppSettings,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit
+) {
+    Row {
+        FlashModeIndicator(currentCameraSettings.flashMode, onFlashModeClick)
+    }
+}
+
+fun FlashMode.getNextFlashMode(): FlashMode {
+    return when (this) {
+        FlashMode.OFF -> FlashMode.ON
+        FlashMode.ON -> FlashMode.AUTO
+        FlashMode.AUTO -> FlashMode.OFF
     }
 }

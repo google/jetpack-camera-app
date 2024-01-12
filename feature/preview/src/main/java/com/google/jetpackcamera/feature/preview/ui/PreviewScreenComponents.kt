@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.util.Log
 import android.view.Display
 import android.view.View
+import android.widget.Toast
 import androidx.camera.core.Preview
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -44,11 +45,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,8 +66,44 @@ import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
-/** this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
- * and double tap to flip camera */
+/**
+ * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
+ *
+ * @param toastMessage the specifications for the [Toast].
+ * @param onToastShown called once the Toast has been displayed.
+ */
+@Composable
+fun ShowTestableToast(
+    modifier: Modifier = Modifier,
+    toastMessage: ToastMessage,
+    onToastShown: () -> Unit
+) {
+    val toastShownStatus = remember { mutableStateOf(false) }
+    Box(
+        // box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier
+            .size(20.dp)
+            .testTag(toastMessage.testTag)
+    ) {
+        // prevents toast from being spammed
+        if (!toastShownStatus.value) {
+            Toast.makeText(
+                LocalContext.current,
+                stringResource(id = toastMessage.stringResource),
+                toastMessage.toastLength
+            )
+                .show()
+            toastShownStatus.value = true
+            onToastShown()
+        }
+    }
+    Log.d(TAG, "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}")
+}
+
+/**
+ * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
+ * and double-tap to flip camera
+ */
 @Composable
 fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,

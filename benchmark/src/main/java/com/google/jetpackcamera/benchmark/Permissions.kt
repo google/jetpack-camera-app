@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.benchmark
+package com.google.jetpackcamera.benchmark
 
 import android.Manifest.permission
-import android.os.Build
 import androidx.benchmark.macro.MacrobenchmarkScope
 import org.junit.Assert
 
 fun MacrobenchmarkScope.allowCamera() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val command = "pm grant $packageName ${permission.CAMERA}"
-        val output = device.executeShellCommand(command)
-        Assert.assertEquals("", output)
-    }
+    val command = "pm grant $packageName ${permission.CAMERA}"
+    val output = device.executeShellCommand(command)
+    Assert.assertEquals("", output)
 }

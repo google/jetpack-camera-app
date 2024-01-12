@@ -55,13 +55,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
+import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
+import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -82,6 +86,9 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+
+    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -156,12 +163,23 @@ fun PreviewScreen(
                         // onTimerClick = {}/*TODO*/
                     )
 
-                    SettingsNavButton(
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                        onNavigateToSettings = onNavigateToSettings
-                    )
+                            .align(Alignment.TopStart),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SettingsNavButton(
+                            modifier = Modifier
+                                .padding(12.dp),
+                            onNavigateToSettings = onNavigateToSettings
+                        )
+
+                        QuickSettingsIndicators(
+                            currentCameraSettings = previewUiState.currentCameraSettings,
+                            onFlashModeClick = viewModel::setFlash
+                        )
+                    }
 
                     TestingButton(
                         modifier = Modifier
@@ -217,6 +235,8 @@ fun PreviewScreen(
                     val multipleEventsCutter = remember { MultipleEventsCutter() }
                     /*todo: close quick settings on start record/image capture*/
                     CaptureButton(
+                        modifier = Modifier
+                            .testTag(CAPTURE_BUTTON),
                         onClick = {
                             multipleEventsCutter.processEvent { viewModel.captureImage() }
                         },
@@ -224,9 +244,10 @@ fun PreviewScreen(
                         onRelease = { viewModel.stopVideoRecording() },
                         videoRecordingState = previewUiState.videoRecordingState
                     )
-                    /* spacer is a placeholder to maintain the proportionate location of this row of
-                     UI elements. if you want to  add another element, replace it with ONE element.
-                     If you want to add multiple components, use a container (Box, Row, Column, etc.)
+                    /* spacer is a placeholder to maintain the proportionate location of this
+                     row of UI elements. if you want to  add another element, replace it with ONE
+                     element. If you want to add multiple components, use a container
+                     (Box, Row, Column, etc.)
                      */
                     Spacer(
                         modifier = Modifier
@@ -235,6 +256,25 @@ fun PreviewScreen(
                     )
                 }
             }
+            // displays toast when there is a message to show
+            if (previewUiState.toastMessageToShow != null) {
+                ShowTestableToast(
+                    modifier = Modifier
+                        .testTag(previewUiState.toastMessageToShow!!.testTag),
+                    toastMessage = previewUiState.toastMessageToShow!!,
+                    onToastShown = viewModel::onToastShown
+                )
+            }
         }
+
+        // Screen flash overlay that stays on top of everything but invisible normally. This should
+        // not be enabled based on whether screen flash is enabled because a previous image capture
+        // may still be running after flash mode change and clear actions (e.g. brightness restore)
+        // may need to be handled later. Compose smart recomposition should be able to optimize this
+        // if the relevant states are no longer changing.
+        ScreenFlashScreen(
+            screenFlashUiState = screenFlashUiState,
+            onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
+        )
     }
 }
