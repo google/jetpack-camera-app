@@ -101,7 +101,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+                cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -221,6 +221,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
             CaptureMode.MULTI_STREAM -> stringResource(
                 id = R.string.capture_mode_description_multi_stream
             )
+
             CaptureMode.SINGLE_STREAM -> stringResource(
                 id = R.string.capture_mode_description_single_stream
             )
@@ -246,6 +247,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
 fun TargetFpsSetting(
     modifier: Modifier = Modifier,
     currentTargetFps: TargetFrameRate,
+    deviceMaxFps: Int,
     setTargetFps: (TargetFrameRate) -> Unit
 ) {
     BasicPopupSetting(
@@ -270,21 +272,27 @@ fun TargetFpsSetting(
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_NONE,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_NONE) }
                 )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_15),
-                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
-                )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_30),
-                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
-                )
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_60),
-                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
-                )
+                if (deviceMaxFps >= 15) {
+                    SingleChoiceSelector(
+                        text = stringResource(id = R.string.fps_selector_15),
+                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
+                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
+                    )
+                }
+                if (deviceMaxFps >= 30) {
+                    SingleChoiceSelector(
+                        text = stringResource(id = R.string.fps_selector_30),
+                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
+                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
+                    )
+                }
+                if (deviceMaxFps >= 60) {
+                    SingleChoiceSelector(
+                        text = stringResource(id = R.string.fps_selector_60),
+                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
+                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
+                    )
+                }
             }
         }
     )

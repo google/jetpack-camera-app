@@ -19,6 +19,7 @@ import android.app.Application
 import android.content.ContentValues
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import android.view.Display
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -109,6 +110,7 @@ constructor(
                 videoCaptureUseCase = VideoCapture.withOutput(recorder)
                 shouldStabilize = true
             }
+
             else -> {
                 videoCaptureUseCase = VideoCapture.Builder(recorder)
                     .setTargetFrameRate(currentCameraSettings.targetFrameRate.range)
@@ -134,8 +136,34 @@ constructor(
                 availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
             )
         }
+        updateMaxFps(currentCameraSettings.targetFrameRate)
 
         return availableCameraLens
+    }
+    private suspend fun updateMaxFps(currentTargetFrameRate: TargetFrameRate) {
+        var maxFps = 5
+        cameraProvider.availableCameraInfos.forEach { e ->
+            val ranges = e.supportedFrameRateRanges
+            Log.d(TAG,"hewwo $ranges")
+
+            val highest = getMaxFps(currentHighestFps = maxFps, supportedFrameRateRanges = ranges)
+            maxFps = maxFps.coerceAtLeast(highest)
+            Log.d(TAG, "uwu $highest")
+        }
+        coroutineScope {
+            settingsRepository.updateMaxFrameRate(maxFps,currentTargetFrameRate)
+        }
+    }
+
+    private fun getMaxFps(
+        currentHighestFps: Int,
+        supportedFrameRateRanges: Set<Range<Int>>,
+    ): Int {
+        var highestFps: Int = currentHighestFps
+        supportedFrameRateRanges.forEach { e ->
+            highestFps = highestFps.coerceAtLeast(e.upper)
+        }
+        return highestFps
     }
 
     override suspend fun runCamera(
@@ -310,7 +338,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -323,7 +351,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()

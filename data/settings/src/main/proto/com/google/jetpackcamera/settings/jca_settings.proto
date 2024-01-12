@@ -36,5 +36,5 @@ message JcaSettings {
   AspectRatio aspect_ratio_status = 7;
   CaptureMode capture_mode_status = 8;
   TargetFrameRate target_frame_rate = 9;
-
+  int32 max_frame_rate = 10;
 }

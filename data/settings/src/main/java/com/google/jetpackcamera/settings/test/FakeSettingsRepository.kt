@@ -70,4 +70,11 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun updateMaxFrameRate(
+        maxFrameRate: Int,
+        currentTargetFrameRate: TargetFrameRate
+    ) {
+        TODO("Not yet implemented")
+    }
 }

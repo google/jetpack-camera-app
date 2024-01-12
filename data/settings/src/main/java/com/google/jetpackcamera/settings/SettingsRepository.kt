@@ -45,5 +45,7 @@ interface SettingsRepository {
 
     suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate)
 
+    suspend fun updateMaxFrameRate(maxFrameRate: Int, currentTargetFrameRate: TargetFrameRate)
+
     suspend fun getCameraAppSettings(): CameraAppSettings
 }

@@ -26,8 +26,8 @@ data class CameraAppSettings(
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
-    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE
-
+    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE,
+    val maxDeviceFrameRate: Int = 1
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
