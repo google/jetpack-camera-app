@@ -49,8 +49,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import dagger.hilt.android.scopes.ViewModelScoped
 import com.google.jetpackcamera.settings.model.TargetFrameRate
+import dagger.hilt.android.scopes.ViewModelScoped
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -144,21 +144,18 @@ constructor(
         var maxFps = 5
         cameraProvider.availableCameraInfos.forEach { e ->
             val ranges = e.supportedFrameRateRanges
-            Log.d(TAG,"hewwo $ranges")
+            Log.d(TAG, "hewwo $ranges")
 
             val highest = getMaxFps(currentHighestFps = maxFps, supportedFrameRateRanges = ranges)
             maxFps = maxFps.coerceAtLeast(highest)
             Log.d(TAG, "uwu $highest")
         }
         coroutineScope {
-            settingsRepository.updateMaxFrameRate(maxFps,currentTargetFrameRate)
+            settingsRepository.updateMaxFrameRate(maxFps, currentTargetFrameRate)
         }
     }
 
-    private fun getMaxFps(
-        currentHighestFps: Int,
-        supportedFrameRateRanges: Set<Range<Int>>,
-    ): Int {
+    private fun getMaxFps(currentHighestFps: Int, supportedFrameRateRanges: Set<Range<Int>>): Int {
         var highestFps: Int = currentHighestFps
         supportedFrameRateRanges.forEach { e ->
             highestFps = highestFps.coerceAtLeast(e.upper)
@@ -338,7 +335,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase.screenFlash != null
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -351,7 +348,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()

@@ -16,19 +16,19 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
+import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
-import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -142,18 +142,21 @@ class LocalSettingsRepository @Inject constructor(
         when (currentTargetFrameRate) {
             TargetFrameRate.TARGET_FPS_NONE -> {}
             TargetFrameRate.TARGET_FPS_15 -> {
-                if (maxFrameRate < 15)
+                if (maxFrameRate < 15) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
             }
 
             TargetFrameRate.TARGET_FPS_30 -> {
-                if (maxFrameRate < 30)
+                if (maxFrameRate < 30) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
             }
 
             TargetFrameRate.TARGET_FPS_60 -> {
-                if (maxFrameRate < 60)
+                if (maxFrameRate < 60) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
             }
         }
     }
