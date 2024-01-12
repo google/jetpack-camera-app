@@ -184,28 +184,32 @@ fun PreviewScreen(
                         )
                     }
 
-                    TestingButton(
-                        modifier = Modifier
-                            .testTag("ToggleCaptureMode")
-                            .align(Alignment.TopEnd)
-                            .padding(12.dp),
-                        onClick = { viewModel.toggleCaptureMode() },
-                        text = stringResource(
-                            when (previewUiState.currentCameraSettings.captureMode) {
-                                CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
-                            }
-                        )
-                    )
-                    if (previewUiState.currentCameraSettings.isStabilizationSupported &&
-                        previewUiState.currentCameraSettings.videoCaptureStabilization ==
-                        Stabilization.ON
+                    Row(modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.baseline_video_stable_24),
-                            contentDescription = "video stabilization is on",
-                            tint = Color.White
+                        TestingButton(
+                            modifier = Modifier
+                                .testTag("ToggleCaptureMode"),
+                            onClick = { viewModel.toggleCaptureMode() },
+                            text = stringResource(
+                                when (previewUiState.currentCameraSettings.captureMode) {
+                                    CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
+                                    CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                                }
+                            )
                         )
+                        if (previewUiState.currentCameraSettings.isStabilizationSupported &&
+                            previewUiState.currentCameraSettings.videoCaptureStabilization ==
+                            Stabilization.ON
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.baseline_video_stable_24),
+                                contentDescription = "video stabilization is on",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }

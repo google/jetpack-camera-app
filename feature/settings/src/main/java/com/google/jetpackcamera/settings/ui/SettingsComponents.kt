@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -278,10 +279,11 @@ private fun getStabilizationStringRes(
 fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
-    isStabilizationSupported: Boolean = false,
+    isStabilizationSupported: Boolean,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
+    Log.d("SettingsComponent", "Setting component says stabilization support: $isStabilizationSupported")
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,

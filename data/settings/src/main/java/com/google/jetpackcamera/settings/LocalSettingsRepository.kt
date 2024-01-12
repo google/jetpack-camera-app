@@ -60,6 +60,7 @@ class LocalSettingsRepository @Inject constructor(
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
+                isStabilizationSupported = it.stabilizationSupported,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
@@ -178,7 +179,7 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updateStabilizationSupported(isSupported: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(isSupported)
+                .setStabilizationSupported(isSupported)
                 .build()
         }
     }
