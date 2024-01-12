@@ -48,8 +48,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import dagger.hilt.android.scopes.ViewModelScoped
 import com.google.jetpackcamera.settings.model.TargetFrameRate
+import dagger.hilt.android.scopes.ViewModelScoped
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
