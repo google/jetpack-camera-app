@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -55,7 +54,6 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
-import java.time.format.TextStyle
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -103,7 +101,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-                cameraAppSettings.isFrontCameraAvailable
+            cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -256,14 +254,15 @@ private fun getStabilizationStringRes(
 ): Int {
     return if (previewStabilization == Stabilization.ON &&
         videoStabilization != Stabilization.OFF
-    )
+    ) {
         R.string.stabilization_description_on
-    else if (previewStabilization == Stabilization.UNDEFINED &&
+    } else if (previewStabilization == Stabilization.UNDEFINED &&
         videoStabilization == Stabilization.ON
-    )
+    ) {
         R.string.stabilization_description_high_quality
-    else
+    } else {
         R.string.stabilization_description_off
+    }
 }
 
 /**
@@ -279,7 +278,6 @@ fun VideoStabilizeSetting(
     currentVideoStabilization: Stabilization,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
-
 ) {
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
@@ -305,7 +303,7 @@ fun VideoStabilizeSetting(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
+                        (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.ON)
@@ -315,11 +313,12 @@ fun VideoStabilizeSetting(
                 // high quality selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
-                    secondaryText = stringResource(id = R.string.stabilization_selector_high_quality_info),
-
+                    secondaryText = stringResource(
+                        id = R.string.stabilization_selector_high_quality_info
+                    ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                            (currentVideoStabilization == Stabilization.ON),
+                        (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -330,7 +329,7 @@ fun VideoStabilizeSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.ON),
+                        (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
