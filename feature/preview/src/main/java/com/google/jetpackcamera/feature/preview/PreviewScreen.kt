@@ -88,7 +88,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -137,7 +137,7 @@ fun PreviewScreen(
             aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
-        //quick settings screen overlay
+        // quick settings screen overlay
         QuickSettingsScreen(
             modifier = Modifier,
             isOpen = previewUiState.quickSettingsIsOpen,
@@ -162,7 +162,6 @@ fun PreviewScreen(
             when (previewUiState.videoRecordingState) {
                 VideoRecordingState.ACTIVE -> {}
                 VideoRecordingState.INACTIVE -> {
-
                     // 3-segmented row to keep quick settings button centered
                     Row(
                         modifier = Modifier
@@ -182,11 +181,12 @@ fun PreviewScreen(
                                     .padding(12.dp),
                                 onNavigateToSettings = onNavigateToSettings
                             )
-                            if (!previewUiState.quickSettingsIsOpen)
+                            if (!previewUiState.quickSettingsIsOpen) {
                                 QuickSettingsIndicators(
                                     currentCameraSettings = previewUiState.currentCameraSettings,
                                     onFlashModeClick = viewModel::setFlash
                                 )
+                            }
                         }
                         // quick settings button
                         ToggleQuickSettingsButton(
@@ -208,8 +208,11 @@ fun PreviewScreen(
                                 onClick = { viewModel.toggleCaptureMode() },
                                 text = stringResource(
                                     when (previewUiState.currentCameraSettings.captureMode) {
-                                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
+                                        CaptureMode.SINGLE_STREAM ->
+                                            R.string.capture_mode_single_stream
+
+                                        CaptureMode.MULTI_STREAM ->
+                                            R.string.capture_mode_multi_stream
                                     }
                                 )
                             )
@@ -218,12 +221,14 @@ fun PreviewScreen(
                 }
             }
 
-            // this component places a gap in the center of the column that will push out the top and
-            // bottom edges. This will also allow the addition of vertical button bars on the
+            // this component places a gap in the center of the column that will push out the top
+            // and bottom edges. This will also allow the addition of vertical button bars on the
             // sides of the screen
-            Row(modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()) {}
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {}
 
             if (zoomScaleShow) {
                 ZoomScaleText(zoomScale = zoomScale)
@@ -254,14 +259,16 @@ fun PreviewScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (!previewUiState.quickSettingsIsOpen)
+                            if (!previewUiState.quickSettingsIsOpen) {
                                 FlipCameraButton(
                                     onClick = { viewModel.flipCamera() },
                                     // enable only when phone has front and rear camera
                                     enabledCondition =
                                     previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                            previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings
+                                            .isFrontCameraAvailable
                                 )
+                            }
                         }
                     }
                 }
@@ -272,13 +279,15 @@ fun PreviewScreen(
                         .testTag(CAPTURE_BUTTON),
                     onClick = {
                         multipleEventsCutter.processEvent { viewModel.captureImage() }
-                        if (previewUiState.quickSettingsIsOpen)
+                        if (previewUiState.quickSettingsIsOpen) {
                             viewModel.toggleQuickSettings()
+                        }
                     },
                     onLongPress = {
                         viewModel.startVideoRecording()
-                        if (previewUiState.quickSettingsIsOpen)
+                        if (previewUiState.quickSettingsIsOpen) {
                             viewModel.toggleQuickSettings()
+                        }
                     },
                     onRelease = { viewModel.stopVideoRecording() },
                     videoRecordingState = previewUiState.videoRecordingState

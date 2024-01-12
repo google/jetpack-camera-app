@@ -30,12 +30,8 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,7 +58,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -207,19 +202,19 @@ fun FlipCameraButton(
     enabledCondition: Boolean,
     onClick: () -> Unit
 ) {
-        IconButton(
-            modifier = modifier
-                .size(40.dp),
-            onClick = onClick,
-            enabled = enabledCondition
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Refresh,
-                tint = Color.White,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
-                modifier = Modifier.size(72.dp)
-            )
-        }
+    IconButton(
+        modifier = modifier
+            .size(40.dp),
+        onClick = onClick,
+        enabled = enabledCondition
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Refresh,
+            tint = Color.White,
+            contentDescription = stringResource(id = R.string.flip_camera_content_description),
+            modifier = Modifier.size(72.dp)
+        )
+    }
 }
 
 @Composable
