@@ -209,7 +209,7 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             traceAsync(IMAGE_CAPTURE_TRACE, 0) {
                 try {
-                    cameraUseCase.takePicture()
+                    cameraUseCase.takePicture(contentResolver, imageCaptureUri, onImageCapture)
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
