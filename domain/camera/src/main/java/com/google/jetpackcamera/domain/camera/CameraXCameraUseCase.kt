@@ -177,11 +177,11 @@ constructor(
     override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
-        var outputFileOptions: OutputFileOptions? = null
+        val outputFileOptions: OutputFileOptions
         if (imageCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
-            imageDeferred.completeExceptionally(e)
+            throw e
         } else {
             try {
                 val outputStream = contentResolver.openOutputStream(imageCaptureUri)
@@ -193,36 +193,34 @@ constructor(
                 } else {
                     val e = RuntimeException("Provider recently crashed.")
                     Log.d(TAG, "takePicture onError: $e")
-                    imageDeferred.completeExceptionally(e)
+                    throw e
                 }
             } catch (e: FileNotFoundException) {
                 Log.d(TAG, "takePicture onError: $e")
-                imageDeferred.completeExceptionally(e)
+                throw e
             }
         }
-        if (outputFileOptions != null) {
-            imageCaptureUseCase.takePicture(
-                outputFileOptions,
-                defaultDispatcher.asExecutor(),
-                object : ImageCapture.OnImageSavedCallback {
-                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        val relativePath =
-                            eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
-                        val displayName = eligibleContentValues.getAsString(
-                            MediaStore.Images.Media.DISPLAY_NAME
-                        )
-                        Log.d(TAG, "Saved image to $relativePath/$displayName")
-                        imageDeferred.complete(outputFileResults)
-                    }
-
-                    override fun onError(exception: ImageCaptureException) {
-                        Log.d(TAG, "takePicture onError: $exception")
-                        imageDeferred.completeExceptionally(exception)
-                    }
+        imageCaptureUseCase.takePicture(
+            outputFileOptions,
+            defaultDispatcher.asExecutor(),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val relativePath =
+                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+                    val displayName = eligibleContentValues.getAsString(
+                        MediaStore.Images.Media.DISPLAY_NAME
+                    )
+                    Log.d(TAG, "Saved image to $relativePath/$displayName")
+                    imageDeferred.complete(outputFileResults)
                 }
-            )
-            imageDeferred.await()
-        }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.d(TAG, "takePicture onError: $exception")
+                    imageDeferred.completeExceptionally(exception)
+                }
+            }
+        )
+        imageDeferred.await()
     }
 
     private fun getEligibleContentValues(): ContentValues {
