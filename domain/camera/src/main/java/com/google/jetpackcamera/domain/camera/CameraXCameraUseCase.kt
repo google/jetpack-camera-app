@@ -179,11 +179,9 @@ constructor(
         val eligibleContentValues = getEligibleContentValues()
         var outputFileOptions: OutputFileOptions? = null
         if (imageCaptureUri == null) {
-            outputFileOptions = OutputFileOptions.Builder(
-                contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                eligibleContentValues
-            ).build()
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            imageDeferred.completeExceptionally(e)
         } else {
             try {
                 val outputStream = contentResolver.openOutputStream(imageCaptureUri)
@@ -202,7 +200,6 @@ constructor(
                 imageDeferred.completeExceptionally(e)
             }
         }
-
         if (outputFileOptions != null) {
             imageCaptureUseCase.takePicture(
                 outputFileOptions,
