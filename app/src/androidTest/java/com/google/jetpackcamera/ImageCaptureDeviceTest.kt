@@ -20,7 +20,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -162,21 +161,6 @@ internal class ImageCaptureDeviceTest {
             }
         }
         return testRegistry
-    }
-
-    private class ImageCaptureTestActivity(
-        registry: ActivityResultRegistry,
-        expectedResultCode: Int,
-        val inputIntent: Intent
-    ) : ComponentActivity() {
-        val launch = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-            registry
-        ) { result -> assert(result.resultCode == expectedResultCode) }
-
-        fun launch() {
-            launch.launch(inputIntent)
-        }
     }
 
     companion object {
