@@ -283,7 +283,10 @@ fun VideoStabilizeSetting(
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
-    Log.d("SettingsComponent", "Setting component says stabilization support: $isStabilizationSupported")
+    Log.d(
+        "SettingsComponent",
+        "Setting component says stabilization support: $isStabilizationSupported"
+    )
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,

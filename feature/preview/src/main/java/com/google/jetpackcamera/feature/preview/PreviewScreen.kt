@@ -184,9 +184,10 @@ fun PreviewScreen(
                         )
                     }
 
-                    Row(modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp),
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TestingButton(
