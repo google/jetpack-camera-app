@@ -53,7 +53,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun QuickSettingsScreen(
+fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
     currentCameraSettings: CameraAppSettings,
     isOpen: Boolean = false,

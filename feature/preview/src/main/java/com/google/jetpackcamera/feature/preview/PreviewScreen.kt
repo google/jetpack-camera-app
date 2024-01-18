@@ -63,7 +63,7 @@ import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
-import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
+import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -137,8 +137,8 @@ fun PreviewScreen(
             aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             deferredSurfaceProvider = deferredSurfaceProvider
         )
-        // quick settings screen overlay
-        QuickSettingsScreen(
+
+        QuickSettingsScreenOverlay(
             modifier = Modifier,
             isOpen = previewUiState.quickSettingsIsOpen,
             toggleIsOpen = { viewModel.toggleQuickSettings() },
