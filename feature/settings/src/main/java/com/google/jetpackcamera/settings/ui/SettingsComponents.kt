@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.settings.ui
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,11 +32,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -102,7 +104,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+                cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -273,33 +275,30 @@ private fun getStabilizationStringRes(
  * HIGH_QUALITY - Video will be stabilized, preview might be stabilized, depending on the device.
  * OFF - Preview and video stabilization is disabled.
  *
- * @param isStabilizationSupported the enabled condition for this setting.
+ * @param supportedStabilizationMode the enabled condition for this setting.
  */
 @Composable
 fun VideoStabilizeSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
-    isStabilizationSupported: Boolean,
+    supportedStabilizationMode: SupportedStabilizationMode,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
-    Log.d(
-        "SettingsComponent",
-        "Setting component says stabilization support: $isStabilizationSupported"
-    )
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = isStabilizationSupported,
-        description = when (isStabilizationSupported) {
-            true -> stringResource(
+        enabled = supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED,
+        description = if (supportedStabilizationMode == SupportedStabilizationMode.UNSUPPORTED) {
+            stringResource(id = R.string.stabilization_description_unsupported)
+
+        } else {
+            stringResource(
                 id = getStabilizationStringRes(
                     previewStabilization = currentPreviewStabilization,
                     videoStabilization = currentVideoStabilization
                 )
             )
-
-            false -> stringResource(id = R.string.stabilization_description_unsupported)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -315,8 +314,9 @@ fun VideoStabilizeSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
+                    enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL,
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                        (currentVideoStabilization != Stabilization.OFF),
+                            (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.ON)
@@ -331,7 +331,7 @@ fun VideoStabilizeSetting(
                     ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                        (currentVideoStabilization == Stabilization.ON),
+                            (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -342,7 +342,7 @@ fun VideoStabilizeSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                        (currentVideoStabilization != Stabilization.ON),
+                            (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
@@ -452,7 +452,7 @@ fun SettingUI(
             when (enabled) {
                 true -> Text(title)
                 false -> {
-                    Text(text = title, color = MaterialTheme.colorScheme.secondary)
+                    Text(text = title, color = LocalContentColor.current.copy(alpha = .7f) )
                 }
             }
         },
@@ -462,7 +462,7 @@ fun SettingUI(
                     true -> Text(description)
                     false -> Text(
                         text = description,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = LocalContentColor.current.copy(alpha = .7f)
                     )
                 }
             }
@@ -490,13 +490,15 @@ fun SingleChoiceSelector(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick
+                onClick = onClick,
+                enabled = enabled
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SettingUI(
             title = text,
             description = secondaryText,
+            enabled = enabled,
             leadingIcon = {
                 RadioButton(
                     selected = selected,

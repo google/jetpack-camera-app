@@ -43,7 +43,8 @@ class FakeJcaSettingsSerializer(
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
-        .setStabilizationSupported(false)
+        .setStabilizeVideoSupported(false)
+        .setStabilizePreviewSupported(false)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

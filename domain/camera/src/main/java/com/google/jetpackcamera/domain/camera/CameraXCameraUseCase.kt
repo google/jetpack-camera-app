@@ -49,9 +49,8 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +60,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -97,7 +98,7 @@ constructor(
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
     private lateinit var surfaceProvider: Preview.SurfaceProvider
-    private var isStabilizationSupported: Boolean = false
+    private lateinit var supportedStabilizationMode: SupportedStabilizationMode
     private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
@@ -108,7 +109,7 @@ constructor(
         this.captureMode = currentCameraSettings.captureMode
         this.stabilizePreviewMode = currentCameraSettings.previewStabilization
         this.stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
-        this.isStabilizationSupported = currentCameraSettings.isStabilizationSupported
+        this.supportedStabilizationMode = currentCameraSettings.supportedStabilizationMode
         setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
@@ -125,7 +126,7 @@ constructor(
                 availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
                 availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
             )
-            settingsRepository.updateStabilizationSupported(isStabilizationSupported())
+            settingsRepository.updateVideoStabilizationSupported(isStabilizationSupported())
         }
         videoCaptureUseCase = createVideoUseCase()
         updateUseCaseGroup()
@@ -303,7 +304,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -316,7 +317,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -362,11 +363,15 @@ constructor(
 
         return isVideoStabilizationSupported
     }
+
     private fun createVideoUseCase(): VideoCapture<Recorder> {
         val videoCaptureBuilder = VideoCapture.Builder(recorder)
 
         // set video stabilization
-        if (isStabilizationSupported && stabilizeVideoMode != Stabilization.UNDEFINED) {
+
+        if (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
+            stabilizeVideoMode != Stabilization.UNDEFINED
+        ) {
             val isStabilized = when (stabilizeVideoMode) {
                 Stabilization.ON -> true
                 Stabilization.OFF, Stabilization.UNDEFINED -> false
@@ -378,7 +383,10 @@ constructor(
 
     private fun createPreviewUseCase(): Preview {
         val previewUseCaseBuilder = Preview.Builder()
-        if (isStabilizationSupported && stabilizePreviewMode != Stabilization.UNDEFINED) {
+        // set preview stabilization
+        if (supportedStabilizationMode == SupportedStabilizationMode.FULL &&
+            stabilizePreviewMode != Stabilization.UNDEFINED
+        ) {
             val isStabilized = when (stabilizePreviewMode) {
                 Stabilization.ON -> true
                 else -> false

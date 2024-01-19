@@ -70,6 +70,7 @@ import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -91,7 +92,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+            by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -201,7 +202,7 @@ fun PreviewScreen(
                                 }
                             )
                         )
-                        if (previewUiState.currentCameraSettings.isStabilizationSupported &&
+                        if (previewUiState.currentCameraSettings.supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
                             previewUiState.currentCameraSettings.videoCaptureStabilization ==
                             Stabilization.ON
                         ) {
@@ -246,7 +247,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

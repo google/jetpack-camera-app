@@ -23,11 +23,14 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object FakeSettingsRepository : SettingsRepository {
     var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+    private var isPreviewStabilizationSupported: Boolean = false
+    private var isVideoStabilizationSupported: Boolean = false
 
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
@@ -73,9 +76,28 @@ object FakeSettingsRepository : SettingsRepository {
             currentCameraSettings.copy(videoCaptureStabilization = stabilization)
     }
 
-    override suspend fun updateStabilizationSupported(isSupported: Boolean) {
+    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
+        isVideoStabilizationSupported = isSupported
+        setSupportedStabilizationMode()
+    }
+
+    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
+        isPreviewStabilizationSupported = isSupported
+        setSupportedStabilizationMode()
+    }
+
+    private fun setSupportedStabilizationMode() {
+        val stabilizationMode =
+            if (isPreviewStabilizationSupported && isVideoStabilizationSupported) {
+                SupportedStabilizationMode.FULL
+            } else if (isPreviewStabilizationSupported == false &&
+                isVideoStabilizationSupported == true) {
+                SupportedStabilizationMode.VIDEO_ONLY
+            } else {
+                SupportedStabilizationMode.UNSUPPORTED
+            }
         currentCameraSettings =
-            currentCameraSettings.copy(isStabilizationSupported = isSupported)
+            currentCameraSettings.copy(supportedStabilizationMode = stabilizationMode)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
