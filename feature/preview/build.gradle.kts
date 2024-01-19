@@ -94,6 +94,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.test.monitor)
+    implementation(libs.androidx.junit)
 
     // Guava
     implementation(libs.kotlinx.coroutines.guava)

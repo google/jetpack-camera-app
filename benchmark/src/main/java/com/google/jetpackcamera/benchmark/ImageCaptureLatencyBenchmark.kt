@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.benchmark
 
+import android.content.Intent
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
@@ -48,6 +49,11 @@ class ImageCaptureLatencyBenchmark {
         imageCaptureLatency(shouldFaceFront = true, flashMode = FlashMode.ON)
     }
 
+    @Test
+    fun rearCameraNoFlashExternalImageCaptureLatency() {
+        imageCaptureLatency(shouldFaceFront = false, flashMode = FlashMode.OFF)
+    }
+
     /**
      * Measures the time between an onClick event on the Capture Button and onImageCapture
      * callback being fired from
@@ -63,7 +69,8 @@ class ImageCaptureLatencyBenchmark {
     private fun imageCaptureLatency(
         shouldFaceFront: Boolean,
         flashMode: FlashMode,
-        timeout: Long = 15000
+        timeout: Long = 15000,
+        intent: Intent? = null
     ) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
@@ -74,7 +81,7 @@ class ImageCaptureLatencyBenchmark {
             setupBlock = {
                 allowCamera()
                 pressHome()
-                startActivityAndWait()
+                if (intent == null) startActivityAndWait() else startActivityAndWait(intent)
                 toggleQuickSettings(device)
                 setQuickFrontFacingCamera(shouldFaceFront = shouldFaceFront, device = device)
                 setQuickSetFlash(flashMode = flashMode, device = device)

@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
@@ -35,14 +36,18 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
-    onPreviewViewModel: (PreviewViewModel) -> Unit
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
     /*TODO(b/306236646): remove after still capture*/
+    previewMode: PreviewMode
 ) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     if (permissionState.status.isGranted) {
-        JetpackCameraNavHost(onPreviewViewModel)
+        JetpackCameraNavHost(
+            onPreviewViewModel = onPreviewViewModel,
+            previewMode = previewMode
+        )
     } else {
         CameraPermission(
             modifier = Modifier.fillMaxSize(),
@@ -54,13 +59,15 @@ fun JcaApp(
 @Composable
 private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    previewMode: PreviewMode
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
-                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) }
+                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                previewMode = previewMode
             )
         }
         composable(SETTINGS_ROUTE) {
