@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera
 
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -44,6 +47,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
@@ -101,9 +105,41 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            JcaApp(onPreviewViewModel = { previewViewModel = it })
+                            JcaApp(
+                                onPreviewViewModel = { previewViewModel = it },
+                                previewMode = getPreviewMode()
+                            )
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private fun getPreviewMode(): PreviewMode {
+        if (intent == null || MediaStore.ACTION_IMAGE_CAPTURE != intent.action) {
+            return PreviewMode.StandardMode
+        } else {
+            var uri = if (intent.extras == null ||
+                !intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
+            ) {
+                null
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.extras!!.getParcelable(
+                    MediaStore.EXTRA_OUTPUT,
+                    Uri::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
+            }
+            if (uri == null && intent.clipData != null && intent.clipData!!.itemCount != 0) {
+                uri = intent.clipData!!.getItemAt(0).uri
+            }
+            return PreviewMode.ExternalImageCaptureMode(uri) { event ->
+                if (event == PreviewViewModel.ImageCaptureEvent.ImageSaved) {
+                    setResult(RESULT_OK)
+                    finish()
                 }
             }
         }

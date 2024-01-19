@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -93,6 +95,9 @@ class FakeCameraUseCase(
             }
         }
         numPicturesTaken += 1
+    }
+    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+        takePicture()
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {

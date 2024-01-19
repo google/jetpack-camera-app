@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.util.Rational
 import android.view.Display
 import androidx.camera.core.Preview
@@ -46,6 +48,8 @@ interface CameraUseCase {
     )
 
     suspend fun takePicture()
+
+    suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
 
     suspend fun startVideoRecording()
 
