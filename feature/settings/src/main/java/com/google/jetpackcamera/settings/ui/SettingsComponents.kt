@@ -321,7 +321,6 @@ fun SwitchSettingUI(
 /**
  * A composable used as a template used to construct other settings components
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingUI(
     modifier: Modifier = Modifier,
@@ -332,8 +331,8 @@ fun SettingUI(
 ) {
     ListItem(
         modifier = modifier,
-        headlineText = { Text(title) },
-        supportingText = when (description) {
+        headlineContent = { Text(title) },
+        supportingContent = when (description) {
             null -> null
             else -> {
                 { Text(description) }

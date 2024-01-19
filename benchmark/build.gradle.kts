@@ -15,8 +15,8 @@
  */
 
 plugins {
-    id("com.android.test")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -64,8 +64,8 @@ android {
 }
 
 dependencies {
-    implementation("androidx.test.ext:junit:1.1.5")
-    implementation("androidx.benchmark:benchmark-macro-junit4:1.2.2")
+    implementation(libs.androidx.junit)
+    implementation(libs.androidx.benchmark.macro.junit4)
 }
 
 androidComponents {
