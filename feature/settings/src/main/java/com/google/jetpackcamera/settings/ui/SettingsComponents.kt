@@ -302,12 +302,6 @@ fun VideoStabilizeSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                Text(
-                    text = stringResource(id = R.string.stabilization_popup_disclaimer),
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // on selector

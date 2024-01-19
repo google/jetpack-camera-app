@@ -72,7 +72,6 @@
 
     <!-- Stabilization setting strings -->
     <string name="video_stabilization_title">Set Video Stabilization</string>
-    <string name="stabilization_popup_disclaimer">*Stabilization will be applied only to supported devices."</string>
 
     <string name="stabilization_selector_on">On</string>
     <string name="stabilization_selector_high_quality">High Quality</string>
