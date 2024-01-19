@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.content.ContentResolver
 import androidx.camera.core.Preview.SurfaceProvider
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -64,6 +65,16 @@ class PreviewViewModelTest {
         val surfaceProvider: SurfaceProvider = mock()
         previewViewModel.runCamera(surfaceProvider)
         previewViewModel.captureImage()
+        advanceUntilIdle()
+        assertEquals(cameraUseCase.numPicturesTaken, 1)
+    }
+
+    @Test
+    fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
+        val surfaceProvider: SurfaceProvider = mock()
+        val contentResolver: ContentResolver = mock()
+        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.captureImage(contentResolver, null) {}
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
     }

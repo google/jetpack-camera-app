@@ -202,21 +202,18 @@ fun FlipCameraButton(
     enabledCondition: Boolean,
     onClick: () -> Unit
 ) {
-    Box(modifier = modifier) {
-        IconButton(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(40.dp),
-            onClick = onClick,
-            enabled = enabledCondition
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Refresh,
-                tint = Color.White,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
-                modifier = Modifier.size(72.dp)
-            )
-        }
+    IconButton(
+        modifier = modifier
+            .size(40.dp),
+        onClick = onClick,
+        enabled = enabledCondition
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Refresh,
+            tint = Color.White,
+            contentDescription = stringResource(id = R.string.flip_camera_content_description),
+            modifier = Modifier.size(72.dp)
+        )
     }
 }
 

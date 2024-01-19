@@ -164,8 +164,15 @@ fun QuickFlipCamera(
     )
 }
 
+/**
+ * Button to toggle quick settings
+ */
 @Composable
-fun DropDownIcon(modifier: Modifier = Modifier, toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun ToggleQuickSettingsButton(
+    modifier: Modifier = Modifier,
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean
+) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center,

@@ -16,7 +16,10 @@
 package com.google.jetpackcamera.domain.camera
 
 import android.app.Application
+import android.content.ContentResolver
 import android.content.ContentValues
+import android.net.Uri
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -27,6 +30,7 @@ import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCapture.ScreenFlashUiCompleter
 import androidx.camera.core.ImageCaptureException
@@ -51,8 +55,6 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -62,6 +64,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -140,6 +146,7 @@ constructor(
 
         return availableCameraLens
     }
+
     private suspend fun updateMaxFps(currentTargetFrameRate: TargetFrameRate) {
         var maxFps = 5
         cameraProvider.availableCameraInfos.forEach { e ->
@@ -200,8 +207,71 @@ constructor(
                 }
             }
         )
-
         imageDeferred.await()
+    }
+
+    // TODO(b/319733374): Return bitmap for external mediastore capture without URI
+    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+        val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
+        val eligibleContentValues = getEligibleContentValues()
+        val outputFileOptions: OutputFileOptions
+        if (imageCaptureUri == null) {
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            throw e
+        } else {
+            try {
+                val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                if (outputStream != null) {
+                    outputFileOptions =
+                        OutputFileOptions.Builder(
+                            contentResolver.openOutputStream(imageCaptureUri)!!
+                        ).build()
+                } else {
+                    val e = RuntimeException("Provider recently crashed.")
+                    Log.d(TAG, "takePicture onError: $e")
+                    throw e
+                }
+            } catch (e: FileNotFoundException) {
+                Log.d(TAG, "takePicture onError: $e")
+                throw e
+            }
+        }
+        imageCaptureUseCase.takePicture(
+            outputFileOptions,
+            defaultDispatcher.asExecutor(),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val relativePath =
+                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+                    val displayName = eligibleContentValues.getAsString(
+                        MediaStore.Images.Media.DISPLAY_NAME
+                    )
+                    Log.d(TAG, "Saved image to $relativePath/$displayName")
+                    imageDeferred.complete(outputFileResults)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.d(TAG, "takePicture onError: $exception")
+                    imageDeferred.completeExceptionally(exception)
+                }
+            }
+        )
+        imageDeferred.await()
+    }
+
+    private fun getEligibleContentValues(): ContentValues {
+        val eligibleContentValues = ContentValues()
+        eligibleContentValues.put(
+            MediaStore.Images.Media.DISPLAY_NAME,
+            Calendar.getInstance().time.toString()
+        )
+        eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        eligibleContentValues.put(
+            MediaStore.Images.Media.RELATIVE_PATH,
+            Environment.DIRECTORY_PICTURES
+        )
+        return eligibleContentValues
     }
 
     override suspend fun startVideoRecording() {
@@ -335,7 +405,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -348,7 +418,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
