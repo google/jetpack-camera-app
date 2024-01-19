@@ -55,6 +55,10 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -64,10 +68,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -405,7 +405,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase.screenFlash != null
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -418,7 +418,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()

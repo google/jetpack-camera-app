@@ -18,10 +18,8 @@ package com.google.jetpackcamera.settings.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -32,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -267,32 +266,33 @@ fun TargetFpsSetting(
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_none),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_NONE,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_NONE) }
                 )
-                if (deviceMaxFps >= 15) {
-                    SingleChoiceSelector(
-                        text = stringResource(id = R.string.fps_selector_15),
-                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
-                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
-                    )
-                }
-                if (deviceMaxFps >= 30) {
-                    SingleChoiceSelector(
-                        text = stringResource(id = R.string.fps_selector_30),
-                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
-                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
-                    )
-                }
-                if (deviceMaxFps >= 60) {
-                    SingleChoiceSelector(
-                        text = stringResource(id = R.string.fps_selector_60),
-                        selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
-                        onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
-                    )
-                }
+
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.fps_selector_15),
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) },
+                    enabled = deviceMaxFps >= 15
+                )
+
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.fps_selector_30),
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) },
+                    enabled = deviceMaxFps >= 30
+                )
+
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.fps_selector_60),
+                    selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) },
+                    enabled = deviceMaxFps >= 60
+                )
             }
         }
     )
@@ -383,17 +383,30 @@ fun SwitchSettingUI(
 fun SettingUI(
     modifier: Modifier = Modifier,
     title: String,
+    enabled: Boolean = true,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?
 ) {
     ListItem(
         modifier = modifier,
-        headlineContent = { Text(title) },
-        supportingContent = when (description) {
-            null -> null
-            else -> {
-                { Text(description) }
+        headlineContent = {
+            when (enabled) {
+                true -> Text(title)
+                false -> {
+                    Text(text = title, color = LocalContentColor.current.copy(alpha = .5f))
+                }
+            }
+        },
+        supportingContent = {
+            if (description != null) {
+                when (enabled) {
+                    true -> Text(description)
+                    false -> Text(
+                        text = description,
+                        color = LocalContentColor.current.copy(alpha = .5f)
+                    )
+                }
             }
         },
         leadingContent = leadingIcon,
@@ -408,6 +421,7 @@ fun SettingUI(
 fun SingleChoiceSelector(
     modifier: Modifier = Modifier,
     text: String,
+    secondaryText: String? = null,
     selected: Boolean,
     onClick: () -> Unit,
     enabled: Boolean = true
@@ -418,16 +432,23 @@ fun SingleChoiceSelector(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick
+                onClick = onClick,
+                enabled = enabled
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-            enabled = enabled
+        SettingUI(
+            title = text,
+            description = secondaryText,
+            enabled = enabled,
+            leadingIcon = {
+                RadioButton(
+                    selected = selected,
+                    onClick = onClick,
+                    enabled = enabled
+                )
+            },
+            trailingContent = null
         )
-        Spacer(Modifier.width(8.dp))
-        Text(text)
     }
 }
