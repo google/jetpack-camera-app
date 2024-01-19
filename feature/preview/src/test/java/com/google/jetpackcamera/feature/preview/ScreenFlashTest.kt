@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.content.ContentResolver
 import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
@@ -70,7 +71,8 @@ class ScreenFlashTest {
 
             // FlashMode.ON in front facing camera automatically enables screen flash
             cameraUseCase.setFlashMode(FlashMode.ON, true)
-            cameraUseCase.takePicture()
+            val contentResolver: ContentResolver = Mockito.mock()
+            cameraUseCase.takePicture(contentResolver, null)
 
             advanceUntilIdle()
             assertEquals(

@@ -15,10 +15,10 @@
  */
 
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -64,49 +64,51 @@ android {
 }
 
 dependencies {
-    implementation("androidx.tracing:tracing-ktx:1.2.0")
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
+    val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
     // Compose - Material Design 3
-    implementation("androidx.compose.material3:material3")
+    implementation(libs.compose.material3)
 
     // Compose - Android Studio Preview support
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
 
     // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation(libs.hilt.navigation.compose)
 
     // Compose - Testing
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
     // noinspection TestManifestGradleConfiguration: required for release build unit tests
-    testImplementation("androidx.compose.ui:ui-test-manifest")
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-core:5.2.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6")
-    testImplementation("org.robolectric:robolectric:4.11.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    debugImplementation("androidx.test:monitor:1.6.1")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.test.monitor)
+    implementation(libs.androidx.junit)
 
     // Guava
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.4.1")
+    implementation(libs.kotlinx.coroutines.guava)
 
     // CameraX
-    val camerax_version = "1.4.0-SNAPSHOT"
-    implementation("androidx.camera:camera-core:${camerax_version}")
-    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation(libs.camera.core)
+    implementation(libs.camera.view)
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.44")
-    kapt("com.google.dagger:hilt-compiler:2.44")
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+
+    //Tracing
+    implementation(libs.androidx.tracing)
 
     // Project dependencies
     implementation(project(":data:settings"))

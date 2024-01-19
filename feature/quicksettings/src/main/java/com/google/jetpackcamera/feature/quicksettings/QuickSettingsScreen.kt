@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import com.google.jetpackcamera.feature.quicksettings.ui.DropDownIcon
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -54,7 +53,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun QuickSettingsScreen(
+fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
     currentCameraSettings: CameraAppSettings,
     isOpen: Boolean = false,
@@ -115,11 +114,6 @@ fun QuickSettingsScreen(
     } else {
         shouldShowQuickSetting = IsExpandedQuickSetting.NONE
     }
-    DropDownIcon(
-        modifier = modifier,
-        toggleDropDown = toggleIsOpen,
-        isOpen = isOpen
-    )
 }
 
 // enum representing which individual quick setting is currently expanded
