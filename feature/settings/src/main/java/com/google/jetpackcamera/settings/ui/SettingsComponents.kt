@@ -332,8 +332,8 @@ fun SettingUI(
 ) {
     ListItem(
         modifier = modifier,
-        headlineText = { Text(title) },
-        supportingText = when (description) {
+        headlineContent = { Text(title) },
+        supportingContent = when (description) {
             null -> null
             else -> {
                 { Text(description) }

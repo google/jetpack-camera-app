@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -45,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -81,7 +83,8 @@ private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel()
+    viewModel: PreviewViewModel = hiltViewModel(),
+    previewMode: PreviewMode
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -273,12 +276,26 @@ fun PreviewScreen(
                     }
                 }
                 val multipleEventsCutter = remember { MultipleEventsCutter() }
-                /*todo: close quick settings on start record/image capture*/
+                val context = LocalContext.current
                 CaptureButton(
                     modifier = Modifier
                         .testTag(CAPTURE_BUTTON),
                     onClick = {
-                        multipleEventsCutter.processEvent { viewModel.captureImage() }
+                        multipleEventsCutter.processEvent {
+                            when (previewMode) {
+                                is PreviewMode.StandardMode -> {
+                                    viewModel.captureImage()
+                                }
+
+                                is PreviewMode.ExternalImageCaptureMode -> {
+                                    viewModel.captureImage(
+                                        context.contentResolver,
+                                        previewMode.imageCaptureUri,
+                                        previewMode.onImageCapture
+                                    )
+                                }
+                            }
+                        }
                         if (previewUiState.quickSettingsIsOpen) {
                             viewModel.toggleQuickSettings()
                         }
@@ -295,8 +312,7 @@ fun PreviewScreen(
                 // You can replace this row so long as the weight of the component is 1f to
                 // ensure the capture button remains centered.
                 Row(
-                    modifier =
-                    Modifier
+                    modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f)
                 ) {
@@ -324,4 +340,23 @@ fun PreviewScreen(
             onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
         )
     }
+}
+
+/**
+ * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
+ * UX differs depends on which mode the Preview is launched under.
+ */
+sealed interface PreviewMode {
+    /**
+     * The default mode for the app.
+     */
+    object StandardMode : PreviewMode
+
+    /**
+     * Under this mode, the app is launched by an external intent to capture an image.
+     */
+    data class ExternalImageCaptureMode(
+        val imageCaptureUri: Uri?,
+        val onImageCapture: (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) : PreviewMode
 }
