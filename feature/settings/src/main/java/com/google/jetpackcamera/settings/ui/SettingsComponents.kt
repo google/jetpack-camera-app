@@ -321,7 +321,6 @@ fun SwitchSettingUI(
 /**
  * A composable used as a template used to construct other settings components
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingUI(
     modifier: Modifier = Modifier,
