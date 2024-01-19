@@ -92,7 +92,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -202,7 +202,8 @@ fun PreviewScreen(
                                 }
                             )
                         )
-                        if (previewUiState.currentCameraSettings.supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
+                        if (previewUiState.currentCameraSettings.supportedStabilizationMode !=
+                            SupportedStabilizationMode.UNSUPPORTED &&
                             previewUiState.currentCameraSettings.videoCaptureStabilization ==
                             Stabilization.ON
                         ) {
@@ -247,7 +248,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }

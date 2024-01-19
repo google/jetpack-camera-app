@@ -38,7 +38,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -104,7 +102,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-                cameraAppSettings.isFrontCameraAvailable
+            cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -291,7 +289,6 @@ fun VideoStabilizeSetting(
         enabled = supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED,
         description = if (supportedStabilizationMode == SupportedStabilizationMode.UNSUPPORTED) {
             stringResource(id = R.string.stabilization_description_unsupported)
-
         } else {
             stringResource(
                 id = getStabilizationStringRes(
@@ -310,7 +307,7 @@ fun VideoStabilizeSetting(
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL,
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
+                        (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.ON)
@@ -325,7 +322,7 @@ fun VideoStabilizeSetting(
                     ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                            (currentVideoStabilization == Stabilization.ON),
+                        (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -336,7 +333,7 @@ fun VideoStabilizeSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.ON),
+                        (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
@@ -446,7 +443,7 @@ fun SettingUI(
             when (enabled) {
                 true -> Text(title)
                 false -> {
-                    Text(text = title, color = LocalContentColor.current.copy(alpha = .7f) )
+                    Text(text = title, color = LocalContentColor.current.copy(alpha = .7f))
                 }
             }
         },

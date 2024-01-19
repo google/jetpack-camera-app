@@ -91,7 +91,8 @@ object FakeSettingsRepository : SettingsRepository {
             if (isPreviewStabilizationSupported && isVideoStabilizationSupported) {
                 SupportedStabilizationMode.FULL
             } else if (isPreviewStabilizationSupported == false &&
-                isVideoStabilizationSupported == true) {
+                isVideoStabilizationSupported == true
+            ) {
                 SupportedStabilizationMode.VIDEO_ONLY
             } else {
                 SupportedStabilizationMode.UNSUPPORTED
