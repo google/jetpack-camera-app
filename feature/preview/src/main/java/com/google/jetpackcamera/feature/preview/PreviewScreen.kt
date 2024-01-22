@@ -92,7 +92,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -129,10 +129,11 @@ fun PreviewScreen(
             Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
         }
     } else if (previewUiState.cameraState == CameraState.READY) {
-
-        Box(modifier = Modifier.semantics {
-            testTagsAsResourceId = true
-        }) {
+        Box(
+            modifier = Modifier.semantics {
+                testTagsAsResourceId = true
+            }
+        ) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
                 onFlipCamera = viewModel::flipCamera,
@@ -188,7 +189,8 @@ fun PreviewScreen(
                                 )
                                 if (!previewUiState.quickSettingsIsOpen) {
                                     QuickSettingsIndicators(
-                                        currentCameraSettings = previewUiState.currentCameraSettings,
+                                        currentCameraSettings = previewUiState
+                                            .currentCameraSettings,
                                         onFlashModeClick = viewModel::setFlash
                                     )
                                 }
@@ -269,9 +271,12 @@ fun PreviewScreen(
                                         onClick = { viewModel.flipCamera() },
                                         // enable only when phone has front and rear camera
                                         enabledCondition =
-                                        previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                                previewUiState.currentCameraSettings
-                                                    .isFrontCameraAvailable
+                                        previewUiState
+                                            .currentCameraSettings
+                                            .isBackCameraAvailable &&
+                                            previewUiState
+                                                .currentCameraSettings
+                                                .isFrontCameraAvailable
                                     )
                                 }
                             }
