@@ -45,7 +45,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,12 +54,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
@@ -179,6 +181,45 @@ fun PreviewDisplay(
                 }
             )
         }
+    }
+}
+
+@Composable
+fun StabilizationIcon(
+    supportedStabilizationMode: SupportedStabilizationMode,
+    videoStabilization: Stabilization,
+    previewStabilization: Stabilization
+) {
+    if (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
+        (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
+    ) {
+
+        Icon(
+            painter = painterResource(id = R.drawable.baseline_video_stable_24),
+            contentDescription = when (supportedStabilizationMode) {
+                SupportedStabilizationMode.FULL -> {
+                    if (previewStabilization == Stabilization.ON) {
+                        stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+                    } else {
+                        stringResource(id = R.string.stabilization_icon_description_video_only)
+                    }
+                }
+
+                SupportedStabilizationMode.VIDEO_ONLY -> {
+                    stringResource(id = R.string.stabilization_icon_description_video_only)
+                }
+
+                SupportedStabilizationMode.PREVIEW_ONLY -> {
+                    stringResource(id = R.string.stabilization_icon_description_preview_only)
+                }
+
+                SupportedStabilizationMode.UNSUPPORTED -> {
+                    // this branch is unreachable but still needed to be included
+                    TODO()
+                }
+            },
+            tint = Color.White
+        )
     }
 }
 

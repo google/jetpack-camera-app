@@ -374,7 +374,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -387,7 +387,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -439,9 +439,7 @@ constructor(
 
         // set video stabilization
 
-        if (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
-            stabilizeVideoMode != Stabilization.UNDEFINED
-        ) {
+        if (shouldVideoBeStabilized()) {
             val isStabilized = when (stabilizeVideoMode) {
                 Stabilization.ON -> true
                 Stabilization.OFF, Stabilization.UNDEFINED -> false
@@ -451,12 +449,20 @@ constructor(
         return videoCaptureBuilder.build()
     }
 
+    private fun shouldVideoBeStabilized(): Boolean {
+        // video is supported by the device AND
+        // video is on OR preview is on
+        return (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED) &&
+                ((stabilizeVideoMode == Stabilization.ON &&
+                        stabilizePreviewMode != Stabilization.OFF) ||
+                        (stabilizePreviewMode == Stabilization.ON &&
+                                stabilizeVideoMode != Stabilization.OFF))
+    }
+
     private fun createPreviewUseCase(): Preview {
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
-        if (supportedStabilizationMode == SupportedStabilizationMode.FULL &&
-            stabilizePreviewMode != Stabilization.UNDEFINED
-        ) {
+        if (shouldPreviewBeStabilized()) {
             val isStabilized = when (stabilizePreviewMode) {
                 Stabilization.ON -> true
                 else -> false
@@ -464,6 +470,12 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
         }
         return previewUseCaseBuilder.build()
+    }
+
+    private fun shouldPreviewBeStabilized(): Boolean {
+        return (supportedStabilizationMode == SupportedStabilizationMode.FULL ||
+                    supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY) &&
+            stabilizeVideoMode == Stabilization.ON
     }
 
     // converts LensFacing from datastore to @LensFacing Int value

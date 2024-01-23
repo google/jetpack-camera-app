@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -66,13 +64,12 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
+import com.google.jetpackcamera.feature.preview.ui.StabilizationIcon
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreen
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 
@@ -95,7 +92,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+            by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -205,18 +202,18 @@ fun PreviewScreen(
                                 }
                             )
                         )
-                        if (previewUiState.currentCameraSettings.supportedStabilizationMode !=
-                            SupportedStabilizationMode.UNSUPPORTED &&
-                            previewUiState.currentCameraSettings.videoCaptureStabilization ==
-                            Stabilization.ON
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.baseline_video_stable_24),
-                                contentDescription = "video stabilization is on",
-                                tint = Color.White
-                            )
-                        }
+
+
+                        StabilizationIcon(
+                            supportedStabilizationMode = previewUiState
+                                .currentCameraSettings.supportedStabilizationMode,
+                            videoStabilization = previewUiState
+                                .currentCameraSettings.videoCaptureStabilization,
+                            previewStabilization = previewUiState
+                                .currentCameraSettings.previewStabilization
+                        )
                     }
+
                 }
             }
 
@@ -251,7 +248,7 @@ fun PreviewScreen(
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState.currentCameraSettings.isBackCameraAvailable &&
-                                    previewUiState.currentCameraSettings.isFrontCameraAvailable
+                                        previewUiState.currentCameraSettings.isFrontCameraAvailable
                             )
                         }
                     }
