@@ -151,11 +151,9 @@ constructor(
         var maxFps = 5
         cameraProvider.availableCameraInfos.forEach { e ->
             val ranges = e.supportedFrameRateRanges
-            Log.d(TAG, "hewwo $ranges")
 
             val highest = getMaxFps(currentHighestFps = maxFps, supportedFrameRateRanges = ranges)
             maxFps = maxFps.coerceAtLeast(highest)
-            Log.d(TAG, "uwu $highest")
         }
         coroutineScope {
             settingsRepository.updateMaxFrameRate(maxFps, currentTargetFrameRate)
@@ -405,7 +403,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -418,7 +416,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
