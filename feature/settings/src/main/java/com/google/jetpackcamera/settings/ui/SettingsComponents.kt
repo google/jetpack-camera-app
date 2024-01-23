@@ -305,7 +305,8 @@ fun StabilizationSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                    enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL,
+                    enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL ||
+                    supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY,
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -320,7 +321,8 @@ fun StabilizationSetting(
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode == SupportedStabilizationMode.VIDEO_ONLY,
+                    enabled = supportedStabilizationMode == SupportedStabilizationMode.VIDEO_ONLY ||
+                            supportedStabilizationMode == SupportedStabilizationMode.FULL,
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),
@@ -329,23 +331,6 @@ fun StabilizationSetting(
                         setPreviewStabilization(Stabilization.UNDEFINED)
                     }
                 )
-
-                // preview-only selector
-                // *only displays if video is unsupported
-                if (supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY) {
-                    SingleChoiceSelector(
-                        text = stringResource(id = R.string.stabilization_selector_on),
-                        secondaryText = stringResource(
-                            id = R.string.stabilization_selector_on_info
-                        ),
-                        selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
-                        onClick = {
-                            setVideoStabilization(Stabilization.UNDEFINED)
-                            setPreviewStabilization(Stabilization.ON)
-                        }
-                    )
-                }
 
                 // off selector
                 SingleChoiceSelector(

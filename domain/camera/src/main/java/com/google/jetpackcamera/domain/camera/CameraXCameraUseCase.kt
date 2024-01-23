@@ -454,11 +454,13 @@ constructor(
         // video is on OR preview is on
         return (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED) &&
             (
-                (
-                    stabilizeVideoMode == Stabilization.ON &&
-                        stabilizePreviewMode != Stabilization.OFF
-                    ) ||
+                    // high quality (video only) selected
                     (
+                    stabilizeVideoMode == Stabilization.ON &&
+                        stabilizePreviewMode == Stabilization.UNDEFINED
+                    ) ||
+                            // or on is selected
+                            (
                         stabilizePreviewMode == Stabilization.ON &&
                             stabilizeVideoMode != Stabilization.OFF
                         )
@@ -483,7 +485,7 @@ constructor(
             supportedStabilizationMode == SupportedStabilizationMode.FULL ||
                 supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY
             ) &&
-            stabilizeVideoMode == Stabilization.ON
+            stabilizePreviewMode == Stabilization.ON
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
