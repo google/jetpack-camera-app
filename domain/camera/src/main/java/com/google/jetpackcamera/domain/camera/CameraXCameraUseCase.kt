@@ -374,7 +374,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase.screenFlash != null
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -387,7 +387,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                    (captureMode == CaptureMode.SINGLE_STREAM)
+                (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
@@ -453,10 +453,16 @@ constructor(
         // video is supported by the device AND
         // video is on OR preview is on
         return (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED) &&
-                ((stabilizeVideoMode == Stabilization.ON &&
-                        stabilizePreviewMode != Stabilization.OFF) ||
-                        (stabilizePreviewMode == Stabilization.ON &&
-                                stabilizeVideoMode != Stabilization.OFF))
+            (
+                (
+                    stabilizeVideoMode == Stabilization.ON &&
+                        stabilizePreviewMode != Stabilization.OFF
+                    ) ||
+                    (
+                        stabilizePreviewMode == Stabilization.ON &&
+                            stabilizeVideoMode != Stabilization.OFF
+                        )
+                )
     }
 
     private fun createPreviewUseCase(): Preview {
@@ -473,8 +479,10 @@ constructor(
     }
 
     private fun shouldPreviewBeStabilized(): Boolean {
-        return (supportedStabilizationMode == SupportedStabilizationMode.FULL ||
-                    supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY) &&
+        return (
+            supportedStabilizationMode == SupportedStabilizationMode.FULL ||
+                supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY
+            ) &&
             stabilizeVideoMode == Stabilization.ON
     }
 

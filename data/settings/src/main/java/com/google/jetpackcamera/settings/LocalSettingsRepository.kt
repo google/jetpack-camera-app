@@ -204,7 +204,7 @@ class LocalSettingsRepository @Inject constructor(
             SupportedStabilizationMode.FULL
         } else if (!previewSupport && videoSupport) {
             SupportedStabilizationMode.VIDEO_ONLY
-        } else if(previewSupport && !videoSupport) {
+        } else if (previewSupport && !videoSupport) {
             SupportedStabilizationMode.PREVIEW_ONLY
         } else {
             SupportedStabilizationMode.UNSUPPORTED

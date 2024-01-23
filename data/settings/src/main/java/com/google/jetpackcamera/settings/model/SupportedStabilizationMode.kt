@@ -19,10 +19,13 @@ package com.google.jetpackcamera.settings.model
 enum class SupportedStabilizationMode {
     /** Device supports both Preview and Video stabilization. */
     FULL,
+
     /** Device supports only Video stabilization.*/
     VIDEO_ONLY,
+
     /** Device supports only Preview stabilization.*/
     PREVIEW_ONLY,
+
     /** Device doesn't support any stabilization.*/
     UNSUPPORTED
 }

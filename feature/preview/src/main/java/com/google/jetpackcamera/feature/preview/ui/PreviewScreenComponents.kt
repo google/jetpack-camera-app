@@ -193,13 +193,14 @@ fun StabilizationIcon(
     if (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
         (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
     ) {
-
         Icon(
             painter = painterResource(id = R.drawable.baseline_video_stable_24),
             contentDescription = when (supportedStabilizationMode) {
                 SupportedStabilizationMode.FULL -> {
                     if (previewStabilization == Stabilization.ON) {
-                        stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+                        stringResource(
+                            id = R.string.stabilization_icon_description_preview_and_video
+                        )
                     } else {
                         stringResource(id = R.string.stabilization_icon_description_video_only)
                     }

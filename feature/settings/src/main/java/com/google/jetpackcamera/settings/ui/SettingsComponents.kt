@@ -102,7 +102,7 @@ fun DefaultCameraFacing(
         onClick = { onClick() },
         settingValue = cameraAppSettings.isFrontCameraFacing,
         enabled = cameraAppSettings.isBackCameraAvailable &&
-                cameraAppSettings.isFrontCameraAvailable
+            cameraAppSettings.isFrontCameraAvailable
     )
 }
 
@@ -307,7 +307,7 @@ fun StabilizationSetting(
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL,
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
+                        (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.UNDEFINED)
                         setPreviewStabilization(Stabilization.ON)
@@ -323,7 +323,7 @@ fun StabilizationSetting(
                     enabled = supportedStabilizationMode == SupportedStabilizationMode.VIDEO_ONLY,
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                            (currentVideoStabilization == Stabilization.ON),
+                        (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -335,9 +335,11 @@ fun StabilizationSetting(
                 if (supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY) {
                     SingleChoiceSelector(
                         text = stringResource(id = R.string.stabilization_selector_on),
-                        secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
+                        secondaryText = stringResource(
+                            id = R.string.stabilization_selector_on_info
+                        ),
                         selected = (currentPreviewStabilization == Stabilization.ON) &&
-                                (currentVideoStabilization != Stabilization.OFF),
+                            (currentVideoStabilization != Stabilization.OFF),
                         onClick = {
                             setVideoStabilization(Stabilization.UNDEFINED)
                             setPreviewStabilization(Stabilization.ON)
@@ -349,7 +351,7 @@ fun StabilizationSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.ON),
+                        (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
