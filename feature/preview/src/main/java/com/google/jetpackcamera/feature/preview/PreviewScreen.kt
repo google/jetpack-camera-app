@@ -96,6 +96,7 @@ fun PreviewScreen(
 
     LaunchedEffect(lifecycleOwner) {
         val surfaceProvider = deferredSurfaceProvider.await()
+
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.runCamera(surfaceProvider)
             try {

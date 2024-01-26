@@ -20,6 +20,10 @@ import android.view.Display
 import android.view.View
 import android.widget.Toast
 import androidx.camera.core.Preview
+import androidx.camera.viewfinder.compose.Viewfinder
+import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.camera.viewfinder.surface.TransformationInfo
+import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -45,6 +49,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -53,13 +59,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
@@ -145,6 +149,7 @@ fun PreviewDisplay(
         val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
         val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
         val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        Log.d(TAG, "$width x $height")
         Box(
             modifier = Modifier
                 .width(width)
@@ -160,6 +165,69 @@ fun PreviewDisplay(
         }
     }
 }
+
+@Composable
+fun CameraPreview(
+    modifier: Modifier = Modifier,
+    implementationMode: ImplementationMode = ImplementationMode.COMPATIBLE,
+    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {}
+) {
+    Log.d(TAG, "CameraPreview")
+
+    val surfaceRequest by produceState<ViewfinderSurfaceRequest?>(initialValue = null) {
+        onSurfaceProviderReady(
+            Preview.SurfaceProvider { request ->
+                Log.d(TAG, "newSurfaceRequest: $request")
+                value?.willNotProvideSurface()
+                value = ViewfinderSurfaceRequest.Builder(request.resolution)
+                    .setImplementationMode(ImplementationMode.PERFORMANCE)
+                    .build()
+            }
+        )
+    }
+
+
+    val transformationInfo by produceState<TransformationInfo?>(
+        key1 = surfaceRequest,
+        initialValue = null
+    ) {
+        surfaceRequest?.let {
+            value = TransformationInfo(0,0,900,0,1600,false)
+//            it.setTransformationInfoListener(
+//                Dispatchers.Main.asExecutor()
+//            ) { transformationInfo ->
+//                Log.d(TAG, "TransformationInfo: $transformationInfo")
+//                value = TransformationInfo(
+//                    transformationInfo.rotationDegrees,
+//                    transformationInfo.cropRect.left,
+//                    transformationInfo.cropRect.right,
+//                    transformationInfo.cropRect.top,
+//                    transformationInfo.cropRect.bottom,
+//                    transformationInfo.isMirroring
+//                )
+//            }
+        }
+
+        awaitDispose {
+//            surfaceRequest?.clearTransformationInfoListener()
+        }
+    }
+
+
+    surfaceRequest?.let { request ->
+
+        transformationInfo?.let { info ->
+            Log.d("JOLO", "Set ViewFinder")
+            Viewfinder(
+                surfaceRequest = request,
+                implementationMode = implementationMode,
+                transformationInfo = info,
+                modifier = modifier
+            )
+        }
+    }
+}
+
 
 /**
  * A temporary button that can be added to preview for quick testing purposes

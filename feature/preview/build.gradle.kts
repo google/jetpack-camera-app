@@ -64,7 +64,7 @@ android {
 
 dependencies {
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2024.01.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -94,7 +94,7 @@ dependencies {
     // CameraX
     val camerax_version = "1.4.0-SNAPSHOT"
     implementation("androidx.camera:camera-core:${camerax_version}")
-    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("androidx.camera:camera-viewfinder-compose:1.0.0-SNAPSHOT")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.44")
@@ -103,7 +103,6 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
-    implementation(project(":camera-viewfinder-compose"))
     implementation(project(":feature:quicksettings"))
 }
 
