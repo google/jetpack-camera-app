@@ -31,7 +31,6 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
-import androidx.camera.core.ImageCapture.ScreenFlashUiCompleter
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -332,12 +331,15 @@ constructor(
 
         if (isScreenFlashRequired) {
             imageCaptureUseCase.screenFlash = object : ScreenFlash {
-                override fun apply(screenFlashUiCompleter: ScreenFlashUiCompleter) {
+                override fun apply(
+                    expirationTimeMillis: Long,
+                    listener: ImageCapture.ScreenFlashListener
+                ) {
                     Log.d(TAG, "ImageCapture.ScreenFlash: apply")
                     coroutineScope.launch {
                         screenFlashEvents.emit(
                             CameraUseCase.ScreenFlashEvent(Type.APPLY_UI) {
-                                screenFlashUiCompleter.complete()
+                                listener.onCompleted()
                             }
                         )
                     }
