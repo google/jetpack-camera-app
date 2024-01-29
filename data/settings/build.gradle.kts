@@ -56,10 +56,9 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     implementation(libs.kotlinx.coroutines.core)
-    androidTestImplementation(libs.kotlinx.coroutines.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
     // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
