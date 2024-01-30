@@ -23,8 +23,7 @@
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_capture_failure">Image Capture Failure</string>
-    <string name="stabilization_icon_description_preview_and_video">Preview and video are stabilized</string>
-    <string name="stabilization_icon_description_preview_only">Only Preview is Stabilized</string>
+    <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
 
 </resources>

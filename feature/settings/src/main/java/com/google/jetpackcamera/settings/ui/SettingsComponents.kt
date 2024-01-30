@@ -279,15 +279,15 @@ private fun getStabilizationStringRes(
 fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
-    supportedStabilizationMode: SupportedStabilizationMode,
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED,
-        description = if (supportedStabilizationMode == SupportedStabilizationMode.UNSUPPORTED) {
+        enabled = supportedStabilizationMode.isNotEmpty(),
+        description = if (supportedStabilizationMode.isEmpty()) {
             stringResource(id = R.string.stabilization_description_unsupported)
         } else {
             stringResource(
@@ -305,8 +305,7 @@ fun StabilizationSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                    enabled = supportedStabilizationMode == SupportedStabilizationMode.FULL ||
-                    supportedStabilizationMode == SupportedStabilizationMode.PREVIEW_ONLY,
+                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -321,8 +320,7 @@ fun StabilizationSetting(
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode == SupportedStabilizationMode.VIDEO_ONLY ||
-                            supportedStabilizationMode == SupportedStabilizationMode.FULL,
+                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.HIGH_QUALITY),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),

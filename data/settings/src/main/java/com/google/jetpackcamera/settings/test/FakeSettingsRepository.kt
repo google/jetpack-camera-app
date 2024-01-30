@@ -87,18 +87,18 @@ object FakeSettingsRepository : SettingsRepository {
     }
 
     private fun setSupportedStabilizationMode() {
-        val stabilizationMode =
-            if (isPreviewStabilizationSupported && isVideoStabilizationSupported) {
-                SupportedStabilizationMode.FULL
-            } else if (isPreviewStabilizationSupported == false &&
-                isVideoStabilizationSupported == true
-            ) {
-                SupportedStabilizationMode.VIDEO_ONLY
-            } else {
-                SupportedStabilizationMode.UNSUPPORTED
+        val stabilizationModes =
+            buildList {
+                if (isPreviewStabilizationSupported) {
+                    add(SupportedStabilizationMode.ON)
+                }
+                if (isVideoStabilizationSupported){
+                    add(SupportedStabilizationMode.HIGH_QUALITY)
+                }
             }
+
         currentCameraSettings =
-            currentCameraSettings.copy(supportedStabilizationMode = stabilizationMode)
+            currentCameraSettings.copy(supportedStabilizationMode = stabilizationModes)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

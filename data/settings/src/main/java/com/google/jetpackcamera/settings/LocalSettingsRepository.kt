@@ -199,15 +199,14 @@ class LocalSettingsRepository @Inject constructor(
     private fun getSupportedStabilization(
         previewSupport: Boolean,
         videoSupport: Boolean
-    ): SupportedStabilizationMode {
-        return if (previewSupport && videoSupport) {
-            SupportedStabilizationMode.FULL
-        } else if (!previewSupport && videoSupport) {
-            SupportedStabilizationMode.VIDEO_ONLY
-        } else if (previewSupport && !videoSupport) {
-            SupportedStabilizationMode.PREVIEW_ONLY
-        } else {
-            SupportedStabilizationMode.UNSUPPORTED
+    ): List<SupportedStabilizationMode> {
+        return buildList {
+            if (previewSupport && videoSupport) {
+                add(SupportedStabilizationMode.ON)
+            }
+            if (!previewSupport && videoSupport) {
+                add(SupportedStabilizationMode.HIGH_QUALITY)
+            }
         }
     }
 }

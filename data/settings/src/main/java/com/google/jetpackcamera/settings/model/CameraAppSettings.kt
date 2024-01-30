@@ -28,8 +28,7 @@ data class CameraAppSettings(
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
-    val supportedStabilizationMode: SupportedStabilizationMode =
-        SupportedStabilizationMode.UNSUPPORTED
+    val supportedStabilizationMode: List<SupportedStabilizationMode> = emptyList()
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

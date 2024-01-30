@@ -186,39 +186,23 @@ fun PreviewDisplay(
 
 @Composable
 fun StabilizationIcon(
-    supportedStabilizationMode: SupportedStabilizationMode,
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
     videoStabilization: Stabilization,
     previewStabilization: Stabilization
 ) {
-    if (supportedStabilizationMode != SupportedStabilizationMode.UNSUPPORTED &&
+    if (supportedStabilizationMode.isNotEmpty() &&
         (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
     ) {
+        val descriptionText = if (videoStabilization == Stabilization.ON) {
+            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+        }
+        else {
+            // previewStabilization will not be on for high quality
+            stringResource(id = R.string.stabilization_icon_description_video_only)
+        }
         Icon(
             painter = painterResource(id = R.drawable.baseline_video_stable_24),
-            contentDescription = when (supportedStabilizationMode) {
-                SupportedStabilizationMode.FULL -> {
-                    if (previewStabilization == Stabilization.ON) {
-                        stringResource(
-                            id = R.string.stabilization_icon_description_preview_and_video
-                        )
-                    } else {
-                        stringResource(id = R.string.stabilization_icon_description_video_only)
-                    }
-                }
-
-                SupportedStabilizationMode.VIDEO_ONLY -> {
-                    stringResource(id = R.string.stabilization_icon_description_video_only)
-                }
-
-                SupportedStabilizationMode.PREVIEW_ONLY -> {
-                    stringResource(id = R.string.stabilization_icon_description_preview_only)
-                }
-
-                SupportedStabilizationMode.UNSUPPORTED -> {
-                    // this branch is unreachable but still needed to be included
-                    TODO()
-                }
-            },
+            contentDescription = descriptionText,
             tint = Color.White
         )
     }
