@@ -195,8 +195,7 @@ fun StabilizationIcon(
     ) {
         val descriptionText = if (videoStabilization == Stabilization.ON) {
             stringResource(id = R.string.stabilization_icon_description_preview_and_video)
-        }
-        else {
+        } else {
             // previewStabilization will not be on for high quality
             stringResource(id = R.string.stabilization_icon_description_video_only)
         }

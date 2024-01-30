@@ -21,5 +21,5 @@ enum class SupportedStabilizationMode {
     ON,
 
     /** Device supports Video stabilization.*/
-    HIGH_QUALITY,
+    HIGH_QUALITY
 }

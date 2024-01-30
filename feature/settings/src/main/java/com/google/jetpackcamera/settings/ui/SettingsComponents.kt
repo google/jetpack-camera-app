@@ -320,7 +320,9 @@ fun StabilizationSetting(
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.HIGH_QUALITY),
+                    enabled = supportedStabilizationMode.contains(
+                        SupportedStabilizationMode.HIGH_QUALITY
+                    ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),

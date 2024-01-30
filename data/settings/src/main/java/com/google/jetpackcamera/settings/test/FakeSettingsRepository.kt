@@ -92,7 +92,7 @@ object FakeSettingsRepository : SettingsRepository {
                 if (isPreviewStabilizationSupported) {
                     add(SupportedStabilizationMode.ON)
                 }
-                if (isVideoStabilizationSupported){
+                if (isVideoStabilizationSupported) {
                     add(SupportedStabilizationMode.HIGH_QUALITY)
                 }
             }
