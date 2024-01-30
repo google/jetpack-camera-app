@@ -53,12 +53,6 @@ class EmptySurfaceProcessor : SurfaceProcessor {
         glThread.start()
         glHandler = Handler(glThread.looper)
         glExecutor = newHandlerExecutor(glHandler)
-        glExecutor.execute {
-            glRenderer.init(
-                DynamicRange.SDR,
-                ShaderProvider.DEFAULT
-            )
-        }
     }
 
     override fun onInputSurface(surfaceRequest: SurfaceRequest) {
@@ -67,6 +61,41 @@ class EmptySurfaceProcessor : SurfaceProcessor {
             surfaceRequest.willNotProvideSurface()
             return
         }
+
+        // Internally, this checks if the renderer is already initialized, so it's ok to call.
+        glRenderer.release()
+
+        val shaderProvider =
+            if (surfaceRequest.dynamicRange.encoding != DynamicRange.ENCODING_SDR &&
+                surfaceRequest.dynamicRange.bitDepth == DynamicRange.BIT_DEPTH_10_BIT
+            ) {
+                object : ShaderProvider {
+                    override fun createFragmentShader(
+                        samplerVarName: String,
+                        fragCoordsVarName: String
+                    ): String {
+                        return """
+                            #version 300 es
+                            #extension GL_OES_EGL_image_external : require
+                            #extension GL_EXT_YUV_target : require
+                            precision mediump float;
+                            uniform __samplerExternal2DY2YEXT $samplerVarName;
+                            in vec2 $fragCoordsVarName;
+                            out vec4 outColor;
+                            void main() {
+                              vec3 srcYuv = texture($samplerVarName, $fragCoordsVarName).xyz;
+                              outColor = vec4(srcYuv, 1.0);
+                            }
+                        """.trimIndent()
+                    }
+                }
+            } else {
+                ShaderProvider.DEFAULT
+            }
+
+        // Init with new dynamic range
+        glRenderer.init(surfaceRequest.dynamicRange, shaderProvider)
+
         val surfaceTexture = SurfaceTexture(glRenderer.textureName)
         surfaceTexture.setDefaultBufferSize(
             surfaceRequest.resolution.width,
@@ -78,6 +107,7 @@ class EmptySurfaceProcessor : SurfaceProcessor {
             surfaceTexture.release()
             surface.release()
         }
+
         surfaceTexture.setOnFrameAvailableListener({
             checkGlThread()
             if (!isReleased) {
