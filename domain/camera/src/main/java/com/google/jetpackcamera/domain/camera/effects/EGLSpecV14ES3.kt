@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.domain.camera
+package com.google.jetpackcamera.domain.camera.effects
 
 import android.hardware.HardwareBuffer
 import android.opengl.EGL14
