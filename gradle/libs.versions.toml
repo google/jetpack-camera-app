@@ -8,6 +8,7 @@ androidxCore = "1.12.0"
 androidxCoreKtx = "1.12.0"
 androidxLifecycle = "2.7.0"
 androidxTracing = "1.2.0"
+atomicfu = "0.23.2"
 benchmarkMacroJunit4 = "1.2.3"
 camerax = "1.4.0-SNAPSHOT"
 camerax-viewfinder-compose = "1.0.0-SNAPSHOT"
@@ -69,6 +70,7 @@ dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref
 futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "futures" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
