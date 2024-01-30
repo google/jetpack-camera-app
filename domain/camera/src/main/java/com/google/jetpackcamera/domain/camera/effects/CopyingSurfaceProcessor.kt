@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera
+package com.google.jetpackcamera.domain.camera.effects
 
 import android.graphics.SurfaceTexture
 import android.opengl.EGL14
@@ -122,7 +122,7 @@ private const val TIMESTAMP_UNINITIALIZED = -1L
  * This is a [SurfaceProcessor] that passes on the same content from the input
  * surface to the output surface. Used to make a copies of surfaces.
  */
-class EmptySurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor {
+class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor {
 
     private val inputSurfaceFlow = MutableStateFlow<SurfaceRequestScope?>(null)
     private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
