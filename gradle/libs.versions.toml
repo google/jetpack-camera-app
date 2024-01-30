@@ -7,6 +7,7 @@ androidxAppCompat = "1.6.1"
 androidxCore = "1.12.0"
 androidxCoreKtx = "1.12.0"
 androidxTracing = "1.2.0"
+atomicfu = "0.23.2"
 benchmarkMacroJunit4 = "1.2.2"
 camerax = "1.4.0-SNAPSHOT"
 camerax-viewfinder-compose = "1.0.0-SNAPSHOT"
@@ -33,6 +34,7 @@ protobuf = "3.21.12"
 protobuf-plugin = "0.9.1"
 robolectric = "4.11.1"
 testMonitor = "1.6.1"
+truth = "1.0.1"
 uiautomator = "2.2.0"
 viewmodelCompose = "2.7.0"
 
@@ -71,6 +73,7 @@ dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref
 futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "futures" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "guava" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
@@ -78,6 +81,7 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+truth = { module = "com.google.truth:truth", version.ref = "truth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidLibrary" }
