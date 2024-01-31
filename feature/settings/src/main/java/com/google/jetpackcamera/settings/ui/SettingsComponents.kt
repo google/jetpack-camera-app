@@ -32,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -44,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -54,6 +54,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -271,41 +272,44 @@ private fun getStabilizationStringRes(
  * ON - Both preview and video are stabilized.
  * HIGH_QUALITY - Video will be stabilized, preview might be stabilized, depending on the device.
  * OFF - Preview and video stabilization is disabled.
+ *
+ * @param supportedStabilizationMode the enabled condition for this setting.
  */
 @Composable
-fun VideoStabilizeSetting(
+fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        description = stringResource(
-            id = getStabilizationStringRes(
-                previewStabilization = currentPreviewStabilization,
-                videoStabilization = currentVideoStabilization
+        enabled = supportedStabilizationMode.isNotEmpty(),
+        description = if (supportedStabilizationMode.isEmpty()) {
+            stringResource(id = R.string.stabilization_description_unsupported)
+        } else {
+            stringResource(
+                id = getStabilizationStringRes(
+                    previewStabilization = currentPreviewStabilization,
+                    videoStabilization = currentVideoStabilization
+                )
             )
-        ),
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                Text(
-                    text = stringResource(id = R.string.stabilization_popup_disclaimer),
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // on selector
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
+                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
-                        setVideoStabilization(Stabilization.ON)
+                        setVideoStabilization(Stabilization.UNDEFINED)
                         setPreviewStabilization(Stabilization.ON)
                     }
                 )
@@ -315,6 +319,9 @@ fun VideoStabilizeSetting(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
+                    ),
+                    enabled = supportedStabilizationMode.contains(
+                        SupportedStabilizationMode.HIGH_QUALITY
                     ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
@@ -361,6 +368,7 @@ fun BasicPopupSetting(
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
+        enabled = enabled,
         description = description,
         leadingIcon = leadingIcon,
         trailingContent = null
@@ -403,6 +411,7 @@ fun SwitchSettingUI(
             value = settingValue,
             onValueChange = { _ -> onClick() }
         ),
+        enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
@@ -425,17 +434,30 @@ fun SwitchSettingUI(
 fun SettingUI(
     modifier: Modifier = Modifier,
     title: String,
+    enabled: Boolean = true,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?
 ) {
     ListItem(
         modifier = modifier,
-        headlineContent = { Text(title) },
-        supportingContent = when (description) {
-            null -> null
-            else -> {
-                { Text(description) }
+        headlineContent = {
+            when (enabled) {
+                true -> Text(title)
+                false -> {
+                    Text(text = title, color = LocalContentColor.current.copy(alpha = .7f))
+                }
+            }
+        },
+        supportingContent = {
+            if (description != null) {
+                when (enabled) {
+                    true -> Text(description)
+                    false -> Text(
+                        text = description,
+                        color = LocalContentColor.current.copy(alpha = .7f)
+                    )
+                }
             }
         },
         leadingContent = leadingIcon,
@@ -461,13 +483,15 @@ fun SingleChoiceSelector(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick
+                onClick = onClick,
+                enabled = enabled
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SettingUI(
             title = text,
             description = secondaryText,
+            enabled = enabled,
             leadingIcon = {
                 RadioButton(
                     selected = selected,

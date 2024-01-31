@@ -33,6 +33,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
+        .setStabilizePreviewSupported(false)
+        .setStabilizeVideoSupported(false)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

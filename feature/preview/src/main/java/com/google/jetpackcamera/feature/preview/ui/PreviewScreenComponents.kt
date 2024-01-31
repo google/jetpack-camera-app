@@ -45,7 +45,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,12 +54,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
@@ -182,6 +184,29 @@ fun PreviewDisplay(
     }
 }
 
+@Composable
+fun StabilizationIcon(
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
+    videoStabilization: Stabilization,
+    previewStabilization: Stabilization
+) {
+    if (supportedStabilizationMode.isNotEmpty() &&
+        (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
+    ) {
+        val descriptionText = if (videoStabilization == Stabilization.ON) {
+            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+        } else {
+            // previewStabilization will not be on for high quality
+            stringResource(id = R.string.stabilization_icon_description_video_only)
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.baseline_video_stable_24),
+            contentDescription = descriptionText,
+            tint = Color.White
+        )
+    }
+}
+
 /**
  * A temporary button that can be added to preview for quick testing purposes
  */
@@ -202,21 +227,18 @@ fun FlipCameraButton(
     enabledCondition: Boolean,
     onClick: () -> Unit
 ) {
-    Box(modifier = modifier) {
-        IconButton(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(40.dp),
-            onClick = onClick,
-            enabled = enabledCondition
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Refresh,
-                tint = Color.White,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
-                modifier = Modifier.size(72.dp)
-            )
-        }
+    IconButton(
+        modifier = modifier
+            .size(40.dp),
+        onClick = onClick,
+        enabled = enabledCondition
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Refresh,
+            tint = Color.White,
+            contentDescription = stringResource(id = R.string.flip_camera_content_description),
+            modifier = Modifier.size(72.dp)
+        )
     }
 }
 

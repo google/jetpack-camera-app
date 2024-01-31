@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,10 @@ class LocalSettingsRepository @Inject constructor(
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
+                supportedStabilizationModes = getSupportedStabilization(
+                    previewSupport = it.stabilizePreviewSupported,
+                    videoSupport = it.stabilizeVideoSupported
+                ),
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
@@ -172,6 +177,36 @@ class LocalSettingsRepository @Inject constructor(
             currentSettings.toBuilder()
                 .setStabilizeVideo(newStatus)
                 .build()
+        }
+    }
+
+    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizeVideoSupported(isSupported)
+                .build()
+        }
+    }
+
+    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizeVideoSupported(isSupported)
+                .build()
+        }
+    }
+
+    private fun getSupportedStabilization(
+        previewSupport: Boolean,
+        videoSupport: Boolean
+    ): List<SupportedStabilizationMode> {
+        return buildList {
+            if (previewSupport && videoSupport) {
+                add(SupportedStabilizationMode.ON)
+            }
+            if (!previewSupport && videoSupport) {
+                add(SupportedStabilizationMode.HIGH_QUALITY)
+            }
         }
     }
 }
