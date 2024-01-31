@@ -104,7 +104,7 @@ constructor(
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
     private lateinit var surfaceProvider: Preview.SurfaceProvider
-    private lateinit var supportedStabilizationMode: List<SupportedStabilizationMode>
+    private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
     private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
@@ -115,7 +115,7 @@ constructor(
         this.captureMode = currentCameraSettings.captureMode
         this.stabilizePreviewMode = currentCameraSettings.previewStabilization
         this.stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
-        this.supportedStabilizationMode = currentCameraSettings.supportedStabilizationMode
+        this.supportedStabilizationModes = currentCameraSettings.supportedStabilizationModes
         setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
@@ -454,7 +454,7 @@ constructor(
     private fun shouldVideoBeStabilized(): Boolean {
         // video is supported by the device AND
         // video is on OR preview is on
-        return (supportedStabilizationMode.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+        return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
             (
                 // high quality (video only) selected
                 (
@@ -484,7 +484,7 @@ constructor(
 
     private fun shouldPreviewBeStabilized(): Boolean {
         return (
-            supportedStabilizationMode.contains(SupportedStabilizationMode.ON) &&
+            supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
                 stabilizePreviewMode == Stabilization.ON
             )
     }

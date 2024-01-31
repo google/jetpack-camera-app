@@ -84,7 +84,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
-        supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationMode,
+        supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization
     )

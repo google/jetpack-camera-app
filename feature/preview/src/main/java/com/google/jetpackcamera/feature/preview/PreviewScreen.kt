@@ -226,7 +226,7 @@ fun PreviewScreen(
                                 )
                                 StabilizationIcon(
                                     supportedStabilizationMode = previewUiState
-                                        .currentCameraSettings.supportedStabilizationMode,
+                                        .currentCameraSettings.supportedStabilizationModes,
                                     videoStabilization = previewUiState
                                         .currentCameraSettings.videoCaptureStabilization,
                                     previewStabilization = previewUiState

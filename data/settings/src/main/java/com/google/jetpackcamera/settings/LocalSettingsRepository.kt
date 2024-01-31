@@ -61,7 +61,7 @@ class LocalSettingsRepository @Inject constructor(
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
-                supportedStabilizationMode = getSupportedStabilization(
+                supportedStabilizationModes = getSupportedStabilization(
                     previewSupport = it.stabilizePreviewSupported,
                     videoSupport = it.stabilizeVideoSupported
                 ),
