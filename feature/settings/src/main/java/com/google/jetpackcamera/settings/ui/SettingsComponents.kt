@@ -20,8 +20,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -32,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -52,6 +53,8 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -211,7 +214,6 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
 
 @Composable
 fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (CaptureMode) -> Unit) {
-    // todo: string resources
     BasicPopupSetting(
         title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
@@ -219,6 +221,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
             CaptureMode.MULTI_STREAM -> stringResource(
                 id = R.string.capture_mode_description_multi_stream
             )
+
             CaptureMode.SINGLE_STREAM -> stringResource(
                 id = R.string.capture_mode_description_single_stream
             )
@@ -241,6 +244,110 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
 }
 
 /**
+ * Returns the description text depending on the preview/video stabilization configuration.
+ * On - preview is on and video is NOT off.
+ * High Quality - preview is unspecified and video is ON.
+ * Off - Every other configuration.
+ */
+private fun getStabilizationStringRes(
+    previewStabilization: Stabilization,
+    videoStabilization: Stabilization
+): Int {
+    return if (previewStabilization == Stabilization.ON &&
+        videoStabilization != Stabilization.OFF
+    ) {
+        R.string.stabilization_description_on
+    } else if (previewStabilization == Stabilization.UNDEFINED &&
+        videoStabilization == Stabilization.ON
+    ) {
+        R.string.stabilization_description_high_quality
+    } else {
+        R.string.stabilization_description_off
+    }
+}
+
+/**
+ * A Setting to set preview and video stabilization.
+ *
+ * ON - Both preview and video are stabilized.
+ * HIGH_QUALITY - Video will be stabilized, preview might be stabilized, depending on the device.
+ * OFF - Preview and video stabilization is disabled.
+ *
+ * @param supportedStabilizationMode the enabled condition for this setting.
+ */
+@Composable
+fun StabilizationSetting(
+    currentPreviewStabilization: Stabilization,
+    currentVideoStabilization: Stabilization,
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
+    setVideoStabilization: (Stabilization) -> Unit,
+    setPreviewStabilization: (Stabilization) -> Unit
+) {
+    BasicPopupSetting(
+        title = stringResource(R.string.video_stabilization_title),
+        leadingIcon = null,
+        enabled = supportedStabilizationMode.isNotEmpty(),
+        description = if (supportedStabilizationMode.isEmpty()) {
+            stringResource(id = R.string.stabilization_description_unsupported)
+        } else {
+            stringResource(
+                id = getStabilizationStringRes(
+                    previewStabilization = currentPreviewStabilization,
+                    videoStabilization = currentVideoStabilization
+                )
+            )
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // on selector
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.stabilization_selector_on),
+                    secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
+                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                    selected = (currentPreviewStabilization == Stabilization.ON) &&
+                        (currentVideoStabilization != Stabilization.OFF),
+                    onClick = {
+                        setVideoStabilization(Stabilization.UNDEFINED)
+                        setPreviewStabilization(Stabilization.ON)
+                    }
+                )
+
+                // high quality selector
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.stabilization_selector_high_quality),
+                    secondaryText = stringResource(
+                        id = R.string.stabilization_selector_high_quality_info
+                    ),
+                    enabled = supportedStabilizationMode.contains(
+                        SupportedStabilizationMode.HIGH_QUALITY
+                    ),
+
+                    selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
+                        (currentVideoStabilization == Stabilization.ON),
+                    onClick = {
+                        setVideoStabilization(Stabilization.ON)
+                        setPreviewStabilization(Stabilization.UNDEFINED)
+                    }
+                )
+
+                // off selector
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.stabilization_selector_off),
+                    selected = (currentPreviewStabilization != Stabilization.ON) &&
+                        (currentVideoStabilization != Stabilization.ON),
+                    onClick = {
+                        setVideoStabilization(Stabilization.OFF)
+                        setPreviewStabilization(Stabilization.OFF)
+                    }
+                )
+            }
+        }
+    )
+}
+
+/*
  * Setting UI sub-Components
  * small and whimsical :)
  * don't use these directly, use them to build the ready-to-use setting components
@@ -261,6 +368,7 @@ fun BasicPopupSetting(
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
+        enabled = enabled,
         description = description,
         leadingIcon = leadingIcon,
         trailingContent = null
@@ -303,6 +411,7 @@ fun SwitchSettingUI(
             value = settingValue,
             onValueChange = { _ -> onClick() }
         ),
+        enabled = enabled,
         title = title,
         description = description,
         leadingIcon = leadingIcon,
@@ -325,17 +434,30 @@ fun SwitchSettingUI(
 fun SettingUI(
     modifier: Modifier = Modifier,
     title: String,
+    enabled: Boolean = true,
     description: String? = null,
     leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?
 ) {
     ListItem(
         modifier = modifier,
-        headlineContent = { Text(title) },
-        supportingContent = when (description) {
-            null -> null
-            else -> {
-                { Text(description) }
+        headlineContent = {
+            when (enabled) {
+                true -> Text(title)
+                false -> {
+                    Text(text = title, color = LocalContentColor.current.copy(alpha = .7f))
+                }
+            }
+        },
+        supportingContent = {
+            if (description != null) {
+                when (enabled) {
+                    true -> Text(description)
+                    false -> Text(
+                        text = description,
+                        color = LocalContentColor.current.copy(alpha = .7f)
+                    )
+                }
             }
         },
         leadingContent = leadingIcon,
@@ -350,6 +472,7 @@ fun SettingUI(
 fun SingleChoiceSelector(
     modifier: Modifier = Modifier,
     text: String,
+    secondaryText: String? = null,
     selected: Boolean,
     onClick: () -> Unit,
     enabled: Boolean = true
@@ -360,16 +483,23 @@ fun SingleChoiceSelector(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick
+                onClick = onClick,
+                enabled = enabled
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
-            enabled = enabled
+        SettingUI(
+            title = text,
+            description = secondaryText,
+            enabled = enabled,
+            leadingIcon = {
+                RadioButton(
+                    selected = selected,
+                    onClick = onClick,
+                    enabled = enabled
+                )
+            },
+            trailingContent = null
         )
-        Spacer(Modifier.width(8.dp))
-        Text(text)
     }
 }

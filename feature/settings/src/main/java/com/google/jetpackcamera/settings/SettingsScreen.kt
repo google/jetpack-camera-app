@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
+import com.google.jetpackcamera.settings.ui.StabilizationSetting
 
 /**
  * Screen used for the Settings feature.
@@ -76,6 +77,16 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     CaptureModeSetting(
         currentCaptureMode = uiState.cameraAppSettings.captureMode,
         setCaptureMode = viewModel::setCaptureMode
+    )
+
+    // todo: b/313647247 - query device and disable setting if preview stabilization isn't supported.
+    // todo: b/313647809 - query device and disable setting if video stabilization isn't supported.
+    StabilizationSetting(
+        currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
+        currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
+        supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
+        setVideoStabilization = viewModel::setVideoStabilization,
+        setPreviewStabilization = viewModel::setPreviewStabilization
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))

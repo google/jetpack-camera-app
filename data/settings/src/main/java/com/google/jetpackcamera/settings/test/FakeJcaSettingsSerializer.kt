@@ -17,8 +17,13 @@ package com.google.jetpackcamera.settings.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.google.jetpackcamera.settings.AspectRatio
+import com.google.jetpackcamera.settings.CaptureMode
 import com.google.jetpackcamera.settings.DarkMode
+import com.google.jetpackcamera.settings.FlashMode
 import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.PreviewStabilization
+import com.google.jetpackcamera.settings.VideoStabilization
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
@@ -31,6 +36,15 @@ class FakeJcaSettingsSerializer(
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultFrontCamera(false)
+        .setBackCameraAvailable(true)
+        .setFrontCameraAvailable(true)
+        .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
+        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
+        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
+        .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
+        .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
+        .setStabilizeVideoSupported(false)
+        .setStabilizePreviewSupported(false)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
