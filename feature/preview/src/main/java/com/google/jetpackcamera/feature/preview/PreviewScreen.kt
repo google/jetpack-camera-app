@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.Trace
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
@@ -87,6 +88,10 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel(),
     previewMode: PreviewMode
 ) {
+
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+        Trace.beginAsyncSection("First Frame Trace", 1)
+    }
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()

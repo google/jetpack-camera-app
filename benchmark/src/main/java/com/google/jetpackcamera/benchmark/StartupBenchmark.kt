@@ -74,7 +74,6 @@ class StartupBenchmark {
             iterations = DEFAULT_TEST_ITERATIONS,
             startupMode = startupMode,
             setupBlock = setupBlock
-
         ) {
             pressHome()
             startActivityAndWait()

@@ -18,11 +18,21 @@ package com.google.jetpackcamera.domain.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Environment
+import android.os.Trace
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
@@ -44,6 +54,7 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
+import androidx.tracing.trace
 import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.settings.SettingsRepository
@@ -66,9 +77,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.lang.Exception
 
 private const val TAG = "CameraXCameraUseCase"
-private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
+private const val FIRST_FRAME_TRACE = "First Frame Trace"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -86,7 +98,35 @@ constructor(
     private lateinit var cameraProvider: ProcessCameraProvider
 
     // TODO apply flash from settings
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private val imageCaptureUseCase = buildImageCaptureUseCase()
+
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun buildImageCaptureUseCase(): ImageCapture {
+        val imageCaptureBuilder = ImageCapture.Builder()
+        val captureCallback = object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult
+            ) {
+                    super.onCaptureCompleted(session, request, result)
+                    try{
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            Trace.endAsyncSection("First Frame Trace", 1)
+                        }
+                    } catch(_:Exception){}
+            }
+        }
+
+        // Create an Extender to attach Camera2 options
+        val previewExtender = Camera2Interop.Extender(imageCaptureBuilder)
+
+        // Attach the Camera2 CaptureCallback
+        previewExtender.setSessionCaptureCallback(captureCallback)
+
+        return imageCaptureBuilder.build()
+    }
+
 
     private val recorder = Recorder.Builder().setExecutor(
         defaultDispatcher.asExecutor()
@@ -369,7 +409,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+                imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
         this.aspectRatio = aspectRatio
@@ -382,7 +422,7 @@ constructor(
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                    (captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
