@@ -22,12 +22,16 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object FakeSettingsRepository : SettingsRepository {
     var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+    private var isPreviewStabilizationSupported: Boolean = false
+    private var isVideoStabilizationSupported: Boolean = false
 
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
@@ -36,8 +40,8 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
     }
 
-    override suspend fun updateDarkModeStatus(darkmode: DarkMode) {
-        currentCameraSettings = currentCameraSettings.copy(darkMode = darkmode)
+    override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
+        currentCameraSettings = currentCameraSettings.copy(darkMode = darkMode)
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
@@ -63,8 +67,44 @@ object FakeSettingsRepository : SettingsRepository {
             currentCameraSettings.copy(captureMode = captureMode)
     }
 
+    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
+        currentCameraSettings =
+            currentCameraSettings.copy(previewStabilization = stabilization)
+    }
+
+    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
+        currentCameraSettings =
+            currentCameraSettings.copy(videoCaptureStabilization = stabilization)
+    }
+
+    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
+        isVideoStabilizationSupported = isSupported
+        setSupportedStabilizationMode()
+    }
+
+    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
+        isPreviewStabilizationSupported = isSupported
+        setSupportedStabilizationMode()
+    }
+
+    private fun setSupportedStabilizationMode() {
+        val stabilizationModes =
+            buildList {
+                if (isPreviewStabilizationSupported) {
+                    add(SupportedStabilizationMode.ON)
+                }
+                if (isVideoStabilizationSupported) {
+                    add(SupportedStabilizationMode.HIGH_QUALITY)
+                }
+            }
+
+        currentCameraSettings =
+            currentCameraSettings.copy(supportedStabilizationModes = stabilizationModes)
+    }
+
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
-        TODO("Not yet implemented")
+        currentCameraSettings =
+            currentCameraSettings.copy(aspectRatio = aspectRatio)
     }
 
     override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {

@@ -20,6 +20,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.flow.Flow
 
@@ -42,6 +43,14 @@ interface SettingsRepository {
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
     suspend fun updateCaptureMode(captureMode: CaptureMode)
+
+    suspend fun updatePreviewStabilization(stabilization: Stabilization)
+
+    suspend fun updateVideoStabilization(stabilization: Stabilization)
+
+    suspend fun updateVideoStabilizationSupported(isSupported: Boolean)
+
+    suspend fun updatePreviewStabilizationSupported(isSupported: Boolean)
 
     suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate)
 

@@ -36,8 +36,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -82,13 +80,10 @@ fun QuickSettingsScreenOverlay(
     if (isOpen) {
         Column(
             modifier =
-            Modifier
+            modifier
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
-                .semantics {
-                    testTagsAsResourceId = true
-                }
                 .clickable {
                     // if a setting is expanded, click on the background to close it.
                     // if no other settings are expanded, then close the popup

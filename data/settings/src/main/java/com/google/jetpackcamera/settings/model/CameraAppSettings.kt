@@ -26,7 +26,10 @@ data class CameraAppSettings(
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
-    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE
+    val previewStabilization: Stabilization = Stabilization.UNDEFINED,
+    val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
+    val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
+    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE,
 
 )
 
