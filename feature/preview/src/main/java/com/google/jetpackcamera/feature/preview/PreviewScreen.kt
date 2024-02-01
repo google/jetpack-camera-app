@@ -226,7 +226,8 @@ fun PreviewScreen(
                                     )
                                 )
                                 if (previewUiState.currentCameraSettings.targetFrameRate ==
-                                    TargetFrameRate.TARGET_FPS_NONE) {
+                                    TargetFrameRate.TARGET_FPS_NONE
+                                ) {
                                     StabilizationIcon(
                                         supportedStabilizationMode = previewUiState
                                             .currentCameraSettings.supportedStabilizationModes,
