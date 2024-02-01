@@ -134,7 +134,7 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setTargetFrameRate(TargetFrameRate.toProto(targetFrameRate))
+                .setTargetFrameRate(targetFrameRate.toProto())
                 .build()
         }
     }
