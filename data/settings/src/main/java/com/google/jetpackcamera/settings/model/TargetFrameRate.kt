@@ -24,17 +24,15 @@ enum class TargetFrameRate(val range: Range<Int>) {
     TARGET_FPS_30(Range(30, 30)),
     TARGET_FPS_60(Range(60, 60));
 
-    companion object {
-        // converts our kotlin enum to a proto enum
-        fun toProto(targetFrameRate: TargetFrameRate): TargetFrameRateProto {
-            return when (targetFrameRate) {
-                TARGET_FPS_NONE -> TargetFrameRateProto.TARGET_FRAME_RATE_NONE
-                TARGET_FPS_15 -> TargetFrameRateProto.TARGET_FRAME_RATE_15
-                TARGET_FPS_30 -> TargetFrameRateProto.TARGET_FRAME_RATE_30
-                TARGET_FPS_60 -> TargetFrameRateProto.TARGET_FRAME_RATE_60
-            }
-        }
+    // converts our kotlin enum to a proto enum
+    fun toProto(): TargetFrameRateProto = when (this) {
+        TARGET_FPS_NONE -> TargetFrameRateProto.TARGET_FRAME_RATE_NONE
+        TARGET_FPS_15 -> TargetFrameRateProto.TARGET_FRAME_RATE_15
+        TARGET_FPS_30 -> TargetFrameRateProto.TARGET_FRAME_RATE_30
+        TARGET_FPS_60 -> TargetFrameRateProto.TARGET_FRAME_RATE_60
+    }
 
+    companion object {
         // converts proto enum to our kotlin enum
         fun fromProto(targetFrameRate: TargetFrameRateProto): TargetFrameRate {
             return when (targetFrameRate) {
