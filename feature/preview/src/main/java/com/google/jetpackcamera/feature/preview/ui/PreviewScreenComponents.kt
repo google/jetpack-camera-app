@@ -20,6 +20,7 @@ import android.view.Display
 import android.view.View
 import android.widget.Toast
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.camera.viewfinder.surface.TransformationInfo
@@ -49,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -65,6 +67,8 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 
 private const val TAG = "PreviewScreen"
 
@@ -174,52 +178,59 @@ fun CameraPreview(
 ) {
     Log.d(TAG, "CameraPreview")
 
-    val surfaceRequest by produceState<ViewfinderSurfaceRequest?>(initialValue = null) {
+    val surfaceRequest by produceState<SurfaceRequest?>(initialValue = null) {
         onSurfaceProviderReady(
             Preview.SurfaceProvider { request ->
                 Log.d(TAG, "newSurfaceRequest: $request")
                 value?.willNotProvideSurface()
-                value = ViewfinderSurfaceRequest.Builder(request.resolution)
-                    .setImplementationMode(ImplementationMode.PERFORMANCE)
-                    .build()
+                value = request
             }
         )
     }
 
-
-    val transformationInfo by produceState<TransformationInfo?>(
-        key1 = surfaceRequest,
-        initialValue = null
-    ) {
-        surfaceRequest?.let {
-            value = TransformationInfo(0,0,900,0,1600,false)
-//            it.setTransformationInfoListener(
-//                Dispatchers.Main.asExecutor()
-//            ) { transformationInfo ->
-//                Log.d(TAG, "TransformationInfo: $transformationInfo")
-//                value = TransformationInfo(
-//                    transformationInfo.rotationDegrees,
-//                    transformationInfo.cropRect.left,
-//                    transformationInfo.cropRect.right,
-//                    transformationInfo.cropRect.top,
-//                    transformationInfo.cropRect.bottom,
-//                    transformationInfo.isMirroring
-//                )
-//            }
-        }
-
-        awaitDispose {
-//            surfaceRequest?.clearTransformationInfoListener()
-        }
-    }
-
-
     surfaceRequest?.let { request ->
+        val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(request.resolution)
+            .setImplementationMode(ImplementationMode.PERFORMANCE)
+            .build()
+
+        LaunchedEffect(viewfinderSurfaceRequest) {
+            val surface = viewfinderSurfaceRequest.getSurface()
+            Log.d(TAG, "Surface: $surface")
+            request.provideSurface(
+                surface,
+                Dispatchers.Main.asExecutor()
+            ) {
+                Log.d(TAG, "provide surface result listener: ${it.resultCode}")
+            }
+        }
+
+        val transformationInfo by produceState<TransformationInfo?>(
+            initialValue = null,
+            request
+        ) {
+            request.setTransformationInfoListener(
+                Dispatchers.Main.asExecutor()
+            ) { transformationInfo ->
+                Log.d(TAG, "TransformationInfo: $transformationInfo")
+                value = TransformationInfo(
+                    transformationInfo.rotationDegrees,
+                    transformationInfo.cropRect.left,
+                    transformationInfo.cropRect.right,
+                    transformationInfo.cropRect.top,
+                    transformationInfo.cropRect.bottom,
+                    transformationInfo.isMirroring
+                )
+            }
+
+            awaitDispose {
+                request.clearTransformationInfoListener()
+            }
+        }
 
         transformationInfo?.let { info ->
-            Log.d("JOLO", "Set ViewFinder")
+            Log.d(TAG, "Set ViewFinder")
             Viewfinder(
-                surfaceRequest = request,
+                surfaceRequest = viewfinderSurfaceRequest,
                 implementationMode = implementationMode,
                 transformationInfo = info,
                 modifier = modifier
