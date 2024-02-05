@@ -191,7 +191,7 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStabilizeVideoSupported(isSupported)
+                .setStabilizePreviewSupported(isSupported)
                 .build()
         }
     }
@@ -201,10 +201,10 @@ class LocalSettingsRepository @Inject constructor(
         videoSupport: Boolean
     ): List<SupportedStabilizationMode> {
         return buildList {
-            if (previewSupport && videoSupport) {
+            if (previewSupport) {
                 add(SupportedStabilizationMode.ON)
             }
-            if (!previewSupport && videoSupport) {
+            if (videoSupport) {
                 add(SupportedStabilizationMode.HIGH_QUALITY)
             }
         }

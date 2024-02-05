@@ -132,7 +132,10 @@ constructor(
                 availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
                 availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
             )
-            settingsRepository.updateVideoStabilizationSupported(isStabilizationSupported())
+            settingsRepository.updatePreviewStabilizationSupported(
+                isPreviewStabilizationSupported()
+            )
+            settingsRepository.updateVideoStabilizationSupported(isVideoStabilizationSupported())
         }
         videoCaptureUseCase = createVideoUseCase()
         updateUseCaseGroup()
@@ -421,7 +424,7 @@ constructor(
      * Checks if video stabilization is supported by the device.
      *
      */
-    private fun isStabilizationSupported(): Boolean {
+    private fun isVideoStabilizationSupported(): Boolean {
         val availableCameraInfo = cameraProvider.availableCameraInfos
         val cameraSelector = if (isFrontFacing) {
             CameraSelector.DEFAULT_FRONT_CAMERA
@@ -432,8 +435,26 @@ constructor(
             cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
                 Recorder.getVideoCapabilities(it).isStabilizationSupported
             } ?: false
-
         return isVideoStabilizationSupported
+    }
+
+    /**
+     * Checks if preview stabilization is supported by the device.
+     *
+     */
+    private fun isPreviewStabilizationSupported(): Boolean {
+        val availableCameraInfo = cameraProvider.availableCameraInfos
+        val cameraSelector = if (isFrontFacing) {
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        } else {
+            CameraSelector.DEFAULT_BACK_CAMERA
+        }
+        val isPreviewStabilizationSupported =
+            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
+                Preview.getPreviewCapabilities(it).isStabilizationSupported
+            } ?: false
+
+        return isPreviewStabilizationSupported
     }
 
     private fun createVideoUseCase(): VideoCapture<Recorder> {
