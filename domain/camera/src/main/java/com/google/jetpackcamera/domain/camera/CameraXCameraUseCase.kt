@@ -105,8 +105,6 @@ constructor(
     private lateinit var surfaceProvider: Preview.SurfaceProvider
     private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
     private var isFrontFacing = true
-    private var canStabilize = true
-
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
 
@@ -135,17 +133,15 @@ constructor(
             settingsRepository.updateVideoStabilizationSupported(isStabilizationSupported())
         }
 
-        // if there is a target fps, disable stabilization
-        when (currentCameraSettings.targetFrameRate) {
+        videoCaptureUseCase = when (currentCameraSettings.targetFrameRate) {
             TargetFrameRate.TARGET_FPS_NONE -> {
-                videoCaptureUseCase = VideoCapture.withOutput(recorder)
-                canStabilize = true
+                VideoCapture.withOutput(recorder)
             }
+
             else -> {
-                videoCaptureUseCase = VideoCapture.Builder(recorder)
+                VideoCapture.Builder(recorder)
                     .setTargetFrameRate(currentCameraSettings.targetFrameRate.range)
                     .build()
-                canStabilize = false
             }
         }
         updateUseCaseGroup()
@@ -455,7 +451,7 @@ constructor(
 
         // set video stabilization
 
-        if (shouldVideoBeStabilized() && canStabilize) {
+        if (shouldVideoBeStabilized()) {
             val isStabilized = when (stabilizeVideoMode) {
                 Stabilization.ON -> true
                 Stabilization.OFF, Stabilization.UNDEFINED -> false
@@ -486,7 +482,7 @@ constructor(
     private fun createPreviewUseCase(): Preview {
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
-        if (shouldPreviewBeStabilized() && canStabilize) {
+        if (shouldPreviewBeStabilized()) {
             val isStabilized = when (stabilizePreviewMode) {
                 Stabilization.ON -> true
                 else -> false
