@@ -19,6 +19,7 @@ import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
 import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
@@ -26,6 +27,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -68,7 +71,8 @@ class LocalSettingsRepository @Inject constructor(
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     else -> CaptureMode.MULTI_STREAM
-                }
+                },
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
             )
         }
 
@@ -206,6 +210,13 @@ class LocalSettingsRepository @Inject constructor(
             if (!previewSupport && videoSupport) {
                 add(SupportedStabilizationMode.HIGH_QUALITY)
             }
+        }
+    }
+    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDynamicRangeStatus(dynamicRange.toProto())
+                .build()
         }
     }
 }
