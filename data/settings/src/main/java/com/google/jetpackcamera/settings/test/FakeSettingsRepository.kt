@@ -21,6 +21,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -99,6 +100,11 @@ object FakeSettingsRepository : SettingsRepository {
 
         currentCameraSettings =
             currentCameraSettings.copy(supportedStabilizationModes = stabilizationModes)
+    }
+
+    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
+        currentCameraSettings =
+            currentCameraSettings.copy(dynamicRange = dynamicRange)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

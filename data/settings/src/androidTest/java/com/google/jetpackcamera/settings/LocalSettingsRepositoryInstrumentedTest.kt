@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -145,5 +146,19 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         assertThat(initialFrontCamera && initialBackCamera).isTrue()
         assertThat(newFrontCamera || newBackCamera).isFalse()
+    }
+
+    @Test
+    fun can_update_dynamic_range() = runTest {
+        val initialDynamicRange = repository.getCameraAppSettings().dynamicRange
+
+        repository.updateDynamicRange(dynamicRange = DynamicRange.HLG10)
+
+        advanceUntilIdle()
+
+        val newDynamicRange = repository.getCameraAppSettings().dynamicRange
+
+        assertThat(initialDynamicRange).isNotEqualTo(newDynamicRange)
+        assertThat(newDynamicRange).isEqualTo(DynamicRange.HLG10)
     }
 }
