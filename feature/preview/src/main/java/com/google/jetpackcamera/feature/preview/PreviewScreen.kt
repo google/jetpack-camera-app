@@ -65,6 +65,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
+import com.google.jetpackcamera.feature.preview.ui.StabilizationIcon
 import com.google.jetpackcamera.feature.preview.ui.TestingButton
 import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
@@ -211,7 +212,7 @@ fun PreviewScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
-                                horizontalArrangement = Arrangement.Center,
+                                horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 TestingButton(
@@ -227,6 +228,14 @@ fun PreviewScreen(
                                                 R.string.capture_mode_multi_stream
                                         }
                                     )
+                                )
+                                StabilizationIcon(
+                                    supportedStabilizationMode = previewUiState
+                                        .currentCameraSettings.supportedStabilizationModes,
+                                    videoStabilization = previewUiState
+                                        .currentCameraSettings.videoCaptureStabilization,
+                                    previewStabilization = previewUiState
+                                        .currentCameraSettings.previewStabilization
                                 )
                             }
                         }

@@ -20,6 +20,10 @@ import "com/google/jetpackcamera/settings/aspect_ratio.proto";
 import "com/google/jetpackcamera/settings/capture_mode.proto";
 import "com/google/jetpackcamera/settings/dark_mode.proto";
 import "com/google/jetpackcamera/settings/flash_mode.proto";
+import "com/google/jetpackcamera/settings/preview_stabilization.proto";
+import "com/google/jetpackcamera/settings/video_stabilization.proto";
+
+
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -33,4 +37,8 @@ message JcaSettings {
   FlashMode flash_mode_status = 6;
   AspectRatio aspect_ratio_status = 7;
   CaptureMode capture_mode_status = 8;
+  PreviewStabilization stabilize_preview = 9;
+  VideoStabilization stabilize_video = 10;
+  bool stabilize_video_supported = 11;
+  bool stabilize_preview_supported = 12;
 }
