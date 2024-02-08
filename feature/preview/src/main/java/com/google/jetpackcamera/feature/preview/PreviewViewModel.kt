@@ -45,8 +45,6 @@ import kotlinx.coroutines.launch
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
-
-
 /**
  * [ViewModel] for [PreviewScreen].
  */
