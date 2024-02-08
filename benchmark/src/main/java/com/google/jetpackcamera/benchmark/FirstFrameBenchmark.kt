@@ -32,17 +32,31 @@ class FirstFrameBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun timeToFirstFrame()  {
+    fun timeToFirstFrameColdStartup()  {
         benchmarkFirstFrame()
     }
 
+    @Test
+    fun timeToFirstFrameHotStartup()  {
+        benchmarkFirstFrame(startupMode = StartupMode.HOT)
+    }
+
     /**
-     * the benchmark for first frame tracks the amount of time it takes from preview loading on the
-     * screen to when the use case is able to start capturing frames
+     * The benchmark for first frame tracks the amount of time it takes from preview loading on the
+     * screen to when the use case is able to start capturing frames.
+     *
+     * Note that the trace this benchmark tracks is the earliest point in which a frame is captured
+     * and sent to a surface. This does not necessarily mean the frame is visible on screen.
+     *
+     * @param startupMode the designated startup mode, either [StartupMode.COLD] or [StartupMode.HOT]
+     * @param timeout option to change the default timeout length after clicking the Image Capture
+     *  button.
+     *
      */
     @OptIn(ExperimentalMetricApi::class)
     private fun benchmarkFirstFrame(
         startupMode: StartupMode? = StartupMode.COLD,
+        iterations: Int = DEFAULT_TEST_ITERATIONS,
         timeout: Long = 15000,
         intent: Intent? = null
     ) {
@@ -52,7 +66,7 @@ class FirstFrameBenchmark {
                 StartupTimingMetric(),
                 TraceSectionMetric(sectionName = FIRST_FRAME_TRACE, targetPackageOnly = false)
             ),
-            iterations = DEFAULT_TEST_ITERATIONS,
+            iterations = iterations,
             startupMode = startupMode,
             setupBlock = {
                 allowCamera()
