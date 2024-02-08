@@ -60,7 +60,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
+import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_TRACE
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
+import com.google.jetpackcamera.feature.preview.ui.PREVIEW_TOGGLE_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
@@ -91,7 +93,7 @@ fun PreviewScreen(
 ) {
 
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-        Trace.beginAsyncSection("First Frame Trace", 1)
+        Trace.beginAsyncSection(FIRST_FRAME_TRACE, 1)
     }
     Log.d(TAG, "PreviewScreen")
 
@@ -217,7 +219,7 @@ fun PreviewScreen(
                             ) {
                                 TestingButton(
                                     modifier = Modifier
-                                        .testTag("ToggleCaptureMode"),
+                                        .testTag(PREVIEW_TOGGLE_CAPTURE_MODE),
                                     onClick = { viewModel.toggleCaptureMode() },
                                     text = stringResource(
                                         when (previewUiState.currentCameraSettings.captureMode) {

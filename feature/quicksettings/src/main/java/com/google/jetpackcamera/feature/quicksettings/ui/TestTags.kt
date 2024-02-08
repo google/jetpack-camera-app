@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
 
-const val CAPTURE_BUTTON = "CaptureButton"
-const val SETTINGS_BUTTON = "SettingsButton"
-const val FIRST_FRAME_TRACE = "FirstFrameTrace"
-const val PREVIEW_TOGGLE_CAPTURE_MODE = "PreviewToggleCaptureMode"
+package com.google.jetpackcamera.feature.quicksettings.ui
 
-// toast test descriptions
-const val IMAGE_CAPTURE_SUCCESS_TOAST_TAG = "ImageCaptureSuccessToast"
-const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
+const val TOGGLE_QUICK_SETTINGS = "QuickSettingDropDown"
+const val QUICK_SET_EXPAND_RATIO = "QuickSetAspectRatio"
+const val QUICK_SET_RATIO_ONE_ONE = "QuickSetAspectRatio1:1"
+const val QUICK_SET_FLASH = "QuickSetFlash"
+const val QUICK_SET_FLIP_CAMERA = "QuickSetFlipCamera"
