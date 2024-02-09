@@ -101,7 +101,7 @@ dependencies {
 
     // CameraX
     implementation(libs.camera.core)
-    implementation(libs.camera.view)
+    implementation(libs.camera.viewfinder.compose)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
@@ -113,7 +113,6 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
-    implementation(project(":camera-viewfinder-compose"))
     implementation(project(":feature:quicksettings"))
 }
 
