@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.util.Log
 import android.view.Display
-import android.view.View
 import android.widget.Toast
 import androidx.camera.core.Preview
 import androidx.compose.animation.core.animateFloatAsState
@@ -63,7 +62,6 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import com.google.jetpackcamera.viewfinder.CameraPreview
 import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
@@ -123,7 +121,6 @@ fun PreviewDisplay(
         Log.d(TAG, "onSurfaceProviderReady")
         deferredSurfaceProvider.complete(it)
     }
-    lateinit var viewInfo: View
 
     BoxWithConstraints(
         Modifier
@@ -135,22 +132,6 @@ fun PreviewDisplay(
                         // double tap to flip camera
                         Log.d(TAG, "onDoubleTap $offset")
                         onFlipCamera()
-                    },
-                    onTap = { offset ->
-                        // tap to focus
-                        try {
-                            onTapToFocus(
-                                viewInfo.display,
-                                viewInfo.width,
-                                viewInfo.height,
-                                offset.x,
-                                offset.y
-                            )
-                            Log.d(TAG, "onTap $offset")
-                        } catch (e: UninitializedPropertyAccessException) {
-                            Log.d(TAG, "onTap $offset")
-                            e.printStackTrace()
-                        }
                     }
                 )
             },
@@ -169,16 +150,10 @@ fun PreviewDisplay(
                 .transformable(state = transformableState)
 
         ) {
-            CameraPreview(
+            CameraXViewfinder(
                 modifier = Modifier
                     .fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady,
-                onRequestBitmapReady = {
-                    it.invoke()
-                },
-                setSurfaceView = { s: View ->
-                    viewInfo = s
-                }
+                onSurfaceProviderReady = onSurfaceProviderReady
             )
         }
     }

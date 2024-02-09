@@ -9,8 +9,9 @@ androidxCoreKtx = "1.12.0"
 androidxTracing = "1.2.0"
 benchmarkMacroJunit4 = "1.2.2"
 camerax = "1.4.0-SNAPSHOT"
+camerax-viewfinder-compose = "1.0.0-SNAPSHOT"
 compose = "1.5.4"
-composeBom = "2023.10.01"
+composeBom = "2024.02.00"
 composeMaterial3 = "1.1.2"
 coreKtx = "1.5.0"
 coroutinesCore = "1.7.1"
@@ -58,7 +59,7 @@ camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" 
 camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camerax" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camera-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+camera-viewfinder-compose = { module = "androidx.camera:camera-viewfinder-compose", version.ref = "camerax-viewfinder-compose" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "composeMaterial3" }
