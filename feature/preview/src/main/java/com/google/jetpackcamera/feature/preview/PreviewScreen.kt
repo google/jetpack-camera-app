@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.util.Log
+import android.view.Display
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +53,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -65,7 +70,9 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomScaleText
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 
@@ -89,7 +96,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+            by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
     var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
@@ -109,14 +116,27 @@ fun PreviewScreen(
         CameraState.NOT_READY -> {
             LoadingScreen()
         }
+
         CameraState.READY -> {
             ContentScreen(
-                viewModel,
-                previewUiState,
-                deferredSurfaceProvider,
-                onNavigateToSettings,
-                previewMode,
-                screenFlashUiState
+                previewUiState = previewUiState,
+                onNavigateToSettings = onNavigateToSettings,
+                previewMode = previewMode,
+                screenFlashUiState = screenFlashUiState,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onFlipCamera = viewModel::flipCamera,
+                onTapToFocus = viewModel::tapToFocus,
+                onChangeZoomScale = viewModel::setZoomScale,
+                onChangeFlash = viewModel::setFlash,
+                onChangeAspectRatio = viewModel::setAspectRatio,
+                onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onCaptureImage = viewModel::captureImage,
+                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onStartVideoRecording = viewModel::startVideoRecording,
+                onStopVideoRecording = viewModel::stopVideoRecording,
+                onToggleCaptureMode = viewModel::toggleCaptureMode,
+                onToastShown = viewModel::onToastShown,
+                onSurfaceProviderCreated = { deferredSurfaceProvider.complete(it) }
             )
         }
     }
@@ -125,12 +145,24 @@ fun PreviewScreen(
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
 private fun ContentScreen(
-    viewModel: PreviewViewModel,
     previewUiState: PreviewUiState,
-    deferredSurfaceProvider: CompletableDeferred<SurfaceProvider>,
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState
+    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    onClearUiScreenBrightness: (Float) -> Unit,
+    onSurfaceProviderCreated: (SurfaceProvider) -> Unit,
+    onFlipCamera: () -> Unit = {},
+    onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
+    onChangeZoomScale: (Float) -> Unit = {},
+    onChangeFlash: (FlashMode) -> Unit = {},
+    onChangeAspectRatio: (AspectRatio) -> Unit = {},
+    onToggleQuickSettings: () -> Unit = {},
+    onCaptureImage: () -> Unit = {},
+    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onStartVideoRecording: () -> Unit = {},
+    onStopVideoRecording: () -> Unit = {},
+    onToggleCaptureMode: () -> Unit = {},
+    onToastShown: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier.semantics {
@@ -139,31 +171,36 @@ private fun ContentScreen(
     ) {
         // display camera feed. this stays behind everything else
         PreviewDisplay(
-            onFlipCamera = viewModel::flipCamera,
-            onTapToFocus = viewModel::tapToFocus,
-            onZoomChange = viewModel::setZoomScale,
+            onFlipCamera = onFlipCamera,
+            onTapToFocus = onTapToFocus,
+            onZoomChange = onChangeZoomScale,
             aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-            deferredSurfaceProvider = deferredSurfaceProvider
+            onSurfaceProviderCreated = onSurfaceProviderCreated
         )
 
         QuickSettingsScreenOverlay(
             modifier = Modifier,
             isOpen = previewUiState.quickSettingsIsOpen,
-            toggleIsOpen = { viewModel.toggleQuickSettings() },
+            toggleIsOpen = onToggleQuickSettings,
             currentCameraSettings = previewUiState.currentCameraSettings,
-            onLensFaceClick = viewModel::flipCamera,
-            onFlashModeClick = viewModel::setFlash,
-            onAspectRatioClick = {
-                viewModel.setAspectRatio(it)
-            }
+            onLensFaceClick = { onFlipCamera() },
+            onFlashModeClick = onChangeFlash,
+            onAspectRatioClick = onChangeAspectRatio
             // onTimerClick = {}/*TODO*/
         )
         // relative-grid style overlay on top of preview display
         CameraControlsOverlay(
-            previewUiState,
-            onNavigateToSettings,
-            viewModel,
-            previewMode
+            previewUiState = previewUiState,
+            onNavigateToSettings = onNavigateToSettings,
+            previewMode = previewMode,
+            onFlipCamera = onFlipCamera,
+            onChangeFlash = onChangeFlash,
+            onToggleQuickSettings = onToggleQuickSettings,
+            onCaptureImage = onCaptureImage,
+            onCaptureImageWithUri = onCaptureImageWithUri,
+            onStartVideoRecording = onStartVideoRecording,
+            onStopVideoRecording = onStopVideoRecording,
+            onToggleCaptureMode = onToggleCaptureMode
         )
 
         // displays toast when there is a message to show
@@ -172,7 +209,7 @@ private fun ContentScreen(
                 modifier = Modifier
                     .testTag(previewUiState.toastMessageToShow!!.testTag),
                 toastMessage = previewUiState.toastMessageToShow!!,
-                onToastShown = viewModel::onToastShown
+                onToastShown = onToastShown
             )
         }
 
@@ -183,7 +220,7 @@ private fun ContentScreen(
         // if the relevant states are no longer changing.
         ScreenFlashScreen(
             screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
+            onInitialBrightnessCalculated = onClearUiScreenBrightness
         )
     }
 }
@@ -206,14 +243,21 @@ private fun LoadingScreen() {
 private fun CameraControlsOverlay(
     previewUiState: PreviewUiState,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel,
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    onFlipCamera: () -> Unit = {},
+    onChangeFlash: (FlashMode) -> Unit = {},
+    onToggleQuickSettings: () -> Unit = {},
+    onCaptureImage: () -> Unit = {},
+    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onStartVideoRecording: () -> Unit = {},
+    onStopVideoRecording: () -> Unit = {},
+    onToggleCaptureMode: () -> Unit = {},
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
     var zoomScaleShow by remember { mutableStateOf(false) }
     LaunchedEffect(previewUiState.zoomScale) {
-        if(firstRun) firstRun = false
+        if (firstRun) firstRun = false
         else {
             zoomScaleShow = true
             delay(ZOOM_SCALE_SHOW_TIMEOUT_MS)
@@ -249,13 +293,13 @@ private fun CameraControlsOverlay(
                             QuickSettingsIndicators(
                                 currentCameraSettings = previewUiState
                                     .currentCameraSettings,
-                                onFlashModeClick = viewModel::setFlash
+                                onFlashModeClick = onChangeFlash
                             )
                         }
                     }
                     // quick settings button
                     ToggleQuickSettingsButton(
-                        toggleDropDown = { viewModel.toggleQuickSettings() },
+                        toggleDropDown = onToggleQuickSettings,
                         isOpen = previewUiState.quickSettingsIsOpen
                     )
 
@@ -270,7 +314,7 @@ private fun CameraControlsOverlay(
                         TestingButton(
                             modifier = Modifier
                                 .testTag("ToggleCaptureMode"),
-                            onClick = { viewModel.toggleCaptureMode() },
+                            onClick = onToggleCaptureMode,
                             text = stringResource(
                                 when (previewUiState.currentCameraSettings.captureMode) {
                                     CaptureMode.SINGLE_STREAM ->
@@ -334,7 +378,7 @@ private fun CameraControlsOverlay(
                     ) {
                         if (!previewUiState.quickSettingsIsOpen) {
                             FlipCameraButton(
-                                onClick = { viewModel.flipCamera() },
+                                onClick = onFlipCamera,
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
                                 previewUiState
@@ -357,11 +401,11 @@ private fun CameraControlsOverlay(
                     multipleEventsCutter.processEvent {
                         when (previewMode) {
                             is PreviewMode.StandardMode -> {
-                                viewModel.captureImage()
+                                onCaptureImage()
                             }
 
                             is PreviewMode.ExternalImageCaptureMode -> {
-                                viewModel.captureImage(
+                                onCaptureImageWithUri(
                                     context.contentResolver,
                                     previewMode.imageCaptureUri,
                                     previewMode.onImageCapture
@@ -370,16 +414,16 @@ private fun CameraControlsOverlay(
                         }
                     }
                     if (previewUiState.quickSettingsIsOpen) {
-                        viewModel.toggleQuickSettings()
+                        onToggleQuickSettings()
                     }
                 },
                 onLongPress = {
-                    viewModel.startVideoRecording()
+                    onStartVideoRecording()
                     if (previewUiState.quickSettingsIsOpen) {
-                        viewModel.toggleQuickSettings()
+                        onToggleQuickSettings()
                     }
                 },
-                onRelease = { viewModel.stopVideoRecording() },
+                onRelease = { onStopVideoRecording() },
                 videoRecordingState = previewUiState.videoRecordingState
             )
             // You can replace this row so long as the weight of the component is 1f to
@@ -395,5 +439,18 @@ private fun CameraControlsOverlay(
     }
 }
 
-
+@Preview
+@Composable
+private fun ContentScreenPreview() {
+    MaterialTheme {
+        ContentScreen(
+            previewUiState = PreviewUiState(),
+            onNavigateToSettings = {},
+            previewMode = PreviewMode.StandardMode,
+            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            onClearUiScreenBrightness = {},
+            onSurfaceProviderCreated = {}
+        )
+    }
+}
 

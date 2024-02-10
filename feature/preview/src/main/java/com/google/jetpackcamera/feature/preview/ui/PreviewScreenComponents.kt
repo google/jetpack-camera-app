@@ -19,6 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.Preview
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -62,7 +63,6 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
@@ -110,7 +110,7 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
+    onSurfaceProviderCreated: (SurfaceProvider) -> Unit
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -119,7 +119,7 @@ fun PreviewDisplay(
     )
     val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
-        deferredSurfaceProvider.complete(it)
+        onSurfaceProviderCreated(it)
     }
 
     BoxWithConstraints(

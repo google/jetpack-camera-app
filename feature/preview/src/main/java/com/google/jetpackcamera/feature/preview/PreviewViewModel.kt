@@ -244,7 +244,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage(
+    fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         onImageCapture: (ImageCaptureEvent) -> Unit
