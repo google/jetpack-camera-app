@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
@@ -70,6 +68,7 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
@@ -94,9 +93,14 @@ fun PreviewScreen(
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
 
+    var zoomScale by remember { mutableFloatStateOf(1f) }
     var zoomScaleShow by remember { mutableStateOf(false) }
-
-    val zoomHandler = Handler(Looper.getMainLooper())
+    LaunchedEffect(zoomScaleShow) {
+        if (zoomScaleShow) {
+            delay(ZOOM_SCALE_SHOW_TIMEOUT_MS)
+            zoomScaleShow = false
+        }
+    }
 
     onPreviewViewModel(viewModel)
 
@@ -135,9 +139,8 @@ fun PreviewScreen(
                 onFlipCamera = viewModel::flipCamera,
                 onTapToFocus = viewModel::tapToFocus,
                 onZoomChange = { zoomChange: Float ->
-                    viewModel.setZoomScale(zoomChange)
+                    zoomScale = viewModel.setZoomScale(zoomChange)
                     zoomScaleShow = true
-                    zoomHandler.postDelayed({ zoomScaleShow = false }, ZOOM_SCALE_SHOW_TIMEOUT_MS)
                 },
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 deferredSurfaceProvider = deferredSurfaceProvider
@@ -161,6 +164,7 @@ fun PreviewScreen(
                 onNavigateToSettings,
                 viewModel,
                 zoomScaleShow,
+                zoomScale,
                 previewMode
             )
             
@@ -193,10 +197,9 @@ private fun CameraControlsOverlay(
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel,
     zoomScaleShow: Boolean,
+    zoomScale: Float,
     previewMode: PreviewMode
 ) {
-    val zoomScale by remember { mutableFloatStateOf(1f) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
