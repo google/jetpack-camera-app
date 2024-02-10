@@ -27,6 +27,7 @@ data class PreviewUiState(
     // "quick" settings
     val currentCameraSettings: CameraAppSettings,
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
+    val zoomScale: Float = 1f,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
     val quickSettingsIsOpen: Boolean = false,
     // todo: remove after implementing post capture screen

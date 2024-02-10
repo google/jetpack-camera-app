@@ -36,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,6 +84,7 @@ fun PreviewScreen(
     previewMode: PreviewMode
 ) {
     Log.d(TAG, "PreviewScreen")
+    onPreviewViewModel(viewModel)
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
@@ -92,18 +92,6 @@ fun PreviewScreen(
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
-
-    var zoomScale by remember { mutableFloatStateOf(1f) }
-    var zoomScaleShow by remember { mutableStateOf(false) }
-    LaunchedEffect(zoomScaleShow) {
-        if (zoomScaleShow) {
-            delay(ZOOM_SCALE_SHOW_TIMEOUT_MS)
-            zoomScaleShow = false
-        }
-    }
-
-    onPreviewViewModel(viewModel)
-
     var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
 
     LaunchedEffect(LocalLifecycleOwner.current) {
@@ -117,77 +105,100 @@ fun PreviewScreen(
         }
     }
 
-    if (previewUiState.cameraState == CameraState.NOT_READY) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(modifier = Modifier.size(50.dp))
-            Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
+    when (previewUiState.cameraState) {
+        CameraState.NOT_READY -> {
+            LoadingScreen()
         }
-    } else if (previewUiState.cameraState == CameraState.READY) {
-        Box(
-            modifier = Modifier.semantics {
-                testTagsAsResourceId = true
-            }
-        ) {
-            // display camera feed. this stays behind everything else
-            PreviewDisplay(
-                onFlipCamera = viewModel::flipCamera,
-                onTapToFocus = viewModel::tapToFocus,
-                onZoomChange = { zoomChange: Float ->
-                    zoomScale = viewModel.setZoomScale(zoomChange)
-                    zoomScaleShow = true
-                },
-                aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-                deferredSurfaceProvider = deferredSurfaceProvider
-            )
-
-            QuickSettingsScreenOverlay(
-                modifier = Modifier,
-                isOpen = previewUiState.quickSettingsIsOpen,
-                toggleIsOpen = { viewModel.toggleQuickSettings() },
-                currentCameraSettings = previewUiState.currentCameraSettings,
-                onLensFaceClick = viewModel::flipCamera,
-                onFlashModeClick = viewModel::setFlash,
-                onAspectRatioClick = {
-                    viewModel.setAspectRatio(it)
-                }
-                // onTimerClick = {}/*TODO*/
-            )
-            // relative-grid style overlay on top of preview display
-            CameraControlsOverlay(
-                previewUiState,
-                onNavigateToSettings,
+        CameraState.READY -> {
+            ContentScreen(
                 viewModel,
-                zoomScaleShow,
-                zoomScale,
-                previewMode
-            )
-            
-            // displays toast when there is a message to show
-            if (previewUiState.toastMessageToShow != null) {
-                ShowTestableToast(
-                    modifier = Modifier
-                        .testTag(previewUiState.toastMessageToShow!!.testTag),
-                    toastMessage = previewUiState.toastMessageToShow!!,
-                    onToastShown = viewModel::onToastShown
-                )
-            }
-
-            // Screen flash overlay that stays on top of everything but invisible normally. This should
-            // not be enabled based on whether screen flash is enabled because a previous image capture
-            // may still be running after flash mode change and clear actions (e.g. brightness restore)
-            // may need to be handled later. Compose smart recomposition should be able to optimize this
-            // if the relevant states are no longer changing.
-            ScreenFlashScreen(
-                screenFlashUiState = screenFlashUiState,
-                onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
+                previewUiState,
+                deferredSurfaceProvider,
+                onNavigateToSettings,
+                previewMode,
+                screenFlashUiState
             )
         }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalComposeUiApi::class)
+private fun ContentScreen(
+    viewModel: PreviewViewModel,
+    previewUiState: PreviewUiState,
+    deferredSurfaceProvider: CompletableDeferred<SurfaceProvider>,
+    onNavigateToSettings: () -> Unit,
+    previewMode: PreviewMode,
+    screenFlashUiState: ScreenFlash.ScreenFlashUiState
+) {
+    Box(
+        modifier = Modifier.semantics {
+            testTagsAsResourceId = true
+        }
+    ) {
+        // display camera feed. this stays behind everything else
+        PreviewDisplay(
+            onFlipCamera = viewModel::flipCamera,
+            onTapToFocus = viewModel::tapToFocus,
+            onZoomChange = viewModel::setZoomScale,
+            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
+            deferredSurfaceProvider = deferredSurfaceProvider
+        )
+
+        QuickSettingsScreenOverlay(
+            modifier = Modifier,
+            isOpen = previewUiState.quickSettingsIsOpen,
+            toggleIsOpen = { viewModel.toggleQuickSettings() },
+            currentCameraSettings = previewUiState.currentCameraSettings,
+            onLensFaceClick = viewModel::flipCamera,
+            onFlashModeClick = viewModel::setFlash,
+            onAspectRatioClick = {
+                viewModel.setAspectRatio(it)
+            }
+            // onTimerClick = {}/*TODO*/
+        )
+        // relative-grid style overlay on top of preview display
+        CameraControlsOverlay(
+            previewUiState,
+            onNavigateToSettings,
+            viewModel,
+            previewMode
+        )
+
+        // displays toast when there is a message to show
+        if (previewUiState.toastMessageToShow != null) {
+            ShowTestableToast(
+                modifier = Modifier
+                    .testTag(previewUiState.toastMessageToShow!!.testTag),
+                toastMessage = previewUiState.toastMessageToShow!!,
+                onToastShown = viewModel::onToastShown
+            )
+        }
+
+        // Screen flash overlay that stays on top of everything but invisible normally. This should
+        // not be enabled based on whether screen flash is enabled because a previous image capture
+        // may still be running after flash mode change and clear actions (e.g. brightness restore)
+        // may need to be handled later. Compose smart recomposition should be able to optimize this
+        // if the relevant states are no longer changing.
+        ScreenFlashScreen(
+            screenFlashUiState = screenFlashUiState,
+            onInitialBrightnessCalculated = viewModel.screenFlash::setClearUiScreenBrightness
+        )
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(50.dp))
+        Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
     }
 }
 
@@ -196,14 +207,21 @@ private fun CameraControlsOverlay(
     previewUiState: PreviewUiState,
     onNavigateToSettings: () -> Unit,
     viewModel: PreviewViewModel,
-    zoomScaleShow: Boolean,
-    zoomScale: Float,
     previewMode: PreviewMode
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    // Show the current zoom level for a short period of time, only when the level changes.
+    var firstRun by remember { mutableStateOf(true) }
+    var zoomScaleShow by remember { mutableStateOf(false) }
+    LaunchedEffect(previewUiState.zoomScale) {
+        if(firstRun) firstRun = false
+        else {
+            zoomScaleShow = true
+            delay(ZOOM_SCALE_SHOW_TIMEOUT_MS)
+            zoomScaleShow = false
+        }
+    }
+
+    Column(Modifier.fillMaxSize()) {
         // hide settings, quickSettings, and quick capture mode button
         when (previewUiState.videoRecordingState) {
             VideoRecordingState.ACTIVE -> {}
@@ -286,7 +304,7 @@ private fun CameraControlsOverlay(
         ) {}
 
         if (zoomScaleShow) {
-            ZoomScaleText(zoomScale = zoomScale)
+            ZoomScaleText(previewUiState.zoomScale)
         }
 
         // 3-segmented row to keep capture button centered

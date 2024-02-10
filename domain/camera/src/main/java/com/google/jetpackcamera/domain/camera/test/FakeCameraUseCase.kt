@@ -29,6 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class FakeCameraUseCase(
@@ -114,9 +117,9 @@ class FakeCameraUseCase(
         recordingInProgress = false
     }
 
-    override fun setZoomScale(scale: Float): Float {
-        return -1f
-    }
+    private val _zoomScale = MutableStateFlow(1f)
+    override fun setZoomScale(scale: Float) { _zoomScale.value = scale }
+    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
 

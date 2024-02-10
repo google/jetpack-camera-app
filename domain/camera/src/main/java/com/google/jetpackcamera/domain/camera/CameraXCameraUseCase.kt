@@ -36,7 +36,6 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
-import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -44,7 +43,6 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -54,11 +52,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.lang.RuntimeException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -66,8 +59,15 @@ import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -277,18 +277,20 @@ constructor(
         recording?.stop()
     }
 
-    override fun setZoomScale(scale: Float): Float {
-        val zoomState = getZoomState() ?: return INVALID_ZOOM_SCALE
+    override fun setZoomScale(scale: Float) {
+        val zoomState = camera?.cameraInfo?.zoomState?.value ?: return
         val finalScale =
             (zoomState.zoomRatio * scale).coerceIn(
                 zoomState.minZoomRatio,
                 zoomState.maxZoomRatio
             )
         camera?.cameraControl?.setZoomRatio(finalScale)
-        return finalScale
+        _zoomScale.value = finalScale
     }
 
-    private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
+    // Could be improved by setting initial value only when camera is initialized
+    private val _zoomScale = MutableStateFlow(1f)
+    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
