@@ -33,6 +33,7 @@ protobuf = "3.21.12"
 protobuf-plugin = "0.9.1"
 robolectric = "4.11.1"
 testMonitor = "1.6.1"
+truth = "1.0.1"
 uiautomator = "2.2.0"
 viewmodelCompose = "2.7.0"
 
@@ -78,6 +79,7 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+truth = { module = "com.google.truth:truth", version.ref = "truth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidLibrary" }
