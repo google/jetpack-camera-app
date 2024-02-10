@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -359,21 +358,5 @@ fun PreviewScreen(
     }
 }
 
-/**
- * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
- * UX differs depends on which mode the Preview is launched under.
- */
-sealed interface PreviewMode {
-    /**
-     * The default mode for the app.
-     */
-    object StandardMode : PreviewMode
 
-    /**
-     * Under this mode, the app is launched by an external intent to capture an image.
-     */
-    data class ExternalImageCaptureMode(
-        val imageCaptureUri: Uri?,
-        val onImageCapture: (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) : PreviewMode
-}
+
