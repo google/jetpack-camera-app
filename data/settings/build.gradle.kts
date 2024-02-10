@@ -53,12 +53,8 @@ android {
 }
 
 dependencies {
-    // Testing
-    testImplementation(libs.junit)
     implementation(libs.kotlinx.coroutines.core)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+
     // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
@@ -66,6 +62,13 @@ dependencies {
     // proto datastore
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }
 
 protobuf {
