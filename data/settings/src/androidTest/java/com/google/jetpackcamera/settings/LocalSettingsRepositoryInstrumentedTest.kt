@@ -158,7 +158,23 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         val newDynamicRange = repository.getCameraAppSettings().dynamicRange
 
-        assertThat(initialDynamicRange).isNotEqualTo(newDynamicRange)
+        assertThat(initialDynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(newDynamicRange).isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
+    fun can_update_supported_dynamic_ranges() = runTest {
+        val initialSupportedDynamicRanges = repository.getCameraAppSettings().supportedDynamicRanges
+
+        repository.updateSupportedDynamicRanges(
+            supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10)
+        )
+
+        advanceUntilIdle()
+
+        val newSupportedDynamicRanges = repository.getCameraAppSettings().supportedDynamicRanges
+
+        assertThat(initialSupportedDynamicRanges).containsExactly(DynamicRange.SDR)
+        assertThat(newSupportedDynamicRanges).containsExactly(DynamicRange.SDR, DynamicRange.HLG10)
     }
 }
