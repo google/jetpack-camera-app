@@ -41,4 +41,5 @@ message JcaSettings {
   bool stabilize_video_supported = 11;
   bool stabilize_preview_supported = 12;
   DynamicRange dynamic_range_status = 13;
+  repeated DynamicRange supported_dynamic_ranges = 14;
 }

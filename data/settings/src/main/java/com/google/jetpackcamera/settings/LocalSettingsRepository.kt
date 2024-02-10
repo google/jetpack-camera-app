@@ -16,13 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
-import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
-import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
-import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -32,9 +25,15 @@ import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
+import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -72,7 +71,11 @@ class LocalSettingsRepository @Inject constructor(
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
+                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
+                    DynamicRange.fromProto(dynRngProto)
+                }
+
             )
         }
 
@@ -212,10 +215,22 @@ class LocalSettingsRepository @Inject constructor(
             }
         }
     }
+
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setDynamicRangeStatus(dynamicRange.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedDynamicRanges()
+                .addAllSupportedDynamicRanges(supportedDynamicRanges.map {
+                    it.toProto()
+                })
                 .build()
         }
     }

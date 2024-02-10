@@ -52,5 +52,7 @@ interface SettingsRepository {
     suspend fun updatePreviewStabilizationSupported(isSupported: Boolean)
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
+    suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>)
+
     suspend fun getCameraAppSettings(): CameraAppSettings
 }

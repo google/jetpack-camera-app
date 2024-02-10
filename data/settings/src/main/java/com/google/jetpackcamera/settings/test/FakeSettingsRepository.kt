@@ -107,6 +107,11 @@ object FakeSettingsRepository : SettingsRepository {
             currentCameraSettings.copy(dynamicRange = dynamicRange)
     }
 
+    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
+        currentCameraSettings =
+            currentCameraSettings.copy(supportedDynamicRanges = supportedDynamicRanges)
+    }
+
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
         currentCameraSettings =
             currentCameraSettings.copy(aspectRatio = aspectRatio)
