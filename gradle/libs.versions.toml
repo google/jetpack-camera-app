@@ -6,6 +6,7 @@ androidxActivityCompose = "1.8.2"
 androidxAppCompat = "1.6.1"
 androidxCore = "1.12.0"
 androidxCoreKtx = "1.12.0"
+androidxLifecycle = "2.7.0"
 androidxTracing = "1.2.0"
 benchmarkMacroJunit4 = "1.2.2"
 camerax = "1.4.0-SNAPSHOT"
@@ -34,7 +35,6 @@ protobuf-plugin = "0.9.1"
 robolectric = "4.11.1"
 testMonitor = "1.6.1"
 uiautomator = "2.2.0"
-viewmodelCompose = "2.7.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -47,7 +47,8 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidJunit" }
-androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 androidx-rules = { module = "androidx.test:rules", version.ref = "coreKtx" }
@@ -74,7 +75,7 @@ junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "guava" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodelCompose" }
+
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

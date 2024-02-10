@@ -79,6 +79,10 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.hilt.navigation.compose)
 
+    // Compose - Lifecycle utilities
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
     debugImplementation(libs.compose.test.manifest)

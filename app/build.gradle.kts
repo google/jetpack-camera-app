@@ -86,7 +86,8 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     // Compose - Integration with ViewModels
-    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Compose - Integration with Activities
     implementation(libs.androidx.activity.compose)
@@ -103,7 +104,7 @@ dependencies {
     androidTestImplementation(libs.androidx.uiautomator)
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Hilt
     implementation(libs.dagger.hilt.android)

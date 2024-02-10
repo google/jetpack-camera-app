@@ -54,8 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
@@ -71,7 +70,6 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.awaitCancellation
 
 private const val TAG = "PreviewScreen"
 private const val ZOOM_SCALE_SHOW_TIMEOUT_MS = 3000L
@@ -106,17 +104,19 @@ fun PreviewScreen(
 
     onPreviewViewModel(viewModel)
 
+    var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
+
     LaunchedEffect(lifecycleOwner) {
-        val surfaceProvider = deferredSurfaceProvider.await()
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.runCamera(surfaceProvider)
-            try {
-                awaitCancellation()
-            } finally {
-                viewModel.stopCamera()
-            }
+        surfaceProvider = deferredSurfaceProvider.await()
+    }
+
+    LifecycleStartEffect(surfaceProvider) {
+        surfaceProvider?.let { viewModel.runCamera(it) }
+        onStopOrDispose {
+            viewModel.stopCamera()
         }
     }
+
     if (previewUiState.cameraState == CameraState.NOT_READY) {
         Column(
             modifier = Modifier
