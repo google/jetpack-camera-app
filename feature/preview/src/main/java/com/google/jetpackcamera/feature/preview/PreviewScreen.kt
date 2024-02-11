@@ -22,7 +22,6 @@ import android.view.Display
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -51,8 +50,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -113,37 +110,31 @@ fun PreviewScreen(
     }
 
     when (previewUiState.cameraState) {
-        CameraState.NOT_READY -> {
-            LoadingScreen()
-        }
-
-        CameraState.READY -> {
-            ContentScreen(
-                previewUiState = previewUiState,
-                onNavigateToSettings = onNavigateToSettings,
-                previewMode = previewMode,
-                screenFlashUiState = screenFlashUiState,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-                onFlipCamera = viewModel::flipCamera,
-                onTapToFocus = viewModel::tapToFocus,
-                onChangeZoomScale = viewModel::setZoomScale,
-                onChangeFlash = viewModel::setFlash,
-                onChangeAspectRatio = viewModel::setAspectRatio,
-                onToggleQuickSettings = viewModel::toggleQuickSettings,
-                onCaptureImage = viewModel::captureImage,
-                onCaptureImageWithUri = viewModel::captureImageWithUri,
-                onStartVideoRecording = viewModel::startVideoRecording,
-                onStopVideoRecording = viewModel::stopVideoRecording,
-                onToggleCaptureMode = viewModel::toggleCaptureMode,
-                onToastShown = viewModel::onToastShown,
-                onSurfaceProviderCreated = { deferredSurfaceProvider.complete(it) }
-            )
-        }
+        CameraState.NOT_READY -> LoadingScreen()
+        CameraState.READY -> ContentScreen(
+            previewUiState = previewUiState,
+            onNavigateToSettings = onNavigateToSettings,
+            previewMode = previewMode,
+            screenFlashUiState = screenFlashUiState,
+            onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+            onFlipCamera = viewModel::flipCamera,
+            onTapToFocus = viewModel::tapToFocus,
+            onChangeZoomScale = viewModel::setZoomScale,
+            onChangeFlash = viewModel::setFlash,
+            onChangeAspectRatio = viewModel::setAspectRatio,
+            onToggleQuickSettings = viewModel::toggleQuickSettings,
+            onCaptureImage = viewModel::captureImage,
+            onCaptureImageWithUri = viewModel::captureImageWithUri,
+            onStartVideoRecording = viewModel::startVideoRecording,
+            onStopVideoRecording = viewModel::stopVideoRecording,
+            onToggleCaptureMode = viewModel::toggleCaptureMode,
+            onToastShown = viewModel::onToastShown,
+            onSurfaceProviderCreated = { deferredSurfaceProvider.complete(it) }
+        )
     }
 }
 
 @Composable
-@OptIn(ExperimentalComposeUiApi::class)
 private fun ContentScreen(
     previewUiState: PreviewUiState,
     onNavigateToSettings: () -> Unit,
@@ -164,65 +155,58 @@ private fun ContentScreen(
     onToggleCaptureMode: () -> Unit = {},
     onToastShown: () -> Unit = {},
 ) {
-    Box(
-        modifier = Modifier.semantics {
-            testTagsAsResourceId = true
-        }
-    ) {
-        // display camera feed. this stays behind everything else
-        PreviewDisplay(
-            onFlipCamera = onFlipCamera,
-            onTapToFocus = onTapToFocus,
-            onZoomChange = onChangeZoomScale,
-            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-            onSurfaceProviderCreated = onSurfaceProviderCreated
-        )
+    // display camera feed. this stays behind everything else
+    PreviewDisplay(
+        onFlipCamera = onFlipCamera,
+        onTapToFocus = onTapToFocus,
+        onZoomChange = onChangeZoomScale,
+        aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
+        onSurfaceProviderCreated = onSurfaceProviderCreated
+    )
 
-        QuickSettingsScreenOverlay(
-            modifier = Modifier,
-            isOpen = previewUiState.quickSettingsIsOpen,
-            toggleIsOpen = onToggleQuickSettings,
-            currentCameraSettings = previewUiState.currentCameraSettings,
-            onLensFaceClick = { onFlipCamera() },
-            onFlashModeClick = onChangeFlash,
-            onAspectRatioClick = onChangeAspectRatio
-            // onTimerClick = {}/*TODO*/
-        )
-        // relative-grid style overlay on top of preview display
-        CameraControlsOverlay(
-            previewUiState = previewUiState,
-            onNavigateToSettings = onNavigateToSettings,
-            previewMode = previewMode,
-            onFlipCamera = onFlipCamera,
-            onChangeFlash = onChangeFlash,
-            onToggleQuickSettings = onToggleQuickSettings,
-            onCaptureImage = onCaptureImage,
-            onCaptureImageWithUri = onCaptureImageWithUri,
-            onStartVideoRecording = onStartVideoRecording,
-            onStopVideoRecording = onStopVideoRecording,
-            onToggleCaptureMode = onToggleCaptureMode
-        )
+    QuickSettingsScreenOverlay(
+        modifier = Modifier,
+        isOpen = previewUiState.quickSettingsIsOpen,
+        toggleIsOpen = onToggleQuickSettings,
+        currentCameraSettings = previewUiState.currentCameraSettings,
+        onLensFaceClick = { onFlipCamera() },
+        onFlashModeClick = onChangeFlash,
+        onAspectRatioClick = onChangeAspectRatio
+        // onTimerClick = {}/*TODO*/
+    )
+    // relative-grid style overlay on top of preview display
+    CameraControlsOverlay(
+        previewUiState = previewUiState,
+        onNavigateToSettings = onNavigateToSettings,
+        previewMode = previewMode,
+        onFlipCamera = onFlipCamera,
+        onChangeFlash = onChangeFlash,
+        onToggleQuickSettings = onToggleQuickSettings,
+        onCaptureImage = onCaptureImage,
+        onCaptureImageWithUri = onCaptureImageWithUri,
+        onStartVideoRecording = onStartVideoRecording,
+        onStopVideoRecording = onStopVideoRecording,
+        onToggleCaptureMode = onToggleCaptureMode
+    )
 
-        // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null) {
-            ShowTestableToast(
-                modifier = Modifier
-                    .testTag(previewUiState.toastMessageToShow!!.testTag),
-                toastMessage = previewUiState.toastMessageToShow!!,
-                onToastShown = onToastShown
-            )
-        }
-
-        // Screen flash overlay that stays on top of everything but invisible normally. This should
-        // not be enabled based on whether screen flash is enabled because a previous image capture
-        // may still be running after flash mode change and clear actions (e.g. brightness restore)
-        // may need to be handled later. Compose smart recomposition should be able to optimize this
-        // if the relevant states are no longer changing.
-        ScreenFlashScreen(
-            screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = onClearUiScreenBrightness
+    // displays toast when there is a message to show
+    if (previewUiState.toastMessageToShow != null) {
+        ShowTestableToast(
+            modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
+            toastMessage = previewUiState.toastMessageToShow,
+            onToastShown = onToastShown
         )
     }
+
+    // Screen flash overlay that stays on top of everything but invisible normally. This should
+    // not be enabled based on whether screen flash is enabled because a previous image capture
+    // may still be running after flash mode change and clear actions (e.g. brightness restore)
+    // may need to be handled later. Compose smart recomposition should be able to optimize this
+    // if the relevant states are no longer changing.
+    ScreenFlashScreen(
+        screenFlashUiState = screenFlashUiState,
+        onInitialBrightnessCalculated = onClearUiScreenBrightness
+    )
 }
 
 @Composable
