@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,10 @@ class FakeCameraUseCase(
     }
 
     private val _zoomScale = MutableStateFlow(1f)
-    override fun setZoomScale(scale: Float) { _zoomScale.value = scale }
+    val zoomScale get() = _zoomScale.asStateFlow()
+    override fun setZoomScale(scale: Float) {
+        _zoomScale.value = scale
+    }
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,10 +167,7 @@ fun QuickFlipCamera(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(
-    toggleDropDown: () -> Unit,
-    isOpen: Boolean
-) {
+fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -258,18 +255,18 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
-                            (
-                                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                                    )
-                    ).toInt()
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -293,18 +290,18 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
-                            (
-                                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                                    )
-                    ).toInt()
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(

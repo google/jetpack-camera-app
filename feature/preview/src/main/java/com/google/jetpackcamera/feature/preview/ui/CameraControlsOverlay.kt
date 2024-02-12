@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
@@ -78,16 +77,23 @@ fun CameraControlsOverlay(
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
-    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onCaptureImageWithUri: (
+        ContentResolver,
+        Uri?,
+        (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {},
+    onToggleCaptureMode: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
     LaunchedEffect(previewUiState.zoomScale) {
-        if (firstRun) firstRun = false
-        else zoomLevelDisplayState.showZoomLevel()
+        if (firstRun) {
+            firstRun = false
+        } else {
+            zoomLevelDisplayState.showZoomLevel()
+        }
     }
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
@@ -206,7 +212,11 @@ private fun ControlsBottom(
     modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
-    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onCaptureImageWithUri: (
+        ContentResolver,
+        Uri?,
+        (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
@@ -226,7 +236,7 @@ private fun ControlsBottom(
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
-                                currentCameraSettings.isFrontCameraAvailable
+                            currentCameraSettings.isFrontCameraAvailable
                     )
                 }
             }
@@ -254,7 +264,11 @@ private fun CaptureButton(
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
     onCaptureImage: () -> Unit = {},
-    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onCaptureImageWithUri: (
+        ContentResolver,
+        Uri?,
+        (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}

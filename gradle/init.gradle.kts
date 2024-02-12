@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-val ktlintVersion = "1.0.0"
+val ktlintVersion = "1.1.1"
 
 initscript {
     val spotlessVersion = "6.22.0"

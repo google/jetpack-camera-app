@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ fun PreviewScreen(
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
     var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
@@ -131,11 +131,15 @@ private fun ContentScreen(
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
-    onCaptureImageWithUri: (ContentResolver, Uri?, (PreviewViewModel.ImageCaptureEvent) -> Unit) -> Unit = { _, _, _ -> },
+    onCaptureImageWithUri: (
+        ContentResolver,
+        Uri?,
+        (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToggleCaptureMode: () -> Unit = {},
-    onToastShown: () -> Unit = {},
+    onToastShown: () -> Unit = {}
 ) {
     // display camera feed. this stays behind everything else
     PreviewDisplay(
@@ -230,4 +234,3 @@ private fun ContentScreen_WhileRecording() {
         )
     }
 }
-
