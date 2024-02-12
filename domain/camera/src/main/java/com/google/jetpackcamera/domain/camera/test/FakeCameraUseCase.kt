@@ -118,7 +118,6 @@ class FakeCameraUseCase(
     }
 
     private val _zoomScale = MutableStateFlow(1f)
-    val zoomScale get() = _zoomScale.asStateFlow()
     override fun setZoomScale(scale: Float) {
         _zoomScale.value = scale
     }
