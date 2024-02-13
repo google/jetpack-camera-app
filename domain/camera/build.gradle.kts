@@ -68,8 +68,6 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
 
-    implementation(libs.camera.extensions)
-
     // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
