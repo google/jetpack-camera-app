@@ -32,9 +32,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -44,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
@@ -74,15 +70,6 @@ fun PreviewScreen(
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
-    var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
-
-    LifecycleStartEffect(surfaceProvider) {
-        surfaceProvider?.let { viewModel.runCamera(it) }
-        onStopOrDispose {
-            viewModel.stopCamera()
-        }
-    }
-
     when (previewUiState.cameraState) {
         CameraState.NOT_READY -> LoadingScreen()
         CameraState.READY -> ContentScreen(
@@ -103,7 +90,9 @@ fun PreviewScreen(
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToggleCaptureMode = viewModel::toggleCaptureMode,
             onToastShown = viewModel::onToastShown,
-            onSurfaceProviderReady = { surfaceProvider = it }
+//            onSurfaceProviderReady = { surfaceProvider = it },
+            onSurfaceProviderReady = viewModel::runCamera,
+            onSurfaceProviderDisposed = viewModel::stopCamera
         )
     }
 }
@@ -116,6 +105,7 @@ private fun ContentScreen(
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSurfaceProviderReady: (SurfaceProvider) -> Unit = {},
+    onSurfaceProviderDisposed: () -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
@@ -139,7 +129,8 @@ private fun ContentScreen(
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-        onSurfaceProviderReady = onSurfaceProviderReady
+        onSurfaceProviderReady = onSurfaceProviderReady,
+        onSurfaceProviderDisposed = onSurfaceProviderDisposed
     )
 
     QuickSettingsScreenOverlay(

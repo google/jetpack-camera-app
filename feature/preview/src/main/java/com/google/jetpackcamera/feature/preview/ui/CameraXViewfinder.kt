@@ -25,8 +25,14 @@ import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LifecycleStartEffect
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,18 +59,25 @@ import kotlinx.coroutines.launch
 fun CameraXViewfinder(
     modifier: Modifier = Modifier,
     implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE,
-    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {}
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {},
+    onSurfaceProviderDisposed: () -> Unit = {}
 ) {
+    var surfaceProvider by remember { mutableStateOf<Preview.SurfaceProvider?>(null) }
+
+    LifecycleStartEffect(surfaceProvider, lifecycleOwner) {
+        surfaceProvider?.let { onSurfaceProviderReady(it) }
+        onStopOrDispose { onSurfaceProviderDisposed() }
+    }
+
     val viewfinderArgs by produceState<ViewfinderArgs?>(initialValue = null, implementationMode) {
         val requests = MutableStateFlow<SurfaceRequest?>(null)
-        onSurfaceProviderReady(
-            Preview.SurfaceProvider { request ->
-                requests.update { oldRequest ->
-                    oldRequest?.willNotProvideSurface()
-                    request
-                }
+        surfaceProvider = Preview.SurfaceProvider { request ->
+            requests.update { oldRequest ->
+                oldRequest?.willNotProvideSurface()
+                request
             }
-        )
+        }
 
         requests.filterNotNull().collectLatest { request ->
             val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(request.resolution)

@@ -109,7 +109,8 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    onSurfaceProviderReady: (SurfaceProvider) -> Unit
+    onSurfaceProviderReady: (SurfaceProvider) -> Unit,
+    onSurfaceProviderDisposed: () -> Unit
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -147,7 +148,8 @@ fun PreviewDisplay(
         ) {
             CameraXViewfinder(
                 modifier = Modifier.fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady
+                onSurfaceProviderReady = onSurfaceProviderReady,
+                onSurfaceProviderDisposed = onSurfaceProviderDisposed
             )
         }
     }
