@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -97,56 +96,38 @@ fun CameraControlsOverlay(
     }
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
-        Log.d("JOLO", LocalContentColor.current.toString())
         Box(Modifier.fillMaxSize()) {
-            when (previewUiState.videoRecordingState) {
-                VideoRecordingState.ACTIVE -> {
-                    // While recording, show only the capture button and hide the other controls
-                    CaptureButton(
-                        previewMode = previewMode,
-                        isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                        videoRecordingState = previewUiState.videoRecordingState,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        onCaptureImage = onCaptureImage,
-                        onCaptureImageWithUri = onCaptureImageWithUri,
-                        onToggleQuickSettings = onToggleQuickSettings,
-                        onStartVideoRecording = onStartVideoRecording,
-                        onStopVideoRecording = onStopVideoRecording
-                    )
-                }
-
-                VideoRecordingState.INACTIVE -> {
-                    ControlsTop(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter),
-                        isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                        currentCameraSettings = previewUiState.currentCameraSettings,
-                        onNavigateToSettings = onNavigateToSettings,
-                        onChangeFlash = onChangeFlash,
-                        onToggleQuickSettings = onToggleQuickSettings,
-                        onToggleCaptureMode = onToggleCaptureMode
-                    )
-
-                    ControlsBottom(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter),
-                        zoomLevel = previewUiState.zoomScale,
-                        showZoomLevel = zoomLevelDisplayState.showZoomLevel,
-                        isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                        currentCameraSettings = previewUiState.currentCameraSettings,
-                        videoRecordingState = previewUiState.videoRecordingState,
-                        previewMode = previewMode,
-                        onFlipCamera = onFlipCamera,
-                        onCaptureImage = onCaptureImage,
-                        onCaptureImageWithUri = onCaptureImageWithUri,
-                        onToggleQuickSettings = onToggleQuickSettings,
-                        onStartVideoRecording = onStartVideoRecording,
-                        onStopVideoRecording = onStopVideoRecording
-                    )
-                }
+            if (previewUiState.videoRecordingState == VideoRecordingState.INACTIVE) {
+                ControlsTop(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter),
+                    isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
+                    currentCameraSettings = previewUiState.currentCameraSettings,
+                    onNavigateToSettings = onNavigateToSettings,
+                    onChangeFlash = onChangeFlash,
+                    onToggleQuickSettings = onToggleQuickSettings,
+                    onToggleCaptureMode = onToggleCaptureMode
+                )
             }
+
+            ControlsBottom(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter),
+                zoomLevel = previewUiState.zoomScale,
+                showZoomLevel = zoomLevelDisplayState.showZoomLevel,
+                isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
+                currentCameraSettings = previewUiState.currentCameraSettings,
+                videoRecordingState = previewUiState.videoRecordingState,
+                previewMode = previewMode,
+                onFlipCamera = onFlipCamera,
+                onCaptureImage = onCaptureImage,
+                onCaptureImageWithUri = onCaptureImageWithUri,
+                onToggleQuickSettings = onToggleQuickSettings,
+                onStartVideoRecording = onStartVideoRecording,
+                onStopVideoRecording = onStopVideoRecording
+            )
         }
     }
 }
@@ -231,7 +212,7 @@ private fun ControlsBottom(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen) {
+                if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
