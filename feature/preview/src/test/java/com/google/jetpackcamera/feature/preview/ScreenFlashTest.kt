@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ class ScreenFlashTest {
 
         val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
         cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
-        cameraUseCase.runCamera(surfaceProvider, DEFAULT_CAMERA_APP_SETTINGS)
+        cameraUseCase.setSurfaceProvider(surfaceProvider)
+        cameraUseCase.runCamera(DEFAULT_CAMERA_APP_SETTINGS)
     }
 
     @Test

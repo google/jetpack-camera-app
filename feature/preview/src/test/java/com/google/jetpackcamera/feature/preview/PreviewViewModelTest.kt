@@ -55,6 +55,7 @@ class PreviewViewModelTest {
     fun runCamera() = runTest(StandardTestDispatcher()) {
         val surfaceProvider: SurfaceProvider = mock()
         previewViewModel.setSurfaceProvider(surfaceProvider)
+        previewViewModel.startCamera()
         advanceUntilIdle()
 
         assertEquals(cameraUseCase.previewStarted, true)

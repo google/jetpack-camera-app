@@ -49,6 +49,9 @@ class FakeCameraUseCase(
     var recordingInProgress = false
 
     var isLensFacingFront = false
+
+    private var surfaceProvider: Preview.SurfaceProvider? = null
+
     private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
 
@@ -155,6 +158,6 @@ class FakeCameraUseCase(
     }
 
     override fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?) {
-        TODO("Not yet implemented")
+        this.surfaceProvider = surfaceProvider
     }
 }
