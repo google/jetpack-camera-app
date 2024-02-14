@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 package com.google.jetpackcamera.settings
 
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import org.junit.Test
-import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
 
 class ProtoConversionTest {
     @Test
@@ -28,8 +28,10 @@ class ProtoConversionTest {
             when (dynamicRange) {
                 DynamicRange.SDR -> DynamicRangeProto.DYNAMIC_RANGE_SDR
                 DynamicRange.HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
-                else -> TODO("Test does not yet contain correct conversion for dynamic range " +
-                        "type: ${dynamicRange.name}")
+                else -> TODO(
+                    "Test does not yet contain correct conversion for dynamic range " +
+                        "type: ${dynamicRange.name}"
+                )
             }
         }
 
@@ -48,8 +50,10 @@ class ProtoConversionTest {
                 -> DynamicRange.SDR
 
                 DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
-                else -> TODO("Test does not yet contain correct conversion for dynamic range " +
-                        "proto type: ${dynamicRangeProto.name}")
+                else -> TODO(
+                    "Test does not yet contain correct conversion for dynamic range " +
+                        "proto type: ${dynamicRangeProto.name}"
+                )
             }
         }
 
