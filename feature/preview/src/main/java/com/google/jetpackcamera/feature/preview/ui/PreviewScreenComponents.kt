@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.Preview
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -29,7 +30,6 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,7 +63,6 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
@@ -110,7 +110,7 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
+    onSurfaceProviderCreated: (SurfaceProvider) -> Unit
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -119,7 +119,7 @@ fun PreviewDisplay(
     )
     val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
-        deferredSurfaceProvider.complete(it)
+        onSurfaceProviderCreated(it)
     }
 
     BoxWithConstraints(
@@ -176,8 +176,7 @@ fun StabilizationIcon(
         }
         Icon(
             painter = painterResource(id = R.drawable.baseline_video_stable_24),
-            contentDescription = descriptionText,
-            tint = Color.White
+            contentDescription = descriptionText
         )
     }
 }
@@ -203,14 +202,12 @@ fun FlipCameraButton(
     onClick: () -> Unit
 ) {
     IconButton(
-        modifier = modifier
-            .size(40.dp),
+        modifier = modifier.size(40.dp),
         onClick = onClick,
         enabled = enabledCondition
     ) {
         Icon(
             imageVector = Icons.Filled.Refresh,
-            tint = Color.White,
             contentDescription = stringResource(id = R.string.flip_camera_content_description),
             modifier = Modifier.size(72.dp)
         )
@@ -225,7 +222,6 @@ fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Filled.Settings,
-            tint = Color.White,
             contentDescription = stringResource(R.string.settings_content_description),
             modifier = Modifier.size(72.dp)
         )
@@ -242,8 +238,7 @@ fun ZoomScaleText(zoomScale: Float) {
     Text(
         modifier = Modifier.alpha(contentAlpha.value),
         text = "%.1fx".format(zoomScale),
-        fontSize = 20.sp,
-        color = Color.White
+        fontSize = 20.sp
     )
 }
 
@@ -257,7 +252,6 @@ fun CaptureButton(
 ) {
     Box(
         modifier = modifier
-            .fillMaxHeight()
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -272,7 +266,7 @@ fun CaptureButton(
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, Color.White, CircleShape)
+            .border(4.dp, LocalContentColor.current, CircleShape)
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(
