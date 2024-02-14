@@ -18,7 +18,6 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
-import androidx.camera.core.Preview
 import androidx.camera.core.Preview.SurfaceProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -110,16 +109,22 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    onSurfaceProviderCreated: (SurfaceProvider) -> Unit
+    onSurfaceProviderCreated: (SurfaceProvider) -> Unit,
+    onSurfaceProviderDisposed: () -> Unit
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
         }
     )
-    val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
+    val onSurfaceProviderReady: (SurfaceProvider) -> Unit = {
         Log.d(TAG, "onSurfaceProviderReady")
         onSurfaceProviderCreated(it)
+    }
+
+    val onSurfaceProviderFinished: (SurfaceProvider) -> Unit = {
+        Log.d(TAG, "onSurfaceProviderFinished")
+        onSurfaceProviderDisposed()
     }
 
     BoxWithConstraints(
@@ -153,7 +158,8 @@ fun PreviewDisplay(
             CameraXViewfinder(
                 modifier = Modifier
                     .fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady
+                onSurfaceProviderReady = onSurfaceProviderReady,
+                onSurfaceProviderDisposed = onSurfaceProviderFinished
             )
         }
     }

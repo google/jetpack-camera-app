@@ -33,7 +33,9 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +62,9 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+
+    private lateinit var initializationDeferred: Deferred<Unit>
+
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
@@ -83,13 +88,14 @@ class PreviewViewModel @Inject constructor(
                 _previewUiState.emit(it)
             }
         }
+
         initializeCamera()
     }
 
     private fun initializeCamera() {
         // TODO(yasith): Handle CameraUnavailableException
         Log.d(TAG, "initializeCamera")
-        viewModelScope.launch {
+        initializationDeferred = viewModelScope.async {
             cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
             _previewUiState.emit(
                 previewUiState.value.copy(
@@ -99,13 +105,13 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun runCamera(surfaceProvider: SurfaceProvider) {
-        Log.d(TAG, "runCamera")
+    fun startCamera() {
+        Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            awaitInitialization()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
-                surfaceProvider,
                 previewUiState.value.currentCameraSettings
             )
         }
@@ -117,6 +123,18 @@ class PreviewViewModel @Inject constructor(
             if (isActive) {
                 cancel()
             }
+        }
+    }
+
+    fun setSurfaceProvider(surfaceProvider: SurfaceProvider) {
+        viewModelScope.launch {
+            cameraUseCase.setSurfaceProvider(surfaceProvider)
+        }
+    }
+
+    fun clearSurfaceProvider() {
+        viewModelScope.launch {
+            cameraUseCase.setSurfaceProvider(null)
         }
     }
 
@@ -354,6 +372,8 @@ class PreviewViewModel @Inject constructor(
             )
         }
     }
+
+    private suspend fun awaitInitialization() = initializationDeferred.await()
 
     sealed interface ImageCaptureEvent {
         object ImageSaved : ImageCaptureEvent

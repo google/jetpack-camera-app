@@ -70,7 +70,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
-private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -103,8 +102,8 @@ constructor(
     private lateinit var captureMode: CaptureMode
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
-    private lateinit var surfaceProvider: Preview.SurfaceProvider
     private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
+    private var surfaceProvider: Preview.SurfaceProvider? = null
     private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
@@ -139,17 +138,11 @@ constructor(
         return availableCameraLens
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) = coroutineScope {
+    override suspend fun runCamera(currentCameraSettings: CameraAppSettings) = coroutineScope {
         Log.d(TAG, "startPreview")
 
         val cameraSelector =
             cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
-
-        previewUseCase.setSurfaceProvider(surfaceProvider)
-        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -397,11 +390,18 @@ constructor(
         rebindUseCases()
     }
 
+    override fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?) {
+        Log.d(TAG, "setSurfaceProvider: $surfaceProvider")
+
+        // Update existing Preview that may already be running
+        previewUseCase.setSurfaceProvider(surfaceProvider)
+
+        // Store SurfaceProvider for next time use case group is updated
+        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
+    }
+
     private fun updateUseCaseGroup() {
         previewUseCase = createPreviewUseCase()
-        if (this::surfaceProvider.isInitialized) {
-            previewUseCase.setSurfaceProvider(surfaceProvider)
-        }
 
         val useCaseGroupBuilder =
             UseCaseGroup.Builder()
@@ -481,7 +481,11 @@ constructor(
             }
             previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
         }
-        return previewUseCaseBuilder.build()
+        return previewUseCaseBuilder.build().apply {
+            surfaceProvider?.let {
+                setSurfaceProvider(surfaceProvider)
+            }
+        }
     }
 
     private fun shouldPreviewBeStabilized(): Boolean {

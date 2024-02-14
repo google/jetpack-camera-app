@@ -54,7 +54,7 @@ class PreviewViewModelTest {
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
         val surfaceProvider: SurfaceProvider = mock()
-        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.setSurfaceProvider(surfaceProvider)
         advanceUntilIdle()
 
         assertEquals(cameraUseCase.previewStarted, true)
@@ -63,7 +63,8 @@ class PreviewViewModelTest {
     @Test
     fun captureImage() = runTest(StandardTestDispatcher()) {
         val surfaceProvider: SurfaceProvider = mock()
-        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.setSurfaceProvider(surfaceProvider)
+        previewViewModel.startCamera()
         previewViewModel.captureImage()
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
@@ -73,7 +74,8 @@ class PreviewViewModelTest {
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val surfaceProvider: SurfaceProvider = mock()
         val contentResolver: ContentResolver = mock()
-        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.setSurfaceProvider(surfaceProvider)
+        previewViewModel.startCamera()
         previewViewModel.captureImageWithUri(contentResolver, null) {}
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
@@ -81,7 +83,8 @@ class PreviewViewModelTest {
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.setSurfaceProvider(mock())
+        previewViewModel.startCamera()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertEquals(cameraUseCase.recordingInProgress, true)
@@ -89,7 +92,8 @@ class PreviewViewModelTest {
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.setSurfaceProvider(mock())
+        previewViewModel.startCamera()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
@@ -98,7 +102,8 @@ class PreviewViewModelTest {
 
     @Test
     fun setFlash() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.setSurfaceProvider(mock())
+        previewViewModel.startCamera()
         previewViewModel.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
         assertEquals(
@@ -110,7 +115,8 @@ class PreviewViewModelTest {
     @Test
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
-        previewViewModel.runCamera(mock())
+        previewViewModel.setSurfaceProvider(mock())
+        previewViewModel.startCamera()
         assertEquals(
             previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing,
             false

@@ -32,6 +32,7 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -53,62 +54,66 @@ import kotlinx.coroutines.launch
 fun CameraXViewfinder(
     modifier: Modifier = Modifier,
     implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE,
-    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {}
+    onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {},
+    onSurfaceProviderDisposed: (Preview.SurfaceProvider) -> Unit = {}
 ) {
     val viewfinderArgs by produceState<ViewfinderArgs?>(initialValue = null, implementationMode) {
         val requests = MutableStateFlow<SurfaceRequest?>(null)
-        onSurfaceProviderReady(
+        val surfaceProvider =
             Preview.SurfaceProvider { request ->
                 requests.update { oldRequest ->
                     oldRequest?.willNotProvideSurface()
                     request
                 }
             }
-        )
 
-        requests.filterNotNull().collectLatest { request ->
-            val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(request.resolution)
-                .build()
+        onSurfaceProviderReady(surfaceProvider)
 
-            request.addRequestCancellationListener(Runnable::run) {
-                viewfinderSurfaceRequest.markSurfaceSafeToRelease()
-            }
+        requests.filterNotNull()
+            .onCompletion { onSurfaceProviderDisposed(surfaceProvider) }
+            .collectLatest { request ->
+                val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(request.resolution)
+                    .build()
 
-            // Launch undispatched so we always reach the try/finally in this coroutine
-            launch(start = CoroutineStart.UNDISPATCHED) {
-                try {
-                    val surface = viewfinderSurfaceRequest.getSurface()
-                    request.provideSurface(surface, Runnable::run) {
-                        viewfinderSurfaceRequest.markSurfaceSafeToRelease()
+                request.addRequestCancellationListener(Runnable::run) {
+                    viewfinderSurfaceRequest.markSurfaceSafeToRelease()
+                }
+
+                // Launch undispatched so we always reach the try/finally in this coroutine
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    try {
+                        val surface = viewfinderSurfaceRequest.getSurface()
+                        request.provideSurface(surface, Runnable::run) {
+                            viewfinderSurfaceRequest.markSurfaceSafeToRelease()
+                        }
+                    } finally {
+                        // If we haven't provided the surface, such as if we're cancelled
+                        // while suspending on getSurface(), this call will succeed. Otherwise
+                        // it will be a no-op.
+                        request.willNotProvideSurface()
                     }
-                } finally {
-                    // If we haven't provided the surface, such as if we're cancelled
-                    // while suspending on getSurface(), this call will succeed. Otherwise
-                    // it will be a no-op.
-                    request.willNotProvideSurface()
+                }
+
+                val transformationInfos = MutableStateFlow<CXTransformationInfo?>(null)
+                request.setTransformationInfoListener(Runnable::run) {
+                    transformationInfos.value = it
+                }
+
+                transformationInfos.filterNotNull().collectLatest {
+                    value = ViewfinderArgs(
+                        viewfinderSurfaceRequest,
+                        implementationMode,
+                        TransformationInfo(
+                            it.rotationDegrees,
+                            it.cropRect.left,
+                            it.cropRect.right,
+                            it.cropRect.top,
+                            it.cropRect.bottom,
+                            it.isMirroring
+                        )
+                    )
                 }
             }
-
-            val transformationInfos = MutableStateFlow<CXTransformationInfo?>(null)
-            request.setTransformationInfoListener(Runnable::run) {
-                transformationInfos.value = it
-            }
-
-            transformationInfos.filterNotNull().collectLatest {
-                value = ViewfinderArgs(
-                    viewfinderSurfaceRequest,
-                    implementationMode,
-                    TransformationInfo(
-                        it.rotationDegrees,
-                        it.cropRect.left,
-                        it.cropRect.right,
-                        it.cropRect.top,
-                        it.cropRect.bottom,
-                        it.isMirroring
-                    )
-                )
-            }
-        }
     }
 
     viewfinderArgs?.let { args ->

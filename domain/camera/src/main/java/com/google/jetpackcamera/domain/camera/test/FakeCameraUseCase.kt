@@ -63,10 +63,7 @@ class FakeCameraUseCase(
         return availableLenses
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) {
+    override suspend fun runCamera(currentCameraSettings: CameraAppSettings) {
         val lensFacing =
             when (currentCameraSettings.isFrontCameraFacing) {
                 true -> CameraSelector.LENS_FACING_FRONT
@@ -154,6 +151,10 @@ class FakeCameraUseCase(
     }
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?) {
         TODO("Not yet implemented")
     }
 }

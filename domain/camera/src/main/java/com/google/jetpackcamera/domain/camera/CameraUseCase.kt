@@ -39,14 +39,14 @@ interface CameraUseCase {
     suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
 
     /**
-     * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
+     * Starts the camera with given [CameraAppSettings].
+     *
+     * This will start to configure the camera, but frames won't stream until [setSurfaceProvider]
+     * has been called with a non-null [Preview.SurfaceProvider].
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    )
+    suspend fun runCamera(currentCameraSettings: CameraAppSettings)
 
     suspend fun takePicture()
 
@@ -73,6 +73,8 @@ interface CameraUseCase {
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
     suspend fun setCaptureMode(captureMode: SettingsCaptureMode)
+
+    fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f

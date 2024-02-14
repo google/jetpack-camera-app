@@ -30,17 +30,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,14 +48,12 @@ import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.FlashMode
-import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
 /**
  * Screen used for the Preview feature.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
@@ -77,15 +69,8 @@ fun PreviewScreen(
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
-    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
-    var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
-
-    LaunchedEffect(LocalLifecycleOwner.current) {
-        surfaceProvider = deferredSurfaceProvider.await()
-    }
-
-    LifecycleStartEffect(surfaceProvider) {
-        surfaceProvider?.let { viewModel.runCamera(it) }
+    LifecycleStartEffect(Unit) {
+        viewModel.startCamera()
         onStopOrDispose {
             viewModel.stopCamera()
         }
@@ -111,7 +96,8 @@ fun PreviewScreen(
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToggleCaptureMode = viewModel::toggleCaptureMode,
             onToastShown = viewModel::onToastShown,
-            onSurfaceProviderCreated = { deferredSurfaceProvider.complete(it) }
+            onSurfaceProviderCreated = viewModel::setSurfaceProvider,
+            onSurfaceProviderDisposed = viewModel::clearSurfaceProvider
         )
     }
 }
@@ -124,6 +110,7 @@ private fun ContentScreen(
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSurfaceProviderCreated: (SurfaceProvider) -> Unit = {},
+    onSurfaceProviderDisposed: () -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
@@ -147,7 +134,8 @@ private fun ContentScreen(
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-        onSurfaceProviderCreated = onSurfaceProviderCreated
+        onSurfaceProviderCreated = onSurfaceProviderCreated,
+        onSurfaceProviderDisposed = onSurfaceProviderDisposed
     )
 
     QuickSettingsScreenOverlay(
