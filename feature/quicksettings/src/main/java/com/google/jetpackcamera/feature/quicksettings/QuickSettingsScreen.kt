@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,9 +37,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
@@ -46,6 +49,7 @@ import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
@@ -61,7 +65,8 @@ fun QuickSettingsScreenOverlay(
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
-    onCaptureModeClick: (captureMode: CaptureMode) -> Unit
+    onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -107,7 +112,8 @@ fun QuickSettingsScreenOverlay(
                 onLensFaceClick = onLensFaceClick,
                 onFlashModeClick = onFlashModeClick,
                 onAspectRatioClick = onAspectRatioClick,
-                onCaptureModeClick = onCaptureModeClick
+                onCaptureModeClick = onCaptureModeClick,
+                onDynamicRangeClick = onDynamicRangeClick
             )
         }
     } else {
@@ -132,7 +138,8 @@ private fun ExpandedQuickSettingsUi(
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
-    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
+    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
 ) {
     Column(
         modifier =
@@ -181,6 +188,13 @@ private fun ExpandedQuickSettingsUi(
                                 setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
                                 currentCaptureMode = currentCameraSettings.captureMode
                             )
+                        },
+                        {
+                            QuickSetDynamicRange(
+                                modifier = Modifier.testTag("QuickSetDynamicRange"),
+                                onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
+                                dynamicRange = currentCameraSettings.dynamicRange
+                            )
                         }
                     )
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
@@ -188,11 +202,27 @@ private fun ExpandedQuickSettingsUi(
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
-
                     setRatio = onAspectRatioClick,
                     currentRatio = currentCameraSettings.aspectRatio
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview() {
+    MaterialTheme {
+        ExpandedQuickSettingsUi(
+            currentCameraSettings = CameraAppSettings(),
+            onLensFaceClick = { } ,
+            onFlashModeClick = { },
+            shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
+            setVisibleQuickSetting = { },
+            onAspectRatioClick = { },
+            onCaptureModeClick = { },
+            onDynamicRangeClick = { }
+        )
     }
 }

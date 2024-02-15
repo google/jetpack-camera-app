@@ -44,10 +44,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -86,6 +88,26 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             }
         )
     ExpandedQuickSetting(quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetDynamicRange(
+    modifier: Modifier = Modifier,
+    onClick: (dynamicRange: DynamicRange) -> Unit,
+    dynamicRange: DynamicRange
+) {
+    val enum =
+        when (dynamicRange) {
+            DynamicRange.SDR -> CameraDynamicRange.SDR
+            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+            else -> CameraDynamicRange.SDR
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = { onClick(dynamicRange) },
+        isHighLighted = (dynamicRange == DynamicRange.HLG10)
+    )
 }
 
 @Composable

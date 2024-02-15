@@ -116,3 +116,24 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_capture_mode_single_description
     }
 }
+
+enum class CameraDynamicRange : QuickSettingsEnum {
+    SDR {
+        override fun getDrawableResId(): Int = R.drawable.baseline_hdr_off_72
+
+        override fun getTextResId(): Int = R.string.quick_settings_dynamic_range_sdr
+
+        override fun getDescriptionResId(): Int =
+            R.string.quick_settings_dynamic_range_sdr_description
+
+    },
+    HLG10 {
+        override fun getDrawableResId(): Int = R.drawable.baseline_hdr_on_72
+
+        override fun getTextResId(): Int = R.string.quick_settings_dynamic_range_hlg10
+
+        override fun getDescriptionResId(): Int =
+            R.string.quick_settings_dynamic_range_hlg10_description
+
+    }
+}
