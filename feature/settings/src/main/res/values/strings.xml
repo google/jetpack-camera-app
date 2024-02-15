@@ -88,6 +88,7 @@
     <!-- Target Fps setting strings -->
     <string name="fps_title">Set Target Frame Rate</string>
 
+    <string name="fps_description_unavailable">No fixed frame rates supported</string>
     <string name="fps_description_none">No target fps</string>
     <string name="fps_description_15">Target 15 fps </string>
     <string name="fps_description_30">Target 30 fps</string>
