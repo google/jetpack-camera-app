@@ -337,6 +337,7 @@ private fun getStabilizationStringRes(
 fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
+    hasCurrentTargetFps: Boolean,
     supportedStabilizationMode: List<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
@@ -344,8 +345,8 @@ fun StabilizationSetting(
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = supportedStabilizationMode.isNotEmpty(),
-        description = if (supportedStabilizationMode.isEmpty()) {
+        enabled = !hasCurrentTargetFps && supportedStabilizationMode.isNotEmpty(),
+        description = if (hasCurrentTargetFps || supportedStabilizationMode.isEmpty()) {
             stringResource(id = R.string.stabilization_description_unsupported)
         } else {
             stringResource(
