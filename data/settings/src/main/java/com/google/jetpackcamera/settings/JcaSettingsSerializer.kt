@@ -35,7 +35,6 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
         .setStabilizePreviewSupported(false)
         .setStabilizeVideoSupported(false)
-        .clearSupportedFrameRates()
         .addAllSupportedFrameRates(emptySet())
         .build()
 
