@@ -27,8 +27,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -44,12 +46,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlin.math.min
@@ -87,6 +91,35 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             }
         )
     ExpandedQuickSetting(quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetHdr(
+    modifier: Modifier = Modifier,
+    onClick: (dynamicRange: DynamicRange) -> Unit,
+    selectedDynamicRange: DynamicRange,
+    hdrDynamicRange: DynamicRange,
+    enabled: Boolean = true
+) {
+    val enum =
+        when (selectedDynamicRange) {
+            DynamicRange.SDR -> CameraDynamicRange.SDR
+            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
+                hdrDynamicRange
+            } else {
+                DynamicRange.SDR
+            }
+            onClick(newDynamicRange)
+        },
+        isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
+        enabled = enabled
+    )
 }
 
 @Composable
@@ -218,7 +251,8 @@ fun QuickSettingUiItem(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
-    isHighLighted: Boolean = false
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     QuickSettingUiItem(
         modifier = modifier,
@@ -226,7 +260,8 @@ fun QuickSettingUiItem(
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
-        isHighLighted = isHighLighted
+        isHighLighted = isHighLighted,
+        enabled = enabled
     )
 }
 
@@ -240,30 +275,32 @@ fun QuickSettingUiItem(
     text: String,
     accessibilityText: String,
     onClick: () -> Unit,
-    isHighLighted: Boolean = false
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     Column(
         modifier =
         modifier
             .wrapContentSize()
             .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable {
-                onClick()
-            },
+            .clickable(onClick = onClick, enabled = enabled),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val tint = if (isHighLighted) Color.Yellow else Color.White
-        Icon(
-            painter = painterResource(drawableResId),
-            contentDescription = accessibilityText,
-            tint = tint,
-            modifier =
-            Modifier
-                .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
-        )
+        val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
+            if (!enabled) it.copy(alpha = 0.38f) else it
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Icon(
+                painter = painterResource(drawableResId),
+                contentDescription = accessibilityText,
+                modifier = Modifier.size(
+                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
+                )
+            )
 
-        Text(text = text, color = tint, textAlign = TextAlign.Center)
+            Text(text = text, color = LocalContentColor.current, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -308,7 +345,7 @@ fun ExpandedQuickSetting(
 @Composable
 fun QuickSettingsGrid(
     modifier: Modifier = Modifier,
-    vararg quickSettingsButtons: @Composable () -> Unit
+    quickSettingsButtons: List<@Composable () -> Unit>
 ) {
     val initialNumOfColumns =
         min(

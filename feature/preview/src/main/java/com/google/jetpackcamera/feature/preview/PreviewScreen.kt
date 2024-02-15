@@ -164,7 +164,8 @@ private fun ContentScreen(
         onLensFaceClick = onSetLensFacing,
         onFlashModeClick = onChangeFlash,
         onAspectRatioClick = onChangeAspectRatio,
-        onCaptureModeClick = onChangeCaptureMode
+        onCaptureModeClick = onChangeCaptureMode,
+        onDynamicRangeClick = { }
         // onTimerClick = {}/*TODO*/
     )
     // relative-grid style overlay on top of preview display
