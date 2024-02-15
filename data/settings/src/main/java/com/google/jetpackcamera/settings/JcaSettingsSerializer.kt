@@ -35,7 +35,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
         .setStabilizePreviewSupported(false)
         .setStabilizeVideoSupported(false)
-        .setMaxFrameRate(1)
+        .clearSupportedFrameRates()
+        .addAllSupportedFrameRates(emptySet())
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

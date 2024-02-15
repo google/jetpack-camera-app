@@ -72,7 +72,7 @@ class LocalSettingsRepository @Inject constructor(
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                maxDeviceFrameRate = it.maxFrameRate
+                supportedFixedFrameRates = it.supportedFrameRatesList
             )
         }
 
@@ -140,31 +140,32 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateMaxFrameRate(
-        maxFrameRate: Int,
+    override suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
         currentTargetFrameRate: TargetFrameRate
     ) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setMaxFrameRate(maxFrameRate)
+                .clearSupportedFrameRates()
+                .addAllSupportedFrameRates(supportedFrameRates)
                 .build()
         }
         when (currentTargetFrameRate) {
             TargetFrameRate.TARGET_FPS_NONE -> {}
             TargetFrameRate.TARGET_FPS_15 -> {
-                if (maxFrameRate < 15) {
+                if (supportedFrameRates.contains(15)) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
                 }
             }
 
             TargetFrameRate.TARGET_FPS_30 -> {
-                if (maxFrameRate < 30) {
+                if (supportedFrameRates.contains(30)) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
                 }
             }
 
             TargetFrameRate.TARGET_FPS_60 -> {
-                if (maxFrameRate < 60) {
+                if (supportedFrameRates.contains(60)) {
                     updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
                 }
             }

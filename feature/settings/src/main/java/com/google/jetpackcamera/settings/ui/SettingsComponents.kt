@@ -249,7 +249,7 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
 fun TargetFpsSetting(
     modifier: Modifier = Modifier,
     currentTargetFps: TargetFrameRate,
-    deviceMaxFps: Int,
+    supportedFps: List<Int>,
     setTargetFps: (TargetFrameRate) -> Unit
 ) {
     BasicPopupSetting(
@@ -280,21 +280,21 @@ fun TargetFpsSetting(
                     text = stringResource(id = R.string.fps_selector_15),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) },
-                    enabled = deviceMaxFps >= 15
+                    enabled = supportedFps.contains(15)
                 )
 
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_30),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) },
-                    enabled = deviceMaxFps >= 30
+                    enabled = supportedFps.contains(30)
                 )
 
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_60),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) },
-                    enabled = deviceMaxFps >= 60
+                    enabled = supportedFps.contains(60)
                 )
             }
         }

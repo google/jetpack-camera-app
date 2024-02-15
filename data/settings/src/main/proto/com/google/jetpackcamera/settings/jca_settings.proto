@@ -44,5 +44,5 @@ message JcaSettings {
   bool stabilize_video_supported = 11;
   bool stabilize_preview_supported = 12;
   TargetFrameRate target_frame_rate = 13;
-  int32 max_frame_rate = 14;
+  repeated int32 supported_frame_rates = 14;
 }

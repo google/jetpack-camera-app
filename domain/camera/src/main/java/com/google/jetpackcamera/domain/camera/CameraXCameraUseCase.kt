@@ -151,12 +151,16 @@ constructor(
 
     private suspend fun updateMaxFps(currentTargetFrameRate: TargetFrameRate) {
         coroutineScope {
-            val maxFps = cameraProvider.availableCameraInfos.maxOf { cameraInfo ->
-                cameraInfo.supportedFrameRateRanges.maxOf { e ->
-                    e.upper
+            var supportedFixedFrameRates = mutableSetOf<Int>()
+            cameraProvider.availableCameraInfos.forEach() { cameraInfo ->
+                cameraInfo.supportedFrameRateRanges.forEach() { e ->
+                    if (listOf(15,30,60).contains(e.upper)
+                        && e.upper == e.lower) {
+                        supportedFixedFrameRates.add(e.upper)
+                    }
                 }
             }
-            settingsRepository.updateMaxFrameRate(maxFps, currentTargetFrameRate)
+            settingsRepository.updateSupportedFixedFrameRate(supportedFixedFrameRates, currentTargetFrameRate)
         }
     }
 
