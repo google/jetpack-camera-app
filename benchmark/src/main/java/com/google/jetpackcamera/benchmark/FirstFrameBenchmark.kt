@@ -32,12 +32,12 @@ class FirstFrameBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun timeToFirstFrameColdStartup()  {
+    fun timeToFirstFrameColdStartup() {
         benchmarkFirstFrame()
     }
 
     @Test
-    fun timeToFirstFrameHotStartup()  {
+    fun timeToFirstFrameHotStartup() {
         benchmarkFirstFrame(startupMode = StartupMode.HOT)
     }
 
