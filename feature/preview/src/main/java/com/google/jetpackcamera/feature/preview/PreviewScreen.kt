@@ -54,10 +54,6 @@ import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
-import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
