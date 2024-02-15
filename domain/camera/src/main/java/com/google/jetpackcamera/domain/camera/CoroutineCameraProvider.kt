@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,9 @@ private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
             currentState = Lifecycle.State.INITIALIZED
         }
 
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry
+
     init {
         if (coroutineContext[Job]?.isActive == true) {
             lifecycleRegistry.currentState = Lifecycle.State.RESUMED
@@ -70,6 +73,4 @@ private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         }
     }
-
-    override fun getLifecycle() = lifecycleRegistry
 }
