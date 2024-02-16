@@ -34,6 +34,7 @@ import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -70,7 +71,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
-private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -103,7 +103,6 @@ constructor(
     private lateinit var captureMode: CaptureMode
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
-    private lateinit var surfaceProvider: Preview.SurfaceProvider
     private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
     private var isFrontFacing = true
 
@@ -139,17 +138,11 @@ constructor(
         return availableCameraLens
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) = coroutineScope {
+    override suspend fun runCamera(currentCameraSettings: CameraAppSettings) = coroutineScope {
         Log.d(TAG, "startPreview")
 
         val cameraSelector =
             cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
-
-        previewUseCase.setSurfaceProvider(surfaceProvider)
-        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
 
         cameraProvider.runWith(cameraSelector, useCaseGroup) {
             camera = it
@@ -292,6 +285,9 @@ constructor(
     private val _zoomScale = MutableStateFlow(1f)
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
         this.isFrontFacing = isFrontFacing
@@ -399,9 +395,6 @@ constructor(
 
     private fun updateUseCaseGroup() {
         previewUseCase = createPreviewUseCase()
-        if (this::surfaceProvider.isInitialized) {
-            previewUseCase.setSurfaceProvider(surfaceProvider)
-        }
 
         val useCaseGroupBuilder =
             UseCaseGroup.Builder()
@@ -481,7 +474,11 @@ constructor(
             }
             previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
         }
-        return previewUseCaseBuilder.build()
+        return previewUseCaseBuilder.build().apply {
+            setSurfaceProvider { surfaceRequest ->
+                _surfaceRequest.value = surfaceRequest
+            }
+        }
     }
 
     private fun shouldPreviewBeStabilized(): Boolean {

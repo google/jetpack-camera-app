@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
-import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -34,7 +33,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakeCameraUseCaseTest {
@@ -42,8 +40,6 @@ class FakeCameraUseCaseTest {
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
 
     private val cameraUseCase = FakeCameraUseCase(testScope)
-
-    private val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
 
     @Before
     fun setup() = runTest(testDispatcher) {
@@ -136,6 +132,6 @@ class FakeCameraUseCaseTest {
 
     private suspend fun initAndRunCamera() {
         cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
-        cameraUseCase.runCamera(surfaceProvider, DEFAULT_CAMERA_APP_SETTINGS)
+        cameraUseCase.runCamera(DEFAULT_CAMERA_APP_SETTINGS)
     }
 }

@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import android.view.Display
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
@@ -33,7 +33,9 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,11 +62,25 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+
+    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
+
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+
+    // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
+    // used to ensure we don't start the camera before initialization is complete.
+    private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
+        cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+        _previewUiState.emit(
+            previewUiState.value.copy(
+                cameraState = CameraState.READY
+            )
+        )
+    }
 
     init {
         viewModelScope.launch {
@@ -83,29 +99,16 @@ class PreviewViewModel @Inject constructor(
                 _previewUiState.emit(it)
             }
         }
-        initializeCamera()
     }
 
-    private fun initializeCamera() {
-        // TODO(yasith): Handle CameraUnavailableException
-        Log.d(TAG, "initializeCamera")
-        viewModelScope.launch {
-            cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    cameraState = CameraState.READY
-                )
-            )
-        }
-    }
-
-    fun runCamera(surfaceProvider: SurfaceProvider) {
-        Log.d(TAG, "runCamera")
+    fun startCamera() {
+        Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            // Ensure CameraUseCase is initialized before starting camera
+            initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
-                surfaceProvider,
                 previewUiState.value.currentCameraSettings
             )
         }
