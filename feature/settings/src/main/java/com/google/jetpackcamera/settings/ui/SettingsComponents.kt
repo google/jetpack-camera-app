@@ -260,12 +260,13 @@ fun TargetFpsSetting(
         title = stringResource(id = R.string.fps_title),
         enabled = supportedFps.isNotEmpty(),
         leadingIcon = null,
-        description = if (supportedFps.isEmpty()){
+        description = if (supportedFps.isEmpty()) {
             stringResource(id = R.string.fps_description_unavailable)
-            }
-            else {
+        } else {
             when (currentTargetFps) {
-                TargetFrameRate.TARGET_FPS_NONE -> stringResource(id = R.string.fps_description_none)
+                TargetFrameRate.TARGET_FPS_NONE -> stringResource(
+                    id = R.string.fps_description_none
+                )
                 TargetFrameRate.TARGET_FPS_15 -> stringResource(id = R.string.fps_description_15)
                 TargetFrameRate.TARGET_FPS_30 -> stringResource(id = R.string.fps_description_30)
                 TargetFrameRate.TARGET_FPS_60 -> stringResource(id = R.string.fps_description_60)
