@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Rational
 import android.view.Display
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
@@ -39,14 +39,14 @@ interface CameraUseCase {
     suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
 
     /**
-     * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
+     * Starts the camera with given [CameraAppSettings].
+     *
+     * This will start to configure the camera, but frames won't stream until a [SurfaceRequest]
+     * from [getSurfaceRequest] has been fulfilled.
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    )
+    suspend fun runCamera(currentCameraSettings: CameraAppSettings)
 
     suspend fun takePicture()
 
@@ -59,6 +59,8 @@ interface CameraUseCase {
     fun setZoomScale(scale: Float)
 
     fun getZoomScale(): StateFlow<Float>
+
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 
