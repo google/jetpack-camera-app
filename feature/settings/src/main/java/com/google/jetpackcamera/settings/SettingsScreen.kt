@@ -73,6 +73,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     TargetFpsSetting(
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        supportedFps = uiState.cameraAppSettings.supportedFixedFrameRates,
         setTargetFps = viewModel::setTargetFrameRate
     )
 

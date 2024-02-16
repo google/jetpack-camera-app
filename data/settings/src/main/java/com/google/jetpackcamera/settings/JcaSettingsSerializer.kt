@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
         .setStabilizePreviewSupported(false)
         .setStabilizeVideoSupported(false)
+        .addAllSupportedFrameRates(emptySet())
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

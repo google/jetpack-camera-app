@@ -71,7 +71,8 @@ class LocalSettingsRepository @Inject constructor(
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
-                }
+                },
+                supportedFixedFrameRates = it.supportedFrameRatesList
             )
         }
 
@@ -136,6 +137,38 @@ class LocalSettingsRepository @Inject constructor(
             currentSettings.toBuilder()
                 .setTargetFrameRate(targetFrameRate.toProto())
                 .build()
+        }
+    }
+
+    override suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
+        currentTargetFrameRate: TargetFrameRate
+    ) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedFrameRates()
+                .addAllSupportedFrameRates(supportedFrameRates)
+                .build()
+        }
+        when (currentTargetFrameRate) {
+            TargetFrameRate.TARGET_FPS_NONE -> {}
+            TargetFrameRate.TARGET_FPS_15 -> {
+                if (supportedFrameRates.contains(15)) {
+                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
+            }
+
+            TargetFrameRate.TARGET_FPS_30 -> {
+                if (supportedFrameRates.contains(30)) {
+                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
+            }
+
+            TargetFrameRate.TARGET_FPS_60 -> {
+                if (supportedFrameRates.contains(60)) {
+                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                }
+            }
         }
     }
 

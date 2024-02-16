@@ -29,8 +29,8 @@ data class CameraAppSettings(
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
     val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
-    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE
-
+    val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE,
+    val supportedFixedFrameRates: List<Int> = emptyList()
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

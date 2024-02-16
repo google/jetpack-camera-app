@@ -85,6 +85,7 @@ constructor(
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
+    private val fixedFrameRates = setOf(15, 30, 60)
     private var camera: Camera? = null
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -132,6 +133,7 @@ constructor(
             )
             settingsRepository.updateVideoStabilizationSupported(isStabilizationSupported())
         }
+        updateMaxFps(currentCameraSettings.targetFrameRate)
 
         videoCaptureUseCase = when (currentCameraSettings.targetFrameRate) {
             TargetFrameRate.TARGET_FPS_NONE -> {
@@ -146,6 +148,23 @@ constructor(
         }
         updateUseCaseGroup()
         return availableCameraLens
+    }
+
+    private suspend fun updateMaxFps(currentTargetFrameRate: TargetFrameRate) {
+        coroutineScope {
+            var supportedFixedFrameRates = mutableSetOf<Int>()
+            cameraProvider.availableCameraInfos.forEach { cameraInfo ->
+                cameraInfo.supportedFrameRateRanges.forEach { e ->
+                    if (e.upper == e.lower && fixedFrameRates.contains(e.upper)) {
+                        supportedFixedFrameRates.add(e.upper)
+                    }
+                }
+            }
+            settingsRepository.updateSupportedFixedFrameRate(
+                supportedFixedFrameRates,
+                currentTargetFrameRate
+            )
+        }
     }
 
     override suspend fun runCamera(

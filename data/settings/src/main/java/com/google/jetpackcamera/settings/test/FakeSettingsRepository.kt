@@ -110,4 +110,12 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
+        currentTargetFrameRate: TargetFrameRate
+    ) {
+        currentCameraSettings =
+            currentCameraSettings.copy(supportedFixedFrameRates = supportedFrameRates.toList())
+    }
 }

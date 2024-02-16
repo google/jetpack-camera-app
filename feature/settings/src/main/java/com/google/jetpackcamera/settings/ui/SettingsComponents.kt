@@ -252,17 +252,25 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
 fun TargetFpsSetting(
     modifier: Modifier = Modifier,
     currentTargetFps: TargetFrameRate,
+    supportedFps: List<Int>,
     setTargetFps: (TargetFrameRate) -> Unit
 ) {
     BasicPopupSetting(
         modifier = modifier,
         title = stringResource(id = R.string.fps_title),
+        enabled = supportedFps.isNotEmpty(),
         leadingIcon = null,
-        description = when (currentTargetFps) {
-            TargetFrameRate.TARGET_FPS_NONE -> stringResource(id = R.string.fps_description_none)
-            TargetFrameRate.TARGET_FPS_15 -> stringResource(id = R.string.fps_description_15)
-            TargetFrameRate.TARGET_FPS_30 -> stringResource(id = R.string.fps_description_30)
-            TargetFrameRate.TARGET_FPS_60 -> stringResource(id = R.string.fps_description_60)
+        description = if (supportedFps.isEmpty()) {
+            stringResource(id = R.string.fps_description_unavailable)
+        } else {
+            when (currentTargetFps) {
+                TargetFrameRate.TARGET_FPS_NONE -> stringResource(
+                    id = R.string.fps_description_none
+                )
+                TargetFrameRate.TARGET_FPS_15 -> stringResource(id = R.string.fps_description_15)
+                TargetFrameRate.TARGET_FPS_30 -> stringResource(id = R.string.fps_description_30)
+                TargetFrameRate.TARGET_FPS_60 -> stringResource(id = R.string.fps_description_60)
+            }
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -271,25 +279,32 @@ fun TargetFpsSetting(
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_none),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_NONE,
                     onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_NONE) }
                 )
+
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_15),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_15,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) }
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_15) },
+                    enabled = supportedFps.contains(15)
                 )
+
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_30),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_30,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) }
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_30) },
+                    enabled = supportedFps.contains(30)
                 )
+
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_60),
                     selected = currentTargetFps == TargetFrameRate.TARGET_FPS_60,
-                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) }
+                    onClick = { setTargetFps(TargetFrameRate.TARGET_FPS_60) },
+                    enabled = supportedFps.contains(60)
                 )
             }
         }
