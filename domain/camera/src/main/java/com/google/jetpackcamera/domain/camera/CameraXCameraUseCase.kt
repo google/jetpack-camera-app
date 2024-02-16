@@ -382,12 +382,12 @@ constructor(
         rebindUseCases()
     }
 
-    override suspend fun setCaptureMode(newCaptureMode: CaptureMode) {
-        captureMode = newCaptureMode
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        this.captureMode = captureMode
         Log.d(
             TAG,
             "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+                (this.captureMode == CaptureMode.SINGLE_STREAM)
         )
         updateUseCaseGroup()
         rebindUseCases()
