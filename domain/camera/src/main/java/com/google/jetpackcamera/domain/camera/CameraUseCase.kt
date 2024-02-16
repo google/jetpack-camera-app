@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Data layer for camera.
@@ -55,7 +56,9 @@ interface CameraUseCase {
 
     fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float): Float
+    fun setZoomScale(scale: Float)
+
+    fun getZoomScale(): StateFlow<Float>
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 

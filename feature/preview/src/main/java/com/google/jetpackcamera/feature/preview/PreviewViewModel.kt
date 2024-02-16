@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.lang.Exception
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -68,12 +68,19 @@ class PreviewViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            settingsRepository.cameraAppSettings.collect {
-                    // TODO: only update settings that were actually changed
-                    // currently resets all "quick" settings to stored settings
-                    settings ->
-                _previewUiState
-                    .emit(previewUiState.value.copy(currentCameraSettings = settings))
+            combine(
+                settingsRepository.cameraAppSettings,
+                cameraUseCase.getZoomScale()
+            ) { cameraAppSettings, zoomScale ->
+                previewUiState.value.copy(
+                    currentCameraSettings = cameraAppSettings,
+                    zoomScale = zoomScale
+                )
+            }.collect {
+                // TODO: only update settings that were actually changed
+                // currently resets all "quick" settings to stored settings
+                Log.d(TAG, "UPDATE UI STATE: ${it.zoomScale}")
+                _previewUiState.emit(it)
             }
         }
         initializeCamera()
@@ -237,7 +244,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage(
+    fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         onImageCapture: (ImageCaptureEvent) -> Unit
@@ -307,8 +314,8 @@ class PreviewViewModel @Inject constructor(
         recordingJob?.cancel()
     }
 
-    fun setZoomScale(scale: Float): Float {
-        return cameraUseCase.setZoomScale(scale = scale)
+    fun setZoomScale(scale: Float) {
+        cameraUseCase.setZoomScale(scale = scale)
     }
 
     // modify ui values

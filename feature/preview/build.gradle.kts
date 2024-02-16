@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,10 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.hilt.navigation.compose)
 
+    // Compose - Lifecycle utilities
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
     debugImplementation(libs.compose.test.manifest)
@@ -101,7 +105,7 @@ dependencies {
 
     // CameraX
     implementation(libs.camera.core)
-    implementation(libs.camera.view)
+    implementation(libs.camera.viewfinder.compose)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
@@ -113,7 +117,6 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
-    implementation(project(":camera-viewfinder-compose"))
     implementation(project(":feature:quicksettings"))
 }
 

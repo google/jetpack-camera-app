@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class PreviewViewModelTest {
         val surfaceProvider: SurfaceProvider = mock()
         val contentResolver: ContentResolver = mock()
         previewViewModel.runCamera(surfaceProvider)
-        previewViewModel.captureImage(contentResolver, null) {}
+        previewViewModel.captureImageWithUri(contentResolver, null) {}
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
     }

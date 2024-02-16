@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 import androidx.camera.core.CameraSelector
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -25,8 +26,9 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 data class PreviewUiState(
     val cameraState: CameraState = CameraState.NOT_READY,
     // "quick" settings
-    val currentCameraSettings: CameraAppSettings,
+    val currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
     val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
+    val zoomScale: Float = 1f,
     val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
     val quickSettingsIsOpen: Boolean = false,
     // todo: remove after implementing post capture screen
