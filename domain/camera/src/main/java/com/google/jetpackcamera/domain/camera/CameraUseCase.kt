@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Rational
 import android.view.Display
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
@@ -41,8 +41,8 @@ interface CameraUseCase {
     /**
      * Starts the camera with given [CameraAppSettings].
      *
-     * This will start to configure the camera, but frames won't stream until [setSurfaceProvider]
-     * has been called with a non-null [Preview.SurfaceProvider].
+     * This will start to configure the camera, but frames won't stream until a [SurfaceRequest]
+     * from [getSurfaceRequest] has been fulfilled.
      *
      * The camera will run until the calling coroutine is cancelled.
      */
@@ -60,6 +60,8 @@ interface CameraUseCase {
 
     fun getZoomScale(): StateFlow<Float>
 
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
+
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 
     fun setFlashMode(flashMode: SettingsFlashMode, isFrontFacing: Boolean)
@@ -73,8 +75,6 @@ interface CameraUseCase {
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
     suspend fun setCaptureMode(captureMode: SettingsCaptureMode)
-
-    fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f

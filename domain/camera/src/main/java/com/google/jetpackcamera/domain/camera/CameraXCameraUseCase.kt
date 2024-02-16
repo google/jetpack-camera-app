@@ -34,6 +34,7 @@ import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -103,7 +104,6 @@ constructor(
     private lateinit var stabilizePreviewMode: Stabilization
     private lateinit var stabilizeVideoMode: Stabilization
     private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
-    private var surfaceProvider: Preview.SurfaceProvider? = null
     private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
@@ -285,6 +285,9 @@ constructor(
     private val _zoomScale = MutableStateFlow(1f)
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+
     // flips the camera to the designated lensFacing direction
     override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
         this.isFrontFacing = isFrontFacing
@@ -390,16 +393,6 @@ constructor(
         rebindUseCases()
     }
 
-    override fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?) {
-        Log.d(TAG, "setSurfaceProvider: $surfaceProvider")
-
-        // Update existing Preview that may already be running
-        previewUseCase.setSurfaceProvider(surfaceProvider)
-
-        // Store SurfaceProvider for next time use case group is updated
-        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
-    }
-
     private fun updateUseCaseGroup() {
         previewUseCase = createPreviewUseCase()
 
@@ -482,8 +475,8 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
         }
         return previewUseCaseBuilder.build().apply {
-            surfaceProvider?.let {
-                setSurfaceProvider(surfaceProvider)
+            setSurfaceProvider { surfaceRequest ->
+                _surfaceRequest.value = surfaceRequest
             }
         }
     }

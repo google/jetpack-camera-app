@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import android.view.Display
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,6 +69,9 @@ fun PreviewScreen(
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
+    val surfaceRequest: SurfaceRequest?
+        by viewModel.surfaceRequest.collectAsState()
+
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
         onStopOrDispose {
@@ -82,6 +85,7 @@ fun PreviewScreen(
             previewUiState = previewUiState,
             previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
+            surfaceRequest = surfaceRequest,
             onNavigateToSettings = onNavigateToSettings,
             onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
             onFlipCamera = viewModel::flipCamera,
@@ -95,9 +99,7 @@ fun PreviewScreen(
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToggleCaptureMode = viewModel::toggleCaptureMode,
-            onToastShown = viewModel::onToastShown,
-            onSurfaceProviderCreated = viewModel::setSurfaceProvider,
-            onSurfaceProviderDisposed = viewModel::clearSurfaceProvider
+            onToastShown = viewModel::onToastShown
         )
     }
 }
@@ -107,10 +109,9 @@ private fun ContentScreen(
     previewUiState: PreviewUiState,
     previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    surfaceRequest: SurfaceRequest?,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
-    onSurfaceProviderCreated: (SurfaceProvider) -> Unit = {},
-    onSurfaceProviderDisposed: () -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
@@ -134,8 +135,7 @@ private fun ContentScreen(
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-        onSurfaceProviderCreated = onSurfaceProviderCreated,
-        onSurfaceProviderDisposed = onSurfaceProviderDisposed
+        surfaceRequest = surfaceRequest
     )
 
     QuickSettingsScreenOverlay(
@@ -204,7 +204,8 @@ private fun ContentScreenPreview() {
         ContentScreen(
             previewUiState = PreviewUiState(),
             previewMode = PreviewMode.StandardMode,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState()
+            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            surfaceRequest = null
         )
     }
 }
@@ -218,7 +219,8 @@ private fun ContentScreen_WhileRecording() {
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
             previewMode = PreviewMode.StandardMode,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState()
+            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            surfaceRequest = null
         )
     }
 }

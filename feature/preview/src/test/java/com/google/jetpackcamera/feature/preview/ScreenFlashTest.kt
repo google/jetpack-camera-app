@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
-import androidx.camera.core.Preview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
@@ -51,9 +50,7 @@ class ScreenFlashTest {
     fun setup() = runTest(testDispatcher) {
         screenFlash = ScreenFlash(cameraUseCase, testScope)
 
-        val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
         cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
-        cameraUseCase.setSurfaceProvider(surfaceProvider)
         cameraUseCase.runCamera(DEFAULT_CAMERA_APP_SETTINGS)
     }
 

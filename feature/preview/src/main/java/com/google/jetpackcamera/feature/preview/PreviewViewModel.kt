@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import android.view.Display
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
@@ -62,6 +62,8 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+
+    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
     private lateinit var initializationDeferred: Deferred<Unit>
 
@@ -123,18 +125,6 @@ class PreviewViewModel @Inject constructor(
             if (isActive) {
                 cancel()
             }
-        }
-    }
-
-    fun setSurfaceProvider(surfaceProvider: SurfaceProvider) {
-        viewModelScope.launch {
-            cameraUseCase.setSurfaceProvider(surfaceProvider)
-        }
-    }
-
-    fun clearSurfaceProvider() {
-        viewModelScope.launch {
-            cameraUseCase.setSurfaceProvider(null)
         }
     }
 

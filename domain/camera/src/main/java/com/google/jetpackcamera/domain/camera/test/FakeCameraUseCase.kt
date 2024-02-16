@@ -20,6 +20,7 @@ import android.net.Uri
 import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -123,6 +124,12 @@ class FakeCameraUseCase(
     }
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    fun setSurfaceRequest(surfaceRequest: SurfaceRequest) {
+        _surfaceRequest.value = surfaceRequest
+    }
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+
     override fun getScreenFlashEvents() = screenFlashEvents
 
     override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
@@ -155,9 +162,5 @@ class FakeCameraUseCase(
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         TODO("Not yet implemented")
-    }
-
-    override fun setSurfaceProvider(surfaceProvider: Preview.SurfaceProvider?) {
-        this.surfaceProvider = surfaceProvider
     }
 }
