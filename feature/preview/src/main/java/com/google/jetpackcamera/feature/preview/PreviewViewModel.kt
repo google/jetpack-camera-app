@@ -65,13 +65,22 @@ class PreviewViewModel @Inject constructor(
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
-    private lateinit var initializationDeferred: Deferred<Unit>
-
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+
+    // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
+    // used to ensure we don't start the camera before initialization is complete.
+    private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
+        cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+        _previewUiState.emit(
+            previewUiState.value.copy(
+                cameraState = CameraState.READY
+            )
+        )
+    }
 
     init {
         viewModelScope.launch {
@@ -90,28 +99,14 @@ class PreviewViewModel @Inject constructor(
                 _previewUiState.emit(it)
             }
         }
-
-        initializeCamera()
-    }
-
-    private fun initializeCamera() {
-        // TODO(yasith): Handle CameraUnavailableException
-        Log.d(TAG, "initializeCamera")
-        initializationDeferred = viewModelScope.async {
-            cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    cameraState = CameraState.READY
-                )
-            )
-        }
     }
 
     fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
-            awaitInitialization()
+            // Ensure CameraUseCase is initialized before starting camera
+            initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
                 previewUiState.value.currentCameraSettings
@@ -362,8 +357,6 @@ class PreviewViewModel @Inject constructor(
             )
         }
     }
-
-    private suspend fun awaitInitialization() = initializationDeferred.await()
 
     sealed interface ImageCaptureEvent {
         object ImageSaved : ImageCaptureEvent
