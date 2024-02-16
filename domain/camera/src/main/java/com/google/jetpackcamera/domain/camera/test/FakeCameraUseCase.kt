@@ -19,7 +19,6 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -50,8 +49,6 @@ class FakeCameraUseCase(
     var recordingInProgress = false
 
     var isLensFacingFront = false
-
-    private var surfaceProvider: Preview.SurfaceProvider? = null
 
     private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
