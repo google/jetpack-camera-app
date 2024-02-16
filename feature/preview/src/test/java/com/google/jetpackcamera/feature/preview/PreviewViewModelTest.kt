@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
-import androidx.camera.core.Preview.SurfaceProvider
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.test.FakeSettingsRepository
@@ -53,8 +52,7 @@ class PreviewViewModelTest {
 
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
-        val surfaceProvider: SurfaceProvider = mock()
-        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.startCamera()
         advanceUntilIdle()
 
         assertEquals(cameraUseCase.previewStarted, true)
@@ -62,8 +60,7 @@ class PreviewViewModelTest {
 
     @Test
     fun captureImage() = runTest(StandardTestDispatcher()) {
-        val surfaceProvider: SurfaceProvider = mock()
-        previewViewModel.runCamera(surfaceProvider)
+        previewViewModel.startCamera()
         previewViewModel.captureImage()
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
@@ -71,17 +68,16 @@ class PreviewViewModelTest {
 
     @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
-        val surfaceProvider: SurfaceProvider = mock()
         val contentResolver: ContentResolver = mock()
-        previewViewModel.runCamera(surfaceProvider)
-        previewViewModel.captureImage(contentResolver, null) {}
+        previewViewModel.startCamera()
+        previewViewModel.captureImageWithUri(contentResolver, null) {}
         advanceUntilIdle()
         assertEquals(cameraUseCase.numPicturesTaken, 1)
     }
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.startCamera()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertEquals(cameraUseCase.recordingInProgress, true)
@@ -89,7 +85,7 @@ class PreviewViewModelTest {
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.startCamera()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
@@ -98,7 +94,7 @@ class PreviewViewModelTest {
 
     @Test
     fun setFlash() = runTest(StandardTestDispatcher()) {
-        previewViewModel.runCamera(mock())
+        previewViewModel.startCamera()
         previewViewModel.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
         assertEquals(
@@ -110,7 +106,7 @@ class PreviewViewModelTest {
     @Test
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
-        previewViewModel.runCamera(mock())
+        previewViewModel.startCamera()
         assertEquals(
             previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing,
             false

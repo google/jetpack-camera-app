@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -168,13 +167,8 @@ fun QuickFlipCamera(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(
-    modifier: Modifier = Modifier,
-    toggleDropDown: () -> Unit,
-    isOpen: Boolean
-) {
+fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
     Row(
-        modifier = modifier,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -182,9 +176,7 @@ fun ToggleQuickSettingsButton(
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
             contentDescription = stringResource(R.string.quick_settings_dropdown_description),
-            tint = Color.White,
-            modifier =
-            Modifier
+            modifier = Modifier
                 .testTag("QuickSettingDropDown")
                 .size(72.dp)
                 .clickable {
@@ -330,7 +322,6 @@ fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
     Icon(
         painter = painterResource(enum.getDrawableResId()),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
-        tint = Color.White,
         modifier = Modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
             .clickable { onClick() }
@@ -354,11 +345,11 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
 
 @Composable
 fun QuickSettingsIndicators(
-    currentCameraSettings: CameraAppSettings,
+    currentFlashMode: FlashMode,
     onFlashModeClick: (flashMode: FlashMode) -> Unit
 ) {
     Row {
-        FlashModeIndicator(currentCameraSettings.flashMode, onFlashModeClick)
+        FlashModeIndicator(currentFlashMode, onFlashModeClick)
     }
 }
 

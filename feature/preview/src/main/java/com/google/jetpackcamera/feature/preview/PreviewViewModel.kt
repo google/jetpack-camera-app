@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import android.view.Display
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
@@ -31,13 +31,15 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.lang.Exception
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -60,45 +62,53 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
 
     val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+
+    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
+
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
+    // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
+    // used to ensure we don't start the camera before initialization is complete.
+    private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
+        cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+        _previewUiState.emit(
+            previewUiState.value.copy(
+                cameraState = CameraState.READY
+            )
+        )
+    }
+
     init {
         viewModelScope.launch {
-            settingsRepository.cameraAppSettings.collect {
-                    // TODO: only update settings that were actually changed
-                    // currently resets all "quick" settings to stored settings
-                    settings ->
-                _previewUiState
-                    .emit(previewUiState.value.copy(currentCameraSettings = settings))
+            combine(
+                settingsRepository.cameraAppSettings,
+                cameraUseCase.getZoomScale()
+            ) { cameraAppSettings, zoomScale ->
+                previewUiState.value.copy(
+                    currentCameraSettings = cameraAppSettings,
+                    zoomScale = zoomScale
+                )
+            }.collect {
+                // TODO: only update settings that were actually changed
+                // currently resets all "quick" settings to stored settings
+                Log.d(TAG, "UPDATE UI STATE: ${it.zoomScale}")
+                _previewUiState.emit(it)
             }
         }
-        initializeCamera()
     }
 
-    private fun initializeCamera() {
-        // TODO(yasith): Handle CameraUnavailableException
-        Log.d(TAG, "initializeCamera")
-        viewModelScope.launch {
-            cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    cameraState = CameraState.READY
-                )
-            )
-        }
-    }
-
-    fun runCamera(surfaceProvider: SurfaceProvider) {
-        Log.d(TAG, "runCamera")
+    fun startCamera() {
+        Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            // Ensure CameraUseCase is initialized before starting camera
+            initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera(
-                surfaceProvider,
                 previewUiState.value.currentCameraSettings
             )
         }
@@ -237,7 +247,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage(
+    fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         onImageCapture: (ImageCaptureEvent) -> Unit
@@ -307,8 +317,8 @@ class PreviewViewModel @Inject constructor(
         recordingJob?.cancel()
     }
 
-    fun setZoomScale(scale: Float): Float {
-        return cameraUseCase.setZoomScale(scale = scale)
+    fun setZoomScale(scale: Float) {
+        cameraUseCase.setZoomScale(scale = scale)
     }
 
     // modify ui values
