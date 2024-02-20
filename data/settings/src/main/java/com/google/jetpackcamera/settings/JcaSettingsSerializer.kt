@@ -35,6 +35,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
         .setStabilizePreviewSupported(false)
         .setStabilizeVideoSupported(false)
+        .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
+        .addSupportedDynamicRanges(DynamicRange.DYNAMIC_RANGE_SDR)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

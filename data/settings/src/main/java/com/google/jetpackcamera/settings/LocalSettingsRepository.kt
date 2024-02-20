@@ -26,6 +26,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -69,7 +71,12 @@ class LocalSettingsRepository @Inject constructor(
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
+                },
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
+                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
+                    DynamicRange.fromProto(dynRngProto)
                 }
+
             )
         }
 
@@ -207,6 +214,27 @@ class LocalSettingsRepository @Inject constructor(
             if (videoSupport) {
                 add(SupportedStabilizationMode.HIGH_QUALITY)
             }
+        }
+    }
+
+    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDynamicRangeStatus(dynamicRange.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedDynamicRanges()
+                .addAllSupportedDynamicRanges(
+                    supportedDynamicRanges.map {
+                        it.toProto()
+                    }
+                )
+                .build()
         }
     }
 }
