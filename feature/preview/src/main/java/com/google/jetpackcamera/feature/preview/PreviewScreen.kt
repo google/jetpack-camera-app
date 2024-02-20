@@ -51,6 +51,7 @@ import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 
@@ -99,6 +100,7 @@ fun PreviewScreen(
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
+            onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
@@ -123,6 +125,7 @@ private fun ContentScreen(
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
+    onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -165,7 +168,7 @@ private fun ContentScreen(
         onFlashModeClick = onChangeFlash,
         onAspectRatioClick = onChangeAspectRatio,
         onCaptureModeClick = onChangeCaptureMode,
-        onDynamicRangeClick = { }
+        onDynamicRangeClick = onChangeDynamicRange
         // onTimerClick = {}/*TODO*/
     )
     // relative-grid style overlay on top of preview display
