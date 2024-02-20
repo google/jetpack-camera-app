@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2023-2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStabilizeVideoSupported(isSupported)
+                .setStabilizePreviewSupported(isSupported)
                 .build()
         }
     }
@@ -201,10 +201,10 @@ class LocalSettingsRepository @Inject constructor(
         videoSupport: Boolean
     ): List<SupportedStabilizationMode> {
         return buildList {
-            if (previewSupport && videoSupport) {
+            if (previewSupport) {
                 add(SupportedStabilizationMode.ON)
             }
-            if (!previewSupport && videoSupport) {
+            if (videoSupport) {
                 add(SupportedStabilizationMode.HIGH_QUALITY)
             }
         }
