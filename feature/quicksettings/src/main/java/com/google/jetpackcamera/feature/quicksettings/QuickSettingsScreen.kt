@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -41,7 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetDynamicRange
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
@@ -55,7 +54,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 /**
  * The UI component for quick settings.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
@@ -154,23 +152,25 @@ private fun ExpandedQuickSettingsUi(
         // to change the order of display just move these lines of code above or below each other
         when (shouldShowQuickSetting) {
             IsExpandedQuickSetting.NONE -> {
-                val displayedQuickSettings: Array<@Composable () -> Unit> =
-                    arrayOf(
-                        {
+                val displayedQuickSettings: List<@Composable () -> Unit> =
+                    buildList {
+                        add {
                             QuickSetFlash(
                                 modifier = Modifier.testTag("QuickSetFlash"),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )
-                        },
-                        {
+                        }
+
+                        add {
                             QuickFlipCamera(
                                 modifier = Modifier.testTag("QuickSetFlipCamera"),
                                 flipCamera = { b: Boolean -> onLensFaceClick(b) },
                                 currentFacingFront = currentCameraSettings.isFrontCameraFacing
                             )
-                        },
-                        {
+                        }
+
+                        add {
                             QuickSetRatio(
                                 modifier = Modifier.testTag("QuickSetAspectRatio"),
                                 onClick = {
@@ -181,22 +181,27 @@ private fun ExpandedQuickSettingsUi(
                                 ratio = currentCameraSettings.aspectRatio,
                                 currentRatio = currentCameraSettings.aspectRatio
                             )
-                        },
-                        {
+                        }
+
+                        add {
                             QuickSetCaptureMode(
                                 modifier = Modifier.testTag(""),
                                 setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
                                 currentCaptureMode = currentCameraSettings.captureMode
                             )
-                        },
-                        {
-                            QuickSetDynamicRange(
-                                modifier = Modifier.testTag("QuickSetDynamicRange"),
-                                onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
-                                dynamicRange = currentCameraSettings.dynamicRange
-                            )
                         }
-                    )
+
+                        if (currentCameraSettings.supportedDynamicRanges.size > 1) {
+                            add {
+                                QuickSetHdr(
+                                    modifier = Modifier.testTag("QuickSetDynamicRange"),
+                                    onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
+                                    selectedDynamicRange = currentCameraSettings.dynamicRange,
+                                    hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange
+                                )
+                            }
+                        }
+                    }
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
             }
             // if a setting that can be expanded is selected, show it
@@ -216,6 +221,26 @@ fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             currentCameraSettings = CameraAppSettings(),
+            onLensFaceClick = { } ,
+            onFlashModeClick = { },
+            shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
+            setVisibleQuickSetting = { },
+            onAspectRatioClick = { },
+            onCaptureModeClick = { },
+            onDynamicRangeClick = { }
+        )
+    }
+}
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview_WithHdr() {
+    MaterialTheme {
+        ExpandedQuickSettingsUi(
+            currentCameraSettings = CameraAppSettings(
+                supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10),
+                dynamicRange = DynamicRange.HLG10
+            ),
             onLensFaceClick = { } ,
             onFlashModeClick = { },
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,

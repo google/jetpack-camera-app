@@ -22,6 +22,7 @@ import android.view.Display
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 import kotlinx.coroutines.flow.SharedFlow
@@ -77,6 +78,8 @@ interface CameraUseCase {
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
     suspend fun setCaptureMode(captureMode: SettingsCaptureMode)
+
+    suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
     companion object {
         const val INVALID_ZOOM_SCALE = -1f

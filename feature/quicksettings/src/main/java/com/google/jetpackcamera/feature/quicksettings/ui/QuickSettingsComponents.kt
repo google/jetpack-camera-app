@@ -49,9 +49,9 @@ import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
-import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -91,22 +91,29 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
 }
 
 @Composable
-fun QuickSetDynamicRange(
+fun QuickSetHdr(
     modifier: Modifier = Modifier,
     onClick: (dynamicRange: DynamicRange) -> Unit,
-    dynamicRange: DynamicRange
+    selectedDynamicRange: DynamicRange,
+    hdrDynamicRange: DynamicRange
 ) {
     val enum =
-        when (dynamicRange) {
+        when (selectedDynamicRange) {
             DynamicRange.SDR -> CameraDynamicRange.SDR
             DynamicRange.HLG10 -> CameraDynamicRange.HLG10
-            else -> CameraDynamicRange.SDR
         }
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
-        onClick = { onClick(dynamicRange) },
-        isHighLighted = (dynamicRange == DynamicRange.HLG10)
+        onClick = {
+            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
+                hdrDynamicRange
+            } else {
+                DynamicRange.SDR
+            }
+            onClick(newDynamicRange)
+        },
+        isHighLighted = (selectedDynamicRange != DynamicRange.SDR)
     )
 }
 
@@ -332,7 +339,7 @@ fun ExpandedQuickSetting(
 @Composable
 fun QuickSettingsGrid(
     modifier: Modifier = Modifier,
-    vararg quickSettingsButtons: @Composable () -> Unit
+    quickSettingsButtons: List<@Composable () -> Unit>
 ) {
     val initialNumOfColumns =
         min(

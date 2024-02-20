@@ -26,6 +26,7 @@ import android.view.Display
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
@@ -47,6 +48,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -115,6 +117,7 @@ constructor(
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
 
+        // updates values for available camera lens if necessary
         settingsRepository.updateAvailableCameraLens(
             availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
             availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
@@ -134,7 +137,8 @@ constructor(
         val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
         val stabilizePreviewMode: Stabilization,
-        val stabilizeVideoMode: Stabilization
+        val stabilizeVideoMode: Stabilization,
+        val dynamicRange: DynamicRange
     )
 
     /**
@@ -172,7 +176,8 @@ constructor(
                     aspectRatio = currentCameraSettings.aspectRatio,
                     captureMode = currentCameraSettings.captureMode,
                     stabilizePreviewMode = currentCameraSettings.previewStabilization,
-                    stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
+                    stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
+                    dynamicRange = currentCameraSettings.dynamicRange
                 )
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
@@ -186,6 +191,10 @@ constructor(
                 )
                 settingsRepository.updateVideoStabilizationSupported(
                     isVideoStabilizationSupported(cameraInfo)
+                )
+
+                settingsRepository.updateSupportedDynamicRanges(
+                    getSupportedDynamicRanges(cameraInfo)
                 )
 
                 val supportedStabilizationModes =
@@ -487,23 +496,34 @@ constructor(
             captureMode = sessionSettings.captureMode
         }.build()
     }
+    override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
+        currentSettings.update { old ->
+            old?.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    private fun getSupportedDynamicRanges(cameraInfo: CameraInfo): List<DynamicRange> {
+        return Recorder
+            .getVideoCapabilities(cameraInfo).supportedDynamicRanges.toSupportedAppDynamicRanges()
+    }
 
     private fun createVideoUseCase(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: List<SupportedStabilizationMode>
     ): VideoCapture<Recorder> {
-        val videoCaptureBuilder = VideoCapture.Builder(recorder)
+        return VideoCapture.Builder(recorder).apply {
+            // set video stabilization
 
-        // set video stabilization
-
-        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)) {
-            val isStabilized = when (sessionSettings.stabilizeVideoMode) {
-                Stabilization.ON -> true
-                Stabilization.OFF, Stabilization.UNDEFINED -> false
+            if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)) {
+                val isStabilized = when (sessionSettings.stabilizeVideoMode) {
+                    Stabilization.ON -> true
+                    Stabilization.OFF, Stabilization.UNDEFINED -> false
+                }
+                setVideoStabilizationEnabled(isStabilized)
             }
-            videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
-        }
-        return videoCaptureBuilder.build()
+
+            setDynamicRange(sessionSettings.dynamicRange.toCXDynamicRange())
+        }.build()
     }
 
     private fun shouldVideoBeStabilized(
@@ -587,5 +607,26 @@ constructor(
         private fun isVideoStabilizationSupported(cameraInfo: CameraInfo): Boolean {
             return Recorder.getVideoCapabilities(cameraInfo).isStabilizationSupported
         }
+    }
+}
+
+private fun CXDynamicRange.toSupportedAppDynamicRange() : DynamicRange? {
+    return when (this) {
+        CXDynamicRange.SDR -> DynamicRange.SDR
+        CXDynamicRange.HLG_10_BIT -> DynamicRange.HLG10
+        // All other dynamic ranges unsupported. Return null.
+        else -> null
+    }
+}
+
+private fun DynamicRange.toCXDynamicRange() : CXDynamicRange {
+    return when (this) {
+        DynamicRange.SDR -> CXDynamicRange.SDR
+        DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
+    }
+}
+private fun Set<CXDynamicRange>.toSupportedAppDynamicRanges() : List<DynamicRange> {
+    return this.mapNotNull {
+        it.toSupportedAppDynamicRange()
     }
 }
