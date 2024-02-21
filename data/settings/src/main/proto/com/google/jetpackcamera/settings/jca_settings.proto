@@ -22,8 +22,7 @@ import "com/google/jetpackcamera/settings/dark_mode.proto";
 import "com/google/jetpackcamera/settings/flash_mode.proto";
 import "com/google/jetpackcamera/settings/preview_stabilization.proto";
 import "com/google/jetpackcamera/settings/video_stabilization.proto";
-
-
+import "com/google/jetpackcamera/settings/dynamic_range.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -41,4 +40,6 @@ message JcaSettings {
   VideoStabilization stabilize_video = 10;
   bool stabilize_video_supported = 11;
   bool stabilize_preview_supported = 12;
+  DynamicRange dynamic_range_status = 13;
+  repeated DynamicRange supported_dynamic_ranges = 14;
 }
