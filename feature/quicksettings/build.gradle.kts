@@ -77,8 +77,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Guava
-    implementation(libs.kotlinx.coroutines.guava)
+    // Futures
+    implementation(libs.futures.ktx)
 
     implementation(project(":data:settings"))
 }

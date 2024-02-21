@@ -100,8 +100,8 @@ dependencies {
     debugImplementation(libs.androidx.test.monitor)
     implementation(libs.androidx.junit)
 
-    // Guava
-    implementation(libs.kotlinx.coroutines.guava)
+    // Futures
+    implementation(libs.futures.ktx)
 
     // CameraX
     implementation(libs.camera.core)
