@@ -159,17 +159,6 @@ private fun ControlsTop(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // For debug purposes, display whether the stream is in single/multi mode.
-            TestingButton(
-                modifier = Modifier.testTag("ToggleCaptureMode"),
-                onClick = onToggleCaptureMode,
-                text = stringResource(
-                    when (currentCameraSettings.captureMode) {
-                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
-                    }
-                )
-            )
             StabilizationIcon(
                 supportedStabilizationMode = currentCameraSettings.supportedStabilizationModes,
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
