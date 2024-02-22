@@ -104,13 +104,15 @@ enum class CameraCaptureMode : QuickSettingsEnum {
 
         override fun getTextResId(): Int = R.string.quick_settings_capture_mode_multi
 
-        override fun getDescriptionResId(): Int = R.string.quick_settings_capture_mode_multi_description
+        override fun getDescriptionResId(): Int =
+            R.string.quick_settings_capture_mode_multi_description
     },
     SINGLE_STREAM {
         override fun getDrawableResId(): Int = R.drawable.single_stream_capture_icon
 
         override fun getTextResId(): Int = R.string.quick_settings_capture_mode_single
 
-        override fun getDescriptionResId(): Int = R.string.quick_settings_capture_mode_single_description
+        override fun getDescriptionResId(): Int =
+            R.string.quick_settings_capture_mode_single_description
     }
 }

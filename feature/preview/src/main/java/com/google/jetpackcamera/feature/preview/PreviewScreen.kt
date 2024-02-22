@@ -161,7 +161,7 @@ private fun ContentScreen(
         onCaptureImage = onCaptureImage,
         onCaptureImageWithUri = onCaptureImageWithUri,
         onStartVideoRecording = onStartVideoRecording,
-        onStopVideoRecording = onStopVideoRecording,
+        onStopVideoRecording = onStopVideoRecording
     )
 
     // displays toast when there is a message to show

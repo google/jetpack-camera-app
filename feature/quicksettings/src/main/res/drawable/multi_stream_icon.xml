@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright (C) 2024 The Android Open Source Project
   ~
@@ -13,7 +14,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <vector android:height="72dp" android:tint="#000000"
     android:viewportHeight="960" android:viewportWidth="960"
     android:width="72dp" xmlns:android="http://schemas.android.com/apk/res/android">

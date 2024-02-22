@@ -132,7 +132,7 @@ private fun ExpandedQuickSettingsUi(
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
-    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
+    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
 ) {
     Column(
         modifier =
@@ -178,8 +178,9 @@ private fun ExpandedQuickSettingsUi(
                         {
                             QuickSetCaptureMode(
                                 modifier = Modifier.testTag(""),
-                                setCaptureMode = {c: CaptureMode -> onCaptureModeClick(c)},
-                                currentCaptureMode =currentCameraSettings.captureMode )
+                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                                currentCaptureMode = currentCameraSettings.captureMode
+                            )
                         }
                     )
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
