@@ -83,7 +83,6 @@ fun CameraControlsOverlay(
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -107,7 +106,6 @@ fun CameraControlsOverlay(
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings,
-                    onToggleCaptureMode = onToggleCaptureMode
                 )
             }
 
@@ -140,7 +138,6 @@ private fun ControlsTop(
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {}
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {

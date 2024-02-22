@@ -168,24 +168,19 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
-    fun toggleCaptureMode() {
-        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
-            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
-            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
-        }
-
+    fun setCaptureMode(captureMode: CaptureMode) {
         stopCamera()
         runningCameraJob = viewModelScope.launch {
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
                     previewUiState.value.currentCameraSettings.copy(
-                        captureMode = newCaptureMode
+                        captureMode = captureMode
                     )
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setCaptureMode(newCaptureMode)
+            cameraUseCase.setCaptureMode(captureMode)
         }
     }
 

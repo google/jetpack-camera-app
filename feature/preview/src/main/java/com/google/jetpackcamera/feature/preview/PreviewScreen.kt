@@ -47,6 +47,7 @@ import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 
 private const val TAG = "PreviewScreen"
@@ -93,12 +94,12 @@ fun PreviewScreen(
             onChangeZoomScale = viewModel::setZoomScale,
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
+            onChangeCaptureMode = viewModel::setCaptureMode,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
-            onToggleCaptureMode = viewModel::toggleCaptureMode,
             onToastShown = viewModel::onToastShown
         )
     }
@@ -117,6 +118,7 @@ private fun ContentScreen(
     onChangeZoomScale: (Float) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
+    onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -126,7 +128,6 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {},
     onToastShown: () -> Unit = {}
 ) {
     // display camera feed. this stays behind everything else
@@ -145,7 +146,8 @@ private fun ContentScreen(
         currentCameraSettings = previewUiState.currentCameraSettings,
         onLensFaceClick = { onFlipCamera() },
         onFlashModeClick = onChangeFlash,
-        onAspectRatioClick = onChangeAspectRatio
+        onAspectRatioClick = onChangeAspectRatio,
+        onCaptureModeClick = onChangeCaptureMode
         // onTimerClick = {}/*TODO*/
     )
     // relative-grid style overlay on top of preview display
@@ -160,7 +162,6 @@ private fun ContentScreen(
         onCaptureImageWithUri = onCaptureImageWithUri,
         onStartVideoRecording = onStartVideoRecording,
         onStopVideoRecording = onStopVideoRecording,
-        onToggleCaptureMode = onToggleCaptureMode
     )
 
     // displays toast when there is a message to show
