@@ -40,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
@@ -264,7 +265,7 @@ fun QuickSettingUiItem(
                 .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
         )
 
-        Text(text = text, color = tint)
+        Text(text = text, color = tint, textAlign = TextAlign.Center)
     }
 }
 
