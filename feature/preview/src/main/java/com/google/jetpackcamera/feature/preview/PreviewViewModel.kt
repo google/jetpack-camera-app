@@ -127,15 +127,13 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun setAspectRatio(aspectRatio: AspectRatio) {
-        stopCamera()
-        runningCameraJob = viewModelScope.launch {
+        viewModelScope.launch {
             cameraUseCase.setAspectRatio(aspectRatio)
         }
     }
 
     fun toggleCaptureMode() {
-        stopCamera()
-        runningCameraJob = viewModelScope.launch {
+        viewModelScope.launch {
             val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
                 CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
                 CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
@@ -147,8 +145,7 @@ class PreviewViewModel @Inject constructor(
 
     // sets the camera to a designated direction
     fun flipCamera() {
-        stopCamera()
-        runningCameraJob = viewModelScope.launch {
+        viewModelScope.launch {
             // only flip if 2 directions are available
             if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
                 previewUiState.value.currentCameraSettings.isFrontCameraAvailable
