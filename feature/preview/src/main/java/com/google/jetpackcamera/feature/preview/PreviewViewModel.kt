@@ -25,7 +25,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
-import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -40,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -55,8 +55,6 @@ const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
     private val cameraUseCase: CameraUseCase,
-    private val settingsRepository: SettingsRepository
-    // only reads from settingsRepository. do not push changes to repository from here
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
@@ -85,7 +83,7 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             combine(
-                settingsRepository.cameraAppSettings,
+                cameraUseCase.getCurrentSettings().filterNotNull(),
                 cameraUseCase.getZoomScale()
             ) { cameraAppSettings, zoomScale ->
                 previewUiState.value.copy(
@@ -123,14 +121,6 @@ class PreviewViewModel @Inject constructor(
 
     fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        flashMode = flashMode
-                    )
-                )
-            )
             // apply to cameraUseCase
             cameraUseCase.setFlashMode(flashMode)
         }
@@ -139,14 +129,6 @@ class PreviewViewModel @Inject constructor(
     fun setAspectRatio(aspectRatio: AspectRatio) {
         stopCamera()
         runningCameraJob = viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        aspectRatio = aspectRatio
-                    )
-                )
-            )
             cameraUseCase.setAspectRatio(aspectRatio)
         }
     }
@@ -158,14 +140,6 @@ class PreviewViewModel @Inject constructor(
                 CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
                 CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
             }
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        captureMode = newCaptureMode
-                    )
-                )
-            )
             // apply to cameraUseCase
             cameraUseCase.setCaptureMode(newCaptureMode)
         }
@@ -179,14 +153,6 @@ class PreviewViewModel @Inject constructor(
             if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
                 previewUiState.value.currentCameraSettings.isFrontCameraAvailable
             ) {
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        currentCameraSettings =
-                        previewUiState.value.currentCameraSettings.copy(
-                            isFrontCameraFacing = isFacingFront
-                        )
-                    )
-                )
                 // apply to cameraUseCase
                 cameraUseCase.flipCamera(
                     !previewUiState.value.currentCameraSettings.isFrontCameraFacing
