@@ -30,7 +30,8 @@ data class CameraAppSettings(
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
     val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
-    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR)
+    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
+    val zoomScale: Float = 1f
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

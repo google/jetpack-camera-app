@@ -74,7 +74,7 @@ class PreviewViewModel @Inject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+        cameraUseCase.initialize()
         _previewUiState.emit(
             previewUiState.value.copy(
                 cameraState = CameraState.READY
@@ -108,9 +108,7 @@ class PreviewViewModel @Inject constructor(
             // Ensure CameraUseCase is initialized before starting camera
             initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
-            cameraUseCase.runCamera(
-                previewUiState.value.currentCameraSettings
-            )
+            cameraUseCase.runCamera()
         }
     }
 
@@ -134,10 +132,7 @@ class PreviewViewModel @Inject constructor(
                 )
             )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(
-                previewUiState.value.currentCameraSettings.flashMode,
-                previewUiState.value.currentCameraSettings.isFrontCameraFacing
-            )
+            cameraUseCase.setFlashMode(flashMode)
         }
     }
 
@@ -152,30 +147,17 @@ class PreviewViewModel @Inject constructor(
                     )
                 )
             )
-            cameraUseCase.setAspectRatio(
-                aspectRatio,
-                previewUiState.value
-                    .currentCameraSettings.isFrontCameraFacing
-            )
+            cameraUseCase.setAspectRatio(aspectRatio)
         }
-    }
-
-    // flips the camera opposite to its current direction
-    fun flipCamera() {
-        flipCamera(
-            !previewUiState.value
-                .currentCameraSettings.isFrontCameraFacing
-        )
     }
 
     fun toggleCaptureMode() {
-        val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
-            CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
-            CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
-        }
-
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            val newCaptureMode = when (previewUiState.value.currentCameraSettings.captureMode) {
+                CaptureMode.MULTI_STREAM -> CaptureMode.SINGLE_STREAM
+                CaptureMode.SINGLE_STREAM -> CaptureMode.MULTI_STREAM
+            }
             _previewUiState.emit(
                 previewUiState.value.copy(
                     currentCameraSettings =
@@ -190,13 +172,13 @@ class PreviewViewModel @Inject constructor(
     }
 
     // sets the camera to a designated direction
-    fun flipCamera(isFacingFront: Boolean) {
-        // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-            previewUiState.value.currentCameraSettings.isFrontCameraAvailable
-        ) {
-            stopCamera()
-            runningCameraJob = viewModelScope.launch {
+    fun flipCamera() {
+        stopCamera()
+        runningCameraJob = viewModelScope.launch {
+            // only flip if 2 directions are available
+            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
+                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            ) {
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         currentCameraSettings =
@@ -207,8 +189,7 @@ class PreviewViewModel @Inject constructor(
                 )
                 // apply to cameraUseCase
                 cameraUseCase.flipCamera(
-                    previewUiState.value.currentCameraSettings.isFrontCameraFacing,
-                    previewUiState.value.currentCameraSettings.flashMode
+                    !previewUiState.value.currentCameraSettings.isFrontCameraFacing
                 )
             }
         }

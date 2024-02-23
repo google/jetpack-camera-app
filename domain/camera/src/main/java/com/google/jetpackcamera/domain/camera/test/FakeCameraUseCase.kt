@@ -36,7 +36,8 @@ import kotlinx.coroutines.launch
 
 class FakeCameraUseCase(
     private val coroutineScope: CoroutineScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val currentCameraSettings: CameraAppSettings = CameraAppSettings()
 ) : CameraUseCase {
     private val availableLenses =
         listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
@@ -56,15 +57,14 @@ class FakeCameraUseCase(
     private var isScreenFlash = true
     private var screenFlashEvents = MutableSharedFlow<CameraUseCase.ScreenFlashEvent>()
 
-    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
+    override suspend fun initialize() {
         initialized = true
         flashMode = currentCameraSettings.flashMode
         isLensFacingFront = currentCameraSettings.isFrontCameraFacing
         aspectRatio = currentCameraSettings.aspectRatio
-        return availableLenses
     }
 
-    override suspend fun runCamera(currentCameraSettings: CameraAppSettings) {
+    override suspend fun runCamera() {
         val lensFacing =
             when (currentCameraSettings.isFrontCameraFacing) {
                 true -> CameraSelector.LENS_FACING_FRONT
@@ -128,10 +128,12 @@ class FakeCameraUseCase(
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
+    override fun getCurrentSettings(): StateFlow<CameraAppSettings?> {
+        TODO("Not yet implemented")
+    }
 
-    override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
+    override fun setFlashMode(flashMode: FlashMode) {
         this.flashMode = flashMode
-        isLensFacingFront = isFrontFacing
 
         isScreenFlash =
             isLensFacingFront && (flashMode == FlashMode.AUTO || flashMode == FlashMode.ON)
@@ -139,11 +141,11 @@ class FakeCameraUseCase(
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
-    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         this.aspectRatio = aspectRatio
     }
 
-    override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
+    override suspend fun flipCamera(isFrontFacing: Boolean) {
         isLensFacingFront = isFrontFacing
     }
 
