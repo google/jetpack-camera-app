@@ -134,7 +134,7 @@ constructor(
         val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
         val stabilizePreviewMode: Stabilization,
-        val stabilizeVideoMode: Stabilization,
+        val stabilizeVideoMode: Stabilization
     )
 
     /**
@@ -222,7 +222,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 

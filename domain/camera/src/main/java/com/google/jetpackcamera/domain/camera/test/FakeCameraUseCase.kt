@@ -17,6 +17,7 @@ package com.google.jetpackcamera.domain.camera.test
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Log
 import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.SurfaceRequest
@@ -32,12 +33,15 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class FakeCameraUseCase(
     private val coroutineScope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default),
-    private val currentCameraSettings: CameraAppSettings = CameraAppSettings()
+    defaultCameraSettings: CameraAppSettings = CameraAppSettings()
 ) : CameraUseCase {
     private val availableLenses =
         listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
@@ -51,24 +55,21 @@ class FakeCameraUseCase(
 
     var isLensFacingFront = false
 
-    private var flashMode = FlashMode.OFF
-    private var aspectRatio = AspectRatio.THREE_FOUR
-
     private var isScreenFlash = true
     private var screenFlashEvents = MutableSharedFlow<CameraUseCase.ScreenFlashEvent>()
 
+    private val currentSettings = MutableStateFlow(defaultCameraSettings)
+
     override suspend fun initialize() {
         initialized = true
-        flashMode = currentCameraSettings.flashMode
-        isLensFacingFront = currentCameraSettings.isFrontCameraFacing
-        aspectRatio = currentCameraSettings.aspectRatio
     }
 
     override suspend fun runCamera() {
         val lensFacing =
-            when (currentCameraSettings.isFrontCameraFacing) {
-                true -> CameraSelector.LENS_FACING_FRONT
-                false -> CameraSelector.LENS_FACING_BACK
+            if (currentSettings.value.isFrontCameraFacing) {
+                CameraSelector.LENS_FACING_FRONT
+            } else {
+                CameraSelector.LENS_FACING_BACK
             }
 
         if (!initialized) {
@@ -77,13 +78,30 @@ class FakeCameraUseCase(
         if (!availableLenses.contains(lensFacing)) {
             throw IllegalStateException("Requested lens not available")
         }
-        useCasesBinded = true
-        previewStarted = true
+
+        currentSettings
+            .onCompletion {
+                Log.e("TDBGTAG", "Completed.")
+                useCasesBinded = false
+                previewStarted = false
+                recordingInProgress = false
+            }.collectLatest {
+                Log.e("TDBGTAG", "Started.")
+                useCasesBinded = true
+                previewStarted = true
+
+                isLensFacingFront = it.isFrontCameraFacing
+                isScreenFlash =
+                    isLensFacingFront &&
+                    (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
+
+                _zoomScale.value = it.zoomScale
+            }
     }
 
     override suspend fun takePicture() {
         if (!useCasesBinded) {
-            throw IllegalStateException("Usecases not binded")
+            throw IllegalStateException("Usecases not bound")
         }
         if (isScreenFlash) {
             coroutineScope.launch {
@@ -108,6 +126,9 @@ class FakeCameraUseCase(
     }
 
     override suspend fun startVideoRecording() {
+        if (!useCasesBinded) {
+            throw IllegalStateException("Usecases not bound")
+        }
         recordingInProgress = true
     }
 
@@ -117,7 +138,9 @@ class FakeCameraUseCase(
 
     private val _zoomScale = MutableStateFlow(1f)
     override fun setZoomScale(scale: Float) {
-        _zoomScale.value = scale
+        currentSettings.update { old ->
+            old.copy(zoomScale = scale)
+        }
     }
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
@@ -128,25 +151,26 @@ class FakeCameraUseCase(
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
-    override fun getCurrentSettings(): StateFlow<CameraAppSettings?> {
-        TODO("Not yet implemented")
-    }
+    override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
 
     override fun setFlashMode(flashMode: FlashMode) {
-        this.flashMode = flashMode
-
-        isScreenFlash =
-            isLensFacingFront && (flashMode == FlashMode.AUTO || flashMode == FlashMode.ON)
+        currentSettings.update { old ->
+            old.copy(flashMode = flashMode)
+        }
     }
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
-        this.aspectRatio = aspectRatio
+        currentSettings.update { old ->
+            old.copy(aspectRatio = aspectRatio)
+        }
     }
 
     override suspend fun flipCamera(isFrontFacing: Boolean) {
-        isLensFacingFront = isFrontFacing
+        currentSettings.update { old ->
+            old.copy(isFrontCameraFacing = isFrontFacing)
+        }
     }
 
     override fun tapToFocus(
@@ -160,6 +184,8 @@ class FakeCameraUseCase(
     }
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
-        TODO("Not yet implemented")
+        currentSettings.update { old ->
+            old.copy(captureMode = captureMode)
+        }
     }
 }

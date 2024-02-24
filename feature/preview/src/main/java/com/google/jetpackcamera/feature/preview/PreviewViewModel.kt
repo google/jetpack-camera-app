@@ -54,7 +54,7 @@ const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase,
+    private val cameraUseCase: CameraUseCase
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
