@@ -17,7 +17,6 @@ package com.google.jetpackcamera.domain.camera.test
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.util.Log
 import android.view.Display
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.SurfaceRequest
@@ -81,12 +80,10 @@ class FakeCameraUseCase(
 
         currentSettings
             .onCompletion {
-                Log.e("TDBGTAG", "Completed.")
                 useCasesBinded = false
                 previewStarted = false
                 recordingInProgress = false
             }.collectLatest {
-                Log.e("TDBGTAG", "Started.")
                 useCasesBinded = true
                 previewStarted = true
 
@@ -160,6 +157,8 @@ class FakeCameraUseCase(
     }
 
     override fun isScreenFlashEnabled() = isScreenFlash
+
+    fun isPreviewStarted() = previewStarted
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

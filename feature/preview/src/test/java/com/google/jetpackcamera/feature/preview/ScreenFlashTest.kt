@@ -29,7 +29,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -70,14 +69,13 @@ class ScreenFlashTest {
         cameraUseCase.takePicture(contentResolver, null)
 
         advanceUntilIdle()
-        assertEquals(
+        assertThat(states.map { it.enabled }).containsExactlyElementsIn(
             listOf(
                 false,
                 true,
                 false
-            ),
-            states.map { it.enabled }
-        )
+            )
+        ).inOrder()
     }
 
     @Test
@@ -88,10 +86,9 @@ class ScreenFlashTest {
         )
 
         advanceUntilIdle()
-        assertEquals(
-            5.0f,
-            screenFlash.screenFlashUiState.value.screenBrightnessToRestore
-        )
+        assertThat(screenFlash.screenFlashUiState.value.screenBrightnessToRestore)
+            .isWithin(FLOAT_TOLERANCE)
+            .of(5.0f)
     }
 
     @Test
@@ -105,10 +102,8 @@ class ScreenFlashTest {
         screenFlash.screenFlashUiState.value.onChangeComplete()
 
         advanceUntilIdle()
-        assertEquals(
-            ScreenFlash.ScreenFlashUiState(),
-            screenFlash.screenFlashUiState.value
-        )
+        assertThat(ScreenFlash.ScreenFlashUiState())
+            .isEqualTo(screenFlash.screenFlashUiState.value)
     }
 
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
@@ -118,5 +113,9 @@ class ScreenFlashTest {
         }
 
         testBody()
+    }
+
+    companion object {
+        const val FLOAT_TOLERANCE = 0.001f
     }
 }
