@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera
 
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -35,15 +38,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
@@ -63,6 +70,7 @@ class MainActivity : ComponentActivity() {
     @VisibleForTesting
     var previewViewModel: PreviewViewModel? = null
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
@@ -98,12 +106,48 @@ class MainActivity : ComponentActivity() {
                         dynamicColor = false
                     ) {
                         Surface(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .semantics {
+                                    testTagsAsResourceId = true
+                                },
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            JcaApp(onPreviewViewModel = { previewViewModel = it })
+                            JcaApp(
+                                onPreviewViewModel = { previewViewModel = it },
+                                previewMode = getPreviewMode()
+                            )
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private fun getPreviewMode(): PreviewMode {
+        if (intent == null || MediaStore.ACTION_IMAGE_CAPTURE != intent.action) {
+            return PreviewMode.StandardMode
+        } else {
+            var uri = if (intent.extras == null ||
+                !intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
+            ) {
+                null
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.extras!!.getParcelable(
+                    MediaStore.EXTRA_OUTPUT,
+                    Uri::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                intent.extras!!.getParcelable(MediaStore.EXTRA_OUTPUT)
+            }
+            if (uri == null && intent.clipData != null && intent.clipData!!.itemCount != 0) {
+                uri = intent.clipData!!.getItemAt(0).uri
+            }
+            return PreviewMode.ExternalImageCaptureMode(uri) { event ->
+                if (event == PreviewViewModel.ImageCaptureEvent.ImageSaved) {
+                    setResult(RESULT_OK)
+                    finish()
                 }
             }
         }

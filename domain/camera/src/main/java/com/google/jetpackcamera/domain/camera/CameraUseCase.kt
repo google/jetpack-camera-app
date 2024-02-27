@@ -15,14 +15,17 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.util.Rational
 import android.view.Display
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Data layer for camera.
@@ -36,22 +39,28 @@ interface CameraUseCase {
     suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
 
     /**
-     * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
+     * Starts the camera with given [CameraAppSettings].
+     *
+     * This will start to configure the camera, but frames won't stream until a [SurfaceRequest]
+     * from [getSurfaceRequest] has been fulfilled.
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    )
+    suspend fun runCamera(currentCameraSettings: CameraAppSettings)
 
     suspend fun takePicture()
+
+    suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
 
     suspend fun startVideoRecording()
 
     fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float): Float
+    fun setZoomScale(scale: Float)
+
+    fun getZoomScale(): StateFlow<Float>
+
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 

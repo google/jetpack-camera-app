@@ -17,10 +17,10 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.test.FakeDataStoreModule
 import com.google.jetpackcamera.settings.test.FakeJcaSettingsSerializer
 import java.io.File
-import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -53,6 +53,6 @@ class DataStoreModuleTest {
         val datastoreValue = dataStore.data.first()
         advanceUntilIdle()
 
-        assertEquals(datastoreValue, JcaSettings.getDefaultInstance())
+        assertThat(datastoreValue).isEqualTo(JcaSettings.getDefaultInstance())
     }
 }

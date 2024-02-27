@@ -20,11 +20,17 @@ import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
 import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
+import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -55,11 +61,22 @@ class LocalSettingsRepository @Inject constructor(
                 isFrontCameraAvailable = it.frontCameraAvailable,
                 isBackCameraAvailable = it.backCameraAvailable,
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
+                previewStabilization = Stabilization.fromProto(it.stabilizePreview),
+                videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
+                supportedStabilizationModes = getSupportedStabilization(
+                    previewSupport = it.stabilizePreviewSupported,
+                    videoSupport = it.stabilizeVideoSupported
+                ),
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
+                },
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
+                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
+                    DynamicRange.fromProto(dynRngProto)
                 }
+
             )
         }
 
@@ -140,6 +157,83 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setCaptureModeStatus(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
+        val newStatus = when (stabilization) {
+            Stabilization.ON -> PreviewStabilizationProto.PREVIEW_STABILIZATION_ON
+            Stabilization.OFF -> PreviewStabilizationProto.PREVIEW_STABILIZATION_OFF
+            else -> PreviewStabilizationProto.PREVIEW_STABILIZATION_UNDEFINED
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizePreview(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
+        val newStatus = when (stabilization) {
+            Stabilization.ON -> VideoStabilizationProto.VIDEO_STABILIZATION_ON
+            Stabilization.OFF -> VideoStabilizationProto.VIDEO_STABILIZATION_OFF
+            else -> VideoStabilizationProto.VIDEO_STABILIZATION_UNDEFINED
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizeVideo(newStatus)
+                .build()
+        }
+    }
+
+    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizeVideoSupported(isSupported)
+                .build()
+        }
+    }
+
+    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setStabilizePreviewSupported(isSupported)
+                .build()
+        }
+    }
+
+    private fun getSupportedStabilization(
+        previewSupport: Boolean,
+        videoSupport: Boolean
+    ): List<SupportedStabilizationMode> {
+        return buildList {
+            if (previewSupport) {
+                add(SupportedStabilizationMode.ON)
+            }
+            if (videoSupport) {
+                add(SupportedStabilizationMode.HIGH_QUALITY)
+            }
+        }
+    }
+
+    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setDynamicRangeStatus(dynamicRange.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedDynamicRanges()
+                .addAllSupportedDynamicRanges(
+                    supportedDynamicRanges.map {
+                        it.toProto()
+                    }
+                )
                 .build()
         }
     }

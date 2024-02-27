@@ -15,9 +15,11 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.content.ContentResolver
+import android.net.Uri
 import android.view.Display
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -27,6 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class FakeCameraUseCase(
@@ -44,6 +49,7 @@ class FakeCameraUseCase(
     var recordingInProgress = false
 
     var isLensFacingFront = false
+
     private var flashMode = FlashMode.OFF
     private var aspectRatio = AspectRatio.THREE_FOUR
 
@@ -58,10 +64,7 @@ class FakeCameraUseCase(
         return availableLenses
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) {
+    override suspend fun runCamera(currentCameraSettings: CameraAppSettings) {
         val lensFacing =
             when (currentCameraSettings.isFrontCameraFacing) {
                 true -> CameraSelector.LENS_FACING_FRONT
@@ -94,6 +97,9 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
+    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+        takePicture()
+    }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
         coroutineScope.launch {
@@ -109,9 +115,17 @@ class FakeCameraUseCase(
         recordingInProgress = false
     }
 
-    override fun setZoomScale(scale: Float): Float {
-        return -1f
+    private val _zoomScale = MutableStateFlow(1f)
+    override fun setZoomScale(scale: Float) {
+        _zoomScale.value = scale
     }
+    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
+
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    fun setSurfaceRequest(surfaceRequest: SurfaceRequest) {
+        _surfaceRequest.value = surfaceRequest
+    }
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
 

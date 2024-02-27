@@ -56,6 +56,9 @@ private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
             currentState = Lifecycle.State.INITIALIZED
         }
 
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry
+
     init {
         if (coroutineContext[Job]?.isActive == true) {
             lifecycleRegistry.currentState = Lifecycle.State.RESUMED
@@ -70,6 +73,4 @@ private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         }
     }
-
-    override fun getLifecycle() = lifecycleRegistry
 }

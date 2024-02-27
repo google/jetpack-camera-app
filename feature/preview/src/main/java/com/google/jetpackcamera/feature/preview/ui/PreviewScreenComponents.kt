@@ -17,9 +17,8 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.util.Log
 import android.view.Display
-import android.view.View
 import android.widget.Toast
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -30,7 +29,6 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,10 +40,10 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,14 +53,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.viewfinder.CameraPreview
-import kotlinx.coroutines.CompletableDeferred
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
 private const val TAG = "PreviewScreen"
 
@@ -110,75 +109,71 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    deferredSurfaceProvider: CompletableDeferred<Preview.SurfaceProvider>
+    surfaceRequest: SurfaceRequest?
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
         }
     )
-    val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
-        Log.d(TAG, "onSurfaceProviderReady")
-        deferredSurfaceProvider.complete(it)
-    }
-    lateinit var viewInfo: View
 
-    BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = { offset ->
-                        // double tap to flip camera
-                        Log.d(TAG, "onDoubleTap $offset")
-                        onFlipCamera()
-                    },
-                    onTap = { offset ->
-                        // tap to focus
-                        try {
-                            onTapToFocus(
-                                viewInfo.display,
-                                viewInfo.width,
-                                viewInfo.height,
-                                offset.x,
-                                offset.y
-                            )
-                            Log.d(TAG, "onTap $offset")
-                        } catch (e: UninitializedPropertyAccessException) {
-                            Log.d(TAG, "onTap $offset")
-                            e.printStackTrace()
+    surfaceRequest?.let {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = { offset ->
+                            // double tap to flip camera
+                            Log.d(TAG, "onDoubleTap $offset")
+                            onFlipCamera()
                         }
-                    }
-                )
-            },
-
-        contentAlignment = Alignment.Center
-    ) {
-        val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
-        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-        Box(
-            modifier = Modifier
-                .width(width)
-                .height(height)
-                .transformable(state = transformableState)
-
-        ) {
-            CameraPreview(
-                modifier = Modifier
-                    .fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady,
-                onRequestBitmapReady = {
-                    it.invoke()
+                    )
                 },
-                setSurfaceView = { s: View ->
-                    viewInfo = s
-                }
-            )
+
+            contentAlignment = Alignment.Center
+        ) {
+            val maxAspectRatio: Float = maxWidth / maxHeight
+            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            Box(
+                modifier = Modifier
+                    .width(width)
+                    .height(height)
+                    .transformable(state = transformableState)
+
+            ) {
+                CameraXViewfinder(
+                    modifier = Modifier.fillMaxSize(),
+                    surfaceRequest = it
+                )
+            }
         }
+    }
+}
+
+@Composable
+fun StabilizationIcon(
+    supportedStabilizationMode: List<SupportedStabilizationMode>,
+    videoStabilization: Stabilization,
+    previewStabilization: Stabilization
+) {
+    if (supportedStabilizationMode.isNotEmpty() &&
+        (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
+    ) {
+        val descriptionText = if (videoStabilization == Stabilization.ON) {
+            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+        } else {
+            // previewStabilization will not be on for high quality
+            stringResource(id = R.string.stabilization_icon_description_video_only)
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.baseline_video_stable_24),
+            contentDescription = descriptionText
+        )
     }
 }
 
@@ -202,21 +197,16 @@ fun FlipCameraButton(
     enabledCondition: Boolean,
     onClick: () -> Unit
 ) {
-    Box(modifier = modifier) {
-        IconButton(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(40.dp),
-            onClick = onClick,
-            enabled = enabledCondition
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Refresh,
-                tint = Color.White,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
-                modifier = Modifier.size(72.dp)
-            )
-        }
+    IconButton(
+        modifier = modifier.size(40.dp),
+        onClick = onClick,
+        enabled = enabledCondition
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Refresh,
+            contentDescription = stringResource(id = R.string.flip_camera_content_description),
+            modifier = Modifier.size(72.dp)
+        )
     }
 }
 
@@ -228,7 +218,6 @@ fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Filled.Settings,
-            tint = Color.White,
             contentDescription = stringResource(R.string.settings_content_description),
             modifier = Modifier.size(72.dp)
         )
@@ -245,8 +234,7 @@ fun ZoomScaleText(zoomScale: Float) {
     Text(
         modifier = Modifier.alpha(contentAlpha.value),
         text = "%.1fx".format(zoomScale),
-        fontSize = 20.sp,
-        color = Color.White
+        fontSize = 20.sp
     )
 }
 
@@ -260,7 +248,6 @@ fun CaptureButton(
 ) {
     Box(
         modifier = modifier
-            .fillMaxHeight()
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -275,7 +262,7 @@ fun CaptureButton(
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, Color.White, CircleShape)
+            .border(4.dp, LocalContentColor.current, CircleShape)
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(

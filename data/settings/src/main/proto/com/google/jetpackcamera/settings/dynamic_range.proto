@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
 
-const val CAPTURE_BUTTON = "CaptureButton"
-const val SETTINGS_BUTTON = "SettingsButton"
-const val DEFAULT_CAMERA_FACING_SETTING = "SetDefaultCameraFacingSwitch"
+syntax = "proto3";
+
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
+
+enum DynamicRange {
+  DYNAMIC_RANGE_UNSPECIFIED = 0;
+  DYNAMIC_RANGE_SDR = 1;
+  DYNAMIC_RANGE_HLG10 = 2;
+}

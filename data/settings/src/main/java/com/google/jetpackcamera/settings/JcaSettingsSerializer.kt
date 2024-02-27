@@ -31,6 +31,12 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
+        .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
+        .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
+        .setStabilizePreviewSupported(false)
+        .setStabilizeVideoSupported(false)
+        .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
+        .addSupportedDynamicRanges(DynamicRange.DYNAMIC_RANGE_SDR)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

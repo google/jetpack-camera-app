@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import androidx.camera.core.Preview
+import android.content.ContentResolver
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
@@ -50,9 +50,8 @@ class ScreenFlashTest {
     fun setup() = runTest(testDispatcher) {
         screenFlash = ScreenFlash(cameraUseCase, testScope)
 
-        val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
         cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
-        cameraUseCase.runCamera(surfaceProvider, DEFAULT_CAMERA_APP_SETTINGS)
+        cameraUseCase.runCamera(DEFAULT_CAMERA_APP_SETTINGS)
     }
 
     @Test
@@ -70,7 +69,8 @@ class ScreenFlashTest {
 
             // FlashMode.ON in front facing camera automatically enables screen flash
             cameraUseCase.setFlashMode(FlashMode.ON, true)
-            cameraUseCase.takePicture()
+            val contentResolver: ContentResolver = Mockito.mock()
+            cameraUseCase.takePicture(contentResolver, null)
 
             advanceUntilIdle()
             assertEquals(
