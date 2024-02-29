@@ -37,19 +37,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
-import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -82,8 +79,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -106,8 +102,7 @@ fun CameraControlsOverlay(
                     currentCameraSettings = previewUiState.currentCameraSettings,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
-                    onToggleQuickSettings = onToggleQuickSettings,
-                    onToggleCaptureMode = onToggleCaptureMode
+                    onToggleQuickSettings = onToggleQuickSettings
                 )
             }
 
@@ -139,8 +134,7 @@ private fun ControlsTop(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
-    onToggleQuickSettings: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {}
+    onToggleQuickSettings: () -> Unit = {}
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -162,17 +156,6 @@ private fun ControlsTop(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // For debug purposes, display whether the stream is in single/multi mode.
-            TestingButton(
-                modifier = Modifier.testTag("ToggleCaptureMode"),
-                onClick = onToggleCaptureMode,
-                text = stringResource(
-                    when (currentCameraSettings.captureMode) {
-                        CaptureMode.SINGLE_STREAM -> R.string.capture_mode_single_stream
-                        CaptureMode.MULTI_STREAM -> R.string.capture_mode_multi_stream
-                    }
-                )
-            )
             StabilizationIcon(
                 supportedStabilizationMode = currentCameraSettings.supportedStabilizationModes,
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
