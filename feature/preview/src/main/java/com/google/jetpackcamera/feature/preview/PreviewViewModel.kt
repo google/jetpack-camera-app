@@ -25,7 +25,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
-import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -40,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -54,9 +54,7 @@ const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase,
-    private val settingsRepository: SettingsRepository
-    // only reads from settingsRepository. do not push changes to repository from here
+    private val cameraUseCase: CameraUseCase
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
@@ -74,7 +72,7 @@ class PreviewViewModel @Inject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize(previewUiState.value.currentCameraSettings)
+        cameraUseCase.initialize()
         _previewUiState.emit(
             previewUiState.value.copy(
                 cameraState = CameraState.READY
@@ -85,7 +83,7 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             combine(
-                settingsRepository.cameraAppSettings,
+                cameraUseCase.getCurrentSettings().filterNotNull(),
                 cameraUseCase.getZoomScale()
             ) { cameraAppSettings, zoomScale ->
                 previewUiState.value.copy(
@@ -108,9 +106,7 @@ class PreviewViewModel @Inject constructor(
             // Ensure CameraUseCase is initialized before starting camera
             initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
-            cameraUseCase.runCamera(
-                previewUiState.value.currentCameraSettings
-            )
+            cameraUseCase.runCamera()
         }
     }
 
@@ -125,85 +121,34 @@ class PreviewViewModel @Inject constructor(
 
     fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        flashMode = flashMode
-                    )
-                )
-            )
             // apply to cameraUseCase
-            cameraUseCase.setFlashMode(
-                previewUiState.value.currentCameraSettings.flashMode,
-                previewUiState.value.currentCameraSettings.isFrontCameraFacing
-            )
+            cameraUseCase.setFlashMode(flashMode)
         }
     }
 
     fun setAspectRatio(aspectRatio: AspectRatio) {
-        stopCamera()
-        runningCameraJob = viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        aspectRatio = aspectRatio
-                    )
-                )
-            )
-            cameraUseCase.setAspectRatio(
-                aspectRatio,
-                previewUiState.value
-                    .currentCameraSettings.isFrontCameraFacing
-            )
+        viewModelScope.launch {
+            cameraUseCase.setAspectRatio(aspectRatio)
         }
     }
 
-    // flips the camera opposite to its current direction
-    fun flipCamera() {
-        flipCamera(
-            !previewUiState.value
-                .currentCameraSettings.isFrontCameraFacing
-        )
-    }
-
     fun setCaptureMode(captureMode: CaptureMode) {
-        stopCamera()
-        runningCameraJob = viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    currentCameraSettings =
-                    previewUiState.value.currentCameraSettings.copy(
-                        captureMode = captureMode
-                    )
-                )
-            )
+        viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
     // sets the camera to a designated direction
-    fun flipCamera(isFacingFront: Boolean) {
-        // only flip if 2 directions are available
-        if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-            previewUiState.value.currentCameraSettings.isFrontCameraAvailable
-        ) {
-            stopCamera()
-            runningCameraJob = viewModelScope.launch {
-                _previewUiState.emit(
-                    previewUiState.value.copy(
-                        currentCameraSettings =
-                        previewUiState.value.currentCameraSettings.copy(
-                            isFrontCameraFacing = isFacingFront
-                        )
-                    )
-                )
+    fun flipCamera() {
+        viewModelScope.launch {
+            // only flip if 2 directions are available
+            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
+                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            ) {
                 // apply to cameraUseCase
                 cameraUseCase.flipCamera(
-                    previewUiState.value.currentCameraSettings.isFrontCameraFacing,
-                    previewUiState.value.currentCameraSettings.flashMode
+                    !previewUiState.value.currentCameraSettings.isFrontCameraFacing
                 )
             }
         }
