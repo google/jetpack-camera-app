@@ -40,13 +40,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -163,6 +166,29 @@ fun QuickFlipCamera(
     )
 }
 
+@Composable
+fun QuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    setCaptureMode: (CaptureMode) -> Unit,
+    currentCaptureMode: CaptureMode
+) {
+    val enum: CameraCaptureMode =
+        when (currentCaptureMode) {
+            CaptureMode.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (currentCaptureMode) {
+                CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
+                CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
+            }
+        }
+    )
+}
+
 /**
  * Button to toggle quick settings
  */
@@ -239,7 +265,7 @@ fun QuickSettingUiItem(
                 .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
         )
 
-        Text(text = text, color = tint)
+        Text(text = text, color = tint, textAlign = TextAlign.Center)
     }
 }
 
