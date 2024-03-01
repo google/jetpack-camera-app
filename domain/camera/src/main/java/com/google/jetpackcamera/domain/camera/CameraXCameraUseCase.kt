@@ -508,7 +508,9 @@ constructor(
                 ).build()
             )
             addUseCase(previewUseCase)
-            addUseCase(imageCaptureUseCase)
+            if (sessionSettings.dynamicRange == DynamicRange.SDR) {
+                addUseCase(imageCaptureUseCase)
+            }
             addUseCase(videoCaptureUseCase)
 
             if (sessionSettings.captureMode == CaptureMode.SINGLE_STREAM) {
