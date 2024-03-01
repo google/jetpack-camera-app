@@ -118,6 +118,7 @@ fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
     blinkState: BlinkState
@@ -163,7 +164,8 @@ fun PreviewDisplay(
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it
+                    surfaceRequest = it,
+                    onRequestWindowColorMode = onRequestWindowColorMode
                 )
             }
         }

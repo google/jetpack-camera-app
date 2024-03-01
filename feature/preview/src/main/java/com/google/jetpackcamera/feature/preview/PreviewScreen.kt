@@ -64,8 +64,9 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel(),
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)
@@ -106,7 +107,8 @@ fun PreviewScreen(
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown
+            onToastShown = viewModel::onToastShown,
+            onRequestWindowColorMode = onRequestWindowColorMode
         )
     }
 }
@@ -135,7 +137,8 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToastShown: () -> Unit = {}
+    onToastShown: () -> Unit = {},
+    onRequestWindowColorMode: (Int) -> Unit = {}
 ) {
     val lensFacing = remember(previewUiState) {
         previewUiState.currentCameraSettings.cameraLensFacing
@@ -154,6 +157,7 @@ private fun ContentScreen(
         onFlipCamera = onFlipCamera,
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
+        onRequestWindowColorMode = onRequestWindowColorMode,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
         surfaceRequest = surfaceRequest,
         blinkState = blinkState
