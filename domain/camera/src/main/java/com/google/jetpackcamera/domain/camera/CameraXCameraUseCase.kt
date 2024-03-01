@@ -26,7 +26,6 @@ import android.view.Display
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
@@ -53,10 +52,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -74,6 +69,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -99,6 +99,7 @@ constructor(
     private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
+    private lateinit var constraintsMap: Map<CameraSelector, CameraConstraints>
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
@@ -122,6 +123,23 @@ constructor(
             availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
             availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
         )
+
+        constraintsMap = buildMap {
+            val availableCameraInfos = cameraProvider.availableCameraInfos
+            for (selector in availableCameraLens.map { cameraLensToSelector(it) }) {
+                selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
+                    val supportedDynamicRanges =
+                        Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
+
+                    put(
+                        selector, CameraConstraints(
+                            supportedDynamicRanges =
+                            supportedDynamicRanges.toSupportedAppDynamicRanges()
+                        )
+                    )
+                }
+            }
+        }
 
         currentSettings.value = settingsRepository.cameraAppSettings.first()
     }
@@ -378,7 +396,25 @@ constructor(
     override suspend fun flipCamera(isFrontFacing: Boolean) {
         currentSettings.update { old ->
             old?.copy(isFrontCameraFacing = isFrontFacing)
+                ?.tryApplyDynamicRangeConstraints()
         }
+    }
+
+    private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings {
+        return constraintsMap[this.getCameraSelector()]?.let { constraints ->
+            with(constraints.supportedDynamicRanges) {
+                val newDynamicRange = if (contains(dynamicRange)) {
+                    dynamicRange
+                } else {
+                    DynamicRange.SDR
+                }
+
+                this@tryApplyDynamicRangeConstraints.copy(
+                    dynamicRange = newDynamicRange,
+                    supportedDynamicRanges = this
+                )
+            }
+        } ?: this
     }
 
     override fun tapToFocus(
@@ -593,6 +629,9 @@ constructor(
             else -> throw IllegalArgumentException("Invalid lens facing type: $lensFacing")
         }
 
+    private fun CameraAppSettings.getCameraSelector(): CameraSelector =
+        cameraLensToSelector(getLensFacing(isFrontCameraFacing))
+
     companion object {
         /**
          * Checks if preview stabilization is supported by the device.
@@ -627,8 +666,13 @@ private fun DynamicRange.toCXDynamicRange() : CXDynamicRange {
         DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
     }
 }
-private fun Set<CXDynamicRange>.toSupportedAppDynamicRanges() : List<DynamicRange> {
+
+private fun Set<CXDynamicRange>.toSupportedAppDynamicRanges(): List<DynamicRange> {
     return this.mapNotNull {
         it.toSupportedAppDynamicRange()
     }
 }
+
+private data class CameraConstraints(
+    val supportedDynamicRanges: List<DynamicRange>
+)
