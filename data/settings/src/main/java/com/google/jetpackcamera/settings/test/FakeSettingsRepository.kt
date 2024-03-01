@@ -34,7 +34,8 @@ object FakeSettingsRepository : SettingsRepository {
     private var isPreviewStabilizationSupported: Boolean = false
     private var isVideoStabilizationSupported: Boolean = false
 
-    override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
+    override val defaultCameraAppSettings: Flow<CameraAppSettings> =
+        flow { emit(currentCameraSettings) }
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         currentCameraSettings = currentCameraSettings.copy(cameraLensFacing = lensFacing)
@@ -57,8 +58,10 @@ object FakeSettingsRepository : SettingsRepository {
         backLensAvailable: Boolean
     ) {
         currentCameraSettings = currentCameraSettings.copy(
-            isFrontCameraAvailable = frontLensAvailable,
-            isBackCameraAvailable = backLensAvailable
+            constraints = currentCameraSettings.constraints.copy(
+                isFrontCameraAvailable = frontLensAvailable,
+                isBackCameraAvailable = backLensAvailable
+            )
         )
     }
 
@@ -99,7 +102,11 @@ object FakeSettingsRepository : SettingsRepository {
             }
 
         currentCameraSettings =
-            currentCameraSettings.copy(supportedStabilizationModes = stabilizationModes)
+            currentCameraSettings.copy(
+                constraints = currentCameraSettings.constraints.copy(
+                    supportedStabilizationModes = stabilizationModes
+                )
+            )
     }
 
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
@@ -109,7 +116,11 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
         currentCameraSettings =
-            currentCameraSettings.copy(supportedDynamicRanges = supportedDynamicRanges)
+            currentCameraSettings.copy(
+                constraints = currentCameraSettings.constraints.copy(
+                    supportedDynamicRanges = supportedDynamicRanges
+                )
+            )
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

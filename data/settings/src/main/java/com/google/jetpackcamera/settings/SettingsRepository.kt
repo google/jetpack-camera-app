@@ -30,16 +30,15 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
 
-    val cameraAppSettings: Flow<CameraAppSettings>
+    val defaultCameraAppSettings: Flow<CameraAppSettings>
+
+    suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings
 
     suspend fun updateDefaultLensFacing(lensFacing: LensFacing)
 
     suspend fun updateDarkModeStatus(darkMode: DarkMode)
 
     suspend fun updateFlashModeStatus(flashMode: FlashMode)
-
-    // set device values from cameraUseCase
-    suspend fun updateAvailableCameraLens(frontLensAvailable: Boolean, backLensAvailable: Boolean)
 
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
@@ -49,19 +48,7 @@ interface SettingsRepository {
 
     suspend fun updateVideoStabilization(stabilization: Stabilization)
 
-    suspend fun updateVideoStabilizationSupported(isSupported: Boolean)
-
-    suspend fun updatePreviewStabilizationSupported(isSupported: Boolean)
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
-    suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>)
-
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
-
-    suspend fun updateSupportedFixedFrameRate(
-        supportedFrameRates: Set<Int>,
-        currentTargetFrameRate: Int
-    )
-
-    suspend fun getCameraAppSettings(): CameraAppSettings
 }

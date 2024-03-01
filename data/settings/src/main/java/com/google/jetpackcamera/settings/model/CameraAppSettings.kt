@@ -21,8 +21,6 @@ const val TARGET_FPS_AUTO = 0
  */
 data class CameraAppSettings(
     val cameraLensFacing: LensFacing = LensFacing.BACK,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
