@@ -191,7 +191,7 @@ private fun ExpandedQuickSettingsUi(
                             )
                         }
 
-                        if (currentCameraSettings.supportedDynamicRanges.size > 1) {
+                        if (currentCameraSettings.constraints.supportedDynamicRanges.size > 1) {
                             add {
                                 QuickSetHdr(
                                     modifier = Modifier.testTag("QuickSetDynamicRange"),
@@ -238,7 +238,9 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             currentCameraSettings = CameraAppSettings(
-                supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10),
+                constraints = CameraAppSettings.Constraints(
+                    supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10)
+                ),
                 dynamicRange = DynamicRange.HLG10
             ),
             onLensFaceClick = { } ,

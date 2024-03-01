@@ -99,7 +99,7 @@ constructor(
     private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
-    private lateinit var constraintsMap: Map<CameraSelector, CameraConstraints>
+    private lateinit var constraintsMap: Map<CameraSelector, CameraAppSettings.Constraints>
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
@@ -118,10 +118,12 @@ constructor(
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
 
+        val isFrontCameraAvailable = availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT)
+        val isBackCameraAvailable = availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
         // updates values for available camera lens if necessary
         settingsRepository.updateAvailableCameraLens(
-            availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
-            availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
+            isFrontCameraAvailable,
+            isBackCameraAvailable
         )
 
         constraintsMap = buildMap {
@@ -132,7 +134,9 @@ constructor(
                         Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
 
                     put(
-                        selector, CameraConstraints(
+                        selector, CameraAppSettings.Constraints(
+                            isFrontCameraAvailable = isFrontCameraAvailable,
+                            isBackCameraAvailable = isBackCameraAvailable,
                             supportedDynamicRanges =
                             supportedDynamicRanges.toSupportedAppDynamicRanges()
                         )
@@ -141,7 +145,8 @@ constructor(
             }
         }
 
-        currentSettings.value = settingsRepository.cameraAppSettings.first()
+        currentSettings.value =
+            settingsRepository.cameraAppSettings.first().tryApplyDynamicRangeConstraints()
     }
 
     /**
@@ -215,8 +220,8 @@ constructor(
                     getSupportedDynamicRanges(cameraInfo)
                 )
 
-                val supportedStabilizationModes =
-                    settingsRepository.cameraAppSettings.first().supportedStabilizationModes
+                val supportedStabilizationModes = settingsRepository
+                    .cameraAppSettings.first().constraints.supportedStabilizationModes
 
                 val initialTransientSettings = transientSettings
                     .filterNotNull()
@@ -411,7 +416,7 @@ constructor(
 
                 this@tryApplyDynamicRangeConstraints.copy(
                     dynamicRange = newDynamicRange,
-                    supportedDynamicRanges = this
+                    constraints = constraints
                 )
             }
         } ?: this
@@ -672,7 +677,3 @@ private fun Set<CXDynamicRange>.toSupportedAppDynamicRanges(): List<DynamicRange
         it.toSupportedAppDynamicRange()
     }
 }
-
-private data class CameraConstraints(
-    val supportedDynamicRanges: List<DynamicRange>
-)

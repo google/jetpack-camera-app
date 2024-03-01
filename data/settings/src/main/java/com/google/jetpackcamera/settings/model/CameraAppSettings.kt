@@ -19,20 +19,24 @@ package com.google.jetpackcamera.settings.model
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
+    val constraints: Constraints = Constraints(),
     val isFrontCameraFacing: Boolean = false,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
-    val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
-    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f
-)
+) {
+    data class Constraints(
+        val isFrontCameraAvailable: Boolean = true,
+        val isBackCameraAvailable: Boolean = true,
+        val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
+        val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR)
+    )
+}
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

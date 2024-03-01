@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object FakeSettingsRepository : SettingsRepository {
-    var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+    private var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     private var isPreviewStabilizationSupported: Boolean = false
     private var isVideoStabilizationSupported: Boolean = false
 
@@ -57,8 +57,10 @@ object FakeSettingsRepository : SettingsRepository {
         backLensAvailable: Boolean
     ) {
         currentCameraSettings = currentCameraSettings.copy(
-            isFrontCameraAvailable = frontLensAvailable,
-            isBackCameraAvailable = backLensAvailable
+            constraints = currentCameraSettings.constraints.copy(
+                isFrontCameraAvailable = frontLensAvailable,
+                isBackCameraAvailable = backLensAvailable
+            )
         )
     }
 
@@ -99,7 +101,11 @@ object FakeSettingsRepository : SettingsRepository {
             }
 
         currentCameraSettings =
-            currentCameraSettings.copy(supportedStabilizationModes = stabilizationModes)
+            currentCameraSettings.copy(
+                constraints = currentCameraSettings.constraints.copy(
+                    supportedStabilizationModes = stabilizationModes
+                )
+            )
     }
 
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
@@ -109,7 +115,11 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
         currentCameraSettings =
-            currentCameraSettings.copy(supportedDynamicRanges = supportedDynamicRanges)
+            currentCameraSettings.copy(
+                constraints = currentCameraSettings.constraints.copy(
+                    supportedDynamicRanges = supportedDynamicRanges
+                )
+            )
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {

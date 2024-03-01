@@ -144,8 +144,8 @@ class PreviewViewModel @Inject constructor(
     fun flipCamera() {
         viewModelScope.launch {
             // only flip if 2 directions are available
-            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            if (previewUiState.value.currentCameraSettings.constraints.isBackCameraAvailable &&
+                previewUiState.value.currentCameraSettings.constraints.isFrontCameraAvailable
             ) {
                 // apply to cameraUseCase
                 cameraUseCase.flipCamera(

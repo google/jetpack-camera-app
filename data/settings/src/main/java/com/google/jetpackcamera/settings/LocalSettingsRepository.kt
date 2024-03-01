@@ -45,6 +45,17 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
+                constraints = CameraAppSettings.Constraints(
+                    isFrontCameraAvailable = it.frontCameraAvailable,
+                    isBackCameraAvailable = it.backCameraAvailable,
+                    supportedStabilizationModes = getSupportedStabilization(
+                        previewSupport = it.stabilizePreviewSupported,
+                        videoSupport = it.stabilizeVideoSupported
+                    ),
+                    supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
+                        DynamicRange.fromProto(dynRngProto)
+                    }
+                ),
                 isFrontCameraFacing = it.defaultFrontCamera,
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
@@ -58,25 +69,15 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
                     else -> FlashMode.OFF
                 },
-                isFrontCameraAvailable = it.frontCameraAvailable,
-                isBackCameraAvailable = it.backCameraAvailable,
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
-                supportedStabilizationModes = getSupportedStabilization(
-                    previewSupport = it.stabilizePreviewSupported,
-                    videoSupport = it.stabilizeVideoSupported
-                ),
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
-                    DynamicRange.fromProto(dynRngProto)
-                }
-
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
             )
         }
 
