@@ -29,13 +29,10 @@ data class CameraAppSettings(
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
-    val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
-    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
-    val targetFrameRate: Int = TARGET_FPS_AUTO,
-    val supportedFixedFrameRates: List<Int> = emptyList()
+    val targetFrameRate: Int = TARGET_FPS_AUTO
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

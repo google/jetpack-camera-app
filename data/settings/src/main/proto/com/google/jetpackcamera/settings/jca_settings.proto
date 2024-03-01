@@ -31,19 +31,19 @@ option java_multiple_files = true;
 
 message JcaSettings {
   bool default_front_camera = 2 [deprecated = true];
-  bool front_camera_available = 3;
-  bool back_camera_available = 4;
+  bool front_camera_available = 3 [deprecated = true];
+  bool back_camera_available = 4 [deprecated = true];
   DarkMode dark_mode_status = 5;
   FlashMode flash_mode_status = 6;
   AspectRatio aspect_ratio_status = 7;
   CaptureMode capture_mode_status = 8;
   PreviewStabilization stabilize_preview = 9;
   VideoStabilization stabilize_video = 10;
-  bool stabilize_video_supported = 11;
-  bool stabilize_preview_supported = 12;
+  bool stabilize_video_supported = 11 [deprecated = true];
+  bool stabilize_preview_supported = 12 [deprecated = true];
   DynamicRange dynamic_range_status = 13;
-  repeated DynamicRange supported_dynamic_ranges = 14;
+  repeated DynamicRange supported_dynamic_ranges = 14 [deprecated = true];
   LensFacing default_lens_facing = 15;
   int32 target_frame_rate = 16;
-  repeated int32 supported_frame_rates = 17;
+  repeated int32 supported_frame_rates = 17 [deprecated = true];
 }

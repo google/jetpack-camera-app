@@ -70,21 +70,13 @@ class LocalSettingsRepository @Inject constructor(
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
-                supportedStabilizationModes = getSupportedStabilization(
-                    previewSupport = it.stabilizePreviewSupported,
-                    videoSupport = it.stabilizeVideoSupported
-                ),
                 targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
-                    DynamicRange.fromProto(dynRngProto)
-                },
-                supportedFixedFrameRates = it.supportedFrameRatesList
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
             )
         }
 
