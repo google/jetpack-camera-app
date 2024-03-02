@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -71,7 +72,7 @@ interface CameraUseCase {
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun flipCamera(isFrontFacing: Boolean)
+    suspend fun setLensFacing(lensFacing: LensFacing)
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 

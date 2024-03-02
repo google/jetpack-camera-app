@@ -63,7 +63,7 @@ class ScreenFlashTest {
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = true)
         cameraUseCase.setFlashMode(FlashMode.ON)
         val contentResolver: ContentResolver = Mockito.mock()
         cameraUseCase.takePicture(contentResolver, null)

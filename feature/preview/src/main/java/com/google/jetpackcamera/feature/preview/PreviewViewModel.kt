@@ -29,6 +29,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -146,10 +147,14 @@ class PreviewViewModel @Inject constructor(
             if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
                 previewUiState.value.currentCameraSettings.isFrontCameraAvailable
             ) {
+                val newLensFacing =
+                    if (previewUiState.value.currentCameraSettings.isFrontCameraFacing) {
+                        LensFacing.BACK
+                    } else {
+                        LensFacing.FRONT
+                    }
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(
-                    !previewUiState.value.currentCameraSettings.isFrontCameraFacing
-                )
+                cameraUseCase.setLensFacing(newLensFacing)
             }
         }
     }
