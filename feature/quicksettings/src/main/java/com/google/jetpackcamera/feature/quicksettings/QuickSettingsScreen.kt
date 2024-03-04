@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.quicksettings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -81,6 +82,13 @@ fun QuickSettingsScreenOverlay(
         )
 
     if (isOpen) {
+        val onBack = {
+            when (shouldShowQuickSetting) {
+                IsExpandedQuickSetting.NONE -> toggleIsOpen()
+                else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+            }
+        }
+        BackHandler(onBack = onBack)
         Column(
             modifier =
             modifier
