@@ -18,3 +18,6 @@ package com.google.jetpackcamera.feature.preview.ui
 const val CAPTURE_BUTTON = "CaptureButton"
 const val SETTINGS_BUTTON = "SettingsButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val QUICK_SETTINGS_BUTTON = "QuickSettingDropDown"
+const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSetAspectRatio"
+const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSetAspectRatio1:1"
