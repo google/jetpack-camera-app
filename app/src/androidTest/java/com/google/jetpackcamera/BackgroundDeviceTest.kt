@@ -21,6 +21,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_BUTTON
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,19 +61,19 @@ class BackgroundDeviceTest {
 
     @Test
     fun flipCamera_then_background_foreground() {
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlipCamera")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }
 
     @Test
     fun setAspectRatio_then_background_foreground() {
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetAspectRatio")).click()
-        uiDevice.findObject(By.res("QuickSetAspectRatio1:1")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_RATIO_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_RATIO_1_1_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }

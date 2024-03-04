@@ -77,7 +77,7 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             },
             {
                 QuickSetRatio(
-                    modifier = Modifier.testTag("QuickSetAspectRatio1:1"),
+                    modifier = Modifier.testTag("QuickSettingsAspectRatio1:1Button"),
                     onClick = { setRatio(AspectRatio.ONE_ONE) },
                     ratio = AspectRatio.ONE_ONE,
                     currentRatio = currentRatio,
@@ -203,7 +203,7 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
             painter = painterResource(R.drawable.baseline_expand_more_72),
             contentDescription = stringResource(R.string.quick_settings_dropdown_description),
             modifier = Modifier
-                .testTag("QuickSettingDropDown")
+                .testTag("QuickSettingsDropDown")
                 .size(72.dp)
                 .clickable {
                     toggleDropDown()

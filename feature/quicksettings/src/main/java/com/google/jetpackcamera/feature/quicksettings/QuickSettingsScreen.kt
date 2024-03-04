@@ -152,21 +152,21 @@ private fun ExpandedQuickSettingsUi(
                     arrayOf(
                         {
                             QuickSetFlash(
-                                modifier = Modifier.testTag("QuickSetFlash"),
+                                modifier = Modifier.testTag("QuickSettingsFlashButton"),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )
                         },
                         {
                             QuickFlipCamera(
-                                modifier = Modifier.testTag("QuickSetFlipCamera"),
+                                modifier = Modifier.testTag("QuickSettingsFlipCameraButton"),
                                 flipCamera = { b: Boolean -> onLensFaceClick(b) },
                                 currentFacingFront = currentCameraSettings.isFrontCameraFacing
                             )
                         },
                         {
                             QuickSetRatio(
-                                modifier = Modifier.testTag("QuickSetAspectRatio"),
+                                modifier = Modifier.testTag("QuickSettingsRatioButton"),
                                 onClick = {
                                     setVisibleQuickSetting(
                                         IsExpandedQuickSetting.ASPECT_RATIO
