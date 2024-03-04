@@ -28,7 +28,7 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
@@ -115,7 +115,7 @@ class NavigationTest {
         }
 
         // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 
@@ -127,7 +127,8 @@ class NavigationTest {
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on PreviewScreen by finding the capture button
+        // Assert we're on PreviewScreen by finding the capture button and not the ratio button
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
     }
 
@@ -139,7 +140,7 @@ class NavigationTest {
         }
 
         // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 

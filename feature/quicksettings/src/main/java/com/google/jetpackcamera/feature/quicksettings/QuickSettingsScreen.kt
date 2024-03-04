@@ -95,14 +95,7 @@ fun QuickSettingsScreenOverlay(
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
-                .clickable {
-                    // if a setting is expanded, click on the background to close it.
-                    // if no other settings are expanded, then close the popup
-                    when (shouldShowQuickSetting) {
-                        IsExpandedQuickSetting.NONE -> toggleIsOpen()
-                        else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
-                    }
-                },
+                .clickable(onClick = onBack),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
