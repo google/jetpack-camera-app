@@ -17,4 +17,4 @@ package com.google.jetpackcamera.feature.preview.ui
 
 const val CAPTURE_BUTTON = "CaptureButton"
 const val SETTINGS_BUTTON = "SettingsButton"
-const val DEFAULT_CAMERA_FACING_SETTING = "SetDefaultCameraFacingSwitch"
+const val FLIP_CAMERA_BUTTON = "FlipCameraButton"

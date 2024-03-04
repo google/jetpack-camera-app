@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -26,6 +27,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import org.junit.Rule
@@ -52,21 +54,17 @@ class NavigationTest {
         }
 
         // Navigate to the settings screen
-        composeTestRule.onNodeWithTag(SETTINGS_BUTTON).apply {
-            assertExists()
-            performClick()
-        }
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
+            .assertExists()
+            .performClick()
 
         // Navigate back using the button
-        composeTestRule.onNodeWithTag(BACK_BUTTON).apply {
-            assertExists()
-            performClick()
-        }
+        composeTestRule.onNodeWithTag(BACK_BUTTON)
+            .assertExists()
+            .performClick()
 
         // Assert we're on PreviewScreen by finding the capture button
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).apply {
-            assertExists()
-        }
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
 
         // Press the device's back button
         uiDevice.pressBack()
@@ -75,6 +73,35 @@ class NavigationTest {
         composeTestRule.onNodeWithText(
             com.google.jetpackcamera.settings.R.string.settings_title
         ).assertDoesNotExist()
+    }
+
+    // Test to ensure we haven't regressed to the cause of
+    // https://github.com/google/jetpack-camera-app/pull/28
+    @Test
+    fun returnFromSettings_afterFlipCamera_returnsToPreview() = runScenarioTest<MainActivity> {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // If flipping the camera is available, flip it. Otherwise skip test.
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
+            .assume(isEnabled()) {
+                "Device does not have multiple cameras to flip between."
+            }.performClick()
+
+        // Navigate to the settings screen
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Navigate back using the button
+        composeTestRule.onNodeWithTag(BACK_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Assert we're on PreviewScreen by finding the capture button
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
     }
 
     private inline fun <reified T : Activity> runScenarioTest(
