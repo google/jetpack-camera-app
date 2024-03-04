@@ -38,12 +38,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 
 /**
@@ -58,7 +60,8 @@ fun QuickSettingsScreenOverlay(
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
-    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
+    onCaptureModeClick: (captureMode: CaptureMode) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -103,7 +106,8 @@ fun QuickSettingsScreenOverlay(
                 },
                 onLensFaceClick = onLensFaceClick,
                 onFlashModeClick = onFlashModeClick,
-                onAspectRatioClick = onAspectRatioClick
+                onAspectRatioClick = onAspectRatioClick,
+                onCaptureModeClick = onCaptureModeClick
             )
         }
     } else {
@@ -125,9 +129,10 @@ private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
     onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
+    onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
-    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
-    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit
+    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
 ) {
     Column(
         modifier =
@@ -168,6 +173,13 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 ratio = currentCameraSettings.aspectRatio,
                                 currentRatio = currentCameraSettings.aspectRatio
+                            )
+                        },
+                        {
+                            QuickSetCaptureMode(
+                                modifier = Modifier.testTag(""),
+                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                                currentCaptureMode = currentCameraSettings.captureMode
                             )
                         }
                     )

@@ -36,17 +36,17 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
+    suspend fun initialize()
 
     /**
-     * Starts the camera with given [CameraAppSettings].
+     * Starts the camera.
      *
      * This will start to configure the camera, but frames won't stream until a [SurfaceRequest]
      * from [getSurfaceRequest] has been fulfilled.
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(currentCameraSettings: CameraAppSettings)
+    suspend fun runCamera()
 
     suspend fun takePicture()
 
@@ -64,13 +64,15 @@ interface CameraUseCase {
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 
-    fun setFlashMode(flashMode: SettingsFlashMode, isFrontFacing: Boolean)
+    fun getCurrentSettings(): StateFlow<CameraAppSettings?>
+
+    fun setFlashMode(flashMode: SettingsFlashMode)
 
     fun isScreenFlashEnabled(): Boolean
 
-    suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
+    suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio)
 
-    suspend fun flipCamera(isFrontFacing: Boolean, flashMode: SettingsFlashMode)
+    suspend fun flipCamera(isFrontFacing: Boolean)
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
