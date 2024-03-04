@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.quicksettings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -81,20 +82,20 @@ fun QuickSettingsScreenOverlay(
         )
 
     if (isOpen) {
+        val onBack = {
+            when (shouldShowQuickSetting) {
+                IsExpandedQuickSetting.NONE -> toggleIsOpen()
+                else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
+            }
+        }
+        BackHandler(onBack = onBack)
         Column(
             modifier =
             modifier
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
-                .clickable {
-                    // if a setting is expanded, click on the background to close it.
-                    // if no other settings are expanded, then close the popup
-                    when (shouldShowQuickSetting) {
-                        IsExpandedQuickSetting.NONE -> toggleIsOpen()
-                        else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
-                    }
-                },
+                .clickable(onClick = onBack),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
