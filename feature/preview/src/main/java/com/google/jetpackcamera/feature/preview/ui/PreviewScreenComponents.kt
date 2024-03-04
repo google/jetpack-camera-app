@@ -69,7 +69,6 @@ private const val TAG = "PreviewScreen"
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *
  * @param toastMessage the specifications for the [Toast].
- * @param shouldShowToast  shows a visible system toast when true.
  * @param onToastShown called once the Toast has been displayed.
  *
  */
@@ -77,7 +76,6 @@ private const val TAG = "PreviewScreen"
 fun TestableToast(
     modifier: Modifier = Modifier,
     toastMessage: ToastMessage,
-    shouldShowToast: Boolean = true,
     onToastShown: () -> Unit
 ) {
     val toastShownStatus = remember { mutableStateOf(false) }
@@ -88,7 +86,7 @@ fun TestableToast(
             .testTag(toastMessage.testTag)
     ) {
         // checking toastShownStatus prevents toast visual from being spammed
-        if (!toastShownStatus.value && shouldShowToast) {
+        if (!toastShownStatus.value && toastMessage.shouldShowToast) {
             Toast.makeText(
                 LocalContext.current,
                 stringResource(id = toastMessage.stringResource),
@@ -256,6 +254,8 @@ fun CaptureButton(
                     onLongPress = {
                         onLongPress()
                     },
+                    //TODO: @kimblebee - stopVideoRecording is being called every time the capture
+                    // button is pressed -- regardless of tap or long press
                     onPress = {
                         awaitRelease()
                         onRelease()

@@ -169,7 +169,6 @@ private fun ContentScreen(
         TestableToast(
             modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
             toastMessage = previewUiState.toastMessageToShow,
-            shouldShowToast = false,
             onToastShown = onToastShown
         )
     }

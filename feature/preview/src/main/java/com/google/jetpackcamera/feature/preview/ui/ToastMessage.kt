@@ -21,11 +21,13 @@ import android.widget.Toast
  * Helper class containing information used to create a [Toast].
  *
  * @param stringResource the resource ID of to be displayed.
- * @param isLongToast determines if the display time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
+ * @param shouldShowToast  shows a visible system toast when true.
+ * @param isLongToast determines if the visible toast's time is [Toast.LENGTH_LONG] or [Toast.LENGTH_SHORT].
  * @property testTag the identifiable resource ID of a [TestableToast] on screen.
  */
 class ToastMessage(
     val stringResource: Int,
+    val shouldShowToast: Boolean = true,
     isLongToast: Boolean = false,
     val testTag: String = ""
 ) {
