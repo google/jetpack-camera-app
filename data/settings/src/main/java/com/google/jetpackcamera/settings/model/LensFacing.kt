@@ -21,6 +21,13 @@ enum class LensFacing {
     BACK,
     FRONT;
 
+    fun flip(): LensFacing {
+        return when (this) {
+            FRONT -> BACK
+            BACK -> FRONT
+        }
+    }
+
     companion object {
 
         /** returns the LensFacing enum equivalent of a provided LensFacingProto */

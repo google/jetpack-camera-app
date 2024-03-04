@@ -109,15 +109,15 @@ constructor(
         // updates values for available camera lens
         val availableCameraLens =
             listOf(
-                CameraSelector.LENS_FACING_BACK,
-                CameraSelector.LENS_FACING_FRONT
+                LensFacing.FRONT,
+                LensFacing.BACK
             ).filter { lensFacing ->
-                cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
+                cameraProvider.hasCamera(lensFacing.toCameraSelector())
             }
 
         settingsRepository.updateAvailableCameraLens(
-            availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
-            availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
+            availableCameraLens.contains(LensFacing.FRONT),
+            availableCameraLens.contains(LensFacing.BACK)
         )
 
         currentSettings.value = settingsRepository.cameraAppSettings.first()
@@ -161,10 +161,9 @@ constructor(
                     zoomScale = currentCameraSettings.zoomScale
                 )
 
-                val cameraSelector = if (currentCameraSettings.isFrontCameraFacing) {
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-                } else {
-                    CameraSelector.DEFAULT_BACK_CAMERA
+                val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
+                    LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
                 }
 
                 PerpetualSessionSettings(
@@ -368,7 +367,7 @@ constructor(
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
-            old?.copy(isFrontCameraFacing = lensFacing == LensFacing.FRONT)
+            old?.copy(cameraLensFacing = lensFacing)
         }
     }
 
@@ -544,12 +543,10 @@ constructor(
             )
     }
 
-    private fun cameraLensToSelector(@CameraSelector.LensFacing lensFacing: Int): CameraSelector =
-        when (lensFacing) {
-            CameraSelector.LENS_FACING_FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-            CameraSelector.LENS_FACING_BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-            else -> throw IllegalArgumentException("Invalid lens facing type: $lensFacing")
-        }
+    private fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
+        LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+        LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+    }
 
     companion object {
         /**

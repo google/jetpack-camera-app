@@ -21,12 +21,12 @@ import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,17 +89,19 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
-        val initialFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
-        settingsViewModel.setDefaultToFrontCamera()
+        val initialCameraLensFacing =
+            settingsViewModel.settingsUiState.value.cameraAppSettings.cameraLensFacing
+        val nextCameraLensFacing = if (initialCameraLensFacing == LensFacing.FRONT) {
+            LensFacing.BACK
+        } else {
+            LensFacing.FRONT
+        }
+        settingsViewModel.setDefaultLensFacing(nextCameraLensFacing)
 
         advanceUntilIdle()
 
-        val newFrontCameraValue =
-            settingsViewModel.settingsUiState.value.cameraAppSettings.isFrontCameraFacing
-
-        assertFalse(initialFrontCameraValue)
-        assertTrue(newFrontCameraValue)
+        assertThat(settingsViewModel.settingsUiState.value.cameraAppSettings.cameraLensFacing)
+            .isEqualTo(nextCameraLensFacing)
     }
 
     @Test

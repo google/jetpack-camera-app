@@ -200,7 +200,7 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        onClick = onFlipCamera,
+                        onFlipCameraClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
                             currentCameraSettings.isFrontCameraAvailable

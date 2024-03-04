@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,15 +109,15 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_default_to_front_camera() = runTest {
-        // default to front camera starts false
-        val initialFrontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
-        repository.updateDefaultToFrontCamera()
+        // default to front camera starts as back
+        val initialDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
+        repository.updateDefaultLensFacing(LensFacing.FRONT)
         // default to front camera is now true
-        val frontCameraDefault = repository.getCameraAppSettings().isFrontCameraFacing
+        val newDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
         advanceUntilIdle()
 
-        assertThat(initialFrontCameraDefault).isFalse()
-        assertThat(frontCameraDefault).isTrue()
+        assertThat(initialDefaultLensFacing).isEqualTo(LensFacing.BACK)
+        assertThat(newDefaultLensFacing).isEqualTo(LensFacing.FRONT)
     }
 
     @Test

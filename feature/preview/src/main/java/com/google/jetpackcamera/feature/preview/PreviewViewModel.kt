@@ -140,19 +140,19 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    // sets the camera to a designated direction
-    fun flipCamera() {
+    /** Sets the camera to a designated lens facing */
+    fun setLensFacing(newLensFacing: LensFacing) {
         viewModelScope.launch {
-            // only flip if 2 directions are available
-            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            // TODO(tm): Move constraint checks into CameraUseCase
+            if ((
+                    newLensFacing == LensFacing.BACK &&
+                        previewUiState.value.currentCameraSettings.isBackCameraAvailable
+                    ) ||
+                (
+                    newLensFacing == LensFacing.FRONT &&
+                        previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+                    )
             ) {
-                val newLensFacing =
-                    if (previewUiState.value.currentCameraSettings.isFrontCameraFacing) {
-                        LensFacing.BACK
-                    } else {
-                        LensFacing.FRONT
-                    }
                 // apply to cameraUseCase
                 cameraUseCase.setLensFacing(newLensFacing)
             }

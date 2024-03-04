@@ -44,8 +44,10 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -117,6 +119,8 @@ fun PreviewDisplay(
         }
     )
 
+    val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
+
     surfaceRequest?.let {
         BoxWithConstraints(
             Modifier
@@ -127,7 +131,7 @@ fun PreviewDisplay(
                         onDoubleTap = { offset ->
                             // double tap to flip camera
                             Log.d(TAG, "onDoubleTap $offset")
-                            onFlipCamera()
+                            currentOnFlipCamera()
                         }
                     )
                 },
@@ -195,11 +199,11 @@ fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: Stri
 fun FlipCameraButton(
     modifier: Modifier = Modifier,
     enabledCondition: Boolean,
-    onClick: () -> Unit
+    onFlipCameraClick: () -> Unit
 ) {
     IconButton(
         modifier = modifier.size(40.dp),
-        onClick = onClick,
+        onClick = { onFlipCameraClick() },
         enabled = enabledCondition
     ) {
         Icon(

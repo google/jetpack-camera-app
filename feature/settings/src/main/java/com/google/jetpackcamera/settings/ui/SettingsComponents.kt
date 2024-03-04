@@ -54,6 +54,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
@@ -99,15 +100,17 @@ fun SectionHeader(modifier: Modifier = Modifier, title: String) {
 fun DefaultCameraFacing(
     modifier: Modifier = Modifier,
     cameraAppSettings: CameraAppSettings,
-    onClick: () -> Unit
+    setDefaultLensFacing: (LensFacing) -> Unit
 ) {
     SwitchSettingUI(
         modifier = modifier,
         title = stringResource(id = R.string.default_facing_camera_title),
         description = null,
         leadingIcon = null,
-        onClick = { onClick() },
-        settingValue = cameraAppSettings.isFrontCameraFacing,
+        onSwitchChanged = { on ->
+            setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
+        },
+        settingValue = cameraAppSettings.cameraLensFacing == LensFacing.FRONT,
         enabled = cameraAppSettings.isBackCameraAvailable &&
             cameraAppSettings.isFrontCameraAvailable
     )
@@ -407,7 +410,7 @@ fun SwitchSettingUI(
     title: String,
     description: String?,
     leadingIcon: @Composable (() -> Unit)?,
-    onClick: () -> Unit,
+    onSwitchChanged: (Boolean) -> Unit,
     settingValue: Boolean,
     enabled: Boolean
 ) {
@@ -416,7 +419,7 @@ fun SwitchSettingUI(
             enabled = enabled,
             role = Role.Switch,
             value = settingValue,
-            onValueChange = { _ -> onClick() }
+            onValueChange = { value -> onSwitchChanged(value) }
         ),
         enabled = enabled,
         title = title,
@@ -426,8 +429,8 @@ fun SwitchSettingUI(
             Switch(
                 enabled = enabled,
                 checked = settingValue,
-                onCheckedChange = {
-                    onClick()
+                onCheckedChange = { value ->
+                    onSwitchChanged(value)
                 }
             )
         }
