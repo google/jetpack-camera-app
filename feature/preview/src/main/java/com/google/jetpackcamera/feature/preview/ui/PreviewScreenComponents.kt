@@ -254,7 +254,7 @@ fun CaptureButton(
                     onLongPress = {
                         onLongPress()
                     },
-                    //TODO: @kimblebee - stopVideoRecording is being called every time the capture
+                    // TODO: @kimblebee - stopVideoRecording is being called every time the capture
                     // button is pressed -- regardless of tap or long press
                     onPress = {
                         awaitRelease()
