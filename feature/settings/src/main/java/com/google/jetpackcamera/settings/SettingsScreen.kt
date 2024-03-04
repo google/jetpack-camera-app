@@ -31,7 +31,6 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
-import com.google.jetpackcamera.settings.ui.StabilizationSetting
 
 /**
  * Screen used for the Settings feature.
@@ -79,7 +78,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setCaptureMode = viewModel::setCaptureMode
     )
 
-    //TODO: b/326140212 - stabilization setting not changing active stabilization mode
+    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
    /*
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
