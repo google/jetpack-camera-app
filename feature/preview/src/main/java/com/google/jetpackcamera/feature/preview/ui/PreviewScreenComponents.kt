@@ -69,12 +69,15 @@ private const val TAG = "PreviewScreen"
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *
  * @param toastMessage the specifications for the [Toast].
+ * @param shouldShowToast  shows a visible system toast when true.
  * @param onToastShown called once the Toast has been displayed.
+ *
  */
 @Composable
-fun ShowTestableToast(
+fun TestableToast(
     modifier: Modifier = Modifier,
     toastMessage: ToastMessage,
+    shouldShowToast: Boolean = true,
     onToastShown: () -> Unit
 ) {
     val toastShownStatus = remember { mutableStateOf(false) }
@@ -84,17 +87,17 @@ fun ShowTestableToast(
             .size(20.dp)
             .testTag(toastMessage.testTag)
     ) {
-        // prevents toast from being spammed
-        if (!toastShownStatus.value) {
+        // checking toastShownStatus prevents toast visual from being spammed
+        if (!toastShownStatus.value && shouldShowToast) {
             Toast.makeText(
                 LocalContext.current,
                 stringResource(id = toastMessage.stringResource),
                 toastMessage.toastLength
             )
                 .show()
-            toastShownStatus.value = true
-            onToastShown()
         }
+        toastShownStatus.value = true
+        onToastShown()
     }
     Log.d(TAG, "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}")
 }
