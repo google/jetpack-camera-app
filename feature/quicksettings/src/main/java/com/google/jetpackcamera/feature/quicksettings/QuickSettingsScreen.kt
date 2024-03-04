@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.quicksettings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -81,6 +82,9 @@ fun QuickSettingsScreenOverlay(
         )
 
     if (isOpen) {
+        BackHandler {
+            toggleIsOpen()
+        }
         Column(
             modifier =
             modifier
