@@ -139,7 +139,10 @@ private fun ControlsTop(
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
-            SettingsNavButton(Modifier.padding(12.dp), onNavigateToSettings)
+            SettingsNavButton(
+                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON),
+                onNavigateToSettings
+            )
             if (!isQuickSettingsOpen) {
                 QuickSettingsIndicators(
                     currentFlashMode = currentCameraSettings.flashMode,

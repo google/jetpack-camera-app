@@ -36,10 +36,7 @@ import com.google.jetpackcamera.settings.ui.SettingsPageHeader
  * Screen used for the Settings feature.
  */
 @Composable
-fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToPreview: () -> Unit
-) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigateBack: () -> Unit) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -48,7 +45,7 @@ fun SettingsScreen(
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
-            navBack = onNavigateToPreview
+            navBack = onNavigateBack
         )
         SettingsList(uiState = settingsUiState, viewModel = viewModel)
     }
