@@ -76,7 +76,7 @@ private fun JetpackCameraNavHost(
         }
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
-                onNavigateToPreview = { navController.navigate(PREVIEW_ROUTE) }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
