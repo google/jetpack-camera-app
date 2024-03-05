@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
 import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.camera.viewfinder.surface.TransformationInfo
@@ -45,7 +46,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
-import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
 
 /**
  * A composable viewfinder that adapts CameraX's [Preview.SurfaceProvider] to [Viewfinder]
@@ -138,8 +138,8 @@ fun CameraXViewfinder(
             snapshotFlow { viewfinderArgs }
                 .filterNotNull()
                 .map { args ->
-                    if (args.isSourceHdr
-                        && args.implementationMode == ImplementationMode.PERFORMANCE
+                    if (args.isSourceHdr &&
+                        args.implementationMode == ImplementationMode.PERFORMANCE
                     ) {
                         ActivityInfo.COLOR_MODE_HDR
                     } else {

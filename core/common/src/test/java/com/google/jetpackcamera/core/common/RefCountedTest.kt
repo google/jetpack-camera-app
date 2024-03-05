@@ -29,7 +29,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLog
 
-
 @RunWith(RobolectricTestRunner::class)
 class RefCountedTest {
 
@@ -100,7 +99,7 @@ class RefCountedTest {
     @Test
     fun acquiresWithMatchedRelease_callsOnRelease() = runBlocking {
         val onReleaseCalled = atomic(false)
-        val refCounted = RefCounted<Unit>() {
+        val refCounted = RefCounted<Unit> {
             onReleaseCalled.value = true
         }.also {
             it.initialize(Unit)

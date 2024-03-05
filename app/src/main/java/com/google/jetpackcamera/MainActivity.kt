@@ -123,8 +123,11 @@ class MainActivity : ComponentActivity() {
                                 onPreviewViewModel = { previewViewModel = it },
                                 onRequestWindowColorMode = { colorMode ->
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        Log.d(TAG, "Setting window color mode to:" +
-                                                " ${colorMode.toColorModeString()}")
+                                        Log.d(
+                                            TAG,
+                                            "Setting window color mode to:" +
+                                                " ${colorMode.toColorModeString()}"
+                                        )
                                         window?.colorMode = colorMode
                                     }
                                 }

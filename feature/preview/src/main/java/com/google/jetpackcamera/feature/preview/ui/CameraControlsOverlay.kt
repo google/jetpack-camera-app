@@ -204,8 +204,8 @@ private fun ControlsBottom(
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition =
-                        currentCameraSettings.constraints.isBackCameraAvailable
-                                && currentCameraSettings.constraints.isFrontCameraAvailable
+                        currentCameraSettings.constraints.isBackCameraAvailable &&
+                            currentCameraSettings.constraints.isFrontCameraAvailable
                     )
                 }
             }

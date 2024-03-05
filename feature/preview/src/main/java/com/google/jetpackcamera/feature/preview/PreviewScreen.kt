@@ -62,7 +62,7 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
     onRequestWindowColorMode: (Int) -> Unit = {},
-    viewModel: PreviewViewModel = hiltViewModel(),
+    viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)

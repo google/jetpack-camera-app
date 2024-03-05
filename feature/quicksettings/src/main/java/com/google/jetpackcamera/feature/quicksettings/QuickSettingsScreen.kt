@@ -41,8 +41,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
@@ -229,7 +229,7 @@ fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             currentCameraSettings = CameraAppSettings(),
-            onLensFaceClick = { } ,
+            onLensFaceClick = { },
             onFlashModeClick = { },
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
             setVisibleQuickSetting = { },
@@ -251,7 +251,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 ),
                 dynamicRange = DynamicRange.HLG10
             ),
-            onLensFaceClick = { } ,
+            onLensFaceClick = { },
             onFlashModeClick = { },
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
             setVisibleQuickSetting = { },

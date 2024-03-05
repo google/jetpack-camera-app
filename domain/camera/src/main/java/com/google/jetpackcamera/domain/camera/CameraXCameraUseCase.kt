@@ -26,6 +26,7 @@ import android.view.Display
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
@@ -53,6 +54,10 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -70,11 +75,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -135,7 +135,8 @@ constructor(
                         Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
 
                     put(
-                        selector, CameraAppSettings.Constraints(
+                        selector,
+                        CameraAppSettings.Constraints(
                             isFrontCameraAvailable = isFrontCameraAvailable,
                             isBackCameraAvailable = isBackCameraAvailable,
                             supportedDynamicRanges =
@@ -657,7 +658,7 @@ constructor(
     }
 }
 
-private fun CXDynamicRange.toSupportedAppDynamicRange() : DynamicRange? {
+private fun CXDynamicRange.toSupportedAppDynamicRange(): DynamicRange? {
     return when (this) {
         CXDynamicRange.SDR -> DynamicRange.SDR
         CXDynamicRange.HLG_10_BIT -> DynamicRange.HLG10
@@ -666,7 +667,7 @@ private fun CXDynamicRange.toSupportedAppDynamicRange() : DynamicRange? {
     }
 }
 
-private fun DynamicRange.toCXDynamicRange() : CXDynamicRange {
+private fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
     return when (this) {
         DynamicRange.SDR -> CXDynamicRange.SDR
         DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT

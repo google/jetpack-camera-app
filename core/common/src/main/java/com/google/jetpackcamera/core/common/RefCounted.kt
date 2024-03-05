@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.common
 
 import android.util.Log
@@ -50,7 +49,7 @@ class RefCounted<T : Any>(
             Log.d(
                 TAG,
                 "RefCounted@${"%x".format(hashCode())}<${newValue::class.simpleName}> " +
-                        "initialized: [refCount: 1, value: $newValue]",
+                    "initialized: [refCount: 1, value: $newValue]",
                 Throwable()
             )
         }
@@ -75,7 +74,7 @@ class RefCounted<T : Any>(
                     Log.d(
                         TAG,
                         "RefCounted@${"%x".format(hashCode())}.acquire() failure: " +
-                                "[refCount: 0]",
+                            "[refCount: 0]",
                         Throwable()
                     )
                 }
@@ -89,7 +88,7 @@ class RefCounted<T : Any>(
                     Log.d(
                         TAG,
                         "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
-                                ".acquire() success: [refCount: ${oldCount + 1}, value: $value]",
+                            ".acquire() success: [refCount: ${oldCount + 1}, value: $value]",
                         Throwable()
                     )
                 }
@@ -122,7 +121,7 @@ class RefCounted<T : Any>(
                         Log.d(
                             TAG,
                             "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
-                                    ".release() (last ref): [refCount: 0, value: $value]",
+                                ".release() (last ref): [refCount: 0, value: $value]",
                             Throwable()
                         )
                     }
@@ -132,7 +131,7 @@ class RefCounted<T : Any>(
                         Log.d(
                             TAG,
                             "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
-                                    ".release(): [refCount: ${oldCount - 1}, value: $value]",
+                                ".release(): [refCount: ${oldCount - 1}, value: $value]",
                             Throwable()
                         )
                     }
