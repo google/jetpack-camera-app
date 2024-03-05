@@ -69,6 +69,9 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
 
+    // Compose - Activity
+    implementation(libs.androidx.activity.compose)
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
 
@@ -77,8 +80,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Guava
-    implementation(libs.kotlinx.coroutines.guava)
+    // Futures
+    implementation(libs.futures.ktx)
 
     implementation(project(":data:settings"))
 }

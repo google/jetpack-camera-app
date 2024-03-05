@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@ package com.google.jetpackcamera.feature.preview.ui
 
 const val CAPTURE_BUTTON = "CaptureButton"
 const val SETTINGS_BUTTON = "SettingsButton"
+const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val QUICK_SETTINGS_BUTTON = "QuickSettingDropDown"
+const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSetAspectRatio"
+const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSetAspectRatio1:1"
 const val FIRST_FRAME_TRACE = "FirstFrameTrace"
 const val PREVIEW_TOGGLE_CAPTURE_MODE = "PreviewToggleCaptureMode"
 

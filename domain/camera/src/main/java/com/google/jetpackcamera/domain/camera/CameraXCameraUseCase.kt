@@ -30,20 +30,18 @@ import android.view.Display
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
-import androidx.camera.core.DisplayOrientedMeteringPointFactory
-import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
-import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -51,7 +49,6 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import com.google.jetpackcamera.domain.camera.CameraUseCase.Companion.INVALID_ZOOM_SCALE
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -61,21 +58,27 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.lang.Exception
-import java.lang.RuntimeException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val FIRST_FRAME_TRACE = "First Frame Trace"
@@ -92,10 +95,8 @@ constructor(
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
-    private var camera: Camera? = null
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    // TODO apply flash from settings
     private val imageCaptureUseCase = buildImageCaptureUseCase()
 
     @OptIn(ExperimentalCamera2Interop::class)
@@ -130,30 +131,17 @@ constructor(
     ).build()
     private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
     private var recording: Recording? = null
-
-    private lateinit var previewUseCase: Preview
-    private lateinit var useCaseGroup: UseCaseGroup
-
-    private lateinit var aspectRatio: AspectRatio
     private lateinit var captureMode: CaptureMode
-    private lateinit var stabilizePreviewMode: Stabilization
-    private lateinit var stabilizeVideoMode: Stabilization
-    private lateinit var surfaceProvider: Preview.SurfaceProvider
-    private lateinit var supportedStabilizationModes: List<SupportedStabilizationMode>
-    private var isFrontFacing = true
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
 
-    override suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int> {
-        this.aspectRatio = currentCameraSettings.aspectRatio
-        this.captureMode = currentCameraSettings.captureMode
-        this.stabilizePreviewMode = currentCameraSettings.previewStabilization
-        this.stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
-        this.supportedStabilizationModes = currentCameraSettings.supportedStabilizationModes
-        setFlashMode(currentCameraSettings.flashMode, currentCameraSettings.isFrontCameraFacing)
+    private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+
+    override suspend fun initialize() {
         cameraProvider = ProcessCameraProvider.getInstance(application).await()
 
+        // updates values for available camera lens
         val availableCameraLens =
             listOf(
                 CameraSelector.LENS_FACING_BACK,
@@ -161,35 +149,122 @@ constructor(
             ).filter { lensFacing ->
                 cameraProvider.hasCamera(cameraLensToSelector(lensFacing))
             }
-        // updates values for available camera lens if necessary
-        coroutineScope {
-            settingsRepository.updateAvailableCameraLens(
-                availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
-                availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
-            )
-            settingsRepository.updateVideoStabilizationSupported(isStabilizationSupported())
-        }
-        videoCaptureUseCase = createVideoUseCase()
-        updateUseCaseGroup()
-        return availableCameraLens
+
+        settingsRepository.updateAvailableCameraLens(
+            availableCameraLens.contains(CameraSelector.LENS_FACING_FRONT),
+            availableCameraLens.contains(CameraSelector.LENS_FACING_BACK)
+        )
+
+        currentSettings.value = settingsRepository.cameraAppSettings.first()
     }
 
-    override suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    ) = coroutineScope {
-        Log.d(TAG, "startPreview")
+    /**
+     * Camera settings that persist as long as a camera is running.
+     *
+     * Any change in these settings will require calling [ProcessCameraProvider.runWith] with
+     * updates [CameraSelector] and/or [UseCaseGroup]
+     */
+    private data class PerpetualSessionSettings(
+        val cameraSelector: CameraSelector,
+        val aspectRatio: AspectRatio,
+        val captureMode: CaptureMode,
+        val stabilizePreviewMode: Stabilization,
+        val stabilizeVideoMode: Stabilization
+    )
 
-        val cameraSelector =
-            cameraLensToSelector(getLensFacing(currentCameraSettings.isFrontCameraFacing))
+    /**
+     * Camera settings that can change while the camera is running.
+     *
+     * Any changes in these settings can be applied either directly to use cases via their
+     * setter methods or to [androidx.camera.core.CameraControl].
+     * The use cases typically will not need to be re-bound.
+     */
+    private data class TransientSessionSettings(
+        val flashMode: FlashMode,
+        val zoomScale: Float
+    )
 
-        previewUseCase.setSurfaceProvider(surfaceProvider)
-        this@CameraXCameraUseCase.surfaceProvider = surfaceProvider
+    override suspend fun runCamera() = coroutineScope {
+        Log.d(TAG, "runCamera")
 
-        cameraProvider.runWith(cameraSelector, useCaseGroup) {
-            camera = it
-            awaitCancellation()
-        }
+        val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
+        currentSettings
+            .filterNotNull()
+            .map { currentCameraSettings ->
+                transientSettings.value = TransientSessionSettings(
+                    flashMode = currentCameraSettings.flashMode,
+                    zoomScale = currentCameraSettings.zoomScale
+                )
+
+                val cameraSelector = if (currentCameraSettings.isFrontCameraFacing) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                }
+
+                PerpetualSessionSettings(
+                    cameraSelector = cameraSelector,
+                    aspectRatio = currentCameraSettings.aspectRatio,
+                    captureMode = currentCameraSettings.captureMode,
+                    stabilizePreviewMode = currentCameraSettings.previewStabilization,
+                    stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
+                )
+            }.distinctUntilChanged()
+            .collectLatest { sessionSettings ->
+                Log.d(TAG, "Starting new camera session")
+                val cameraInfo = sessionSettings.cameraSelector.filter(
+                    cameraProvider.availableCameraInfos
+                ).first()
+
+                settingsRepository.updatePreviewStabilizationSupported(
+                    isPreviewStabilizationSupported(cameraInfo)
+                )
+                settingsRepository.updateVideoStabilizationSupported(
+                    isVideoStabilizationSupported(cameraInfo)
+                )
+
+                val supportedStabilizationModes =
+                    settingsRepository.cameraAppSettings.first().supportedStabilizationModes
+
+                val initialTransientSettings = transientSettings
+                    .filterNotNull()
+                    .first()
+
+                val useCaseGroup = createUseCaseGroup(
+                    sessionSettings,
+                    initialTransientSettings,
+                    supportedStabilizationModes
+                )
+
+                var prevTransientSettings = initialTransientSettings
+                cameraProvider.runWith(sessionSettings.cameraSelector, useCaseGroup) { camera ->
+                    Log.d(TAG, "Camera session started")
+                    transientSettings.filterNotNull().collectLatest { newTransientSettings ->
+                        // Apply camera control settings
+                        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
+                            cameraInfo.zoomState.value?.let { zoomState ->
+                                val finalScale =
+                                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
+                                        zoomState.minZoomRatio,
+                                        zoomState.maxZoomRatio
+                                    )
+                                camera.cameraControl.setZoomRatio(finalScale)
+                                _zoomScale.value = finalScale
+                            }
+                        }
+
+                        if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+                            setFlashModeInternal(
+                                flashMode = newTransientSettings.flashMode,
+                                isFrontFacing = sessionSettings.cameraSelector
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
+                            )
+                        }
+
+                        prevTransientSettings = newTransientSettings
+                    }
+                }
+            }
     }
 
     override suspend fun takePicture() {
@@ -312,26 +387,24 @@ constructor(
         recording?.stop()
     }
 
-    override fun setZoomScale(scale: Float): Float {
-        val zoomState = getZoomState() ?: return INVALID_ZOOM_SCALE
-        val finalScale =
-            (zoomState.zoomRatio * scale).coerceIn(
-                zoomState.minZoomRatio,
-                zoomState.maxZoomRatio
-            )
-        camera?.cameraControl?.setZoomRatio(finalScale)
-        return finalScale
+    override fun setZoomScale(scale: Float) {
+        currentSettings.update { old ->
+            old?.copy(zoomScale = scale)
+        }
     }
 
-    private fun getZoomState(): ZoomState? = camera?.cameraInfo?.zoomState?.value
+    // Could be improved by setting initial value only when camera is initialized
+    private val _zoomScale = MutableStateFlow(1f)
+    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
+
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     // flips the camera to the designated lensFacing direction
-    override suspend fun flipCamera(isFrontFacing: Boolean, flashMode: FlashMode) {
-        this.isFrontFacing = isFrontFacing
-        // screen flash needs to be reset during switching camera
-        setFlashMode(flashMode, isFrontFacing)
-        updateUseCaseGroup()
-        rebindUseCases()
+    override suspend fun flipCamera(isFrontFacing: Boolean) {
+        currentSettings.update { old ->
+            old?.copy(isFrontCameraFacing = isFrontFacing)
+        }
     }
 
     override fun tapToFocus(
@@ -341,26 +414,20 @@ constructor(
         x: Float,
         y: Float
     ) {
-        if (camera != null) {
-            val meteringPoint =
-                DisplayOrientedMeteringPointFactory(
-                    display,
-                    camera!!.cameraInfo,
-                    surfaceWidth.toFloat(),
-                    surfaceHeight.toFloat()
-                )
-                    .createPoint(x, y)
-
-            val action = FocusMeteringAction.Builder(meteringPoint).build()
-
-            camera!!.cameraControl.startFocusAndMetering(action)
-            Log.d(TAG, "Tap to focus on: $meteringPoint")
-        }
+        // TODO(tm):Convert API to use SurfaceOrientedMeteringPointFactory and
+        // use a Channel to get result of FocusMeteringAction
     }
 
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
+    override fun getCurrentSettings() = currentSettings.asStateFlow()
 
-    override fun setFlashMode(flashMode: FlashMode, isFrontFacing: Boolean) {
+    override fun setFlashMode(flashMode: FlashMode) {
+        currentSettings.update { old ->
+            old?.copy(flashMode = flashMode)
+        }
+    }
+
+    private fun setFlashModeInternal(flashMode: FlashMode, isFrontFacing: Boolean) {
         val isScreenFlashRequired =
             isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
@@ -413,114 +480,102 @@ constructor(
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
             imageCaptureUseCase.screenFlash != null
 
-    override suspend fun setAspectRatio(aspectRatio: AspectRatio, isFrontFacing: Boolean) {
-        this.aspectRatio = aspectRatio
-        updateUseCaseGroup()
-        rebindUseCases()
+    override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
+        currentSettings.update { old ->
+            old?.copy(aspectRatio = aspectRatio)
+        }
     }
 
-    override suspend fun setCaptureMode(newCaptureMode: CaptureMode) {
-        captureMode = newCaptureMode
-        Log.d(
-            TAG,
-            "Changing CaptureMode: singleStreamCaptureEnabled:" +
-                (captureMode == CaptureMode.SINGLE_STREAM)
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        currentSettings.update { old ->
+            old?.copy(captureMode = captureMode)
+        }
+    }
+
+    private fun createUseCaseGroup(
+        sessionSettings: PerpetualSessionSettings,
+        initialTransientSettings: TransientSessionSettings,
+        supportedStabilizationModes: List<SupportedStabilizationMode>
+    ): UseCaseGroup {
+        val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
+        videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+
+        setFlashModeInternal(
+            flashMode = initialTransientSettings.flashMode,
+            isFrontFacing = sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
         )
-        updateUseCaseGroup()
-        rebindUseCases()
+
+        return UseCaseGroup.Builder().apply {
+            setViewPort(
+                ViewPort.Builder(
+                    sessionSettings.aspectRatio.ratio,
+                    previewUseCase.targetRotation
+                ).build()
+            )
+            addUseCase(previewUseCase)
+            addUseCase(imageCaptureUseCase)
+            addUseCase(videoCaptureUseCase)
+
+            if (sessionSettings.captureMode == CaptureMode.SINGLE_STREAM) {
+                addEffect(SingleSurfaceForcingEffect())
+            }
+            captureMode = sessionSettings.captureMode
+        }.build()
     }
 
-    private fun updateUseCaseGroup() {
-        previewUseCase = createPreviewUseCase()
-        if (this::surfaceProvider.isInitialized) {
-            previewUseCase.setSurfaceProvider(surfaceProvider)
-        }
-
-        val useCaseGroupBuilder =
-            UseCaseGroup.Builder()
-                .setViewPort(
-                    ViewPort.Builder(aspectRatio.ratio, previewUseCase.targetRotation).build()
-                )
-                .addUseCase(previewUseCase)
-                .addUseCase(imageCaptureUseCase)
-                .addUseCase(videoCaptureUseCase)
-
-        if (captureMode == CaptureMode.SINGLE_STREAM) {
-            useCaseGroupBuilder.addEffect(SingleSurfaceForcingEffect())
-        }
-
-        useCaseGroup = useCaseGroupBuilder.build()
-    }
-
-    /**
-     * Checks if video stabilization is supported by the device.
-     *
-     */
-    private fun isStabilizationSupported(): Boolean {
-        val availableCameraInfo = cameraProvider.availableCameraInfos
-        val cameraSelector = if (isFrontFacing) {
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        } else {
-            CameraSelector.DEFAULT_BACK_CAMERA
-        }
-        val isVideoStabilizationSupported =
-            cameraSelector.filter(availableCameraInfo).firstOrNull()?.let {
-                Recorder.getVideoCapabilities(it).isStabilizationSupported
-            } ?: false
-
-        return isVideoStabilizationSupported
-    }
-
-    private fun createVideoUseCase(): VideoCapture<Recorder> {
+    private fun createVideoUseCase(
+        sessionSettings: PerpetualSessionSettings,
+        supportedStabilizationMode: List<SupportedStabilizationMode>
+    ): VideoCapture<Recorder> {
         val videoCaptureBuilder = VideoCapture.Builder(recorder)
 
         // set video stabilization
 
-        if (shouldVideoBeStabilized()) {
-            val isStabilized = when (stabilizeVideoMode) {
-                Stabilization.ON -> true
-                Stabilization.OFF, Stabilization.UNDEFINED -> false
-            }
-            videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
+        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
+        ) {
+            videoCaptureBuilder.setVideoStabilizationEnabled(true)
         }
         return videoCaptureBuilder.build()
     }
 
-    private fun shouldVideoBeStabilized(): Boolean {
+    private fun shouldVideoBeStabilized(
+        sessionSettings: PerpetualSessionSettings,
+        supportedStabilizationModes: List<SupportedStabilizationMode>
+    ): Boolean {
         // video is supported by the device AND
-        // video is on OR preview is on
+        // video is on
         return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            // high quality (video only) selected
             (
-                // high quality (video only) selected
-                (
-                    stabilizeVideoMode == Stabilization.ON &&
-                        stabilizePreviewMode == Stabilization.UNDEFINED
-                    ) ||
-                    // or on is selected
-                    (
-                        stabilizePreviewMode == Stabilization.ON &&
-                            stabilizeVideoMode != Stabilization.OFF
-                        )
+                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
                 )
     }
 
-    private fun createPreviewUseCase(): Preview {
+    private fun createPreviewUseCase(
+        sessionSettings: PerpetualSessionSettings,
+        supportedStabilizationModes: List<SupportedStabilizationMode>
+    ): Preview {
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
-        if (shouldPreviewBeStabilized()) {
-            val isStabilized = when (stabilizePreviewMode) {
-                Stabilization.ON -> true
-                else -> false
-            }
-            previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
+        if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
-        return previewUseCaseBuilder.build()
+
+        return previewUseCaseBuilder.build().apply {
+            setSurfaceProvider { surfaceRequest ->
+                _surfaceRequest.value = surfaceRequest
+            }
+        }
     }
 
-    private fun shouldPreviewBeStabilized(): Boolean {
+    private fun shouldPreviewBeStabilized(
+        sessionSettings: PerpetualSessionSettings,
+        supportedStabilizationModes: List<SupportedStabilizationMode>
+    ): Boolean {
         return (
             supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
-                stabilizePreviewMode == Stabilization.ON
+                sessionSettings.stabilizePreviewMode == Stabilization.ON
             )
     }
 
@@ -530,22 +585,28 @@ constructor(
         false -> CameraSelector.LENS_FACING_BACK
     }
 
-    private suspend fun rebindUseCases() {
-        val cameraSelector =
-            cameraLensToSelector(
-                getLensFacing(isFrontFacing)
-            )
-        cameraProvider.unbindAll()
-        cameraProvider.runWith(cameraSelector, useCaseGroup) {
-            camera = it
-            awaitCancellation()
-        }
-    }
-
     private fun cameraLensToSelector(@LensFacing lensFacing: Int): CameraSelector =
         when (lensFacing) {
             CameraSelector.LENS_FACING_FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
             CameraSelector.LENS_FACING_BACK -> CameraSelector.DEFAULT_BACK_CAMERA
             else -> throw IllegalArgumentException("Invalid lens facing type: $lensFacing")
         }
+
+    companion object {
+        /**
+         * Checks if preview stabilization is supported by the device.
+         *
+         */
+        private fun isPreviewStabilizationSupported(cameraInfo: CameraInfo): Boolean {
+            return Preview.getPreviewCapabilities(cameraInfo).isStabilizationSupported
+        }
+
+        /**
+         * Checks if video stabilization is supported by the device.
+         *
+         */
+        private fun isVideoStabilizationSupported(cameraInfo: CameraInfo): Boolean {
+            return Recorder.getVideoCapabilities(cameraInfo).isStabilizationSupported
+        }
+    }
 }

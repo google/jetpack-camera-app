@@ -13,14 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.jetpackcamera.settings.ui
 
-syntax = "proto3";
-
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-enum VideoStabilization {
-  VIDEO_STABILIZATION_UNDEFINED = 0;
-  VIDEO_STABILIZATION_OFF = 1;
-  VIDEO_STABILIZATION_ON = 2;
-}
+const val BACK_BUTTON = "BackButton"

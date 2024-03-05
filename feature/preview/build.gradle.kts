@@ -61,6 +61,10 @@ android {
             isIncludeAndroidResources = true
         }
     }
+
+    kotlinOptions {
+        freeCompilerArgs += "-Xcontext-receivers"
+    }
 }
 
 dependencies {
@@ -79,6 +83,10 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.hilt.navigation.compose)
 
+    // Compose - Lifecycle utilities
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
     debugImplementation(libs.compose.test.manifest)
@@ -88,20 +96,21 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.truth)
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.test.monitor)
     implementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
-    // Guava
-    implementation(libs.kotlinx.coroutines.guava)
+    // Futures
+    implementation(libs.futures.ktx)
 
     // CameraX
     implementation(libs.camera.core)
-    implementation(libs.camera.view)
+    implementation(libs.camera.viewfinder.compose)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
@@ -113,7 +122,6 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
-    implementation(project(":camera-viewfinder-compose"))
     implementation(project(":feature:quicksettings"))
 }
 

@@ -19,12 +19,13 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Rational
 import android.view.Display
-import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio as SettingsAspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode as SettingsCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode as SettingsFlashMode
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Data layer for camera.
@@ -35,17 +36,17 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(currentCameraSettings: CameraAppSettings): List<Int>
+    suspend fun initialize()
 
     /**
-     * Starts the camera with lensFacing with the provided [Preview.SurfaceProvider].
+     * Starts the camera.
+     *
+     * This will start to configure the camera, but frames won't stream until a [SurfaceRequest]
+     * from [getSurfaceRequest] has been fulfilled.
      *
      * The camera will run until the calling coroutine is cancelled.
      */
-    suspend fun runCamera(
-        surfaceProvider: Preview.SurfaceProvider,
-        currentCameraSettings: CameraAppSettings
-    )
+    suspend fun runCamera()
 
     suspend fun takePicture()
 
@@ -55,17 +56,23 @@ interface CameraUseCase {
 
     fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float): Float
+    fun setZoomScale(scale: Float)
+
+    fun getZoomScale(): StateFlow<Float>
+
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
 
-    fun setFlashMode(flashMode: SettingsFlashMode, isFrontFacing: Boolean)
+    fun getCurrentSettings(): StateFlow<CameraAppSettings?>
+
+    fun setFlashMode(flashMode: SettingsFlashMode)
 
     fun isScreenFlashEnabled(): Boolean
 
-    suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio, isFrontFacing: Boolean)
+    suspend fun setAspectRatio(aspectRatio: SettingsAspectRatio)
 
-    suspend fun flipCamera(isFrontFacing: Boolean, flashMode: SettingsFlashMode)
+    suspend fun flipCamera(isFrontFacing: Boolean)
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 

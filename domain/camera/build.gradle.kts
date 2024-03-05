@@ -54,10 +54,11 @@ android {
 dependencies {
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.truth)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.mockito:mockito-core:5.2.0")
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
     // Futures
     implementation(libs.futures.ktx)
@@ -67,9 +68,6 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
-
-    implementation(libs.camera.view)
-    implementation(libs.camera.extensions)
 
     // Hilt
     implementation(libs.dagger.hilt.android)

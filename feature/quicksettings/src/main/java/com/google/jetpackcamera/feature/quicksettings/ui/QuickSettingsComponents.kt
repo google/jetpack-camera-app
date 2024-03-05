@@ -40,14 +40,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -164,17 +166,35 @@ fun QuickFlipCamera(
     )
 }
 
+@Composable
+fun QuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    setCaptureMode: (CaptureMode) -> Unit,
+    currentCaptureMode: CaptureMode
+) {
+    val enum: CameraCaptureMode =
+        when (currentCaptureMode) {
+            CaptureMode.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (currentCaptureMode) {
+                CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
+                CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
+            }
+        }
+    )
+}
+
 /**
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(
-    modifier: Modifier = Modifier,
-    toggleDropDown: () -> Unit,
-    isOpen: Boolean
-) {
+fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
     Row(
-        modifier = modifier,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -182,9 +202,7 @@ fun ToggleQuickSettingsButton(
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
             contentDescription = stringResource(R.string.quick_settings_dropdown_description),
-            tint = Color.White,
-            modifier =
-            Modifier
+            modifier = Modifier
                 .testTag(TOGGLE_QUICK_SETTINGS)
                 .size(72.dp)
                 .clickable {
@@ -247,7 +265,7 @@ fun QuickSettingUiItem(
                 .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
         )
 
-        Text(text = text, color = tint)
+        Text(text = text, color = tint, textAlign = TextAlign.Center)
     }
 }
 
@@ -330,7 +348,6 @@ fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
     Icon(
         painter = painterResource(enum.getDrawableResId()),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
-        tint = Color.White,
         modifier = Modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
             .clickable { onClick() }
@@ -354,11 +371,11 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
 
 @Composable
 fun QuickSettingsIndicators(
-    currentCameraSettings: CameraAppSettings,
+    currentFlashMode: FlashMode,
     onFlashModeClick: (flashMode: FlashMode) -> Unit
 ) {
     Row {
-        FlashModeIndicator(currentCameraSettings.flashMode, onFlashModeClick)
+        FlashModeIndicator(currentFlashMode, onFlashModeClick)
     }
 }
 

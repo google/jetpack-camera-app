@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
-import androidx.camera.core.Preview
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,10 +30,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakeCameraUseCaseTest {
@@ -43,10 +40,8 @@ class FakeCameraUseCaseTest {
 
     private val cameraUseCase = FakeCameraUseCase(testScope)
 
-    private val surfaceProvider: Preview.SurfaceProvider = Mockito.mock()
-
     @Before
-    fun setup() = runTest(testDispatcher) {
+    fun setup() {
         Dispatchers.setMain(testDispatcher)
     }
 
@@ -57,57 +52,68 @@ class FakeCameraUseCaseTest {
 
     @Test
     fun canInitialize() = runTest(testDispatcher) {
-        cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
+        cameraUseCase.initialize()
     }
 
     @Test
     fun canRunCamera() = runTest(testDispatcher) {
         initAndRunCamera()
+        assertThat(cameraUseCase.isPreviewStarted())
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeOffAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
+        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setFlashMode(flashMode = FlashMode.OFF)
+        advanceUntilIdle()
 
-        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
+        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeOnAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
+        cameraUseCase.flipCamera(isFrontFacing = false)
+        cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
+        advanceUntilIdle()
 
-        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
+        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeAutoAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = false)
+        cameraUseCase.flipCamera(isFrontFacing = false)
+        cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
+        advanceUntilIdle()
 
-        assertEquals(false, cameraUseCase.isScreenFlashEnabled())
+        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashEnabled_whenFlashModeOnAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = true)
+        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
+        advanceUntilIdle()
 
-        assertEquals(true, cameraUseCase.isScreenFlashEnabled())
+        assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
     fun screenFlashEnabled_whenFlashModeAutoAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON, isFrontFacing = true)
+        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
+        advanceUntilIdle()
 
-        assertEquals(true, cameraUseCase.isScreenFlashEnabled())
+        assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
@@ -121,21 +127,24 @@ class FakeCameraUseCaseTest {
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.setFlashMode(FlashMode.ON, true)
+        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setFlashMode(FlashMode.ON)
+        advanceUntilIdle()
         cameraUseCase.takePicture()
 
         advanceUntilIdle()
-        assertEquals(
+        assertThat(events.map { it.type }).containsExactlyElementsIn(
             listOf(
                 CameraUseCase.ScreenFlashEvent.Type.APPLY_UI,
                 CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI
-            ),
-            events.map { it.type }
-        )
+            )
+        ).inOrder()
     }
 
-    private suspend fun initAndRunCamera() {
-        cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS)
-        cameraUseCase.runCamera(surfaceProvider, DEFAULT_CAMERA_APP_SETTINGS)
+    private fun TestScope.initAndRunCamera() {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            cameraUseCase.initialize()
+            cameraUseCase.runCamera()
+        }
     }
 }

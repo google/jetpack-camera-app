@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.google.jetpackcamera.benchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -75,6 +76,7 @@ class ImageCaptureLatencyBenchmark {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
+                StartupTimingMetric(),
                 TraceSectionMetric(sectionName = IMAGE_CAPTURE_TRACE, targetPackageOnly = false)
             ),
             iterations = DEFAULT_TEST_ITERATIONS,
