@@ -28,6 +28,7 @@ import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -143,8 +144,8 @@ class PreviewViewModel @Inject constructor(
     fun flipCamera() {
         viewModelScope.launch {
             // only flip if 2 directions are available
-            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            if (previewUiState.value.currentCameraSettings.constraints.isBackCameraAvailable &&
+                previewUiState.value.currentCameraSettings.constraints.isFrontCameraAvailable
             ) {
                 // apply to cameraUseCase
                 cameraUseCase.flipCamera(
@@ -259,6 +260,12 @@ class PreviewViewModel @Inject constructor(
 
     fun setZoomScale(scale: Float) {
         cameraUseCase.setZoomScale(scale = scale)
+    }
+
+    fun setDynamicRange(dynamicRange: DynamicRange) {
+        viewModelScope.launch {
+            cameraUseCase.setDynamicRange(dynamicRange)
+        }
     }
 
     // modify ui values

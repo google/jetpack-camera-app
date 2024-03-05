@@ -76,6 +76,9 @@ dependencies {
     // Tracing
     implementation("androidx.tracing:tracing-ktx:1.2.0")
 
+    // Graphics libraries
+    implementation("androidx.graphics:graphics-core:1.0.0-beta01")
+
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":core:common"))

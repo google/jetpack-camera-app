@@ -160,7 +160,8 @@ private fun ControlsTop(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StabilizationIcon(
-                supportedStabilizationMode = currentCameraSettings.supportedStabilizationModes,
+                supportedStabilizationMode =
+                currentCameraSettings.constraints.supportedStabilizationModes,
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
                 previewStabilization = currentCameraSettings.previewStabilization
             )
@@ -202,8 +203,9 @@ private fun ControlsBottom(
                     FlipCameraButton(
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
-                        enabledCondition = currentCameraSettings.isBackCameraAvailable &&
-                            currentCameraSettings.isFrontCameraAvailable
+                        enabledCondition =
+                        currentCameraSettings.constraints.isBackCameraAvailable &&
+                            currentCameraSettings.constraints.isFrontCameraAvailable
                     )
                 }
             }
@@ -326,7 +328,9 @@ private fun Preview_ControlsTop_WithStabilization() {
         ControlsTop(
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(
-                supportedStabilizationModes = listOf(SupportedStabilizationMode.HIGH_QUALITY),
+                constraints = CameraAppSettings.Constraints(
+                    supportedStabilizationModes = listOf(SupportedStabilizationMode.HIGH_QUALITY)
+                ),
                 videoCaptureStabilization = Stabilization.ON,
                 previewStabilization = Stabilization.ON
             )
@@ -387,7 +391,9 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(isBackCameraAvailable = false),
+            currentCameraSettings = CameraAppSettings(
+                constraints = CameraAppSettings.Constraints(isBackCameraAvailable = false)
+            ),
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode
         )

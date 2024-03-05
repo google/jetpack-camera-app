@@ -24,6 +24,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,5 +187,9 @@ class FakeCameraUseCase(
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
         }
+    }
+
+    override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
+        TODO("Not yet implemented")
     }
 }

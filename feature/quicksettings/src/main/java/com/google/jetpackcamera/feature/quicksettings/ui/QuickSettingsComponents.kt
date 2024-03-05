@@ -44,12 +44,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlin.math.min
 
@@ -86,6 +88,33 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
             }
         )
     ExpandedQuickSetting(quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetHdr(
+    modifier: Modifier = Modifier,
+    onClick: (dynamicRange: DynamicRange) -> Unit,
+    selectedDynamicRange: DynamicRange,
+    hdrDynamicRange: DynamicRange
+) {
+    val enum =
+        when (selectedDynamicRange) {
+            DynamicRange.SDR -> CameraDynamicRange.SDR
+            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
+                hdrDynamicRange
+            } else {
+                DynamicRange.SDR
+            }
+            onClick(newDynamicRange)
+        },
+        isHighLighted = (selectedDynamicRange != DynamicRange.SDR)
+    )
 }
 
 @Composable
@@ -310,7 +339,7 @@ fun ExpandedQuickSetting(
 @Composable
 fun QuickSettingsGrid(
     modifier: Modifier = Modifier,
-    vararg quickSettingsButtons: @Composable () -> Unit
+    quickSettingsButtons: List<@Composable () -> Unit>
 ) {
     val initialNumOfColumns =
         min(

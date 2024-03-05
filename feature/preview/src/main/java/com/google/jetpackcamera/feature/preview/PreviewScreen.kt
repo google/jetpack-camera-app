@@ -48,6 +48,7 @@ import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 
 private const val TAG = "PreviewScreen"
@@ -59,8 +60,9 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel(),
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)
@@ -95,12 +97,14 @@ fun PreviewScreen(
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
+            onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown
+            onToastShown = viewModel::onToastShown,
+            onRequestWindowColorMode = onRequestWindowColorMode
         )
     }
 }
@@ -119,6 +123,7 @@ private fun ContentScreen(
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
+    onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -128,13 +133,15 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToastShown: () -> Unit = {}
+    onToastShown: () -> Unit = {},
+    onRequestWindowColorMode: (Int) -> Unit = {}
 ) {
     // display camera feed. this stays behind everything else
     PreviewDisplay(
         onFlipCamera = onFlipCamera,
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
+        onRequestWindowColorMode = onRequestWindowColorMode,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
         surfaceRequest = surfaceRequest
     )
@@ -147,7 +154,8 @@ private fun ContentScreen(
         onLensFaceClick = { onFlipCamera() },
         onFlashModeClick = onChangeFlash,
         onAspectRatioClick = onChangeAspectRatio,
-        onCaptureModeClick = onChangeCaptureMode
+        onCaptureModeClick = onChangeCaptureMode,
+        onDynamicRangeClick = onChangeDynamicRange
         // onTimerClick = {}/*TODO*/
     )
     // relative-grid style overlay on top of preview display
