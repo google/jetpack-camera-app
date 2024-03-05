@@ -240,7 +240,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -461,7 +461,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase.screenFlash != null
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -521,8 +521,9 @@ constructor(
             videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
         }
         // set target fps
-        if (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_NONE)
+        if (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_NONE) {
             videoCaptureBuilder.setTargetFrameRate(sessionSettings.targetFrameRate.range)
+        }
         return videoCaptureBuilder.build()
     }
 
@@ -533,18 +534,18 @@ constructor(
         // video is supported by the device AND
         // video is on OR preview is on
         return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            (
+                // high quality (video only) selected
                 (
-                        // high quality (video only) selected
-                        (
-                                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                                        sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                                ) ||
-                                // or on is selected
-                                (
-                                        sessionSettings.stabilizePreviewMode == Stabilization.ON &&
-                                                sessionSettings.stabilizeVideoMode != Stabilization.OFF
-                                        )
+                    sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                        sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
+                    ) ||
+                    // or on is selected
+                    (
+                        sessionSettings.stabilizePreviewMode == Stabilization.ON &&
+                            sessionSettings.stabilizeVideoMode != Stabilization.OFF
                         )
+                )
     }
 
     private fun createPreviewUseCase(
@@ -573,9 +574,9 @@ constructor(
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
         return (
-                supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
-                        sessionSettings.stabilizePreviewMode == Stabilization.ON
-                )
+            supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
+                sessionSettings.stabilizePreviewMode == Stabilization.ON
+            )
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
