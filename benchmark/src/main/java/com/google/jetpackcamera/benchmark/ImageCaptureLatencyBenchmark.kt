@@ -76,7 +76,6 @@ class ImageCaptureLatencyBenchmark {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
-                StartupTimingMetric(),
                 TraceSectionMetric(sectionName = IMAGE_CAPTURE_TRACE, targetPackageOnly = false)
             ),
             iterations = DEFAULT_TEST_ITERATIONS,
