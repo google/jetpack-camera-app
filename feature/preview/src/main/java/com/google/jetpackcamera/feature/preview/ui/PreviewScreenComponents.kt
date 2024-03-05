@@ -44,8 +44,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -78,26 +77,29 @@ fun TestableToast(
     toastMessage: ToastMessage,
     onToastShown: () -> Unit
 ) {
-    val toastShownStatus = remember { mutableStateOf(false) }
     Box(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
             .testTag(toastMessage.testTag)
     ) {
-        // checking toastShownStatus prevents toast visual from being spammed
-        if (!toastShownStatus.value && toastMessage.shouldShowToast) {
-            Toast.makeText(
-                LocalContext.current,
-                stringResource(id = toastMessage.stringResource),
-                toastMessage.toastLength
-            )
-                .show()
+        val context = LocalContext.current
+        LaunchedEffect(toastMessage) {
+            if (toastMessage.shouldShowToast) {
+                Toast.makeText(
+                    context,
+                    context.getText(toastMessage.stringResource),
+                    toastMessage.toastLength
+                ).show()
+            }
+
+            onToastShown()
         }
-        toastShownStatus.value = true
-        onToastShown()
+        Log.d(
+            TAG,
+            "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}"
+        )
     }
-    Log.d(TAG, "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}")
 }
 
 /**
