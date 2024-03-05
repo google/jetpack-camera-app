@@ -496,12 +496,9 @@ constructor(
 
         // set video stabilization
 
-        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)) {
-            val isStabilized = when (sessionSettings.stabilizeVideoMode) {
-                Stabilization.ON -> true
-                Stabilization.OFF, Stabilization.UNDEFINED -> false
-            }
-            videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
+        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
+        ) {
+            videoCaptureBuilder.setVideoStabilizationEnabled(true)
         }
         return videoCaptureBuilder.build()
     }
@@ -511,20 +508,14 @@ constructor(
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
         // video is supported by the device AND
-        // video is on OR preview is on
+        // video is on
         return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
-            (
                 // high quality (video only) selected
                 (
-                    sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                        sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                    ) ||
-                    // or on is selected
-                    (
-                        sessionSettings.stabilizePreviewMode == Stabilization.ON &&
-                            sessionSettings.stabilizeVideoMode != Stabilization.OFF
+                        sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                                sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
                         )
-                )
+
     }
 
     private fun createPreviewUseCase(
