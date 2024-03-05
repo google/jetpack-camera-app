@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
-import androidx.camera.core.Preview
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -110,51 +109,48 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    onSurfaceProviderCreated: (SurfaceProvider) -> Unit
+    surfaceRequest: SurfaceRequest?
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
         }
     )
-    val onSurfaceProviderReady: (Preview.SurfaceProvider) -> Unit = {
-        Log.d(TAG, "onSurfaceProviderReady")
-        onSurfaceProviderCreated(it)
-    }
 
-    BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = { offset ->
-                        // double tap to flip camera
-                        Log.d(TAG, "onDoubleTap $offset")
-                        onFlipCamera()
-                    }
-                )
-            },
+    surfaceRequest?.let {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = { offset ->
+                            // double tap to flip camera
+                            Log.d(TAG, "onDoubleTap $offset")
+                            onFlipCamera()
+                        }
+                    )
+                },
 
-        contentAlignment = Alignment.Center
-    ) {
-        val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
-        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-        Box(
-            modifier = Modifier
-                .width(width)
-                .height(height)
-                .transformable(state = transformableState)
-
+            contentAlignment = Alignment.Center
         ) {
-            CameraXViewfinder(
+            val maxAspectRatio: Float = maxWidth / maxHeight
+            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-                onSurfaceProviderReady = onSurfaceProviderReady
-            )
+                    .width(width)
+                    .height(height)
+                    .transformable(state = transformableState)
+
+            ) {
+                CameraXViewfinder(
+                    modifier = Modifier.fillMaxSize(),
+                    surfaceRequest = it
+                )
+            }
         }
     }
 }

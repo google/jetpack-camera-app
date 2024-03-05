@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -32,17 +31,13 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
-import com.google.jetpackcamera.settings.ui.StabilizationSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 /**
  * Screen used for the Settings feature.
  */
 @Composable
-fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToPreview: () -> Unit
-) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigateBack: () -> Unit) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -51,7 +46,7 @@ fun SettingsScreen(
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
-            navBack = onNavigateToPreview
+            navBack = onNavigateBack
         )
         SettingsList(uiState = settingsUiState, viewModel = viewModel)
     }
@@ -87,6 +82,8 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setCaptureMode = viewModel::setCaptureMode
     )
 
+    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
+   /*
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
@@ -96,6 +93,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization
     )
+    */
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 

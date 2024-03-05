@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ data class CameraAppSettings(
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
     val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
+    val dynamicRange: DynamicRange = DynamicRange.SDR,
+    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
+    val zoomScale: Float = 1f,
     val targetFrameRate: TargetFrameRate = TargetFrameRate.TARGET_FPS_NONE,
     val supportedFixedFrameRates: List<Int> = emptyList()
 )

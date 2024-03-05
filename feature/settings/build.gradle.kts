@@ -85,8 +85,8 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
 
-    // Guava
-    implementation(libs.kotlinx.coroutines.guava)
+    // Futures
+    implementation(libs.futures.ktx)
 
     // Hilt
     implementation(libs.dagger.hilt.android)

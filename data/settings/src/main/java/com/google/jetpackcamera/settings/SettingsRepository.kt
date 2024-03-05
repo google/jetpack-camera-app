@@ -19,6 +19,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.TargetFrameRate
@@ -51,6 +52,9 @@ interface SettingsRepository {
     suspend fun updateVideoStabilizationSupported(isSupported: Boolean)
 
     suspend fun updatePreviewStabilizationSupported(isSupported: Boolean)
+    suspend fun updateDynamicRange(dynamicRange: DynamicRange)
+
+    suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>)
 
     suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate)
 

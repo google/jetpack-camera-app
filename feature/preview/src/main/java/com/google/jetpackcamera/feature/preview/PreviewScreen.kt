@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import android.view.Display
-import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,17 +30,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,15 +47,14 @@ import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import kotlinx.coroutines.CompletableDeferred
 
 private const val TAG = "PreviewScreen"
 
 /**
  * Screen used for the Preview feature.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
@@ -77,15 +70,11 @@ fun PreviewScreen(
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
-    val deferredSurfaceProvider = remember { CompletableDeferred<SurfaceProvider>() }
-    var surfaceProvider by remember { mutableStateOf<SurfaceProvider?>(null) }
+    val surfaceRequest: SurfaceRequest?
+        by viewModel.surfaceRequest.collectAsState()
 
-    LaunchedEffect(LocalLifecycleOwner.current) {
-        surfaceProvider = deferredSurfaceProvider.await()
-    }
-
-    LifecycleStartEffect(surfaceProvider) {
-        surfaceProvider?.let { viewModel.runCamera(it) }
+    LifecycleStartEffect(Unit) {
+        viewModel.startCamera()
         onStopOrDispose {
             viewModel.stopCamera()
         }
@@ -97,6 +86,7 @@ fun PreviewScreen(
             previewUiState = previewUiState,
             previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
+            surfaceRequest = surfaceRequest,
             onNavigateToSettings = onNavigateToSettings,
             onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
             onFlipCamera = viewModel::flipCamera,
@@ -104,14 +94,13 @@ fun PreviewScreen(
             onChangeZoomScale = viewModel::setZoomScale,
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
+            onChangeCaptureMode = viewModel::setCaptureMode,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
-            onToggleCaptureMode = viewModel::toggleCaptureMode,
-            onToastShown = viewModel::onToastShown,
-            onSurfaceProviderCreated = { deferredSurfaceProvider.complete(it) }
+            onToastShown = viewModel::onToastShown
         )
     }
 }
@@ -121,14 +110,15 @@ private fun ContentScreen(
     previewUiState: PreviewUiState,
     previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    surfaceRequest: SurfaceRequest?,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
-    onSurfaceProviderCreated: (SurfaceProvider) -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
+    onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -138,7 +128,6 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToggleCaptureMode: () -> Unit = {},
     onToastShown: () -> Unit = {}
 ) {
     // display camera feed. this stays behind everything else
@@ -147,7 +136,7 @@ private fun ContentScreen(
         onTapToFocus = onTapToFocus,
         onZoomChange = onChangeZoomScale,
         aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-        onSurfaceProviderCreated = onSurfaceProviderCreated
+        surfaceRequest = surfaceRequest
     )
 
     QuickSettingsScreenOverlay(
@@ -157,7 +146,8 @@ private fun ContentScreen(
         currentCameraSettings = previewUiState.currentCameraSettings,
         onLensFaceClick = { onFlipCamera() },
         onFlashModeClick = onChangeFlash,
-        onAspectRatioClick = onChangeAspectRatio
+        onAspectRatioClick = onChangeAspectRatio,
+        onCaptureModeClick = onChangeCaptureMode
         // onTimerClick = {}/*TODO*/
     )
     // relative-grid style overlay on top of preview display
@@ -171,8 +161,7 @@ private fun ContentScreen(
         onCaptureImage = onCaptureImage,
         onCaptureImageWithUri = onCaptureImageWithUri,
         onStartVideoRecording = onStartVideoRecording,
-        onStopVideoRecording = onStopVideoRecording,
-        onToggleCaptureMode = onToggleCaptureMode
+        onStopVideoRecording = onStopVideoRecording
     )
 
     // displays toast when there is a message to show
@@ -216,7 +205,8 @@ private fun ContentScreenPreview() {
         ContentScreen(
             previewUiState = PreviewUiState(),
             previewMode = PreviewMode.StandardMode,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState()
+            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            surfaceRequest = null
         )
     }
 }
@@ -230,7 +220,8 @@ private fun ContentScreen_WhileRecording() {
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
             previewMode = PreviewMode.StandardMode,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState()
+            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            surfaceRequest = null
         )
     }
 }

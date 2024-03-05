@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
@@ -72,7 +73,10 @@ fun SettingsPageHeader(modifier: Modifier = Modifier, title: String, navBack: ()
             Text(title)
         },
         navigationIcon = {
-            IconButton(onClick = { navBack() }) {
+            IconButton(
+                modifier = Modifier.testTag(BACK_BUTTON),
+                onClick = { navBack() }
+            ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     stringResource(id = R.string.nav_back_accessibility)
