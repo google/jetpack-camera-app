@@ -58,6 +58,10 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -75,10 +79,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 private const val FIRST_FRAME_TRACE = "First Frame Trace"
