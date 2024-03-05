@@ -524,11 +524,7 @@ constructor(
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
-            val isStabilized = when (sessionSettings.stabilizePreviewMode) {
-                Stabilization.ON -> true
-                else -> false
-            }
-            previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
         return previewUseCaseBuilder.build().apply {
