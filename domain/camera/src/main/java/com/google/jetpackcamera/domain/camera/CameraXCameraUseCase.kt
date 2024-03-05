@@ -508,7 +508,7 @@ constructor(
         }
     }
 
-    private fun createUseCaseGroup(
+    private suspend fun createUseCaseGroup(
         sessionSettings: PerpetualSessionSettings,
         initialTransientSettings: TransientSessionSettings,
         supportedStabilizationModes: List<SupportedStabilizationMode>
@@ -535,7 +535,7 @@ constructor(
             addUseCase(videoCaptureUseCase)
 
             if (sessionSettings.captureMode == CaptureMode.SINGLE_STREAM) {
-                addEffect(SingleSurfaceForcingEffect())
+                addEffect(SingleSurfaceForcingEffect(coroutineScope))
             }
             captureMode = sessionSettings.captureMode
         }.build()
