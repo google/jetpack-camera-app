@@ -271,7 +271,6 @@ class PreviewViewModel @Inject constructor(
             _previewUiState.emit(
                 previewUiState.value.copy(
                     quickSettingsIsOpen = isOpen
-
                 )
             )
         }
