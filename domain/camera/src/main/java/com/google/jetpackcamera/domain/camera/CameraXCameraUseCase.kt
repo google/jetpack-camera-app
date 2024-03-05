@@ -510,12 +510,11 @@ constructor(
         // video is supported by the device AND
         // video is on
         return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
-                // high quality (video only) selected
-                (
-                        sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                                sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                        )
-
+            // high quality (video only) selected
+            (
+                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
+                )
     }
 
     private fun createPreviewUseCase(

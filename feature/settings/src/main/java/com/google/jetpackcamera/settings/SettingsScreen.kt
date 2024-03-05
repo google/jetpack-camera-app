@@ -86,7 +86,6 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setPreviewStabilization = viewModel::setPreviewStabilization
     )
 
-
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
