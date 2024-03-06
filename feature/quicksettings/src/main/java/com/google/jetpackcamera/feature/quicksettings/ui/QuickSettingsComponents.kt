@@ -154,14 +154,7 @@ fun QuickFlipCamera(
             LensFacing.BACK -> CameraLensFace.BACK
         }
     QuickSettingUiItem(
-        modifier = modifier
-            .semantics {
-                contentDescription =
-                    when (enum) {
-                        CameraLensFace.FRONT -> "QUICK SETTINGS LENS FACING FRONT"
-                        CameraLensFace.BACK -> "QUICK SETTINGS LENS FACING BACK"
-                    }
-            },
+        modifier = modifier,
         enum = enum,
         onClick = { setLensFacing(currentLensFacing.flip()) }
     )
@@ -202,7 +195,11 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
         // dropdown icon
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
-            contentDescription = stringResource(R.string.quick_settings_dropdown_description),
+            contentDescription = if (isOpen) {
+                stringResource(R.string.quick_settings_dropdown_open_description)
+            } else {
+                stringResource(R.string.quick_settings_dropdown_closed_description)
+            },
             modifier = Modifier
                 .testTag("QuickSettingDropDown")
                 .size(72.dp)

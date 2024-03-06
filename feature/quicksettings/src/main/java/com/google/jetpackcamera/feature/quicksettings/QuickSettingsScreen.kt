@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -165,7 +166,7 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickFlipCamera(
-                                modifier = Modifier.testTag("QuickSetFlipCamera"),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
                                 setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
                                 currentLensFacing = currentCameraSettings.cameraLensFacing
                             )

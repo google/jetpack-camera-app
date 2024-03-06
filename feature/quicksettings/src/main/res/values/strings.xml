@@ -39,5 +39,6 @@
     <string name="quick_settings_capture_mode_single_description">Single-stream capture mode on</string>
     <string name="quick_settings_capture_mode_multi_description">Multi-stream capture mode on</string>
 
-    <string name="quick_settings_dropdown_description">Quick settings drop down</string>
+    <string name="quick_settings_dropdown_open_description">Quick settings open</string>
+    <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
 </resources>

@@ -124,6 +124,7 @@ fun PreviewDisplay(
     surfaceRequest?.let {
         BoxWithConstraints(
             Modifier
+                .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black)
                 .pointerInput(Unit) {

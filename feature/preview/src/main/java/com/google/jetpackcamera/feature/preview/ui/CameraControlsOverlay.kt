@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
@@ -200,6 +201,7 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
+                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onFlipCameraClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
