@@ -21,6 +21,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ class ScreenFlashTest {
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.setLensFacing(lensFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(FlashMode.ON)
         val contentResolver: ContentResolver = Mockito.mock()
         cameraUseCase.takePicture(contentResolver, null)

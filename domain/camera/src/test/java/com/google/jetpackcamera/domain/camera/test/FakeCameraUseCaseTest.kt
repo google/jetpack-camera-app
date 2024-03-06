@@ -17,8 +17,8 @@ package com.google.jetpackcamera.domain.camera.test
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.domain.camera.CameraUseCase.LensFacing
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
