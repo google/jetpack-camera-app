@@ -127,10 +127,6 @@ class NavigationTest {
         // Press the device's back button
         uiDevice.pressBack()
 
-        composeTestRule.waitUntil(5000) {
-            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).isDisplayed()
-        }
-
         // Assert we're on PreviewScreen by finding the capture button and not the ratio button
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
     }
