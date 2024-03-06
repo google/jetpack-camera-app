@@ -203,11 +203,11 @@ fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: Stri
 fun FlipCameraButton(
     modifier: Modifier = Modifier,
     enabledCondition: Boolean,
-    onFlipCameraClick: () -> Unit
+    onClick: () -> Unit
 ) {
     IconButton(
         modifier = modifier.size(40.dp),
-        onClick = { onFlipCameraClick() },
+        onClick = onClick,
         enabled = enabledCondition
     ) {
         Icon(
