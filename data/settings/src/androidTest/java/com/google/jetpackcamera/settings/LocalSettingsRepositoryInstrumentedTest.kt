@@ -109,10 +109,10 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_default_to_front_camera() = runTest {
-        // default to front camera starts as back
+        // default lens facing starts as BACK
         val initialDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
         repository.updateDefaultLensFacing(LensFacing.FRONT)
-        // default to front camera is now true
+        // default lens facing is now FRONT
         val newDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
         advanceUntilIdle()
 
@@ -122,10 +122,10 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_flash_mode() = runTest {
-        // default to front camera starts false
+        // default flash mode starts as OFF
         val initialFlashModeStatus = repository.getCameraAppSettings().flashMode
         repository.updateFlashModeStatus(FlashMode.ON)
-        // default to front camera is now true
+        // default flash mode is now ON
         val newFlashModeStatus = repository.getCameraAppSettings().flashMode
         advanceUntilIdle()
 
