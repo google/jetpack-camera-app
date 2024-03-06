@@ -189,7 +189,7 @@ private fun ControlsBottom(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
-    Column(modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
             ZoomScaleText(zoomLevel)
         }

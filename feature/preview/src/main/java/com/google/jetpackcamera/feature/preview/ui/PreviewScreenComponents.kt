@@ -44,9 +44,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,33 +71,37 @@ private const val TAG = "PreviewScreen"
  *
  * @param toastMessage the specifications for the [Toast].
  * @param onToastShown called once the Toast has been displayed.
+ *
  */
 @Composable
-fun ShowTestableToast(
+fun TestableToast(
     modifier: Modifier = Modifier,
     toastMessage: ToastMessage,
     onToastShown: () -> Unit
 ) {
-    val toastShownStatus = remember { mutableStateOf(false) }
     Box(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
             .testTag(toastMessage.testTag)
     ) {
-        // prevents toast from being spammed
-        if (!toastShownStatus.value) {
-            Toast.makeText(
-                LocalContext.current,
-                stringResource(id = toastMessage.stringResource),
-                toastMessage.toastLength
-            )
-                .show()
-            toastShownStatus.value = true
+        val context = LocalContext.current
+        LaunchedEffect(toastMessage) {
+            if (toastMessage.shouldShowToast) {
+                Toast.makeText(
+                    context,
+                    context.getText(toastMessage.stringResource),
+                    toastMessage.toastLength
+                ).show()
+            }
+
             onToastShown()
         }
+        Log.d(
+            TAG,
+            "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}"
+        )
     }
-    Log.d(TAG, "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}")
 }
 
 /**
@@ -258,6 +261,8 @@ fun CaptureButton(
                     onLongPress = {
                         onLongPress()
                     },
+                    // TODO: @kimblebee - stopVideoRecording is being called every time the capture
+                    // button is pressed -- regardless of tap or long press
                     onPress = {
                         awaitRelease()
                         onRelease()

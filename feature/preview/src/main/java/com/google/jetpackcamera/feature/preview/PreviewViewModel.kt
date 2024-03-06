@@ -291,6 +291,9 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Sets current value of [PreviewUiState.toastMessageToShow] to null.
+     */
     fun onToastShown() {
         viewModelScope.launch {
             // keeps the composable up on screen longer to be detected by UiAutomator
