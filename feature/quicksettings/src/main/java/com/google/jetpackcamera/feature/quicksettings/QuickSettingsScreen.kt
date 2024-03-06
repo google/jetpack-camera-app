@@ -31,13 +31,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -48,18 +48,18 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 
 /**
  * The UI component for quick settings.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
     currentCameraSettings: CameraAppSettings,
     isOpen: Boolean = false,
     toggleIsOpen: () -> Unit,
-    onLensFaceClick: (lensFace: Boolean) -> Unit,
+    onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit
@@ -135,7 +135,7 @@ private enum class IsExpandedQuickSetting {
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
-    onLensFaceClick: (lensFacingFront: Boolean) -> Unit,
+    onLensFaceClick: (newLensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
@@ -166,9 +166,9 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickFlipCamera(
-                                modifier = Modifier.testTag("QuickSetFlipCamera"),
-                                flipCamera = { b: Boolean -> onLensFaceClick(b) },
-                                currentFacingFront = currentCameraSettings.isFrontCameraFacing
+                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                                setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
+                                currentLensFacing = currentCameraSettings.cameraLensFacing
                             )
                         },
                         {
