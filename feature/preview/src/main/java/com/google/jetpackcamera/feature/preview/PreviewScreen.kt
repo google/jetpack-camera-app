@@ -44,7 +44,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.ShowTestableToast
+import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -166,7 +166,7 @@ private fun ContentScreen(
 
     // displays toast when there is a message to show
     if (previewUiState.toastMessageToShow != null) {
-        ShowTestableToast(
+        TestableToast(
             modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
             toastMessage = previewUiState.toastMessageToShow,
             onToastShown = onToastShown
