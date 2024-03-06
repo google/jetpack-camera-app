@@ -20,6 +20,8 @@
     <string name="flip_camera_content_description">Flip Camera</string>
 
     <string name="toast_image_capture_success">Image Capture Success</string>
+    <string name="toast_video_capture_success">Video Capture Success</string>
+
     <string name="toast_capture_failure">Image Capture Failure</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>

@@ -52,10 +52,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -73,6 +69,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -513,12 +513,10 @@ constructor(
         val videoCaptureBuilder = VideoCapture.Builder(recorder)
 
         // set video stabilization
-        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)) {
-            val isStabilized = when (sessionSettings.stabilizeVideoMode) {
-                Stabilization.ON -> true
-                Stabilization.OFF, Stabilization.UNDEFINED -> false
-            }
-            videoCaptureBuilder.setVideoStabilizationEnabled(isStabilized)
+
+        if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
+        ) {
+            videoCaptureBuilder.setVideoStabilizationEnabled(true)
         }
         // set target fps
         if (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_NONE) {
@@ -532,19 +530,12 @@ constructor(
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
         // video is supported by the device AND
-        // video is on OR preview is on
+        // video is on
         return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            // high quality (video only) selected
             (
-                // high quality (video only) selected
-                (
-                    sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                        sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                    ) ||
-                    // or on is selected
-                    (
-                        sessionSettings.stabilizePreviewMode == Stabilization.ON &&
-                            sessionSettings.stabilizeVideoMode != Stabilization.OFF
-                        )
+                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
                 )
     }
 
@@ -555,11 +546,7 @@ constructor(
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
-            val isStabilized = when (sessionSettings.stabilizePreviewMode) {
-                Stabilization.ON -> true
-                else -> false
-            }
-            previewUseCaseBuilder.setPreviewStabilizationEnabled(isStabilized)
+            previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
         return previewUseCaseBuilder.build().apply {
