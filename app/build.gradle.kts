@@ -73,7 +73,6 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(project(":feature:quicksettings"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
