@@ -45,6 +45,8 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -120,9 +122,12 @@ fun PreviewDisplay(
         }
     )
 
+    val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
+
     surfaceRequest?.let {
         BoxWithConstraints(
             Modifier
+                .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black)
                 .pointerInput(Unit) {
@@ -130,7 +135,7 @@ fun PreviewDisplay(
                         onDoubleTap = { offset ->
                             // double tap to flip camera
                             Log.d(TAG, "onDoubleTap $offset")
-                            onFlipCamera()
+                            currentOnFlipCamera()
                         }
                     )
                 },

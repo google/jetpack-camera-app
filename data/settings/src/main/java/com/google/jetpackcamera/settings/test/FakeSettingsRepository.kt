@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
@@ -30,15 +31,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object FakeSettingsRepository : SettingsRepository {
-    var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+    private var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     private var isPreviewStabilizationSupported: Boolean = false
     private var isVideoStabilizationSupported: Boolean = false
 
     override val cameraAppSettings: Flow<CameraAppSettings> = flow { emit(currentCameraSettings) }
 
-    override suspend fun updateDefaultToFrontCamera() {
-        val newLensFacing = !currentCameraSettings.isFrontCameraFacing
-        currentCameraSettings = currentCameraSettings.copy(isFrontCameraFacing = newLensFacing)
+    override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
+        currentCameraSettings = currentCameraSettings.copy(cameraLensFacing = lensFacing)
     }
 
     override suspend fun updateDarkModeStatus(darkMode: DarkMode) {

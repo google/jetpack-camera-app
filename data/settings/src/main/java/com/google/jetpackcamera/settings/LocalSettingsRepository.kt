@@ -29,6 +29,8 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
@@ -46,7 +48,7 @@ class LocalSettingsRepository @Inject constructor(
     override val cameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                isFrontCameraFacing = it.defaultFrontCamera,
+                cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
@@ -84,10 +86,10 @@ class LocalSettingsRepository @Inject constructor(
 
     override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
 
-    override suspend fun updateDefaultToFrontCamera() {
+    override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(!currentSettings.defaultFrontCamera)
+                .setDefaultLensFacing(lensFacing.toProto())
                 .build()
         }
     }

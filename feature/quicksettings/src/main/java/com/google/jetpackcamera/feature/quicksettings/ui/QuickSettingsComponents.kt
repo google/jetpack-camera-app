@@ -51,6 +51,7 @@ import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -144,25 +145,18 @@ fun QuickSetFlash(
 @Composable
 fun QuickFlipCamera(
     modifier: Modifier = Modifier,
-    flipCamera: (Boolean) -> Unit,
-    currentFacingFront: Boolean
+    setLensFacing: (LensFacing) -> Unit,
+    currentLensFacing: LensFacing
 ) {
     val enum =
-        when (currentFacingFront) {
-            true -> CameraLensFace.FRONT
-            false -> CameraLensFace.BACK
+        when (currentLensFacing) {
+            LensFacing.FRONT -> CameraLensFace.FRONT
+            LensFacing.BACK -> CameraLensFace.BACK
         }
     QuickSettingUiItem(
-        modifier = modifier
-            .semantics {
-                contentDescription =
-                    when (enum) {
-                        CameraLensFace.FRONT -> "QUICK SETTINGS LENS FACING FRONT"
-                        CameraLensFace.BACK -> "QUICK SETTINGS LENS FACING BACK"
-                    }
-            },
+        modifier = modifier,
         enum = enum,
-        onClick = { flipCamera(!currentFacingFront) }
+        onClick = { setLensFacing(currentLensFacing.flip()) }
     )
 }
 
@@ -201,7 +195,11 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
         // dropdown icon
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
-            contentDescription = stringResource(R.string.quick_settings_dropdown_description),
+            contentDescription = if (isOpen) {
+                stringResource(R.string.quick_settings_dropdown_open_description)
+            } else {
+                stringResource(R.string.quick_settings_dropdown_closed_description)
+            },
             modifier = Modifier
                 .testTag("QuickSettingDropDown")
                 .size(72.dp)

@@ -20,6 +20,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
@@ -32,8 +33,25 @@ import org.junit.AssumptionViolatedException
 fun SemanticsNodeInteractionsProvider.onNodeWithText(
     @StringRes strRes: Int
 ): SemanticsNodeInteraction = onNodeWithText(
-    text = ApplicationProvider.getApplicationContext<Context>().getString(strRes)
+    text = getResString(strRes)
 )
+
+/**
+ * Allows use of testRule.onNodeWithContentDescription that uses an integer string resource
+ * rather than a [String] directly.
+ */
+fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
+    @StringRes strRes: Int
+): SemanticsNodeInteraction = onNodeWithContentDescription(
+    label = getResString(strRes)
+)
+
+/**
+ * Fetch a string resources from a [SemanticsNodeInteractionsProvider] context.
+ */
+fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String {
+    return ApplicationProvider.getApplicationContext<Context>().getString(strRes)
+}
 
 /**
  * Assumes that the provided [matcher] is satisfied for this node.

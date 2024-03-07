@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -104,14 +105,14 @@ class PreviewViewModelTest {
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
         previewViewModel.startCamera()
-        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing)
-            .isFalse()
-        previewViewModel.flipCamera()
+        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.cameraLensFacing)
+            .isEqualTo(LensFacing.BACK)
+        previewViewModel.setLensFacing(LensFacing.FRONT)
 
         advanceUntilIdle()
         // ui state and camera should both be true now
-        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing)
-            .isTrue()
+        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.cameraLensFacing)
+            .isEqualTo(LensFacing.FRONT)
         assertThat(cameraUseCase.isLensFacingFront).isTrue()
     }
 
