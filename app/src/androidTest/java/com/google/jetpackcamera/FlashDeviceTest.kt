@@ -23,8 +23,8 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.test.runTest
 import org.junit.Before

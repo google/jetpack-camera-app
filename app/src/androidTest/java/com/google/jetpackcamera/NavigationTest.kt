@@ -15,23 +15,21 @@
  */
 package com.google.jetpackcamera
 
-import android.app.Activity
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import org.junit.Rule
 import org.junit.Test
@@ -158,13 +156,5 @@ class NavigationTest {
 
         // Assert we're on quick settings by finding the ratio button
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON).assertExists()
-    }
-
-    private inline fun <reified T : Activity> runScenarioTest(
-        crossinline block: ActivityScenario<T>.() -> Unit
-    ) {
-        ActivityScenario.launch(T::class.java).use { scenario ->
-            scenario.apply(block)
-        }
     }
 }

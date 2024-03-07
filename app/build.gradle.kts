@@ -73,6 +73,7 @@ android {
 }
 
 dependencies {
+    androidTestImplementation(project(":feature:quicksettings"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -99,9 +100,9 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.uiautomator)
+    androidTestImplementation(libs.truth)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -121,6 +122,8 @@ dependencies {
 
     // Camera Preview
     implementation(project(":feature:preview"))
+    // Only needed as androidTestImplementation for now since we only need it for string resources
+    androidTestImplementation(project(":feature:quicksettings"))
 
     // Settings Screen
     implementation(project(":feature:settings"))

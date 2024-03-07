@@ -18,6 +18,7 @@ package com.google.jetpackcamera.domain.camera.test
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -65,7 +66,7 @@ class FakeCameraUseCaseTest {
     fun screenFlashDisabled_whenFlashModeOffAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(flashMode = FlashMode.OFF)
         advanceUntilIdle()
 
@@ -76,7 +77,7 @@ class FakeCameraUseCaseTest {
     fun screenFlashDisabled_whenFlashModeOnAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.flipCamera(isFrontFacing = false)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.BACK)
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
@@ -87,7 +88,7 @@ class FakeCameraUseCaseTest {
     fun screenFlashDisabled_whenFlashModeAutoAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.flipCamera(isFrontFacing = false)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.BACK)
         cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
@@ -98,7 +99,7 @@ class FakeCameraUseCaseTest {
     fun screenFlashEnabled_whenFlashModeOnAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
@@ -109,7 +110,7 @@ class FakeCameraUseCaseTest {
     fun screenFlashEnabled_whenFlashModeAutoAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
@@ -127,7 +128,7 @@ class FakeCameraUseCaseTest {
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.flipCamera(isFrontFacing = true)
+        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(FlashMode.ON)
         advanceUntilIdle()
         cameraUseCase.takePicture()
