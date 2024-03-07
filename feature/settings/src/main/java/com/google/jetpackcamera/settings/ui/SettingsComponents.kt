@@ -359,24 +359,26 @@ fun StabilizationSetting(
 ) {
     // if the preview stabilization was left ON and the target frame rate was set to 15,
     // this setting needs to be reset to OFF
-    LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization ) {
+    LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization) {
         if (currentTargetFps == TargetFrameRate.TARGET_FPS_15 &&
-            currentPreviewStabilization == Stabilization.ON)
+            currentPreviewStabilization == Stabilization.ON
+        ) {
             setPreviewStabilization(Stabilization.UNDEFINED)
+        }
     }
     // entire setting disabled when no available fps or target fps = 60
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = (supportedStabilizationMode.isNotEmpty() &&
-                currentTargetFps != TargetFrameRate.TARGET_FPS_60),
+        enabled = (
+            supportedStabilizationMode.isNotEmpty() &&
+                currentTargetFps != TargetFrameRate.TARGET_FPS_60
+            ),
         description = if (supportedStabilizationMode.isEmpty()) {
             stringResource(id = R.string.stabilization_description_unsupported_device)
-        }
-        else if (currentTargetFps == TargetFrameRate.TARGET_FPS_60) {
+        } else if (currentTargetFps == TargetFrameRate.TARGET_FPS_60) {
             stringResource(id = R.string.stabilization_description_unsupported_fps)
-        }
-        else {
+        } else {
             stringResource(
                 id = getStabilizationStringRes(
                     previewStabilization = currentPreviewStabilization,
@@ -394,10 +396,13 @@ fun StabilizationSetting(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     enabled =
-                    (when (currentTargetFps) {
-                        TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
-                            else -> false }) &&
-                    supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                    (
+                        when (currentTargetFps) {
+                            TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
+                            else -> false
+                        }
+                        ) &&
+                        supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -413,9 +418,10 @@ fun StabilizationSetting(
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = (currentTargetFps != TargetFrameRate.TARGET_FPS_60) && supportedStabilizationMode.contains(
-                        SupportedStabilizationMode.HIGH_QUALITY
-                    ),
+                    enabled = (currentTargetFps != TargetFrameRate.TARGET_FPS_60) &&
+                        supportedStabilizationMode.contains(
+                            SupportedStabilizationMode.HIGH_QUALITY
+                        ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),

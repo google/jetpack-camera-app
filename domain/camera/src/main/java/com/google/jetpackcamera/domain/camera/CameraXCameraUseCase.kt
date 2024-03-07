@@ -52,6 +52,10 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.FileNotFoundException
+import java.util.Calendar
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -69,10 +73,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
-import java.util.Calendar
-import java.util.Date
-import javax.inject.Inject
 
 private const val TAG = "CameraXCameraUseCase"
 
@@ -531,7 +531,7 @@ constructor(
     ): Boolean {
         // video is on and target fps is not 60
         return (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_60) &&
-        (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
             // high quality (video only) selected
             (
                 sessionSettings.stabilizeVideoMode == Stabilization.ON &&
@@ -561,14 +561,16 @@ constructor(
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
         // only supported if target fps is 30 or none
-        return (when(sessionSettings.targetFrameRate) {
-            TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
-            else -> false
-        }) &&
-        (
-            supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
-                sessionSettings.stabilizePreviewMode == Stabilization.ON
-            )
+        return (
+            when (sessionSettings.targetFrameRate) {
+                TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
+                else -> false
+            }
+            ) &&
+            (
+                supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.ON
+                )
     }
 
     // converts LensFacing from datastore to @LensFacing Int value
