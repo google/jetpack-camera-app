@@ -88,8 +88,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
-        hasCurrentTargetFps = uiState.cameraAppSettings.targetFrameRate !=
-            TargetFrameRate.TARGET_FPS_NONE,
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization

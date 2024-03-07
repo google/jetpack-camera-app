@@ -83,7 +83,9 @@
     <string name="stabilization_description_on">Stabilization On</string>
     <string name="stabilization_description_high_quality">Stabilization High Quality</string>
     <string name="stabilization_description_off">Stabilization Off</string>
-    <string name="stabilization_description_unsupported">Stabilization unsupported</string>
+    <string name="stabilization_description_unsupported_device">Stabilization unsupported by device</string>
+    <string name="stabilization_description_unsupported_fps">Stabilization unsupported due to frame rate</string>
+
 
     <!-- Target Fps setting strings -->
     <string name="fps_title">Set Target Frame Rate</string>
@@ -99,6 +101,6 @@
     <string name="fps_selector_30">30</string>
     <string name="fps_selector_60">60</string>
 
-    <string name="fps_stabilization_disclaimer">*Stabilization will be disabled when selecting a target frame rate other than none.</string>
+    <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected target fps.</string>
 
 </resources>

@@ -529,9 +529,9 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
-        // video is supported by the device AND
-        // video is on
-        return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+        // video is on and target fps is not 60
+        return (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_60) &&
+        (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
             // high quality (video only) selected
             (
                 sessionSettings.stabilizeVideoMode == Stabilization.ON &&
@@ -560,7 +560,12 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
-        return (
+        // only supported if target fps is 30 or none
+        return (when(sessionSettings.targetFrameRate) {
+            TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
+            else -> false
+        }) &&
+        (
             supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
                 sessionSettings.stabilizePreviewMode == Stabilization.ON
             )

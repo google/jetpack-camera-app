@@ -39,6 +39,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -351,18 +352,31 @@ private fun getStabilizationStringRes(
 fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
-    hasCurrentTargetFps: Boolean,
+    currentTargetFps: TargetFrameRate,
     supportedStabilizationMode: List<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
+    // if the preview stabilization was left ON and the target frame rate was set to 15,
+    // this setting needs to be reset to OFF
+    LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization ) {
+        if (currentTargetFps == TargetFrameRate.TARGET_FPS_15 &&
+            currentPreviewStabilization == Stabilization.ON)
+            setPreviewStabilization(Stabilization.UNDEFINED)
+    }
+    // entire setting disabled when no available fps or target fps = 60
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = !hasCurrentTargetFps && supportedStabilizationMode.isNotEmpty(),
-        description = if (hasCurrentTargetFps || supportedStabilizationMode.isEmpty()) {
-            stringResource(id = R.string.stabilization_description_unsupported)
-        } else {
+        enabled = (supportedStabilizationMode.isNotEmpty() &&
+                currentTargetFps != TargetFrameRate.TARGET_FPS_60),
+        description = if (supportedStabilizationMode.isEmpty()) {
+            stringResource(id = R.string.stabilization_description_unsupported_device)
+        }
+        else if (currentTargetFps == TargetFrameRate.TARGET_FPS_60) {
+            stringResource(id = R.string.stabilization_description_unsupported_fps)
+        }
+        else {
             stringResource(
                 id = getStabilizationStringRes(
                     previewStabilization = currentPreviewStabilization,
@@ -374,11 +388,16 @@ fun StabilizationSetting(
             Column(Modifier.selectableGroup()) {
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // on selector
+                // on (preview) selector
+                // disabled if target fps != (30 or off)
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                    enabled =
+                    (when (currentTargetFps) {
+                        TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
+                            else -> false }) &&
+                    supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -388,12 +407,13 @@ fun StabilizationSetting(
                 )
 
                 // high quality selector
+                // disabled if target fps = 60
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode.contains(
+                    enabled = (currentTargetFps != TargetFrameRate.TARGET_FPS_60) && supportedStabilizationMode.contains(
                         SupportedStabilizationMode.HIGH_QUALITY
                     ),
 
