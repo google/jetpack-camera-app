@@ -15,13 +15,11 @@
  */
 package com.google.jetpackcamera
 
-import android.app.Activity
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -158,13 +156,5 @@ class NavigationTest {
 
         // Assert we're on quick settings by finding the ratio button
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON).assertExists()
-    }
-
-    private inline fun <reified T : Activity> runScenarioTest(
-        crossinline block: ActivityScenario<T>.() -> Unit
-    ) {
-        ActivityScenario.launch(T::class.java).use { scenario ->
-            scenario.apply(block)
-        }
     }
 }

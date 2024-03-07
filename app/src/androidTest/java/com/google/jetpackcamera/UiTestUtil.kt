@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.app.Activity
 import androidx.test.core.app.ActivityScenario
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import java.util.concurrent.atomic.AtomicReference
@@ -32,5 +33,13 @@ object UiTestUtil {
         return getActivity(
             activityScenario
         ).previewViewModel!!.previewUiState.value.currentCameraSettings
+    }
+}
+
+inline fun <reified T : Activity> runScenarioTest(
+    crossinline block: ActivityScenario<T>.() -> Unit
+) {
+    ActivityScenario.launch(T::class.java).use { scenario ->
+        scenario.apply(block)
     }
 }
