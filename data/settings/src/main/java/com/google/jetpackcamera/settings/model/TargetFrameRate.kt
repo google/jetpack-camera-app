@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.settings.model
 
 import android.util.Range
-import com.google.jetpackcamera.settings.TargetFrameRate as TargetFrameRateProto
 
 enum class TargetFrameRate(val range: Range<Int>) {
     TARGET_FPS_NONE(Range(0, 0)),
@@ -25,21 +24,21 @@ enum class TargetFrameRate(val range: Range<Int>) {
     TARGET_FPS_60(Range(60, 60));
 
     // converts our kotlin enum to a proto enum
-    fun toProto(): TargetFrameRateProto = when (this) {
-        TARGET_FPS_NONE -> TargetFrameRateProto.TARGET_FRAME_RATE_NONE
-        TARGET_FPS_15 -> TargetFrameRateProto.TARGET_FRAME_RATE_15
-        TARGET_FPS_30 -> TargetFrameRateProto.TARGET_FRAME_RATE_30
-        TARGET_FPS_60 -> TargetFrameRateProto.TARGET_FRAME_RATE_60
+    fun toProto(): Int = when (this) {
+        TARGET_FPS_NONE -> 0
+        TARGET_FPS_15 -> 15
+        TARGET_FPS_30 -> 30
+        TARGET_FPS_60 -> 60
     }
 
     companion object {
         // converts proto enum to our kotlin enum
-        fun fromProto(targetFrameRate: TargetFrameRateProto): TargetFrameRate {
+        fun fromProto(targetFrameRate: Int): TargetFrameRate {
             return when (targetFrameRate) {
-                TargetFrameRateProto.TARGET_FRAME_RATE_NONE -> TARGET_FPS_NONE
-                TargetFrameRateProto.TARGET_FRAME_RATE_15 -> TARGET_FPS_15
-                TargetFrameRateProto.TARGET_FRAME_RATE_30 -> TARGET_FPS_30
-                TargetFrameRateProto.TARGET_FRAME_RATE_60 -> TARGET_FPS_60
+                0 -> TARGET_FPS_NONE
+                15 -> TARGET_FPS_15
+                30 -> TARGET_FPS_30
+                60 -> TARGET_FPS_60
                 else -> TARGET_FPS_NONE
             }
         }
