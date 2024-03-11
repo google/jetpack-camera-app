@@ -88,19 +88,19 @@
 
 
     <!-- Target Fps setting strings -->
-    <string name="fps_title">Set Auto Frame Rate</string>
+    <string name="fps_title">Set Frame Rate</string>
 
     <string name="fps_description_unavailable">No fixed frame rates supported</string>
-    <string name="fps_description_none">No target fps</string>
-    <string name="fps_description_15">Target 15 fps </string>
-    <string name="fps_description_30">Target 30 fps</string>
-    <string name="fps_description_60">Target 60 fps</string>
+    <string name="fps_description_none">Auto Frame Rate</string>
+    <string name="fps_description_15">15 fps </string>
+    <string name="fps_description_30">30 fps</string>
+    <string name="fps_description_60">60 fps</string>
 
-    <string name="fps_selector_none">None</string>
+    <string name="fps_selector_none">Auto</string>
     <string name="fps_selector_15">15</string>
     <string name="fps_selector_30">30</string>
     <string name="fps_selector_60">60</string>
 
-    <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected target fps.</string>
+    <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
 
 </resources>
