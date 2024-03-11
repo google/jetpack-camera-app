@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.quicksettings.ui
 
-const val TOGGLE_QUICK_SETTINGS = "QuickSettingDropDown"
-const val QUICK_SETTINGS_EXPAND_RATIO_BUTTON = "QuickSetAspectRatio"
-const val QUICK_SETTINGS_RATIO_ONE_ONE = "QuickSetAspectRatio1:1"
-const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSetFlash"
-const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
+syntax = "proto3";
+
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
+
+enum LensFacing {
+  LENS_FACING_BACK = 0;
+  LENS_FACING_FRONT = 1;
+}

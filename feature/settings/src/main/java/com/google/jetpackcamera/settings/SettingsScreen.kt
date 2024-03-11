@@ -58,7 +58,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     DefaultCameraFacing(
         cameraAppSettings = uiState.cameraAppSettings,
-        onClick = viewModel::setDefaultToFrontCamera
+        setDefaultLensFacing = viewModel::setDefaultLensFacing
     )
 
     FlashModeSetting(

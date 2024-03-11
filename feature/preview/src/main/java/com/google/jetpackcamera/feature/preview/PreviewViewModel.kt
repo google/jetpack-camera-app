@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -137,17 +138,21 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    // sets the camera to a designated direction
-    fun flipCamera() {
+    /** Sets the camera to a designated lens facing */
+    fun setLensFacing(newLensFacing: LensFacing) {
         viewModelScope.launch {
-            // only flip if 2 directions are available
-            if (previewUiState.value.currentCameraSettings.isBackCameraAvailable &&
-                previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+            // TODO(tm): Move constraint checks into CameraUseCase
+            if ((
+                    newLensFacing == LensFacing.BACK &&
+                        previewUiState.value.currentCameraSettings.isBackCameraAvailable
+                    ) ||
+                (
+                    newLensFacing == LensFacing.FRONT &&
+                        previewUiState.value.currentCameraSettings.isFrontCameraAvailable
+                    )
             ) {
                 // apply to cameraUseCase
-                cameraUseCase.flipCamera(
-                    !previewUiState.value.currentCameraSettings.isFrontCameraFacing
-                )
+                cameraUseCase.setLensFacing(newLensFacing)
             }
         }
     }

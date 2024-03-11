@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -75,14 +76,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setDefaultToFrontCamera() {
-        // true means default is front
+    fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
-            settingsRepository.updateDefaultToFrontCamera()
+            settingsRepository.updateDefaultLensFacing(lensFacing)
             Log.d(
                 TAG,
                 "set camera default facing: " +
-                    "${settingsRepository.getCameraAppSettings().isFrontCameraFacing}"
+                    "${settingsRepository.getCameraAppSettings().cameraLensFacing}"
             )
         }
     }

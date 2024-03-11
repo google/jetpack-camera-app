@@ -18,13 +18,13 @@ package com.google.jetpackcamera.domain.camera.test
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,8 +42,7 @@ class FakeCameraUseCase(
         CoroutineScope(SupervisorJob() + Dispatchers.Default),
     defaultCameraSettings: CameraAppSettings = CameraAppSettings()
 ) : CameraUseCase {
-    private val availableLenses =
-        listOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK)
+    private val availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK)
     private var initialized = false
     private var useCasesBinded = false
 
@@ -64,12 +63,7 @@ class FakeCameraUseCase(
     }
 
     override suspend fun runCamera() {
-        val lensFacing =
-            if (currentSettings.value.isFrontCameraFacing) {
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                CameraSelector.LENS_FACING_BACK
-            }
+        val lensFacing = currentSettings.value.cameraLensFacing
 
         if (!initialized) {
             throw IllegalStateException("CameraProvider not initialized")
@@ -87,7 +81,7 @@ class FakeCameraUseCase(
                 useCasesBinded = true
                 previewStarted = true
 
-                isLensFacingFront = it.isFrontCameraFacing
+                isLensFacingFront = it.cameraLensFacing == LensFacing.FRONT
                 isScreenFlash =
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
@@ -166,9 +160,9 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun flipCamera(isFrontFacing: Boolean) {
+    override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
-            old.copy(isFrontCameraFacing = isFrontFacing)
+            old.copy(cameraLensFacing = lensFacing)
         }
     }
 

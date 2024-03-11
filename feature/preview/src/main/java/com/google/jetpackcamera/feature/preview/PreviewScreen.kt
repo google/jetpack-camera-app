@@ -33,6 +33,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +52,7 @@ import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 
 private const val TAG = "PreviewScreen"
 
@@ -94,7 +96,7 @@ fun PreviewScreen(
             surfaceRequest = surfaceRequest,
             onNavigateToSettings = onNavigateToSettings,
             onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-            onFlipCamera = viewModel::flipCamera,
+            onSetLensFacing = viewModel::setLensFacing,
             onTapToFocus = viewModel::tapToFocus,
             onChangeZoomScale = viewModel::setZoomScale,
             onChangeFlash = viewModel::setFlash,
@@ -118,7 +120,7 @@ private fun ContentScreen(
     surfaceRequest: SurfaceRequest?,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
-    onFlipCamera: () -> Unit = {},
+    onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
@@ -135,6 +137,15 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {}
 ) {
+    val lensFacing = remember(previewUiState) {
+        previewUiState.currentCameraSettings.cameraLensFacing
+    }
+
+    val onFlipCamera = remember(lensFacing) {
+        {
+            onSetLensFacing(lensFacing.flip())
+        }
+    }
     // display camera feed. this stays behind everything else
     PreviewDisplay(
         onFlipCamera = onFlipCamera,
@@ -149,7 +160,7 @@ private fun ContentScreen(
         isOpen = previewUiState.quickSettingsIsOpen,
         toggleIsOpen = onToggleQuickSettings,
         currentCameraSettings = previewUiState.currentCameraSettings,
-        onLensFaceClick = { onFlipCamera() },
+        onLensFaceClick = onSetLensFacing,
         onFlashModeClick = onChangeFlash,
         onAspectRatioClick = onChangeAspectRatio,
         onCaptureModeClick = onChangeCaptureMode
