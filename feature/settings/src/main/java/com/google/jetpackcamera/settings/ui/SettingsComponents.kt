@@ -396,7 +396,7 @@ fun StabilizationSetting(
 
                 // on (preview) selector
                 // disabled if target fps != (30 or off)
-                //TODO(b/328223562): device always resolves to 30fps when using preview stabilization
+                // TODO(b/328223562): device always resolves to 30fps when using preview stabilization
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
