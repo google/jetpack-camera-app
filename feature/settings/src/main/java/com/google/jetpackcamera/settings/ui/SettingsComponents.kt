@@ -370,6 +370,7 @@ fun StabilizationSetting(
         }
     }
     // entire setting disabled when no available fps or target fps = 60
+    // stabilization is unsupported >30 fps
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
@@ -395,6 +396,7 @@ fun StabilizationSetting(
 
                 // on (preview) selector
                 // disabled if target fps != (30 or off)
+                //TODO(b/328223562): device always resolves to 30fps when using preview stabilization
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
@@ -415,7 +417,7 @@ fun StabilizationSetting(
                 )
 
                 // high quality selector
-                // disabled if target fps = 60
+                // disabled if target fps = 60 (see VideoCapabilities.isStabilizationSupported)
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
                     secondaryText = stringResource(
