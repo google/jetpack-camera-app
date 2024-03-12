@@ -201,7 +201,7 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
                 stringResource(R.string.quick_settings_dropdown_closed_description)
             },
             modifier = Modifier
-                .testTag("QuickSettingsDropDown")
+                .testTag(QUICK_SETTINGS_DROP_DOWN)
                 .size(72.dp)
                 .clickable {
                     toggleDropDown()
