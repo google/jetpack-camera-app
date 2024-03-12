@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.Environment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import java.io.File
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
@@ -249,7 +251,18 @@ private fun CaptureButton(
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
-                        onCaptureImage()
+                        val timeStamp = System.currentTimeMillis()
+                        onCaptureImageWithUri(
+                            context.contentResolver,
+                            Uri.fromFile(
+                                File(
+                                    Environment.getExternalStoragePublicDirectory(
+                                        Environment.DIRECTORY_PICTURES
+                                    ),
+                                    "$timeStamp.jpg"
+                                )
+                            )
+                        ) {}
                     }
 
                     is PreviewMode.ExternalImageCaptureMode -> {
