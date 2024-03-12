@@ -48,9 +48,9 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_on() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.ON
@@ -60,10 +60,10 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_auto() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.AUTO
@@ -77,11 +77,11 @@ internal class FlashDeviceTest {
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.OFF
         )
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.OFF
@@ -91,10 +91,10 @@ internal class FlashDeviceTest {
     @Test
     fun set_screen_flash_and_capture_successfully() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         // flash on with front camera will automatically enable screen flash
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         uiDevice.findObject(By.res("CaptureButton")).click()
         uiDevice.wait(
             Until.findObject(By.res("ImageCaptureSuccessToast")),
@@ -105,10 +105,10 @@ internal class FlashDeviceTest {
     @Test
     fun set_screen_flash_and_capture_with_screen_change_overlay_shown() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         // flash on with front camera will automatically enable screen flash
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res("QuickSettingsFlash")).click()
+        uiDevice.findObject(By.res("QuickSettingsDropDown")).click()
         uiDevice.findObject(By.res("CaptureButton")).click()
         uiDevice.wait(
             Until.findObject(By.res("ScreenFlashOverlay")),

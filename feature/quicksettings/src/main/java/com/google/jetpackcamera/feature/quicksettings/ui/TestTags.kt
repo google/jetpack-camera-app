@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.feature.quicksettings.ui
 
-const val TOGGLE_QUICK_SETTINGS = "QuickSettingDropDown"
-const val QUICK_SETTINGS_EXPAND_RATIO_BUTTON = "QuickSetAspectRatio"
-const val QUICK_SETTINGS_RATIO_ONE_ONE = "QuickSetAspectRatio1:1"
-const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSetFlash"
+const val TOGGLE_QUICK_SETTINGS = "QuickSettingsDropDown"
+const val QUICK_SETTINGS_EXPAND_RATIO_BUTTON = "QuickSettingsAspectRatio"
+const val QUICK_SETTINGS_RATIO_ONE_ONE = "QuickSettingsAspectRatio1:1"
+const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlash"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
