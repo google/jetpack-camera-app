@@ -50,6 +50,11 @@ interface CameraUseCase {
 
     suspend fun takePicture()
 
+    /**
+     * Takes a picture with the camera. If the imageCaptureUri is not null, save the picture at
+     * the location of the url on the device. If the imageCaptureUri is null, save the picture in
+     * the picture directory.
+     */
     suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
 
     suspend fun startVideoRecording()
