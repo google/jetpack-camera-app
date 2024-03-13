@@ -89,8 +89,8 @@ jobs:
       fail-fast: false
       matrix:
         device:
-          - pixel2api28
-          - pixel2api34
+          - pixel2Api28
+          - pixel8Api34
 
     steps:
       - name: Checkout
