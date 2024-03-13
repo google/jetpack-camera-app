@@ -40,14 +40,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -141,25 +145,41 @@ fun QuickSetFlash(
 @Composable
 fun QuickFlipCamera(
     modifier: Modifier = Modifier,
-    flipCamera: (Boolean) -> Unit,
-    currentFacingFront: Boolean
+    setLensFacing: (LensFacing) -> Unit,
+    currentLensFacing: LensFacing
 ) {
     val enum =
-        when (currentFacingFront) {
-            true -> CameraLensFace.FRONT
-            false -> CameraLensFace.BACK
+        when (currentLensFacing) {
+            LensFacing.FRONT -> CameraLensFace.FRONT
+            LensFacing.BACK -> CameraLensFace.BACK
         }
     QuickSettingUiItem(
-        modifier = modifier
-            .semantics {
-                contentDescription =
-                    when (enum) {
-                        CameraLensFace.FRONT -> "QUICK SETTINGS LENS FACING FRONT"
-                        CameraLensFace.BACK -> "QUICK SETTINGS LENS FACING BACK"
-                    }
-            },
+        modifier = modifier,
         enum = enum,
-        onClick = { flipCamera(!currentFacingFront) }
+        onClick = { setLensFacing(currentLensFacing.flip()) }
+    )
+}
+
+@Composable
+fun QuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    setCaptureMode: (CaptureMode) -> Unit,
+    currentCaptureMode: CaptureMode
+) {
+    val enum: CameraCaptureMode =
+        when (currentCaptureMode) {
+            CaptureMode.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
+            CaptureMode.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (currentCaptureMode) {
+                CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
+                CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
+            }
+        }
     )
 }
 
@@ -175,7 +195,11 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
         // dropdown icon
         Icon(
             painter = painterResource(R.drawable.baseline_expand_more_72),
-            contentDescription = stringResource(R.string.quick_settings_dropdown_description),
+            contentDescription = if (isOpen) {
+                stringResource(R.string.quick_settings_dropdown_open_description)
+            } else {
+                stringResource(R.string.quick_settings_dropdown_closed_description)
+            },
             modifier = Modifier
                 .testTag("QuickSettingDropDown")
                 .size(72.dp)
@@ -239,7 +263,7 @@ fun QuickSettingUiItem(
                 .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
         )
 
-        Text(text = text, color = tint)
+        Text(text = text, color = tint, textAlign = TextAlign.Center)
     }
 }
 

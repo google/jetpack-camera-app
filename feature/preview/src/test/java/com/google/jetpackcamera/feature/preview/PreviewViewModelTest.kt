@@ -16,13 +16,14 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.test.FakeSettingsRepository
-import junit.framework.TestCase.assertEquals
+import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -39,7 +40,7 @@ class PreviewViewModelTest {
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        previewViewModel = PreviewViewModel(cameraUseCase, FakeSettingsRepository)
+        previewViewModel = PreviewViewModel(cameraUseCase)
         advanceUntilIdle()
     }
 
@@ -47,49 +48,48 @@ class PreviewViewModelTest {
     fun getPreviewUiState() = runTest(StandardTestDispatcher()) {
         advanceUntilIdle()
         val uiState = previewViewModel.previewUiState.value
-        assertEquals(CameraState.READY, uiState.cameraState)
+        assertThat(uiState.cameraState).isEqualTo(CameraState.READY)
     }
 
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCamera()
-        advanceUntilIdle()
+        previewViewModel.startCameraUntilRunning()
 
-        assertEquals(cameraUseCase.previewStarted, true)
+        assertThat(cameraUseCase.previewStarted).isTrue()
     }
 
     @Test
     fun captureImage() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCamera()
+        previewViewModel.startCameraUntilRunning()
         previewViewModel.captureImage()
         advanceUntilIdle()
-        assertEquals(cameraUseCase.numPicturesTaken, 1)
+        assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
     }
 
     @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
-        previewViewModel.startCamera()
+        previewViewModel.startCameraUntilRunning()
         previewViewModel.captureImageWithUri(contentResolver, null) {}
         advanceUntilIdle()
-        assertEquals(cameraUseCase.numPicturesTaken, 1)
+        assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
     }
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCamera()
+        previewViewModel.startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
-        assertEquals(cameraUseCase.recordingInProgress, true)
+        assertThat(cameraUseCase.recordingInProgress).isTrue()
     }
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCamera()
+        previewViewModel.startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
-        assertEquals(cameraUseCase.recordingInProgress, false)
+        assertThat(cameraUseCase.recordingInProgress).isFalse()
     }
 
     @Test
@@ -97,28 +97,28 @@ class PreviewViewModelTest {
         previewViewModel.startCamera()
         previewViewModel.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
-        assertEquals(
-            previewViewModel.previewUiState.value.currentCameraSettings.flashMode,
-            FlashMode.AUTO
-        )
+        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.flashMode)
+            .isEqualTo(FlashMode.AUTO)
     }
 
     @Test
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
         previewViewModel.startCamera()
-        assertEquals(
-            previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing,
-            false
-        )
-        previewViewModel.flipCamera()
+        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.cameraLensFacing)
+            .isEqualTo(LensFacing.BACK)
+        previewViewModel.setLensFacing(LensFacing.FRONT)
 
         advanceUntilIdle()
         // ui state and camera should both be true now
-        assertEquals(
-            previewViewModel.previewUiState.value.currentCameraSettings.isFrontCameraFacing,
-            true
-        )
-        assertEquals(true, cameraUseCase.isLensFacingFront)
+        assertThat(previewViewModel.previewUiState.value.currentCameraSettings.cameraLensFacing)
+            .isEqualTo(LensFacing.FRONT)
+        assertThat(cameraUseCase.isLensFacingFront).isTrue()
+    }
+
+    context(TestScope)
+    private fun PreviewViewModel.startCameraUntilRunning() {
+        startCamera()
+        advanceUntilIdle()
     }
 }

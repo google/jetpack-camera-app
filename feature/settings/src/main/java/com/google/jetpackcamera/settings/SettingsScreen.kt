@@ -37,10 +37,7 @@ import com.google.jetpackcamera.settings.ui.StabilizationSetting
  * Screen used for the Settings feature.
  */
 @Composable
-fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToPreview: () -> Unit
-) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigateBack: () -> Unit) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
     Column(
@@ -49,7 +46,7 @@ fun SettingsScreen(
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
-            navBack = onNavigateToPreview
+            navBack = onNavigateBack
         )
         SettingsList(uiState = settingsUiState, viewModel = viewModel)
     }
@@ -61,7 +58,7 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     DefaultCameraFacing(
         cameraAppSettings = uiState.cameraAppSettings,
-        onClick = viewModel::setDefaultToFrontCamera
+        setDefaultLensFacing = viewModel::setDefaultLensFacing
     )
 
     FlashModeSetting(
@@ -79,8 +76,8 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setCaptureMode = viewModel::setCaptureMode
     )
 
-    // todo: b/313647247 - query device and disable setting if preview stabilization isn't supported.
-    // todo: b/313647809 - query device and disable setting if video stabilization isn't supported.
+    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
+
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,

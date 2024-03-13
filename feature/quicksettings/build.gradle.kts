@@ -69,6 +69,9 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
 
+    // Compose - Activity
+    implementation(libs.androidx.activity.compose)
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
 
