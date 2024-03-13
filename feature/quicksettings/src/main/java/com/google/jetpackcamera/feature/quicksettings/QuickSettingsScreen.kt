@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_EXPAND_RATIO_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
@@ -159,7 +161,7 @@ private fun ExpandedQuickSettingsUi(
                     arrayOf(
                         {
                             QuickSetFlash(
-                                modifier = Modifier.testTag("QuickSetFlash"),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )
@@ -173,7 +175,7 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickSetRatio(
-                                modifier = Modifier.testTag("QuickSetAspectRatio"),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_EXPAND_RATIO_BUTTON),
                                 onClick = {
                                     setVisibleQuickSetting(
                                         IsExpandedQuickSetting.ASPECT_RATIO
@@ -196,7 +198,6 @@ private fun ExpandedQuickSettingsUi(
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
-
                     setRatio = onAspectRatioClick,
                     currentRatio = currentCameraSettings.aspectRatio
                 )

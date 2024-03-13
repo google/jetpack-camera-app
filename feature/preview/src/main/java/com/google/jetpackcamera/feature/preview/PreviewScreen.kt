@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.Trace
 import android.util.Log
 import android.view.Display
 import androidx.camera.core.SurfaceRequest
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
+import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_TRACE
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
@@ -64,6 +66,9 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel(),
     previewMode: PreviewMode
 ) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+        Trace.beginAsyncSection(FIRST_FRAME_TRACE, 1)
+    }
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)
 
