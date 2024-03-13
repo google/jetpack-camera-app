@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(showInitially)
@@ -79,7 +81,8 @@ fun CameraControlsOverlay(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -121,7 +124,8 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
             )
         }
     }
@@ -140,7 +144,9 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON),
+                Modifier
+                    .padding(12.dp)
+                    .testTag(SETTINGS_BUTTON),
                 onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
@@ -186,7 +192,8 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState? = null
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
@@ -200,11 +207,11 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                        modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
-                            currentCameraSettings.isFrontCameraAvailable
+                                currentCameraSettings.isFrontCameraAvailable
                     )
                 }
             }
@@ -216,7 +223,8 @@ private fun ControlsBottom(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
             )
             Row(Modifier.weight(1f)) {
                 /*TODO("Place other components here") */
@@ -239,13 +247,15 @@ private fun CaptureButton(
     ) -> Unit = { _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState? = null
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
+            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
@@ -345,7 +355,7 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode,
         )
     }
 }

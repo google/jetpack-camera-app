@@ -37,7 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
@@ -62,7 +64,7 @@ fun QuickSettingsScreenOverlay(
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
-    onCaptureModeClick: (captureMode: CaptureMode) -> Unit
+    onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -95,14 +97,7 @@ fun QuickSettingsScreenOverlay(
                 .fillMaxSize()
                 .background(color = backgroundColor.value)
                 .alpha(alpha = contentAlpha.value)
-                .clickable {
-                    // if a setting is expanded, click on the background to close it.
-                    // if no other settings are expanded, then close the popup
-                    when (shouldShowQuickSetting) {
-                        IsExpandedQuickSetting.NONE -> toggleIsOpen()
-                        else -> shouldShowQuickSetting = IsExpandedQuickSetting.NONE
-                    }
-                },
+                .clickable(onClick = onBack),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -159,7 +154,7 @@ private fun ExpandedQuickSettingsUi(
                     arrayOf(
                         {
                             QuickSetFlash(
-                                modifier = Modifier.testTag("QuickSetFlash"),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
                                 currentFlashMode = currentCameraSettings.flashMode
                             )
@@ -173,7 +168,7 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickSetRatio(
-                                modifier = Modifier.testTag("QuickSetAspectRatio"),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 onClick = {
                                     setVisibleQuickSetting(
                                         IsExpandedQuickSetting.ASPECT_RATIO
