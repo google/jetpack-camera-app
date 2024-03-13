@@ -123,19 +123,14 @@ jobs:
         with:
           arguments: ${{ matrix.device }}DebugAndroidTest
 
-      - name: Upload android test reports on failure
+      - name: Upload instrumentation test reports and logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: android-test-reports
-          path: "*/build/reports/androidTests"
-
-      - name: Upload android test results (logs) on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-test-reports
-          path: "*/build/outputs/androidTest-results"
+          name: instrumentation-test-reports
+          path: |
+            "*/build/reports/androidTests"
+            "*/build/outputs/androidTest-results"
 
   spotless:
     name: Spotless Check
