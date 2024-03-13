@@ -127,10 +127,10 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-test-reports
+          name: instrumentation-test-reports-${{ matrix.device }}
           path: |
-            */build/reports/androidTests
-            */build/outputs/androidTest-results
+            */build/reports/androidTests/**/${{ matrix.device }}
+            */build/outputs/androidTest-results/**/${{ matrix.device }}
 
   spotless:
     name: Spotless Check
