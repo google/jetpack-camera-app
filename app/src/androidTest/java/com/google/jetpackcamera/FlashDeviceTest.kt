@@ -22,6 +22,9 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.settings.model.FlashMode
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -48,9 +51,9 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_on() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.ON
@@ -60,10 +63,10 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_auto() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.AUTO
@@ -77,11 +80,11 @@ internal class FlashDeviceTest {
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.OFF
         )
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         assert(
             UiTestUtil.getPreviewCameraAppSettings(activityScenario!!).flashMode ==
                 FlashMode.OFF
@@ -91,11 +94,11 @@ internal class FlashDeviceTest {
     @Test
     fun set_screen_flash_and_capture_successfully() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         // flash on with front camera will automatically enable screen flash
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("CaptureButton")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
         uiDevice.wait(
             Until.findObject(By.res("ImageCaptureSuccessToast")),
             5000
@@ -105,11 +108,11 @@ internal class FlashDeviceTest {
     @Test
     fun set_screen_flash_and_capture_with_screen_change_overlay_shown() = runTest {
         uiDevice.waitForIdle()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         // flash on with front camera will automatically enable screen flash
-        uiDevice.findObject(By.res("QuickSetFlash")).click()
-        uiDevice.findObject(By.res("QuickSettingDropDown")).click()
-        uiDevice.findObject(By.res("CaptureButton")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLASH_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
         uiDevice.wait(
             Until.findObject(By.res("ScreenFlashOverlay")),
             5000
