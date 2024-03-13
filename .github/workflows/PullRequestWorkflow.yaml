@@ -129,8 +129,8 @@ jobs:
         with:
           name: instrumentation-test-reports
           path: |
-            "*/build/reports/androidTests"
-            "*/build/outputs/androidTest-results"
+            */build/reports/androidTests
+            */build/outputs/androidTest-results
 
   spotless:
     name: Spotless Check
