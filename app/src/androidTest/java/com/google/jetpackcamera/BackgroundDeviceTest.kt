@@ -24,6 +24,7 @@ import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import org.junit.Before
 import org.junit.Rule
@@ -80,7 +81,9 @@ class BackgroundDeviceTest {
 
     @Test
     fun toggleCaptureMode_then_background_foreground() {
-        uiDevice.findObject(By.res("ToggleCaptureMode")).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_CAPTURE_MODE_BUTTON)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_BUTTON)).click()
         uiDevice.waitForIdle(2000)
         backgroundThenForegroundApp()
     }
