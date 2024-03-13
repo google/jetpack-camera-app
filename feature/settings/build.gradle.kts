@@ -55,6 +55,23 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.0"
     }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                    systemImageSource = "aosp"
+                }
+                create("pixel2api34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+            }
+        }
+    }
 }
 
 dependencies {

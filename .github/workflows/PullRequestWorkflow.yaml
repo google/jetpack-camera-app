@@ -81,6 +81,62 @@ jobs:
           name: test-reports
           path: "*/build/reports/tests"
 
+  android-test:
+    name: Instrumentation Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - pixel2api28
+          - pixel2api34
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump to AGP 8.4 alpha
+        run: |
+          sed -i 's/androidGradlePlugin = .*/androidGradlePlugin = "8.4.0-alpha13"/' gradle/libs.versions.toml
+
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.DISTRIBUTION }}
+          java-version: ${{ env.JDK_VERSION }}
+
+      - name: Install Emulator
+        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install "emulator"
+
+      - name: Accept licenses
+        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Run instrumentation tests
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: ${{ matrix.device }}DebugAndroidTest
+
+      - name: Upload android test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: "*/build/reports/androidTests"
+
+      - name: Upload android test results (logs) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: "*/build/outputs/androidTest-results"
+
   spotless:
     name: Spotless Check
     runs-on: ubuntu-latest
