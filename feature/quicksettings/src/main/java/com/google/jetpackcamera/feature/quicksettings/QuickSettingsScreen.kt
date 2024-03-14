@@ -64,7 +64,7 @@ fun QuickSettingsScreenOverlay(
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
-    onCaptureModeClick: (captureMode: CaptureMode) -> Unit
+    onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
