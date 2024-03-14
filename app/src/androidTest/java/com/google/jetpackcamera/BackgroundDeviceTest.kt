@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.os.Build
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,6 +27,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
@@ -67,7 +69,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun background_foreground() = runScenarioTest<MainActivity>{
+    fun background_foreground() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -102,7 +104,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun setAspectRatio_then_background_foreground() = runScenarioTest<MainActivity>{
+    fun setAspectRatio_then_background_foreground() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -131,8 +133,16 @@ class BackgroundDeviceTest {
         backgroundThenForegroundApp()
     }
 
+    private fun assumeSupportsSingleStream() {
+        // The GMD emulators with API <=28 do not support single-stream configs.
+        assume().that(Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT <= 28).isFalse()
+    }
+
     @Test
     fun toggleCaptureMode_then_background_foreground() = runScenarioTest<MainActivity> {
+        // Skip this test on devices that don't support single stream
+        assumeSupportsSingleStream()
+
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
