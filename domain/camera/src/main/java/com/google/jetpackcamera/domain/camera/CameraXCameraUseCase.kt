@@ -265,9 +265,9 @@ constructor(
                 "yyyy-MM-dd-HH-mm-ss-SSS",
                 Locale.US
             )
-            val fileName = (formatter.format(Calendar.getInstance().time)) + ".jpg"
+            val filename = "JCA-${formatter.format(Calendar.getInstance().time)}.jpg"
             val contentValues = ContentValues()
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
