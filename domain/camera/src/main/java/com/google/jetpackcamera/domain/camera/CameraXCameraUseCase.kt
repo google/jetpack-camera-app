@@ -256,7 +256,11 @@ constructor(
     }
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ):  CompletableDeferred<ImageCapture.OutputFileResults> {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
@@ -274,6 +278,10 @@ constructor(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 contentValues
             ).build()
+        } else if(imageCaptureUri == null) {
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            throw e
         } else {
             try {
                 val outputStream = contentResolver.openOutputStream(imageCaptureUri)
@@ -313,6 +321,7 @@ constructor(
             }
         )
         imageDeferred.await()
+        return imageDeferred
     }
 
     private fun getEligibleContentValues(): ContentValues {

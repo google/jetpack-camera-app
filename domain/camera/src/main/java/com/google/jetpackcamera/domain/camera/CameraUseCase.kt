@@ -18,12 +18,14 @@ package com.google.jetpackcamera.domain.camera
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -51,11 +53,15 @@ interface CameraUseCase {
     suspend fun takePicture()
 
     /**
-     * Takes a picture with the camera. If the imageCaptureUri is not null, save the picture at
-     * the location of the url on the device. If the imageCaptureUri is null, save the picture in
-     * the picture directory.
+     * Takes a picture with the camera. If ignoreUri is set to true, the picture taken will be saved
+     * at the default directory for pictures on device. Otherwise, it will be saved at the uri
+     * location if the uri is not null. If it is null, an error will be thrown.
      */
-    suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
+    suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): CompletableDeferred<ImageCapture.OutputFileResults>
 
     suspend fun startVideoRecording()
 

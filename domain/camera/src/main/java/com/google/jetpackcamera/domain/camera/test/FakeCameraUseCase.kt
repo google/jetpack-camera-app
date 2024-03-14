@@ -18,6 +18,7 @@ package com.google.jetpackcamera.domain.camera.test
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -25,6 +26,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -106,8 +108,13 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): CompletableDeferred<ImageCapture.OutputFileResults> {
         takePicture()
+        return CompletableDeferred()
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
