@@ -20,6 +20,7 @@ import androidx.test.core.app.ActivityScenario
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import java.util.concurrent.atomic.AtomicReference
 
+const val APP_START_TIMEOUT_MILLIS = 5000L
 object UiTestUtil {
     private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
         val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()
