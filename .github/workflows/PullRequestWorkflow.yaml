@@ -36,7 +36,7 @@ jobs:
         run: ./gradlew assemble --parallel --build-cache
 
       - name: Upload build outputs (APKs)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-outputs
           path: app/build/outputs
@@ -44,10 +44,11 @@ jobs:
       - name: Upload build reports
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-reports
-          path: "*/build/reports"
+          path: |
+            **/build/reports
 
   test:
     name: Unit Tests
@@ -76,10 +77,11 @@ jobs:
 
       - name: Upload test reports on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: "*/build/reports/tests"
+          path: |
+            **/build/reports/tests
 
   spotless:
     name: Spotless Check
