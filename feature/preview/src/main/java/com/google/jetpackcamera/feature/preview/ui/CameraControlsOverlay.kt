@@ -31,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -211,7 +210,7 @@ private fun ControlsBottom(
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
-                                currentCameraSettings.isFrontCameraAvailable
+                            currentCameraSettings.isFrontCameraAvailable
                     )
                 }
             }
@@ -355,7 +354,7 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode,
+            previewMode = PreviewMode.StandardMode
         )
     }
 }

@@ -153,7 +153,6 @@ fun PreviewDisplay(
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-
             Box(
                 modifier = Modifier
                     .width(width)
