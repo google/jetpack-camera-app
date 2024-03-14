@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.os.Environment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
