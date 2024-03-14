@@ -143,9 +143,7 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier
-                    .padding(12.dp)
-                    .testTag(SETTINGS_BUTTON),
+                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON),
                 onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
