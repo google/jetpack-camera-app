@@ -30,7 +30,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.quicksettings.R.string.quick_settings_back_camera_description
 import com.google.jetpackcamera.quicksettings.R.string.quick_settings_dropdown_closed_description
@@ -107,7 +107,7 @@ class SwitchCameraTest {
     @Test
     fun canFlipCamera_fromQuickSettings() = runFlipCameraTest(composeTestRule) {
         // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 

@@ -26,10 +26,10 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import org.junit.Rule
 import org.junit.Test
@@ -113,7 +113,7 @@ class NavigationTest {
         }
 
         // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 
@@ -125,8 +125,8 @@ class NavigationTest {
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on PreviewScreen by finding the capture button
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        // Assert we're on PreviewScreen by finding the flip camera button
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
     }
 
     @Test
@@ -137,7 +137,7 @@ class NavigationTest {
         }
 
         // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 
