@@ -33,10 +33,15 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+
+const val TARGET_FPS_NONE = 0
+const val TARGET_FPS_15 = 15
+const val TARGET_FPS_30 = 30
+const val TARGET_FPS_60 = 60
+
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -70,7 +75,7 @@ class LocalSettingsRepository @Inject constructor(
                     previewSupport = it.stabilizePreviewSupported,
                     videoSupport = it.stabilizeVideoSupported
                 ),
-                targetFrameRate = TargetFrameRate.fromProto(it.targetFrameRate),
+                targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
@@ -140,17 +145,17 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setTargetFrameRate(targetFrameRate.toProto())
+                .setTargetFrameRate(targetFrameRate)
                 .build()
         }
     }
 
     override suspend fun updateSupportedFixedFrameRate(
         supportedFrameRates: Set<Int>,
-        currentTargetFrameRate: TargetFrameRate
+        currentTargetFrameRate: Int
     ) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -159,22 +164,22 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
         when (currentTargetFrameRate) {
-            TargetFrameRate.TARGET_FPS_NONE -> {}
-            TargetFrameRate.TARGET_FPS_15 -> {
-                if (!supportedFrameRates.contains(15)) {
-                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+            TARGET_FPS_NONE -> {}
+            TARGET_FPS_15 -> {
+                if (!supportedFrameRates.contains(TARGET_FPS_15)) {
+                    updateTargetFrameRate(TARGET_FPS_NONE)
                 }
             }
 
-            TargetFrameRate.TARGET_FPS_30 -> {
+            TARGET_FPS_30 -> {
                 if (!supportedFrameRates.contains(30)) {
-                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                    updateTargetFrameRate(TARGET_FPS_NONE)
                 }
             }
 
-            TargetFrameRate.TARGET_FPS_60 -> {
+            TARGET_FPS_60 -> {
                 if (!supportedFrameRates.contains(60)) {
-                    updateTargetFrameRate(TargetFrameRate.TARGET_FPS_NONE)
+                    updateTargetFrameRate(TARGET_FPS_NONE)
                 }
             }
         }

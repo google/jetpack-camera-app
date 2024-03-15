@@ -23,7 +23,6 @@ import "com/google/jetpackcamera/settings/dynamic_range.proto";
 import "com/google/jetpackcamera/settings/flash_mode.proto";
 import "com/google/jetpackcamera/settings/lens_facing.proto";
 import "com/google/jetpackcamera/settings/preview_stabilization.proto";
-import "com/google/jetpackcamera/settings/target_frame_rate.proto";
 import "com/google/jetpackcamera/settings/video_stabilization.proto";
 
 

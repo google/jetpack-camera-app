@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -57,11 +56,11 @@ interface SettingsRepository {
 
     suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>)
 
-    suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate)
+    suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
     suspend fun updateSupportedFixedFrameRate(
         supportedFrameRates: Set<Int>,
-        currentTargetFrameRate: TargetFrameRate
+        currentTargetFrameRate: Int
     )
 
     suspend fun getCameraAppSettings(): CameraAppSettings

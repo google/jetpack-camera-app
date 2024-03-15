@@ -25,7 +25,6 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,7 +103,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setTargetFrameRate(targetFrameRate: TargetFrameRate) {
+    fun setTargetFrameRate(targetFrameRate: Int) {
         viewModelScope.launch {
             settingsRepository.updateTargetFrameRate(targetFrameRate)
         }

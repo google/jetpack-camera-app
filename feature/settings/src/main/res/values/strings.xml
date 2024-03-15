@@ -91,15 +91,12 @@
     <string name="fps_title">Set Frame Rate</string>
 
     <string name="fps_description_unavailable">No fixed frame rates supported</string>
-    <string name="fps_description_none">Auto Frame Rate</string>
-    <string name="fps_description_15">15 fps </string>
-    <string name="fps_description_30">30 fps</string>
-    <string name="fps_description_60">60 fps</string>
+    <string name="fps_description_auto">Auto Frame Rate</string>
+    <string name="fps_description">%d fps</string>
 
-    <string name="fps_selector_none">Auto</string>
-    <string name="fps_selector_15">15</string>
-    <string name="fps_selector_30">30</string>
-    <string name="fps_selector_60">60</string>
+
+    <string name="fps_selector_auto">Auto</string>
+    <string name="fps_selector_value">%d</string>
 
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
 

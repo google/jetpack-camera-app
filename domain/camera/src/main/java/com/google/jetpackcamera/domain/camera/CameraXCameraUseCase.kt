@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import android.view.Display
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -50,7 +51,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.FileNotFoundException
 import java.util.Calendar
@@ -75,6 +75,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
+const val TARGET_FPS_AUTO = 0
+const val TARGET_FPS_15 = 15
+const val TARGET_FPS_30 = 30
+const val TARGET_FPS_60 = 60
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -145,7 +149,7 @@ constructor(
         val cameraSelector: CameraSelector,
         val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
-        val targetFrameRate: TargetFrameRate,
+        val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization
     )
@@ -518,8 +522,8 @@ constructor(
             videoCaptureBuilder.setVideoStabilizationEnabled(true)
         }
         // set target fps
-        if (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_NONE) {
-            videoCaptureBuilder.setTargetFrameRate(sessionSettings.targetFrameRate.range)
+        if (sessionSettings.targetFrameRate != TARGET_FPS_AUTO) {
+            videoCaptureBuilder.setTargetFrameRate(Range(sessionSettings.targetFrameRate, sessionSettings.targetFrameRate))
         }
         return videoCaptureBuilder.build()
     }
@@ -529,7 +533,7 @@ constructor(
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
         // video is on and target fps is not 60
-        return (sessionSettings.targetFrameRate != TargetFrameRate.TARGET_FPS_60) &&
+        return (sessionSettings.targetFrameRate != TARGET_FPS_60) &&
             (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
             // high quality (video only) selected
             (
@@ -562,7 +566,7 @@ constructor(
         // only supported if target fps is 30 or none
         return (
             when (sessionSettings.targetFrameRate) {
-                TargetFrameRate.TARGET_FPS_NONE, TargetFrameRate.TARGET_FPS_30 -> true
+                TARGET_FPS_AUTO, TARGET_FPS_30 -> true
                 else -> false
             }
             ) &&

@@ -26,7 +26,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
-import com.google.jetpackcamera.settings.model.TargetFrameRate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -118,14 +117,14 @@ object FakeSettingsRepository : SettingsRepository {
             currentCameraSettings.copy(aspectRatio = aspectRatio)
     }
 
-    override suspend fun updateTargetFrameRate(targetFrameRate: TargetFrameRate) {
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
         currentCameraSettings =
             currentCameraSettings.copy(targetFrameRate = targetFrameRate)
     }
 
     override suspend fun updateSupportedFixedFrameRate(
         supportedFrameRates: Set<Int>,
-        currentTargetFrameRate: TargetFrameRate
+        currentTargetFrameRate: Int
     ) {
         currentCameraSettings =
             currentCameraSettings.copy(supportedFixedFrameRates = supportedFrameRates.toList())
