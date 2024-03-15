@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.model
 const val TARGET_FPS_AUTO = 0
+
 /**
  * Data layer representation for settings.
  */

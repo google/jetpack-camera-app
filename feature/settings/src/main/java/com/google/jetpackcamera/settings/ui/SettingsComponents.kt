@@ -280,8 +280,8 @@ fun TargetFpsSetting(
                 TARGET_FPS_30 -> stringResource(id = R.string.fps_description, TARGET_FPS_30)
                 TARGET_FPS_60 -> stringResource(id = R.string.fps_description, TARGET_FPS_60)
                 else -> stringResource(
-                id = R.string.fps_description_auto
-            )
+                    id = R.string.fps_description_auto
+                )
             }
         },
         popupContents = {

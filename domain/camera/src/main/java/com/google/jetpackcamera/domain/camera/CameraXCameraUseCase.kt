@@ -523,7 +523,9 @@ constructor(
         }
         // set target fps
         if (sessionSettings.targetFrameRate != TARGET_FPS_AUTO) {
-            videoCaptureBuilder.setTargetFrameRate(Range(sessionSettings.targetFrameRate, sessionSettings.targetFrameRate))
+            videoCaptureBuilder.setTargetFrameRate(
+                Range(sessionSettings.targetFrameRate, sessionSettings.targetFrameRate)
+            )
         }
         return videoCaptureBuilder.build()
     }

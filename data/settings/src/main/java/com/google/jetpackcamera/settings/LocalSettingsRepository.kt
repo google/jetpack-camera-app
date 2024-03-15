@@ -42,7 +42,6 @@ const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
-
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
