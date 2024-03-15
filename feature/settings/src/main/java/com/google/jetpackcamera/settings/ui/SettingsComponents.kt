@@ -60,10 +60,10 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
-const val TARGET_FPS_AUTO = 0
-const val TARGET_FPS_15 = 15
-const val TARGET_FPS_30 = 30
-const val TARGET_FPS_60 = 60
+const val FPS_AUTO = 0
+const val FPS_15 = 15
+const val FPS_30 = 30
+const val FPS_60 = 60
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -276,9 +276,9 @@ fun TargetFpsSetting(
             stringResource(id = R.string.fps_description_unavailable)
         } else {
             when (currentTargetFps) {
-                TARGET_FPS_15 -> stringResource(id = R.string.fps_description, TARGET_FPS_15)
-                TARGET_FPS_30 -> stringResource(id = R.string.fps_description, TARGET_FPS_30)
-                TARGET_FPS_60 -> stringResource(id = R.string.fps_description, TARGET_FPS_60)
+                FPS_15 -> stringResource(id = R.string.fps_description, FPS_15)
+                FPS_30 -> stringResource(id = R.string.fps_description, FPS_30)
+                FPS_60 -> stringResource(id = R.string.fps_description, FPS_60)
                 else -> stringResource(
                     id = R.string.fps_description_auto
                 )
@@ -294,30 +294,17 @@ fun TargetFpsSetting(
 
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.fps_selector_auto),
-                    selected = currentTargetFps == TARGET_FPS_AUTO,
-                    onClick = { setTargetFps(TARGET_FPS_AUTO) }
+                    selected = currentTargetFps == FPS_AUTO,
+                    onClick = { setTargetFps(FPS_AUTO) }
                 )
-
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_value, TARGET_FPS_15),
-                    selected = currentTargetFps == TARGET_FPS_15,
-                    onClick = { setTargetFps(TARGET_FPS_15) },
-                    enabled = supportedFps.contains(TARGET_FPS_15)
-                )
-
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_value, TARGET_FPS_30),
-                    selected = currentTargetFps == TARGET_FPS_30,
-                    onClick = { setTargetFps(TARGET_FPS_30) },
-                    enabled = supportedFps.contains(TARGET_FPS_30)
-                )
-
-                SingleChoiceSelector(
-                    text = stringResource(id = R.string.fps_selector_value, TARGET_FPS_60),
-                    selected = currentTargetFps == TARGET_FPS_60,
-                    onClick = { setTargetFps(TARGET_FPS_60) },
-                    enabled = supportedFps.contains(TARGET_FPS_60)
-                )
+                listOf(FPS_15, FPS_30, FPS_60).forEach { fpsOption ->
+                    SingleChoiceSelector(
+                        text = "%d".format(fpsOption),
+                        selected = currentTargetFps == fpsOption,
+                        onClick = { setTargetFps(fpsOption) },
+                        enabled = supportedFps.contains(fpsOption)
+                    )
+                }
             }
         }
     )
@@ -367,7 +354,7 @@ fun StabilizationSetting(
     // if the preview stabilization was left ON and the target frame rate was set to 15,
     // this setting needs to be reset to OFF
     LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization) {
-        if (currentTargetFps == TARGET_FPS_15 &&
+        if (currentTargetFps == FPS_15 &&
             currentPreviewStabilization == Stabilization.ON
         ) {
             setPreviewStabilization(Stabilization.UNDEFINED)
@@ -380,11 +367,11 @@ fun StabilizationSetting(
         leadingIcon = null,
         enabled = (
             supportedStabilizationMode.isNotEmpty() &&
-                currentTargetFps != TARGET_FPS_60
+                currentTargetFps != FPS_60
             ),
         description = if (supportedStabilizationMode.isEmpty()) {
             stringResource(id = R.string.stabilization_description_unsupported_device)
-        } else if (currentTargetFps == TARGET_FPS_60) {
+        } else if (currentTargetFps == FPS_60) {
             stringResource(id = R.string.stabilization_description_unsupported_fps)
         } else {
             stringResource(
@@ -407,7 +394,7 @@ fun StabilizationSetting(
                     enabled =
                     (
                         when (currentTargetFps) {
-                            TARGET_FPS_AUTO, TARGET_FPS_30 -> true
+                            FPS_AUTO, FPS_30 -> true
                             else -> false
                         }
                         ) &&
@@ -427,7 +414,7 @@ fun StabilizationSetting(
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = (currentTargetFps != TARGET_FPS_60) &&
+                    enabled = (currentTargetFps != FPS_60) &&
                         supportedStabilizationMode.contains(
                             SupportedStabilizationMode.HIGH_QUALITY
                         ),
