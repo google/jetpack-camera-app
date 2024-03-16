@@ -44,4 +44,6 @@ message JcaSettings {
   DynamicRange dynamic_range_status = 13;
   repeated DynamicRange supported_dynamic_ranges = 14;
   LensFacing default_lens_facing = 15;
+  int32 target_frame_rate = 16;
+  repeated int32 supported_frame_rates = 17;
 }

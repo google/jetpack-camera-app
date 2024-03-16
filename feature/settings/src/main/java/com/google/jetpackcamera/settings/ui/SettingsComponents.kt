@@ -39,6 +39,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -57,6 +59,11 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+
+const val FPS_AUTO = 0
+const val FPS_15 = 15
+const val FPS_30 = 30
+const val FPS_60 = 60
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -253,6 +260,56 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
     )
 }
 
+@Composable
+fun TargetFpsSetting(
+    modifier: Modifier = Modifier,
+    currentTargetFps: Int,
+    supportedFps: List<Int>,
+    setTargetFps: (Int) -> Unit
+) {
+    BasicPopupSetting(
+        modifier = modifier,
+        title = stringResource(id = R.string.fps_title),
+        enabled = supportedFps.isNotEmpty(),
+        leadingIcon = null,
+        description = if (supportedFps.isEmpty()) {
+            stringResource(id = R.string.fps_description_unavailable)
+        } else {
+            when (currentTargetFps) {
+                FPS_15 -> stringResource(id = R.string.fps_description, FPS_15)
+                FPS_30 -> stringResource(id = R.string.fps_description, FPS_30)
+                FPS_60 -> stringResource(id = R.string.fps_description, FPS_60)
+                else -> stringResource(
+                    id = R.string.fps_description_auto
+                )
+            }
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                Text(
+                    text = stringResource(id = R.string.fps_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.fps_selector_auto),
+                    selected = currentTargetFps == FPS_AUTO,
+                    onClick = { setTargetFps(FPS_AUTO) }
+                )
+                listOf(FPS_15, FPS_30, FPS_60).forEach { fpsOption ->
+                    SingleChoiceSelector(
+                        text = "%d".format(fpsOption),
+                        selected = currentTargetFps == fpsOption,
+                        onClick = { setTargetFps(fpsOption) },
+                        enabled = supportedFps.contains(fpsOption)
+                    )
+                }
+            }
+        }
+    )
+}
+
 /**
  * Returns the description text depending on the preview/video stabilization configuration.
  * On - preview is on and video is NOT off.
@@ -289,16 +346,33 @@ private fun getStabilizationStringRes(
 fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
+    currentTargetFps: Int,
     supportedStabilizationMode: List<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit
 ) {
+    // if the preview stabilization was left ON and the target frame rate was set to 15,
+    // this setting needs to be reset to OFF
+    LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization) {
+        if (currentTargetFps == FPS_15 &&
+            currentPreviewStabilization == Stabilization.ON
+        ) {
+            setPreviewStabilization(Stabilization.UNDEFINED)
+        }
+    }
+    // entire setting disabled when no available fps or target fps = 60
+    // stabilization is unsupported >30 fps
     BasicPopupSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = supportedStabilizationMode.isNotEmpty(),
+        enabled = (
+            supportedStabilizationMode.isNotEmpty() &&
+                currentTargetFps != FPS_60
+            ),
         description = if (supportedStabilizationMode.isEmpty()) {
-            stringResource(id = R.string.stabilization_description_unsupported)
+            stringResource(id = R.string.stabilization_description_unsupported_device)
+        } else if (currentTargetFps == FPS_60) {
+            stringResource(id = R.string.stabilization_description_unsupported_fps)
         } else {
             stringResource(
                 id = getStabilizationStringRes(
@@ -311,11 +385,20 @@ fun StabilizationSetting(
             Column(Modifier.selectableGroup()) {
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // on selector
+                // on (preview) selector
+                // disabled if target fps != (30 or off)
+                // TODO(b/328223562): device always resolves to 30fps when using preview stabilization
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                    enabled =
+                    (
+                        when (currentTargetFps) {
+                            FPS_AUTO, FPS_30 -> true
+                            else -> false
+                        }
+                        ) &&
+                        supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -325,14 +408,16 @@ fun StabilizationSetting(
                 )
 
                 // high quality selector
+                // disabled if target fps = 60 (see VideoCapabilities.isStabilizationSupported)
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode.contains(
-                        SupportedStabilizationMode.HIGH_QUALITY
-                    ),
+                    enabled = (currentTargetFps != FPS_60) &&
+                        supportedStabilizationMode.contains(
+                            SupportedStabilizationMode.HIGH_QUALITY
+                        ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),

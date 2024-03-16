@@ -32,6 +32,7 @@ import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
+import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 /**
  * Screen used for the Settings feature.
@@ -66,6 +67,12 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setFlashMode = viewModel::setFlashMode
     )
 
+    TargetFpsSetting(
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        supportedFps = uiState.cameraAppSettings.supportedFixedFrameRates,
+        setTargetFps = viewModel::setTargetFrameRate
+    )
+
     AspectRatioSetting(
         currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
         setAspectRatio = viewModel::setAspectRatio
@@ -76,11 +83,10 @@ fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         setCaptureMode = viewModel::setCaptureMode
     )
 
-    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
-
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization
