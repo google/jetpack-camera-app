@@ -260,7 +260,7 @@ constructor(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
-    ): CompletableDeferred<ImageCapture.OutputFileResults> {
+    ): ImageCapture.OutputFileResults {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
@@ -321,7 +321,7 @@ constructor(
             }
         )
         imageDeferred.await()
-        return imageDeferred
+        return imageDeferred.await()
     }
 
     private fun getEligibleContentValues(): ContentValues {

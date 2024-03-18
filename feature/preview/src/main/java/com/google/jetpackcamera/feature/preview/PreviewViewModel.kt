@@ -204,7 +204,7 @@ class PreviewViewModel @Inject constructor(
                 try {
                     val savedUri =
                         cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri)
-                            .await().savedUri
+                            .savedUri
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(

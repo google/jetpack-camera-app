@@ -25,7 +25,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -61,7 +60,7 @@ interface CameraUseCase {
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean = false
-    ): CompletableDeferred<ImageCapture.OutputFileResults>
+    ): ImageCapture.OutputFileResults
 
     suspend fun startVideoRecording()
 

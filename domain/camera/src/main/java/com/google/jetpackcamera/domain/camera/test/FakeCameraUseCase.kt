@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
@@ -26,7 +27,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -108,13 +108,14 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
+    @SuppressLint("RestrictedApi")
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
-    ): CompletableDeferred<ImageCapture.OutputFileResults> {
+    ): ImageCapture.OutputFileResults {
         takePicture()
-        return CompletableDeferred()
+        return ImageCapture.OutputFileResults(null)
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
