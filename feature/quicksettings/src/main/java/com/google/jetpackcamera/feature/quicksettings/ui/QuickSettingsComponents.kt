@@ -187,7 +187,11 @@ fun QuickSetCaptureMode(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(modifier: Modifier = Modifier, toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun ToggleQuickSettingsButton(
+    modifier: Modifier = Modifier,
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically

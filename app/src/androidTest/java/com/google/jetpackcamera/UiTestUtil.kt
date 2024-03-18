@@ -22,8 +22,8 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import org.junit.Assert
 import java.util.concurrent.atomic.AtomicReference
+import org.junit.Assert
 
 object UiTestUtil {
     private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
