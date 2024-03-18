@@ -260,7 +260,7 @@ constructor(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
-    ):  CompletableDeferred<ImageCapture.OutputFileResults> {
+    ): CompletableDeferred<ImageCapture.OutputFileResults> {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
@@ -278,7 +278,7 @@ constructor(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 contentValues
             ).build()
-        } else if(imageCaptureUri == null) {
+        } else if (imageCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
             throw e
