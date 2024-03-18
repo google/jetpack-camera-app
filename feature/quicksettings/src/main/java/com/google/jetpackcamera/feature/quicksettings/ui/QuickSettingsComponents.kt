@@ -172,7 +172,7 @@ fun QuickSetCaptureMode(
             CaptureMode.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
         }
     QuickSettingUiItem(
-        modifier = modifier,
+        modifier = modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE),
         enum = enum,
         onClick = {
             when (currentCaptureMode) {

@@ -19,3 +19,7 @@ const val CAPTURE_BUTTON = "CaptureButton"
 const val SETTINGS_BUTTON = "SettingsButton"
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
+// toast test tags
+const val IMAGE_CAPTURE_SUCCESS_TOAST = "ImageCaptureSuccessToast"
+const val IMAGE_CAPTURE_FAIL_TOAST = "ImageCaptureFailureToast"
