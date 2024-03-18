@@ -60,7 +60,7 @@ interface CameraUseCase {
     suspend fun takePicture(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
-        ignoreUri: Boolean
+        ignoreUri: Boolean = false
     ): CompletableDeferred<ImageCapture.OutputFileResults>
 
     suspend fun startVideoRecording()

@@ -195,7 +195,7 @@ class PreviewViewModel @Inject constructor(
     fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
-        ignoreUri: Boolean,
+        ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent) -> Unit
     ) {
         Log.d(TAG, "captureImageWithUri")
