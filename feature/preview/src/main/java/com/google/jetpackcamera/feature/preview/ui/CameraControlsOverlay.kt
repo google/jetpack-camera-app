@@ -152,7 +152,7 @@ private fun ControlsTop(
         }
 
         // quick settings button
-        ToggleQuickSettingsButton(onToggleQuickSettings, isQuickSettingsOpen)
+        ToggleQuickSettingsButton(toggleDropDown = onToggleQuickSettings, isOpen = isQuickSettingsOpen)
 
         Row(
             Modifier.weight(1f),

@@ -17,7 +17,12 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import androidx.test.core.app.ActivityScenario
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import org.junit.Assert
 import java.util.concurrent.atomic.AtomicReference
 
 object UiTestUtil {
@@ -41,5 +46,26 @@ inline fun <reified T : Activity> runScenarioTest(
 ) {
     ActivityScenario.launch(T::class.java).use { scenario ->
         scenario.apply(block)
+    }
+}
+
+/**
+ * Find a composable by its test tag.
+ */
+fun findObjectByRes(
+    device: UiDevice,
+    testTag: String,
+    timeout: Long = 2_500,
+    shouldFailIfNotFound: Boolean = false
+): UiObject2? {
+    val selector = By.res(testTag)
+
+    return if (!device.wait(Until.hasObject(selector), timeout)) {
+        if (shouldFailIfNotFound) {
+            Assert.fail("Did not find object with id $testTag")
+        }
+        null
+    } else {
+        device.findObject(selector)
     }
 }

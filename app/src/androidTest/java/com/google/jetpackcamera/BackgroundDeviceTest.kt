@@ -82,6 +82,7 @@ class BackgroundDeviceTest {
     @Test
     fun toggleCaptureMode_then_background_foreground() {
         uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
+        uiDevice.findObject(By.res(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)).click()
         uiDevice.findObject(By.res(QUICK_SETTINGS_CAPTURE_MODE)).click()
         uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
         uiDevice.waitForIdle(2000)
