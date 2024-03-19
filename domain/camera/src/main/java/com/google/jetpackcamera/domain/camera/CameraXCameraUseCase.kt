@@ -111,7 +111,7 @@ constructor(
                 super.onCaptureCompleted(session, request, result)
                 try {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        Trace.endAsyncSection("First Frame Trace", 1)
+                        Trace.endAsyncSection(FIRST_FRAME_TRACE, 1)
                     }
                 } catch (_: Exception) {}
             }
