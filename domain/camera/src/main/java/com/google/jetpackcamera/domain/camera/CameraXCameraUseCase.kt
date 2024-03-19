@@ -35,7 +35,6 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
-import androidx.camera.core.impl.stabilization.StabilizationMode
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
@@ -150,11 +149,12 @@ constructor(
         val deviceSupportedStabilizationModes = mutableSetOf<SupportedStabilizationMode>()
 
         cameraProvider.availableCameraInfos.forEach { cameraInfo ->
-            if(isPreviewStabilizationSupported(cameraInfo))
+            if (isPreviewStabilizationSupported(cameraInfo)) {
                 deviceSupportedStabilizationModes.add(SupportedStabilizationMode.ON)
-            if(isVideoStabilizationSupported(cameraInfo))
+            }
+            if (isVideoStabilizationSupported(cameraInfo)) {
                 deviceSupportedStabilizationModes.add(SupportedStabilizationMode.HIGH_QUALITY)
-
+            }
         }
         return deviceSupportedStabilizationModes
     }
@@ -227,14 +227,14 @@ constructor(
                 // get device-supported stabilization modes
                 val supportedStabilizationModes = getDeviceSupportedStabilizations()
 
-                    settingsRepository.updatePreviewStabilizationSupported(
+                settingsRepository.updatePreviewStabilizationSupported(
                     supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
                 )
                 settingsRepository.updateVideoStabilizationSupported(
                     supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
                 )
 
-                    settingsRepository.cameraAppSettings.first().supportedStabilizationModes
+                settingsRepository.cameraAppSettings.first().supportedStabilizationModes
 
                 val initialTransientSettings = transientSettings
                     .filterNotNull()
