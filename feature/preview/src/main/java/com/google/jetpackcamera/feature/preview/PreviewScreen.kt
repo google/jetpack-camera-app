@@ -205,7 +205,8 @@ private fun ContentScreen(
                 val result =
                     snackbarHostState.showSnackbar(
                         message = context.getString(previewUiState.snackBarToShow.stringResource),
-                        duration = previewUiState.snackBarToShow.duration
+                        duration = previewUiState.snackBarToShow.duration,
+                        withDismissAction = true
                     )
                 when (result) {
                     SnackbarResult.ActionPerformed -> {
