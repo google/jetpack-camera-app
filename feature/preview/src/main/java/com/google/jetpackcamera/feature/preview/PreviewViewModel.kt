@@ -26,14 +26,13 @@ import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
+import com.google.jetpackcamera.feature.preview.ui.SnackBarData
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -43,12 +42,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
-
-// toast test descriptions
-const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -168,10 +166,7 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
-                                stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
-                            )
+                            snackBarToShow = SnackBarData(R.string.toast_image_capture_success)
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture success")
@@ -179,10 +174,7 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
-                                stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
-                            )
+                            snackBarToShow = SnackBarData(R.string.toast_capture_failure)
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture error")
@@ -205,10 +197,7 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
-                                stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
-                            )
+                            snackBarToShow = SnackBarData(R.string.toast_image_capture_success)
                         )
                     )
                     onImageCapture(ImageCaptureEvent.ImageSaved)
@@ -217,10 +206,7 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
-                                stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
-                            )
+                            snackBarToShow = SnackBarData(R.string.toast_capture_failure)
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture error")
@@ -301,6 +287,16 @@ class PreviewViewModel @Inject constructor(
             _previewUiState.emit(
                 previewUiState.value.copy(
                     toastMessageToShow = null
+                )
+            )
+        }
+    }
+
+    fun onSnackBarResult() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    snackBarToShow = null
                 )
             )
         }
