@@ -141,7 +141,7 @@ private fun ContentScreen(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
-    onSnackBarResult: () -> Unit = {},
+    onSnackBarResult: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
