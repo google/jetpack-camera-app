@@ -19,5 +19,7 @@ import androidx.compose.material3.SnackbarDuration
 
 data class SnackBarData(
     val stringResource: Int,
-    val duration: SnackbarDuration = SnackbarDuration.Short
+    val duration: SnackbarDuration = SnackbarDuration.Short,
+    val actionLabelRes: Int? = null,
+    val withDismissAction: Boolean = false,
 )

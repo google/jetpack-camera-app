@@ -206,12 +206,15 @@ private fun ContentScreen(
                     snackbarHostState.showSnackbar(
                         message = context.getString(previewUiState.snackBarToShow.stringResource),
                         duration = previewUiState.snackBarToShow.duration,
-                        withDismissAction = true
+                        withDismissAction = previewUiState.snackBarToShow.withDismissAction,
+                        actionLabel = if (previewUiState.snackBarToShow.actionLabelRes == null) null
+                        else context.getString(previewUiState.snackBarToShow.actionLabelRes)
                     )
                 when (result) {
                     SnackbarResult.ActionPerformed -> {
                         onSnackBarResult()
                     }
+
                     SnackbarResult.Dismissed -> {
                         onSnackBarResult()
                     }

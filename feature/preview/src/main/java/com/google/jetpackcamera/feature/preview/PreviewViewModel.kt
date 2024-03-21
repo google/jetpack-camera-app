@@ -164,7 +164,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(R.string.toast_image_capture_success)
+                            snackBarToShow = SnackBarData(
+                                stringResource = R.string.toast_image_capture_success,
+                                withDismissAction = true
+                            )
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture success")
@@ -172,7 +175,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(R.string.toast_capture_failure)
+                            snackBarToShow = SnackBarData(
+                                stringResource = R.string.toast_capture_failure,
+                                withDismissAction = true
+                            )
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture error")
@@ -195,7 +201,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(R.string.toast_image_capture_success)
+                            snackBarToShow = SnackBarData(
+                                stringResource = R.string.toast_image_capture_success,
+                                withDismissAction = true
+                            )
                         )
                     )
                     onImageCapture(ImageCaptureEvent.ImageSaved)
@@ -204,7 +213,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(R.string.toast_capture_failure)
+                            snackBarToShow = SnackBarData(
+                                stringResource = R.string.toast_capture_failure,
+                                withDismissAction = true
+                            )
                         )
                     )
                     Log.d(TAG, "cameraUseCase.takePicture error")
