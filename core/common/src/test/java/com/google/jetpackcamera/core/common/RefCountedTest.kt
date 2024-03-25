@@ -53,7 +53,7 @@ class RefCountedTest {
 
     @Test
     fun acquireBeforeInitialize_throwsException() {
-        val refCounted = RefCounted<Unit>()
+        val refCounted = RefCounted<Unit> {}
         assertThrows(IllegalStateException::class.java) {
             refCounted.acquire()
         }
@@ -61,7 +61,7 @@ class RefCountedTest {
 
     @Test
     fun releaseBeforeInitialize_throwsException() {
-        val refCounted = RefCounted<Unit>()
+        val refCounted = RefCounted<Unit> {}
         assertThrows(IllegalStateException::class.java) {
             refCounted.release()
         }
@@ -69,7 +69,7 @@ class RefCountedTest {
 
     @Test
     fun releaseCalledMoreTimesThanAcquire_throwsException() {
-        val refCounted = RefCounted<Unit>()
+        val refCounted = RefCounted<Unit> {}
         refCounted.initialize(Unit)
         refCounted.release()
 
@@ -80,7 +80,7 @@ class RefCountedTest {
 
     @Test
     fun acquireAfterRelease_returnsNull() {
-        val refCounted = RefCounted<Unit>()
+        val refCounted = RefCounted<Unit> {}
         refCounted.initialize(Unit)
         refCounted.release()
 
@@ -90,7 +90,7 @@ class RefCountedTest {
     @Test
     fun acquireAfterInitialize_returnsValue() {
         val value = Object()
-        val refCounted = RefCounted<Any>()
+        val refCounted = RefCounted<Any> {}
         refCounted.initialize(value)
 
         assertThat(refCounted.acquire()).isEqualTo(value)

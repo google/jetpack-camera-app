@@ -29,7 +29,7 @@ import kotlinx.atomicfu.loop
  */
 class RefCounted<T : Any>(
     private val debugRefCounts: Boolean = false,
-    private val onRelease: (T) -> Unit = {}
+    private val onRelease: (T) -> Unit
 ) {
     private val refCounted = atomic(uninitialized<T>())
 
@@ -37,6 +37,9 @@ class RefCounted<T : Any>(
      * Initializes the ref-count managed object with the object being managed.
      *
      * This also initializes the implicit ref-count to 1.
+     *
+     * All calls to this function must be paired with [release] to ensure the initial implicit
+     * ref count is decremented and the `onRelease` callback can be called.
      *
      */
     fun initialize(newValue: T) {
@@ -105,7 +108,7 @@ class RefCounted<T : Any>(
      */
     fun release() {
         check(refCounted.value != uninitialized<T>()) {
-            "Ref-count managed object has not yet been initialized. Unable to acquire."
+            "Ref-count managed object has not yet been initialized. Unable to release."
         }
 
         refCounted.loop { old ->
