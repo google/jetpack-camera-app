@@ -19,6 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -46,7 +47,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,6 +67,7 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "PreviewScreen"
 
@@ -114,7 +119,8 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     aspectRatio: AspectRatio,
-    surfaceRequest: SurfaceRequest?
+    surfaceRequest: SurfaceRequest?,
+    blinkState: BlinkState
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -152,6 +158,7 @@ fun PreviewDisplay(
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
+                    .alpha(blinkState.alpha)
 
             ) {
                 CameraXViewfinder(
@@ -160,6 +167,20 @@ fun PreviewDisplay(
                 )
             }
         }
+    }
+}
+
+class BlinkState(
+    initialAlpha: Float = 1F,
+    coroutineScope: CoroutineScope
+) {
+    private val animatable = Animatable(initialAlpha)
+    val alpha: Float get() = animatable.value
+    val scope = coroutineScope
+
+    suspend fun play() {
+        animatable.snapTo(0F)
+        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 
@@ -254,6 +275,10 @@ fun CaptureButton(
     onRelease: () -> Unit,
     videoRecordingState: VideoRecordingState
 ) {
+    var isPressedDown by remember {
+        mutableStateOf(false)
+    }
+    val currentColor = LocalContentColor.current
     Box(
         modifier = modifier
             .pointerInput(Unit) {
@@ -264,7 +289,9 @@ fun CaptureButton(
                     // TODO: @kimblebee - stopVideoRecording is being called every time the capture
                     // button is pressed -- regardless of tap or long press
                     onPress = {
+                        isPressedDown = true
                         awaitRelease()
+                        isPressedDown = false
                         onRelease()
                     },
                     onTap = { onClick() }
@@ -272,13 +299,16 @@ fun CaptureButton(
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, LocalContentColor.current, CircleShape)
+            .border(4.dp, currentColor, CircleShape)
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(
                 color =
                 when (videoRecordingState) {
-                    VideoRecordingState.INACTIVE -> Color.Transparent
+                    VideoRecordingState.INACTIVE -> {
+                        if (isPressedDown) currentColor else Color.Transparent
+                    }
+
                     VideoRecordingState.ACTIVE -> Color.Red
                 }
             )

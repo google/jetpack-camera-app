@@ -37,6 +37,11 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+const val TARGET_FPS_NONE = 0
+const val TARGET_FPS_15 = 15
+const val TARGET_FPS_30 = 30
+const val TARGET_FPS_60 = 60
+
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
@@ -69,6 +74,7 @@ class LocalSettingsRepository @Inject constructor(
                     previewSupport = it.stabilizePreviewSupported,
                     videoSupport = it.stabilizeVideoSupported
                 ),
+                targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
@@ -77,8 +83,8 @@ class LocalSettingsRepository @Inject constructor(
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
                     DynamicRange.fromProto(dynRngProto)
-                }
-
+                },
+                supportedFixedFrameRates = it.supportedFrameRatesList
             )
         }
 
@@ -135,6 +141,46 @@ class LocalSettingsRepository @Inject constructor(
                 .setFrontCameraAvailable(frontLensAvailable)
                 .setBackCameraAvailable(backLensAvailable)
                 .build()
+        }
+    }
+
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setTargetFrameRate(targetFrameRate)
+                .build()
+        }
+    }
+
+    override suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
+        currentTargetFrameRate: Int
+    ) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedFrameRates()
+                .addAllSupportedFrameRates(supportedFrameRates)
+                .build()
+        }
+        when (currentTargetFrameRate) {
+            TARGET_FPS_NONE -> {}
+            TARGET_FPS_15 -> {
+                if (!supportedFrameRates.contains(TARGET_FPS_15)) {
+                    updateTargetFrameRate(TARGET_FPS_NONE)
+                }
+            }
+
+            TARGET_FPS_30 -> {
+                if (!supportedFrameRates.contains(30)) {
+                    updateTargetFrameRate(TARGET_FPS_NONE)
+                }
+            }
+
+            TARGET_FPS_60 -> {
+                if (!supportedFrameRates.contains(60)) {
+                    updateTargetFrameRate(TARGET_FPS_NONE)
+                }
+            }
         }
     }
 

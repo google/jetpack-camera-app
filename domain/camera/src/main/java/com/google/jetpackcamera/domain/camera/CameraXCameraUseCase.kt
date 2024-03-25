@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import android.view.Display
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -74,6 +75,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
+const val TARGET_FPS_AUTO = 0
+const val TARGET_FPS_15 = 15
+const val TARGET_FPS_30 = 30
+const val TARGET_FPS_60 = 60
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -87,13 +92,12 @@ constructor(
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository
 ) : CameraUseCase {
+    private val fixedFrameRates = setOf(15, 30, 60)
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private val imageCaptureUseCase = ImageCapture.Builder().build()
 
-    private val recorder = Recorder.Builder().setExecutor(
-        defaultDispatcher.asExecutor()
-    ).build()
+    private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
@@ -123,6 +127,18 @@ constructor(
         currentSettings.value = settingsRepository.cameraAppSettings.first()
     }
 
+    private fun getSupportedFrameRates(): Set<Int> {
+        val supportedFixedFrameRates = mutableSetOf<Int>()
+        cameraProvider.availableCameraInfos.forEach { cameraInfo ->
+            cameraInfo.supportedFrameRateRanges.forEach { e ->
+                if (e.upper == e.lower && fixedFrameRates.contains(e.upper)) {
+                    supportedFixedFrameRates.add(e.upper)
+                }
+            }
+        }
+        return supportedFixedFrameRates
+    }
+
     /**
      * Camera settings that persist as long as a camera is running.
      *
@@ -133,6 +149,7 @@ constructor(
         val cameraSelector: CameraSelector,
         val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
+        val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization
     )
@@ -170,6 +187,7 @@ constructor(
                     cameraSelector = cameraSelector,
                     aspectRatio = currentCameraSettings.aspectRatio,
                     captureMode = currentCameraSettings.captureMode,
+                    targetFrameRate = currentCameraSettings.targetFrameRate,
                     stabilizePreviewMode = currentCameraSettings.previewStabilization,
                     stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization
                 )
@@ -180,6 +198,10 @@ constructor(
                     cameraProvider.availableCameraInfos
                 ).first()
 
+                settingsRepository.updateSupportedFixedFrameRate(
+                    getSupportedFrameRates(),
+                    sessionSettings.targetFrameRate
+                )
                 settingsRepository.updatePreviewStabilizationSupported(
                     isPreviewStabilizationSupported(cameraInfo)
                 )
@@ -499,6 +521,12 @@ constructor(
         ) {
             videoCaptureBuilder.setVideoStabilizationEnabled(true)
         }
+        // set target fps
+        if (sessionSettings.targetFrameRate != TARGET_FPS_AUTO) {
+            videoCaptureBuilder.setTargetFrameRate(
+                Range(sessionSettings.targetFrameRate, sessionSettings.targetFrameRate)
+            )
+        }
         return videoCaptureBuilder.build()
     }
 
@@ -506,9 +534,9 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
-        // video is supported by the device AND
-        // video is on
-        return (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+        // video is on and target fps is not 60
+        return (sessionSettings.targetFrameRate != TARGET_FPS_60) &&
+            (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
             // high quality (video only) selected
             (
                 sessionSettings.stabilizeVideoMode == Stabilization.ON &&
@@ -537,10 +565,17 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: List<SupportedStabilizationMode>
     ): Boolean {
+        // only supported if target fps is 30 or none
         return (
-            supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
-                sessionSettings.stabilizePreviewMode == Stabilization.ON
-            )
+            when (sessionSettings.targetFrameRate) {
+                TARGET_FPS_AUTO, TARGET_FPS_30 -> true
+                else -> false
+            }
+            ) &&
+            (
+                supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.ON
+                )
     }
 
     private fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
