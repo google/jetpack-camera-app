@@ -81,10 +81,10 @@ internal class ImageCaptureDeviceTest {
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res("CaptureButton")),
+                Until.findObject(By.res(CAPTURE_BUTTON)),
                 5000
             )
-            uiDevice.findObject(By.res("CaptureButton")).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
                 Until.findObject(By.res("ImageCaptureSuccessToast")),
                 5000
@@ -104,10 +104,10 @@ internal class ImageCaptureDeviceTest {
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res("CaptureButton")),
+                Until.findObject(By.res(CAPTURE_BUTTON)),
                 5000
             )
-            uiDevice.findObject(By.res("CaptureButton")).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
                 Until.findObject(By.res("ImageCaptureFailureToast")),
                 5000
