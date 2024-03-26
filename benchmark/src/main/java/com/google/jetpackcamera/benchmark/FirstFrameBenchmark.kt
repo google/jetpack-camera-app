@@ -64,7 +64,11 @@ class FirstFrameBenchmark {
             packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
                 StartupTimingMetric(),
-                TraceSectionMetric(sectionName = FIRST_FRAME_TRACE, targetPackageOnly = false, mode = TraceSectionMetric.Mode.First)
+                TraceSectionMetric(
+                    sectionName = FIRST_FRAME_TRACE,
+                    targetPackageOnly = false,
+                    mode = TraceSectionMetric.Mode.First
+                )
             ),
             iterations = iterations,
             startupMode = startupMode,

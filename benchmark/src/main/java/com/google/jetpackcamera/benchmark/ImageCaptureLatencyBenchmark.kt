@@ -17,7 +17,6 @@ package com.google.jetpackcamera.benchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.ExperimentalMetricApi
-import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
