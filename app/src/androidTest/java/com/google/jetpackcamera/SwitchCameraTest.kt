@@ -27,8 +27,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
+import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY_TAG
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -53,13 +53,13 @@ class SwitchCameraTest {
         lensFacingStates.add(initialLensFacing)
 
         // Press the flip camera button
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG).performClick()
 
         // Get lens facing after first flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())
 
         // Press the flip camera button again
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG).performClick()
 
         // Get lens facing after second flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())
@@ -79,14 +79,14 @@ class SwitchCameraTest {
         lensFacingStates.add(initialLensFacing)
 
         // Double click display to flip camera
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
+        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY_TAG)
             .performTouchInput { doubleClick() }
 
         // Get lens facing after first flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())
 
         // Double click display to flip camera again
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
+        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY_TAG)
             .performTouchInput { doubleClick() }
 
         // Get lens facing after second flip
@@ -137,11 +137,11 @@ inline fun runFlipCameraTest(
 ) = runScenarioTest {
     // Wait for the preview display to be visible
     composeTestRule.waitUntil {
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).isDisplayed()
+        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY_TAG).isDisplayed()
     }
 
     // If flipping the camera is available, flip it. Otherwise skip test.
-    composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+    composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG).assume(isEnabled()) {
         "Device does not have multiple cameras to flip between."
     }
 

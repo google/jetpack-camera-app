@@ -33,9 +33,9 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAIL_TOAST
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAIL_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
@@ -66,12 +66,12 @@ internal class ImageCaptureDeviceTest {
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
+                Until.findObject(By.res(CAPTURE_BUTTON_TAG)),
                 5000
             )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON_TAG)).click()
             uiDevice.wait(
-                Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
+                Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TAG)),
                 5000
             )
             activityScenario!!.result
@@ -89,12 +89,12 @@ internal class ImageCaptureDeviceTest {
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
+                Until.findObject(By.res(CAPTURE_BUTTON_TAG)),
                 5000
             )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON_TAG)).click()
             uiDevice.wait(
-                Until.findObject(By.res(IMAGE_CAPTURE_FAIL_TOAST)),
+                Until.findObject(By.res(IMAGE_CAPTURE_FAIL_TAG)),
                 5000
             )
             uiDevice.pressBack()

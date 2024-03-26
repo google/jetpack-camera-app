@@ -25,10 +25,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
-import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY_TAG
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -58,7 +58,7 @@ internal class FlashDeviceTest {
     fun set_flash_on() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings
@@ -86,7 +86,7 @@ internal class FlashDeviceTest {
     fun set_flash_auto() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings
@@ -115,7 +115,7 @@ internal class FlashDeviceTest {
     fun set_flash_off() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         assert(
@@ -150,7 +150,7 @@ internal class FlashDeviceTest {
     fun set_screen_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings
@@ -168,12 +168,12 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG)
             .assertExists()
             .performClick()
 
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TOAST).isDisplayed()
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
     }
 
@@ -182,13 +182,13 @@ internal class FlashDeviceTest {
         runScenarioTest<MainActivity> {
             // Wait for the capture button to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
             }
 
             // Ensure camera has a front camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
             if (lensFacing != LensFacing.FRONT) {
-                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG).assume(isEnabled()) {
                     "Device does not have a front camera to flip to."
                 }.performClick()
             }
@@ -209,12 +209,12 @@ internal class FlashDeviceTest {
                 .performClick()
 
             // Perform a capture to enable screen flash
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG)
                 .assertExists()
                 .performClick()
 
             composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(SCREEN_FLASH_OVERLAY).isDisplayed()
+                composeTestRule.onNodeWithTag(SCREEN_FLASH_OVERLAY_TAG).isDisplayed()
             }
         }
 }

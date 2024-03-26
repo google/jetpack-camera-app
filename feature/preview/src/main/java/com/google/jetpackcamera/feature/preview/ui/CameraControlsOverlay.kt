@@ -143,7 +143,7 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON),
+                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON_TAG),
                 onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
@@ -207,7 +207,7 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
+                        modifier = modifier.testTag(FLIP_CAMERA_BUTTON_TAG),
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&
@@ -253,7 +253,7 @@ private fun CaptureButton(
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
-        modifier = modifier.testTag(CAPTURE_BUTTON),
+        modifier = modifier.testTag(CAPTURE_BUTTON_TAG),
         onClick = {
             blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
