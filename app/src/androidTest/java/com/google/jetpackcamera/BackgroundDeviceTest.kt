@@ -15,12 +15,21 @@
  */
 package com.google.jetpackcamera
 
-import androidx.test.core.app.ActivityScenario
+import android.os.Build
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
@@ -36,52 +45,124 @@ class BackgroundDeviceTest {
     val cameraPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
 
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     private fun backgroundThenForegroundApp() {
         uiDevice.pressHome()
-        uiDevice.waitForIdle(1500)
         uiDevice.pressRecentApps()
-        uiDevice.waitForIdle(1500)
-        uiDevice.click(uiDevice.displayWidth / 2, uiDevice.displayHeight / 2)
-        uiDevice.waitForIdle(1500)
+        uiDevice.pressRecentApps()
+
+        // Wait for the app to return to the foreground
+        uiDevice.wait(
+            Until.hasObject(By.pkg("com.google.jetpackcamera")),
+            APP_START_TIMEOUT_MILLIS
+        )
     }
 
     @Before
     fun setUp() {
-        ActivityScenario.launch(MainActivity::class.java)
-        uiDevice.waitForIdle(2000)
+        assertThat(uiDevice.isScreenOn).isTrue()
     }
 
     @Test
-    fun background_foreground() {
+    fun background_foreground() = runScenarioTest<MainActivity> {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
         backgroundThenForegroundApp()
     }
 
     @Test
-    fun flipCamera_then_background_foreground() {
-        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
-        uiDevice.findObject(By.res(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)).click()
-        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
-        uiDevice.waitForIdle(2000)
+    fun flipCamera_then_background_foreground() = runScenarioTest<MainActivity> {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // Navigate to quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
+        // Click the flip camera button
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Exit quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
         backgroundThenForegroundApp()
     }
 
     @Test
-    fun setAspectRatio_then_background_foreground() {
-        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
-        uiDevice.findObject(By.res(QUICK_SETTINGS_RATIO_BUTTON)).click()
-        uiDevice.findObject(By.res(QUICK_SETTINGS_RATIO_1_1_BUTTON)).click()
-        uiDevice.findObject(By.res(QUICK_SETTINGS_DROP_DOWN)).click()
-        uiDevice.waitForIdle(2000)
+    fun setAspectRatio_then_background_foreground() = runScenarioTest<MainActivity> {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // Navigate to quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
+        // Click the ratio button
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Click the 1:1 ratio button
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Exit quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
         backgroundThenForegroundApp()
     }
 
+    private fun assumeSupportsSingleStream() {
+        // The GMD emulators with API <=28 do not support single-stream configs.
+        assume().that(Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT <= 28).isFalse()
+    }
+
     @Test
-    fun toggleCaptureMode_then_background_foreground() {
-        uiDevice.findObject(By.res("ToggleCaptureMode")).click()
-        uiDevice.waitForIdle(2000)
+    fun toggleCaptureMode_then_background_foreground() = runScenarioTest<MainActivity> {
+        // Skip this test on devices that don't support single stream
+        assumeSupportsSingleStream()
+
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // Navigate to quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
+        // Click the flip camera button
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON)
+            .assertExists()
+            .performClick()
+
+        // Exit quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .assertExists()
+            .performClick()
+
         backgroundThenForegroundApp()
     }
 }

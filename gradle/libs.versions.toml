@@ -1,13 +1,14 @@
 [versions]
 accompanistPermissions = "0.26.5-rc"
 androidJunit = "1.1.5"
-androidLibrary = "8.1.4"
+androidGradlePlugin = "8.1.4"
 androidxActivityCompose = "1.8.2"
 androidxAppCompat = "1.6.1"
 androidxCore = "1.12.0"
 androidxCoreKtx = "1.12.0"
 androidxLifecycle = "2.7.0"
 androidxTracing = "1.2.0"
+atomicfu = "0.23.2"
 benchmarkMacroJunit4 = "1.2.3"
 camerax = "1.4.0-SNAPSHOT"
 camerax-viewfinder-compose = "1.0.0-SNAPSHOT"
@@ -69,6 +70,7 @@ dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref
 futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "futures" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesCore" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
@@ -78,9 +80,9 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 
 [plugins]
-android-application = { id = "com.android.application", version.ref = "androidLibrary" }
-android-library = { id = "com.android.library", version.ref = "androidLibrary" }
-android-test = { id = "com.android.test", version.ref = "androidLibrary" }
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+android-test = { id = "com.android.test", version.ref = "androidGradlePlugin" }
 dagger-hilt-android =  { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinPlugin" }

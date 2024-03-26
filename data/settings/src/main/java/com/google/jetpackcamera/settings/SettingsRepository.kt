@@ -46,6 +46,7 @@ interface SettingsRepository {
     suspend fun updateCaptureMode(captureMode: CaptureMode)
 
     suspend fun updatePreviewStabilization(stabilization: Stabilization)
+
     suspend fun updateVideoStabilization(stabilization: Stabilization)
 
     suspend fun updateVideoStabilizationSupported(isSupported: Boolean)
@@ -54,6 +55,13 @@ interface SettingsRepository {
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
     suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>)
+
+    suspend fun updateTargetFrameRate(targetFrameRate: Int)
+
+    suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
+        currentTargetFrameRate: Int
+    )
 
     suspend fun getCameraAppSettings(): CameraAppSettings
 }
