@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera
 
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -32,10 +31,6 @@ import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_back_camera_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_dropdown_closed_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_dropdown_open_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_front_camera_description
 import com.google.jetpackcamera.settings.model.LensFacing
 import org.junit.Rule
 import org.junit.Test

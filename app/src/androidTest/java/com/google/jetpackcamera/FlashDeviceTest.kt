@@ -174,7 +174,6 @@ internal class FlashDeviceTest {
 
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TOAST).isDisplayed()
-
         }
     }
 
@@ -214,7 +213,7 @@ internal class FlashDeviceTest {
                 .assertExists()
                 .performClick()
 
-            composeTestRule.waitUntil (timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(SCREEN_FLASH_OVERLAY).isDisplayed()
             }
         }
