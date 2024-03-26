@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import androidx.compose.material3.SnackbarDuration
@@ -22,5 +21,5 @@ data class SnackBarData(
     val stringResource: Int,
     val duration: SnackbarDuration = SnackbarDuration.Short,
     val actionLabelRes: Int? = null,
-    val withDismissAction: Boolean = false,
+    val withDismissAction: Boolean = false
 )

@@ -142,7 +142,7 @@ private fun ContentScreen(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
-    onSnackBarResult: () -> Unit = {},
+    onSnackBarResult: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -209,7 +209,13 @@ private fun ContentScreen(
                 val result =
                     snackbarHostState.showSnackbar(
                         message = context.getString(previewUiState.snackBarToShow.stringResource),
-                        duration = previewUiState.snackBarToShow.duration
+                        duration = previewUiState.snackBarToShow.duration,
+                        withDismissAction = previewUiState.snackBarToShow.withDismissAction,
+                        actionLabel = if (previewUiState.snackBarToShow.actionLabelRes == null) {
+                            null
+                        } else {
+                            context.getString(previewUiState.snackBarToShow.actionLabelRes)
+                        }
                     )
                 when (result) {
                     SnackbarResult.ActionPerformed -> {
