@@ -131,9 +131,7 @@ class MainActivity : ComponentActivity() {
             return PreviewMode.StandardMode { event ->
                 if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
                     val intent = Intent(Camera.ACTION_NEW_PICTURE)
-                    if (event.savedUri != null) {
-                        intent.setData(event.savedUri)
-                    }
+                    intent.setData(event.savedUri)
                     sendBroadcast(intent)
                 }
             }

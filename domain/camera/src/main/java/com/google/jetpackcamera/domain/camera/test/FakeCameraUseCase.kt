@@ -108,6 +108,7 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
+
     @SuppressLint("RestrictedApi")
     override suspend fun takePicture(
         contentResolver: ContentResolver,

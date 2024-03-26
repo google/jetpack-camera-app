@@ -264,7 +264,7 @@ constructor(
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
-        if (imageCaptureUri == null) {
+        if (ignoreUri) {
             val formatter = SimpleDateFormat(
                 "yyyy-MM-dd-HH-mm-ss-SSS",
                 Locale.US
