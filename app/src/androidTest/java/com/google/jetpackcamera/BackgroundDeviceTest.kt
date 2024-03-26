@@ -28,7 +28,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON_TAG
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
@@ -72,7 +72,7 @@ class BackgroundDeviceTest {
     fun background_foreground() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         backgroundThenForegroundApp()
@@ -82,7 +82,7 @@ class BackgroundDeviceTest {
     fun flipCamera_then_background_foreground() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings
@@ -107,7 +107,7 @@ class BackgroundDeviceTest {
     fun setAspectRatio_then_background_foreground() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings
@@ -145,7 +145,7 @@ class BackgroundDeviceTest {
 
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to quick settings

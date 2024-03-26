@@ -187,7 +187,11 @@ fun QuickSetCaptureMode(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun ToggleQuickSettingsButton(
+    modifier: Modifier = Modifier,
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -200,7 +204,7 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
             } else {
                 stringResource(R.string.quick_settings_dropdown_closed_description)
             },
-            modifier = Modifier
+            modifier = modifier
                 .testTag(QUICK_SETTINGS_DROP_DOWN)
                 .size(72.dp)
                 .clickable {

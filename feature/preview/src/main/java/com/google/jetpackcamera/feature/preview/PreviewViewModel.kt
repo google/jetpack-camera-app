@@ -24,7 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAIL_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -46,9 +47,6 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
-
-// toast test descriptions
-const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -170,7 +168,7 @@ class PreviewViewModel @Inject constructor(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -181,7 +179,7 @@ class PreviewViewModel @Inject constructor(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                                testTag = IMAGE_CAPTURE_FAIL_TAG
                             )
                         )
                     )
@@ -207,7 +205,7 @@ class PreviewViewModel @Inject constructor(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -219,7 +217,7 @@ class PreviewViewModel @Inject constructor(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                                testTag = IMAGE_CAPTURE_FAIL_TAG
                             )
                         )
                     )

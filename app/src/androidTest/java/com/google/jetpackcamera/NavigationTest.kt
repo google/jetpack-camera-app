@@ -24,9 +24,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON_TAG
+import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON_TAG
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
@@ -51,11 +51,11 @@ class NavigationTest {
     fun backAfterReturnFromSettings_doesNotReturnToSettings() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to the settings screen
-        composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON_TAG)
             .assertExists()
             .performClick()
 
@@ -65,7 +65,7 @@ class NavigationTest {
             .performClick()
 
         // Assert we're on PreviewScreen by finding the capture button
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).assertExists()
 
         // Press the device's back button
         uiDevice.pressBack()
@@ -82,17 +82,17 @@ class NavigationTest {
     fun returnFromSettings_afterFlipCamera_returnsToPreview() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // If flipping the camera is available, flip it. Otherwise skip test.
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG)
             .assume(isEnabled()) {
                 "Device does not have multiple cameras to flip between."
             }.performClick()
 
         // Navigate to the settings screen
-        composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON_TAG)
             .assertExists()
             .performClick()
 
@@ -102,14 +102,14 @@ class NavigationTest {
             .performClick()
 
         // Assert we're on PreviewScreen by finding the capture button
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).assertExists()
     }
 
     @Test
     fun backFromQuickSettings_returnToPreview() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to the quick settings screen
@@ -126,14 +126,14 @@ class NavigationTest {
         uiDevice.pressBack()
 
         // Assert we're on PreviewScreen by finding the flip camera button
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON_TAG).assertExists()
     }
 
     @Test
     fun backFromQuickSettingsExpended_returnToQuickSettings() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON_TAG).isDisplayed()
         }
 
         // Navigate to the quick settings screen
