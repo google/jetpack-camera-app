@@ -103,6 +103,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setTargetFrameRate(targetFrameRate: Int) {
+        viewModelScope.launch {
+            settingsRepository.updateTargetFrameRate(targetFrameRate)
+        }
+    }
+
     fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             settingsRepository.updateAspectRatio(aspectRatio)
