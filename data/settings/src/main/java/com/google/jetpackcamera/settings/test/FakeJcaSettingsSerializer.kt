@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.CaptureMode
 import com.google.jetpackcamera.settings.DarkMode
 import com.google.jetpackcamera.settings.FlashMode
 import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.LensFacing
 import com.google.jetpackcamera.settings.PreviewStabilization
 import com.google.jetpackcamera.settings.VideoStabilization
 import com.google.protobuf.InvalidProtocolBufferException
@@ -35,7 +36,7 @@ class FakeJcaSettingsSerializer(
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
-        .setDefaultFrontCamera(false)
+        .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)

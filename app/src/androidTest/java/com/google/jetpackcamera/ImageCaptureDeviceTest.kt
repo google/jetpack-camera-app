@@ -33,8 +33,8 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import com.google.jetpackcamera.feature.preview.IMAGE_CAPTURE_SUCCESS_TOAST_TAG
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
@@ -68,7 +68,7 @@ internal class ImageCaptureDeviceTest {
         )
         uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
         uiDevice.wait(
-            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST_TAG)),
+            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
             5000
         )
         assert(deleteFilesInDirAfterTimestamp(timeStamp))

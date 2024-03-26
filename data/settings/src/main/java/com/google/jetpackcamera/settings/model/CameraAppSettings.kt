@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.settings.model
+const val TARGET_FPS_AUTO = 0
 
 /**
  * Data layer representation for settings.
@@ -31,7 +32,9 @@ data class CameraAppSettings(
     val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
-    val zoomScale: Float = 1f
+    val zoomScale: Float = 1f,
+    val targetFrameRate: Int = TARGET_FPS_AUTO,
+    val supportedFixedFrameRates: List<Int> = emptyList()
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

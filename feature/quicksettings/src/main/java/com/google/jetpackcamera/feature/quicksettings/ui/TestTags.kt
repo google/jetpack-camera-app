@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.quicksettings.ui
 
+const val QUICK_SETTINGS_CAPTURE_MODE_BUTTON = "QuickSettingsCaptureModeButton"
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
 const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSettingsRatioButton"
