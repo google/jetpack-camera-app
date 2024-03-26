@@ -25,7 +25,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
-        .setDefaultFrontCamera(false)
+        .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setBackCameraAvailable(true)
         .setFrontCameraAvailable(true)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
@@ -37,6 +37,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideoSupported(false)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .addSupportedDynamicRanges(DynamicRange.DYNAMIC_RANGE_SDR)
+        .addAllSupportedFrameRates(emptySet())
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

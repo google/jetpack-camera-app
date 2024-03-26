@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
@@ -180,7 +181,7 @@ private fun ExpandedQuickSettingsUi(
                         },
                         {
                             QuickSetCaptureMode(
-                                modifier = Modifier.testTag(""),
+                                modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
                                 setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
                                 currentCaptureMode = currentCameraSettings.captureMode
                             )

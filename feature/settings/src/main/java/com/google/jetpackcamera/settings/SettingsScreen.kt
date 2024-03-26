@@ -43,6 +43,7 @@ import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
+import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 
 /**
  * Screen used for the Settings feature.
@@ -61,6 +62,7 @@ fun SettingsScreen(
         onNavigateBack = onNavigateBack,
         setDefaultLensFacing = viewModel::setDefaultLensFacing,
         setFlashMode = viewModel::setFlashMode,
+        setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
         setCaptureMode = viewModel::setCaptureMode,
         setVideoStabilization = viewModel::setVideoStabilization,
@@ -76,6 +78,7 @@ private fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
     setDefaultLensFacing: (LensFacing) -> Unit = {},
     setFlashMode: (FlashMode) -> Unit = {},
+    setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
@@ -95,6 +98,7 @@ private fun SettingsScreen(
             versionInfo = versionInfo,
             setDefaultLensFacing = setDefaultLensFacing,
             setFlashMode = setFlashMode,
+            setTargetFrameRate = setTargetFrameRate,
             setAspectRatio = setAspectRatio,
             setCaptureMode = setCaptureMode,
             setVideoStabilization = setVideoStabilization,
@@ -110,6 +114,7 @@ fun SettingsList(
     versionInfo: VersionInfoHolder,
     setDefaultLensFacing: (LensFacing) -> Unit = {},
     setFlashMode: (FlashMode) -> Unit = {},
+    setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
@@ -128,6 +133,12 @@ fun SettingsList(
         setFlashMode = setFlashMode
     )
 
+    TargetFpsSetting(
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        supportedFps = uiState.cameraAppSettings.supportedFixedFrameRates,
+        setTargetFps = setTargetFrameRate
+    )
+
     AspectRatioSetting(
         currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
         setAspectRatio = setAspectRatio
@@ -138,11 +149,10 @@ fun SettingsList(
         setCaptureMode = setCaptureMode
     )
 
-    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
-
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
