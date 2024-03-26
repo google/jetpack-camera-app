@@ -32,12 +32,12 @@ class FirstFrameBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun timeToFirstFrameColdStartup() {
+    fun timeToFirstFrameNoFlashColdStartup() {
         benchmarkFirstFrame()
     }
 
     @Test
-    fun timeToFirstFrameHotStartup() {
+    fun timeToFirstFrameNoFlashHotStartup() {
         benchmarkFirstFrame(startupMode = StartupMode.HOT)
     }
 
@@ -64,7 +64,7 @@ class FirstFrameBenchmark {
             packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
                 StartupTimingMetric(),
-                TraceSectionMetric(sectionName = FIRST_FRAME_TRACE, targetPackageOnly = false)
+                TraceSectionMetric(sectionName = FIRST_FRAME_TRACE, targetPackageOnly = false, mode = TraceSectionMetric.Mode.First)
             ),
             iterations = iterations,
             startupMode = startupMode,

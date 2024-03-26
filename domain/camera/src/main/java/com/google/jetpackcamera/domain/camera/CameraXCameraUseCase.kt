@@ -81,7 +81,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraXCameraUseCase"
-private const val FIRST_FRAME_TRACE = "First Frame Trace"
+private const val FIRST_FRAME_TRACE = "FirstFrameTrace"
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -111,7 +111,7 @@ constructor(
                 super.onCaptureCompleted(session, request, result)
                 try {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        Trace.endAsyncSection(FIRST_FRAME_TRACE, 1)
+                        Trace.endAsyncSection(FIRST_FRAME_TRACE, 12345)
                     }
                 } catch (_: Exception) {}
             }
