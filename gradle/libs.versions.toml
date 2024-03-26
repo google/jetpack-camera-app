@@ -1,7 +1,7 @@
 [versions]
 accompanistPermissions = "0.26.5-rc"
 androidJunit = "1.1.5"
-androidLibrary = "8.1.4"
+androidGradlePlugin = "8.1.4"
 androidxActivityCompose = "1.8.2"
 androidxAppCompat = "1.6.1"
 androidxCore = "1.12.0"
@@ -80,9 +80,9 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 
 [plugins]
-android-application = { id = "com.android.application", version.ref = "androidLibrary" }
-android-library = { id = "com.android.library", version.ref = "androidLibrary" }
-android-test = { id = "com.android.test", version.ref = "androidLibrary" }
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+android-test = { id = "com.android.test", version.ref = "androidGradlePlugin" }
 dagger-hilt-android =  { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinPlugin" }
