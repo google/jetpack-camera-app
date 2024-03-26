@@ -16,15 +16,20 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject2
-import androidx.test.uiautomator.Until
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.LensFacing
 import java.util.concurrent.atomic.AtomicReference
-import org.junit.Assert
 
+const val APP_START_TIMEOUT_MILLIS = 5000L
+const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5000L
 object UiTestUtil {
     private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
         val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()
@@ -49,23 +54,42 @@ inline fun <reified T : Activity> runScenarioTest(
     }
 }
 
-/**
- * Find a composable by its test tag.
- */
-fun findObjectByRes(
-    device: UiDevice,
-    testTag: String,
-    timeout: Long = 2_500,
-    shouldFailIfNotFound: Boolean = false
-): UiObject2? {
-    val selector = By.res(testTag)
-
-    return if (!device.wait(Until.hasObject(selector), timeout)) {
-        if (shouldFailIfNotFound) {
-            Assert.fail("Did not find object with id $testTag")
+context(ActivityScenario<MainActivity>)
+fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
+    var needReturnFromQuickSettings = false
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
+        if (isDisplayed()) {
+            performClick()
+            needReturnFromQuickSettings = true
         }
-        null
-    } else {
-        device.findObject(selector)
+    }
+
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
+        "LensFacing can only be retrieved from PreviewScreen or QuickSettings screen"
+    )
+
+    try {
+        return onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
+            "Flip camera button is not visible when expected."
+        ).let { node ->
+            node.config[SemanticsProperties.ContentDescription].any { description ->
+                when (description) {
+                    getResString(R.string.quick_settings_front_camera_description) ->
+                        return@let LensFacing.FRONT
+
+                    getResString(R.string.quick_settings_back_camera_description) ->
+                        return@let LensFacing.BACK
+
+                    else -> false
+                }
+            }
+            throw AssertionError("Unable to determine lens facing from quick settings")
+        }
+    } finally {
+        if (needReturnFromQuickSettings) {
+            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
+                .assertExists()
+                .performClick()
+        }
     }
 }
