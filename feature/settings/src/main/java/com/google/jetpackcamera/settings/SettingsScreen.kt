@@ -16,9 +16,11 @@
 package com.google.jetpackcamera.settings
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -88,6 +90,7 @@ private fun SettingsScreen(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
@@ -178,7 +181,7 @@ data class VersionInfoHolder(
     val buildType: String
 )
 
-@Preview(name = "Light Mode", showBackground = true)
+@Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun Preview_SettingsScreen() {
