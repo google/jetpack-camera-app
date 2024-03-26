@@ -86,6 +86,10 @@ android {
             }
         }
     }
+
+    kotlinOptions {
+        freeCompilerArgs += "-Xcontext-receivers"
+    }
 }
 
 dependencies {
