@@ -33,8 +33,8 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
@@ -57,6 +57,7 @@ internal class ImageCaptureDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var activityScenario: ActivityScenario<MainActivity>? = null
     private val uiDevice = UiDevice.getInstance(instrumentation)
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
     fun image_capture() = runTest {
@@ -68,7 +69,7 @@ internal class ImageCaptureDeviceTest {
         )
         uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
         uiDevice.wait(
-            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
+            Until.findObject(By.text(context.getString(R.string.toast_image_capture_success))),
             5000
         )
         assert(deleteFilesInDirAfterTimestamp(timeStamp))
@@ -86,7 +87,7 @@ internal class ImageCaptureDeviceTest {
             )
             uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
-                Until.findObject(By.res("ImageCaptureSuccessToast")),
+                Until.findObject(By.text(context.getString(R.string.toast_image_capture_success))),
                 5000
             )
             activityScenario!!.result
@@ -109,7 +110,7 @@ internal class ImageCaptureDeviceTest {
             )
             uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
-                Until.findObject(By.res("ImageCaptureFailureToast")),
+                Until.findObject(By.text(context.getString(R.string.toast_capture_failure))),
                 5000
             )
             uiDevice.pressBack()
