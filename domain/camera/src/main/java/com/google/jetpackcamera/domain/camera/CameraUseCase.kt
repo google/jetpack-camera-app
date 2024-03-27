@@ -52,7 +52,7 @@ interface CameraUseCase {
 
     suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
 
-    suspend fun startVideoRecording()
+    suspend fun startVideoRecording(onVideoRecord: (VideoRecordEvent) -> Unit)
 
     fun stopVideoRecording()
 
@@ -86,5 +86,14 @@ interface CameraUseCase {
             APPLY_UI,
             CLEAR_UI
         }
+    }
+
+    /**
+     * Represents the events for video recording.
+     */
+    sealed interface VideoRecordEvent {
+        object VideoRecorded: VideoRecordEvent
+
+        object VideoRecordError: VideoRecordEvent
     }
 }

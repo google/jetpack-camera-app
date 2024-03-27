@@ -40,6 +40,8 @@ import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
@@ -339,7 +341,9 @@ constructor(
         return eligibleContentValues
     }
 
-    override suspend fun startVideoRecording() {
+    override suspend fun startVideoRecording(
+        onVideoRecord: (CameraUseCase.VideoRecordEvent) -> Unit
+    ) {
         Log.d(TAG, "recordVideo")
         val captureTypeString =
             when (captureMode) {
@@ -364,6 +368,18 @@ constructor(
                 .start(ContextCompat.getMainExecutor(application)) { videoRecordEvent ->
                     run {
                         Log.d(TAG, videoRecordEvent.toString())
+                        when (videoRecordEvent) {
+                            is VideoRecordEvent.Finalize -> {
+                                when (videoRecordEvent.error) {
+                                    ERROR_NONE ->
+                                        onVideoRecord(CameraUseCase.VideoRecordEvent.VideoRecorded)
+                                    else ->
+                                        onVideoRecord(
+                                            CameraUseCase.VideoRecordEvent.VideoRecordError
+                                        )
+                                }
+                            }
+                        }
                     }
                 }
     }

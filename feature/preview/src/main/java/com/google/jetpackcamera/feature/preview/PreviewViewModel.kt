@@ -31,8 +31,6 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -42,6 +40,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -231,7 +231,32 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             try {
-                cameraUseCase.startVideoRecording()
+                cameraUseCase.startVideoRecording {
+                    when (it) {
+                        CameraUseCase.VideoRecordEvent.VideoRecorded ->
+                            viewModelScope.launch {
+                                _previewUiState.emit(
+                                    previewUiState.value.copy(
+                                        snackBarToShow = SnackBarData(
+                                            stringResource = R.string.toast_video_capture_success,
+                                            withDismissAction = true
+                                        )
+                                    )
+                                )
+                            }
+
+                        else -> viewModelScope.launch {
+                            _previewUiState.emit(
+                                previewUiState.value.copy(
+                                    snackBarToShow = SnackBarData(
+                                        stringResource = R.string.toast_video_capture_failure,
+                                        withDismissAction = true
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         videoRecordingState = VideoRecordingState.ACTIVE
