@@ -47,7 +47,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-reports
-          path: "*/build/reports"
+          path: |
+            **/build/reports
 
   test:
     name: Unit Tests
@@ -79,7 +80,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: "*/build/reports/tests"
+          path: |
+            **/build/reports/tests
 
   android-test:
     name: Instrumentation Tests
