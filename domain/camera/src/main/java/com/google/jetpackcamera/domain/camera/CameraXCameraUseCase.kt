@@ -129,7 +129,10 @@ constructor(
         currentSettings.value = settingsRepository.cameraAppSettings.first()
     }
 
-    private fun getSupportedFrameRates(): Set<Int> {
+    /**
+     * Returns the union of supported fixed frame rates fom a device's cameras
+     */
+    private fun getDeviceSupportedFrameRates(): Set<Int> {
         val supportedFixedFrameRates = mutableSetOf<Int>()
         cameraProvider.availableCameraInfos.forEach { cameraInfo ->
             cameraInfo.supportedFrameRateRanges.forEach { e ->
@@ -139,6 +142,23 @@ constructor(
             }
         }
         return supportedFixedFrameRates
+    }
+
+    /**
+     * Returns the union of supported stabilization modes for a device's cameras
+     */
+    private fun getDeviceSupportedStabilizations(): Set<SupportedStabilizationMode> {
+        val deviceSupportedStabilizationModes = mutableSetOf<SupportedStabilizationMode>()
+
+        cameraProvider.availableCameraInfos.forEach { cameraInfo ->
+            if (isPreviewStabilizationSupported(cameraInfo)) {
+                deviceSupportedStabilizationModes.add(SupportedStabilizationMode.ON)
+            }
+            if (isVideoStabilizationSupported(cameraInfo)) {
+                deviceSupportedStabilizationModes.add(SupportedStabilizationMode.HIGH_QUALITY)
+            }
+        }
+        return deviceSupportedStabilizationModes
     }
 
     /**
@@ -200,19 +220,23 @@ constructor(
                     cameraProvider.availableCameraInfos
                 ).first()
 
+                // get device-supported fixed frame rates
                 settingsRepository.updateSupportedFixedFrameRate(
-                    getSupportedFrameRates(),
+                    getDeviceSupportedFrameRates(),
                     sessionSettings.targetFrameRate
                 )
+
+                // get device-supported stabilization modes
+                val supportedStabilizationModes = getDeviceSupportedStabilizations()
+
                 settingsRepository.updatePreviewStabilizationSupported(
-                    isPreviewStabilizationSupported(cameraInfo)
+                    supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
                 )
                 settingsRepository.updateVideoStabilizationSupported(
-                    isVideoStabilizationSupported(cameraInfo)
+                    supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
                 )
 
-                val supportedStabilizationModes =
-                    settingsRepository.cameraAppSettings.first().supportedStabilizationModes
+                settingsRepository.cameraAppSettings.first().supportedStabilizationModes
 
                 val initialTransientSettings = transientSettings
                     .filterNotNull()
@@ -221,7 +245,7 @@ constructor(
                 val useCaseGroup = createUseCaseGroup(
                     sessionSettings,
                     initialTransientSettings,
-                    supportedStabilizationModes
+                    supportedStabilizationModes.toList()
                 )
 
                 var prevTransientSettings = initialTransientSettings
