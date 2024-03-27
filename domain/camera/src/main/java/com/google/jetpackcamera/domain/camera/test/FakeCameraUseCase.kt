@@ -21,6 +21,8 @@ import android.net.Uri
 import android.view.Display
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.video.VideoRecordEvent
+import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -125,7 +127,9 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun startVideoRecording() {
+    override suspend fun startVideoRecording(
+        onVideoRecord: (CameraUseCase.VideoRecordEvent) -> Unit
+    ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
