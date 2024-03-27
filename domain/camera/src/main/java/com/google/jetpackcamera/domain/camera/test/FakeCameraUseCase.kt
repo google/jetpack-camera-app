@@ -15,9 +15,11 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -106,8 +108,15 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+
+    @SuppressLint("RestrictedApi")
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): ImageCapture.OutputFileResults {
         takePicture()
+        return ImageCapture.OutputFileResults(null)
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
