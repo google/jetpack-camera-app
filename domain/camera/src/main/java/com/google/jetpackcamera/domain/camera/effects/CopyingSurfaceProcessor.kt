@@ -29,6 +29,7 @@ import androidx.graphics.opengl.GLRenderer
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.graphics.opengl.egl.EGLSpec
 import com.google.jetpackcamera.core.common.RefCounted
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -47,7 +48,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
 
 private const val TIMESTAMP_UNINITIALIZED = -1L
 
@@ -74,178 +74,182 @@ class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor
         }
     }
 
-    private suspend fun RenderCallbacks.renderWithSurfaceRequest(
-        surfaceRequest: SurfaceRequest
-    ) = coroutineScope inputScope@{
-        var currentTimestamp = TIMESTAMP_UNINITIALIZED
-        val surfaceTextureRef = RefCounted<SurfaceTexture> {
-            it.release()
-        }
-        val textureTransform = FloatArray(16)
+    private suspend fun RenderCallbacks.renderWithSurfaceRequest(surfaceRequest: SurfaceRequest) =
+        coroutineScope inputScope@{
+            var currentTimestamp = TIMESTAMP_UNINITIALIZED
+            val surfaceTextureRef = RefCounted<SurfaceTexture> {
+                it.release()
+            }
+            val textureTransform = FloatArray(16)
 
-        val frameUpdateFlow = MutableStateFlow(0)
+            val frameUpdateFlow = MutableStateFlow(0)
 
-        val initializeCallback = object : GLRenderer.EGLContextCallback {
+            val initializeCallback = object : GLRenderer.EGLContextCallback {
 
-            override fun onEGLContextCreated(eglManager: EGLManager) {
-                initRenderer()
+                override fun onEGLContextCreated(eglManager: EGLManager) {
+                    initRenderer()
 
-                val surfaceTex = createSurfaceTexture(
-                    surfaceRequest.resolution.width,
-                    surfaceRequest.resolution.height
-                )
-
-                // Initialize the reference counted surface texture
-                surfaceTextureRef.initialize(surfaceTex)
-
-                surfaceTex.setOnFrameAvailableListener {
-                    // Increment frame counter
-                    frameUpdateFlow.update { it + 1 }
-                }
-
-                val inputSurface = Surface(surfaceTex)
-                surfaceRequest.provideSurface(inputSurface, Runnable::run) { result ->
-                    inputSurface.release()
-                    surfaceTextureRef.release()
-                    this@inputScope.cancel(
-                        "Input surface no longer receiving frames: $result"
+                    val surfaceTex = createSurfaceTexture(
+                        surfaceRequest.resolution.width,
+                        surfaceRequest.resolution.height
                     )
+
+                    // Initialize the reference counted surface texture
+                    surfaceTextureRef.initialize(surfaceTex)
+
+                    surfaceTex.setOnFrameAvailableListener {
+                        // Increment frame counter
+                        frameUpdateFlow.update { it + 1 }
+                    }
+
+                    val inputSurface = Surface(surfaceTex)
+                    surfaceRequest.provideSurface(inputSurface, Runnable::run) { result ->
+                        inputSurface.release()
+                        surfaceTextureRef.release()
+                        this@inputScope.cancel(
+                            "Input surface no longer receiving frames: $result"
+                        )
+                    }
+                }
+
+                override fun onEGLContextDestroyed(eglManager: EGLManager) {
+                    // no-op
                 }
             }
 
-            override fun onEGLContextDestroyed(eglManager: EGLManager) {
-                // no-op
-            }
-        }
+            val glRenderer = GLRenderer(
+                eglSpecFactory = provideEGLSpec,
+                eglConfigFactory = initConfig
+            )
+            glRenderer.registerEGLContextCallback(initializeCallback)
+            glRenderer.start(glThreadName)
 
-        val glRenderer = GLRenderer(eglSpecFactory = provideEGLSpec, eglConfigFactory = initConfig)
-        glRenderer.registerEGLContextCallback(initializeCallback)
-        glRenderer.start(glThreadName)
+            val inputRenderTarget = glRenderer.createRenderTarget(
+                surfaceRequest.resolution.width,
+                surfaceRequest.resolution.height,
+                object : GLRenderer.RenderCallback {
 
-        val inputRenderTarget = glRenderer.createRenderTarget(
-            surfaceRequest.resolution.width,
-            surfaceRequest.resolution.height,
-            object : GLRenderer.RenderCallback {
-
-                override fun onDrawFrame(eglManager: EGLManager) {
-                    surfaceTextureRef.acquire()?.also {
-                        try {
-                            currentTimestamp = if (currentTimestamp == TIMESTAMP_UNINITIALIZED) {
-                                // Don't perform any updates on first draw, we're only setting up
-                                // the context.
-                                0
-                            } else {
-                                it.updateTexImage()
-                                it.getTransformMatrix(textureTransform)
-                                it.timestamp
+                    override fun onDrawFrame(eglManager: EGLManager) {
+                        surfaceTextureRef.acquire()?.also {
+                            try {
+                                currentTimestamp =
+                                    if (currentTimestamp == TIMESTAMP_UNINITIALIZED) {
+                                        // Don't perform any updates on first draw,
+                                        // we're only setting up the context.
+                                        0
+                                    } else {
+                                        it.updateTexImage()
+                                        it.getTransformMatrix(textureTransform)
+                                        it.timestamp
+                                    }
+                            } finally {
+                                surfaceTextureRef.release()
                             }
-                        } finally {
-                            surfaceTextureRef.release()
                         }
                     }
                 }
-            })
+            )
 
-        // Create the context and initialize the input. This will call RenderTarget.onDrawFrame,
-        // but we won't actually update the frame since this triggers adding the frame callback.
-        // All subsequent updates will then happen through frameUpdateFlow.
-        inputRenderTarget.requestRender()
+            // Create the context and initialize the input. This will call RenderTarget.onDrawFrame,
+            // but we won't actually update the frame since this triggers adding the frame callback.
+            // All subsequent updates will then happen through frameUpdateFlow.
+            inputRenderTarget.requestRender()
 
-        // Connect the onConnectToInput callback with the onDisconnectFromInput
-        // Should only be called on worker thread
-        var connectedToInput = false
+            // Connect the onConnectToInput callback with the onDisconnectFromInput
+            // Should only be called on worker thread
+            var connectedToInput = false
 
-        // Should only be called on worker thread
-        val onConnectToInput: () -> Boolean = {
-            connectedToInput = surfaceTextureRef.acquire() != null
-            connectedToInput
-        }
-
-        // Should only be called on worker thread
-        val onDisconnectFromInput: () -> Unit = {
-            if (connectedToInput) {
-                surfaceTextureRef.release()
-                connectedToInput = false
+            // Should only be called on worker thread
+            val onConnectToInput: () -> Boolean = {
+                connectedToInput = surfaceTextureRef.acquire() != null
+                connectedToInput
             }
-        }
 
-        // Wait for output surfaces
-        outputSurfaceFlow
-            .onCompletion {
-                glRenderer.stop(cancelPending = false)
-                glRenderer.unregisterEGLContextCallback(initializeCallback)
-            }.filterNotNull()
-            .collectLatest { surfaceOutputScope ->
-                surfaceOutputScope.withSurfaceOutput { refCountedSurface,
-                                                        size,
-                                                        updateTransformMatrix ->
-                    // If we can't acquire the surface, then the surface output is already
-                    // closed, so we'll return and wait for the next output surface.
-                    val outputSurface =
-                        refCountedSurface.acquire() ?: return@withSurfaceOutput
-
-                    val surfaceTransform = FloatArray(16)
-                    val outputRenderTarget = glRenderer.attach(
-                        outputSurface,
-                        size.width,
-                        size.height,
-                        object : GLRenderer.RenderCallback {
-
-                            override fun onSurfaceCreated(
-                                spec: EGLSpec,
-                                config: EGLConfig,
-                                surface: Surface,
-                                width: Int,
-                                height: Int
-                            ): EGLSurface? {
-                                return if (onConnectToInput()) {
-                                    createOutputSurface(spec, config, surface, width, height)
-                                } else {
-                                    null
-                                }
-                            }
-
-                            override fun onDrawFrame(eglManager: EGLManager) {
-                                val currentDrawSurface = eglManager.currentDrawSurface
-                                if (currentDrawSurface != eglManager.defaultSurface) {
-                                    updateTransformMatrix(
-                                        surfaceTransform,
-                                        textureTransform
-                                    )
-
-                                    drawFrame(
-                                        size.width,
-                                        size.height,
-                                        surfaceTransform
-                                    )
-
-                                    // Set timestamp
-                                    val display =
-                                        EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
-                                    EGLExt.eglPresentationTimeANDROID(
-                                        display,
-                                        eglManager.currentDrawSurface,
-                                        currentTimestamp
-                                    )
-                                }
-                            }
-                        }
-                    )
-
-                    frameUpdateFlow
-                        .onCompletion {
-                            outputRenderTarget.detach(cancelPending = false) {
-                                onDisconnectFromInput()
-                                refCountedSurface.release()
-                            }
-                        }.filterNot { it == 0 } // Don't attempt render on frame count 0
-                        .collectLatest {
-                            inputRenderTarget.requestRender()
-                            outputRenderTarget.requestRender()
-                        }
+            // Should only be called on worker thread
+            val onDisconnectFromInput: () -> Unit = {
+                if (connectedToInput) {
+                    surfaceTextureRef.release()
+                    connectedToInput = false
                 }
             }
-    }
+
+            // Wait for output surfaces
+            outputSurfaceFlow
+                .onCompletion {
+                    glRenderer.stop(cancelPending = false)
+                    glRenderer.unregisterEGLContextCallback(initializeCallback)
+                }.filterNotNull()
+                .collectLatest { surfaceOutputScope ->
+                    surfaceOutputScope.withSurfaceOutput { refCountedSurface,
+                                                           size,
+                                                           updateTransformMatrix ->
+                        // If we can't acquire the surface, then the surface output is already
+                        // closed, so we'll return and wait for the next output surface.
+                        val outputSurface =
+                            refCountedSurface.acquire() ?: return@withSurfaceOutput
+
+                        val surfaceTransform = FloatArray(16)
+                        val outputRenderTarget = glRenderer.attach(
+                            outputSurface,
+                            size.width,
+                            size.height,
+                            object : GLRenderer.RenderCallback {
+
+                                override fun onSurfaceCreated(
+                                    spec: EGLSpec,
+                                    config: EGLConfig,
+                                    surface: Surface,
+                                    width: Int,
+                                    height: Int
+                                ): EGLSurface? {
+                                    return if (onConnectToInput()) {
+                                        createOutputSurface(spec, config, surface, width, height)
+                                    } else {
+                                        null
+                                    }
+                                }
+
+                                override fun onDrawFrame(eglManager: EGLManager) {
+                                    val currentDrawSurface = eglManager.currentDrawSurface
+                                    if (currentDrawSurface != eglManager.defaultSurface) {
+                                        updateTransformMatrix(
+                                            surfaceTransform,
+                                            textureTransform
+                                        )
+
+                                        drawFrame(
+                                            size.width,
+                                            size.height,
+                                            surfaceTransform
+                                        )
+
+                                        // Set timestamp
+                                        val display =
+                                            EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+                                        EGLExt.eglPresentationTimeANDROID(
+                                            display,
+                                            eglManager.currentDrawSurface,
+                                            currentTimestamp
+                                        )
+                                    }
+                                }
+                            }
+                        )
+
+                        frameUpdateFlow
+                            .onCompletion {
+                                outputRenderTarget.detach(cancelPending = false) {
+                                    onDisconnectFromInput()
+                                    refCountedSurface.release()
+                                }
+                            }.filterNot { it == 0 } // Don't attempt render on frame count 0
+                            .collectLatest {
+                                inputRenderTarget.requestRender()
+                                outputRenderTarget.requestRender()
+                            }
+                    }
+                }
+        }
 
     override fun onInputSurface(surfaceRequest: SurfaceRequest) {
         val newScope = SurfaceRequestScope(surfaceRequest)
@@ -288,9 +292,11 @@ private class SurfaceOutputScope(val surfaceOutput: SurfaceOutput) {
         // Ensure we don't release until after `initialize` has completed by deferring
         // the release.
         val deferredRelease = CompletableDeferred<Unit>()
-        initialize(surfaceOutput.getSurface(Runnable::run) {
-            deferredRelease.complete(Unit)
-        })
+        initialize(
+            surfaceOutput.getSurface(Runnable::run) {
+                deferredRelease.complete(Unit)
+            }
+        )
         CoroutineScope(Dispatchers.Unconfined).launch {
             deferredRelease.await()
             surfaceLifecycleJob.cancel("SurfaceOutput close requested.")

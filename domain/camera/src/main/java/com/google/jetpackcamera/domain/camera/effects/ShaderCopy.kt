@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.effects
 
 import android.graphics.SurfaceTexture
@@ -59,19 +58,20 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
                             TEN_BIT_REQUIRED_EGL_EXTENSIONS.forEach {
                                 check(isExtensionSupported(it)) {
                                     "Required extension for 10-bit HDR is not " +
-                                            "supported: $it"
+                                        "supported: $it"
                                 }
                             }
                             include(EGLConfigAttributes.RGBA_1010102)
                             EGL14.EGL_RENDERABLE_TYPE to
-                                    EGLExt.EGL_OPENGL_ES3_BIT_KHR
+                                EGLExt.EGL_OPENGL_ES3_BIT_KHR
                             EGL14.EGL_SURFACE_TYPE to
-                                    (EGL14.EGL_WINDOW_BIT or EGL14.EGL_PBUFFER_BIT)
+                                (EGL14.EGL_WINDOW_BIT or EGL14.EGL_PBUFFER_BIT)
                         } else {
                             include(EGLConfigAttributes.RGBA_8888)
                         }
                     }
-                )) {
+                )
+            ) {
                 "Unable to select EGLConfig"
             }
         }
@@ -79,10 +79,16 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
     override val initRenderer: () -> Unit
         get() = {
             createProgram(
-                if (use10bitPipeline)
-                    TEN_BIT_VERTEX_SHADER else DEFAULT_VERTEX_SHADER,
-                if (use10bitPipeline)
-                    TEN_BIT_FRAGMENT_SHADER else DEFAULT_FRAGMENT_SHADER
+                if (use10bitPipeline) {
+                    TEN_BIT_VERTEX_SHADER
+                } else {
+                    DEFAULT_VERTEX_SHADER
+                },
+                if (use10bitPipeline) {
+                    TEN_BIT_FRAGMENT_SHADER
+                } else {
+                    DEFAULT_FRAGMENT_SHADER
+                }
             )
             loadLocations()
             createTexture()
@@ -98,10 +104,10 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
 
     override val createOutputSurface
         get() = { eglSpec: EGLSpec,
-                  config: EGLConfig,
-                  surface: Surface,
-                  _: Int,
-                  _: Int ->
+                config: EGLConfig,
+                surface: Surface,
+                _: Int,
+                _: Int ->
             eglSpec.eglCreateWindowSurface(
                 config,
                 surface,
@@ -109,13 +115,14 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
                     if (use10bitPipeline) {
                         EGL_GL_COLORSPACE_KHR to EGL_GL_COLORSPACE_BT2020_HLG_EXT
                     }
-                })
+                }
+            )
         }
 
     override val drawFrame
         get() = { outputWidth: Int,
-                  outputHeight: Int,
-                  surfaceTransform: FloatArray ->
+                outputHeight: Int,
+                surfaceTransform: FloatArray ->
             GLES20.glViewport(
                 0,
                 0,
@@ -131,22 +138,26 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
 
             GLES20.glUniformMatrix4fv(
                 texMatrixLoc,
-                /*count=*/1,
-                /*transpose=*/false,
+                /*count=*/
+                1,
+                /*transpose=*/
+                false,
                 surfaceTransform,
-                /*offset=*/0
+                /*offset=*/
+                0
             )
             checkGlErrorOrThrow("glUniformMatrix4fv")
 
             // Draw the rect.
             GLES20.glDrawArrays(
                 GLES20.GL_TRIANGLE_STRIP,
-                /*firstVertex=*/0,
-                /*vertexCount=*/4
+                /*firstVertex=*/
+                0,
+                /*vertexCount=*/
+                4
             )
             checkGlErrorOrThrow("glDrawArrays")
         }
-
 
     @WorkerThread
     fun createTexture() {
@@ -158,19 +169,23 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texId)
         checkGlErrorOrThrow("glBindTexture $texId")
         GLES20.glTexParameterf(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MIN_FILTER,
             GLES20.GL_NEAREST.toFloat()
         )
         GLES20.glTexParameterf(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER,
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_MAG_FILTER,
             GLES20.GL_LINEAR.toFloat()
         )
         GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S,
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_S,
             GLES20.GL_CLAMP_TO_EDGE
         )
         GLES20.glTexParameteri(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T,
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GLES20.GL_TEXTURE_WRAP_T,
             GLES20.GL_CLAMP_TO_EDGE
         )
         checkGlErrorOrThrow("glTexParameter")
@@ -196,8 +211,13 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         val coordsPerVertex = 2
         val vertexStride = 0
         GLES20.glVertexAttribPointer(
-            positionLoc, coordsPerVertex, GLES20.GL_FLOAT,  /*normalized=*/
-            false, vertexStride, VERTEX_BUF
+            positionLoc,
+            coordsPerVertex,
+            GLES20.GL_FLOAT,
+            /*normalized=*/
+            false,
+            vertexStride,
+            VERTEX_BUF
         )
         checkGlErrorOrThrow("glVertexAttribPointer")
 
@@ -209,8 +229,13 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         val coordsPerTex = 2
         val texStride = 0
         GLES20.glVertexAttribPointer(
-            texCoordLoc, coordsPerTex, GLES20.GL_FLOAT,  /*normalized=*/
-            false, texStride, TEX_BUF
+            texCoordLoc,
+            coordsPerTex,
+            GLES20.GL_FLOAT,
+            /*normalized=*/
+            false,
+            texStride,
+            TEX_BUF
         )
         checkGlErrorOrThrow("glVertexAttribPointer")
     }
@@ -238,7 +263,13 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
             checkGlErrorOrThrow("glAttachShader")
             GLES20.glLinkProgram(program)
             val linkStatus = IntArray(1)
-            GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus,  /*offset=*/0)
+            GLES20.glGetProgramiv(
+                program,
+                GLES20.GL_LINK_STATUS,
+                linkStatus,
+                /*offset=*/
+                0
+            )
             check(linkStatus[0] == GLES20.GL_TRUE) {
                 "Could not link program: " + GLES20.glGetProgramInfoLog(
                     program
@@ -278,12 +309,18 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         GLES20.glShaderSource(shader, source)
         GLES20.glCompileShader(shader)
         val compiled = IntArray(1)
-        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled,  /*offset=*/0)
+        GLES20.glGetShaderiv(
+            shader,
+            GLES20.GL_COMPILE_STATUS,
+            compiled,
+            /*offset=*/
+            0
+        )
         check(compiled[0] == GLES20.GL_TRUE) {
             Log.w(TAG, "Could not compile shader: $source")
             try {
                 return@check "Could not compile shader type " +
-                        "$shaderType: ${GLES20.glGetShaderInfoLog(shader)}"
+                    "$shaderType: ${GLES20.glGetShaderInfoLog(shader)}"
             } finally {
                 GLES20.glDeleteShader(shader)
             }
@@ -305,17 +342,33 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         private const val SIZEOF_FLOAT = 4
 
         private val VERTEX_BUF = floatArrayOf(
-            -1.0f, -1.0f,  // 0 bottom left
-            1.0f, -1.0f,  // 1 bottom right
-            -1.0f, 1.0f,  // 2 top left
-            1.0f, 1.0f
+            // 0 bottom left
+            -1.0f,
+            -1.0f,
+            // 1 bottom right
+            1.0f,
+            -1.0f,
+            // 2 top left
+            -1.0f,
+            1.0f,
+            // 3 top right
+            1.0f,
+            1.0f
         ).toBuffer()
 
         private val TEX_BUF = floatArrayOf(
-            0.0f, 0.0f,  // 0 bottom left
-            1.0f, 0.0f,  // 1 bottom right
-            0.0f, 1.0f,  // 2 top left
-            1.0f, 1.0f // 3 top right
+            // 0 bottom left
+            0.0f,
+            0.0f,
+            // 1 bottom right
+            1.0f,
+            0.0f,
+            // 2 top left
+            0.0f,
+            1.0f,
+            // 3 top right
+            1.0f,
+            1.0f
         ).toBuffer()
 
         private const val TAG = "ShaderCopy"
@@ -332,7 +385,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
             gl_Position = aPosition;
             $VAR_TEXTURE_COORD = (uTexMatrix * aTextureCoord).xy;
         }
-        """.trimIndent()
+            """.trimIndent()
 
         private val TEN_BIT_VERTEX_SHADER =
             """
@@ -345,7 +398,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
           gl_Position = aPosition;
           $VAR_TEXTURE_COORD = (uTexMatrix * aTextureCoord).xy;
         }
-        """.trimIndent()
+            """.trimIndent()
 
         private const val VAR_TEXTURE = "sTexture"
         private val DEFAULT_FRAGMENT_SHADER =
@@ -357,7 +410,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         void main() {
             gl_FragColor = texture2D($VAR_TEXTURE, $VAR_TEXTURE_COORD);
         }
-        """.trimIndent()
+            """.trimIndent()
 
         private val TEN_BIT_FRAGMENT_SHADER =
             """
@@ -371,7 +424,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         void main() {
           outColor = texture($VAR_TEXTURE, $VAR_TEXTURE_COORD).xyz;
         }
-        """.trimIndent()
+            """.trimIndent()
 
         private const val EGL_GL_COLORSPACE_KHR = 0x309D
         private const val EGL_GL_COLORSPACE_BT2020_HLG_EXT = 0x3540

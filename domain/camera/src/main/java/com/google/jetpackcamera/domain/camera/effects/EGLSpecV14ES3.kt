@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.domain.camera.effects
 
 import android.hardware.HardwareBuffer
@@ -24,11 +23,11 @@ import android.opengl.EGLSurface
 import android.os.Build
 import android.view.Surface
 import androidx.annotation.RequiresApi
-import androidx.opengl.EGLExt
 import androidx.graphics.opengl.egl.EGLConfigAttributes
 import androidx.graphics.opengl.egl.EGLException
 import androidx.graphics.opengl.egl.EGLSpec
 import androidx.graphics.opengl.egl.EGLVersion
+import androidx.opengl.EGLExt
 import androidx.opengl.EGLImageKHR
 import androidx.opengl.EGLSyncKHR
 
@@ -37,7 +36,9 @@ object EGLSpecV14ES3 : EGLSpec {
     // Tuples of attribute identifiers along with their corresponding values.
     // EGL_NONE is used as a termination value similar to a null terminated string
     private val contextAttributes = intArrayOf(
-        EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, // GLES VERSION 3
+        // GLES VERSION 3
+        EGL14.EGL_CONTEXT_CLIENT_VERSION,
+        3,
         // HWUI provides the ability to configure a context priority as well but that only
         // seems to be configured on SystemUIApplication. This might be useful for
         // front buffer rendering situations for performance.
@@ -58,11 +59,9 @@ object EGLSpecV14ES3 : EGLSpec {
         }
     }
 
-    override fun eglGetCurrentReadSurface(): EGLSurface =
-        EGL14.eglGetCurrentSurface(EGL14.EGL_READ)
+    override fun eglGetCurrentReadSurface(): EGLSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ)
 
-    override fun eglGetCurrentDrawSurface(): EGLSurface =
-        EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW)
+    override fun eglGetCurrentDrawSurface(): EGLSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW)
 
     override fun eglQueryString(nameId: Int): String =
         EGL14.eglQueryString(getDefaultDisplay(), nameId)
@@ -70,26 +69,24 @@ object EGLSpecV14ES3 : EGLSpec {
     override fun eglCreatePBufferSurface(
         config: EGLConfig,
         configAttributes: EGLConfigAttributes?
-    ): EGLSurface =
-        EGL14.eglCreatePbufferSurface(
-            getDefaultDisplay(),
-            config,
-            configAttributes?.toArray(),
-            0
-        )
+    ): EGLSurface = EGL14.eglCreatePbufferSurface(
+        getDefaultDisplay(),
+        config,
+        configAttributes?.toArray(),
+        0
+    )
 
     override fun eglCreateWindowSurface(
         config: EGLConfig,
         surface: Surface,
-        configAttributes: EGLConfigAttributes?,
-    ): EGLSurface =
-        EGL14.eglCreateWindowSurface(
-            getDefaultDisplay(),
-            config,
-            surface,
-            configAttributes?.toArray() ?: DefaultWindowSurfaceConfig.toArray(),
-            0
-        )
+        configAttributes: EGLConfigAttributes?
+    ): EGLSurface = EGL14.eglCreateWindowSurface(
+        getDefaultDisplay(),
+        config,
+        surface,
+        configAttributes?.toArray() ?: DefaultWindowSurfaceConfig.toArray(),
+        0
+    )
 
     override fun eglSwapBuffers(surface: EGLSurface): Boolean =
         EGL14.eglSwapBuffers(getDefaultDisplay(), surface)
@@ -99,8 +96,7 @@ object EGLSpecV14ES3 : EGLSpec {
         attribute: Int,
         result: IntArray,
         offset: Int
-    ): Boolean =
-        EGL14.eglQuerySurface(getDefaultDisplay(), surface, attribute, result, offset)
+    ): Boolean = EGL14.eglQuerySurface(getDefaultDisplay(), surface, attribute, result, offset)
 
     override fun eglDestroySurface(surface: EGLSurface) =
         EGL14.eglDestroySurface(getDefaultDisplay(), surface)
@@ -109,13 +105,12 @@ object EGLSpecV14ES3 : EGLSpec {
         context: EGLContext,
         drawSurface: EGLSurface,
         readSurface: EGLSurface
-    ): Boolean =
-        EGL14.eglMakeCurrent(
-            getDefaultDisplay(),
-            drawSurface,
-            readSurface,
-            context
-        )
+    ): Boolean = EGL14.eglMakeCurrent(
+        getDefaultDisplay(),
+        drawSurface,
+        readSurface,
+        context
+    )
 
     override fun loadConfig(configAttributes: EGLConfigAttributes): EGLConfig? {
         val configs = arrayOfNulls<EGLConfig?>(1)
@@ -128,7 +123,8 @@ object EGLSpecV14ES3 : EGLSpec {
                 1,
                 intArrayOf(1),
                 0
-            )) {
+            )
+        ) {
             configs[0]
         } else {
             null
@@ -139,7 +135,8 @@ object EGLSpecV14ES3 : EGLSpec {
         return EGL14.eglCreateContext(
             getDefaultDisplay(),
             config,
-            EGL14.EGL_NO_CONTEXT, // not creating from a shared context
+            // not creating from a shared context
+            EGL14.EGL_NO_CONTEXT,
             contextAttributes,
             0
         )
@@ -152,18 +149,13 @@ object EGLSpecV14ES3 : EGLSpec {
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    override fun eglCreateImageFromHardwareBuffer(
-        hardwareBuffer: HardwareBuffer
-    ): EGLImageKHR? =
+    override fun eglCreateImageFromHardwareBuffer(hardwareBuffer: HardwareBuffer): EGLImageKHR? =
         EGLExt.eglCreateImageFromHardwareBuffer(getDefaultDisplay(), hardwareBuffer)
 
     override fun eglDestroyImageKHR(image: EGLImageKHR): Boolean =
         EGLExt.eglDestroyImageKHR(getDefaultDisplay(), image)
 
-    override fun eglCreateSyncKHR(
-        type: Int,
-        attributes: EGLConfigAttributes?
-    ): EGLSyncKHR? =
+    override fun eglCreateSyncKHR(type: Int, attributes: EGLConfigAttributes?): EGLSyncKHR? =
         EGLExt.eglCreateSyncKHR(getDefaultDisplay(), type, attributes)
 
     override fun eglGetSyncAttribKHR(
@@ -171,19 +163,14 @@ object EGLSpecV14ES3 : EGLSpec {
         attribute: Int,
         value: IntArray,
         offset: Int
-    ): Boolean =
-        EGLExt.eglGetSyncAttribKHR(getDefaultDisplay(), sync, attribute, value, offset)
+    ): Boolean = EGLExt.eglGetSyncAttribKHR(getDefaultDisplay(), sync, attribute, value, offset)
 
     override fun eglDestroySyncKHR(sync: EGLSyncKHR): Boolean =
         EGLExt.eglDestroySyncKHR(getDefaultDisplay(), sync)
 
     override fun eglGetError(): Int = EGL14.eglGetError()
 
-    override fun eglClientWaitSyncKHR(
-        sync: EGLSyncKHR,
-        flags: Int,
-        timeoutNanos: Long
-    ): Int =
+    override fun eglClientWaitSyncKHR(sync: EGLSyncKHR, flags: Int, timeoutNanos: Long): Int =
         EGLExt.eglClientWaitSyncKHR(getDefaultDisplay(), sync, flags, timeoutNanos)
 
     private fun getDefaultDisplay() = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
