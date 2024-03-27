@@ -24,6 +24,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
+import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -43,6 +44,7 @@ import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
+import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -221,7 +223,11 @@ constructor(
                 val useCaseGroup = createUseCaseGroup(
                     sessionSettings,
                     initialTransientSettings,
-                    supportedStabilizationModes
+                    supportedStabilizationModes,
+                    effect = when (sessionSettings.captureMode) {
+                        CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(coroutineScope)
+                        CaptureMode.MULTI_STREAM -> null
+                    }
                 )
 
                 var prevTransientSettings = initialTransientSettings
@@ -502,7 +508,8 @@ constructor(
     private fun createUseCaseGroup(
         sessionSettings: PerpetualSessionSettings,
         initialTransientSettings: TransientSessionSettings,
-        supportedStabilizationModes: List<SupportedStabilizationMode>
+        supportedStabilizationModes: List<SupportedStabilizationMode>,
+        effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
         videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
@@ -523,9 +530,8 @@ constructor(
             addUseCase(imageCaptureUseCase)
             addUseCase(videoCaptureUseCase)
 
-            if (sessionSettings.captureMode == CaptureMode.SINGLE_STREAM) {
-                addEffect(SingleSurfaceForcingEffect())
-            }
+            effect?.let { addEffect(it) }
+
             captureMode = sessionSettings.captureMode
         }.build()
     }
