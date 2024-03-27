@@ -15,12 +15,12 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.video.VideoRecordEvent
-import androidx.core.util.Consumer
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -108,8 +108,15 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+
+    @SuppressLint("RestrictedApi")
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): ImageCapture.OutputFileResults {
         takePicture()
+        return ImageCapture.OutputFileResults(null)
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
@@ -119,7 +126,7 @@ class FakeCameraUseCase(
     }
 
     override suspend fun startVideoRecording(
-        onVideoRecord: (CameraUseCase.VideoRecordEvent) -> Unit
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
