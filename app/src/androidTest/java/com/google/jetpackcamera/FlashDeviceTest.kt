@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.os.Build
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -25,6 +26,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
@@ -147,8 +149,17 @@ internal class FlashDeviceTest {
         )
     }
 
+    private fun assumeHalStableOnImageCapture() {
+        // The GMD emulators with API <=31 will often crash the HAL when taking an image capture.
+        // See b/195122056
+        assume().that(Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT <= 31).isFalse()
+    }
+
     @Test
     fun set_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
+        // Skip test on unstable devices
+        assumeHalStableOnImageCapture()
+
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
