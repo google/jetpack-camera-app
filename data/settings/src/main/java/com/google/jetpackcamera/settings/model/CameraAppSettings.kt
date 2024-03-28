@@ -32,6 +32,7 @@ data class CameraAppSettings(
     val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
+    val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val supportedFixedFrameRates: List<Int> = emptyList()
