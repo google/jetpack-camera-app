@@ -193,13 +193,16 @@ class PreviewViewModel @Inject constructor(
     fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
+        ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent) -> Unit
     ) {
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
             traceAsync(IMAGE_CAPTURE_TRACE, 0) {
                 try {
-                    cameraUseCase.takePicture(contentResolver, imageCaptureUri)
+                    val savedUri =
+                        cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri)
+                            .savedUri
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
@@ -209,7 +212,7 @@ class PreviewViewModel @Inject constructor(
                             )
                         )
                     )
-                    onImageCapture(ImageCaptureEvent.ImageSaved)
+                    onImageCapture(ImageCaptureEvent.ImageSaved(savedUri))
                     Log.d(TAG, "cameraUseCase.takePicture success")
                 } catch (exception: Exception) {
                     // todo: remove toast after postcapture screen implemented
@@ -305,7 +308,9 @@ class PreviewViewModel @Inject constructor(
     }
 
     sealed interface ImageCaptureEvent {
-        object ImageSaved : ImageCaptureEvent
+        data class ImageSaved(
+            val savedUri: Uri? = null
+        ) : ImageCaptureEvent
 
         data class ImageCaptureError(
             val exception: Exception
