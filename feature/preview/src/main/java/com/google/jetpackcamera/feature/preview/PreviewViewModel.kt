@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -47,7 +48,6 @@ private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 // toast test descriptions
-const val IMAGE_CAPTURE_SUCCESS_TOAST_TAG = "ImageCaptureSuccessToast"
 const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
@@ -170,7 +170,7 @@ class PreviewViewModel @Inject constructor(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
+                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
                             )
                         )
                     )
@@ -195,23 +195,26 @@ class PreviewViewModel @Inject constructor(
     fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
+        ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent) -> Unit
     ) {
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
             traceAsync(IMAGE_CAPTURE_TRACE, 0) {
                 try {
-                    cameraUseCase.takePicture(contentResolver, imageCaptureUri)
+                    val savedUri =
+                        cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri)
+                            .savedUri
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
                             toastMessageToShow = ToastMessage(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST_TAG
+                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
                             )
                         )
                     )
-                    onImageCapture(ImageCaptureEvent.ImageSaved)
+                    onImageCapture(ImageCaptureEvent.ImageSaved(savedUri))
                     Log.d(TAG, "cameraUseCase.takePicture success")
                 } catch (exception: Exception) {
                     // todo: remove toast after postcapture screen implemented
@@ -307,7 +310,9 @@ class PreviewViewModel @Inject constructor(
     }
 
     sealed interface ImageCaptureEvent {
-        object ImageSaved : ImageCaptureEvent
+        data class ImageSaved(
+            val savedUri: Uri? = null
+        ) : ImageCaptureEvent
 
         data class ImageCaptureError(
             val exception: Exception

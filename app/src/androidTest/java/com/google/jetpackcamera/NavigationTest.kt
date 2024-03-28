@@ -38,8 +38,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NavigationTest {
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -50,7 +50,7 @@ class NavigationTest {
     @Test
     fun backAfterReturnFromSettings_doesNotReturnToSettings() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil {
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
@@ -81,7 +81,7 @@ class NavigationTest {
     @Test
     fun returnFromSettings_afterFlipCamera_returnsToPreview() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil {
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
@@ -108,7 +108,7 @@ class NavigationTest {
     @Test
     fun backFromQuickSettings_returnToPreview() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil {
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
@@ -132,7 +132,7 @@ class NavigationTest {
     @Test
     fun backFromQuickSettingsExpended_returnToQuickSettings() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil {
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 

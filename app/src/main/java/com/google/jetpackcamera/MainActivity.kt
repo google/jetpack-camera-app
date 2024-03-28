@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera
 
+import android.content.Intent
+import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -126,7 +128,13 @@ class MainActivity : ComponentActivity() {
 
     private fun getPreviewMode(): PreviewMode {
         if (intent == null || MediaStore.ACTION_IMAGE_CAPTURE != intent.action) {
-            return PreviewMode.StandardMode
+            return PreviewMode.StandardMode { event ->
+                if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
+                    val intent = Intent(Camera.ACTION_NEW_PICTURE)
+                    intent.setData(event.savedUri)
+                    sendBroadcast(intent)
+                }
+            }
         } else {
             var uri = if (intent.extras == null ||
                 !intent.extras!!.containsKey(MediaStore.EXTRA_OUTPUT)
@@ -145,7 +153,7 @@ class MainActivity : ComponentActivity() {
                 uri = intent.clipData!!.getItemAt(0).uri
             }
             return PreviewMode.ExternalImageCaptureMode(uri) { event ->
-                if (event == PreviewViewModel.ImageCaptureEvent.ImageSaved) {
+                if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
                     setResult(RESULT_OK)
                     finish()
                 }

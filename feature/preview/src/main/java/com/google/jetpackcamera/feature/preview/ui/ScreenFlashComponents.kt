@@ -68,7 +68,7 @@ fun ScreenFlashOverlay(screenFlashUiState: ScreenFlash.ScreenFlashUiState) {
         modifier = Modifier
             .run {
                 if (screenFlashUiState.enabled) {
-                    this.testTag("ScreenFlashOverlay")
+                    this.testTag(SCREEN_FLASH_OVERLAY)
                 } else {
                     this
                 }

@@ -53,8 +53,10 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -300,11 +302,29 @@ constructor(
     }
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): ImageCapture.OutputFileResults {
         val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
-        if (imageCaptureUri == null) {
+        if (ignoreUri) {
+            val formatter = SimpleDateFormat(
+                "yyyy-MM-dd-HH-mm-ss-SSS",
+                Locale.US
+            )
+            val filename = "JCA-${formatter.format(Calendar.getInstance().time)}.jpg"
+            val contentValues = ContentValues()
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            outputFileOptions = OutputFileOptions.Builder(
+                contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            ).build()
+        } else if (imageCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
             throw e
@@ -347,6 +367,7 @@ constructor(
             }
         )
         imageDeferred.await()
+        return imageDeferred.await()
     }
 
     private fun getEligibleContentValues(): ContentValues {

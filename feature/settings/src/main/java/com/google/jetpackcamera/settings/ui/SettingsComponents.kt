@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.toUpperCase
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
@@ -59,6 +63,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 const val FPS_AUTO = 0
 const val FPS_15 = 15
@@ -446,6 +451,22 @@ fun StabilizationSetting(
     )
 }
 
+@Composable
+fun VersionInfo(versionName: String, buildType: String = "") {
+    SettingUI(
+        title = stringResource(id = R.string.version_info_title),
+        leadingIcon = null
+    ) {
+        val versionString = versionName +
+            if (buildType.isNotEmpty()) {
+                "/${buildType.toUpperCase(Locale.current)}"
+            } else {
+                ""
+            }
+        Text(text = versionString)
+    }
+}
+
 /*
  * Setting UI sub-Components
  * small and whimsical :)
@@ -600,5 +621,14 @@ fun SingleChoiceSelector(
             },
             trailingContent = null
         )
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun Preview_VersionInfo() {
+    SettingsPreviewTheme {
+        VersionInfo(versionName = "0.1.0", buildType = "debug")
     }
 }

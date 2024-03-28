@@ -26,10 +26,12 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
+import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
@@ -72,6 +74,10 @@ private fun JetpackCameraNavHost(
         }
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
+                versionInfo = VersionInfoHolder(
+                    versionName = BuildConfig.VERSION_NAME,
+                    buildType = BuildConfig.BUILD_TYPE
+                ),
                 onNavigateBack = { navController.popBackStack() }
             )
         }

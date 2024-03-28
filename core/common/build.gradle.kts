@@ -51,10 +51,16 @@ android {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.android.material)
+    implementation(libs.kotlinx.atomicfu)
+
     testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
