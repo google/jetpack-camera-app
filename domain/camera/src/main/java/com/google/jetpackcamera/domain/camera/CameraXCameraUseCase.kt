@@ -231,7 +231,7 @@ constructor(
                     supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
                 )
                 settingsRepository.updateVideoStabilizationSupported(
-                    supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
+                    supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)
                 )
 
                 settingsRepository.cameraAppSettings.first().supportedStabilizationModes
