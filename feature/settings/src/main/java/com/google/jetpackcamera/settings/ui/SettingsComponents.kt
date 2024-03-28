@@ -383,7 +383,11 @@ fun StabilizationSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(id = R.string.lens_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
 
                 // on (preview) selector
                 // disabled if target fps != (30 or off)
