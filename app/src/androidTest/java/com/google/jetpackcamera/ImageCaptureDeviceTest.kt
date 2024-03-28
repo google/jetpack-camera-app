@@ -33,6 +33,8 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
@@ -57,16 +59,32 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
+    fun image_capture() = runTest {
+        val timeStamp = System.currentTimeMillis()
+        activityScenario = ActivityScenario.launch(MainActivity::class.java)
+        uiDevice.wait(
+            Until.findObject(By.res(CAPTURE_BUTTON)),
+            5000
+        )
+        uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
+        uiDevice.wait(
+            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
+            5000
+        )
+        assert(deleteFilesInDirAfterTimestamp(timeStamp))
+    }
+
+    @Test
     fun image_capture_external() = runTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(timeStamp)
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res("CaptureButton")),
+                Until.findObject(By.res(CAPTURE_BUTTON)),
                 5000
             )
-            uiDevice.findObject(By.res("CaptureButton")).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
                 Until.findObject(By.res("ImageCaptureSuccessToast")),
                 5000
@@ -86,10 +104,10 @@ internal class ImageCaptureDeviceTest {
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
             uiDevice.wait(
-                Until.findObject(By.res("CaptureButton")),
+                Until.findObject(By.res(CAPTURE_BUTTON)),
                 5000
             )
-            uiDevice.findObject(By.res("CaptureButton")).click()
+            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
                 Until.findObject(By.res("ImageCaptureFailureToast")),
                 5000
@@ -111,7 +129,8 @@ internal class ImageCaptureDeviceTest {
         return false
     }
 
-    private fun deleteFilesInDirAfterTimestamp(timeStamp: Long) {
+    private fun deleteFilesInDirAfterTimestamp(timeStamp: Long): Boolean {
+        var hasDeletedFile = false
         for (file in File(DIR_PATH).listFiles()) {
             if (file.lastModified() >= timeStamp) {
                 file.delete()
@@ -121,8 +140,10 @@ internal class ImageCaptureDeviceTest {
                         instrumentation.targetContext.applicationContext.deleteFile(file.getName())
                     }
                 }
+                hasDeletedFile = true
             }
         }
+        return hasDeletedFile
     }
 
     private fun getTestRegistry(

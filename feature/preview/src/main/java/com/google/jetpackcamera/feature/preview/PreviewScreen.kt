@@ -133,8 +133,9 @@ private fun ContentScreen(
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
+        Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
@@ -230,7 +231,7 @@ private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
             previewUiState = PreviewUiState(),
-            previewMode = PreviewMode.StandardMode,
+            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -245,7 +246,7 @@ private fun ContentScreen_WhileRecording() {
             previewUiState = PreviewUiState(
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
-            previewMode = PreviewMode.StandardMode,
+            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
