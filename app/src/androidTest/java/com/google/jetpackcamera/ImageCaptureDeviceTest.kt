@@ -50,7 +50,6 @@ internal class ImageCaptureDeviceTest {
     val cameraPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
 

@@ -41,8 +41,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class FlashDeviceTest {
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -147,10 +150,18 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_screen_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
+    fun set_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // Ensure camera has a back camera and flip to it
+        val lensFacing = composeTestRule.getCurrentLensFacing()
+        if (lensFacing != LensFacing.BACK) {
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+                "Device does not have a back camera to flip to."
+            }.performClick()
         }
 
         // Navigate to quick settings
