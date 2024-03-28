@@ -40,12 +40,10 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 internal class FlashDeviceTest {
+
     @get:Rule
     val permissionsRule: GrantPermissionRule =
-        GrantPermissionRule.grant(
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
