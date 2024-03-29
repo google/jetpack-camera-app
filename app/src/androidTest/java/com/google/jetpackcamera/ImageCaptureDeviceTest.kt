@@ -35,6 +35,8 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TOAST
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
@@ -47,12 +49,8 @@ internal class ImageCaptureDeviceTest {
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
 
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var activityScenario: ActivityScenario<MainActivity>? = null
@@ -69,7 +67,7 @@ internal class ImageCaptureDeviceTest {
         )
         uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
         uiDevice.wait(
-            Until.findObject(By.text(context.getString(R.string.toast_image_capture_success))),
+            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
             5000
         )
         assert(deleteFilesInDirAfterTimestamp(timeStamp))
@@ -87,7 +85,7 @@ internal class ImageCaptureDeviceTest {
             )
             uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
-                Until.findObject(By.text(context.getString(R.string.toast_image_capture_success))),
+                Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
                 5000
             )
             activityScenario!!.result
@@ -110,7 +108,7 @@ internal class ImageCaptureDeviceTest {
             )
             uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
             uiDevice.wait(
-                Until.findObject(By.text(context.getString(R.string.toast_capture_failure))),
+                Until.findObject(By.res(IMAGE_CAPTURE_FAILURE_TOAST)),
                 5000
             )
             uiDevice.pressBack()

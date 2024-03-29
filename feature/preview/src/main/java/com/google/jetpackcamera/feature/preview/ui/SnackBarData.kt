@@ -21,5 +21,6 @@ data class SnackBarData(
     val stringResource: Int,
     val duration: SnackbarDuration = SnackbarDuration.Short,
     val actionLabelRes: Int? = null,
-    val withDismissAction: Boolean = false
+    val withDismissAction: Boolean = false,
+    val testTag: String = ""
 )

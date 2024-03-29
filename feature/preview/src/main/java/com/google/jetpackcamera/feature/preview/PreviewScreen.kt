@@ -24,7 +24,9 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
@@ -205,6 +208,7 @@ private fun ContentScreen(
         }
 
         if (previewUiState.snackBarToShow != null) {
+            Spacer(modifier = Modifier.height(0.dp).testTag(previewUiState.snackBarToShow.testTag))
             val context = LocalContext.current
             scope.launch {
                 val result =
