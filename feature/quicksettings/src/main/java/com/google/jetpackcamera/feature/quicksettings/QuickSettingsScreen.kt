@@ -23,6 +23,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -45,7 +47,6 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -128,6 +129,7 @@ private enum class IsExpandedQuickSetting {
 /**
  * The UI component for quick settings when it is expanded.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
@@ -151,48 +153,37 @@ private fun ExpandedQuickSettingsUi(
         // to change the order of display just move these lines of code above or below each other
         when (shouldShowQuickSetting) {
             IsExpandedQuickSetting.NONE -> {
-                val displayedQuickSettings: Array<@Composable () -> Unit> =
-                    arrayOf(
-                        {
-                            QuickSetFlash(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
-                                onClick = { f: FlashMode -> onFlashModeClick(f) },
-                                currentFlashMode = currentCameraSettings.flashMode
-                            )
-                        },
-                        {
-                            QuickFlipCamera(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
-                                setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
-                                currentLensFacing = currentCameraSettings.cameraLensFacing
-                            )
-                        },
-                        {
-                            QuickSetRatio(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
-                                onClick = {
-                                    setVisibleQuickSetting(
-                                        IsExpandedQuickSetting.ASPECT_RATIO
-                                    )
-                                },
-                                ratio = currentCameraSettings.aspectRatio,
-                                currentRatio = currentCameraSettings.aspectRatio
-                            )
-                        },
-                        {
-                            QuickSetCaptureMode(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
-                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
-                                currentCaptureMode = currentCameraSettings.captureMode
-                            )
-                        }
+                FlowRow {
+                    QuickSetFlash(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
+                        onClick = { f: FlashMode -> onFlashModeClick(f) },
+                        currentFlashMode = currentCameraSettings.flashMode
                     )
-                QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
+                    QuickFlipCamera(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                        setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
+                        currentLensFacing = currentCameraSettings.cameraLensFacing
+                    )
+                    QuickSetRatio(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                        onClick = {
+                            setVisibleQuickSetting(
+                                IsExpandedQuickSetting.ASPECT_RATIO
+                            )
+                        },
+                        ratio = currentCameraSettings.aspectRatio,
+                        currentRatio = currentCameraSettings.aspectRatio
+                    )
+                    QuickSetCaptureMode(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
+                        setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                        currentCaptureMode = currentCameraSettings.captureMode
+                    )
+                }
             }
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {
                 ExpandedQuickSetRatio(
-
                     setRatio = onAspectRatioClick,
                     currentRatio = currentCameraSettings.aspectRatio
                 )

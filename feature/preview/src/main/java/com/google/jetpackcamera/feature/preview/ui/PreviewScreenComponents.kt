@@ -29,12 +29,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -56,10 +54,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.R
@@ -67,6 +67,7 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "PreviewScreen"
@@ -132,11 +133,12 @@ fun PreviewDisplay(
     val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
 
     surfaceRequest?.let {
-        BoxWithConstraints(
-            Modifier
+        Box(
+            modifier
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black)
+                .wrapContentSize()
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = { offset ->
@@ -145,28 +147,46 @@ fun PreviewDisplay(
                             currentOnFlipCamera()
                         }
                     )
-                },
+                }
+                .layout { measurable, constraints ->
+                    val maxWidth = constraints.maxWidth.toFloat()
+                    val maxHeight = constraints.maxHeight.toFloat()
+                    val maxAspectRatio: Float = maxWidth / maxHeight
+                    val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+
+                    val correctAspectRation = if (
+                        (maxAspectRatio > 1 && aspectRatioFloat < 1) ||
+                        (maxAspectRatio < 1 && aspectRatioFloat > 1)
+                    ) {
+                        1 / aspectRatioFloat
+                    } else {
+                        aspectRatioFloat
+                    }
+                    val shouldUseMaxWidth = maxAspectRatio <= correctAspectRation
+                    val width = if (shouldUseMaxWidth) maxWidth else maxHeight * correctAspectRation
+                    val height =
+                        if (!shouldUseMaxWidth) maxHeight else maxWidth / correctAspectRation
+
+                    val placeable = measurable.measure(
+                        Constraints.fixed(
+                            width.roundToInt(),
+                            height.roundToInt()
+                        )
+                    )
+
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                    }
+                }
+                .transformable(state = transformableState)
+                .alpha(blinkState.alpha),
 
             contentAlignment = Alignment.Center
         ) {
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            Box(
-                modifier = Modifier
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(blinkState.alpha)
-
-            ) {
-                CameraXViewfinder(
-                    modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it
-                )
-            }
+            CameraXViewfinder(
+                modifier = Modifier.fillMaxSize(),
+                surfaceRequest = it
+            )
         }
     }
 }

@@ -19,13 +19,12 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -52,45 +50,37 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import kotlin.math.min
 
 // completed components ready to go into preview screen
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ExpandedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
     currentRatio: AspectRatio,
     modifier: Modifier = Modifier
 ) {
-    val buttons: Array<@Composable () -> Unit> =
-        arrayOf(
-            {
-                QuickSetRatio(
-                    onClick = { setRatio(AspectRatio.THREE_FOUR) },
-                    ratio = AspectRatio.THREE_FOUR,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            },
-            {
-                QuickSetRatio(
-                    onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
-                    ratio = AspectRatio.NINE_SIXTEEN,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            },
-            {
-                QuickSetRatio(
-                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                    onClick = { setRatio(AspectRatio.ONE_ONE) },
-                    ratio = AspectRatio.ONE_ONE,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            }
+    FlowRow(modifier) {
+        QuickSetRatio(
+            onClick = { setRatio(AspectRatio.THREE_FOUR) },
+            ratio = AspectRatio.THREE_FOUR,
+            currentRatio = currentRatio,
+            isHighlightEnabled = true
         )
-    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+        QuickSetRatio(
+            onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
+            ratio = AspectRatio.NINE_SIXTEEN,
+            currentRatio = currentRatio,
+            isHighlightEnabled = true
+        )
+        QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+            onClick = { setRatio(AspectRatio.ONE_ONE) },
+            ratio = AspectRatio.ONE_ONE,
+            currentRatio = currentRatio,
+            isHighlightEnabled = true
+        )
+    }
 }
 
 @Composable
@@ -273,77 +263,6 @@ fun QuickSettingUiItem(
         )
 
         Text(text = text, color = tint, textAlign = TextAlign.Center)
-    }
-}
-
-/**
- * Should you want to have an expanded view of a single quick setting
- */
-@Composable
-fun ExpandedQuickSetting(
-    modifier: Modifier = Modifier,
-    vararg quickSettingButtons: @Composable () -> Unit
-) {
-    val expandedNumOfColumns =
-        min(
-            quickSettingButtons.size,
-            (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
-                    (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                        )
-                ).toInt()
-        )
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxWidth(),
-        columns = GridCells.Fixed(count = expandedNumOfColumns)
-    ) {
-        items(quickSettingButtons.size) { i ->
-            quickSettingButtons[i]()
-        }
-    }
-}
-
-/**
- * Algorithm to determine dimensions of QuickSettings Icon layout
- */
-@Composable
-fun QuickSettingsGrid(
-    modifier: Modifier = Modifier,
-    vararg quickSettingsButtons: @Composable () -> Unit
-) {
-    val initialNumOfColumns =
-        min(
-            quickSettingsButtons.size,
-            (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
-                    (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
-                        )
-                ).toInt()
-        )
-
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxWidth(),
-        columns = GridCells.Fixed(count = initialNumOfColumns)
-    ) {
-        items(quickSettingsButtons.size) { i ->
-            quickSettingsButtons[i]()
-        }
     }
 }
 

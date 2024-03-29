@@ -31,24 +31,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
+import com.google.jetpackcamera.feature.preview.ui.SmoothImmersiveRotationEffect
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -71,13 +74,16 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)
 
-    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+    // For this screen, force an immersive view with smooth rotation.
+    SmoothImmersiveRotationEffect(LocalContext.current)
+
+    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsStateWithLifecycle()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsStateWithLifecycle()
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsStateWithLifecycle()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -163,7 +169,7 @@ private fun ContentScreen(
         )
 
         QuickSettingsScreenOverlay(
-            modifier = Modifier,
+            modifier = Modifier.rotatedLayout(),
             isOpen = previewUiState.quickSettingsIsOpen,
             toggleIsOpen = onToggleQuickSettings,
             currentCameraSettings = previewUiState.currentCameraSettings,
@@ -175,6 +181,7 @@ private fun ContentScreen(
         )
         // relative-grid style overlay on top of preview display
         CameraControlsOverlay(
+            modifier = Modifier.rotatedLayout(),
             previewUiState = previewUiState,
             onNavigateToSettings = onNavigateToSettings,
             previewMode = previewMode,

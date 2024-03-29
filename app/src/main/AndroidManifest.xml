@@ -44,8 +44,8 @@
         <profileable android:shell="true"/>
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|smallestScreenSize"
             android:exported="true"
-            android:screenOrientation="nosensor"
             android:theme="@style/Theme.JetpackCamera">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
