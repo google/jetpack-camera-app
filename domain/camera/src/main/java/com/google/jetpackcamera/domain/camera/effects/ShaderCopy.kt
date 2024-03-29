@@ -47,7 +47,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         get() = TAG
 
     override val provideEGLSpec: () -> EGLSpec
-        get() = { if (use10bitPipeline) EGLSpecV14ES3 else EGLSpec.V14 }
+        get() = { if (use10bitPipeline) EGLSpec.V14ES3 else EGLSpec.V14 }
 
     override val initConfig: EGLManager.() -> EGLConfig
         get() = {
