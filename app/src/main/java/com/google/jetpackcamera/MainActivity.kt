@@ -23,106 +23,37 @@ import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import com.google.jetpackcamera.MainActivityUiState.Loading
-import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
-import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.ui.JcaApp
-import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
+import com.google.jetpackcamera.ui.JcaMainApp
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 /**
  * Activity for the JetpackCameraApp.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val viewModel: MainActivityViewModel by viewModels()
-
     @VisibleForTesting
     var previewViewModel: PreviewViewModel? = null
 
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        var uiState: MainActivityUiState by mutableStateOf(Loading)
-
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState
-                    .onEach {
-                        uiState = it
-                    }
-                    .collect()
-            }
-        }
         setContent {
-            when (uiState) {
-                Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(50.dp))
-                        Text(text = stringResource(R.string.jca_loading), color = Color.White)
-                    }
-                }
-
-                is Success -> {
-                    // TODO(kimblebee@): add app setting to enable/disable dynamic color
-                    JetpackCameraTheme(
-                        darkTheme = isInDarkMode(uiState = uiState),
-                        dynamicColor = false
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .semantics {
-                                    testTagsAsResourceId = true
-                                },
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            JcaApp(
-                                onPreviewViewModel = { previewViewModel = it },
-                                previewMode = getPreviewMode()
-                            )
-                        }
-                    }
-                }
-            }
+            val previewMode = remember { getPreviewMode() }
+            JcaMainApp(
+                modifier = Modifier.semantics { testTagsAsResourceId = true },
+                onPreviewViewModel = { previewViewModel = it },
+                previewMode = previewMode
+            )
         }
     }
 
@@ -162,15 +93,4 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Determines whether the Theme should be in dark, light, or follow system theme
- */
-@Composable
-private fun isInDarkMode(uiState: MainActivityUiState): Boolean = when (uiState) {
-    Loading -> isSystemInDarkTheme()
-    is Success -> when (uiState.cameraAppSettings.darkMode) {
-        DarkMode.DARK -> true
-        DarkMode.LIGHT -> false
-        DarkMode.SYSTEM -> isSystemInDarkTheme()
-    }
-}
+

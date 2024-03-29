@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.jetpackcamera.MainActivityUiState.Loading
-import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.ui.JcaMainAppUiState.Loading
+import com.google.jetpackcamera.ui.JcaMainAppUiState.Success
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
 @HiltViewModel
-class MainActivityViewModel @Inject constructor(
+class JcaMainAppViewModel @Inject constructor(
     val settingsRepository: SettingsRepository
 ) : ViewModel() {
-    val uiState: StateFlow<MainActivityUiState> = settingsRepository.cameraAppSettings.map {
+    val uiState: StateFlow<JcaMainAppUiState> = settingsRepository.cameraAppSettings.map {
         Success(it)
     }.stateIn(
         scope = viewModelScope,
@@ -41,7 +41,7 @@ class MainActivityViewModel @Inject constructor(
     )
 }
 
-sealed interface MainActivityUiState {
-    object Loading : MainActivityUiState
-    data class Success(val cameraAppSettings: CameraAppSettings) : MainActivityUiState
+sealed interface JcaMainAppUiState {
+    object Loading : JcaMainAppUiState
+    data class Success(val cameraAppSettings: CameraAppSettings) : JcaMainAppUiState
 }

@@ -137,6 +137,9 @@ dependencies {
     // Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Compose - Integration with ViewModels with Navigation and Hilt
+    implementation(libs.hilt.navigation.compose)
+
     // Access Settings data
     implementation(project(":data:settings"))
 
