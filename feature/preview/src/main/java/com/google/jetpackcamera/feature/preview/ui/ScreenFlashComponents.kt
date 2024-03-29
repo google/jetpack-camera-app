@@ -56,7 +56,10 @@ fun ScreenFlashScreen(
 }
 
 @Composable
-fun ScreenFlashOverlay(screenFlashUiState: ScreenFlash.ScreenFlashUiState) {
+fun ScreenFlashOverlay(
+    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    modifier: Modifier = Modifier
+) {
     // Update overlay transparency gradually
     val alpha by animateFloatAsState(
         targetValue = if (screenFlashUiState.enabled) 1f else 0f,
@@ -65,7 +68,7 @@ fun ScreenFlashOverlay(screenFlashUiState: ScreenFlash.ScreenFlashUiState) {
         finishedListener = { screenFlashUiState.onChangeComplete() }
     )
     Box(
-        modifier = Modifier
+        modifier = modifier
             .run {
                 if (screenFlashUiState.enabled) {
                     this.testTag(SCREEN_FLASH_OVERLAY)

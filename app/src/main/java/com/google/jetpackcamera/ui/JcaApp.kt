@@ -40,7 +40,8 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 fun JcaApp(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     /*TODO(b/306236646): remove after still capture*/
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    modifier: Modifier = Modifier
 ) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -48,11 +49,12 @@ fun JcaApp(
     if (permissionState.status.isGranted) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
-            previewMode = previewMode
+            previewMode = previewMode,
+            modifier = modifier
         )
     } else {
         CameraPermission(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             cameraPermissionState = permissionState
         )
     }
@@ -61,10 +63,11 @@ fun JcaApp(
 @Composable
 private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
-    navController: NavHostController = rememberNavController(),
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
+    NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,

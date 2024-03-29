@@ -67,9 +67,11 @@ class ZoomLevelDisplayState(showInitially: Boolean = false) {
 @Composable
 fun CameraControlsOverlay(
     previewUiState: PreviewUiState,
-    zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
-    onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
+    blinkState: BlinkState,
+    modifier: Modifier = Modifier,
+    zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
+    onNavigateToSettings: () -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
@@ -81,8 +83,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState
+    onStopVideoRecording: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -95,7 +96,7 @@ fun CameraControlsOverlay(
     }
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
-        Box(Modifier.fillMaxSize()) {
+        Box(modifier.fillMaxSize()) {
             if (previewUiState.videoRecordingState == VideoRecordingState.INACTIVE) {
                 ControlsTop(
                     modifier = Modifier
@@ -144,10 +145,10 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier
+                modifier = Modifier
                     .padding(12.dp)
                     .testTag(SETTINGS_BUTTON),
-                onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
                 QuickSettingsIndicators(
@@ -208,7 +209,7 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
+                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = currentCameraSettings.isBackCameraAvailable &&

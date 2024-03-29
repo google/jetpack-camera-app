@@ -52,8 +52,8 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun CameraXViewfinder(
-    modifier: Modifier = Modifier,
     surfaceRequest: SurfaceRequest,
+    modifier: Modifier = Modifier,
     implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
