@@ -59,6 +59,7 @@ android {
         jvmToolchain(17)
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     composeOptions {

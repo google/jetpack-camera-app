@@ -145,9 +145,6 @@ class FakeCameraUseCase(
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
-    fun setSurfaceRequest(surfaceRequest: SurfaceRequest) {
-        _surfaceRequest.value = surfaceRequest
-    }
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
