@@ -153,6 +153,7 @@ class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor
             // Create the context and initialize the input. This will call RenderTarget.onDrawFrame,
             // but we won't actually update the frame since this triggers adding the frame callback.
             // All subsequent updates will then happen through frameUpdateFlow.
+            // This should be updated when https://issuetracker.google.com/331968279 is resolved.
             inputRenderTarget.requestRender()
 
             // Connect the onConnectToInput callback with the onDisconnectFromInput
