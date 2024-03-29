@@ -44,12 +44,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.jetpackcamera.R
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: PermissionState) {
+fun CameraPermission(
+    modifier: Modifier = Modifier,
+    cameraPermissionState: MultiplePermissionsState
+) {
     PermissionTemplate(
         modifier = modifier,
         permissionState = cameraPermissionState,
@@ -63,9 +66,26 @@ fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: Permi
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
+fun StoragePermission(
+    modifier: Modifier = Modifier,
+    storagePermissionState: MultiplePermissionsState
+) {
+    PermissionTemplate(
+        modifier = modifier,
+        permissionState = storagePermissionState,
+        painter = painterResource(id = R.drawable.photo_storage),
+        iconAccessibilityText = stringResource(id = R.string.storage_permission_accessibility_text),
+        title = stringResource(id = R.string.storage_permission_screen_title),
+        bodyText = stringResource(id = R.string.storage_permission_required_rationale),
+        requestButtonText = stringResource(id = R.string.request_permission)
+    )
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    permissionState: MultiplePermissionsState,
     onSkipPermission: (() -> Unit)? = null,
     painter: Painter,
     iconAccessibilityText: String,
@@ -127,7 +147,7 @@ fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibili
 @Composable
 fun PermissionButtonSection(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    permissionState: MultiplePermissionsState,
     requestButtonText: String,
     onSkipPermission: (() -> Unit)?
 ) {
@@ -160,7 +180,7 @@ fun PermissionButtonSection(
 @Composable
 fun PermissionButton(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    permissionState: MultiplePermissionsState,
     requestButtonText: String
 ) {
     Button(
@@ -169,7 +189,7 @@ fun PermissionButton(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
-        onClick = { permissionState.launchPermissionRequest() }
+        onClick = { permissionState.launchMultiplePermissionRequest() }
     ) {
         Text(
             modifier = Modifier.padding(10.dp),

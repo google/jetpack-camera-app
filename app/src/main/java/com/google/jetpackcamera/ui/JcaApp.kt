@@ -16,6 +16,11 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.Manifest.permission.READ_MEDIA_VIDEO
+import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+import android.os.Build
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,8 +29,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
@@ -42,21 +48,51 @@ fun JcaApp(
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode
 ) {
-    val permissionState =
-        rememberPermissionState(permission = Manifest.permission.CAMERA)
+    val cameraPermissionState =
+        rememberMultiplePermissionsState(permissions = listOf(Manifest.permission.CAMERA))
+    val storagePermissionState: MultiplePermissionsState
 
-    if (permissionState.status.isGranted) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        storagePermissionState = rememberMultiplePermissionsState(
+            permissions = listOf(
+                READ_MEDIA_VISUAL_USER_SELECTED,
+                READ_MEDIA_IMAGES,
+                READ_MEDIA_VIDEO
+            )
+        )
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        storagePermissionState =
+            rememberMultiplePermissionsState(
+                permissions = listOf(
+                    READ_MEDIA_IMAGES,
+                    READ_MEDIA_VIDEO
+                )
+            )
+    } else {
+        storagePermissionState =
+            rememberMultiplePermissionsState(permissions = listOf(READ_EXTERNAL_STORAGE))
+    }
+    if (cameraPermissionState.allPermissionsGranted && (storagePermissionState.allPermissionsGranted || storagePermissionState.permissions[0].status.isGranted)) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode
         )
     } else {
-        CameraPermission(
-            modifier = Modifier.fillMaxSize(),
-            cameraPermissionState = permissionState
-        )
+        if (!cameraPermissionState.allPermissionsGranted) {
+            CameraPermission(
+                modifier = Modifier.fillMaxSize(),
+                cameraPermissionState = cameraPermissionState
+            )
+        }
+        if (!storagePermissionState.allPermissionsGranted && !storagePermissionState.permissions[0].status.isGranted) {
+            StoragePermission(
+                modifier = Modifier.fillMaxSize(),
+                storagePermissionState = storagePermissionState
+            )
+        }
     }
 }
+
 
 @Composable
 private fun JetpackCameraNavHost(
