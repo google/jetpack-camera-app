@@ -25,7 +25,9 @@ sealed interface PreviewMode {
     /**
      * The default mode for the app.
      */
-    object StandardMode : PreviewMode
+    data class StandardMode(
+        val onImageCapture: (PreviewViewModel.ImageCaptureEvent) -> Unit
+    ) : PreviewMode
 
     /**
      * Under this mode, the app is launched by an external intent to capture an image.

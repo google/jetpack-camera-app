@@ -64,6 +64,7 @@ camera-viewfinder-compose = { module = "androidx.camera:camera-viewfinder-compos
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
