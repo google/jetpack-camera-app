@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.HdrOff
+import androidx.compose.material.icons.filled.HdrOn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -132,14 +134,14 @@ enum class CameraCaptureMode : QuickSettingsEnum {
 
 enum class CameraDynamicRange : QuickSettingsEnum {
     SDR {
-        override fun getDrawableResId() = R.drawable.baseline_hdr_off_72
-        override fun getImageVector() = null
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Filled.HdrOff
         override fun getTextResId() = R.string.quick_settings_dynamic_range_sdr
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_sdr_description
     },
     HLG10 {
-        override fun getDrawableResId() = R.drawable.baseline_hdr_on_72
-        override fun getImageVector() = null
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Filled.HdrOn
         override fun getTextResId() = R.string.quick_settings_dynamic_range_hlg10
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hlg10_description
     }
