@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.quicksettings.ui
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
@@ -35,10 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -227,7 +228,7 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
     ) {
         // dropdown icon
         Icon(
-            painter = painterResource(R.drawable.baseline_expand_more_72),
+            imageVector = Icons.Filled.ExpandMore,
             contentDescription = if (isOpen) {
                 stringResource(R.string.quick_settings_dropdown_open_description)
             } else {
@@ -256,7 +257,7 @@ fun QuickSettingUiItem(
 ) {
     QuickSettingUiItem(
         modifier = modifier,
-        drawableResId = enum.getDrawableResId(),
+        painter = enum.getPainter(),
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
@@ -271,7 +272,7 @@ fun QuickSettingUiItem(
 @Composable
 fun QuickSettingUiItem(
     modifier: Modifier = Modifier,
-    @DrawableRes drawableResId: Int,
+    painter: Painter,
     text: String,
     accessibilityText: String,
     onClick: () -> Unit,
@@ -292,14 +293,14 @@ fun QuickSettingUiItem(
         }
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Icon(
-                painter = painterResource(drawableResId),
+                painter = painter,
                 contentDescription = accessibilityText,
                 modifier = Modifier.size(
                     dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
                 )
             )
 
-            Text(text = text, color = LocalContentColor.current, textAlign = TextAlign.Center)
+            Text(text = text, textAlign = TextAlign.Center)
         }
     }
 }
@@ -381,7 +382,7 @@ fun QuickSettingsGrid(
 @Composable
 fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
     Icon(
-        painter = painterResource(enum.getDrawableResId()),
+        painter = enum.getPainter(),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
         modifier = Modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
