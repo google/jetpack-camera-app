@@ -194,10 +194,9 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        uiDevice.wait(
-            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
-            IMAGE_CAPTURE_TIMEOUT_MILLIS
-        )
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TOAST).isDisplayed()
+        }
     }
 
     @Test

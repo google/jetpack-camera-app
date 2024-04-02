@@ -43,6 +43,8 @@ import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +70,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -105,6 +108,50 @@ fun TestableToast(
         Log.d(
             TAG,
             "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}"
+        )
+    }
+}
+
+@Composable
+fun TestableSnackBar(
+    modifier: Modifier = Modifier,
+    snackBarToShow: SnackBarData,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
+    onSnackBarResult: () -> Unit
+) {
+    Box(
+        // box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier
+            .size(20.dp)
+            .testTag(snackBarToShow.testTag)
+    ) {
+        val context = LocalContext.current
+        scope.launch {
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = context.getString(snackBarToShow.stringResource),
+                    duration = snackBarToShow.duration,
+                    withDismissAction = snackBarToShow.withDismissAction,
+                    actionLabel = if (snackBarToShow.actionLabelRes == null) {
+                        null
+                    } else {
+                        context.getString(snackBarToShow.actionLabelRes)
+                    }
+                )
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    onSnackBarResult()
+                }
+                SnackbarResult.Dismissed -> {
+                    onSnackBarResult()
+                }
+            }
+        }
+        Log.d(
+            TAG,
+            "Snackbar Displayed with message: " +
+                    "${stringResource(id = snackBarToShow.stringResource)}"
         )
     }
 }

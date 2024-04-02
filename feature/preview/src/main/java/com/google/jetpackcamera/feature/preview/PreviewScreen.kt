@@ -24,16 +24,13 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -44,7 +41,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,13 +51,13 @@ import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
+import com.google.jetpackcamera.feature.preview.ui.TestableSnackBar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -207,29 +203,13 @@ private fun ContentScreen(
         }
 
         if (previewUiState.snackBarToShow != null) {
-            Spacer(modifier = Modifier.height(0.dp).testTag(previewUiState.snackBarToShow.testTag))
-            val context = LocalContext.current
-            scope.launch {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(previewUiState.snackBarToShow.stringResource),
-                        duration = previewUiState.snackBarToShow.duration,
-                        withDismissAction = previewUiState.snackBarToShow.withDismissAction,
-                        actionLabel = if (previewUiState.snackBarToShow.actionLabelRes == null) {
-                            null
-                        } else {
-                            context.getString(previewUiState.snackBarToShow.actionLabelRes)
-                        }
-                    )
-                when (result) {
-                    SnackbarResult.ActionPerformed -> {
-                        onSnackBarResult()
-                    }
-                    SnackbarResult.Dismissed -> {
-                        onSnackBarResult()
-                    }
-                }
-            }
+            TestableSnackBar(
+                modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
+                snackBarToShow = previewUiState.snackBarToShow,
+                scope = scope,
+                snackbarHostState = snackbarHostState,
+                onSnackBarResult = onSnackBarResult
+            )
         }
 
         // Screen flash overlay that stays on top of everything but invisible normally. This should
