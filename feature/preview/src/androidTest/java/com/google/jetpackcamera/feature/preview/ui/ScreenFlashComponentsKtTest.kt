@@ -29,7 +29,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.jetpackcamera.feature.preview.ScreenFlash
+import com.google.jetpackcamera.feature.preview.ScreenFlashUiState
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -42,8 +42,8 @@ class ScreenFlashComponentsKtTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val screenFlashUiState: MutableState<ScreenFlash.ScreenFlashUiState> =
-        mutableStateOf(ScreenFlash.ScreenFlashUiState())
+    private val screenFlashUiState: MutableState<ScreenFlashUiState> =
+        mutableStateOf(ScreenFlashUiState.NotApplied())
 
     @Before
     fun setUp() {
@@ -63,7 +63,7 @@ class ScreenFlashComponentsKtTest {
 
     @Test
     fun screenFlashOverlay_existsAfterStateIsEnabled() = runTest {
-        screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
+        screenFlashUiState.value = ScreenFlashUiState.Applied(onComplete = {})
 
         composeTestRule.awaitIdle()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).assertExists()
@@ -71,8 +71,8 @@ class ScreenFlashComponentsKtTest {
 
     @Test
     fun screenFlashOverlay_doesNotExistWhenDisabledAfterEnabled() = runTest {
-        screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
-        screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = false)
+        screenFlashUiState.value = ScreenFlashUiState.Applied(onComplete = {})
+        screenFlashUiState.value = ScreenFlashUiState.NotApplied()
 
         composeTestRule.awaitIdle()
         composeTestRule.onNode(hasTestTag("ScreenFlashOverlay")).assertDoesNotExist()
@@ -80,7 +80,7 @@ class ScreenFlashComponentsKtTest {
 
     @Test
     fun screenFlashOverlay_sizeFillsMaxSize() = runTest {
-        screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
+        screenFlashUiState.value = ScreenFlashUiState.Applied(onComplete = {})
 
         composeTestRule.awaitIdle()
         val rootBounds = composeTestRule.onRoot().getBoundsInRoot()
@@ -92,7 +92,7 @@ class ScreenFlashComponentsKtTest {
 
     @Test
     fun screenFlashOverlay_fullWhiteWhenEnabled() = runTest {
-        screenFlashUiState.value = ScreenFlash.ScreenFlashUiState(enabled = true)
+        screenFlashUiState.value = ScreenFlashUiState.Applied(onComplete = {})
 
         composeTestRule.awaitIdle()
         val overlayScreenShot =

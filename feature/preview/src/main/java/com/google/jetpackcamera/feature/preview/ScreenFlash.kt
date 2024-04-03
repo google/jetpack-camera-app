@@ -33,23 +33,24 @@ class ScreenFlash(
     cameraUseCase: CameraUseCase,
     scope: CoroutineScope
 ) {
-    private var screenBrightnessToRestore : Float? = null
+    private var screenBrightnessToRestore: Float? = null
 
-    val screenFlashUiState: StateFlow<ScreenFlashUiState> = cameraUseCase.getScreenFlashEvents().map { event ->
-        when (event.type) {
-            CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->
-                ScreenFlashUiState.Applied(onComplete = event.onComplete)
-            CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI -> {
-                ScreenFlashUiState.NotApplied(
-                    screenBrightnessToRestore = screenBrightnessToRestore
-                )
+    val screenFlashUiState: StateFlow<ScreenFlashUiState> =
+        cameraUseCase.getScreenFlashEvents().map { event ->
+            when (event.type) {
+                CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->
+                    ScreenFlashUiState.Applied(onComplete = event.onComplete)
+                CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI -> {
+                    ScreenFlashUiState.NotApplied(
+                        screenBrightnessToRestore = screenBrightnessToRestore
+                    )
+                }
             }
-        }
-    }.stateIn(
-        scope = scope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ScreenFlashUiState.NotApplied()
-    )
+        }.stateIn(
+            scope = scope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ScreenFlashUiState.NotApplied()
+        )
 
     /**
      * Set the screen brightness to restore to after a screen flash has been applied.

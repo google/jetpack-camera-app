@@ -43,7 +43,7 @@ fun ScreenFlashScreen(
 ) {
     ScreenFlashOverlay(screenFlashUiState)
 
-    when(screenFlashUiState){
+    when (screenFlashUiState) {
         is ScreenFlashUiState.Applied -> {
             BrightnessMaximization(onInitialBrightnessCalculated = onInitialBrightnessCalculated)
         }
