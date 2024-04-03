@@ -150,8 +150,7 @@ fun TestableSnackBar(
         }
         Log.d(
             TAG,
-            "Snackbar Displayed with message: " +
-                    "${stringResource(id = snackBarToShow.stringResource)}"
+            "Snackbar Displayed with message: ${stringResource(snackBarToShow.stringResource)}"
         )
     }
 }
