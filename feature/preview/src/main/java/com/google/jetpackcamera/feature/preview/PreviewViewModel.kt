@@ -24,8 +24,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TOAST
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackBarData
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -169,7 +169,7 @@ class PreviewViewModel @Inject constructor(
                             snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_image_capture_success,
                                 withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -181,7 +181,7 @@ class PreviewViewModel @Inject constructor(
                             snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_capture_failure,
                                 withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_FAILURE_TOAST
+                                testTag = IMAGE_CAPTURE_FAILURE_TAG
                             )
                         )
                     )
@@ -211,7 +211,7 @@ class PreviewViewModel @Inject constructor(
                             snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_image_capture_success,
                                 withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -224,7 +224,7 @@ class PreviewViewModel @Inject constructor(
                             snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_capture_failure,
                                 withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_FAILURE_TOAST
+                                testTag = IMAGE_CAPTURE_FAILURE_TAG
                             )
                         )
                     )
