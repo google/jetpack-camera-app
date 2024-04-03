@@ -156,6 +156,9 @@ class MainActivity : ComponentActivity() {
                 if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
                     setResult(RESULT_OK)
                     finish()
+                } else if (event is PreviewViewModel.ImageCaptureEvent.ImageCaptureError) {
+                    setResult(RESULT_CANCELED)
+                    finish()
                 }
             }
         }

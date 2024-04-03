@@ -24,15 +24,16 @@ import android.os.Environment
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
 import java.io.File
@@ -50,23 +51,25 @@ internal class ImageCaptureDeviceTest {
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var activityScenario: ActivityScenario<MainActivity>? = null
-    private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
     fun image_capture() = runTest {
         val timeStamp = System.currentTimeMillis()
         activityScenario = ActivityScenario.launch(MainActivity::class.java)
-        uiDevice.wait(
-            Until.findObject(By.res(CAPTURE_BUTTON)),
-            5000
-        )
-        uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-        uiDevice.wait(
-            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TOAST)),
-            5000
-        )
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performClick()
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TOAST).isDisplayed()
+        }
         assert(deleteFilesInDirAfterTimestamp(timeStamp))
     }
 
@@ -76,15 +79,12 @@ internal class ImageCaptureDeviceTest {
         val uri = getTestUri(timeStamp)
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-            uiDevice.wait(
-                Until.findObject(By.res("ImageCaptureSuccessToast")),
-                5000
-            )
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                .assertExists()
+                .performClick()
             activityScenario!!.result
         }.register("key", TEST_CONTRACT) { result ->
             assert(result)
@@ -96,23 +96,19 @@ internal class ImageCaptureDeviceTest {
     @Test
     fun image_capture_external_illegal_uri() = runTest {
         val timeStamp = System.currentTimeMillis()
-        val inputUri = Uri.parse("asdfasdf")
+        val uri = Uri.parse("asdfasdf")
         getTestRegistry {
             activityScenario = ActivityScenario.launchActivityForResult(it)
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-            uiDevice.wait(
-                Until.findObject(By.res("ImageCaptureFailureToast")),
-                5000
-            )
-            uiDevice.pressBack()
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                .assertExists()
+                .performClick()
             activityScenario!!.result
-        }.register("key_illegal_uri", TEST_CONTRACT) { result ->
+        }.register("key", TEST_CONTRACT) { result ->
             assert(!result)
-        }.launch(inputUri)
+        }.launch(uri)
         deleteFilesInDirAfterTimestamp(timeStamp)
     }
 
