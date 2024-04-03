@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
                                 previewMode = getPreviewMode(),
                                 onPreviewViewModel = { previewViewModel = it },
                                 onRequestWindowColorMode = { colorMode ->
+                                    // Window color mode APIs require API level 26+
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                         Log.d(
                                             TAG,

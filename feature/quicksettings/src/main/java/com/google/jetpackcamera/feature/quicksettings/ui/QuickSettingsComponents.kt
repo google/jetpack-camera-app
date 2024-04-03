@@ -289,6 +289,9 @@ fun QuickSettingUiItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
+            // When in disabled state, material3 guidelines say the element's opacity should be 38%
+            // See: https://m3.material.io/foundations/interaction/states/applying-states#3c3032e8-b07a-42ac-a508-a32f573cc7e1
+            // and: https://developer.android.com/develop/ui/compose/designsystems/material2-material3#emphasis-and
             if (!enabled) it.copy(alpha = 0.38f) else it
         }
         CompositionLocalProvider(LocalContentColor provides contentColor) {
