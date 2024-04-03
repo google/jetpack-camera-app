@@ -38,12 +38,12 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAIL_TOAST
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
+import java.io.File
+import java.net.URLConnection
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.net.URLConnection
 
 @RunWith(AndroidJUnit4::class)
 internal class ImageCaptureDeviceTest {
