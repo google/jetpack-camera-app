@@ -71,7 +71,7 @@ fun PreviewScreen(
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
-    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+    val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
@@ -113,7 +113,7 @@ fun PreviewScreen(
 private fun ContentScreen(
     previewUiState: PreviewUiState,
     previewMode: PreviewMode,
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
@@ -224,7 +224,7 @@ private fun ContentScreenPreview() {
         ContentScreen(
             previewUiState = PreviewUiState(),
             previewMode = PreviewMode.StandardMode {},
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState.NotApplied(),
             surfaceRequest = null
         )
     }
@@ -239,7 +239,7 @@ private fun ContentScreen_WhileRecording() {
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
             previewMode = PreviewMode.StandardMode {},
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState.NotApplied(),
             surfaceRequest = null
         )
     }

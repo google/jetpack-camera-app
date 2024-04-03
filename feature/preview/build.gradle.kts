@@ -116,6 +116,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(kotlin("test"))
     debugImplementation(libs.androidx.test.monitor)
     implementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)

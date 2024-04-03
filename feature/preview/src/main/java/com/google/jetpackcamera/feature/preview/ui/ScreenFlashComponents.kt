@@ -32,42 +32,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import com.google.jetpackcamera.feature.preview.ScreenFlash
+import com.google.jetpackcamera.feature.preview.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"
 
 @Composable
 fun ScreenFlashScreen(
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    screenFlashUiState: ScreenFlashUiState,
     onInitialBrightnessCalculated: (Float) -> Unit
 ) {
     ScreenFlashOverlay(screenFlashUiState)
 
-    if (screenFlashUiState.enabled) {
-        BrightnessMaximization(onInitialBrightnessCalculated = onInitialBrightnessCalculated)
-    } else {
-        screenFlashUiState.screenBrightnessToRestore?.let {
+    when(screenFlashUiState){
+        is ScreenFlashUiState.Applied -> {
+            BrightnessMaximization(onInitialBrightnessCalculated = onInitialBrightnessCalculated)
+        }
+        is ScreenFlashUiState.NotApplied -> {
             // non-null brightness value means there is a value to restore
-            BrightnessRestoration(
-                brightness = it
-            )
+            screenFlashUiState.screenBrightnessToRestore?.let {
+                BrightnessRestoration(brightness = it)
+            }
         }
     }
 }
 
 @Composable
-fun ScreenFlashOverlay(screenFlashUiState: ScreenFlash.ScreenFlashUiState) {
+fun ScreenFlashOverlay(screenFlashUiState: ScreenFlashUiState) {
     // Update overlay transparency gradually
     val alpha by animateFloatAsState(
-        targetValue = if (screenFlashUiState.enabled) 1f else 0f,
+        targetValue = if (screenFlashUiState is ScreenFlashUiState.Applied) 1f else 0f,
         label = "screenFlashAlphaAnimation",
         animationSpec = tween(),
-        finishedListener = { screenFlashUiState.onChangeComplete() }
+        finishedListener = {
+            if (screenFlashUiState is ScreenFlashUiState.Applied) {
+                screenFlashUiState.onComplete()
+            }
+        }
     )
     Box(
         modifier = Modifier
             .run {
-                if (screenFlashUiState.enabled) {
+                if (screenFlashUiState is ScreenFlashUiState.Applied) {
                     this.testTag(SCREEN_FLASH_OVERLAY)
                 } else {
                     this
