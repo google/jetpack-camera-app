@@ -99,6 +99,8 @@
     <string name="fps_selector_value">%d</string>
 
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
+    <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
+
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>
