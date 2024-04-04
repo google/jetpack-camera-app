@@ -193,6 +193,8 @@ class FakeCameraUseCase(
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
-        TODO("Not yet implemented")
+        currentSettings.update { old ->
+            old.copy(dynamicRange = dynamicRange)
+        }
     }
 }
