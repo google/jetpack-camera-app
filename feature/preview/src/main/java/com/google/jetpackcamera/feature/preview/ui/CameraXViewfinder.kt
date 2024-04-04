@@ -15,20 +15,25 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.util.Log
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.CameraInputTransformer
 import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
 import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.camera.viewfinder.surface.TransformationInfo
 import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +42,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+
+private const val TAG = "CameraXViewfinder"
 
 /**
  * A composable viewfinder that adapts CameraX's [Preview.SurfaceProvider] to [Viewfinder]
@@ -57,6 +64,7 @@ fun CameraXViewfinder(
     implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
+    var cameraInputTransformer = remember { CameraInputTransformer() }
 
     val viewfinderArgs by produceState<ViewfinderArgs?>(initialValue = null, surfaceRequest) {
         val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(surfaceRequest.resolution)
@@ -126,7 +134,14 @@ fun CameraXViewfinder(
             surfaceRequest = args.viewfinderSurfaceRequest,
             implementationMode = args.implementationMode,
             transformationInfo = args.transformationInfo,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize().pointerInput(Unit) {
+                detectTapGestures {
+                    with(cameraInputTransformer) {
+                        Log.d(TAG, "onTap: $it, onTapCameraSpace: ${it.toCameraSpace()}")
+                    }
+                }
+            },
+            cameraInputTransformer = cameraInputTransformer,
         )
     }
 }
