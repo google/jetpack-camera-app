@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.os.Build
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -25,7 +26,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.R
+import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
@@ -40,9 +41,10 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 internal class FlashDeviceTest {
+
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -146,11 +148,28 @@ internal class FlashDeviceTest {
         )
     }
 
+    private fun assumeHalStableOnImageCapture() {
+        // The GMD emulators with API <=31 will often crash the HAL when taking an image capture.
+        // See b/195122056
+        assume().that(Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT <= 31).isFalse()
+    }
+
     @Test
-    fun set_screen_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
+    fun set_flash_and_capture_successfully() = runScenarioTest<MainActivity> {
+        // Skip test on unstable devices
+        assumeHalStableOnImageCapture()
+
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        // Ensure camera has a back camera and flip to it
+        val lensFacing = composeTestRule.getCurrentLensFacing()
+        if (lensFacing != LensFacing.BACK) {
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+                "Device does not have a back camera to flip to."
+            }.performClick()
         }
 
         // Navigate to quick settings

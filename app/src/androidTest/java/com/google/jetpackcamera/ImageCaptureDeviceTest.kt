@@ -47,12 +47,8 @@ internal class ImageCaptureDeviceTest {
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
 
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var activityScenario: ActivityScenario<MainActivity>? = null
