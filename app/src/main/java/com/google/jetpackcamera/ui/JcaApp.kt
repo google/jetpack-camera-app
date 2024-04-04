@@ -16,9 +16,15 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,23 +45,57 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 @Composable
 fun JcaApp(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
+    shouldShowPermissionsRationale: (String) -> Boolean,
+    openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode
 ) {
-    val permissionState =
+    val cameraPermissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
+    val shouldOpenPermissions = remember { mutableStateOf(true) }
+    // camera not being granted  is what toggles the main menu
+    shouldOpenPermissions.value = !cameraPermissionState.status.isGranted
 
-    if (permissionState.status.isGranted) {
+
+    // if camera permission is granted and permission screen is closed
+    if (!shouldOpenPermissions.value) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode
         )
     } else {
-        CameraPermission(
+        // you'll have the option to go through camera and all other optional permissions
+        PermissionsScreen(
             modifier = Modifier.fillMaxSize(),
-            cameraPermissionState = permissionState
+            permissionEnums = getUnGrantedPermissions(LocalContext.current),
+            cameraPermissionState = cameraPermissionState,
+            openAppSettings = openAppSettings,
+            shouldShowPermissionsRequestRationale = shouldShowPermissionsRationale,
+            onClosePermissionsScreen = { shouldOpenPermissions.value = false }
         )
     }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+private fun getUnGrantedPermissions(context: Context): List<PermissionsEnum> {
+    var ungrantedPermissions = mutableListOf<PermissionsEnum>()
+    if (!isPermissionGranted(context, Manifest.permission.CAMERA))
+        ungrantedPermissions.add(PermissionsEnum.CAMERA)
+
+    //todo add audio permission
+    /*
+    if (!isPermissionGranted(context, Manifest.permission.RECORD_AUDIO))
+    ungrantedPermissions.add(PermissionsEnum.RECORD_AUDIO)
+     */
+
+    return ungrantedPermissions
+}
+
+private fun isPermissionGranted(context: Context, permission: String): Boolean {
+    return ContextCompat.checkSelfPermission(
+        context,
+        permission
+    ) == PackageManager.PERMISSION_GRANTED
 }
 
 @Composable

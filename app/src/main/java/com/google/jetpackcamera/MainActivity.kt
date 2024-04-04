@@ -15,15 +15,18 @@
  */
 package com.google.jetpackcamera
 
+import android.app.Activity
 import android.content.Intent
 import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -72,6 +75,7 @@ class MainActivity : ComponentActivity() {
     @VisibleForTesting
     var previewViewModel: PreviewViewModel? = null
 
+    @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,7 +121,10 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 onPreviewViewModel = { previewViewModel = it },
-                                previewMode = getPreviewMode()
+                                previewMode = getPreviewMode(),
+                                openAppSettings = ::openAppSettings,
+                                shouldShowPermissionsRationale =
+                                    ::shouldShowRequestPermissionRationale
                             )
                         }
                     }
@@ -125,6 +132,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 
     private fun getPreviewMode(): PreviewMode {
         if (intent == null || MediaStore.ACTION_IMAGE_CAPTURE != intent.action) {
@@ -173,4 +181,14 @@ private fun isInDarkMode(uiState: MainActivityUiState): Boolean = when (uiState)
         DarkMode.LIGHT -> false
         DarkMode.SYSTEM -> isSystemInDarkTheme()
     }
+}
+
+/**
+ * Open the app settings when necessary to enable permissions
+ */
+fun Activity.openAppSettings() {
+    Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
+    ).also(::startActivity)
 }

@@ -34,6 +34,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,13 +49,54 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.jetpackcamera.R
+import com.google.jetpackcamera.settings.SettingsViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: PermissionState) {
+fun PermissionsScreen(
+    modifier: Modifier = Modifier,
+    onClosePermissionsScreen: () -> Unit,
+    permissionEnums: List<PermissionsEnum>,
+    shouldShowPermissionsRequestRationale: (String) -> Boolean,
+    openAppSettings: () -> Unit,
+    cameraPermissionState: PermissionState
+) {
+    val permissionsToShow = remember { mutableStateListOf<PermissionsEnum>() }
+    permissionsToShow.addAll(permissionEnums)
+
+    val permissionsViewModel =
+        PermissionsViewModel(
+            shouldShowRequestPermissionRationale = shouldShowPermissionsRequestRationale,
+            openAppSettings = openAppSettings,
+            permissionEnums = permissionsToShow
+        )
+
+    if (permissionEnums.isEmpty()) {
+        onClosePermissionsScreen()
+    } else {
+        when (permissionEnums.first()) {
+            PermissionsEnum.CAMERA -> CameraPermission(
+                modifier = modifier,
+                cameraPermissionState = cameraPermissionState,
+                onRequestPermission = permissionsViewModel::onRequestPermission
+            )
+
+        }
+    }
+
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun CameraPermission(
+    modifier: Modifier = Modifier,
+    cameraPermissionState: PermissionState,
+    onRequestPermission: (PermissionState) -> Unit
+) {
     PermissionTemplate(
         modifier = modifier,
-        permissionState = cameraPermissionState,
+        //permissionState = cameraPermissionState,
+        onRequestPermission = { onRequestPermission(cameraPermissionState) },
         painter = painterResource(id = R.drawable.photo_camera),
         iconAccessibilityText = stringResource(id = R.string.camera_permission_accessibility_text),
         title = stringResource(id = R.string.camera_permission_screen_title),
@@ -65,7 +109,7 @@ fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: Permi
 @Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     painter: Painter,
     iconAccessibilityText: String,
@@ -100,8 +144,8 @@ fun PermissionTemplate(
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),
-                permissionState = permissionState,
                 requestButtonText = requestButtonText,
+                onRequestPermission = onRequestPermission,
                 onSkipPermission = onSkipPermission
             )
         }
@@ -127,7 +171,7 @@ fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibili
 @Composable
 fun PermissionButtonSection(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
     requestButtonText: String,
     onSkipPermission: (() -> Unit)?
 ) {
@@ -138,7 +182,7 @@ fun PermissionButtonSection(
                 .align(Alignment.Center)
         ) {
             PermissionButton(
-                permissionState = permissionState,
+                onRequestPermission = { onRequestPermission() },
                 requestButtonText = requestButtonText
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -160,7 +204,7 @@ fun PermissionButtonSection(
 @Composable
 fun PermissionButton(
     modifier: Modifier = Modifier,
-    permissionState: PermissionState,
+    onRequestPermission: () -> Unit,
     requestButtonText: String
 ) {
     Button(
@@ -169,7 +213,7 @@ fun PermissionButton(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
-        onClick = { permissionState.launchPermissionRequest() }
+        onClick = { onRequestPermission() }
     ) {
         Text(
             modifier = Modifier.padding(10.dp),
