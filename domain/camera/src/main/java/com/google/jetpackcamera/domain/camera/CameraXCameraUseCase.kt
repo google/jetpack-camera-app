@@ -421,7 +421,7 @@ constructor(
             (
                 currentCoroutineContext()[ContinuationInterceptor] as?
                     CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)
