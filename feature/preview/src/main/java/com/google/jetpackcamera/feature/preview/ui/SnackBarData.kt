@@ -15,10 +15,12 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
-const val CAPTURE_BUTTON = "CaptureButton"
-const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
-const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
-const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
-const val PREVIEW_DISPLAY = "PreviewDisplay"
-const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
-const val SETTINGS_BUTTON = "SettingsButton"
+import androidx.compose.material3.SnackbarDuration
+
+data class SnackBarData(
+    val stringResource: Int,
+    val duration: SnackbarDuration = SnackbarDuration.Short,
+    val actionLabelRes: Int? = null,
+    val withDismissAction: Boolean = false,
+    val testTag: String = ""
+)
