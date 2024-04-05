@@ -67,6 +67,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,6 +80,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -393,7 +396,7 @@ constructor(
     }
 
     override suspend fun startVideoRecording(
-        onVideoRecord: (CameraUseCase.VideoRecordEvent) -> Unit
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         Log.d(TAG, "recordVideo")
         val captureTypeString =
@@ -413,20 +416,26 @@ constructor(
             )
                 .setContentValues(contentValues)
                 .build()
+
+        val callbackExecutor: Executor =
+            (currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher)?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)
-                .start(ContextCompat.getMainExecutor(application)) { videoRecordEvent ->
+                .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
-                        Log.d(TAG, videoRecordEvent.toString())
-                        when (videoRecordEvent) {
+                        Log.d(TAG, onVideoRecordEvent.toString())
+                        when (onVideoRecordEvent) {
                             is VideoRecordEvent.Finalize -> {
-                                when (videoRecordEvent.error) {
+                                when (onVideoRecordEvent.error) {
                                     ERROR_NONE ->
-                                        onVideoRecord(CameraUseCase.VideoRecordEvent.VideoRecorded)
+                                        onVideoRecord(
+                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
+                                        )
                                     else ->
                                         onVideoRecord(
-                                            CameraUseCase.VideoRecordEvent.VideoRecordError
+                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
                                         )
                                 }
                             }

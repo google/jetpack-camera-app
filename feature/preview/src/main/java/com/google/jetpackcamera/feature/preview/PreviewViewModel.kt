@@ -242,7 +242,7 @@ class PreviewViewModel @Inject constructor(
             try {
                 cameraUseCase.startVideoRecording {
                     when (it) {
-                        CameraUseCase.VideoRecordEvent.VideoRecorded ->
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
                             viewModelScope.launch {
                                 _previewUiState.emit(
                                     previewUiState.value.copy(

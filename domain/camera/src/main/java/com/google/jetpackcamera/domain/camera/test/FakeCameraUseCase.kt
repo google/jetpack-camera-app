@@ -128,7 +128,7 @@ class FakeCameraUseCase(
     }
 
     override suspend fun startVideoRecording(
-        onVideoRecord: (CameraUseCase.VideoRecordEvent) -> Unit
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
