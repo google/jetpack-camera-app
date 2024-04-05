@@ -62,7 +62,7 @@ interface CameraUseCase {
         ignoreUri: Boolean = false
     ): ImageCapture.OutputFileResults
 
-    suspend fun startVideoRecording()
+    suspend fun startVideoRecording(onVideoRecord: (OnVideoRecordEvent) -> Unit)
 
     fun stopVideoRecording()
 
@@ -96,5 +96,14 @@ interface CameraUseCase {
             APPLY_UI,
             CLEAR_UI
         }
+    }
+
+    /**
+     * Represents the events for video recording.
+     */
+    sealed interface OnVideoRecordEvent {
+        object OnVideoRecorded : OnVideoRecordEvent
+
+        object OnVideoRecordError : OnVideoRecordEvent
     }
 }

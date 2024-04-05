@@ -240,7 +240,32 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             try {
-                cameraUseCase.startVideoRecording()
+                cameraUseCase.startVideoRecording {
+                    when (it) {
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
+                            viewModelScope.launch {
+                                _previewUiState.emit(
+                                    previewUiState.value.copy(
+                                        snackBarToShow = SnackBarData(
+                                            stringResource = R.string.toast_video_capture_success,
+                                            withDismissAction = true
+                                        )
+                                    )
+                                )
+                            }
+
+                        else -> viewModelScope.launch {
+                            _previewUiState.emit(
+                                previewUiState.value.copy(
+                                    snackBarToShow = SnackBarData(
+                                        stringResource = R.string.toast_video_capture_failure,
+                                        withDismissAction = true
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         videoRecordingState = VideoRecordingState.ACTIVE
