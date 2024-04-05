@@ -61,7 +61,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executor
 import javax.inject.Inject
+import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -80,8 +82,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executor
-import kotlin.coroutines.ContinuationInterceptor
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -418,8 +418,10 @@ constructor(
                 .build()
 
         val callbackExecutor: Executor =
-            (currentCoroutineContext()[ContinuationInterceptor] as?
-                    CoroutineDispatcher)?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+            (
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)
