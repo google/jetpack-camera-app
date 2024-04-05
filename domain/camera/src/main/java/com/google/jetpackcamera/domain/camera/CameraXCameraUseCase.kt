@@ -48,6 +48,7 @@ import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
+import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -104,7 +105,8 @@ constructor(
     private val application: Application,
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -133,6 +135,7 @@ constructor(
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
 
+        // Build and update the system constraints
         systemConstraints = SystemConstraints(
             availableLenses = availableCameraLenses,
             perLensConstraints = buildMap {
@@ -169,6 +172,8 @@ constructor(
                 }
             }
         )
+
+        constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
             settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
