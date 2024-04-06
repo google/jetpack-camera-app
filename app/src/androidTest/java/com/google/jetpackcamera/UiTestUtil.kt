@@ -48,8 +48,8 @@ object UiTestUtil {
             when (it) {
                 is PreviewUiState.Ready -> it.currentCameraSettings
                 else -> throw IllegalStateException(
-                    "Can only retrieve camera app settings from" +
-                        "PreviewUiState.Ready, but state was ${it::class}"
+                    "Can only retrieve camera app settings from PreviewUiState.Ready," +
+                        " but state was ${it::class}"
                 )
             }
         }
