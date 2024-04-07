@@ -24,8 +24,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TOAST
-import com.google.jetpackcamera.feature.preview.ui.ToastMessage
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.SnackBarData
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -47,9 +48,6 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
-
-// toast test descriptions
-const val IMAGE_CAPTURE_FAIL_TOAST_TAG = "ImageCaptureFailureToast"
 
 /**
  * [ViewModel] for [PreviewScreen].
@@ -169,9 +167,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
+                            snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                withDismissAction = true,
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -180,9 +179,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
+                            snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                                withDismissAction = true,
+                                testTag = IMAGE_CAPTURE_FAILURE_TAG
                             )
                         )
                     )
@@ -209,9 +209,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
+                            snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_image_capture_success,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TOAST
+                                withDismissAction = true,
+                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
                             )
                         )
                     )
@@ -221,9 +222,10 @@ class PreviewViewModel @Inject constructor(
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
-                            toastMessageToShow = ToastMessage(
+                            snackBarToShow = SnackBarData(
                                 stringResource = R.string.toast_capture_failure,
-                                testTag = IMAGE_CAPTURE_FAIL_TOAST_TAG
+                                withDismissAction = true,
+                                testTag = IMAGE_CAPTURE_FAILURE_TAG
                             )
                         )
                     )
@@ -239,7 +241,32 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             try {
-                cameraUseCase.startVideoRecording()
+                cameraUseCase.startVideoRecording {
+                    when (it) {
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
+                            viewModelScope.launch {
+                                _previewUiState.emit(
+                                    previewUiState.value.copy(
+                                        snackBarToShow = SnackBarData(
+                                            stringResource = R.string.toast_video_capture_success,
+                                            withDismissAction = true
+                                        )
+                                    )
+                                )
+                            }
+
+                        else -> viewModelScope.launch {
+                            _previewUiState.emit(
+                                previewUiState.value.copy(
+                                    snackBarToShow = SnackBarData(
+                                        stringResource = R.string.toast_video_capture_failure,
+                                        withDismissAction = true
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
                 _previewUiState.emit(
                     previewUiState.value.copy(
                         videoRecordingState = VideoRecordingState.ACTIVE
@@ -311,6 +338,16 @@ class PreviewViewModel @Inject constructor(
             _previewUiState.emit(
                 previewUiState.value.copy(
                     toastMessageToShow = null
+                )
+            )
+        }
+    }
+
+    fun onSnackBarResult() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    snackBarToShow = null
                 )
             )
         }
