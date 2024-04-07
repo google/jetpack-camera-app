@@ -96,9 +96,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Bump to AGP 8.4 alpha
+      - name: Bump to AGP 8.4 RC
         run: |
-          sed -i 's/androidGradlePlugin = .*/androidGradlePlugin = "8.4.0-alpha13"/' gradle/libs.versions.toml
+          sed -i 's/androidGradlePlugin = .*/androidGradlePlugin = "8.4.0-rc01"/' gradle/libs.versions.toml
 
       - name: Enable KVM group perms
         run: |
