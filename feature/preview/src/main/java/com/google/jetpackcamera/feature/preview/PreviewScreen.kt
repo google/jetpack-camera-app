@@ -56,9 +56,11 @@ import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 
 private const val TAG = "PreviewScreen"
 
@@ -91,10 +93,10 @@ fun PreviewScreen(
         }
     }
 
-    when (previewUiState.cameraState) {
-        CameraState.NOT_READY -> LoadingScreen()
-        CameraState.READY -> ContentScreen(
-            previewUiState = previewUiState,
+    when (val currentUiState = previewUiState) {
+        is PreviewUiState.NotReady -> LoadingScreen()
+        is PreviewUiState.Ready -> ContentScreen(
+            previewUiState = currentUiState,
             previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
             surfaceRequest = surfaceRequest,
@@ -122,7 +124,7 @@ fun PreviewScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
-    previewUiState: PreviewUiState,
+    previewUiState: PreviewUiState.Ready,
     previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
@@ -180,6 +182,7 @@ private fun ContentScreen(
             isOpen = previewUiState.quickSettingsIsOpen,
             toggleIsOpen = onToggleQuickSettings,
             currentCameraSettings = previewUiState.currentCameraSettings,
+            systemConstraints = previewUiState.systemConstraints,
             onLensFaceClick = onSetLensFacing,
             onFlashModeClick = onChangeFlash,
             onAspectRatioClick = onChangeAspectRatio,
@@ -251,7 +254,7 @@ private fun LoadingScreen() {
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            previewUiState = PreviewUiState(),
+            previewUiState = FAKE_PREVIEW_UI_STATE_READY,
             previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
@@ -264,7 +267,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_WhileRecording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = PreviewUiState(
+            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
             previewMode = PreviewMode.StandardMode {},
@@ -273,3 +276,8 @@ private fun ContentScreen_WhileRecording() {
         )
     }
 }
+
+private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
+    currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
+    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+)

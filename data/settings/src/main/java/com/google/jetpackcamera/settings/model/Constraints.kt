@@ -25,3 +25,23 @@ data class CameraConstraints(
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>
 )
+
+/**
+ * Useful set of constraints for testing
+ */
+val TYPICAL_SYSTEM_CONSTRAINTS =
+    SystemConstraints(
+        availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK),
+        perLensConstraints = buildMap {
+            for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
+                put(
+                    lensFacing,
+                    CameraConstraints(
+                        supportedFixedFrameRates = setOf(15, 30),
+                        supportedStabilizationModes = emptySet(),
+                        supportedDynamicRanges = setOf(DynamicRange.SDR)
+                    )
+                )
+            }
+        }
+    )

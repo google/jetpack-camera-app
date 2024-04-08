@@ -33,4 +33,8 @@ data class CameraAppSettings(
     val targetFrameRate: Int = TARGET_FPS_AUTO
 )
 
+fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
+    return perLensConstraints[cameraAppSettings.cameraLensFacing]
+}
+
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

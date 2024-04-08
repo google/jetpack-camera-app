@@ -35,6 +35,7 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -96,24 +97,26 @@ private fun SettingsScreen(
             title = stringResource(id = R.string.settings_title),
             navBack = onNavigateBack
         )
-        SettingsList(
-            uiState = uiState,
-            versionInfo = versionInfo,
-            setDefaultLensFacing = setDefaultLensFacing,
-            setFlashMode = setFlashMode,
-            setTargetFrameRate = setTargetFrameRate,
-            setAspectRatio = setAspectRatio,
-            setCaptureMode = setCaptureMode,
-            setVideoStabilization = setVideoStabilization,
-            setPreviewStabilization = setPreviewStabilization,
-            setDarkMode = setDarkMode
-        )
+        if (uiState is SettingsUiState.Enabled) {
+            SettingsList(
+                uiState = uiState,
+                versionInfo = versionInfo,
+                setDefaultLensFacing = setDefaultLensFacing,
+                setFlashMode = setFlashMode,
+                setTargetFrameRate = setTargetFrameRate,
+                setAspectRatio = setAspectRatio,
+                setCaptureMode = setCaptureMode,
+                setVideoStabilization = setVideoStabilization,
+                setPreviewStabilization = setPreviewStabilization,
+                setDarkMode = setDarkMode
+            )
+        }
     }
 }
 
 @Composable
 fun SettingsList(
-    uiState: SettingsUiState,
+    uiState: SettingsUiState.Enabled,
     versionInfo: VersionInfoHolder,
     setDefaultLensFacing: (LensFacing) -> Unit = {},
     setFlashMode: (FlashMode) -> Unit = {},
@@ -127,7 +130,10 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        cameraAppSettings = uiState.cameraAppSettings,
+        settingValue = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
+        enabled = with(uiState.systemConstraints.availableLenses) {
+            size > 1 && contains(LensFacing.FRONT)
+        },
         setDefaultLensFacing = setDefaultLensFacing
     )
 
@@ -138,7 +144,10 @@ fun SettingsList(
 
     TargetFpsSetting(
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedFps = uiState.cameraAppSettings.supportedFixedFrameRates,
+        supportedFps = uiState.systemConstraints.perLensConstraints.values.fold(emptySet()) {
+                union, constraints ->
+            union + constraints.supportedFixedFrameRates
+        },
         setTargetFps = setTargetFrameRate
     )
 
@@ -156,7 +165,12 @@ fun SettingsList(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
+        supportedStabilizationMode = uiState.systemConstraints.perLensConstraints.values.fold(
+            emptySet()
+        ) {
+                union, constraints ->
+            union + constraints.supportedStabilizationModes
+        },
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
     )
@@ -187,7 +201,10 @@ data class VersionInfoHolder(
 fun Preview_SettingsScreen() {
     SettingsPreviewTheme {
         SettingsScreen(
-            uiState = SettingsUiState(DEFAULT_CAMERA_APP_SETTINGS),
+            uiState = SettingsUiState.Enabled(
+                DEFAULT_CAMERA_APP_SETTINGS,
+                TYPICAL_SYSTEM_CONSTRAINTS
+            ),
             versionInfo = VersionInfoHolder(
                 versionName = "1.0.0",
                 buildType = "release"
