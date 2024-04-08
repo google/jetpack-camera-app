@@ -176,8 +176,7 @@ class PreviewViewModel @Inject constructor(
                     cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri -> onImageCapture(ImageCaptureEvent.ImageSaved(savedUri)) },
-                onFailure = {
-                        exception ->
+                onFailure = { exception ->
                     onImageCapture(ImageCaptureEvent.ImageCaptureError(exception))
                 }
             )
