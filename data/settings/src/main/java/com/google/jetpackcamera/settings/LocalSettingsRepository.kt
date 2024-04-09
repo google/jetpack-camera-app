@@ -29,6 +29,8 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
@@ -84,7 +86,11 @@ class LocalSettingsRepository @Inject constructor(
                 supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
                     DynamicRange.fromProto(dynRngProto)
                 },
-                supportedFixedFrameRates = it.supportedFrameRatesList
+                supportedFixedFrameRates = it.supportedFrameRatesList,
+                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
+                supportedImageFormats = it.supportedImageFormatsList.map { imgFmtProto ->
+                    ImageOutputFormat.fromProto(imgFmtProto)
+                }
             )
         }
 
@@ -273,6 +279,29 @@ class LocalSettingsRepository @Inject constructor(
                 .clearSupportedDynamicRanges()
                 .addAllSupportedDynamicRanges(
                     supportedDynamicRanges.map {
+                        it.toProto()
+                    }
+                )
+                .build()
+        }
+    }
+
+    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setImageFormatStatus(imageFormat.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateSupportedImageFormats(
+        supportedImageFormats: List<ImageOutputFormat>
+    ) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .clearSupportedImageFormats()
+                .addAllSupportedImageFormats(
+                    supportedImageFormats.map {
                         it.toProto()
                     }
                 )

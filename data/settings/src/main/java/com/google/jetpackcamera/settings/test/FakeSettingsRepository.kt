@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -128,5 +129,16 @@ object FakeSettingsRepository : SettingsRepository {
     ) {
         currentCameraSettings =
             currentCameraSettings.copy(supportedFixedFrameRates = supportedFrameRates.toList())
+    }
+
+    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
+        currentCameraSettings = currentCameraSettings.copy(imageFormat = imageFormat)
+    }
+
+    override suspend fun updateSupportedImageFormats(
+        supportedImageFormats: List<ImageOutputFormat>
+    ) {
+        currentCameraSettings =
+            currentCameraSettings.copy(supportedImageFormats = supportedImageFormats)
     }
 }

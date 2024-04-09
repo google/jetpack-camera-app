@@ -35,7 +35,9 @@ data class CameraAppSettings(
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
-    val supportedFixedFrameRates: List<Int> = emptyList()
+    val supportedFixedFrameRates: List<Int> = emptyList(),
+    val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
+    val supportedImageFormats: List<ImageOutputFormat> = listOf(ImageOutputFormat.JPEG)
 )
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

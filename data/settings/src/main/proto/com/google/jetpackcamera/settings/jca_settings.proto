@@ -24,6 +24,7 @@ import "com/google/jetpackcamera/settings/flash_mode.proto";
 import "com/google/jetpackcamera/settings/lens_facing.proto";
 import "com/google/jetpackcamera/settings/preview_stabilization.proto";
 import "com/google/jetpackcamera/settings/video_stabilization.proto";
+import "com/google/jetpackcamera/settings/image_output_format.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -46,4 +47,6 @@ message JcaSettings {
   LensFacing default_lens_facing = 15;
   int32 target_frame_rate = 16;
   repeated int32 supported_frame_rates = 17;
+  ImageOutputFormat image_format_status = 18;
+  repeated ImageOutputFormat supported_image_formats = 19;
 }

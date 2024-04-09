@@ -38,6 +38,8 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .addSupportedDynamicRanges(DynamicRange.DYNAMIC_RANGE_SDR)
         .addAllSupportedFrameRates(emptySet())
+        .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
+        .addSupportedImageFormats(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
