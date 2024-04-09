@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -146,5 +147,19 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         assertThat(initialDynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(newDynamicRange).isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
+    fun can_update_image_format() = runTest {
+        val initialImageFormat = repository.getCurrentDefaultCameraAppSettings().imageFormat
+
+        repository.updateImageFormat(imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        advanceUntilIdle()
+
+        val newImageFormat = repository.getCurrentDefaultCameraAppSettings().imageFormat
+
+        assertThat(initialImageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(newImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
     }
 }
