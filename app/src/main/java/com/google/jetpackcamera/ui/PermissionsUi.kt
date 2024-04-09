@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -48,20 +49,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.R
-import com.google.jetpackcamera.settings.SettingsViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
-    onClosePermissionsScreen: () -> Unit,
-    permissionEnums: List<PermissionsEnum>,
+    permissionEnums: List<PermissionEnum>,
     shouldShowPermissionsRequestRationale: (String) -> Boolean,
     openAppSettings: () -> Unit,
-    cameraPermissionState: PermissionState
 ) {
-    val permissionsToShow = remember { mutableStateListOf<PermissionsEnum>() }
+    val permissionsToShow = remember { mutableStateListOf<PermissionEnum>() }
     permissionsToShow.addAll(permissionEnums)
 
     val permissionsViewModel =
@@ -70,29 +69,101 @@ fun PermissionsScreen(
             openAppSettings = openAppSettings,
             permissionEnums = permissionsToShow
         )
+    val dialogQueue = permissionsViewModel.visiblePermissionDialogQueue
 
-    if (permissionEnums.isEmpty()) {
-        onClosePermissionsScreen()
-    } else {
-        when (permissionEnums.first()) {
-            PermissionsEnum.CAMERA -> CameraPermission(
-                modifier = modifier,
-                cameraPermissionState = cameraPermissionState,
-                onRequestPermission = permissionsViewModel::onRequestPermission
-            )
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { permissionGranted ->
+            if (permissionGranted) {
+                // remove from list
+                permissionsViewModel.dismissPermission()
+            }
+        })
 
+    dialogQueue.forEach { permissionEnum ->
+        PermissionTemplate(
+            modifier = modifier,
+            permissionEnum = permissionEnum,
+            isDeclinedByUser = shouldShowPermissionsRequestRationale(permissionEnum.getPermission()),
+            onSkipPermission = {
+                if (permissionEnum != PermissionEnum.CAMERA) {
+                    permissionsViewModel.dismissPermission()
+                }
+            },
+            onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) }) {
         }
     }
 
 }
 
+@Composable
+fun PermissionTemplate(
+    modifier: Modifier = Modifier,
+    permissionEnum: PermissionEnum,
+    isDeclinedByUser: Boolean,
+    onRequestPermission: () -> Unit,
+    onSkipPermission: (() -> Unit)? = null,
+    onOpenAppSettings: () -> Unit
+) {
+    PermissionTemplate(
+        modifier = modifier,
+        onRequestPermission = {
+            // if declined by user, must go to system app settings to enable permission
+            if (isDeclinedByUser)
+                onOpenAppSettings()
+            else
+                onRequestPermission()
+        },
+        onSkipPermission = onSkipPermission,
+        painter = permissionEnum.getPainter(),
+        iconAccessibilityText = stringResource(permissionEnum.getIconAccessiblityTextResId()),
+        title = stringResource(permissionEnum.getPermissionTitleResId()),
+        bodyText = stringResource(id = permissionEnum.getPermissionBodyTextResId()),
+        requestButtonText = stringResource(id = R.string.request_permission)
+    )
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun AudioRecordPermission(
+    modifier: Modifier = Modifier,
+    onRequestPermission: (PermissionState) -> Unit,
+    onSkipPermission: (() -> Unit)
+) {
+    val audioPermissionState = rememberPermissionState(permission = AUDIO_RECORD_PERMISSION)
+    PermissionTemplate(
+        modifier = modifier,
+        //permissionState = cameraPermissionState,
+        onRequestPermission = { onRequestPermission(audioPermissionState) },
+        painter = painterResource(id = R.drawable.photo_camera),
+        iconAccessibilityText = "A symbol representing a microphone", //stringResource(id = R.string.camera_permission_accessibility_text),
+        title = "Enable Audio Recording", //stringResource(id = R.string.camera_permission_screen_title),
+        bodyText = "Please enable this permission to include audio in your recordings",//stringResource(id = R.string.camera_permission_required_rationale),
+        requestButtonText = stringResource(R.string.request_permission),
+        onSkipPermission = onSkipPermission
+    )
+}
+
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraPermission(
     modifier: Modifier = Modifier,
-    cameraPermissionState: PermissionState,
     onRequestPermission: (PermissionState) -> Unit
 ) {
+    val cameraPermissionState =
+        rememberPermissionState(permission = PermissionEnum.CAMERA.getPermission())
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { permissionGranted ->
+            if (permissionGranted) {
+                // remove from list
+            } else {
+                // if optional, remove from list
+            }
+        })
+
     PermissionTemplate(
         modifier = modifier,
         //permissionState = cameraPermissionState,

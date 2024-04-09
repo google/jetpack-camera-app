@@ -20,8 +20,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -30,8 +28,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
@@ -50,15 +46,7 @@ fun JcaApp(
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode
 ) {
-    val cameraPermissionState =
-        rememberPermissionState(permission = Manifest.permission.CAMERA)
-    val shouldOpenPermissions = remember { mutableStateOf(true) }
-    // camera not being granted  is what toggles the main menu
-    shouldOpenPermissions.value = !cameraPermissionState.status.isGranted
-
-
-    // if camera permission is granted and permission screen is closed
-    if (!shouldOpenPermissions.value) {
+    if (getUnGrantedPermissions(LocalContext.current, shouldShowPermissionsRationale).isEmpty()) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode
@@ -67,26 +55,30 @@ fun JcaApp(
         // you'll have the option to go through camera and all other optional permissions
         PermissionsScreen(
             modifier = Modifier.fillMaxSize(),
-            permissionEnums = getUnGrantedPermissions(LocalContext.current),
-            cameraPermissionState = cameraPermissionState,
+            permissionEnums = getUnGrantedPermissions(
+                LocalContext.current,
+                shouldShowPermissionsRationale
+            ),
             openAppSettings = openAppSettings,
             shouldShowPermissionsRequestRationale = shouldShowPermissionsRationale,
-            onClosePermissionsScreen = { shouldOpenPermissions.value = false }
         )
     }
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
-private fun getUnGrantedPermissions(context: Context): List<PermissionsEnum> {
-    var ungrantedPermissions = mutableListOf<PermissionsEnum>()
+// display permissions that have not yet been declined
+private fun getUnGrantedPermissions(
+    context: Context,
+    shouldShowPermissionsRationale: (String) -> Boolean
+): List<PermissionEnum> {
+    // camera permission is required
+    var ungrantedPermissions = mutableListOf<PermissionEnum>()
     if (!isPermissionGranted(context, Manifest.permission.CAMERA))
-        ungrantedPermissions.add(PermissionsEnum.CAMERA)
+        ungrantedPermissions.add(PermissionEnum.CAMERA)
 
-    //todo add audio permission
-    /*
-    if (!isPermissionGranted(context, Manifest.permission.RECORD_AUDIO))
-    ungrantedPermissions.add(PermissionsEnum.RECORD_AUDIO)
-     */
+
+    //if (!isPermissionGranted(context, Manifest.permission.RECORD_AUDIO))
+    //    ungrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
 
     return ungrantedPermissions
 }

@@ -21,26 +21,26 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
-import dagger.hilt.android.lifecycle.HiltViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 class PermissionsViewModel(
     val shouldShowRequestPermissionRationale: (String) -> Boolean,
     val openAppSettings: () -> Unit,
-    val permissionEnums: SnapshotStateList<PermissionsEnum>,
+    val permissionEnums: SnapshotStateList<PermissionEnum>,
 ) : ViewModel() {
 
+    val visiblePermissionDialogQueue = mutableStateListOf<PermissionEnum>()
     //todo skip permission
-    fun skipPermission() {
-        removeVisiblePermission()
+    fun dismissPermission() {
+        visiblePermissionDialogQueue.removeFirst()
     }
 
-    fun getPermissionToShow(): PermissionsEnum {
+    fun getPermissionToShow(): PermissionEnum {
         return permissionEnums.first()
     }
 
-    fun removeVisiblePermission() {
-        permissionEnums.removeFirst()
+    fun onPermissionResult(permission: PermissionEnum, isGranted:Boolean, isRequired: Boolean){
+
     }
 
     fun onRequestPermission(permissionState: PermissionState) {
@@ -54,6 +54,3 @@ class PermissionsViewModel(
     }
 }
 
-enum class PermissionsEnum(val isRequired: Boolean = false, val permission: String) {
-    CAMERA(isRequired = true, permission = "android.permission.CAMERA")
-}
