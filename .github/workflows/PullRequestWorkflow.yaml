@@ -109,10 +109,13 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
 
       - name: Install Emulator
-        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install "emulator"
+        run: |
+          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager \
+            "system-images;android-28;default;x86_64" \
+            "system-images;android-34;aosp_atd;x86_64"
 
       - name: Accept licenses
-        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses
+        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Run instrumentation tests
         uses: gradle/gradle-build-action@v3
