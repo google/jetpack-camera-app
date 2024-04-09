@@ -17,40 +17,26 @@
 package com.google.jetpackcamera.ui
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 
 @OptIn(ExperimentalPermissionsApi::class)
 class PermissionsViewModel(
-    val shouldShowRequestPermissionRationale: (String) -> Boolean,
-    val openAppSettings: () -> Unit,
-    val permissionEnums: SnapshotStateList<PermissionEnum>,
+    val permissionEnums: Set<PermissionEnum>,
 ) : ViewModel() {
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionEnum>()
-    //todo skip permission
+
+    init {
+        visiblePermissionDialogQueue.addAll(permissionEnums)
+    }
+
     fun dismissPermission() {
         visiblePermissionDialogQueue.removeFirst()
     }
 
-    fun getPermissionToShow(): PermissionEnum {
-        return permissionEnums.first()
-    }
-
-    fun onPermissionResult(permission: PermissionEnum, isGranted:Boolean, isRequired: Boolean){
-
-    }
-
-    fun onRequestPermission(permissionState: PermissionState) {
-        if (shouldShowRequestPermissionRationale(permissionState.permission)) {
-            //todo make it a prettier flow vs just redirecting to app settings
-            openAppSettings()
-        } else {
-            permissionState.launchPermissionRequest()
-        }
-
+    fun addPermissions(permissionEnums: Iterable<PermissionEnum>) {
+        visiblePermissionDialogQueue.addAll(permissionEnums)
     }
 }
 

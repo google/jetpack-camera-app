@@ -36,39 +36,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.R
 
-@OptIn(ExperimentalPermissionsApi::class)
+/**
+ * Permission prompts screen.
+ * Camera permission will always prompt when disabled, and the app cannot be used otherwise
+ * if optional settings have not yet been declined by the user, then they will be prompted as well
+ */
 @Composable
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
-    permissionEnums: List<PermissionEnum>,
+    permissionEnums: Set<PermissionEnum>,
     shouldShowPermissionsRequestRationale: (String) -> Boolean,
     openAppSettings: () -> Unit,
 ) {
-    val permissionsToShow = remember { mutableStateListOf<PermissionEnum>() }
-    permissionsToShow.addAll(permissionEnums)
 
     val permissionsViewModel =
         PermissionsViewModel(
-            shouldShowRequestPermissionRationale = shouldShowPermissionsRequestRationale,
-            openAppSettings = openAppSettings,
-            permissionEnums = permissionsToShow
+            permissionEnums = permissionEnums
         )
+    permissionsViewModel.addPermissions(permissionEnums)
     val dialogQueue = permissionsViewModel.visiblePermissionDialogQueue
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -79,28 +74,36 @@ fun PermissionsScreen(
                 permissionsViewModel.dismissPermission()
             }
         })
-
-    dialogQueue.forEach { permissionEnum ->
+    if (!dialogQueue.isEmpty()) {
+        val permissionEnum = dialogQueue.first()
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
-            isDeclinedByUser = shouldShowPermissionsRequestRationale(permissionEnum.getPermission()),
-            onSkipPermission = {
-                if (permissionEnum != PermissionEnum.CAMERA) {
-                    permissionsViewModel.dismissPermission()
+            shouldShowPermissionsRequestRationale = {
+                shouldShowPermissionsRequestRationale(
+                    permissionEnum.getPermission()
+                )
+            },
+            onSkipPermission = when (permissionEnum) {
+                PermissionEnum.CAMERA -> null
+                else -> {
+                    { permissionsViewModel.dismissPermission() }
                 }
             },
-            onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) }) {
-        }
+            onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
+            onOpenAppSettings = openAppSettings
+        )
     }
-
 }
 
+/**
+ * Template for a permission Screen page that uses a [permissionEnum]
+ */
 @Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
-    isDeclinedByUser: Boolean,
+    shouldShowPermissionsRequestRationale: () -> Boolean,
     onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
@@ -109,7 +112,8 @@ fun PermissionTemplate(
         modifier = modifier,
         onRequestPermission = {
             // if declined by user, must go to system app settings to enable permission
-            if (isDeclinedByUser)
+            //todo: open a dialog that tells user they must go to device's app settings to enable permissions
+            if (shouldShowPermissionsRequestRationale())
                 onOpenAppSettings()
             else
                 onRequestPermission()
@@ -123,60 +127,9 @@ fun PermissionTemplate(
     )
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun AudioRecordPermission(
-    modifier: Modifier = Modifier,
-    onRequestPermission: (PermissionState) -> Unit,
-    onSkipPermission: (() -> Unit)
-) {
-    val audioPermissionState = rememberPermissionState(permission = AUDIO_RECORD_PERMISSION)
-    PermissionTemplate(
-        modifier = modifier,
-        //permissionState = cameraPermissionState,
-        onRequestPermission = { onRequestPermission(audioPermissionState) },
-        painter = painterResource(id = R.drawable.photo_camera),
-        iconAccessibilityText = "A symbol representing a microphone", //stringResource(id = R.string.camera_permission_accessibility_text),
-        title = "Enable Audio Recording", //stringResource(id = R.string.camera_permission_screen_title),
-        bodyText = "Please enable this permission to include audio in your recordings",//stringResource(id = R.string.camera_permission_required_rationale),
-        requestButtonText = stringResource(R.string.request_permission),
-        onSkipPermission = onSkipPermission
-    )
-}
-
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun CameraPermission(
-    modifier: Modifier = Modifier,
-    onRequestPermission: (PermissionState) -> Unit
-) {
-    val cameraPermissionState =
-        rememberPermissionState(permission = PermissionEnum.CAMERA.getPermission())
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { permissionGranted ->
-            if (permissionGranted) {
-                // remove from list
-            } else {
-                // if optional, remove from list
-            }
-        })
-
-    PermissionTemplate(
-        modifier = modifier,
-        //permissionState = cameraPermissionState,
-        onRequestPermission = { onRequestPermission(cameraPermissionState) },
-        painter = painterResource(id = R.drawable.photo_camera),
-        iconAccessibilityText = stringResource(id = R.string.camera_permission_accessibility_text),
-        title = stringResource(id = R.string.camera_permission_screen_title),
-        bodyText = stringResource(id = R.string.camera_permission_required_rationale),
-        requestButtonText = stringResource(R.string.request_permission)
-    )
-}
-
-@OptIn(ExperimentalPermissionsApi::class)
+/**
+ * Template for a Permission Screen page
+ */
 @Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
@@ -224,6 +177,9 @@ fun PermissionTemplate(
     }
 }
 
+/*
+Permission UI Subcomponents
+ */
 @Composable
 fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
     Box(modifier = modifier) {
@@ -238,7 +194,6 @@ fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibili
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButtonSection(
     modifier: Modifier = Modifier,
@@ -271,7 +226,6 @@ fun PermissionButtonSection(
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButton(
     modifier: Modifier = Modifier,

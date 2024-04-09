@@ -25,15 +25,12 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.R
 
-val  CAMERA_PERMISSION = "android.permission.CAMERA"
-val  AUDIO_RECORD_PERMISSION = "android.permission.CAMERA"
+val CAMERA_PERMISSION = "android.permission.CAMERA"
 
-/*
-enum class PermissionsEnum(val permission: String) {
-    CAMERA(permission = "android.permission.CAMERA"),
-    RECORD_AUDIO(permission = "android.permission.RECORD_AUDIO"),
-}
+// val  AUDIO_RECORD_PERMISSION = "android.permission.CAMERA"
 
+/**
+ * Helper class storing a permission's relevant UI information
  */
 interface PermissionInfoProvider {
     @Composable
@@ -69,7 +66,7 @@ interface PermissionInfoProvider {
 }
 
 
-enum class PermissionEnum: PermissionInfoProvider {
+enum class PermissionEnum : PermissionInfoProvider {
 
     CAMERA {
         override fun getPermission(): String = CAMERA_PERMISSION

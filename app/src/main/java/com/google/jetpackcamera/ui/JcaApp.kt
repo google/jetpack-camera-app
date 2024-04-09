@@ -65,18 +65,19 @@ fun JcaApp(
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 // display permissions that have not yet been declined
 private fun getUnGrantedPermissions(
     context: Context,
     shouldShowPermissionsRationale: (String) -> Boolean
-): List<PermissionEnum> {
+): Set<PermissionEnum> {
+    var ungrantedPermissions = mutableSetOf<PermissionEnum>()
+
     // camera permission is required
-    var ungrantedPermissions = mutableListOf<PermissionEnum>()
     if (!isPermissionGranted(context, Manifest.permission.CAMERA))
         ungrantedPermissions.add(PermissionEnum.CAMERA)
 
 
+    // if it hasnt been previously declined by user, display permision request
     //if (!isPermissionGranted(context, Manifest.permission.RECORD_AUDIO))
     //    ungrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
 
