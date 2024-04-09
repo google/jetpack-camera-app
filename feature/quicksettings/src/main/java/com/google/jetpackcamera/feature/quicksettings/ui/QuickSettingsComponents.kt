@@ -49,6 +49,7 @@ import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
+import com.google.jetpackcamera.feature.quicksettings.CameraImageFormat
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
@@ -56,6 +57,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlin.math.min
 
@@ -214,6 +216,32 @@ fun QuickSetCaptureMode(
                 CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
             }
         }
+    )
+}
+
+@Composable
+fun QuickSetImageFormat(
+    modifier: Modifier = Modifier,
+    setImageFormat: (ImageOutputFormat) -> Unit,
+    currentImageFormat: ImageOutputFormat,
+    enabled: Boolean = true
+) {
+    val enum: CameraImageFormat =
+        when (currentImageFormat) {
+            ImageOutputFormat.JPEG -> CameraImageFormat.JPEG
+            ImageOutputFormat.JPEG_ULTRA_HDR -> CameraImageFormat.JPEG_ULTRA_HDR
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (currentImageFormat) {
+                ImageOutputFormat.JPEG -> setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+                ImageOutputFormat.JPEG_ULTRA_HDR -> setImageFormat(ImageOutputFormat.JPEG)
+            }
+        },
+        isHighLighted = (currentImageFormat != ImageOutputFormat.JPEG),
+        enabled = enabled
     )
 }
 

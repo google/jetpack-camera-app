@@ -28,6 +28,7 @@ import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
+import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
@@ -54,6 +55,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -106,7 +108,7 @@ constructor(
     private val fixedFrameRates = setOf(15, 30, 60)
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private lateinit var imageCaptureUseCase: ImageCapture
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
@@ -184,7 +186,8 @@ constructor(
         val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization,
-        val dynamicRange: DynamicRange
+        val dynamicRange: DynamicRange,
+        val imageFormat: ImageOutputFormat
     )
 
     /**
@@ -223,7 +226,8 @@ constructor(
                     targetFrameRate = currentCameraSettings.targetFrameRate,
                     stabilizePreviewMode = currentCameraSettings.previewStabilization,
                     stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
-                    dynamicRange = currentCameraSettings.dynamicRange
+                    dynamicRange = currentCameraSettings.dynamicRange,
+                    imageFormat = currentCameraSettings.imageFormat
                 )
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
@@ -250,6 +254,10 @@ constructor(
 
                 settingsRepository.updateSupportedDynamicRanges(
                     getSupportedDynamicRanges(cameraInfo)
+                )
+
+                settingsRepository.updateSupportedImageFormats(
+                    getSupportedImageFormats(cameraInfo)
                 )
 
                 val initialTransientSettings = transientSettings
@@ -570,6 +578,7 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
+        imageCaptureUseCase = createImageUseCase(sessionSettings)
         videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
 
         setFlashModeInternal(
@@ -588,7 +597,10 @@ constructor(
             if (sessionSettings.dynamicRange == DynamicRange.SDR) {
                 addUseCase(imageCaptureUseCase)
             }
-            addUseCase(videoCaptureUseCase)
+            // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
+            if (sessionSettings.imageFormat == ImageOutputFormat.JPEG) {
+                addUseCase(videoCaptureUseCase)
+            }
 
             effect?.let { addEffect(it) }
 
@@ -604,6 +616,27 @@ constructor(
     private fun getSupportedDynamicRanges(cameraInfo: CameraInfo): List<DynamicRange> {
         return Recorder
             .getVideoCapabilities(cameraInfo).supportedDynamicRanges.toSupportedAppDynamicRanges()
+    }
+
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
+        currentSettings.update { old ->
+            old?.copy(imageFormat = imageFormat)
+        }
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun getSupportedImageFormats(cameraInfo: CameraInfo): List<ImageOutputFormat> {
+        return ImageCapture
+            .getImageCaptureCapabilities(cameraInfo).supportedOutputFormats.toAppImageFormats()
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
+        val builder = ImageCapture.Builder()
+        if (sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+            builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+        }
+        return builder.build()
     }
 
     private fun createVideoUseCase(
@@ -714,8 +747,25 @@ private fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
         DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
     }
 }
+
 private fun Set<CXDynamicRange>.toSupportedAppDynamicRanges(): List<DynamicRange> {
     return this.mapNotNull {
         it.toSupportedAppDynamicRange()
+    }
+}
+
+@androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+private fun Int.toAppImageFormat(): ImageOutputFormat? {
+    return when (this) {
+        ImageCapture.OUTPUT_FORMAT_JPEG -> ImageOutputFormat.JPEG
+        ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> ImageOutputFormat.JPEG_ULTRA_HDR
+        // All other output formats unsupported. Return null.
+        else -> null
+    }
+}
+
+private fun Set<Int>.toAppImageFormats(): List<ImageOutputFormat> {
+    return this.mapNotNull {
+        it.toAppImageFormat()
     }
 }

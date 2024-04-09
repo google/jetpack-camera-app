@@ -28,10 +28,12 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackBarData
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -134,8 +136,13 @@ class PreviewViewModel @Inject constructor(
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            // apply to cameraUseCase
-            cameraUseCase.setCaptureMode(captureMode)
+            val newSettings =
+                cameraUseCase.getCurrentSettings().value?.copy(captureMode = captureMode)
+            if (isFeatureCombinationSupported(newSettings)) {
+                cameraUseCase.setCaptureMode(captureMode)
+            } else {
+                showFeatureCombinationNotSupportedMessage()
+            }
         }
     }
 
@@ -274,6 +281,14 @@ class PreviewViewModel @Inject constructor(
                 )
                 Log.d(TAG, "cameraUseCase.startRecording success")
             } catch (exception: IllegalStateException) {
+                _previewUiState.emit(
+                    previewUiState.value.copy(
+                        snackBarToShow = SnackBarData(
+                            stringResource = R.string.toast_video_capture_failure,
+                            withDismissAction = true
+                        )
+                    )
+                )
                 Log.d(TAG, "cameraUseCase.startVideoRecording error")
                 Log.d(TAG, exception.toString())
             }
@@ -299,7 +314,61 @@ class PreviewViewModel @Inject constructor(
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
-            cameraUseCase.setDynamicRange(dynamicRange)
+            val newSettings =
+                cameraUseCase.getCurrentSettings().value?.copy(dynamicRange = dynamicRange)
+            if (isFeatureCombinationSupported(newSettings)) {
+                cameraUseCase.setDynamicRange(dynamicRange)
+            } else {
+                showFeatureCombinationNotSupportedMessage()
+            }
+        }
+    }
+
+    fun setImageFormat(imageFormat: ImageOutputFormat) {
+        viewModelScope.launch {
+            val newSettings =
+                cameraUseCase.getCurrentSettings().value?.copy(imageFormat = imageFormat)
+            if (isFeatureCombinationSupported(newSettings)) {
+                cameraUseCase.setImageFormat(imageFormat)
+            } else {
+                showFeatureCombinationNotSupportedMessage()
+            }
+        }
+    }
+
+    private fun isFeatureCombinationSupported(cameraAppSettings: CameraAppSettings?): Boolean {
+        // Makes HDR Video, Ultra HDR and Single Stream Mode features mutually exclusive for the
+        // following reasons:
+        // 1. Single-stream mode uses CameraEffect, which does not support HDR-related functions.
+        // 2. Allow Ultra HDR with HDR Video will make the app design complicated.
+        cameraAppSettings?.run {
+            var featureCount = 0
+            if (dynamicRange != DynamicRange.SDR) {
+                featureCount += 1
+            }
+            if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+                featureCount += 1
+            }
+            if (captureMode == CaptureMode.SINGLE_STREAM) {
+                featureCount += 1
+            }
+
+            return featureCount <= 1
+        }
+
+        return true
+    }
+
+    private fun showFeatureCombinationNotSupportedMessage() {
+        viewModelScope.launch {
+            _previewUiState.emit(
+                previewUiState.value.copy(
+                    snackBarToShow = SnackBarData(
+                        stringResource = R.string.toast_unsupported_feature_combination,
+                        withDismissAction = true
+                    )
+                )
+            )
         }
     }
 

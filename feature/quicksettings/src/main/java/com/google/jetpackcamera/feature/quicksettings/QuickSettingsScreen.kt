@@ -43,11 +43,13 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_IMAGE_FORMAT_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetImageFormat
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.quicksettings.R
@@ -56,6 +58,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 
 /**
@@ -71,7 +74,8 @@ fun QuickSettingsScreenOverlay(
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
-    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
+    onImageFormatClick: (imageFormat: ImageOutputFormat) -> Unit
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -118,7 +122,8 @@ fun QuickSettingsScreenOverlay(
                 onFlashModeClick = onFlashModeClick,
                 onAspectRatioClick = onAspectRatioClick,
                 onCaptureModeClick = onCaptureModeClick,
-                onDynamicRangeClick = onDynamicRangeClick
+                onDynamicRangeClick = onDynamicRangeClick,
+                onImageFormatClick = onImageFormatClick
             )
         }
     } else {
@@ -144,7 +149,8 @@ private fun ExpandedQuickSettingsUi(
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
-    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
+    onImageFormatClick: (imageFormat: ImageOutputFormat) -> Unit
 ) {
     Column(
         modifier =
@@ -207,6 +213,15 @@ private fun ExpandedQuickSettingsUi(
                                 enabled = currentCameraSettings.supportedDynamicRanges.size > 1
                             )
                         }
+
+                        add {
+                            QuickSetImageFormat(
+                                modifier = Modifier.testTag(QUICK_SETTINGS_IMAGE_FORMAT_BUTTON),
+                                setImageFormat = { c: ImageOutputFormat -> onImageFormatClick(c) },
+                                currentImageFormat = currentCameraSettings.imageFormat,
+                                enabled = currentCameraSettings.supportedImageFormats.size > 1
+                            )
+                        }
                     }
                 QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
             }
@@ -233,7 +248,8 @@ fun ExpandedQuickSettingsUiPreview() {
             setVisibleQuickSetting = { },
             onAspectRatioClick = { },
             onCaptureModeClick = { },
-            onDynamicRangeClick = { }
+            onDynamicRangeClick = { },
+            onImageFormatClick = { }
         )
     }
 }
@@ -253,7 +269,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             setVisibleQuickSetting = { },
             onAspectRatioClick = { },
             onCaptureModeClick = { },
-            onDynamicRangeClick = { }
+            onDynamicRangeClick = { },
+            onImageFormatClick = { }
         )
     }
 }

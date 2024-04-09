@@ -146,3 +146,19 @@ enum class CameraDynamicRange : QuickSettingsEnum {
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hlg10_description
     }
 }
+
+enum class CameraImageFormat : QuickSettingsEnum {
+    JPEG {
+        override fun getDrawableResId() = R.drawable.image_jpeg
+        override fun getImageVector() = null // this icon is not available
+        override fun getTextResId() = R.string.quick_settings_image_format_jpeg
+        override fun getDescriptionResId() = R.string.quick_settings_image_format_jpeg_description
+    },
+    JPEG_ULTRA_HDR {
+        override fun getDrawableResId() = R.drawable.image_ultra_hdr
+        override fun getImageVector() = null // this icon is not available
+        override fun getTextResId() = R.string.quick_settings_image_format_jpeg_ultra_hdr
+        override fun getDescriptionResId() =
+            R.string.quick_settings_image_format_jpeg_ultra_hdr_description
+    }
+}
