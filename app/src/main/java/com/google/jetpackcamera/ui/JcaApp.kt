@@ -20,6 +20,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -46,7 +48,17 @@ fun JcaApp(
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode
 ) {
-    if (getUnGrantedPermissions(LocalContext.current, shouldShowPermissionsRationale).isEmpty()) {
+
+    val openPermissions = remember { mutableStateOf(false) }
+
+    if (getUnGrantedPermissions(
+            LocalContext.current,
+            shouldShowPermissionsRationale
+        ).isNotEmpty()
+    ) {
+        openPermissions.value = true
+    }
+    if (!openPermissions.value) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode
@@ -59,6 +71,7 @@ fun JcaApp(
                 LocalContext.current,
                 shouldShowPermissionsRationale
             ),
+            onClosePermissions = { openPermissions.value = false },
             openAppSettings = openAppSettings,
             shouldShowPermissionsRequestRationale = shouldShowPermissionsRationale,
         )
