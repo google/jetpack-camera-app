@@ -82,7 +82,7 @@ jobs:
           path: "*/build/reports/tests"
 
   android-test:
-    name: Instrumentation Tests ({{ matrix.device.name }})
+    name: Instrumentation Tests (${{ matrix.device.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -110,7 +110,7 @@ jobs:
 
       - name: Install Emulator
         run: |
-          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install {{ matrix.device.img }}
+          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install ${{ matrix.device.img }}
             
 
       - name: Accept licenses
@@ -125,10 +125,10 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-test-reports-${{ matrix.device }}
+          name: instrumentation-test-reports-${{ matrix.device.name }}
           path: |
-            */build/reports/androidTests/**/${{ matrix.device }}
-            */build/outputs/androidTest-results/**/${{ matrix.device }}
+            */build/reports/androidTests/**/${{ matrix.device.name }}
+            */build/outputs/androidTest-results/**/${{ matrix.device.name }}
 
   spotless:
     name: Spotless Check
