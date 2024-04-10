@@ -82,15 +82,15 @@ jobs:
           path: "*/build/reports/tests"
 
   android-test:
-    name: Instrumentation Tests
+    name: Instrumentation Tests ({{ matrix.device.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         device:
-          - pixel2Api28
-          - pixel8Api34
+          - { name: pixel2Api28, img: "system-images;android-28;default;x86_64" },
+          - { name: pixel8Api34, img: "system-images;android-34;aosp_atd;x86_64" }
 
     steps:
       - name: Checkout
@@ -110,9 +110,8 @@ jobs:
 
       - name: Install Emulator
         run: |
-          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager \
-            "system-images;android-28;default;x86_64" \
-            "system-images;android-34;aosp_atd;x86_64"
+          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install {{ matrix.device.img }}
+            
 
       - name: Accept licenses
         run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -120,7 +119,7 @@ jobs:
       - name: Run instrumentation tests
         uses: gradle/gradle-build-action@v3
         with:
-          arguments: ${{ matrix.device }}DebugAndroidTest
+          arguments: ${{ matrix.device.name }}DebugAndroidTest
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
