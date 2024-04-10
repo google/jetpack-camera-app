@@ -56,6 +56,7 @@ import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 
@@ -68,8 +69,9 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: PreviewViewModel = hiltViewModel(),
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
     onPreviewViewModel(viewModel)
@@ -104,12 +106,14 @@ fun PreviewScreen(
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
+            onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToastShown = viewModel::onToastShown,
+            onRequestWindowColorMode = onRequestWindowColorMode,
             onSnackBarResult = viewModel::onSnackBarResult
         )
     }
@@ -130,6 +134,7 @@ private fun ContentScreen(
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
+    onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -141,6 +146,7 @@ private fun ContentScreen(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
+    onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
@@ -163,6 +169,7 @@ private fun ContentScreen(
             onFlipCamera = onFlipCamera,
             onTapToFocus = onTapToFocus,
             onZoomChange = onChangeZoomScale,
+            onRequestWindowColorMode = onRequestWindowColorMode,
             aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
             surfaceRequest = surfaceRequest,
             blinkState = blinkState
@@ -176,7 +183,8 @@ private fun ContentScreen(
             onLensFaceClick = onSetLensFacing,
             onFlashModeClick = onChangeFlash,
             onAspectRatioClick = onChangeAspectRatio,
-            onCaptureModeClick = onChangeCaptureMode
+            onCaptureModeClick = onChangeCaptureMode,
+            onDynamicRangeClick = onChangeDynamicRange
             // onTimerClick = {}/*TODO*/
         )
         // relative-grid style overlay on top of preview display
