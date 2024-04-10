@@ -53,13 +53,11 @@ android {
                     device = "Pixel 2"
                     apiLevel = 28
                     systemImageSource = "default"
-                    require64Bit = true
                 }
                 create("pixel8Api34") {
                     device = "Pixel 8"
                     apiLevel = 34
                     systemImageSource = "aosp_atd"
-                    require64Bit = true
                 }
             }
         }
