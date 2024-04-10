@@ -30,8 +30,8 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import java.lang.IllegalStateException
 import java.util.concurrent.atomic.AtomicReference
 
-const val APP_START_TIMEOUT_MILLIS = 5000L
-const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5000L
+const val APP_START_TIMEOUT_MILLIS = 10_000L
+const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 object UiTestUtil {
     private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
         val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()

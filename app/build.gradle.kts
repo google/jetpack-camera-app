@@ -39,12 +39,9 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         create("benchmark") {
             initWith(buildTypes.getByName("release"))
@@ -76,12 +73,11 @@ android {
                 create("pixel2Api28") {
                     device = "Pixel 2"
                     apiLevel = 28
-                    systemImageSource = "aosp"
                 }
                 create("pixel8Api34") {
                     device = "Pixel 8"
                     apiLevel = 34
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp_atd"
                 }
             }
         }
