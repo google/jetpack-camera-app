@@ -15,14 +15,17 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.CoroutineScope
@@ -106,8 +109,15 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
+
+    @SuppressLint("RestrictedApi")
+    override suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): ImageCapture.OutputFileResults {
         takePicture()
+        return ImageCapture.OutputFileResults(null)
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
@@ -116,7 +126,9 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun startVideoRecording() {
+    override suspend fun startVideoRecording(
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
@@ -179,6 +191,12 @@ class FakeCameraUseCase(
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
+        }
+    }
+
+    override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
+        currentSettings.update { old ->
+            old.copy(dynamicRange = dynamicRange)
         }
     }
 }

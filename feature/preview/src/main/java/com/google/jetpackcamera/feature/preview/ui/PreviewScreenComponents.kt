@@ -19,6 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -38,15 +39,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,7 +61,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +69,8 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -104,6 +112,49 @@ fun TestableToast(
     }
 }
 
+@Composable
+fun TestableSnackBar(
+    modifier: Modifier = Modifier,
+    snackBarToShow: SnackBarData,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
+    onSnackBarResult: () -> Unit
+) {
+    Box(
+        // box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier
+            .size(20.dp)
+            .testTag(snackBarToShow.testTag)
+    ) {
+        val context = LocalContext.current
+        scope.launch {
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = context.getString(snackBarToShow.stringResource),
+                    duration = snackBarToShow.duration,
+                    withDismissAction = snackBarToShow.withDismissAction,
+                    actionLabel = if (snackBarToShow.actionLabelRes == null) {
+                        null
+                    } else {
+                        context.getString(snackBarToShow.actionLabelRes)
+                    }
+                )
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    onSnackBarResult()
+                }
+                SnackbarResult.Dismissed -> {
+                    onSnackBarResult()
+                }
+            }
+        }
+        Log.d(
+            TAG,
+            "Snackbar Displayed with message: ${stringResource(snackBarToShow.stringResource)}"
+        )
+    }
+}
+
 /**
  * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
  * and double-tap to flip camera
@@ -113,8 +164,10 @@ fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
-    surfaceRequest: SurfaceRequest?
+    surfaceRequest: SurfaceRequest?,
+    blinkState: BlinkState
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -152,14 +205,30 @@ fun PreviewDisplay(
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
+                    .alpha(blinkState.alpha)
 
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it
+                    surfaceRequest = it,
+                    onRequestWindowColorMode = onRequestWindowColorMode
                 )
             }
         }
+    }
+}
+
+class BlinkState(
+    initialAlpha: Float = 1F,
+    coroutineScope: CoroutineScope
+) {
+    private val animatable = Animatable(initialAlpha)
+    val alpha: Float get() = animatable.value
+    val scope = coroutineScope
+
+    suspend fun play() {
+        animatable.snapTo(0F)
+        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 
@@ -179,7 +248,7 @@ fun StabilizationIcon(
             stringResource(id = R.string.stabilization_icon_description_video_only)
         }
         Icon(
-            painter = painterResource(id = R.drawable.baseline_video_stable_24),
+            imageVector = Icons.Filled.VideoStable,
             contentDescription = descriptionText
         )
     }
@@ -254,6 +323,10 @@ fun CaptureButton(
     onRelease: () -> Unit,
     videoRecordingState: VideoRecordingState
 ) {
+    var isPressedDown by remember {
+        mutableStateOf(false)
+    }
+    val currentColor = LocalContentColor.current
     Box(
         modifier = modifier
             .pointerInput(Unit) {
@@ -264,7 +337,9 @@ fun CaptureButton(
                     // TODO: @kimblebee - stopVideoRecording is being called every time the capture
                     // button is pressed -- regardless of tap or long press
                     onPress = {
+                        isPressedDown = true
                         awaitRelease()
+                        isPressedDown = false
                         onRelease()
                     },
                     onTap = { onClick() }
@@ -272,13 +347,16 @@ fun CaptureButton(
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, LocalContentColor.current, CircleShape)
+            .border(4.dp, currentColor, CircleShape)
     ) {
         Canvas(modifier = Modifier.size(110.dp), onDraw = {
             drawCircle(
                 color =
                 when (videoRecordingState) {
-                    VideoRecordingState.INACTIVE -> Color.Transparent
+                    VideoRecordingState.INACTIVE -> {
+                        if (isPressedDown) currentColor else Color.Transparent
+                    }
+
                     VideoRecordingState.ACTIVE -> Color.Red
                 }
             )

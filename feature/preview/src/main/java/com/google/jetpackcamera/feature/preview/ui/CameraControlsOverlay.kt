@@ -51,6 +51,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(showInitially)
@@ -76,10 +77,12 @@ fun CameraControlsOverlay(
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
+        Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -121,7 +124,8 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
             )
         }
     }
@@ -140,7 +144,9 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier.padding(12.dp).testTag(SETTINGS_BUTTON),
+                Modifier
+                    .padding(12.dp)
+                    .testTag(SETTINGS_BUTTON),
                 onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
@@ -182,11 +188,13 @@ private fun ControlsBottom(
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
+        Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState? = null
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
@@ -216,7 +224,8 @@ private fun ControlsBottom(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
             )
             Row(Modifier.weight(1f)) {
                 /*TODO("Place other components here") */
@@ -235,27 +244,36 @@ private fun CaptureButton(
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
+        Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    blinkState: BlinkState? = null
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
+            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
-                        onCaptureImage()
+                        onCaptureImageWithUri(
+                            context.contentResolver,
+                            null,
+                            true,
+                            previewMode.onImageCapture
+                        )
                     }
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
                             context.contentResolver,
                             previewMode.imageCaptureUri,
+                            false,
                             previewMode.onImageCapture
                         )
                     }
@@ -345,7 +363,7 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode {}
         )
     }
 }
@@ -360,7 +378,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode {}
         )
     }
 }
@@ -375,7 +393,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             isQuickSettingsOpen = true,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode {}
         )
     }
 }
@@ -390,7 +408,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(isBackCameraAvailable = false),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode {}
         )
     }
 }
@@ -405,7 +423,7 @@ private fun Preview_ControlsBottom_Recording() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             videoRecordingState = VideoRecordingState.ACTIVE,
-            previewMode = PreviewMode.StandardMode
+            previewMode = PreviewMode.StandardMode {}
         )
     }
 }

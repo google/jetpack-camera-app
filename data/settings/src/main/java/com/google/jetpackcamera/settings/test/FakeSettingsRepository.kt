@@ -116,4 +116,17 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings =
             currentCameraSettings.copy(aspectRatio = aspectRatio)
     }
+
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
+        currentCameraSettings =
+            currentCameraSettings.copy(targetFrameRate = targetFrameRate)
+    }
+
+    override suspend fun updateSupportedFixedFrameRate(
+        supportedFrameRates: Set<Int>,
+        currentTargetFrameRate: Int
+    ) {
+        currentCameraSettings =
+            currentCameraSettings.copy(supportedFixedFrameRates = supportedFrameRates.toList())
+    }
 }

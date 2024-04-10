@@ -18,10 +18,12 @@ package com.google.jetpackcamera.domain.camera
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,9 +52,18 @@ interface CameraUseCase {
 
     suspend fun takePicture()
 
-    suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?)
+    /**
+     * Takes a picture with the camera. If ignoreUri is set to true, the picture taken will be saved
+     * at the default directory for pictures on device. Otherwise, it will be saved at the uri
+     * location if the uri is not null. If it is null, an error will be thrown.
+     */
+    suspend fun takePicture(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean = false
+    ): ImageCapture.OutputFileResults
 
-    suspend fun startVideoRecording()
+    suspend fun startVideoRecording(onVideoRecord: (OnVideoRecordEvent) -> Unit)
 
     fun stopVideoRecording()
 
@@ -78,6 +89,8 @@ interface CameraUseCase {
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
+    suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
     /**
      * Represents the events required for screen flash.
      */
@@ -86,5 +99,14 @@ interface CameraUseCase {
             APPLY_UI,
             CLEAR_UI
         }
+    }
+
+    /**
+     * Represents the events for video recording.
+     */
+    sealed interface OnVideoRecordEvent {
+        object OnVideoRecorded : OnVideoRecordEvent
+
+        object OnVideoRecordError : OnVideoRecordEvent
     }
 }

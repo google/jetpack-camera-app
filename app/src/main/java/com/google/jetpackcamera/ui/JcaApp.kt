@@ -26,19 +26,22 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
+import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
+    previewMode: PreviewMode,
     onPreviewViewModel: (PreviewViewModel) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit
     /*TODO(b/306236646): remove after still capture*/
-    previewMode: PreviewMode
 ) {
     val permissionState =
         rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -46,7 +49,8 @@ fun JcaApp(
     if (permissionState.status.isGranted) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
-            previewMode = previewMode
+            previewMode = previewMode,
+            onRequestWindowColorMode = onRequestWindowColorMode
         )
     } else {
         CameraPermission(
@@ -58,20 +62,26 @@ fun JcaApp(
 
 @Composable
 private fun JetpackCameraNavHost(
+    previewMode: PreviewMode,
     onPreviewViewModel: (PreviewViewModel) -> Unit,
-    navController: NavHostController = rememberNavController(),
-    previewMode: PreviewMode
+    onRequestWindowColorMode: (Int) -> Unit,
+    navController: NavHostController = rememberNavController()
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onRequestWindowColorMode = onRequestWindowColorMode,
                 previewMode = previewMode
             )
         }
         composable(SETTINGS_ROUTE) {
             SettingsScreen(
+                versionInfo = VersionInfoHolder(
+                    versionName = BuildConfig.VERSION_NAME,
+                    buildType = BuildConfig.BUILD_TYPE
+                ),
                 onNavigateBack = { navController.popBackStack() }
             )
         }
