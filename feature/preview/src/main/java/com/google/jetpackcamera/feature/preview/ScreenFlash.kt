@@ -17,9 +17,10 @@ package com.google.jetpackcamera.feature.preview
 
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 private const val TAG = "ScreenFlash"
 
@@ -29,59 +30,37 @@ private const val TAG = "ScreenFlash"
 // TODO: Add this to ViewModelScoped so that it can be injected automatically. However, the current
 //  ViewModel and Hilt APIs probably don't support injecting the viewModelScope.
 class ScreenFlash(
-    private val cameraUseCase: CameraUseCase,
-    private val scope: CoroutineScope
+    cameraUseCase: CameraUseCase,
+    scope: CoroutineScope
 ) {
-    data class ScreenFlashUiState(
-        val enabled: Boolean = false,
-        val onChangeComplete: () -> Unit = {},
-        // restored during CLEAR_UI event
-        val screenBrightnessToRestore: Float? = null
-    )
+    private var screenBrightnessToRestore: Float? = null
 
-    private val _screenFlashUiState: MutableStateFlow<ScreenFlashUiState> =
-        MutableStateFlow(ScreenFlashUiState())
-    val screenFlashUiState: StateFlow<ScreenFlashUiState> = _screenFlashUiState
-
-    init {
-        scope.launch {
-            cameraUseCase.getScreenFlashEvents().collect { event ->
-                _screenFlashUiState.emit(
-                    when (event.type) {
-                        CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->
-                            screenFlashUiState.value.copy(
-                                enabled = true,
-                                onChangeComplete = event.onComplete
-                            )
-
-                        CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI ->
-                            screenFlashUiState.value.copy(
-                                enabled = false,
-                                onChangeComplete = {
-                                    event.onComplete()
-                                    // reset ui state on CLEAR_UI event completion
-                                    scope.launch {
-                                        _screenFlashUiState.emit(
-                                            ScreenFlashUiState()
-                                        )
-                                    }
-                                }
-                            )
-                    }
-                )
+    val screenFlashUiState: StateFlow<ScreenFlashUiState> =
+        cameraUseCase.getScreenFlashEvents().map { event ->
+            when (event.type) {
+                CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->
+                    ScreenFlashUiState.Applied(onComplete = event.onComplete)
+                CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI -> {
+                    ScreenFlashUiState.NotApplied(
+                        screenBrightnessToRestore = screenBrightnessToRestore
+                    )
+                }
             }
-        }
-    }
+        }.stateIn(
+            scope = scope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ScreenFlashUiState.NotApplied()
+        )
 
     /**
-     * Sets the screenBrightness value to the value right before APPLY_UI event for the next
-     * CLEAR_UI event, will be set to unknown (null) again after CLEAR_UI event is completed.
+     * Set the screen brightness to restore to after a screen flash has been applied.
      */
     fun setClearUiScreenBrightness(brightness: Float) {
-        scope.launch {
-            _screenFlashUiState.emit(
-                screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
-            )
-        }
+        screenBrightnessToRestore = brightness
     }
+}
+
+sealed interface ScreenFlashUiState {
+    data class Applied(val onComplete: () -> Unit) : ScreenFlashUiState
+    data class NotApplied(val screenBrightnessToRestore: Float? = null) : ScreenFlashUiState
 }
