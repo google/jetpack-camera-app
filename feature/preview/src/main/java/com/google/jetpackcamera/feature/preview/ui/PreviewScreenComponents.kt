@@ -39,9 +39,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +61,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +70,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -109,6 +112,49 @@ fun TestableToast(
     }
 }
 
+@Composable
+fun TestableSnackBar(
+    modifier: Modifier = Modifier,
+    snackBarToShow: SnackBarData,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
+    onSnackBarResult: () -> Unit
+) {
+    Box(
+        // box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier
+            .size(20.dp)
+            .testTag(snackBarToShow.testTag)
+    ) {
+        val context = LocalContext.current
+        scope.launch {
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = context.getString(snackBarToShow.stringResource),
+                    duration = snackBarToShow.duration,
+                    withDismissAction = snackBarToShow.withDismissAction,
+                    actionLabel = if (snackBarToShow.actionLabelRes == null) {
+                        null
+                    } else {
+                        context.getString(snackBarToShow.actionLabelRes)
+                    }
+                )
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    onSnackBarResult()
+                }
+                SnackbarResult.Dismissed -> {
+                    onSnackBarResult()
+                }
+            }
+        }
+        Log.d(
+            TAG,
+            "Snackbar Displayed with message: ${stringResource(snackBarToShow.stringResource)}"
+        )
+    }
+}
+
 /**
  * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
  * and double-tap to flip camera
@@ -118,6 +164,7 @@ fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
     blinkState: BlinkState,
@@ -164,7 +211,8 @@ fun PreviewDisplay(
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it
+                    surfaceRequest = it,
+                    onRequestWindowColorMode = onRequestWindowColorMode
                 )
             }
         }
@@ -202,7 +250,7 @@ fun StabilizationIcon(
             stringResource(id = R.string.stabilization_icon_description_video_only)
         }
         Icon(
-            painter = painterResource(id = R.drawable.baseline_video_stable_24),
+            imageVector = Icons.Filled.VideoStable,
             contentDescription = descriptionText,
             modifier = modifier
         )

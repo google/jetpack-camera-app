@@ -31,18 +31,8 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -76,6 +66,9 @@ dependencies {
 
     // Tracing
     implementation(libs.androidx.tracing)
+
+    // Graphics libraries
+    implementation(libs.androidx.graphics.core)
 
     // Project dependencies
     implementation(project(":data:settings"))

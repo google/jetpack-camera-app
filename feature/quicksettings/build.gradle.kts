@@ -30,18 +30,8 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -66,6 +56,7 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)

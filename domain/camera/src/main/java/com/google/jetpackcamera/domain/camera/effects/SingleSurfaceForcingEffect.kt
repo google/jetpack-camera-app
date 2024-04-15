@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera
+package com.google.jetpackcamera.domain.camera.effects
 
 import androidx.camera.core.CameraEffect
+import kotlinx.coroutines.CoroutineScope
 
 private const val TARGETS =
-    CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE or CameraEffect.IMAGE_CAPTURE
-
-private val emptySurfaceProcessor = EmptySurfaceProcessor()
+    CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE
 
 /**
  * [CameraEffect] that applies a no-op effect.
@@ -30,15 +29,9 @@ private val emptySurfaceProcessor = EmptySurfaceProcessor()
  *
  * Used as a workaround to force the above 3 use cases to use a single camera stream.
  */
-class SingleSurfaceForcingEffect : CameraEffect(
+class SingleSurfaceForcingEffect(coroutineScope: CoroutineScope) : CameraEffect(
     TARGETS,
-    emptySurfaceProcessor.glExecutor,
-    emptySurfaceProcessor,
+    Runnable::run,
+    CopyingSurfaceProcessor(coroutineScope),
     {}
-) {
-    // TODO(b/304547401): Invoke this to release the processor properly
-    @SuppressWarnings("unused")
-    fun release() {
-        emptySurfaceProcessor.release()
-    }
-}
+)

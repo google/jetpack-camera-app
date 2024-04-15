@@ -56,12 +56,11 @@ android {
     }
 
     targetProjectPath = ":app"
-    @Suppress("UnstableApiUsage")
-    experimentalProperties["android.experimental.self-instrumenting"] = true
     // required for benchmark:
     // self instrumentation required for the tests to be able to compile, start, or kill the app
     // ensures test and app processes are separate
     // see https://source.android.com/docs/core/tests/development/instr-self-e2e
+    experimentalProperties["android.experimental.self-instrumenting"] = true
 }
 
 dependencies {

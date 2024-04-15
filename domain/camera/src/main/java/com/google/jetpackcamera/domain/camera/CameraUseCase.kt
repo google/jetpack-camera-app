@@ -23,6 +23,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.flow.SharedFlow
@@ -62,7 +63,7 @@ interface CameraUseCase {
         ignoreUri: Boolean = false
     ): ImageCapture.OutputFileResults
 
-    suspend fun startVideoRecording()
+    suspend fun startVideoRecording(onVideoRecord: (OnVideoRecordEvent) -> Unit)
 
     fun stopVideoRecording()
 
@@ -88,6 +89,8 @@ interface CameraUseCase {
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
+    suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
     /**
      * Represents the events required for screen flash.
      */
@@ -96,5 +99,14 @@ interface CameraUseCase {
             APPLY_UI,
             CLEAR_UI
         }
+    }
+
+    /**
+     * Represents the events for video recording.
+     */
+    sealed interface OnVideoRecordEvent {
+        object OnVideoRecorded : OnVideoRecordEvent
+
+        object OnVideoRecordError : OnVideoRecordEvent
     }
 }

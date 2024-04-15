@@ -8,12 +8,12 @@ composeCompiler = "1.5.10"
 # Used below in dependency definitions
 # Compose and Accompanist versions are linked
 # See https://github.com/google/accompanist?tab=readme-ov-file#compose-versions
-composeBom = "2024.03.00"
+composeBom = "2024.04.00"
 accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.3.1"
+androidGradlePlugin = "8.4.0-rc01"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
@@ -24,6 +24,7 @@ androidxCameraViewfinder = "1.0.0-SNAPSHOT"
 androidxConcurrentFutures = "1.1.0"
 androidxCoreKtx = "1.12.0"
 androidxDatastore = "1.0.0"
+androidxGraphicsCore = "1.0.0-beta01"
 androidxHiltNavigationCompose = "1.2.0"
 androidxLifecycle = "2.7.0"
 androidxNavigationCompose = "2.7.7"
@@ -53,6 +54,7 @@ androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCoreKtx" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidxDatastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidxTestEspresso" }
+androidx-graphics-core = { module = "androidx.graphics:graphics-core", version.ref = "androidxGraphicsCore" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
@@ -70,6 +72,7 @@ camera-viewfinder-compose = { module = "androidx.camera:camera-viewfinder-compos
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }

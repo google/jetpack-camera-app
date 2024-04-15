@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
@@ -28,6 +29,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -48,10 +52,12 @@ import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
+import com.google.jetpackcamera.feature.preview.ui.TestableSnackBar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 
@@ -66,6 +72,7 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
+    onRequestWindowColorMode: (Int) -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -102,16 +109,20 @@ fun PreviewScreen(
             onChangeFlash = viewModel::setFlash,
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
+            onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
             onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown
+            onToastShown = viewModel::onToastShown,
+            onRequestWindowColorMode = onRequestWindowColorMode,
+            onSnackBarResult = viewModel::onSnackBarResult
         )
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
     previewUiState: PreviewUiState,
@@ -127,6 +138,7 @@ private fun ContentScreen(
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
+    onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -137,75 +149,93 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onToastShown: () -> Unit = {}
+    onToastShown: () -> Unit = {},
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    onSnackBarResult: () -> Unit = {}
 ) {
-    val lensFacing = remember(previewUiState) {
-        previewUiState.currentCameraSettings.cameraLensFacing
-    }
-
-    val onFlipCamera = remember(lensFacing) {
-        {
-            onSetLensFacing(lensFacing.flip())
-        }
-    }
-
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val blinkState = remember { BlinkState(coroutineScope = scope) }
-    Box(modifier.fillMaxSize()) {
-        // display camera feed. this stays behind everything else
-        PreviewDisplay(
-            onFlipCamera = onFlipCamera,
-            onTapToFocus = onTapToFocus,
-            onZoomChange = onChangeZoomScale,
-            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-            surfaceRequest = surfaceRequest,
-            blinkState = blinkState
-        )
+    Scaffold(snackbarHost = {
+        SnackbarHost(hostState = snackbarHostState)
+    }) {
+        val lensFacing = remember(previewUiState) {
+            previewUiState.currentCameraSettings.cameraLensFacing
+        }
 
-        QuickSettingsScreenOverlay(
-            modifier = Modifier,
-            isOpen = previewUiState.quickSettingsIsOpen,
-            toggleIsOpen = onToggleQuickSettings,
-            currentCameraSettings = previewUiState.currentCameraSettings,
-            onLensFaceClick = onSetLensFacing,
-            onFlashModeClick = onChangeFlash,
-            onAspectRatioClick = onChangeAspectRatio,
-            onCaptureModeClick = onChangeCaptureMode
-            // onTimerClick = {}/*TODO*/
-        )
-        // relative-grid style overlay on top of preview display
-        CameraControlsOverlay(
-            previewUiState = previewUiState,
-            onNavigateToSettings = onNavigateToSettings,
-            previewMode = previewMode,
-            onFlipCamera = onFlipCamera,
-            onChangeFlash = onChangeFlash,
-            onToggleQuickSettings = onToggleQuickSettings,
-            onCaptureImage = onCaptureImage,
-            onCaptureImageWithUri = onCaptureImageWithUri,
-            onStartVideoRecording = onStartVideoRecording,
-            onStopVideoRecording = onStopVideoRecording,
-            blinkState = blinkState
-        )
+        val onFlipCamera = remember(lensFacing) {
+            {
+                onSetLensFacing(lensFacing.flip())
+            }
+        }
 
-        // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null) {
-            TestableToast(
-                modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
-                toastMessage = previewUiState.toastMessageToShow,
-                onToastShown = onToastShown
+        val scope = rememberCoroutineScope()
+        val blinkState = remember { BlinkState(coroutineScope = scope) }
+        Box(modifier.fillMaxSize()) {
+            // display camera feed. this stays behind everything else
+            PreviewDisplay(
+                onFlipCamera = onFlipCamera,
+                onTapToFocus = onTapToFocus,
+                onZoomChange = onChangeZoomScale,
+                aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
+                surfaceRequest = surfaceRequest,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                blinkState = blinkState
+            )
+
+            QuickSettingsScreenOverlay(
+                modifier = Modifier,
+                isOpen = previewUiState.quickSettingsIsOpen,
+                toggleIsOpen = onToggleQuickSettings,
+                currentCameraSettings = previewUiState.currentCameraSettings,
+                onLensFaceClick = onSetLensFacing,
+                onFlashModeClick = onChangeFlash,
+                onAspectRatioClick = onChangeAspectRatio,
+                onCaptureModeClick = onChangeCaptureMode,
+                onDynamicRangeClick = onChangeDynamicRange// onTimerClick = {}/*TODO*/
+            )
+            // relative-grid style overlay on top of preview display
+            CameraControlsOverlay(
+                previewUiState = previewUiState,
+                onNavigateToSettings = onNavigateToSettings,
+                previewMode = previewMode,
+                onFlipCamera = onFlipCamera,
+                onChangeFlash = onChangeFlash,
+                onToggleQuickSettings = onToggleQuickSettings,
+                onCaptureImage = onCaptureImage,
+                onCaptureImageWithUri = onCaptureImageWithUri,
+                onStartVideoRecording = onStartVideoRecording,
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
+
+            )
+            // displays toast when there is a message to show
+            if (previewUiState.toastMessageToShow != null) {
+                TestableToast(
+                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
+                    toastMessage = previewUiState.toastMessageToShow,
+                    onToastShown = onToastShown
+                )
+            }
+
+            if (previewUiState.snackBarToShow != null) {
+                TestableSnackBar(
+                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
+                    snackBarToShow = previewUiState.snackBarToShow,
+                    scope = scope,
+                    snackbarHostState = snackbarHostState,
+                    onSnackBarResult = onSnackBarResult
+                )
+            }// Screen flash overlay that stays on top of everything but invisible normally. This should
+            // not be enabled based on whether screen flash is enabled because a previous image capture
+            // may still be running after flash mode change and clear actions (e.g. brightness restore)
+            // may need to be handled later. Compose smart recomposition should be able to optimize this
+            // if the relevant states are no longer changing.
+            ScreenFlashScreen(
+                screenFlashUiState = screenFlashUiState,
+                onInitialBrightnessCalculated = onClearUiScreenBrightness
             )
         }
-
-        // Screen flash overlay that stays on top of everything but invisible normally. This should
-        // not be enabled based on whether screen flash is enabled because a previous image capture
-        // may still be running after flash mode change and clear actions (e.g. brightness restore)
-        // may need to be handled later. Compose smart recomposition should be able to optimize this
-        // if the relevant states are no longer changing.
-        ScreenFlashScreen(
-            screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = onClearUiScreenBrightness
-        )
     }
 }
 

@@ -38,12 +38,9 @@ android {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
         }
-        release {
+        getByName("release") {
             isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         create("benchmark") {
             initWith(buildTypes.getByName("release"))
@@ -77,12 +74,11 @@ android {
                 create("pixel2Api28") {
                     device = "Pixel 2"
                     apiLevel = 28
-                    systemImageSource = "aosp"
                 }
                 create("pixel8Api34") {
                     device = "Pixel 8"
                     apiLevel = 34
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp_atd"
                 }
             }
         }
@@ -101,6 +97,7 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
