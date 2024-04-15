@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackBarData
@@ -158,12 +159,12 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage() {
+    fun captureImage(blinkState: BlinkState?) {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             traceAsync(IMAGE_CAPTURE_TRACE, 0) {
                 try {
-                    cameraUseCase.takePicture()
+                    cameraUseCase.takePicture { blinkState?.scope?.launch { blinkState.play() } }
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(
                         previewUiState.value.copy(
@@ -194,6 +195,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun captureImageWithUri(
+        blinkState: BlinkState?,
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean = false,
@@ -204,7 +206,12 @@ class PreviewViewModel @Inject constructor(
             traceAsync(IMAGE_CAPTURE_TRACE, 0) {
                 try {
                     val savedUri =
-                        cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri)
+                        cameraUseCase.takePicture(
+                            { blinkState?.scope?.launch { blinkState.play() } },
+                            contentResolver,
+                            imageCaptureUri,
+                            ignoreUri
+                        )
                             .savedUri
                     // todo: remove toast after postcapture screen implemented
                     _previewUiState.emit(

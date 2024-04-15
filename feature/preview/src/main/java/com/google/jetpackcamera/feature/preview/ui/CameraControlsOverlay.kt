@@ -75,13 +75,14 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
@@ -185,13 +186,14 @@ private fun ControlsBottom(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
@@ -241,13 +243,14 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
@@ -258,11 +261,11 @@ private fun CaptureButton(
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
-            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
                         onCaptureImageWithUri(
+                            blinkState,
                             context.contentResolver,
                             null,
                             true,
@@ -272,6 +275,7 @@ private fun CaptureButton(
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
+                            blinkState,
                             context.contentResolver,
                             previewMode.imageCaptureUri,
                             false,

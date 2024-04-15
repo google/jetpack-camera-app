@@ -140,13 +140,14 @@ private fun ContentScreen(
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
