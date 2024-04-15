@@ -70,7 +70,6 @@ class ZoomLevelDisplayState(showInitially: Boolean = false) {
 fun CameraControlsOverlay(
     previewUiState: PreviewUiState.Ready,
     previewMode: PreviewMode,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
@@ -128,7 +127,6 @@ fun CameraControlsOverlay(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
             )
         }
     }
@@ -196,7 +194,6 @@ private fun ControlsBottom(
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
@@ -226,7 +223,6 @@ private fun ControlsBottom(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
             )
             Row(Modifier.weight(1f)) {
                 /*TODO("Place other components here") */
@@ -251,14 +247,12 @@ private fun CaptureButton(
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
-            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {

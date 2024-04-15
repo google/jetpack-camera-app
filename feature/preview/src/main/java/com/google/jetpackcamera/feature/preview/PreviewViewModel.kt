@@ -163,7 +163,16 @@ class PreviewViewModel @Inject constructor(
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            captureImageInternal(cameraUseCase::takePicture)
+            captureImageInternal(doTakePicture = {
+                cameraUseCase.takePicture {
+                    _previewUiState.update { old ->
+                        (old as? PreviewUiState.Ready)?.copy(
+                            blinkTimeStamp = System.currentTimeMillis()
+                        ) ?: old
+                    }
+                }
+            }
+            )
         }
     }
 
@@ -177,7 +186,13 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             captureImageInternal(
                 doTakePicture = {
-                    cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri).savedUri
+                    cameraUseCase.takePicture({
+                        _previewUiState.update { old ->
+                            (old as? PreviewUiState.Ready)?.copy(
+                                blinkTimeStamp = System.currentTimeMillis()
+                            ) ?: old
+                        }
+                    }, contentResolver, imageCaptureUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri -> onImageCapture(ImageCaptureEvent.ImageSaved(savedUri)) },
                 onFailure = { exception ->
