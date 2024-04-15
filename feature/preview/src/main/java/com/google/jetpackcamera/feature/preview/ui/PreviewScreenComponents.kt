@@ -19,7 +19,6 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -216,20 +215,6 @@ fun PreviewDisplay(
                 )
             }
         }
-    }
-}
-
-class BlinkState(
-    initialAlpha: Float = 1F,
-    coroutineScope: CoroutineScope
-) {
-    private val animatable = Animatable(initialAlpha)
-    val alpha: Float get() = animatable.value
-    val scope = coroutineScope
-
-    suspend fun play() {
-        animatable.snapTo(0F)
-        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 
