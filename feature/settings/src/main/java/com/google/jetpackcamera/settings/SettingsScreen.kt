@@ -198,7 +198,7 @@ data class VersionInfoHolder(
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun Preview_SettingsScreen() {
+private fun Preview_SettingsScreen() {
     SettingsPreviewTheme {
         SettingsScreen(
             uiState = SettingsUiState.Enabled(

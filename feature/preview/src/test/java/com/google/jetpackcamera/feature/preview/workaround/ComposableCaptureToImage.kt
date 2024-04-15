@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:SuppressLint("UseSdkSuppress")
+
 package com.google.jetpackcamera.feature.preview.workaround
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -52,14 +55,16 @@ import kotlin.math.roundToInt
  *
  * See [robolectric issue 8071](https://github.com/robolectric/robolectric/issues/8071) for details.
  */
+
 @OptIn(ExperimentalTestApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
     val node = fetchSemanticsNode("Failed to capture a node to bitmap.")
     // Validate we are in popup
-    val popupParentMaybe = node.findClosestParentNode(includeSelf = true) {
-        it.config.contains(SemanticsProperties.IsPopup)
-    }
+    val popupParentMaybe =
+        node.findClosestParentNode(includeSelf = true) {
+            it.config.contains(SemanticsProperties.IsPopup)
+        }
     if (popupParentMaybe != null) {
         return processMultiWindowScreenshot(node)
     }
@@ -67,9 +72,10 @@ fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
     val view = (node.root as ViewRootForTest).view
 
     // If we are in dialog use its window to capture the bitmap
-    val dialogParentNodeMaybe = node.findClosestParentNode(includeSelf = true) {
-        it.config.contains(SemanticsProperties.IsDialog)
-    }
+    val dialogParentNodeMaybe =
+        node.findClosestParentNode(includeSelf = true) {
+            it.config.contains(SemanticsProperties.IsDialog)
+        }
     var dialogWindow: Window? = null
     if (dialogParentNodeMaybe != null) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -86,12 +92,13 @@ fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
     val windowToUse = dialogWindow ?: view.context.getActivityWindow()
 
     val nodeBounds = node.boundsInRoot
-    val nodeBoundsRect = Rect(
-        nodeBounds.left.roundToInt(),
-        nodeBounds.top.roundToInt(),
-        nodeBounds.right.roundToInt(),
-        nodeBounds.bottom.roundToInt()
-    )
+    val nodeBoundsRect =
+        Rect(
+            nodeBounds.left.roundToInt(),
+            nodeBounds.top.roundToInt(),
+            nodeBounds.right.roundToInt(),
+            nodeBounds.bottom.roundToInt()
+        )
 
     val locationInWindow = intArrayOf(0, 0)
     view.getLocationInWindow(locationInWindow)
@@ -129,13 +136,14 @@ private fun processMultiWindowScreenshot(node: SemanticsNode): ImageBitmap {
 
     val combinedBitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
 
-    val finalBitmap = Bitmap.createBitmap(
-        combinedBitmap,
-        (nodePositionInScreen.x + nodeBoundsInRoot.left).roundToInt(),
-        (nodePositionInScreen.y + nodeBoundsInRoot.top).roundToInt(),
-        nodeBoundsInRoot.width.roundToInt(),
-        nodeBoundsInRoot.height.roundToInt()
-    )
+    val finalBitmap =
+        Bitmap.createBitmap(
+            combinedBitmap,
+            (nodePositionInScreen.x + nodeBoundsInRoot.left).roundToInt(),
+            (nodePositionInScreen.y + nodeBoundsInRoot.top).roundToInt(),
+            nodeBoundsInRoot.width.roundToInt(),
+            nodeBoundsInRoot.height.roundToInt()
+        )
     return finalBitmap.asImageBitmap()
 }
 
@@ -227,10 +235,11 @@ private object PixelCopyHelper {
 private fun Window.generateBitmapFromPixelCopy(boundsInWindow: Rect, destBitmap: Bitmap) {
     val latch = CountDownLatch(1)
     var copyResult = 0
-    val onCopyFinished = PixelCopy.OnPixelCopyFinishedListener { result ->
-        copyResult = result
-        latch.countDown()
-    }
+    val onCopyFinished =
+        PixelCopy.OnPixelCopyFinishedListener { result ->
+            copyResult = result
+            latch.countDown()
+        }
     PixelCopyHelper.request(
         this,
         boundsInWindow,

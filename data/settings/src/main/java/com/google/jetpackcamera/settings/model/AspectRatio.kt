@@ -28,14 +28,14 @@ enum class AspectRatio(val ratio: Rational) {
         /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
         fun fromProto(aspectRatioProto: AspectRatioProto): AspectRatio {
             return when (aspectRatioProto) {
-                AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
-                AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
+                AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> NINE_SIXTEEN
+                AspectRatioProto.ASPECT_RATIO_ONE_ONE -> ONE_ONE
 
                 // defaults to 3:4 aspect ratio
                 AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
                 AspectRatioProto.ASPECT_RATIO_UNDEFINED,
                 AspectRatioProto.UNRECOGNIZED
-                -> AspectRatio.THREE_FOUR
+                -> THREE_FOUR
             }
         }
     }

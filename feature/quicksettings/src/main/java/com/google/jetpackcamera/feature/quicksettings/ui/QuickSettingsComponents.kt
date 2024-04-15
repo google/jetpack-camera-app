@@ -62,7 +62,11 @@ import kotlin.math.min
 // completed components ready to go into preview screen
 
 @Composable
-fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentRatio: AspectRatio) {
+fun ExpandedQuickSetRatio(
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
+    currentRatio: AspectRatio,
+    modifier: Modifier = Modifier
+) {
     val buttons: Array<@Composable () -> Unit> =
         arrayOf(
             {
@@ -91,7 +95,7 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
                 )
             }
         )
-    ExpandedQuickSetting(quickSettingButtons = buttons)
+    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
 }
 
 @Composable
@@ -125,10 +129,10 @@ fun QuickSetHdr(
 
 @Composable
 fun QuickSetRatio(
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     ratio: AspectRatio,
     currentRatio: AspectRatio,
+    modifier: Modifier = Modifier,
     isHighlightEnabled: Boolean = false
 ) {
     val enum =
@@ -148,9 +152,9 @@ fun QuickSetRatio(
 
 @Composable
 fun QuickSetFlash(
-    modifier: Modifier = Modifier,
     onClick: (FlashMode) -> Unit,
-    currentFlashMode: FlashMode
+    currentFlashMode: FlashMode,
+    modifier: Modifier = Modifier
 ) {
     val enum = when (currentFlashMode) {
         FlashMode.OFF -> CameraFlashMode.OFF
@@ -178,9 +182,9 @@ fun QuickSetFlash(
 
 @Composable
 fun QuickFlipCamera(
-    modifier: Modifier = Modifier,
     setLensFacing: (LensFacing) -> Unit,
-    currentLensFacing: LensFacing
+    currentLensFacing: LensFacing,
+    modifier: Modifier = Modifier
 ) {
     val enum =
         when (currentLensFacing) {
@@ -196,9 +200,9 @@ fun QuickFlipCamera(
 
 @Composable
 fun QuickSetCaptureMode(
-    modifier: Modifier = Modifier,
     setCaptureMode: (CaptureMode) -> Unit,
-    currentCaptureMode: CaptureMode
+    currentCaptureMode: CaptureMode,
+    modifier: Modifier = Modifier
 ) {
     val enum: CameraCaptureMode =
         when (currentCaptureMode) {
@@ -221,10 +225,15 @@ fun QuickSetCaptureMode(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun ToggleQuickSettingsButton(
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean,
+    modifier: Modifier = Modifier
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
     ) {
         // dropdown icon
         Icon(
@@ -249,9 +258,9 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
 
 @Composable
 fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
@@ -271,11 +280,11 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
-    painter: Painter,
     text: String,
+    painter: Painter,
     accessibilityText: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
@@ -383,11 +392,11 @@ fun QuickSettingsGrid(
  * The top bar indicators for quick settings items.
  */
 @Composable
-fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
+fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Icon(
         painter = enum.getPainter(),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
-        modifier = Modifier
+        modifier = modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
             .clickable { onClick() }
     )
@@ -411,9 +420,10 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
 @Composable
 fun QuickSettingsIndicators(
     currentFlashMode: FlashMode,
-    onFlashModeClick: (flashMode: FlashMode) -> Unit
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row {
+    Row(modifier) {
         FlashModeIndicator(currentFlashMode, onFlashModeClick)
     }
 }
