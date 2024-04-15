@@ -153,12 +153,10 @@ private fun ContentScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: () -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val blinkState = remember { BlinkState(coroutineScope = scope) }
-    Scaffold(snackbarHost = {
-        SnackbarHost(hostState = snackbarHostState)
-    }) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) {
         val lensFacing = remember(previewUiState) {
             previewUiState.currentCameraSettings.cameraLensFacing
         }
@@ -192,7 +190,7 @@ private fun ContentScreen(
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
                 onCaptureModeClick = onChangeCaptureMode,
-                onDynamicRangeClick = onChangeDynamicRange// onTimerClick = {}/*TODO*/
+                onDynamicRangeClick = onChangeDynamicRange // onTimerClick = {}/*TODO*/
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
@@ -226,7 +224,8 @@ private fun ContentScreen(
                     snackbarHostState = snackbarHostState,
                     onSnackBarResult = onSnackBarResult
                 )
-            }// Screen flash overlay that stays on top of everything but invisible normally. This should
+            }
+            // Screen flash overlay that stays on top of everything but invisible normally. This should
             // not be enabled based on whether screen flash is enabled because a previous image capture
             // may still be running after flash mode change and clear actions (e.g. brightness restore)
             // may need to be handled later. Compose smart recomposition should be able to optimize this

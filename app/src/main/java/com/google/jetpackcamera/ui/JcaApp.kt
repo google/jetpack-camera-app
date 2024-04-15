@@ -68,7 +68,7 @@ private fun JetpackCameraNavHost(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController = rememberNavController()
 ) {
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
         composable(PREVIEW_ROUTE) {
