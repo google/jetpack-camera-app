@@ -236,7 +236,8 @@ class BlinkState(
 fun StabilizationIcon(
     videoStabilization: Stabilization,
     previewStabilization: Stabilization,
-    modifier: Modifier = Modifier) {
+    modifier: Modifier = Modifier
+) {
     if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
         val descriptionText = if (videoStabilization == Stabilization.ON) {
             stringResource(id = R.string.stabilization_icon_description_preview_and_video)
