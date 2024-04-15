@@ -63,15 +63,15 @@ import com.google.jetpackcamera.settings.model.LensFacing
  */
 @Composable
 fun QuickSettingsScreenOverlay(
-    modifier: Modifier = Modifier,
     currentCameraSettings: CameraAppSettings,
-    isOpen: Boolean = false,
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
-    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
+    modifier: Modifier = Modifier,
+    isOpen: Boolean = false
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)

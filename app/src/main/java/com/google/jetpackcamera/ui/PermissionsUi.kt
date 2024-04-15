@@ -49,7 +49,7 @@ import com.google.jetpackcamera.R
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: PermissionState) {
+fun CameraPermission(cameraPermissionState: PermissionState, modifier: Modifier = Modifier) {
     PermissionTemplate(
         modifier = modifier,
         permissionState = cameraPermissionState,
@@ -64,14 +64,14 @@ fun CameraPermission(modifier: Modifier = Modifier, cameraPermissionState: Permi
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionTemplate(
-    modifier: Modifier = Modifier,
     permissionState: PermissionState,
-    onSkipPermission: (() -> Unit)? = null,
     painter: Painter,
     iconAccessibilityText: String,
     title: String,
     bodyText: String,
-    requestButtonText: String
+    requestButtonText: String,
+    modifier: Modifier = Modifier,
+    onSkipPermission: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier.background(MaterialTheme.colorScheme.primary),
@@ -110,7 +110,7 @@ fun PermissionTemplate(
 }
 
 @Composable
-fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
+fun PermissionImage(painter: Painter, accessibilityText: String, modifier: Modifier = Modifier) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier
@@ -126,9 +126,9 @@ fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibili
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButtonSection(
-    modifier: Modifier = Modifier,
     permissionState: PermissionState,
     requestButtonText: String,
+    modifier: Modifier = Modifier,
     onSkipPermission: (() -> Unit)?
 ) {
     Box(modifier = modifier) {
@@ -159,9 +159,9 @@ fun PermissionButtonSection(
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButton(
-    modifier: Modifier = Modifier,
     permissionState: PermissionState,
-    requestButtonText: String
+    requestButtonText: String,
+    modifier: Modifier = Modifier
 ) {
     Button(
         modifier = modifier,
@@ -181,13 +181,13 @@ fun PermissionButton(
 }
 
 @Composable
-fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: String) {
+fun PermissionText(title: String, bodyText: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .height(IntrinsicSize.Min)
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.Center)
         ) {
@@ -213,7 +213,7 @@ fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: Strin
 }
 
 @Composable
-fun PermissionTitleText(modifier: Modifier = Modifier, text: String, color: Color) {
+fun PermissionTitleText(text: String, color: Color, modifier: Modifier = Modifier) {
     Text(
         modifier = modifier,
         color = color,
@@ -224,7 +224,7 @@ fun PermissionTitleText(modifier: Modifier = Modifier, text: String, color: Colo
 }
 
 @Composable
-fun PermissionBodyText(modifier: Modifier = Modifier, text: String, color: Color) {
+fun PermissionBodyText(text: String, color: Color, modifier: Modifier = Modifier) {
     Text(
         modifier = modifier,
         color = color,
