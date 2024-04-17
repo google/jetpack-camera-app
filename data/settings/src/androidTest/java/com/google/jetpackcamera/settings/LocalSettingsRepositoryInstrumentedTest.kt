@@ -89,7 +89,7 @@ class LocalSettingsRepositoryInstrumentedTest {
         // if you've created a new setting value and this test is failing, be sure to check that
         // JcaSettingsSerializer.kt defaultValue has been properly modified :)
 
-        val cameraAppSettings: CameraAppSettings = repository.getCameraAppSettings()
+        val cameraAppSettings: CameraAppSettings = repository.getCurrentDefaultCameraAppSettings()
 
         advanceUntilIdle()
         assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
@@ -97,9 +97,9 @@ class LocalSettingsRepositoryInstrumentedTest {
 
     @Test
     fun can_update_dark_mode() = runTest {
-        val initialDarkModeStatus = repository.getCameraAppSettings().darkMode
+        val initialDarkModeStatus = repository.getCurrentDefaultCameraAppSettings().darkMode
         repository.updateDarkModeStatus(DarkMode.LIGHT)
-        val newDarkModeStatus = repository.getCameraAppSettings().darkMode
+        val newDarkModeStatus = repository.getCurrentDefaultCameraAppSettings().darkMode
 
         advanceUntilIdle()
         assertThat(initialDarkModeStatus).isNotEqualTo(newDarkModeStatus)
@@ -110,10 +110,11 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_default_to_front_camera() = runTest {
         // default lens facing starts as BACK
-        val initialDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
+        val initialDefaultLensFacing =
+            repository.getCurrentDefaultCameraAppSettings().cameraLensFacing
         repository.updateDefaultLensFacing(LensFacing.FRONT)
         // default lens facing is now FRONT
-        val newDefaultLensFacing = repository.getCameraAppSettings().cameraLensFacing
+        val newDefaultLensFacing = repository.getCurrentDefaultCameraAppSettings().cameraLensFacing
         advanceUntilIdle()
 
         assertThat(initialDefaultLensFacing).isEqualTo(LensFacing.BACK)
@@ -123,10 +124,10 @@ class LocalSettingsRepositoryInstrumentedTest {
     @Test
     fun can_update_flash_mode() = runTest {
         // default flash mode starts as OFF
-        val initialFlashModeStatus = repository.getCameraAppSettings().flashMode
+        val initialFlashModeStatus = repository.getCurrentDefaultCameraAppSettings().flashMode
         repository.updateFlashModeStatus(FlashMode.ON)
         // default flash mode is now ON
-        val newFlashModeStatus = repository.getCameraAppSettings().flashMode
+        val newFlashModeStatus = repository.getCurrentDefaultCameraAppSettings().flashMode
         advanceUntilIdle()
 
         assertThat(initialFlashModeStatus).isEqualTo(FlashMode.OFF)
@@ -134,48 +135,16 @@ class LocalSettingsRepositoryInstrumentedTest {
     }
 
     @Test
-    fun can_update_available_camera_lens() = runTest {
-        // available cameras start true
-        val initialFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
-        val initialBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
-
-        repository.updateAvailableCameraLens(frontLensAvailable = false, backLensAvailable = false)
-        // available cameras now false
-        advanceUntilIdle()
-        val newFrontCamera = repository.getCameraAppSettings().isFrontCameraAvailable
-        val newBackCamera = repository.getCameraAppSettings().isBackCameraAvailable
-
-        assertThat(initialFrontCamera && initialBackCamera).isTrue()
-        assertThat(newFrontCamera || newBackCamera).isFalse()
-    }
-
-    @Test
     fun can_update_dynamic_range() = runTest {
-        val initialDynamicRange = repository.getCameraAppSettings().dynamicRange
+        val initialDynamicRange = repository.getCurrentDefaultCameraAppSettings().dynamicRange
 
         repository.updateDynamicRange(dynamicRange = DynamicRange.HLG10)
 
         advanceUntilIdle()
 
-        val newDynamicRange = repository.getCameraAppSettings().dynamicRange
+        val newDynamicRange = repository.getCurrentDefaultCameraAppSettings().dynamicRange
 
         assertThat(initialDynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(newDynamicRange).isEqualTo(DynamicRange.HLG10)
-    }
-
-    @Test
-    fun can_update_supported_dynamic_ranges() = runTest {
-        val initialSupportedDynamicRanges = repository.getCameraAppSettings().supportedDynamicRanges
-
-        repository.updateSupportedDynamicRanges(
-            supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10)
-        )
-
-        advanceUntilIdle()
-
-        val newSupportedDynamicRanges = repository.getCameraAppSettings().supportedDynamicRanges
-
-        assertThat(initialSupportedDynamicRanges).containsExactly(DynamicRange.SDR)
-        assertThat(newSupportedDynamicRanges).containsExactly(DynamicRange.SDR, DynamicRange.HLG10)
     }
 }

@@ -57,21 +57,25 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.forCurrentLens
 
 /**
  * The UI component for quick settings.
  */
 @Composable
 fun QuickSettingsScreenOverlay(
-    modifier: Modifier = Modifier,
     currentCameraSettings: CameraAppSettings,
-    isOpen: Boolean = false,
+    systemConstraints: SystemConstraints,
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
-    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
+    modifier: Modifier = Modifier,
+    isOpen: Boolean = false
 ) {
     var shouldShowQuickSetting by remember {
         mutableStateOf(IsExpandedQuickSetting.NONE)
@@ -110,6 +114,7 @@ fun QuickSettingsScreenOverlay(
         ) {
             ExpandedQuickSettingsUi(
                 currentCameraSettings = currentCameraSettings,
+                systemConstraints = systemConstraints,
                 shouldShowQuickSetting = shouldShowQuickSetting,
                 setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
                     shouldShowQuickSetting = enum
@@ -138,6 +143,7 @@ private enum class IsExpandedQuickSetting {
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
+    systemConstraints: SystemConstraints,
     onLensFaceClick: (newLensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
@@ -204,7 +210,8 @@ private fun ExpandedQuickSettingsUi(
                                 onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                enabled = currentCameraSettings.supportedDynamicRanges.size > 1
+                                enabled = systemConstraints.forCurrentLens(currentCameraSettings)
+                                    ?.let { it.supportedDynamicRanges.size > 1 } ?: false
                             )
                         }
                     }
@@ -227,6 +234,7 @@ fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             onLensFaceClick = { },
             onFlashModeClick = { },
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
@@ -243,10 +251,8 @@ fun ExpandedQuickSettingsUiPreview() {
 fun ExpandedQuickSettingsUiPreview_WithHdr() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
-            currentCameraSettings = CameraAppSettings(
-                supportedDynamicRanges = listOf(DynamicRange.SDR, DynamicRange.HLG10),
-                dynamicRange = DynamicRange.HLG10
-            ),
+            currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR,
             onLensFaceClick = { },
             onFlashModeClick = { },
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
@@ -257,3 +263,13 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
         )
     }
 }
+
+private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
+    TYPICAL_SYSTEM_CONSTRAINTS.copy(
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate {
+                (lensFacing, constraints) ->
+            lensFacing to constraints.copy(
+                supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+            )
+        }
+    )

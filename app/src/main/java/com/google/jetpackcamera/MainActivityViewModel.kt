@@ -30,9 +30,9 @@ import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    val settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository
 ) : ViewModel() {
-    val uiState: StateFlow<MainActivityUiState> = settingsRepository.cameraAppSettings.map {
+    val uiState: StateFlow<MainActivityUiState> = settingsRepository.defaultCameraAppSettings.map {
         Success(it)
     }.stateIn(
         scope = viewModelScope,
@@ -42,6 +42,6 @@ class MainActivityViewModel @Inject constructor(
 }
 
 sealed interface MainActivityUiState {
-    object Loading : MainActivityUiState
+    data object Loading : MainActivityUiState
     data class Success(val cameraAppSettings: CameraAppSettings) : MainActivityUiState
 }

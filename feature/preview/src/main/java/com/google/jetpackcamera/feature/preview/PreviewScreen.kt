@@ -23,6 +23,7 @@ import android.view.Display
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -56,9 +57,11 @@ import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 
 private const val TAG = "PreviewScreen"
 
@@ -70,6 +73,7 @@ fun PreviewScreen(
     onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
+    modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
@@ -91,10 +95,11 @@ fun PreviewScreen(
         }
     }
 
-    when (previewUiState.cameraState) {
-        CameraState.NOT_READY -> LoadingScreen()
-        CameraState.READY -> ContentScreen(
-            previewUiState = previewUiState,
+    when (val currentUiState = previewUiState) {
+        is PreviewUiState.NotReady -> LoadingScreen()
+        is PreviewUiState.Ready -> ContentScreen(
+            modifier = modifier,
+            previewUiState = currentUiState,
             previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
             surfaceRequest = surfaceRequest,
@@ -122,10 +127,11 @@ fun PreviewScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
-    previewUiState: PreviewUiState,
+    previewUiState: PreviewUiState.Ready,
     previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
+    modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
@@ -149,12 +155,10 @@ private fun ContentScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: () -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val blinkState = remember { BlinkState(coroutineScope = scope) }
-    Scaffold(snackbarHost = {
-        SnackbarHost(hostState = snackbarHostState)
-    }) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) {
         val lensFacing = remember(previewUiState) {
             previewUiState.currentCameraSettings.cameraLensFacing
         }
@@ -164,78 +168,82 @@ private fun ContentScreen(
                 onSetLensFacing(lensFacing.flip())
             }
         }
-        // display camera feed. this stays behind everything else
-        PreviewDisplay(
-            onFlipCamera = onFlipCamera,
-            onTapToFocus = onTapToFocus,
-            onZoomChange = onChangeZoomScale,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
-            surfaceRequest = surfaceRequest,
-            blinkState = blinkState
-        )
 
-        QuickSettingsScreenOverlay(
-            modifier = Modifier,
-            isOpen = previewUiState.quickSettingsIsOpen,
-            toggleIsOpen = onToggleQuickSettings,
-            currentCameraSettings = previewUiState.currentCameraSettings,
-            onLensFaceClick = onSetLensFacing,
-            onFlashModeClick = onChangeFlash,
-            onAspectRatioClick = onChangeAspectRatio,
-            onCaptureModeClick = onChangeCaptureMode,
-            onDynamicRangeClick = onChangeDynamicRange
-            // onTimerClick = {}/*TODO*/
-        )
-        // relative-grid style overlay on top of preview display
-        CameraControlsOverlay(
-            previewUiState = previewUiState,
-            onNavigateToSettings = onNavigateToSettings,
-            previewMode = previewMode,
-            onFlipCamera = onFlipCamera,
-            onChangeFlash = onChangeFlash,
-            onToggleQuickSettings = onToggleQuickSettings,
-            onCaptureImage = onCaptureImage,
-            onCaptureImageWithUri = onCaptureImageWithUri,
-            onStartVideoRecording = onStartVideoRecording,
-            onStopVideoRecording = onStopVideoRecording,
-            blinkState = blinkState
-        )
-        // displays toast when there is a message to show
-        if (previewUiState.toastMessageToShow != null) {
-            TestableToast(
-                modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
-                toastMessage = previewUiState.toastMessageToShow,
-                onToastShown = onToastShown
+        val scope = rememberCoroutineScope()
+        val blinkState = remember { BlinkState(coroutineScope = scope) }
+        Box(modifier.fillMaxSize()) {
+            // display camera feed. this stays behind everything else
+            PreviewDisplay(
+                onFlipCamera = onFlipCamera,
+                onTapToFocus = onTapToFocus,
+                onZoomChange = onChangeZoomScale,
+                aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
+                surfaceRequest = surfaceRequest,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                blinkState = blinkState
+            )
+
+            QuickSettingsScreenOverlay(
+                modifier = Modifier,
+                isOpen = previewUiState.quickSettingsIsOpen,
+                toggleIsOpen = onToggleQuickSettings,
+                currentCameraSettings = previewUiState.currentCameraSettings,
+                systemConstraints = previewUiState.systemConstraints,
+                onLensFaceClick = onSetLensFacing,
+                onFlashModeClick = onChangeFlash,
+                onAspectRatioClick = onChangeAspectRatio,
+                onCaptureModeClick = onChangeCaptureMode,
+                onDynamicRangeClick = onChangeDynamicRange // onTimerClick = {}/*TODO*/
+            )
+            // relative-grid style overlay on top of preview display
+            CameraControlsOverlay(
+                previewUiState = previewUiState,
+                onNavigateToSettings = onNavigateToSettings,
+                previewMode = previewMode,
+                onFlipCamera = onFlipCamera,
+                onChangeFlash = onChangeFlash,
+                onToggleQuickSettings = onToggleQuickSettings,
+                onCaptureImage = onCaptureImage,
+                onCaptureImageWithUri = onCaptureImageWithUri,
+                onStartVideoRecording = onStartVideoRecording,
+                onStopVideoRecording = onStopVideoRecording,
+                blinkState = blinkState
+            )
+            // displays toast when there is a message to show
+            if (previewUiState.toastMessageToShow != null) {
+                TestableToast(
+                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
+                    toastMessage = previewUiState.toastMessageToShow,
+                    onToastShown = onToastShown
+                )
+            }
+
+            if (previewUiState.snackBarToShow != null) {
+                TestableSnackBar(
+                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
+                    snackBarToShow = previewUiState.snackBarToShow,
+                    scope = scope,
+                    snackbarHostState = snackbarHostState,
+                    onSnackBarResult = onSnackBarResult
+                )
+            }
+            // Screen flash overlay that stays on top of everything but invisible normally. This should
+            // not be enabled based on whether screen flash is enabled because a previous image capture
+            // may still be running after flash mode change and clear actions (e.g. brightness restore)
+            // may need to be handled later. Compose smart recomposition should be able to optimize this
+            // if the relevant states are no longer changing.
+            ScreenFlashScreen(
+                screenFlashUiState = screenFlashUiState,
+                onInitialBrightnessCalculated = onClearUiScreenBrightness
             )
         }
-
-        if (previewUiState.snackBarToShow != null) {
-            TestableSnackBar(
-                modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
-                snackBarToShow = previewUiState.snackBarToShow,
-                scope = scope,
-                snackbarHostState = snackbarHostState,
-                onSnackBarResult = onSnackBarResult
-            )
-        }
-
-        // Screen flash overlay that stays on top of everything but invisible normally. This should
-        // not be enabled based on whether screen flash is enabled because a previous image capture
-        // may still be running after flash mode change and clear actions (e.g. brightness restore)
-        // may need to be handled later. Compose smart recomposition should be able to optimize this
-        // if the relevant states are no longer changing.
-        ScreenFlashScreen(
-            screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = onClearUiScreenBrightness
-        )
     }
 }
 
 @Composable
-private fun LoadingScreen() {
+private fun LoadingScreen(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color.Black),
         verticalArrangement = Arrangement.Center,
@@ -251,7 +259,7 @@ private fun LoadingScreen() {
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            previewUiState = PreviewUiState(),
+            previewUiState = FAKE_PREVIEW_UI_STATE_READY,
             previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
@@ -264,7 +272,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_WhileRecording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = PreviewUiState(
+            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
             previewMode = PreviewMode.StandardMode {},
@@ -273,3 +281,8 @@ private fun ContentScreen_WhileRecording() {
         )
     }
 }
+
+private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
+    currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
+    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+)

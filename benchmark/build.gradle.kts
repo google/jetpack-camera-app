@@ -21,7 +21,7 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.benchmark"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -35,7 +35,7 @@ android {
     defaultConfig {
         //Our app has a minSDK of 21, but in order for the benchmark tool to function, it must be 23
         minSdk = 23
-        targetSdk = 34
+        targetSdk = libs.versions.targetSdk.get().toInt()
 
         // allows the benchmark to be run on an emulator
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] =
