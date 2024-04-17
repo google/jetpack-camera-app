@@ -68,7 +68,6 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -235,14 +234,11 @@ class BlinkState(
 
 @Composable
 fun StabilizationIcon(
-    supportedStabilizationMode: List<SupportedStabilizationMode>,
     videoStabilization: Stabilization,
     previewStabilization: Stabilization,
     modifier: Modifier = Modifier
 ) {
-    if (supportedStabilizationMode.isNotEmpty() &&
-        (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
-    ) {
+    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
         val descriptionText = if (videoStabilization == Stabilization.ON) {
             stringResource(id = R.string.stabilization_icon_description_preview_and_video)
         } else {

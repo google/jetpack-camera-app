@@ -27,9 +27,9 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackBarData
+import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -42,8 +42,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -54,12 +56,15 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraUseCase: CameraUseCase
+    private val cameraUseCase: CameraUseCase,
+    private val constraintsRepository: ConstraintsRepository
+
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
-        MutableStateFlow(PreviewUiState(currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS))
+        MutableStateFlow(PreviewUiState.NotReady)
 
-    val previewUiState: StateFlow<PreviewUiState> = _previewUiState
+    val previewUiState: StateFlow<PreviewUiState> =
+        _previewUiState.asStateFlow()
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
@@ -73,29 +78,33 @@ class PreviewViewModel @Inject constructor(
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize()
-        _previewUiState.emit(
-            previewUiState.value.copy(
-                cameraState = CameraState.READY
-            )
-        )
     }
 
     init {
         viewModelScope.launch {
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
+                constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getZoomScale()
-            ) { cameraAppSettings, zoomScale ->
-                previewUiState.value.copy(
-                    currentCameraSettings = cameraAppSettings,
-                    zoomScale = zoomScale
-                )
-            }.collect {
-                // TODO: only update settings that were actually changed
-                // currently resets all "quick" settings to stored settings
-                Log.d(TAG, "UPDATE UI STATE: ${it.zoomScale}")
-                _previewUiState.emit(it)
-            }
+            ) { cameraAppSettings, systemConstraints, zoomScale ->
+                _previewUiState.update { old ->
+                    when (old) {
+                        is PreviewUiState.Ready ->
+                            old.copy(
+                                currentCameraSettings = cameraAppSettings,
+                                systemConstraints = systemConstraints,
+                                zoomScale = zoomScale
+                            )
+
+                        is PreviewUiState.NotReady ->
+                            PreviewUiState.Ready(
+                                currentCameraSettings = cameraAppSettings,
+                                systemConstraints = systemConstraints,
+                                zoomScale = zoomScale
+                            )
+                    }
+                }
+            }.collect {}
         }
     }
 
@@ -142,54 +151,15 @@ class PreviewViewModel @Inject constructor(
     /** Sets the camera to a designated lens facing */
     fun setLensFacing(newLensFacing: LensFacing) {
         viewModelScope.launch {
-            // TODO(tm): Move constraint checks into CameraUseCase
-            if ((
-                    newLensFacing == LensFacing.BACK &&
-                        previewUiState.value.currentCameraSettings.isBackCameraAvailable
-                    ) ||
-                (
-                    newLensFacing == LensFacing.FRONT &&
-                        previewUiState.value.currentCameraSettings.isFrontCameraAvailable
-                    )
-            ) {
-                // apply to cameraUseCase
-                cameraUseCase.setLensFacing(newLensFacing)
-            }
+            // apply to cameraUseCase
+            cameraUseCase.setLensFacing(newLensFacing)
         }
     }
 
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
-                try {
-                    cameraUseCase.takePicture()
-                    // todo: remove toast after postcapture screen implemented
-                    _previewUiState.emit(
-                        previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(
-                                stringResource = R.string.toast_image_capture_success,
-                                withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
-                            )
-                        )
-                    )
-                    Log.d(TAG, "cameraUseCase.takePicture success")
-                } catch (exception: Exception) {
-                    // todo: remove toast after postcapture screen implemented
-                    _previewUiState.emit(
-                        previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(
-                                stringResource = R.string.toast_capture_failure,
-                                withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_FAILURE_TAG
-                            )
-                        )
-                    )
-                    Log.d(TAG, "cameraUseCase.takePicture error")
-                    Log.d(TAG, exception.toString())
-                }
-            }
+            captureImageInternal(cameraUseCase::takePicture)
         }
     }
 
@@ -201,38 +171,49 @@ class PreviewViewModel @Inject constructor(
     ) {
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
-            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
-                try {
-                    val savedUri =
-                        cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri)
-                            .savedUri
-                    // todo: remove toast after postcapture screen implemented
-                    _previewUiState.emit(
-                        previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(
-                                stringResource = R.string.toast_image_capture_success,
-                                withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_SUCCESS_TAG
-                            )
-                        )
-                    )
-                    onImageCapture(ImageCaptureEvent.ImageSaved(savedUri))
-                    Log.d(TAG, "cameraUseCase.takePicture success")
-                } catch (exception: Exception) {
-                    // todo: remove toast after postcapture screen implemented
-                    _previewUiState.emit(
-                        previewUiState.value.copy(
-                            snackBarToShow = SnackBarData(
-                                stringResource = R.string.toast_capture_failure,
-                                withDismissAction = true,
-                                testTag = IMAGE_CAPTURE_FAILURE_TAG
-                            )
-                        )
-                    )
-                    Log.d(TAG, "cameraUseCase.takePicture error")
-                    Log.d(TAG, exception.toString())
+            captureImageInternal(
+                doTakePicture = {
+                    cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri).savedUri
+                },
+                onSuccess = { savedUri -> onImageCapture(ImageCaptureEvent.ImageSaved(savedUri)) },
+                onFailure = { exception ->
                     onImageCapture(ImageCaptureEvent.ImageCaptureError(exception))
                 }
+            )
+        }
+    }
+
+    private suspend fun <T> captureImageInternal(
+        doTakePicture: suspend () -> T,
+        onSuccess: (T) -> Unit = {},
+        onFailure: (exception: Exception) -> Unit = {}
+    ) {
+        try {
+            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
+                doTakePicture()
+            }.also { result ->
+                onSuccess(result)
+            }
+            Log.d(TAG, "cameraUseCase.takePicture success")
+            SnackBarData(
+                stringResource = R.string.toast_image_capture_success,
+                withDismissAction = true,
+                testTag = IMAGE_CAPTURE_SUCCESS_TAG
+            )
+        } catch (exception: Exception) {
+            onFailure(exception)
+            Log.d(TAG, "cameraUseCase.takePicture error", exception)
+            SnackBarData(
+                stringResource = R.string.toast_capture_failure,
+                withDismissAction = true,
+                testTag = IMAGE_CAPTURE_FAILURE_TAG
+            )
+        }.also { snackBarData ->
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    // todo: remove toast after postcapture screen implemented
+                    snackBarToShow = snackBarData
+                ) ?: old
             }
         }
     }
@@ -242,40 +223,35 @@ class PreviewViewModel @Inject constructor(
         recordingJob = viewModelScope.launch {
             try {
                 cameraUseCase.startVideoRecording {
-                    when (it) {
+                    val snackBarData = when (it) {
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
-                            viewModelScope.launch {
-                                _previewUiState.emit(
-                                    previewUiState.value.copy(
-                                        snackBarToShow = SnackBarData(
-                                            stringResource = R.string.toast_video_capture_success,
-                                            withDismissAction = true
-                                        )
-                                    )
-                                )
-                            }
-
-                        else -> viewModelScope.launch {
-                            _previewUiState.emit(
-                                previewUiState.value.copy(
-                                    snackBarToShow = SnackBarData(
-                                        stringResource = R.string.toast_video_capture_failure,
-                                        withDismissAction = true
-                                    )
-                                )
+                            SnackBarData(
+                                stringResource = R.string.toast_video_capture_success,
+                                withDismissAction = true
                             )
+                        else ->
+                            SnackBarData(
+                                stringResource = R.string.toast_video_capture_failure,
+                                withDismissAction = true
+                            )
+                    }
+
+                    viewModelScope.launch {
+                        _previewUiState.update { old ->
+                            (old as? PreviewUiState.Ready)?.copy(
+                                snackBarToShow = snackBarData
+                            ) ?: old
                         }
                     }
                 }
-                _previewUiState.emit(
-                    previewUiState.value.copy(
+                _previewUiState.update { old ->
+                    (old as? PreviewUiState.Ready)?.copy(
                         videoRecordingState = VideoRecordingState.ACTIVE
-                    )
-                )
+                    ) ?: old
+                }
                 Log.d(TAG, "cameraUseCase.startRecording success")
             } catch (exception: IllegalStateException) {
-                Log.d(TAG, "cameraUseCase.startVideoRecording error")
-                Log.d(TAG, exception.toString())
+                Log.d(TAG, "cameraUseCase.startVideoRecording error", exception)
             }
         }
     }
@@ -283,11 +259,11 @@ class PreviewViewModel @Inject constructor(
     fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
                     videoRecordingState = VideoRecordingState.INACTIVE
-                )
-            )
+                ) ?: old
+            }
         }
         cameraUseCase.stopVideoRecording()
         recordingJob?.cancel()
@@ -305,16 +281,12 @@ class PreviewViewModel @Inject constructor(
 
     // modify ui values
     fun toggleQuickSettings() {
-        toggleQuickSettings(!previewUiState.value.quickSettingsIsOpen)
-    }
-
-    private fun toggleQuickSettings(isOpen: Boolean) {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
-                    quickSettingsIsOpen = isOpen
-                )
-            )
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    quickSettingsIsOpen = !old.quickSettingsIsOpen
+                ) ?: old
+            }
         }
     }
 
@@ -329,27 +301,27 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-     * Sets current value of [PreviewUiState.toastMessageToShow] to null.
+     * Sets current value of [PreviewUiState.Ready.toastMessageToShow] to null.
      */
     fun onToastShown() {
         viewModelScope.launch {
             // keeps the composable up on screen longer to be detected by UiAutomator
             delay(2.seconds)
-            _previewUiState.emit(
-                previewUiState.value.copy(
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
                     toastMessageToShow = null
-                )
-            )
+                ) ?: old
+            }
         }
     }
 
     fun onSnackBarResult() {
         viewModelScope.launch {
-            _previewUiState.emit(
-                previewUiState.value.copy(
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
                     snackBarToShow = null
-                )
-            )
+                ) ?: old
+            }
         }
     }
 
