@@ -119,7 +119,7 @@ fun PreviewScreen(
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToastShown = viewModel::onToastShown,
             onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult
+            resetSnackBarData = viewModel::resetSnackBarData
         )
     }
 }
@@ -153,7 +153,7 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
-    onSnackBarResult: () -> Unit = {}
+    resetSnackBarData: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -224,7 +224,7 @@ private fun ContentScreen(
                     snackBarToShow = previewUiState.snackBarToShow,
                     scope = scope,
                     snackbarHostState = snackbarHostState,
-                    onSnackBarResult = onSnackBarResult
+                    resetSnackBarData = resetSnackBarData
                 )
             }
             // Screen flash overlay that stays on top of everything but invisible normally. This should
