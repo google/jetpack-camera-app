@@ -117,8 +117,11 @@ fun TestableSnackBar(
     snackBarToShow: SnackBarData,
     scope: CoroutineScope,
     snackbarHostState: SnackbarHostState,
-    onSnackBarResult: () -> Unit
+    onSnackBarResult: () -> Unit = {},
+    resetSnackBarData: () -> Unit
 ) {
+    // Reset SnackBarData in PreviewUiState to null since the SnackBar is guaranteed to show
+    resetSnackBarData()
     Box(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
@@ -127,6 +130,10 @@ fun TestableSnackBar(
     ) {
         val context = LocalContext.current
         scope.launch {
+            // Dismiss actively shown SnackBar if any before showing a new one
+            if (snackbarHostState.currentSnackbarData != null) {
+                snackbarHostState.currentSnackbarData!!.dismiss()
+            }
             val result =
                 snackbarHostState.showSnackbar(
                     message = context.getString(snackBarToShow.stringResource),
@@ -142,9 +149,7 @@ fun TestableSnackBar(
                 SnackbarResult.ActionPerformed -> {
                     onSnackBarResult()
                 }
-                SnackbarResult.Dismissed -> {
-                    onSnackBarResult()
-                }
+                SnackbarResult.Dismissed -> {}
             }
         }
         Log.d(

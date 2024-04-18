@@ -315,7 +315,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun onSnackBarResult() {
+    fun resetSnackBarData() {
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
