@@ -52,7 +52,7 @@ import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.TestableSnackBar
+import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -119,7 +119,7 @@ fun PreviewScreen(
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToastShown = viewModel::onToastShown,
             onRequestWindowColorMode = onRequestWindowColorMode,
-            resetSnackBarData = viewModel::resetSnackBarData
+            onSnackBarResult = viewModel::onSnackBarResult
         )
     }
 }
@@ -153,7 +153,7 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
-    resetSnackBarData: () -> Unit = {}
+    onSnackBarResult: (String) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -219,12 +219,11 @@ private fun ContentScreen(
             }
 
             if (previewUiState.snackBarToShow != null) {
-                TestableSnackBar(
+                TestableSnackbar(
                     modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
-                    snackBarToShow = previewUiState.snackBarToShow,
-                    scope = scope,
+                    snackbarToShow = previewUiState.snackBarToShow,
                     snackbarHostState = snackbarHostState,
-                    resetSnackBarData = resetSnackBarData
+                    onSnackbarResult = onSnackBarResult
                 )
             }
             // Screen flash overlay that stays on top of everything but invisible normally. This should
