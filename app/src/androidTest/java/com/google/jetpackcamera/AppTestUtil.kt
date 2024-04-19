@@ -22,4 +22,7 @@ val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     if (Build.VERSION.SDK_INT <= 28) {
         add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
+    if(Build.VERSION.SDK_INT < 32){
+        add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
 }

@@ -20,6 +20,7 @@ import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.os.Build
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -70,7 +71,7 @@ fun JcaApp(
             )
     } else {
         storagePermissionState =
-            rememberMultiplePermissionsState(permissions = listOf(READ_EXTERNAL_STORAGE))
+            rememberMultiplePermissionsState(permissions = listOf(READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE))
     }
     if (cameraPermissionState.allPermissionsGranted && (storagePermissionState.allPermissionsGranted || storagePermissionState.permissions[0].status.isGranted)) {
         JetpackCameraNavHost(
