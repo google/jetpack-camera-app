@@ -127,6 +127,8 @@ dependencies {
     //Tracing
     implementation(libs.androidx.tracing)
 
+    implementation(libs.kotlinx.atomicfu)
+
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
