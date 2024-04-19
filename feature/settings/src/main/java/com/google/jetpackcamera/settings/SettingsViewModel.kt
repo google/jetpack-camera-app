@@ -20,15 +20,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
@@ -38,121 +40,78 @@ private const val TAG = "SettingsViewModel"
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
 
-    private val _settingsUiState: MutableStateFlow<SettingsUiState> =
-        MutableStateFlow(
-            SettingsUiState(
-                DEFAULT_CAMERA_APP_SETTINGS,
-                disabled = true
+    val settingsUiState: StateFlow<SettingsUiState> =
+        combine(
+            settingsRepository.defaultCameraAppSettings,
+            constraintsRepository.systemConstraints.filterNotNull()
+        ) { updatedSettings, constraints ->
+            SettingsUiState.Enabled(
+                cameraAppSettings = updatedSettings,
+                systemConstraints = constraints
             )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = SettingsUiState.Disabled
         )
-    val settingsUiState: StateFlow<SettingsUiState> = _settingsUiState
-
-    init {
-        // updates our view model as soon as datastore is updated
-        viewModelScope.launch {
-            settingsRepository.cameraAppSettings.collect { updatedSettings ->
-                _settingsUiState.emit(
-                    settingsUiState.value.copy(
-                        cameraAppSettings = updatedSettings,
-                        disabled = false
-                    )
-                )
-
-                Log.d(
-                    TAG,
-                    "updated setting ${settingsRepository.getCameraAppSettings().captureMode}"
-                )
-            }
-        }
-        viewModelScope.launch {
-            _settingsUiState.emit(
-                settingsUiState.value.copy(
-                    disabled = false
-                )
-            )
-        }
-    }
 
     fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
             settingsRepository.updateDefaultLensFacing(lensFacing)
-            Log.d(
-                TAG,
-                "set camera default facing: " +
-                    "${settingsRepository.getCameraAppSettings().cameraLensFacing}"
-            )
+            Log.d(TAG, "set camera default facing: $lensFacing")
         }
     }
 
     fun setDarkMode(darkMode: DarkMode) {
         viewModelScope.launch {
             settingsRepository.updateDarkModeStatus(darkMode)
-            Log.d(
-                TAG,
-                "set dark mode theme: ${settingsRepository.getCameraAppSettings().darkMode}"
-            )
+            Log.d(TAG, "set dark mode theme: $darkMode")
         }
     }
 
     fun setFlashMode(flashMode: FlashMode) {
         viewModelScope.launch {
             settingsRepository.updateFlashModeStatus(flashMode)
+            Log.d(TAG, "set flash mode: $flashMode")
         }
     }
 
     fun setTargetFrameRate(targetFrameRate: Int) {
         viewModelScope.launch {
             settingsRepository.updateTargetFrameRate(targetFrameRate)
+            Log.d(TAG, "set target frame rate: $targetFrameRate")
         }
     }
 
     fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             settingsRepository.updateAspectRatio(aspectRatio)
-            Log.d(
-                TAG,
-                "set aspect ratio: " +
-                    "${settingsRepository.getCameraAppSettings().aspectRatio}"
-            )
+            Log.d(TAG, "set aspect ratio: $aspectRatio")
         }
     }
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
             settingsRepository.updateCaptureMode(captureMode)
-
-            Log.d(
-                TAG,
-                "set default capture mode: " +
-                    "${settingsRepository.getCameraAppSettings().captureMode}"
-            )
+            Log.d(TAG, "set default capture mode: $captureMode")
         }
     }
 
     fun setPreviewStabilization(stabilization: Stabilization) {
         viewModelScope.launch {
             settingsRepository.updatePreviewStabilization(stabilization)
-
-            Log.d(
-                TAG,
-                "set preview stabilization: " +
-                    "${settingsRepository.getCameraAppSettings().previewStabilization}"
-            )
+            Log.d(TAG, "set preview stabilization: $stabilization")
         }
     }
 
     fun setVideoStabilization(stabilization: Stabilization) {
         viewModelScope.launch {
             settingsRepository.updateVideoStabilization(stabilization)
-
-            Log.d(
-                TAG,
-                "set video stabilization: " +
-                    "${settingsRepository.getCameraAppSettings().previewStabilization}"
-            )
+            Log.d(TAG, "set video stabilization: $stabilization")
         }
     }
 }

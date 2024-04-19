@@ -32,7 +32,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -49,7 +48,7 @@ class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>
 ) : SettingsRepository {
 
-    override val cameraAppSettings = jcaSettings.data
+    override val defaultCameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
                 cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
@@ -65,30 +64,21 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
                     else -> FlashMode.OFF
                 },
-                isFrontCameraAvailable = it.frontCameraAvailable,
-                isBackCameraAvailable = it.backCameraAvailable,
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
-                supportedStabilizationModes = getSupportedStabilization(
-                    previewSupport = it.stabilizePreviewSupported,
-                    videoSupport = it.stabilizeVideoSupported
-                ),
                 targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
-                    DynamicRange.fromProto(dynRngProto)
-                },
-                supportedFixedFrameRates = it.supportedFrameRatesList
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
             )
         }
 
-    override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
+    override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
+        defaultCameraAppSettings.first()
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
@@ -124,57 +114,11 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateAvailableCameraLens(
-        frontLensAvailable: Boolean,
-        backLensAvailable: Boolean
-    ) {
-        // if a front or back lens is not present, the option to change
-        // the direction of the camera should be disabled
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setFrontCameraAvailable(frontLensAvailable)
-                .setBackCameraAvailable(backLensAvailable)
-                .build()
-        }
-    }
-
     override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setTargetFrameRate(targetFrameRate)
                 .build()
-        }
-    }
-
-    override suspend fun updateSupportedFixedFrameRate(
-        supportedFrameRates: Set<Int>,
-        currentTargetFrameRate: Int
-    ) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .clearSupportedFrameRates()
-                .addAllSupportedFrameRates(supportedFrameRates)
-                .build()
-        }
-        when (currentTargetFrameRate) {
-            TARGET_FPS_NONE -> {}
-            TARGET_FPS_15 -> {
-                if (!supportedFrameRates.contains(TARGET_FPS_15)) {
-                    updateTargetFrameRate(TARGET_FPS_NONE)
-                }
-            }
-
-            TARGET_FPS_30 -> {
-                if (!supportedFrameRates.contains(30)) {
-                    updateTargetFrameRate(TARGET_FPS_NONE)
-                }
-            }
-
-            TARGET_FPS_60 -> {
-                if (!supportedFrameRates.contains(60)) {
-                    updateTargetFrameRate(TARGET_FPS_NONE)
-                }
-            }
         }
     }
 
@@ -229,53 +173,10 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizeVideoSupported(isSupported)
-                .build()
-        }
-    }
-
-    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizePreviewSupported(isSupported)
-                .build()
-        }
-    }
-
-    private fun getSupportedStabilization(
-        previewSupport: Boolean,
-        videoSupport: Boolean
-    ): List<SupportedStabilizationMode> {
-        return buildList {
-            if (previewSupport) {
-                add(SupportedStabilizationMode.ON)
-            }
-            if (videoSupport) {
-                add(SupportedStabilizationMode.HIGH_QUALITY)
-            }
-        }
-    }
-
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setDynamicRangeStatus(dynamicRange.toProto())
-                .build()
-        }
-    }
-
-    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .clearSupportedDynamicRanges()
-                .addAllSupportedDynamicRanges(
-                    supportedDynamicRanges.map {
-                        it.toProto()
-                    }
-                )
                 .build()
         }
     }

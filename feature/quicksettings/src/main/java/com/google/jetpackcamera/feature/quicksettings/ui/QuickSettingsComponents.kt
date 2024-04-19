@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.feature.quicksettings.ui
-
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,16 +23,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,12 +44,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 
@@ -81,6 +85,35 @@ fun ExpandedQuickSetRatio(
             isHighlightEnabled = true
         )
     }
+}
+
+@Composable
+fun QuickSetHdr(
+    modifier: Modifier = Modifier,
+    onClick: (dynamicRange: DynamicRange) -> Unit,
+    selectedDynamicRange: DynamicRange,
+    hdrDynamicRange: DynamicRange,
+    enabled: Boolean = true
+) {
+    val enum =
+        when (selectedDynamicRange) {
+            DynamicRange.SDR -> CameraDynamicRange.SDR
+            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
+                hdrDynamicRange
+            } else {
+                DynamicRange.SDR
+            }
+            onClick(newDynamicRange)
+        },
+        isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
+        enabled = enabled
+    )
 }
 
 @Composable
@@ -193,7 +226,7 @@ fun ToggleQuickSettingsButton(
     ) {
         // dropdown icon
         Icon(
-            painter = painterResource(R.drawable.baseline_expand_more_72),
+            imageVector = Icons.Filled.ExpandMore,
             contentDescription = if (isOpen) {
                 stringResource(R.string.quick_settings_dropdown_open_description)
             } else {
@@ -217,15 +250,17 @@ fun QuickSettingUiItem(
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isHighLighted: Boolean = false
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     QuickSettingUiItem(
         modifier = modifier,
-        drawableResId = enum.getDrawableResId(),
+        painter = enum.getPainter(),
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
-        isHighLighted = isHighLighted
+        isHighLighted = isHighLighted,
+        enabled = enabled
     )
 }
 
@@ -234,35 +269,40 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
-    @DrawableRes drawableResId: Int,
     text: String,
+    painter: Painter,
     accessibilityText: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isHighLighted: Boolean = false
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     Column(
         modifier =
         modifier
             .wrapContentSize()
             .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable {
-                onClick()
-            },
+            .clickable(onClick = onClick, enabled = enabled),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val tint = if (isHighLighted) Color.Yellow else Color.White
-        Icon(
-            painter = painterResource(drawableResId),
-            contentDescription = accessibilityText,
-            tint = tint,
-            modifier =
-            Modifier
-                .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
-        )
+        val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
+            // When in disabled state, material3 guidelines say the element's opacity should be 38%
+            // See: https://m3.material.io/foundations/interaction/states/applying-states#3c3032e8-b07a-42ac-a508-a32f573cc7e1
+            // and: https://developer.android.com/develop/ui/compose/designsystems/material2-material3#emphasis-and
+            if (!enabled) it.copy(alpha = 0.38f) else it
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Icon(
+                painter = painter,
+                contentDescription = accessibilityText,
+                modifier = Modifier.size(
+                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
+                )
+            )
 
-        Text(text = text, color = tint, textAlign = TextAlign.Center)
+            Text(text = text, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -272,7 +312,7 @@ fun QuickSettingUiItem(
 @Composable
 fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Icon(
-        painter = painterResource(enum.getDrawableResId()),
+        painter = enum.getPainter(),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
         modifier = modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))

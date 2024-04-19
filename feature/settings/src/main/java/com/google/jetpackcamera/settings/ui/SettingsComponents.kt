@@ -19,9 +19,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -56,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -110,7 +107,8 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun DefaultCameraFacing(
-    cameraAppSettings: CameraAppSettings,
+    settingValue: Boolean,
+    enabled: Boolean,
     setDefaultLensFacing: (LensFacing) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -122,9 +120,8 @@ fun DefaultCameraFacing(
         onSwitchChanged = { on ->
             setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
         },
-        settingValue = cameraAppSettings.cameraLensFacing == LensFacing.FRONT,
-        enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+        settingValue = settingValue,
+        enabled = enabled
     )
 }
 
@@ -278,7 +275,7 @@ fun CaptureModeSetting(
 @Composable
 fun TargetFpsSetting(
     currentTargetFps: Int,
-    supportedFps: List<Int>,
+    supportedFps: Set<Int>,
     setTargetFps: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -362,7 +359,7 @@ fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
     currentTargetFps: Int,
-    supportedStabilizationMode: List<SupportedStabilizationMode>,
+    supportedStabilizationMode: Set<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
     setPreviewStabilization: (Stabilization) -> Unit,
     modifier: Modifier = Modifier
@@ -400,7 +397,11 @@ fun StabilizationSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(id = R.string.lens_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
 
                 // on (preview) selector
                 // disabled if target fps != (30 or off)

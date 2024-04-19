@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 class MainActivityViewModel @Inject constructor(
     settingsRepository: SettingsRepository
 ) : ViewModel() {
-    val uiState: StateFlow<MainActivityUiState> = settingsRepository.cameraAppSettings.map {
+    val uiState: StateFlow<MainActivityUiState> = settingsRepository.defaultCameraAppSettings.map {
         Success(it)
     }.stateIn(
         scope = viewModelScope,

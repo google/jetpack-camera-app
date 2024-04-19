@@ -15,25 +15,30 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import androidx.camera.core.CameraSelector
+import com.google.jetpackcamera.feature.preview.ui.SnackBarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.SystemConstraints
 
 /**
  * Defines the current state of the [PreviewScreen].
  */
-data class PreviewUiState(
-    val cameraState: CameraState = CameraState.NOT_READY,
-    // "quick" settings
-    val currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-    val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
-    val zoomScale: Float = 1f,
-    val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
-    val quickSettingsIsOpen: Boolean = false,
-    // todo: remove after implementing post capture screen
-    val toastMessageToShow: ToastMessage? = null
-)
+sealed interface PreviewUiState {
+    object NotReady : PreviewUiState
+
+    data class Ready(
+        // "quick" settings
+        val currentCameraSettings: CameraAppSettings,
+        val systemConstraints: SystemConstraints,
+        val zoomScale: Float = 1f,
+        val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
+        val quickSettingsIsOpen: Boolean = false,
+
+        // todo: remove after implementing post capture screen
+        val toastMessageToShow: ToastMessage? = null,
+        val snackBarToShow: SnackBarData? = null
+    ) : PreviewUiState
+}
 
 /**
  * Defines the current state of Video Recording
@@ -48,19 +53,4 @@ enum class VideoRecordingState {
      * Camera is currently recording a video
      */
     ACTIVE
-}
-
-/**
- * Defines the current state of the camera.
- */
-enum class CameraState {
-    /**
-     * Camera hasn't been initialized.
-     */
-    NOT_READY,
-
-    /**
-     * Camera is open and presenting a preview stream.
-     */
-    READY
 }

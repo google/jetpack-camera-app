@@ -38,9 +38,10 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode,
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val permissionState =
@@ -50,6 +51,7 @@ fun JcaApp(
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode,
+            onRequestWindowColorMode = onRequestWindowColorMode,
             modifier = modifier
         )
     } else {
@@ -62,8 +64,9 @@ fun JcaApp(
 
 @Composable
 private fun JetpackCameraNavHost(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     previewMode: PreviewMode,
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
@@ -72,6 +75,7 @@ private fun JetpackCameraNavHost(
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onRequestWindowColorMode = onRequestWindowColorMode,
                 previewMode = previewMode
             )
         }

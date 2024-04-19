@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,21 +39,28 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
+import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.forCurrentLens
 
 /**
  * The UI component for quick settings.
@@ -60,11 +68,13 @@ import com.google.jetpackcamera.settings.model.LensFacing
 @Composable
 fun QuickSettingsScreenOverlay(
     currentCameraSettings: CameraAppSettings,
+    systemConstraints: SystemConstraints,
     toggleIsOpen: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     modifier: Modifier = Modifier,
     isOpen: Boolean = false
 ) {
@@ -105,6 +115,7 @@ fun QuickSettingsScreenOverlay(
         ) {
             ExpandedQuickSettingsUi(
                 currentCameraSettings = currentCameraSettings,
+                systemConstraints = systemConstraints,
                 shouldShowQuickSetting = shouldShowQuickSetting,
                 setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
                     shouldShowQuickSetting = enum
@@ -112,7 +123,8 @@ fun QuickSettingsScreenOverlay(
                 onLensFaceClick = onLensFaceClick,
                 onFlashModeClick = onFlashModeClick,
                 onAspectRatioClick = onAspectRatioClick,
-                onCaptureModeClick = onCaptureModeClick
+                onCaptureModeClick = onCaptureModeClick,
+                onDynamicRangeClick = onDynamicRangeClick
             )
         }
     } else {
@@ -133,12 +145,14 @@ private enum class IsExpandedQuickSetting {
 @Composable
 private fun ExpandedQuickSettingsUi(
     currentCameraSettings: CameraAppSettings,
+    systemConstraints: SystemConstraints,
     onLensFaceClick: (newLensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
     onCaptureModeClick: (captureMode: CaptureMode) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
-    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit
+    setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit
 ) {
     Column(
         modifier =
@@ -179,6 +193,14 @@ private fun ExpandedQuickSettingsUi(
                         setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
                         currentCaptureMode = currentCameraSettings.captureMode
                     )
+                    QuickSetHdr(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                        onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
+                        selectedDynamicRange = currentCameraSettings.dynamicRange,
+                        hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
+                        enabled = systemConstraints.forCurrentLens(currentCameraSettings)
+                            ?.let { it.supportedDynamicRanges.size > 1 } ?: false
+                    )
                 }
             }
             // if a setting that can be expanded is selected, show it
@@ -191,3 +213,49 @@ private fun ExpandedQuickSettingsUi(
         }
     }
 }
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview() {
+    MaterialTheme {
+        ExpandedQuickSettingsUi(
+            currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            onLensFaceClick = { },
+            onFlashModeClick = { },
+            shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
+            setVisibleQuickSetting = { },
+            onAspectRatioClick = { },
+            onCaptureModeClick = { },
+            onDynamicRangeClick = { }
+        )
+    }
+}
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview_WithHdr() {
+    MaterialTheme {
+        ExpandedQuickSettingsUi(
+            currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR,
+            onLensFaceClick = { },
+            onFlashModeClick = { },
+            shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
+            setVisibleQuickSetting = { },
+            onAspectRatioClick = { },
+            onCaptureModeClick = { },
+            onDynamicRangeClick = { }
+        )
+    }
+}
+
+private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
+    TYPICAL_SYSTEM_CONSTRAINTS.copy(
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate {
+                (lensFacing, constraints) ->
+            lensFacing to constraints.copy(
+                supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+            )
+        }
+    )
