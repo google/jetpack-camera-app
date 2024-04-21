@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import com.google.jetpackcamera.feature.preview.ui.SnackBarData
+import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -36,7 +36,7 @@ sealed interface PreviewUiState {
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
-        val snackBarToShow: SnackBarData? = null
+        val snackBarToShow: SnackbarData? = null
     ) : PreviewUiState
 }
 
