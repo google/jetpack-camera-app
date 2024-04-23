@@ -163,15 +163,16 @@ class PreviewViewModel @Inject constructor(
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            captureImageInternal(doTakePicture = {
-                cameraUseCase.takePicture {
-                    _previewUiState.update { old ->
-                        (old as? PreviewUiState.Ready)?.copy(
-                            blinkTimeStamp = System.currentTimeMillis()
-                        ) ?: old
+            captureImageInternal(
+                doTakePicture = {
+                    cameraUseCase.takePicture {
+                        _previewUiState.update { old ->
+                            (old as? PreviewUiState.Ready)?.copy(
+                                blinkTimeStamp = System.currentTimeMillis()
+                            ) ?: old
+                        }
                     }
                 }
-            }
             )
         }
     }

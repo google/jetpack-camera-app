@@ -176,7 +176,7 @@ private fun ContentScreen(
                 onZoomChange = onChangeZoomScale,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode,
+                onRequestWindowColorMode = onRequestWindowColorMode
             )
 
             QuickSettingsScreenOverlay(
@@ -202,7 +202,7 @@ private fun ContentScreen(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
+                onStopVideoRecording = onStopVideoRecording
             )
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {
