@@ -19,7 +19,6 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -50,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -64,13 +64,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 
 private const val TAG = "PreviewScreen"
+private const val BLINK_TIME = 300L
 
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
@@ -157,13 +159,13 @@ fun TestableSnackbar(
  */
 @Composable
 fun PreviewDisplay(
+    previewUiState: PreviewUiState.Ready,
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier
 ) {
     val transformableState = rememberTransformableState(
@@ -197,13 +199,24 @@ fun PreviewDisplay(
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            var alpha by remember {
+                mutableFloatStateOf(1f)
+            }
+
+            LaunchedEffect(previewUiState.blinkTimeStamp) {
+                if (previewUiState.blinkTimeStamp != 0L) {
+                    alpha = 0f
+                    delay(BLINK_TIME)
+                    alpha = 1f
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
-                    .alpha(blinkState.alpha)
-
+                    .alpha(alpha)
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
@@ -212,20 +225,6 @@ fun PreviewDisplay(
                 )
             }
         }
-    }
-}
-
-class BlinkState(
-    initialAlpha: Float = 1F,
-    coroutineScope: CoroutineScope
-) {
-    private val animatable = Animatable(initialAlpha)
-    val alpha: Float get() = animatable.value
-    val scope = coroutineScope
-
-    suspend fun play() {
-        animatable.snapTo(0F)
-        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 
