@@ -38,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +47,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
-import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
@@ -167,18 +165,16 @@ private fun ContentScreen(
             }
         }
 
-        val scope = rememberCoroutineScope()
-        val blinkState = remember { BlinkState(coroutineScope = scope) }
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
+                previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
                 onZoomChange = onChangeZoomScale,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                blinkState = blinkState
+                onRequestWindowColorMode = onRequestWindowColorMode
             )
 
             QuickSettingsScreenOverlay(
@@ -204,8 +200,7 @@ private fun ContentScreen(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {
