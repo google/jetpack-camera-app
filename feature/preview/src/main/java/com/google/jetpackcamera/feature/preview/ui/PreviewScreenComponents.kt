@@ -69,7 +69,6 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -112,45 +111,43 @@ fun TestableToast(
 }
 
 @Composable
-fun TestableSnackBar(
+fun TestableSnackbar(
     modifier: Modifier = Modifier,
-    snackBarToShow: SnackBarData,
-    scope: CoroutineScope,
+    snackbarToShow: SnackbarData,
     snackbarHostState: SnackbarHostState,
-    onSnackBarResult: () -> Unit
+    onSnackbarResult: (String) -> Unit
 ) {
     Box(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
-            .testTag(snackBarToShow.testTag)
+            .testTag(snackbarToShow.testTag)
     ) {
         val context = LocalContext.current
-        scope.launch {
-            val result =
-                snackbarHostState.showSnackbar(
-                    message = context.getString(snackBarToShow.stringResource),
-                    duration = snackBarToShow.duration,
-                    withDismissAction = snackBarToShow.withDismissAction,
-                    actionLabel = if (snackBarToShow.actionLabelRes == null) {
-                        null
-                    } else {
-                        context.getString(snackBarToShow.actionLabelRes)
-                    }
-                )
-            when (result) {
-                SnackbarResult.ActionPerformed -> {
-                    onSnackBarResult()
+        LaunchedEffect(snackbarToShow) {
+            val message = context.getString(snackbarToShow.stringResource)
+            Log.d(TAG, "Snackbar Displayed with message: $message")
+            try {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = snackbarToShow.duration,
+                        withDismissAction = snackbarToShow.withDismissAction,
+                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
+                            null
+                        } else {
+                            context.getString(snackbarToShow.actionLabelRes)
+                        }
+                    )
+                when (result) {
+                    SnackbarResult.ActionPerformed,
+                    SnackbarResult.Dismissed -> onSnackbarResult(snackbarToShow.cookie)
                 }
-                SnackbarResult.Dismissed -> {
-                    onSnackBarResult()
-                }
+            } catch (e: Exception) {
+                // This is equivalent to dismissing the snackbar
+                onSnackbarResult(snackbarToShow.cookie)
             }
         }
-        Log.d(
-            TAG,
-            "Snackbar Displayed with message: ${stringResource(snackBarToShow.stringResource)}"
-        )
     }
 }
 

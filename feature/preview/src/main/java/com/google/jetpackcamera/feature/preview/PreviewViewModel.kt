@@ -26,7 +26,7 @@ import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.SnackBarData
+import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -36,6 +36,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -73,6 +74,9 @@ class PreviewViewModel @Inject constructor(
     private var recordingJob: Job? = null
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+
+    private val imageCaptureCalledCount = atomic(0)
+    private val videoCaptureStartedCount = atomic(0)
 
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
@@ -188,14 +192,17 @@ class PreviewViewModel @Inject constructor(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
+        val cookieInt = imageCaptureCalledCount.incrementAndGet()
+        val cookie = "Image-$cookieInt"
         try {
-            traceAsync(IMAGE_CAPTURE_TRACE, 0) {
+            traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
                 doTakePicture()
             }.also { result ->
                 onSuccess(result)
             }
             Log.d(TAG, "cameraUseCase.takePicture success")
-            SnackBarData(
+            SnackbarData(
+                cookie = cookie,
                 stringResource = R.string.toast_image_capture_success,
                 withDismissAction = true,
                 testTag = IMAGE_CAPTURE_SUCCESS_TAG
@@ -203,7 +210,8 @@ class PreviewViewModel @Inject constructor(
         } catch (exception: Exception) {
             onFailure(exception)
             Log.d(TAG, "cameraUseCase.takePicture error", exception)
-            SnackBarData(
+            SnackbarData(
+                cookie = cookie,
                 stringResource = R.string.toast_capture_failure,
                 withDismissAction = true,
                 testTag = IMAGE_CAPTURE_FAILURE_TAG
@@ -211,7 +219,7 @@ class PreviewViewModel @Inject constructor(
         }.also { snackBarData ->
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
-                    // todo: remove toast after postcapture screen implemented
+                    // todo: remove snackBar after postcapture screen implemented
                     snackBarToShow = snackBarData
                 ) ?: old
             }
@@ -221,16 +229,19 @@ class PreviewViewModel @Inject constructor(
     fun startVideoRecording() {
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
+            val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording {
                     val snackBarData = when (it) {
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
-                            SnackBarData(
+                            SnackbarData(
+                                cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
                                 withDismissAction = true
                             )
                         else ->
-                            SnackBarData(
+                            SnackbarData(
+                                cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
                                 withDismissAction = true
                             )
@@ -315,12 +326,17 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun onSnackBarResult() {
+    fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    snackBarToShow = null
-                ) ?: old
+                (old as? PreviewUiState.Ready)?.snackBarToShow?.let {
+                    if (it.cookie == cookie) {
+                        // If the latest snackbar had a result, then clear snackBarToShow
+                        old.copy(snackBarToShow = null)
+                    } else {
+                        old
+                    }
+                } ?: old
             }
         }
     }

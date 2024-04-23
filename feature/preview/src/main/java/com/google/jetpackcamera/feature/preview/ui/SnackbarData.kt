@@ -17,7 +17,8 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import androidx.compose.material3.SnackbarDuration
 
-data class SnackBarData(
+data class SnackbarData(
+    val cookie: String,
     val stringResource: Int,
     val duration: SnackbarDuration = SnackbarDuration.Short,
     val actionLabelRes: Int? = null,
