@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -160,7 +161,7 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun captureImage() {
+    fun captureImage(blinkState: BlinkState?) {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             captureImageInternal(doTakePicture = {
@@ -177,6 +178,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun captureImageWithUri(
+        blinkState: BlinkState?,
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean = false,

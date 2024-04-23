@@ -53,7 +53,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(showInitially)
@@ -76,13 +75,14 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
@@ -184,13 +184,14 @@ private fun ControlsBottom(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
@@ -237,13 +238,14 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
-    onCaptureImage: () -> Unit = {},
+    onCaptureImage: (BlinkState?) -> Unit = {},
     onCaptureImageWithUri: (
+        BlinkState?,
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
@@ -257,6 +259,7 @@ private fun CaptureButton(
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
                         onCaptureImageWithUri(
+                            blinkState,
                             context.contentResolver,
                             null,
                             true,
@@ -266,6 +269,7 @@ private fun CaptureButton(
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
+                            blinkState,
                             context.contentResolver,
                             previewMode.imageCaptureUri,
                             false,
