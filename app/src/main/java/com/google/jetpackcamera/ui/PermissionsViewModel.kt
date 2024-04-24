@@ -34,9 +34,5 @@ class PermissionsViewModel(
     fun dismissPermission() {
         visiblePermissionDialogQueue.removeFirst()
     }
-
-    fun addPermissions(permissionEnums: Iterable<PermissionEnum>) {
-        visiblePermissionDialogQueue.addAll(permissionEnums)
-    }
 }
 

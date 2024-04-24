@@ -123,8 +123,6 @@ class MainActivity : ComponentActivity() {
                                 onPreviewViewModel = { previewViewModel = it },
                                 previewMode = getPreviewMode(),
                                 openAppSettings = ::openAppSettings,
-                                shouldShowPermissionsRationale =
-                                    ::shouldShowRequestPermissionRationale
                             )
                         }
                     }
@@ -132,7 +130,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     private fun getPreviewMode(): PreviewMode {
         if (intent == null || MediaStore.ACTION_IMAGE_CAPTURE != intent.action) {

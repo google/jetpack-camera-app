@@ -25,9 +25,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.R
 
-val CAMERA_PERMISSION = "android.permission.CAMERA"
+const val CAMERA_PERMISSION = "android.permission.CAMERA"
 
-// val  AUDIO_RECORD_PERMISSION = "android.permission.CAMERA"
+const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
 
 /**
  * Helper class storing a permission's relevant UI information
@@ -50,6 +50,8 @@ interface PermissionInfoProvider {
 
     fun getPermission(): String
 
+    fun isOptional(): Boolean
+
     @DrawableRes
     fun getDrawableResId(): Int?
 
@@ -71,7 +73,9 @@ enum class PermissionEnum : PermissionInfoProvider {
     CAMERA {
         override fun getPermission(): String = CAMERA_PERMISSION
 
-        override fun getDrawableResId(): Int? = R.drawable.photo_camera
+        override fun isOptional(): Boolean = false
+
+        override fun getDrawableResId(): Int = R.drawable.photo_camera
 
         override fun getImageVector(): ImageVector? = null
 
@@ -83,5 +87,23 @@ enum class PermissionEnum : PermissionInfoProvider {
         override fun getIconAccessiblityTextResId(): Int =
             R.string.camera_permission_accessibility_text
     },
+
+    RECORD_AUDIO {
+        override fun getPermission(): String = AUDIO_RECORD_PERMISSION
+
+        override fun isOptional(): Boolean = false
+
+        override fun getDrawableResId(): Int = R.drawable.audio_microphone
+
+        override fun getImageVector(): ImageVector? = null
+
+        override fun getPermissionTitleResId(): Int = R.string.microphone_permission_screen_title
+
+        override fun getPermissionBodyTextResId(): Int =
+            R.string.microphone_permission_required_rationale
+
+        override fun getIconAccessiblityTextResId(): Int =
+            R.string.microphone_permission_accessibility_text
+    }
 }
 

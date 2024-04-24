@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui
 
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -45,6 +46,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.R
 
 /**
@@ -52,62 +58,59 @@ import com.google.jetpackcamera.R
  * Camera permission will always prompt when disabled, and the app cannot be used otherwise
  * if optional settings have not yet been declined by the user, then they will be prompted as well
  */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
     permissionEnums: Set<PermissionEnum>,
-    shouldShowPermissionsRequestRationale: (String) -> Boolean,
-    onClosePermissions: () -> Unit,
     openAppSettings: () -> Unit,
 ) {
-
     val permissionsViewModel =
         PermissionsViewModel(
             permissionEnums = permissionEnums
         )
-    permissionsViewModel.addPermissions(permissionEnums)
-    val dialogQueue = permissionsViewModel.visiblePermissionDialogQueue
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { permissionGranted ->
-            if (permissionGranted) {
-                // remove from list
-                permissionsViewModel.dismissPermission()
-            }
-        })
-    if (!dialogQueue.isEmpty()) {
-        val permissionEnum = dialogQueue.first()
+    if (!permissionsViewModel.visiblePermissionDialogQueue.isEmpty()) {
+        val permissionEnum = permissionsViewModel.visiblePermissionDialogQueue.first()
+        val currentPermissionState =
+            rememberPermissionState(permission = permissionEnum.getPermission())
+
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { permissionGranted ->
+                if (permissionGranted) {
+                    // remove from list
+                    permissionsViewModel.dismissPermission()
+                } else if (permissionEnum.isOptional()) {
+                    permissionsViewModel.dismissPermission()
+                }
+            })
+
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
-            shouldShowPermissionsRequestRationale = {
-                shouldShowPermissionsRequestRationale(
-                    permissionEnum.getPermission()
-                )
-            },
+            permissionState = currentPermissionState,
             onSkipPermission = when (permissionEnum) {
+                //todo: a prettier navigation to app settings.
                 PermissionEnum.CAMERA -> null
-                else -> permissionsViewModel::dismissPermission
+                else -> null //permissionsViewModel::dismissPermission //todo: skip permission button functionality
             },
             onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
             onOpenAppSettings = openAppSettings
         )
     }
-    LaunchedEffect(key1 = dialogQueue) {
-        if (dialogQueue.isEmpty())
-            onClosePermissions()
-    }
 }
+
 
 /**
  * Template for a permission Screen page that uses a [permissionEnum]
  */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
-    shouldShowPermissionsRequestRationale: () -> Boolean,
+    permissionState: PermissionState,
     onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
@@ -117,7 +120,7 @@ fun PermissionTemplate(
         onRequestPermission = {
             // if declined by user, must go to system app settings to enable permission
             //todo: open a dialog that tells user they must go to device's app settings to enable permissions
-            if (shouldShowPermissionsRequestRationale())
+            if (permissionState.status.shouldShowRationale)
                 onOpenAppSettings()
             else
                 onRequestPermission()
