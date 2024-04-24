@@ -21,11 +21,12 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         maven {
-            setUrl("https://androidx.dev/snapshots/builds/11445438/artifacts/repository")
+            setUrl("https://androidx.dev/snapshots/builds/11683807/artifacts/repository")
         }
         google()
         mavenCentral()

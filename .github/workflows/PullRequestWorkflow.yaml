@@ -82,23 +82,19 @@ jobs:
           path: "*/build/reports/tests"
 
   android-test:
-    name: Instrumentation Tests
+    name: Instrumentation Tests (${{ matrix.device.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         device:
-          - pixel2Api28
-          - pixel8Api34
+          - { name: pixel2Api28, img: 'system-images;android-28;google_apis;x86' }
+          - { name: pixel8Api34, img: 'system-images;android-34;aosp_atd;x86_64' }
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Bump to AGP 8.4 alpha
-        run: |
-          sed -i 's/androidGradlePlugin = .*/androidGradlePlugin = "8.4.0-alpha13"/' gradle/libs.versions.toml
 
       - name: Enable KVM group perms
         run: |
@@ -113,24 +109,26 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
 
       - name: Install Emulator
-        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install "emulator"
+        run: |
+          yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --install "${{ matrix.device.img }}"
+            
 
       - name: Accept licenses
-        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses
+        run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Run instrumentation tests
         uses: gradle/gradle-build-action@v3
         with:
-          arguments: ${{ matrix.device }}DebugAndroidTest
+          arguments: ${{ matrix.device.name }}DebugAndroidTest
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-test-reports-${{ matrix.device }}
+          name: instrumentation-test-reports-${{ matrix.device.name }}
           path: |
-            */build/reports/androidTests/**/${{ matrix.device }}
-            */build/outputs/androidTest-results/**/${{ matrix.device }}
+            */build/reports/androidTests/**/${{ matrix.device.name }}
+            */build/outputs/androidTest-results/**/${{ matrix.device.name }}
 
   spotless:
     name: Spotless Check

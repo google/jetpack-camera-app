@@ -15,6 +15,9 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.content.pm.ActivityInfo
+import android.os.Build
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
@@ -24,6 +27,7 @@ import androidx.camera.viewfinder.surface.TransformationInfo
 import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
@@ -32,9 +36,14 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 
@@ -52,11 +61,13 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun CameraXViewfinder(
-    modifier: Modifier = Modifier,
     surfaceRequest: SurfaceRequest,
-    implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE
+    modifier: Modifier = Modifier,
+    implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE,
+    onRequestWindowColorMode: (Int) -> Unit = {}
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
+    val currentOnRequestWindowColorMode by rememberUpdatedState(onRequestWindowColorMode)
 
     val viewfinderArgs by produceState<ViewfinderArgs?>(initialValue = null, surfaceRequest) {
         val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(surfaceRequest.resolution)
@@ -108,6 +119,7 @@ fun CameraXViewfinder(
                 snapshotImplementationMode = implMode
                 value = ViewfinderArgs(
                     viewfinderSurfaceRequest,
+                    isSourceHdr = surfaceRequest.dynamicRange.encoding != DynamicRange.ENCODING_SDR,
                     implMode,
                     TransformationInfo(
                         transformInfo.rotationDegrees,
@@ -119,6 +131,25 @@ fun CameraXViewfinder(
                     )
                 )
             }
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        LaunchedEffect(Unit) {
+            snapshotFlow { viewfinderArgs }
+                .filterNotNull()
+                .map { args ->
+                    if (args.isSourceHdr &&
+                        args.implementationMode == ImplementationMode.PERFORMANCE
+                    ) {
+                        ActivityInfo.COLOR_MODE_HDR
+                    } else {
+                        ActivityInfo.COLOR_MODE_DEFAULT
+                    }
+                }.distinctUntilChanged()
+                .onEach { currentOnRequestWindowColorMode(it) }
+                .onCompletion { currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT) }
+                .collect()
+        }
     }
 
     viewfinderArgs?.let { args ->
@@ -133,6 +164,7 @@ fun CameraXViewfinder(
 
 private data class ViewfinderArgs(
     val viewfinderSurfaceRequest: ViewfinderSurfaceRequest,
+    val isSourceHdr: Boolean,
     val implementationMode: ImplementationMode,
     val transformationInfo: TransformationInfo
 )

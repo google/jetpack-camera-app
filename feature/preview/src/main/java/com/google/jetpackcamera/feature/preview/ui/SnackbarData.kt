@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.feature.preview.ui
 
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import androidx.compose.material3.SnackbarDuration
 
-/**
- * Defines the current state of the [SettingsScreen].
- */
-sealed interface SettingsUiState {
-    object Disabled : SettingsUiState
-    data class Enabled(
-        val cameraAppSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints
-    ) : SettingsUiState
-}
+data class SnackbarData(
+    val cookie: String,
+    val stringResource: Int,
+    val duration: SnackbarDuration = SnackbarDuration.Short,
+    val actionLabelRes: Int? = null,
+    val withDismissAction: Boolean = false,
+    val testTag: String = ""
+)

@@ -28,8 +28,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -45,12 +47,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.quicksettings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlin.math.min
@@ -58,7 +62,11 @@ import kotlin.math.min
 // completed components ready to go into preview screen
 
 @Composable
-fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentRatio: AspectRatio) {
+fun ExpandedQuickSetRatio(
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
+    currentRatio: AspectRatio,
+    modifier: Modifier = Modifier
+) {
     val buttons: Array<@Composable () -> Unit> =
         arrayOf(
             {
@@ -87,15 +95,44 @@ fun ExpandedQuickSetRatio(setRatio: (aspectRatio: AspectRatio) -> Unit, currentR
                 )
             }
         )
-    ExpandedQuickSetting(quickSettingButtons = buttons)
+    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetHdr(
+    modifier: Modifier = Modifier,
+    onClick: (dynamicRange: DynamicRange) -> Unit,
+    selectedDynamicRange: DynamicRange,
+    hdrDynamicRange: DynamicRange,
+    enabled: Boolean = true
+) {
+    val enum =
+        when (selectedDynamicRange) {
+            DynamicRange.SDR -> CameraDynamicRange.SDR
+            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
+                hdrDynamicRange
+            } else {
+                DynamicRange.SDR
+            }
+            onClick(newDynamicRange)
+        },
+        isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
+        enabled = enabled
+    )
 }
 
 @Composable
 fun QuickSetRatio(
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     ratio: AspectRatio,
     currentRatio: AspectRatio,
+    modifier: Modifier = Modifier,
     isHighlightEnabled: Boolean = false
 ) {
     val enum =
@@ -115,9 +152,9 @@ fun QuickSetRatio(
 
 @Composable
 fun QuickSetFlash(
-    modifier: Modifier = Modifier,
     onClick: (FlashMode) -> Unit,
-    currentFlashMode: FlashMode
+    currentFlashMode: FlashMode,
+    modifier: Modifier = Modifier
 ) {
     val enum = when (currentFlashMode) {
         FlashMode.OFF -> CameraFlashMode.OFF
@@ -145,9 +182,9 @@ fun QuickSetFlash(
 
 @Composable
 fun QuickFlipCamera(
-    modifier: Modifier = Modifier,
     setLensFacing: (LensFacing) -> Unit,
-    currentLensFacing: LensFacing
+    currentLensFacing: LensFacing,
+    modifier: Modifier = Modifier
 ) {
     val enum =
         when (currentLensFacing) {
@@ -163,9 +200,9 @@ fun QuickFlipCamera(
 
 @Composable
 fun QuickSetCaptureMode(
-    modifier: Modifier = Modifier,
     setCaptureMode: (CaptureMode) -> Unit,
-    currentCaptureMode: CaptureMode
+    currentCaptureMode: CaptureMode,
+    modifier: Modifier = Modifier
 ) {
     val enum: CameraCaptureMode =
         when (currentCaptureMode) {
@@ -188,10 +225,15 @@ fun QuickSetCaptureMode(
  * Button to toggle quick settings
  */
 @Composable
-fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
+fun ToggleQuickSettingsButton(
+    toggleDropDown: () -> Unit,
+    isOpen: Boolean,
+    modifier: Modifier = Modifier
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
     ) {
         // dropdown icon
         Icon(
@@ -216,10 +258,11 @@ fun ToggleQuickSettingsButton(toggleDropDown: () -> Unit, isOpen: Boolean) {
 
 @Composable
 fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
-    isHighLighted: Boolean = false
+    modifier: Modifier = Modifier,
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     QuickSettingUiItem(
         modifier = modifier,
@@ -227,7 +270,8 @@ fun QuickSettingUiItem(
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
-        isHighLighted = isHighLighted
+        isHighLighted = isHighLighted,
+        enabled = enabled
     )
 }
 
@@ -236,35 +280,40 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
-    painter: Painter,
     text: String,
+    painter: Painter,
     accessibilityText: String,
     onClick: () -> Unit,
-    isHighLighted: Boolean = false
+    modifier: Modifier = Modifier,
+    isHighLighted: Boolean = false,
+    enabled: Boolean = true
 ) {
     Column(
         modifier =
         modifier
             .wrapContentSize()
             .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable {
-                onClick()
-            },
+            .clickable(onClick = onClick, enabled = enabled),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val tint = if (isHighLighted) Color.Yellow else Color.White
-        Icon(
-            painter = painter,
-            contentDescription = accessibilityText,
-            tint = tint,
-            modifier =
-            Modifier
-                .size(dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size))
-        )
+        val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
+            // When in disabled state, material3 guidelines say the element's opacity should be 38%
+            // See: https://m3.material.io/foundations/interaction/states/applying-states#3c3032e8-b07a-42ac-a508-a32f573cc7e1
+            // and: https://developer.android.com/develop/ui/compose/designsystems/material2-material3#emphasis-and
+            if (!enabled) it.copy(alpha = 0.38f) else it
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Icon(
+                painter = painter,
+                contentDescription = accessibilityText,
+                modifier = Modifier.size(
+                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
+                )
+            )
 
-        Text(text = text, color = tint, textAlign = TextAlign.Center)
+            Text(text = text, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -309,7 +358,7 @@ fun ExpandedQuickSetting(
 @Composable
 fun QuickSettingsGrid(
     modifier: Modifier = Modifier,
-    vararg quickSettingsButtons: @Composable () -> Unit
+    quickSettingsButtons: List<@Composable () -> Unit>
 ) {
     val initialNumOfColumns =
         min(
@@ -343,11 +392,11 @@ fun QuickSettingsGrid(
  * The top bar indicators for quick settings items.
  */
 @Composable
-fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit) {
+fun Indicator(enum: QuickSettingsEnum, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Icon(
         painter = enum.getPainter(),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
-        modifier = Modifier
+        modifier = modifier
             .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
             .clickable { onClick() }
     )
@@ -371,9 +420,10 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
 @Composable
 fun QuickSettingsIndicators(
     currentFlashMode: FlashMode,
-    onFlashModeClick: (flashMode: FlashMode) -> Unit
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row {
+    Row(modifier) {
         FlashModeIndicator(currentFlashMode, onFlashModeClick)
     }
 }

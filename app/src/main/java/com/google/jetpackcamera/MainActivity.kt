@@ -17,12 +17,14 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -64,6 +66,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+
+private const val TAG = "MainActivity"
 
 /**
  * Activity for the JetpackCameraApp.
@@ -120,9 +124,20 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             JcaApp(
-                                onPreviewViewModel = { previewViewModel = it },
                                 previewMode = getPreviewMode(),
-                                openAppSettings = ::openAppSettings
+                                onPreviewViewModel = { previewViewModel = it },
+                                openAppSettings = ::openAppSettings,
+                                        onRequestWindowColorMode = { colorMode ->
+                                    // Window color mode APIs require API level 26+
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        Log.d(
+                                            TAG,
+                                            "Setting window color mode to:" +
+                                                " ${colorMode.toColorModeString()}"
+                                        )
+                                        window?.colorMode = colorMode
+                                    }
+                                }
                             )
                         }
                     }
@@ -177,6 +192,16 @@ private fun isInDarkMode(uiState: MainActivityUiState): Boolean = when (uiState)
         DarkMode.DARK -> true
         DarkMode.LIGHT -> false
         DarkMode.SYSTEM -> isSystemInDarkTheme()
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun Int.toColorModeString(): String {
+    return when (this) {
+        ActivityInfo.COLOR_MODE_DEFAULT -> "COLOR_MODE_DEFAULT"
+        ActivityInfo.COLOR_MODE_HDR -> "COLOR_MODE_HDR"
+        ActivityInfo.COLOR_MODE_WIDE_COLOR_GAMUT -> "COLOR_MODE_WIDE_COLOR_GAMUT"
+        else -> "<Unknown>"
     }
 }
 

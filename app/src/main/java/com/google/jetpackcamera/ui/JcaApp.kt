@@ -41,10 +41,12 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    onPreviewViewModel: (PreviewViewModel) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
     val permissionStates = rememberMultiplePermissionsState(
@@ -62,12 +64,14 @@ fun JcaApp(
     ) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
-            previewMode = previewMode
+            previewMode = previewMode,
+            onRequestWindowColorMode = onRequestWindowColorMode,
+            modifier = modifier
         )
     } else {
         // you'll have the option to go through camera and all other optional permissions
         PermissionsScreen(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             permissionEnums = getUnGrantedPermissions(permissionStates),
             openAppSettings = openAppSettings
         )
@@ -96,15 +100,18 @@ private fun getUnGrantedPermissions(
 
 @Composable
 private fun JetpackCameraNavHost(
+    previewMode: PreviewMode,
     onPreviewViewModel: (PreviewViewModel) -> Unit,
-    navController: NavHostController = rememberNavController(),
-    previewMode: PreviewMode
+    onRequestWindowColorMode: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = PREVIEW_ROUTE) {
+    NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onRequestWindowColorMode = onRequestWindowColorMode,
                 previewMode = previewMode
             )
         }

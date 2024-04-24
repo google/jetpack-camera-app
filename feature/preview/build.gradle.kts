@@ -23,25 +23,16 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.feature.preview"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 21
-        targetSdk = 34
+        minSdk = libs.versions.minSdk.get().toInt()
+        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
+        lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -50,28 +41,29 @@ android {
         jvmToolchain(17)
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.0"
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
+
+    @Suppress("UnstableApiUsage")
     testOptions {
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
         }
-
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
                     device = "Pixel 2"
                     apiLevel = 28
-                    systemImageSource = "aosp"
                 }
                 create("pixel8Api34") {
                     device = "Pixel 8"
                     apiLevel = 34
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp_atd"
                 }
             }
         }
@@ -134,6 +126,8 @@ dependencies {
 
     //Tracing
     implementation(libs.androidx.tracing)
+
+    implementation(libs.kotlinx.atomicfu)
 
     // Project dependencies
     implementation(project(":data:settings"))

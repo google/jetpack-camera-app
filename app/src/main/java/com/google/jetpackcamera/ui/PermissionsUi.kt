@@ -262,7 +262,7 @@ fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: Strin
             .height(IntrinsicSize.Min)
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.Center)
         ) {

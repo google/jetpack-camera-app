@@ -48,8 +48,10 @@ import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -66,10 +68,12 @@ class ZoomLevelDisplayState(showInitially: Boolean = false) {
 
 @Composable
 fun CameraControlsOverlay(
-    previewUiState: PreviewUiState,
-    zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
-    onNavigateToSettings: () -> Unit,
+    previewUiState: PreviewUiState.Ready,
     previewMode: PreviewMode,
+    blinkState: BlinkState,
+    modifier: Modifier = Modifier,
+    zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
+    onNavigateToSettings: () -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
@@ -81,8 +85,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState
+    onStopVideoRecording: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -95,7 +98,7 @@ fun CameraControlsOverlay(
     }
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
-        Box(Modifier.fillMaxSize()) {
+        Box(modifier.fillMaxSize()) {
             if (previewUiState.videoRecordingState == VideoRecordingState.INACTIVE) {
                 ControlsTop(
                     modifier = Modifier
@@ -116,7 +119,7 @@ fun CameraControlsOverlay(
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                currentCameraSettings = previewUiState.currentCameraSettings,
+                systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
                 previewMode = previewMode,
                 onFlipCamera = onFlipCamera,
@@ -144,10 +147,10 @@ private fun ControlsTop(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // button to open default settings page
             SettingsNavButton(
-                Modifier
+                modifier = Modifier
                     .padding(12.dp)
                     .testTag(SETTINGS_BUTTON),
-                onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
                 QuickSettingsIndicators(
@@ -166,7 +169,6 @@ private fun ControlsTop(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StabilizationIcon(
-                supportedStabilizationMode = currentCameraSettings.supportedStabilizationModes,
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
                 previewStabilization = currentCameraSettings.previewStabilization
             )
@@ -179,7 +181,7 @@ private fun ControlsBottom(
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
-    currentCameraSettings: CameraAppSettings,
+    systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
@@ -208,11 +210,10 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
+                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
-                        enabledCondition = currentCameraSettings.isBackCameraAvailable &&
-                            currentCameraSettings.isFrontCameraAvailable
+                        enabledCondition = systemConstraints.availableLenses.size > 1
                     )
                 }
             }
@@ -345,7 +346,6 @@ private fun Preview_ControlsTop_WithStabilization() {
         ControlsTop(
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(
-                supportedStabilizationModes = listOf(SupportedStabilizationMode.HIGH_QUALITY),
                 videoCaptureStabilization = Stabilization.ON,
                 previewStabilization = Stabilization.ON
             )
@@ -361,7 +361,7 @@ private fun Preview_ControlsBottom() {
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {}
         )
@@ -376,7 +376,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             zoomLevel = 1.3f,
             showZoomLevel = false,
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {}
         )
@@ -391,7 +391,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = true,
-            currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {}
         )
@@ -406,7 +406,13 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(isBackCameraAvailable = false),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                availableLenses = listOf(LensFacing.FRONT),
+                perLensConstraints = mapOf(
+                    LensFacing.FRONT to
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                )
+            ),
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {}
         )
@@ -421,7 +427,7 @@ private fun Preview_ControlsBottom_Recording() {
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(),
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
             previewMode = PreviewMode.StandardMode {}
         )

@@ -43,6 +43,8 @@ import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +68,6 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "PreviewScreen"
@@ -80,9 +81,9 @@ private const val TAG = "PreviewScreen"
  */
 @Composable
 fun TestableToast(
-    modifier: Modifier = Modifier,
     toastMessage: ToastMessage,
-    onToastShown: () -> Unit
+    onToastShown: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
         // box seems to need to have some size to be detected by UiAutomator
@@ -109,6 +110,47 @@ fun TestableToast(
     }
 }
 
+@Composable
+fun TestableSnackbar(
+    modifier: Modifier = Modifier,
+    snackbarToShow: SnackbarData,
+    snackbarHostState: SnackbarHostState,
+    onSnackbarResult: (String) -> Unit
+) {
+    Box(
+        // box seems to need to have some size to be detected by UiAutomator
+        modifier = modifier
+            .size(20.dp)
+            .testTag(snackbarToShow.testTag)
+    ) {
+        val context = LocalContext.current
+        LaunchedEffect(snackbarToShow) {
+            val message = context.getString(snackbarToShow.stringResource)
+            Log.d(TAG, "Snackbar Displayed with message: $message")
+            try {
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = snackbarToShow.duration,
+                        withDismissAction = snackbarToShow.withDismissAction,
+                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
+                            null
+                        } else {
+                            context.getString(snackbarToShow.actionLabelRes)
+                        }
+                    )
+                when (result) {
+                    SnackbarResult.ActionPerformed,
+                    SnackbarResult.Dismissed -> onSnackbarResult(snackbarToShow.cookie)
+                }
+            } catch (e: Exception) {
+                // This is equivalent to dismissing the snackbar
+                onSnackbarResult(snackbarToShow.cookie)
+            }
+        }
+    }
+}
+
 /**
  * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
  * and double-tap to flip camera
@@ -118,9 +160,11 @@ fun PreviewDisplay(
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
-    blinkState: BlinkState
+    blinkState: BlinkState,
+    modifier: Modifier = Modifier
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
@@ -163,7 +207,8 @@ fun PreviewDisplay(
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it
+                    surfaceRequest = it,
+                    onRequestWindowColorMode = onRequestWindowColorMode
                 )
             }
         }
@@ -186,13 +231,11 @@ class BlinkState(
 
 @Composable
 fun StabilizationIcon(
-    supportedStabilizationMode: List<SupportedStabilizationMode>,
     videoStabilization: Stabilization,
-    previewStabilization: Stabilization
+    previewStabilization: Stabilization,
+    modifier: Modifier = Modifier
 ) {
-    if (supportedStabilizationMode.isNotEmpty() &&
-        (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON)
-    ) {
+    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
         val descriptionText = if (videoStabilization == Stabilization.ON) {
             stringResource(id = R.string.stabilization_icon_description_preview_and_video)
         } else {
@@ -201,7 +244,8 @@ fun StabilizationIcon(
         }
         Icon(
             imageVector = Icons.Filled.VideoStable,
-            contentDescription = descriptionText
+            contentDescription = descriptionText,
+            modifier = modifier
         )
     }
 }
@@ -210,7 +254,7 @@ fun StabilizationIcon(
  * A temporary button that can be added to preview for quick testing purposes
  */
 @Composable
-fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: String) {
+fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
     SuggestionChip(
         onClick = { onClick() },
         modifier = modifier,
@@ -222,9 +266,9 @@ fun TestingButton(modifier: Modifier = Modifier, onClick: () -> Unit, text: Stri
 
 @Composable
 fun FlipCameraButton(
-    modifier: Modifier = Modifier,
     enabledCondition: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     IconButton(
         modifier = modifier.size(40.dp),
@@ -240,7 +284,7 @@ fun FlipCameraButton(
 }
 
 @Composable
-fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
+fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         modifier = modifier,
         onClick = onNavigateToSettings
@@ -254,7 +298,7 @@ fun SettingsNavButton(modifier: Modifier, onNavigateToSettings: () -> Unit) {
 }
 
 @Composable
-fun ZoomScaleText(zoomScale: Float) {
+fun ZoomScaleText(zoomScale: Float, modifier: Modifier = Modifier) {
     val contentAlpha = animateFloatAsState(
         targetValue = 10f,
         label = "zoomScaleAlphaAnimation",
@@ -269,11 +313,11 @@ fun ZoomScaleText(zoomScale: Float) {
 
 @Composable
 fun CaptureButton(
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     onRelease: () -> Unit,
-    videoRecordingState: VideoRecordingState
+    videoRecordingState: VideoRecordingState,
+    modifier: Modifier = Modifier
 ) {
     var isPressedDown by remember {
         mutableStateOf(false)
