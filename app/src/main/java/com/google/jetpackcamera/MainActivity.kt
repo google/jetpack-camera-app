@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
                             JcaApp(
                                 onPreviewViewModel = { previewViewModel = it },
                                 previewMode = getPreviewMode(),
-                                openAppSettings = ::openAppSettings,
+                                openAppSettings = ::openAppSettings
                             )
                         }
                     }

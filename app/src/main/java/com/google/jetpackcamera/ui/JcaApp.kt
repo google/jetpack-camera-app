@@ -18,8 +18,6 @@ package com.google.jetpackcamera.ui
 import android.Manifest
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -57,7 +55,11 @@ fun JcaApp(
     )
 
     // should show rationale means a setting has been viewed and denied
-    if (cameraPermissionState.status.isGranted && (permissionStates.allPermissionsGranted || permissionStates.shouldShowRationale)) {
+    if (cameraPermissionState.status.isGranted && (
+            permissionStates.allPermissionsGranted ||
+                permissionStates.shouldShowRationale
+            )
+    ) {
         JetpackCameraNavHost(
             onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode
@@ -67,14 +69,15 @@ fun JcaApp(
         PermissionsScreen(
             modifier = Modifier.fillMaxSize(),
             permissionEnums = getUnGrantedPermissions(permissionStates),
-            openAppSettings = openAppSettings,
+            openAppSettings = openAppSettings
         )
     }
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
-private fun getUnGrantedPermissions(permissionStates: MultiplePermissionsState):
-        MutableSet<PermissionEnum> {
+private fun getUnGrantedPermissions(
+    permissionStates: MultiplePermissionsState
+): MutableSet<PermissionEnum> {
     val unGrantedPermissions = mutableSetOf<PermissionEnum>()
     for (permission in permissionStates.permissions) {
         // camera is always required
@@ -90,7 +93,6 @@ private fun getUnGrantedPermissions(permissionStates: MultiplePermissionsState):
     }
     return unGrantedPermissions
 }
-
 
 @Composable
 private fun JetpackCameraNavHost(

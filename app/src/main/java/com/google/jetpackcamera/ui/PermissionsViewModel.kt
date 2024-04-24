@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
-@OptIn(ExperimentalPermissionsApi::class)
 class PermissionsViewModel(
-    val permissionEnums: Set<PermissionEnum>,
+    val permissionEnums: Set<PermissionEnum>
 ) : ViewModel() {
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionEnum>()
@@ -35,4 +32,3 @@ class PermissionsViewModel(
         visiblePermissionDialogQueue.removeFirst()
     }
 }
-

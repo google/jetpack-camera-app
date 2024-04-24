@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui
 
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -37,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +46,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.R
@@ -63,7 +60,7 @@ import com.google.jetpackcamera.R
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
     permissionEnums: Set<PermissionEnum>,
-    openAppSettings: () -> Unit,
+    openAppSettings: () -> Unit
 ) {
     val permissionsViewModel =
         PermissionsViewModel(
@@ -84,23 +81,24 @@ fun PermissionsScreen(
                 } else if (permissionEnum.isOptional()) {
                     permissionsViewModel.dismissPermission()
                 }
-            })
+            }
+        )
 
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
             permissionState = currentPermissionState,
             onSkipPermission = when (permissionEnum) {
-                //todo: a prettier navigation to app settings.
+                // todo: a prettier navigation to app settings.
                 PermissionEnum.CAMERA -> null
-                else -> null //permissionsViewModel::dismissPermission //todo: skip permission button functionality
+                // todo: skip permission button functionality. currently need to go through the prompt to skip
+                else -> null // permissionsViewModel::dismissPermission
             },
             onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
             onOpenAppSettings = openAppSettings
         )
     }
 }
-
 
 /**
  * Template for a permission Screen page that uses a [permissionEnum]
@@ -118,12 +116,13 @@ fun PermissionTemplate(
     PermissionTemplate(
         modifier = modifier,
         onRequestPermission = {
-            // if declined by user, must go to system app settings to enable permission
-            //todo: open a dialog that tells user they must go to device's app settings to enable permissions
-            if (permissionState.status.shouldShowRationale)
+            // if declined by user, must navigate to system app settings to enable permission
+            // todo: open a dialog that tells user they must go to device's app settings to enable permissions
+            if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
-            else
+            } else {
                 onRequestPermission()
+            }
         },
         onSkipPermission = onSkipPermission,
         painter = permissionEnum.getPainter(),

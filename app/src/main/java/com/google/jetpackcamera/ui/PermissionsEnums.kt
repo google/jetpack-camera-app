@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui
 
 import androidx.annotation.DrawableRes
@@ -67,7 +66,6 @@ interface PermissionInfoProvider {
     fun getIconAccessiblityTextResId(): Int
 }
 
-
 enum class PermissionEnum : PermissionInfoProvider {
 
     CAMERA {
@@ -106,4 +104,3 @@ enum class PermissionEnum : PermissionInfoProvider {
             R.string.microphone_permission_accessibility_text
     }
 }
-
