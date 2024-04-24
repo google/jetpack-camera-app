@@ -15,9 +15,12 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -46,6 +49,7 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -415,10 +419,14 @@ constructor(
         return eligibleContentValues
     }
 
+    @SuppressLint("MissingPermission")
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         Log.d(TAG, "recordVideo")
+        //todo: add setting to enable or disable audio when permission is granted
+        val audioEnabled = (checkSelfPermission( this.application.baseContext,Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED)
         val captureTypeString =
             when (captureMode) {
                 CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -445,6 +453,7 @@ constructor(
         recording =
             videoCaptureUseCase.output
                 .prepareRecording(application, mediaStoreOutput)
+                .apply { if (audioEnabled) withAudioEnabled() }
                 .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
                         Log.d(TAG, onVideoRecordEvent.toString())
