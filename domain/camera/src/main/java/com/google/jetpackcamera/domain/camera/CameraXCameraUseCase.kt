@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.domain.camera
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -423,10 +422,15 @@ constructor(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         Log.d(TAG, "recordVideo")
-        //todo(b/336886716): default setting to enable or disable audio when permission is granted
-        //todo(b/336888844): mute/unmute audio while recording is active
-        val audioEnabled = (checkSelfPermission( this.application.baseContext,Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED)
+        // todo(b/336886716): default setting to enable or disable audio when permission is granted
+        // todo(b/336888844): mute/unmute audio while recording is active
+        val audioEnabled = (
+            checkSelfPermission(
+                this.application.baseContext,
+                Manifest.permission.RECORD_AUDIO
+            )
+                == PackageManager.PERMISSION_GRANTED
+            )
         val captureTypeString =
             when (captureMode) {
                 CaptureMode.MULTI_STREAM -> "MultiStream"
