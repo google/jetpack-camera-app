@@ -419,12 +419,12 @@ constructor(
         return eligibleContentValues
     }
 
-    @SuppressLint("MissingPermission")
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         Log.d(TAG, "recordVideo")
-        //todo: add setting to enable or disable audio when permission is granted
+        //todo(b/336886716): default setting to enable or disable audio when permission is granted
+        //todo(b/336888844): mute/unmute audio while recording is active
         val audioEnabled = (checkSelfPermission( this.application.baseContext,Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED)
         val captureTypeString =
