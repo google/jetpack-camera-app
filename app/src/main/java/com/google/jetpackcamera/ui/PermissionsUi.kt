@@ -126,7 +126,7 @@ fun PermissionTemplate(
         },
         onSkipPermission = onSkipPermission,
         painter = permissionEnum.getPainter(),
-        iconAccessibilityText = stringResource(permissionEnum.getIconAccessiblityTextResId()),
+        iconAccessibilityText = stringResource(permissionEnum.getIconAccessibilityTextResId()),
         title = stringResource(permissionEnum.getPermissionTitleResId()),
         bodyText = stringResource(id = permissionEnum.getPermissionBodyTextResId()),
         requestButtonText = stringResource(id = R.string.request_permission)

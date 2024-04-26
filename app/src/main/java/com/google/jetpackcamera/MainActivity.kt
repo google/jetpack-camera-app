@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
                                 previewMode = getPreviewMode(),
                                 onPreviewViewModel = { previewViewModel = it },
                                 openAppSettings = ::openAppSettings,
-                                        onRequestWindowColorMode = { colorMode ->
+                                onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                         Log.d(
@@ -206,9 +206,9 @@ private fun Int.toColorModeString(): String {
 }
 
 /**
- * Open the app settings when necessary to enable permissions
+ * Open the app settings when necessary. I.e. to enable permissions that have been denied by a user
  */
-fun Activity.openAppSettings() {
+private fun Activity.openAppSettings() {
     Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
         Uri.fromParts("package", packageName, null)

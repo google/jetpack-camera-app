@@ -72,14 +72,21 @@ fun JcaApp(
         // you'll have the option to go through camera and all other optional permissions
         PermissionsScreen(
             modifier = modifier.fillMaxSize(),
-            permissionEnums = getUnGrantedPermissions(permissionStates),
+            permissionEnums = getRequestablePermissions(permissionStates),
             openAppSettings = openAppSettings
         )
     }
 }
 
+/**
+ *
+ * Provides a set of [PermissionEnum] representing the permissions that can still be requested.
+ * Permissions that can be requested are:
+ * - mandatory permissions that have not been granted
+ * - optional permissions that have not yet been denied by the user
+ */
 @OptIn(ExperimentalPermissionsApi::class)
-private fun getUnGrantedPermissions(
+private fun getRequestablePermissions(
     permissionStates: MultiplePermissionsState
 ): MutableSet<PermissionEnum> {
     val unGrantedPermissions = mutableSetOf<PermissionEnum>()
