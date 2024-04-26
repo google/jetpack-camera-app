@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.ui.permissions
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 
+/**
+ * A [ViewModel] for [PermissionsScreen]]
+ */
 class PermissionsViewModel(
     val permissionEnums: Set<PermissionEnum>
 ) : ViewModel() {

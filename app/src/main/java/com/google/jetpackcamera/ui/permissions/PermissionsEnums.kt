@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.ui.permissions
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes

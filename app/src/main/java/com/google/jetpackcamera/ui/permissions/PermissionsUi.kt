@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.ui.permissions
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,62 +44,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.R
 
-/**
- * Permission prompts screen.
- * Camera permission will always prompt when disabled, and the app cannot be used otherwise
- * if optional settings have not yet been declined by the user, then they will be prompted as well
- */
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun PermissionsScreen(
-    modifier: Modifier = Modifier,
-    permissionEnums: Set<PermissionEnum>,
-    openAppSettings: () -> Unit
-) {
-    val permissionsViewModel =
-        PermissionsViewModel(
-            permissionEnums = permissionEnums
-        )
-
-    if (!permissionsViewModel.visiblePermissionDialogQueue.isEmpty()) {
-        val permissionEnum = permissionsViewModel.visiblePermissionDialogQueue.first()
-        val currentPermissionState =
-            rememberPermissionState(permission = permissionEnum.getPermission())
-
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-            onResult = { permissionGranted ->
-                if (permissionGranted) {
-                    // remove from list
-                    permissionsViewModel.dismissPermission()
-                } else if (permissionEnum.isOptional()) {
-                    permissionsViewModel.dismissPermission()
-                }
-            }
-        )
-
-        PermissionTemplate(
-            modifier = modifier,
-            permissionEnum = permissionEnum,
-            permissionState = currentPermissionState,
-            onSkipPermission = when (permissionEnum) {
-                // todo: a prettier navigation to app settings.
-                PermissionEnum.CAMERA -> null
-                // todo: skip permission button functionality. currently need to go through the prompt to skip
-                else -> null // permissionsViewModel::dismissPermission
-            },
-            onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
-            onOpenAppSettings = openAppSettings
-        )
-    }
-}
 
 /**
- * Template for a permission Screen page that uses a [permissionEnum]
+ * Template for a single page for the permissions Screen
+ *
+ * @param permissionEnum a [PermissionEnum] representing the target permission
+ * @param permissionState a [PermissionState] of the target permission
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
