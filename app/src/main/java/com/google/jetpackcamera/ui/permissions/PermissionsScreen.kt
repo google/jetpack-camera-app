@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.permissions
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
-
 
 /**
  * Permission prompts screen.
@@ -36,7 +34,6 @@ fun PermissionsScreen(
     viewModel: PermissionsViewModel,
     openAppSettings: () -> Unit
 ) {
-
     if (!viewModel.visiblePermissionDialogQueue.isEmpty()) {
         val permissionEnum = viewModel.visiblePermissionDialogQueue.first()
         val currentPermissionState =

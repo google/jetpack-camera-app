@@ -73,8 +73,8 @@ fun JcaApp(
             modifier = modifier
         )
     } else {
-
-        val permissionsViewModel = viewModel{PermissionsViewModel(getRequestablePermissions(permissionStates))}
+        val permissionsViewModel =
+            viewModel { PermissionsViewModel(getRequestablePermissions(permissionStates)) }
         // you'll have the option to go through camera and all other optional permissions
         PermissionsScreen(
             modifier = modifier.fillMaxSize(),

@@ -47,7 +47,6 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.R
 
-
 /**
  * Template for a single page for the permissions Screen
  *
