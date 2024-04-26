@@ -32,29 +32,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
-object UiTestUtil {
-    private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
-        val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()
-        activityScenario.onActivity(activityRef::set)
-        return activityRef.get()
-    }
-
-    fun getPreviewCameraAppSettings(
-        activityScenario: ActivityScenario<MainActivity>
-    ): CameraAppSettings {
-        return getActivity(
-            activityScenario
-        ).previewViewModel!!.previewUiState.value.let {
-            when (it) {
-                is PreviewUiState.Ready -> it.currentCameraSettings
-                else -> throw IllegalStateException(
-                    "Can only retrieve camera app settings from PreviewUiState.Ready," +
-                        " but state was ${it::class}"
-                )
-            }
-        }
-    }
-}
+object UiTestUtil
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
