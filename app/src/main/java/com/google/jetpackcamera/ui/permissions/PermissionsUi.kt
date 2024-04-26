@@ -68,7 +68,7 @@ fun PermissionTemplate(
         modifier = modifier,
         onRequestPermission = {
             // if declined by user, must navigate to system app settings to enable permission
-            // todo: open a dialog that tells user they must go to device's app settings to enable permissions
+            // todo(b/337338326): open a dialog that tells user they must go to device's app settings to enable permissions
             if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
             } else {
