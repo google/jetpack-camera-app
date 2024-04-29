@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.quicksettings.ui
+package com.google.jetpackcamera.feature.preview.quicksettings.ui
 
 const val QUICK_SETTINGS_CAPTURE_MODE_BUTTON = "QuickSettingsCaptureModeButton"
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"

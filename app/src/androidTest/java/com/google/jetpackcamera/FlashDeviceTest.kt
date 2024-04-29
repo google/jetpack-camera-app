@@ -31,8 +31,8 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
 import org.junit.Before
 import org.junit.Rule
@@ -76,7 +76,7 @@ internal class FlashDeviceTest {
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
             .assertExists()
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_on_description
+            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_on_description
         )
     }
 
@@ -99,7 +99,7 @@ internal class FlashDeviceTest {
             .performClick()
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_auto_description
+            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_auto_description
         )
     }
 
@@ -111,7 +111,7 @@ internal class FlashDeviceTest {
         }
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_off_description
+            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_off_description
         )
 
         // Navigate to quick settings
@@ -127,7 +127,7 @@ internal class FlashDeviceTest {
             .performClick()
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.quicksettings.R.string.quick_settings_flash_off_description
+            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_off_description
         )
     }
 
