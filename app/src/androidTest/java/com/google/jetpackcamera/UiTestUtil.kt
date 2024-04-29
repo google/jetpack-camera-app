@@ -22,8 +22,8 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
