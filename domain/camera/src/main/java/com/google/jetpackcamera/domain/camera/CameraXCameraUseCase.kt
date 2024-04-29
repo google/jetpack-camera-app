@@ -124,7 +124,7 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     override suspend fun initialize() {
-        cameraProvider = ProcessCameraProvider.awaitInstance(application.applicationContext)
+        cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
         val availableCameraLenses =
