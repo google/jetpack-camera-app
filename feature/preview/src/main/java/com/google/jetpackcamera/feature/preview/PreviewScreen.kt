@@ -70,7 +70,6 @@ private const val TAG = "PreviewScreen"
  */
 @Composable
 fun PreviewScreen(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
@@ -78,7 +77,6 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
-    onPreviewViewModel(viewModel)
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
