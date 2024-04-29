@@ -22,39 +22,12 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.quicksettings.R
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.LensFacing
-import java.lang.IllegalStateException
-import java.util.concurrent.atomic.AtomicReference
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
-object UiTestUtil {
-    private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
-        val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()
-        activityScenario.onActivity(activityRef::set)
-        return activityRef.get()
-    }
-
-    fun getPreviewCameraAppSettings(
-        activityScenario: ActivityScenario<MainActivity>
-    ): CameraAppSettings {
-        return getActivity(
-            activityScenario
-        ).previewViewModel!!.previewUiState.value.let {
-            when (it) {
-                is PreviewUiState.Ready -> it.currentCameraSettings
-                else -> throw IllegalStateException(
-                    "Can only retrieve camera app settings from PreviewUiState.Ready," +
-                        " but state was ${it::class}"
-                )
-            }
-        }
-    }
-}
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
