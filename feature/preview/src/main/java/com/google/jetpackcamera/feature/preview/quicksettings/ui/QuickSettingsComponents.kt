@@ -45,13 +45,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
-import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
