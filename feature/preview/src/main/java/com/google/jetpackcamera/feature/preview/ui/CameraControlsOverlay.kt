@@ -17,6 +17,11 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +29,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -110,6 +117,19 @@ fun CameraControlsOverlay(
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings
                 )
+            }
+            if (previewUiState.videoRecordingState == VideoRecordingState.ACTIVE) {
+                val animatedSize by animateDpAsState(
+                    targetValue = (100 * (1 + previewUiState.audioAmplitude)).dp,
+                    label = ""
+                )
+
+                Canvas(modifier = Modifier.size(animatedSize), onDraw = {
+                    drawCircle(
+                        alpha = .5f,
+                        color = Color.White
+                    )
+                })
             }
 
             ControlsBottom(
@@ -410,7 +430,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,

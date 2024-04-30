@@ -242,6 +242,7 @@ class PreviewViewModel @Inject constructor(
                                 withDismissAction = true
                             )
                         }
+
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
@@ -249,9 +250,11 @@ class PreviewViewModel @Inject constructor(
                                 withDismissAction = true
                             )
                         }
+
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
                             audioAmplitude = it.audioAmplitude
-                            println("hamptertude$audioAmplitude")
+                            if (audioAmplitude > 0.01)
+                                Log.d("HAMPTER", "$audioAmplitude")
                         }
 
                     }
