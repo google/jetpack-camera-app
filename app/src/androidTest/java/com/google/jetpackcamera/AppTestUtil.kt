@@ -25,4 +25,11 @@ val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     if(Build.VERSION.SDK_INT < 32){
         add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
     }
+    if (Build.VERSION.SDK_INT >= 33) {
+        add (android.Manifest.permission.READ_MEDIA_IMAGES)
+        add (android.Manifest.permission.READ_MEDIA_VIDEO)
+    }
+    if (Build.VERSION.SDK_INT >= 34) {
+        add(android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+    }
 }
