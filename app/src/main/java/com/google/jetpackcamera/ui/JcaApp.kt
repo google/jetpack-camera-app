@@ -33,7 +33,6 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
-import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
@@ -48,7 +47,6 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode,
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -67,7 +65,6 @@ fun JcaApp(
             )
     ) {
         JetpackCameraNavHost(
-            onPreviewViewModel = onPreviewViewModel,
             previewMode = previewMode,
             onRequestWindowColorMode = onRequestWindowColorMode,
             modifier = modifier
@@ -114,7 +111,6 @@ private fun getRequestablePermissions(
 @Composable
 private fun JetpackCameraNavHost(
     previewMode: PreviewMode,
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
@@ -122,7 +118,6 @@ private fun JetpackCameraNavHost(
     NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
-                onPreviewViewModel = onPreviewViewModel,
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 previewMode = previewMode

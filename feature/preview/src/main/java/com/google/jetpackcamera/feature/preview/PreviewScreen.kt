@@ -48,13 +48,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.BlinkState
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
-import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -70,7 +70,6 @@ private const val TAG = "PreviewScreen"
  */
 @Composable
 fun PreviewScreen(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
@@ -78,7 +77,6 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
-    onPreviewViewModel(viewModel)
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
