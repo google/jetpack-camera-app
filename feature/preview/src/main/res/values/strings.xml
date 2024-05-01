@@ -27,4 +27,36 @@
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
 
+    <string name="quick_settings_front_camera_text">FRONT</string>
+    <string name="quick_settings_back_camera_text">BACK</string>
+    <string name="quick_settings_front_camera_description">Front Camera</string>
+    <string name="quick_settings_back_camera_description">Back Camera</string>
+
+    <string name="quick_settings_aspect_ratio_3_4">3:4</string>
+    <string name="quick_settings_aspect_ratio_9_16">9:16</string>
+    <string name="quick_settings_aspect_ratio_1_1">1:1</string>
+
+    <string name="quick_settings_dynamic_range_sdr">SDR</string>
+    <string name="quick_settings_dynamic_range_hlg10">HLG10</string>
+    <string name="quick_settings_dynamic_range_sdr_description">Standard dynamic range</string>
+    <string name="quick_settings_dynamic_range_hlg10_description">10-bit Hybrid Log Gamma dynamic range</string>
+
+    <string name="quick_settings_aspect_ratio_3_4_description">3 to 4 aspect ratio</string>
+    <string name="quick_settings_aspect_ratio_9_16_description">9 to 16 aspect ratio</string>
+    <string name="quick_settings_aspect_ratio_1_1_description">1 to 1 aspect ratio</string>
+
+    <string name="quick_settings_flash_off">OFF</string>
+    <string name="quick_settings_flash_auto">AUTO</string>
+    <string name="quick_settings_flash_on">ON</string>
+    <string name="quick_settings_flash_off_description">Flash off</string>
+    <string name="quick_settings_flash_auto_description">Auto flash</string>
+    <string name="quick_settings_flash_on_description">Flash on</string>
+
+    <string name="quick_settings_capture_mode_single">Single Stream</string>
+    <string name="quick_settings_capture_mode_multi">Multi Stream</string>
+    <string name="quick_settings_capture_mode_single_description">Single-stream capture mode on</string>
+    <string name="quick_settings_capture_mode_multi_description">Multi-stream capture mode on</string>
+
+    <string name="quick_settings_dropdown_open_description">Quick settings open</string>
+    <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
 </resources>
