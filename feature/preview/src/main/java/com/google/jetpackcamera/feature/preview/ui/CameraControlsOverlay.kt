@@ -359,7 +359,7 @@ private fun Preview_ControlsBottom() {
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -378,7 +378,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -397,7 +397,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -422,7 +422,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                         TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -441,7 +441,7 @@ private fun Preview_ControlsBottom_Recording() {
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.ACTIVE,
+            videoRecordingState = VideoRecordingState.ACTIVE
         )
     }
 }
