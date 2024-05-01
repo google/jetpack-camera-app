@@ -206,7 +206,8 @@ fun PreviewDisplay(
                 animationSpec = tween(
                     durationMillis = (BLINK_TIME / 2).toInt(),
                     easing = LinearEasing
-                ), label = ""
+                ),
+                label = ""
             )
 
             LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
