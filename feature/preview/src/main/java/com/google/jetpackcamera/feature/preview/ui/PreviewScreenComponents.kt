@@ -20,6 +20,8 @@ import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -37,6 +39,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
@@ -72,6 +75,34 @@ import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "PreviewScreen"
 
+@Composable
+fun AmplitudeVisualizer(modifier: Modifier = Modifier, sizeScale: Int = 100, audioAmplitude: Float){
+        val animatedSize by animateDpAsState(
+            targetValue = ((sizeScale*1.5f).coerceAtMost(sizeScale * (1 + EaseOutExpo
+                .transform(audioAmplitude)))).dp,
+            label = "vumeterAnimation"
+        )
+        Box(modifier = modifier) {
+            Canvas(modifier = Modifier
+                .size(animatedSize)
+                .align(Alignment.Center), onDraw = {
+                drawCircle(
+                    alpha = .5f,
+                    color = Color.White
+                )
+            })
+            Canvas(modifier = Modifier
+                .size(sizeScale.dp)
+                .align(Alignment.Center), onDraw = {drawCircle(color = Color.White)})
+
+            Icon(modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.75 * sizeScale).dp),
+                tint = Color.Black,
+                imageVector = Icons.Filled.Mic,
+                contentDescription = stringResource(id = R.string.audio_visualizer_icon))
+    }
+}
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *

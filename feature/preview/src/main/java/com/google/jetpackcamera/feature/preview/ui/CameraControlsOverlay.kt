@@ -17,17 +17,21 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
@@ -118,24 +122,14 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings
                 )
             }
-            if (previewUiState.videoRecordingState == VideoRecordingState.ACTIVE) {
-                val animatedSize by animateDpAsState(
-                    targetValue = (100 * (1 + previewUiState.audioAmplitude)).dp,
-                    label = ""
-                )
 
-                Canvas(modifier = Modifier.size(animatedSize), onDraw = {
-                    drawCircle(
-                        alpha = .5f,
-                        color = Color.White
-                    )
-                })
-            }
+
 
             ControlsBottom(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
+                audioAmplitude = previewUiState.audioAmplitude.toFloat(),
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
@@ -198,13 +192,14 @@ private fun ControlsTop(
 
 @Composable
 private fun ControlsBottom(
+    modifier: Modifier = Modifier,
+    audioAmplitude: Float,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
     previewMode: PreviewMode,
-    modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -224,7 +219,9 @@ private fun ControlsBottom(
         }
 
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -249,7 +246,15 @@ private fun ControlsBottom(
                 blinkState = blinkState
             )
             Row(Modifier.weight(1f)) {
-                /*TODO("Place other components here") */
+                if (videoRecordingState == VideoRecordingState.ACTIVE) {
+                    AmplitudeVisualizer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        sizeScale = 50,
+                        audioAmplitude = audioAmplitude,
+                    )
+                }
             }
         }
     }
@@ -383,7 +388,8 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            previewMode = PreviewMode.StandardMode {},
+            audioAmplitude = 0f
         )
     }
 }
@@ -398,7 +404,8 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            previewMode = PreviewMode.StandardMode {},
+            audioAmplitude = 0f
         )
     }
 }
@@ -413,7 +420,9 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            previewMode = PreviewMode.StandardMode {},
+                    audioAmplitude = 0f
+
         )
     }
 }
@@ -434,7 +443,9 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            previewMode = PreviewMode.StandardMode {},
+            audioAmplitude = 0f
+
         )
     }
 }
@@ -449,7 +460,8 @@ private fun Preview_ControlsBottom_Recording() {
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            previewMode = PreviewMode.StandardMode {},
+            audioAmplitude = 0.5f
         )
     }
 }
