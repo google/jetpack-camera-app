@@ -139,9 +139,6 @@ dependencies {
 
     // Camera Preview
     implementation(project(":feature:preview"))
-    // Only needed as androidTestImplementation & testImplementation for now since we only need it for string resources
-    androidTestImplementation(project(":feature:quicksettings"))
-    testImplementation(project(":feature:quicksettings"))
 
     // Settings Screen
     implementation(project(":feature:settings"))
