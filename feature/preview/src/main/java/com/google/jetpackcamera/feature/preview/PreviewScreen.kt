@@ -72,7 +72,8 @@ fun PreviewScreen(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
-    viewModel: PreviewViewModel = hiltViewModel()
+    viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
+    { factory -> factory.create(previewMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -96,7 +97,6 @@ fun PreviewScreen(
         is PreviewUiState.Ready -> ContentScreen(
             modifier = modifier,
             previewUiState = currentUiState,
-            previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
             surfaceRequest = surfaceRequest,
             onNavigateToSettings = onNavigateToSettings,
@@ -124,7 +124,6 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     previewUiState: PreviewUiState.Ready,
-    previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -193,7 +192,6 @@ private fun ContentScreen(
             CameraControlsOverlay(
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
-                previewMode = previewMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleQuickSettings = onToggleQuickSettings,
@@ -252,7 +250,6 @@ private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
             previewUiState = FAKE_PREVIEW_UI_STATE_READY,
-            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -267,7 +264,6 @@ private fun ContentScreen_WhileRecording() {
             previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
-            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -276,5 +272,6 @@ private fun ContentScreen_WhileRecording() {
 
 private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
-    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+    previewMode = PreviewMode.StandardMode {}
 )

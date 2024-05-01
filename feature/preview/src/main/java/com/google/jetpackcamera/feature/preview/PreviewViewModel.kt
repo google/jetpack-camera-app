@@ -27,15 +27,17 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -48,6 +50,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
+
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -55,8 +59,9 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * [ViewModel] for [PreviewScreen].
  */
-@HiltViewModel
-class PreviewViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
+class PreviewViewModel @AssistedInject constructor(
+    @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
 
@@ -97,14 +102,16 @@ class PreviewViewModel @Inject constructor(
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale
+                                zoomScale = zoomScale,
+                                previewMode = previewMode
                             )
 
                         is PreviewUiState.NotReady ->
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale
+                                zoomScale = zoomScale,
+                                previewMode = previewMode
                             )
                     }
                 }
@@ -243,6 +250,25 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun startVideoRecording() {
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is
+                    PreviewMode.ExternalImageCaptureMode
+        ) {
+            Log.d(TAG, "externalVideoRecording")
+            viewModelScope.launch {
+                _previewUiState.update { old ->
+                    (old as? PreviewUiState.Ready)?.copy(
+                        snackBarToShow = SnackbarData(
+                            cookie = "Video-ExternalImageCaptureMode",
+                            stringResource = R.string.toast_video_capture_external_unsupported,
+                            withDismissAction = true,
+                            testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                        )
+                    ) ?: old
+                }
+            }
+            return
+        }
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
@@ -355,6 +381,11 @@ class PreviewViewModel @Inject constructor(
                 } ?: old
             }
         }
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(previewMode: PreviewMode): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {
