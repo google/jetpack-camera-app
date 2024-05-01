@@ -309,7 +309,7 @@ constructor(
             }
     }
 
-    override suspend fun takePicture(onCaptureStarted: (() -> Unit)?) {
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         try {
             val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
             Log.d(TAG, "onCaptureSuccess")
@@ -322,7 +322,7 @@ constructor(
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     override suspend fun takePicture(
-        onCaptureStarted: (() -> Unit)?,
+        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean

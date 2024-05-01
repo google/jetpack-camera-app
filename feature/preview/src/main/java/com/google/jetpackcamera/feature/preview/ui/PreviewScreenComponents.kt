@@ -50,7 +50,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -205,13 +204,13 @@ fun PreviewDisplay(
             val imageAlpha: Float by animateFloatAsState(
                 targetValue = if (imageVisible) 1f else 0f,
                 animationSpec = tween(
-                    durationMillis = (BLINK_TIME/ 2).toInt(),
-                    easing = LinearEasing,
+                    durationMillis = (BLINK_TIME / 2).toInt(),
+                    easing = LinearEasing
                 ), label = ""
             )
 
-            LaunchedEffect(previewUiState.blinkTimeStamp) {
-                if (previewUiState.blinkTimeStamp != 0L) {
+            LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
+                if (previewUiState.lastBlinkTimeStamp != 0L) {
                     imageVisible = false
                     delay(BLINK_TIME)
                     imageVisible = true

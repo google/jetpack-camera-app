@@ -168,7 +168,7 @@ class PreviewViewModel @Inject constructor(
                     cameraUseCase.takePicture {
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                blinkTimeStamp = System.currentTimeMillis()
+                                lastBlinkTimeStamp = System.currentTimeMillis()
                             ) ?: old
                         }
                     }
@@ -190,7 +190,7 @@ class PreviewViewModel @Inject constructor(
                     cameraUseCase.takePicture({
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                blinkTimeStamp = System.currentTimeMillis()
+                                lastBlinkTimeStamp = System.currentTimeMillis()
                             ) ?: old
                         }
                     }, contentResolver, imageCaptureUri, ignoreUri).savedUri

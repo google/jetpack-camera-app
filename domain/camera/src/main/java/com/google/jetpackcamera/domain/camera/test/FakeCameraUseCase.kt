@@ -93,7 +93,7 @@ class FakeCameraUseCase(
             }
     }
 
-    override suspend fun takePicture(onCaptureStarted: (() -> Unit)?) {
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
@@ -112,7 +112,7 @@ class FakeCameraUseCase(
 
     @SuppressLint("RestrictedApi")
     override suspend fun takePicture(
-        onCaptureStarted: (() -> Unit)?,
+        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean

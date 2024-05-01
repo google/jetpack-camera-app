@@ -131,7 +131,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(FlashMode.ON)
         advanceUntilIdle()
-        cameraUseCase.takePicture(null)
+        cameraUseCase.takePicture()
 
         advanceUntilIdle()
         assertThat(events.map { it.type }).containsExactlyElementsIn(

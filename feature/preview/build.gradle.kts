@@ -132,7 +132,6 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
-    implementation(project(":feature:quicksettings"))
 }
 
 // Allow references to generated code
