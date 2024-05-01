@@ -17,6 +17,9 @@ package com.google.jetpackcamera.ui.permissions
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,9 +82,9 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun isOptional(): Boolean = false
 
-        override fun getDrawableResId(): Int = R.drawable.photo_camera
+        override fun getDrawableResId(): Int? = null
 
-        override fun getImageVector(): ImageVector? = null
+        override fun getImageVector(): ImageVector = Icons.Outlined.CameraAlt
 
         override fun getPermissionTitleResId(): Int = R.string.camera_permission_screen_title
 
@@ -97,9 +100,9 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun isOptional(): Boolean = false
 
-        override fun getDrawableResId(): Int = R.drawable.audio_microphone
+        override fun getDrawableResId(): Int? = null
 
-        override fun getImageVector(): ImageVector? = null
+        override fun getImageVector(): ImageVector = Icons.Outlined.Mic
 
         override fun getPermissionTitleResId(): Int = R.string.microphone_permission_screen_title
 

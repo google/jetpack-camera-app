@@ -26,6 +26,6 @@
     <string name="request_permission">Allow Access</string>
 
     <string name="microphone_permission_screen_title">Enable Audio Recording</string>
-    <string name="microphone_permission_required_rationale">Enabling this is necessary for audio in video recordings.</string>
+    <string name="microphone_permission_required_rationale">Please provide permission to enable audio in video recording. Videos will be mute if this permission is revoked.</string>
     <string name="microphone_permission_accessibility_text">An icon representing a microphone</string>
 </resources>
