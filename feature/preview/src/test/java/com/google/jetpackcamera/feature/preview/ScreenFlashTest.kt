@@ -67,7 +67,7 @@ class ScreenFlashTest {
         cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(FlashMode.ON)
         val contentResolver: ContentResolver = Mockito.mock()
-        cameraUseCase.takePicture(contentResolver, null)
+        cameraUseCase.takePicture({}, contentResolver, null)
 
         advanceUntilIdle()
         assertThat(states.map { it.enabled }).containsExactlyElementsIn(
