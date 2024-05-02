@@ -38,13 +38,13 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
@@ -123,7 +123,7 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     override suspend fun initialize() {
-        cameraProvider = ProcessCameraProvider.getInstance(application).await()
+        cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
         val availableCameraLenses =
