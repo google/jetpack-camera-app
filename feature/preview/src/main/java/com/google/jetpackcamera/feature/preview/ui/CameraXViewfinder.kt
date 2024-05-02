@@ -55,15 +55,14 @@ import kotlinx.coroutines.launch
  *
  * @param[modifier] the modifier to be applied to the layout
  * @param[surfaceRequest] a [SurfaceRequest] from [Preview.SurfaceProvider].
- * @param[implementationMode] the implementation mode, either [ImplementationMode.PERFORMANCE] or
- * [ImplementationMode.COMPATIBLE]. Currently, only [ImplementationMode.PERFORMANCE] will produce
- * the correct orientation.
+ * @param[implementationMode] the implementation mode, either [ImplementationMode.EXTERNAL] or
+ * [ImplementationMode.EMBEDDED].
  */
 @Composable
 fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
     modifier: Modifier = Modifier,
-    implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE,
+    implementationMode: ImplementationMode = ImplementationMode.EXTERNAL,
     onRequestWindowColorMode: (Int) -> Unit = {}
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
@@ -122,12 +121,12 @@ fun CameraXViewfinder(
                     isSourceHdr = surfaceRequest.dynamicRange.encoding != DynamicRange.ENCODING_SDR,
                     implMode,
                     TransformationInfo(
-                        transformInfo.rotationDegrees,
-                        transformInfo.cropRect.left,
-                        transformInfo.cropRect.right,
-                        transformInfo.cropRect.top,
-                        transformInfo.cropRect.bottom,
-                        transformInfo.isMirroring
+                        sourceRotation = transformInfo.rotationDegrees,
+                        cropRectLeft = transformInfo.cropRect.left,
+                        cropRectTop = transformInfo.cropRect.top,
+                        cropRectRight = transformInfo.cropRect.right,
+                        cropRectBottom = transformInfo.cropRect.bottom,
+                        shouldMirror = transformInfo.isMirroring
                     )
                 )
             }
@@ -139,7 +138,7 @@ fun CameraXViewfinder(
                 .filterNotNull()
                 .map { args ->
                     if (args.isSourceHdr &&
-                        args.implementationMode == ImplementationMode.PERFORMANCE
+                        args.implementationMode == ImplementationMode.EXTERNAL
                     ) {
                         ActivityInfo.COLOR_MODE_HDR
                     } else {
