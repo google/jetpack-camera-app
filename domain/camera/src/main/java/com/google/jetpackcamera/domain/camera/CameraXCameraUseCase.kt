@@ -38,13 +38,13 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
@@ -87,6 +87,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -112,18 +113,20 @@ constructor(
     private val imageCaptureUseCase = ImageCapture.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
-    private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
+    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
+    private var disableVideoCapture by Delegates.notNull<Boolean>()
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize() {
-        cameraProvider = ProcessCameraProvider.getInstance(application).await()
+    override suspend fun initialize(disableVideoCapture: Boolean) {
+        this.disableVideoCapture = disableVideoCapture
+        cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -400,6 +403,10 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        if (videoCaptureUseCase == null) {
+            Log.e(TAG, "attempted video recording with null videoCapture use case")
+            return
+        }
         Log.d(TAG, "recordVideo")
         val captureTypeString =
             when (captureMode) {
@@ -425,7 +432,7 @@ constructor(
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
-            videoCaptureUseCase.output
+            videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
                 .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
@@ -586,7 +593,9 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
-        videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        if (!disableVideoCapture) {
+            videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        }
 
         setFlashModeInternal(
             flashMode = initialTransientSettings.flashMode,
@@ -604,7 +613,9 @@ constructor(
             if (sessionSettings.dynamicRange == DynamicRange.SDR) {
                 addUseCase(imageCaptureUseCase)
             }
-            addUseCase(videoCaptureUseCase)
+            if (videoCaptureUseCase != null) {
+                addUseCase(videoCaptureUseCase!!)
+            }
 
             effect?.let { addEffect(it) }
 

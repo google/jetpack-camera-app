@@ -178,6 +178,7 @@ private fun ContentScreen(
 
             QuickSettingsScreenOverlay(
                 modifier = Modifier,
+                previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = onToggleQuickSettings,
                 currentCameraSettings = previewUiState.currentCameraSettings,

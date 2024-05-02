@@ -85,7 +85,7 @@ class PreviewViewModel @AssistedInject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize()
+        cameraUseCase.initialize(previewMode is PreviewMode.ExternalImageCaptureMode)
     }
 
     init {
