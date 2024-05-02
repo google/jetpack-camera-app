@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
 fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
     modifier: Modifier = Modifier,
-    implementationMode: ImplementationMode = ImplementationMode.EMBEDDED,
+    implementationMode: ImplementationMode = ImplementationMode.EXTERNAL,
     onRequestWindowColorMode: (Int) -> Unit = {}
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
