@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
@@ -76,31 +77,43 @@ import kotlinx.coroutines.CoroutineScope
 private const val TAG = "PreviewScreen"
 
 @Composable
-fun AmplitudeVisualizer(modifier: Modifier = Modifier, sizeScale: Int = 100, audioAmplitude: Float){
-        val animatedSize by animateDpAsState(
-            targetValue = ((sizeScale*1.5f).coerceAtMost(sizeScale * (1 + EaseOutExpo
-                .transform(audioAmplitude)))).dp,
-            label = "vumeterAnimation"
-        )
-        Box(modifier = modifier) {
-            Canvas(modifier = Modifier
-                .size(animatedSize)
-                .align(Alignment.Center), onDraw = {
-                drawCircle(
-                    alpha = .5f,
-                    color = Color.White
-                )
-            })
-            Canvas(modifier = Modifier
-                .size(sizeScale.dp)
-                .align(Alignment.Center), onDraw = {drawCircle(color = Color.White)})
+fun AmplitudeVisualizer(
+    modifier: Modifier = Modifier,
+    sizeScale: Int = 100,
+    audioAmplitude: Float
+) {
+    val animatedSize by animateDpAsState(
+        targetValue = ((sizeScale * 1.5f).coerceAtMost(
+            sizeScale * (1 + EaseOutExpo
+                .transform(audioAmplitude))
+        )).dp,
+        label = "vumeterAnimation"
+    )
+    Box(modifier = modifier) {
+        Canvas(modifier = Modifier
+            .size(animatedSize)
+            .align(Alignment.Center), onDraw = {
+            drawCircle(
+                alpha = .5f,
+                color = Color.White
+            )
+        })
+        Canvas(modifier = Modifier
+            .size(sizeScale.dp)
+            .align(Alignment.Center), onDraw = { drawCircle(color = Color.White) })
 
-            Icon(modifier = Modifier
+        Icon(
+            modifier = Modifier
                 .align(Alignment.Center)
                 .size((0.75 * sizeScale).dp),
-                tint = Color.Black,
-                imageVector = Icons.Filled.Mic,
-                contentDescription = stringResource(id = R.string.audio_visualizer_icon))
+            tint = Color.Black,
+            imageVector = if (audioAmplitude != 0f) {
+                Icons.Filled.Mic
+            } else {
+                Icons.Filled.MicOff
+            },
+            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+        )
     }
 }
 /**
