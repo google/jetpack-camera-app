@@ -15,33 +15,23 @@
  */
 package com.google.jetpackcamera.ui
 
-import android.Manifest
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
+import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
-import com.google.jetpackcamera.permissions.PermissionEnum
-import com.google.jetpackcamera.permissions.PermissionsScreen
-import com.google.jetpackcamera.permissions.PermissionsViewModel
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
     openAppSettings: () -> Unit,
@@ -50,78 +40,37 @@ fun JcaApp(
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
-    val permissionStates = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO
-        )
+
+    JetpackCameraNavHost(
+        previewMode = previewMode,
+        onOpenAppSettings = openAppSettings,
+        onRequestWindowColorMode = onRequestWindowColorMode,
+        modifier = modifier
     )
 
-    // should show rationale means a setting has been viewed and denied
-    if (cameraPermissionState.status.isGranted && (
-            permissionStates.allPermissionsGranted ||
-                permissionStates.shouldShowRationale
-            )
-    ) {
-        JetpackCameraNavHost(
-            previewMode = previewMode,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            modifier = modifier
-        )
-    } else {
-        val permissionsViewModel =
-            viewModel {
-                PermissionsViewModel(
-                    getRequestablePermissions(
-                        permissionStates
-                    )
-                )
-            }
-        // you'll have the option to go through camera and all other optional permissions
-        PermissionsScreen(
-            modifier = modifier.fillMaxSize(),
-            viewModel = permissionsViewModel,
-            openAppSettings = openAppSettings
-        )
-    }
 }
 
-/**
- *
- * Provides a set of [PermissionEnum] representing the permissions that can still be requested.
- * Permissions that can be requested are:
- * - mandatory permissions that have not been granted
- * - optional permissions that have not yet been denied by the user
- */
-@OptIn(ExperimentalPermissionsApi::class)
-private fun getRequestablePermissions(
-    permissionStates: MultiplePermissionsState
-): MutableSet<PermissionEnum> {
-    val unGrantedPermissions = mutableSetOf<PermissionEnum>()
-    for (permission in permissionStates.permissions) {
-        // camera is always required
-        if (!permission.status.isGranted && permission.permission == Manifest.permission.CAMERA) {
-            unGrantedPermissions.add(PermissionEnum.CAMERA)
-        }
-        // audio is optional
-        else if (!permission.status.shouldShowRationale && permission.permission ==
-            Manifest.permission.RECORD_AUDIO
-        ) {
-            unGrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
-        }
-    }
-    return unGrantedPermissions
-}
 
 @Composable
 private fun JetpackCameraNavHost(
-    previewMode: PreviewMode,
-    onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    previewMode: PreviewMode,
+    onOpenAppSettings: () -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
+    NavHost(
+        navController = navController,
+        startDestination = PERMISSIONS_ROUTE,
+        modifier = modifier
+    ) {
+        composable(PERMISSIONS_ROUTE) {
+            PermissionsScreen(
+                onNavigateToPreview = { navController.navigate(PREVIEW_ROUTE) },
+                openAppSettings = onOpenAppSettings,
+            )
+        }
+
         composable(PREVIEW_ROUTE) {
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },

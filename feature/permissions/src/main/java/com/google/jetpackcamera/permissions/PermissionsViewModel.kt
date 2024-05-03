@@ -15,23 +15,77 @@
  */
 package com.google.jetpackcamera.permissions
 
+import android.Manifest
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.shouldShowRationale
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * A [ViewModel] for [PermissionsScreen]]
  */
+@OptIn(ExperimentalPermissionsApi::class)
 class PermissionsViewModel(
-    val permissionEnums: Set<PermissionEnum>
+    permissionStates: MultiplePermissionsState
 ) : ViewModel() {
-
-    val visiblePermissionDialogQueue = mutableStateListOf<PermissionEnum>()
+    private val permissionQueue = mutableStateListOf<PermissionEnum>()
 
     init {
-        visiblePermissionDialogQueue.addAll(permissionEnums)
+        permissionQueue.addAll(getRequestablePermissions(permissionStates))
+    }
+
+    private val _permissionsUiState: MutableStateFlow<PermissionsUiState> =
+        MutableStateFlow(getCurrentPermission())
+    val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
+
+
+    private fun getCurrentPermission(): PermissionsUiState {
+        if (permissionQueue.isEmpty())
+            return PermissionsUiState.AllPermissionsGranted
+        else
+            return PermissionsUiState.PermissionsNeeded(permissionQueue.first())
     }
 
     fun dismissPermission() {
-        visiblePermissionDialogQueue.removeFirst()
+        if (!permissionQueue.isEmpty())
+            permissionQueue.removeFirst()
+
+        viewModelScope.launch {
+            _permissionsUiState.emit(getCurrentPermission())
+        }
     }
+}
+
+/**
+ *
+ * Provides a set of [PermissionEnum] representing the permissions that can still be requested.
+ * Permissions that can be requested are:
+ * - mandatory permissions that have not been granted
+ * - optional permissions that have not yet been denied by the user
+ */
+@OptIn(ExperimentalPermissionsApi::class)
+fun getRequestablePermissions(
+    permissionStates: MultiplePermissionsState
+): MutableSet<PermissionEnum> {
+    val unGrantedPermissions = mutableSetOf<PermissionEnum>()
+    for (permission in permissionStates.permissions) {
+        // camera is always required
+        if (!permission.status.isGranted && permission.permission == Manifest.permission.CAMERA) {
+            unGrantedPermissions.add(PermissionEnum.CAMERA)
+        }
+        // audio is optional
+        else if (!permission.status.shouldShowRationale && permission.permission ==
+            Manifest.permission.RECORD_AUDIO
+        ) {
+            unGrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
+        }
+    }
+    return unGrantedPermissions
 }

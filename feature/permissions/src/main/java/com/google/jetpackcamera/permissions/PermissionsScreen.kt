@@ -15,13 +15,46 @@
  */
 package com.google.jetpackcamera.permissions
 
+import android.Manifest
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
+
+private const val TAG = "PermissionsScreen"
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun PermissionsScreen(onNavigateToPreview: () -> Unit, openAppSettings: () -> Unit) {
+    val permissionStates:MultiplePermissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        )
+    )
+    //todo: use hilt dependency injection
+    val permissionsViewModel =
+        viewModel {
+            PermissionsViewModel(permissionStates)
+        }
+    PermissionsScreen(
+        viewModel = permissionsViewModel,
+        onNavigateToPreview = onNavigateToPreview,
+        openAppSettings = openAppSettings
+    )
+}
 
 /**
  * Permission prompts screen.
@@ -32,13 +65,17 @@ import com.google.accompanist.permissions.rememberPermissionState
 @Composable
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
+    onNavigateToPreview: () -> Unit,
+    openAppSettings: () -> Unit,
     viewModel: PermissionsViewModel,
-    openAppSettings: () -> Unit
 ) {
-    if (!viewModel.visiblePermissionDialogQueue.isEmpty()) {
-        val permissionEnum = viewModel.visiblePermissionDialogQueue.first()
+    Log.d(TAG, "PermissionsScreen")
+    val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
+    if (permissionsUiState is PermissionsUiState.PermissionsNeeded) {
+        val permissionEnum = (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
         val currentPermissionState =
-            rememberPermissionState(permission = permissionEnum.getPermission())
+            rememberPermissionState(
+                permission = permissionEnum.getPermission())
 
         val permissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -66,4 +103,9 @@ fun PermissionsScreen(
             onOpenAppSettings = openAppSettings
         )
     }
+    else {
+        onNavigateToPreview()
+    }
 }
+
+

@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -57,11 +60,17 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.hilt.navigation.compose)
 
+
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
+
+    // Hilt
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -69,4 +78,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }
