@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.permissions
+package com.google.jetpackcamera.permissions
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel

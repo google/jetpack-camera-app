@@ -37,9 +37,9 @@ import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
-import com.google.jetpackcamera.ui.permissions.PermissionEnum
-import com.google.jetpackcamera.ui.permissions.PermissionsScreen
-import com.google.jetpackcamera.ui.permissions.PermissionsViewModel
+import com.google.jetpackcamera.permissions.PermissionEnum
+import com.google.jetpackcamera.permissions.PermissionsScreen
+import com.google.jetpackcamera.permissions.PermissionsViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -71,7 +71,13 @@ fun JcaApp(
         )
     } else {
         val permissionsViewModel =
-            viewModel { PermissionsViewModel(getRequestablePermissions(permissionStates)) }
+            viewModel {
+                PermissionsViewModel(
+                    getRequestablePermissions(
+                        permissionStates
+                    )
+                )
+            }
         // you'll have the option to go through camera and all other optional permissions
         PermissionsScreen(
             modifier = modifier.fillMaxSize(),

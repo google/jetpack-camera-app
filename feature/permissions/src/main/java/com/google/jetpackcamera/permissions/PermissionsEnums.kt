@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.permissions
+package com.google.jetpackcamera.permissions
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
-import com.google.jetpackcamera.R
 
 const val CAMERA_PERMISSION = "android.permission.CAMERA"
 const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
