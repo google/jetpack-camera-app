@@ -23,6 +23,10 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.shouldShowRationale
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,9 +36,14 @@ import kotlinx.coroutines.launch
  * A [ViewModel] for [PermissionsScreen]]
  */
 @OptIn(ExperimentalPermissionsApi::class)
-class PermissionsViewModel(
-    permissionStates: MultiplePermissionsState
+@HiltViewModel(assistedFactory = PermissionsViewModel.Factory::class)
+class PermissionsViewModel @AssistedInject constructor(
+    @Assisted permissionStates: MultiplePermissionsState
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(runtimeArg: MultiplePermissionsState): PermissionsViewModel
+    }
     private val permissionQueue = mutableStateListOf<PermissionEnum>()
 
     init {

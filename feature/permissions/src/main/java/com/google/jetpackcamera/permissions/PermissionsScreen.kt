@@ -38,19 +38,14 @@ private const val TAG = "PermissionsScreen"
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionsScreen(onNavigateToPreview: () -> Unit, openAppSettings: () -> Unit) {
-    val permissionStates:MultiplePermissionsState = rememberMultiplePermissionsState(
+    val permissionStates = rememberMultiplePermissionsState(
         permissions = listOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO
         )
     )
-    //todo: use hilt dependency injection
-    val permissionsViewModel =
-        viewModel {
-            PermissionsViewModel(permissionStates)
-        }
     PermissionsScreen(
-        viewModel = permissionsViewModel,
+        permissionStates = permissionStates,
         onNavigateToPreview = onNavigateToPreview,
         openAppSettings = openAppSettings
     )
@@ -67,7 +62,8 @@ fun PermissionsScreen(
     modifier: Modifier = Modifier,
     onNavigateToPreview: () -> Unit,
     openAppSettings: () -> Unit,
-    viewModel: PermissionsViewModel,
+    permissionStates: MultiplePermissionsState,
+    viewModel: PermissionsViewModel = hiltViewModel<PermissionsViewModel,PermissionsViewModel.Factory>{factory -> factory.create(permissionStates)},
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
