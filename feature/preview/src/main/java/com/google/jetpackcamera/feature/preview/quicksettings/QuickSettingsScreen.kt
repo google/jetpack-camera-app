@@ -216,11 +216,11 @@ private fun ExpandedQuickSettingsUi(
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
                                 enabled = previewUiState.previewMode !is
-                                        PreviewMode.ExternalImageCaptureMode &&
-                                        previewUiState.systemConstraints.forCurrentLens(
-                                            currentCameraSettings
-                                        )
-                                            ?.let { it.supportedDynamicRanges.size > 1 } ?: false
+                                    PreviewMode.ExternalImageCaptureMode &&
+                                    previewUiState.systemConstraints.forCurrentLens(
+                                        currentCameraSettings
+                                    )
+                                        ?.let { it.supportedDynamicRanges.size > 1 } ?: false
                             )
                         }
                     }

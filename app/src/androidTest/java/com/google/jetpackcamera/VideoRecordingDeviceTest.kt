@@ -51,7 +51,7 @@ internal class VideoRecordingDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun video_capture_external() = run {
+    fun video_capture_external_with_image_capture_intent() = run {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(timeStamp)
         getTestRegistry {
