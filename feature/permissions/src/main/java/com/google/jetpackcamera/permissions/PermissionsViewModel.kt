@@ -54,17 +54,18 @@ class PermissionsViewModel @AssistedInject constructor(
         MutableStateFlow(getCurrentPermission())
     val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
 
-
     private fun getCurrentPermission(): PermissionsUiState {
-        if (permissionQueue.isEmpty())
+        if (permissionQueue.isEmpty()) {
             return PermissionsUiState.AllPermissionsGranted
-        else
+        } else {
             return PermissionsUiState.PermissionsNeeded(permissionQueue.first())
+        }
     }
 
     fun dismissPermission() {
-        if (!permissionQueue.isEmpty())
+        if (!permissionQueue.isEmpty()) {
             permissionQueue.removeFirst()
+        }
 
         viewModelScope.launch {
             _permissionsUiState.emit(getCurrentPermission())

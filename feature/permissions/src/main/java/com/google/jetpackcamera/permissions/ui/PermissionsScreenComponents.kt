@@ -43,10 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.R
 
 /**
@@ -168,7 +168,11 @@ private fun Preview_Audio_Permission_Page() {
 Permission UI Subcomponents
  */
 @Composable
-fun PermissionImage(modifier: Modifier = Modifier, imageVector: ImageVector, accessibilityText: String) {
+fun PermissionImage(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector,
+    accessibilityText: String
+) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier

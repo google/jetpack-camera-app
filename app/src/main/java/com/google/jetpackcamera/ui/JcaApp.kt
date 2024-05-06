@@ -44,16 +44,13 @@ fun JcaApp(
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     JetpackCameraNavHost(
         previewMode = previewMode,
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         modifier = modifier
     )
-
 }
-
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -72,7 +69,7 @@ private fun JetpackCameraNavHost(
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
                 onNavigateToPreview = { navController.navigate(PREVIEW_ROUTE) },
-                openAppSettings = onOpenAppSettings,
+                openAppSettings = onOpenAppSettings
             )
         }
 
@@ -83,11 +80,11 @@ private fun JetpackCameraNavHost(
                     Manifest.permission.RECORD_AUDIO
                 )
             )
-            //WIP automatically navigate to permissions screen when camera permission revoked
+            // WIP automatically navigate to permissions screen when camera permission revoked
             LaunchedEffect(key1 = permissionStates.permissions[0].status) {
-                if(!permissionStates.permissions[0].status.isGranted)
+                if (!permissionStates.permissions[0].status.isGranted) {
                     navController.navigate(PERMISSIONS_ROUTE)
-
+                }
             }
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },

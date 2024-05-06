@@ -24,14 +24,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
-import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
+import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 
 private const val TAG = "PermissionsScreen"
 
@@ -63,15 +60,24 @@ fun PermissionsScreen(
     onNavigateToPreview: () -> Unit,
     openAppSettings: () -> Unit,
     permissionStates: MultiplePermissionsState,
-    viewModel: PermissionsViewModel = hiltViewModel<PermissionsViewModel,PermissionsViewModel.Factory>{factory -> factory.create(permissionStates)},
+    viewModel: PermissionsViewModel = hiltViewModel<
+        PermissionsViewModel,
+        PermissionsViewModel.Factory
+        > { factory ->
+        factory.create(
+            permissionStates
+        )
+    }
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
     if (permissionsUiState is PermissionsUiState.PermissionsNeeded) {
-        val permissionEnum = (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
+        val permissionEnum =
+            (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
         val currentPermissionState =
             rememberPermissionState(
-                permission = permissionEnum.getPermission())
+                permission = permissionEnum.getPermission()
+            )
 
         val permissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -92,16 +98,14 @@ fun PermissionsScreen(
             onSkipPermission = when (permissionEnum) {
                 // todo: a prettier navigation to app settings.
                 PermissionEnum.CAMERA -> null
-                // todo: skip permission button functionality. currently need to go through the prompt to skip
+                // todo: skip permission button functionality. currently need to go through the
+                // prompt to skip
                 else -> null // permissionsViewModel::dismissPermission
             },
             onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
             onOpenAppSettings = openAppSettings
         )
-    }
-    else {
+    } else {
         onNavigateToPreview()
     }
 }
-
-
