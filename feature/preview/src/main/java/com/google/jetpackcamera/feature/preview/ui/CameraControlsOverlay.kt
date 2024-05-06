@@ -129,7 +129,7 @@ fun CameraControlsOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
-                audioAmplitude = previewUiState.audioAmplitude.toFloat(),
+                audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
@@ -193,7 +193,7 @@ private fun ControlsTop(
 @Composable
 private fun ControlsBottom(
     modifier: Modifier = Modifier,
-    audioAmplitude: Float,
+    audioAmplitude: Double,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -389,7 +389,7 @@ private fun Preview_ControlsBottom() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {},
-            audioAmplitude = 0f
+            audioAmplitude = 0.0
         )
     }
 }
@@ -405,7 +405,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {},
-            audioAmplitude = 0f
+            audioAmplitude = 0.0
         )
     }
 }
@@ -421,7 +421,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {},
-                    audioAmplitude = 0f
+                    audioAmplitude = 0.0
 
         )
     }
@@ -444,7 +444,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {},
-            audioAmplitude = 0f
+            audioAmplitude = 0.0
 
         )
     }
@@ -461,7 +461,7 @@ private fun Preview_ControlsBottom_Recording() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
             previewMode = PreviewMode.StandardMode {},
-            audioAmplitude = 0.5f
+            audioAmplitude = 0.5
         )
     }
 }

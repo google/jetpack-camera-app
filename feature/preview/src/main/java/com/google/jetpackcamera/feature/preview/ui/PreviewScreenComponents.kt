@@ -80,14 +80,17 @@ private const val TAG = "PreviewScreen"
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
     sizeScale: Int = 100,
-    audioAmplitude: Float
+    audioAmplitude: Double
 ) {
     val animatedSize by animateDpAsState(
-        targetValue = ((sizeScale * 1.5f).coerceAtMost(
-            sizeScale * (1 + EaseOutExpo
-                .transform(audioAmplitude))
-        )).dp,
-        label = "vumeterAnimation"
+        targetValue = (
+                (sizeScale * 1.5)
+                    .coerceAtMost(
+                        sizeScale *
+                                (1 + EaseOutExpo.transform(audioAmplitude.toFloat())
+                                    .toDouble())
+                    )).dp,
+        label = "AudioAnimation"
     )
     Box(modifier = modifier) {
         Canvas(modifier = Modifier
@@ -107,7 +110,7 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center)
                 .size((0.75 * sizeScale).dp),
             tint = Color.Black,
-            imageVector = if (audioAmplitude != 0f) {
+            imageVector = if (audioAmplitude != 0.0) {
                 Icons.Filled.Mic
             } else {
                 Icons.Filled.MicOff
