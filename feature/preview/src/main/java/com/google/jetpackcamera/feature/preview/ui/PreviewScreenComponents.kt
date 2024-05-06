@@ -84,26 +84,35 @@ fun AmplitudeVisualizer(
 ) {
     val animatedSize by animateDpAsState(
         targetValue = (
-                (sizeScale * 1.5)
-                    .coerceAtMost(
-                        sizeScale *
-                                (1 + EaseOutExpo.transform(audioAmplitude.toFloat())
-                                    .toDouble())
-                    )).dp,
+            (sizeScale * 1.5)
+                .coerceAtMost(
+                    sizeScale *
+                        (
+                            1 + EaseOutExpo.transform(audioAmplitude.toFloat())
+                                .toDouble()
+                            )
+                )
+            ).dp,
         label = "AudioAnimation"
     )
     Box(modifier = modifier) {
-        Canvas(modifier = Modifier
-            .size(animatedSize)
-            .align(Alignment.Center), onDraw = {
-            drawCircle(
-                alpha = .5f,
-                color = Color.White
-            )
-        })
-        Canvas(modifier = Modifier
-            .size(sizeScale.dp)
-            .align(Alignment.Center), onDraw = { drawCircle(color = Color.White) })
+        Canvas(
+            modifier = Modifier
+                .size(animatedSize)
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    alpha = .5f,
+                    color = Color.White
+                )
+            }
+        )
+        Canvas(
+            modifier = Modifier
+                .size(sizeScale.dp)
+                .align(Alignment.Center),
+            onDraw = { drawCircle(color = Color.White) }
+        )
 
         Icon(
             modifier = Modifier
@@ -119,6 +128,7 @@ fun AmplitudeVisualizer(
         )
     }
 }
+
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *

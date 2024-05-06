@@ -464,7 +464,8 @@ constructor(
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude)
+                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                    )
                                 )
                             }
                         }

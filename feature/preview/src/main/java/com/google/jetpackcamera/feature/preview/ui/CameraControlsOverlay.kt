@@ -17,13 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
-import androidx.compose.animation.core.EaseOutExpo
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +28,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -122,8 +114,6 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings
                 )
             }
-
-
 
             ControlsBottom(
                 modifier = Modifier
@@ -252,7 +242,7 @@ private fun ControlsBottom(
                             .weight(1f)
                             .fillMaxSize(),
                         sizeScale = 50,
-                        audioAmplitude = audioAmplitude,
+                        audioAmplitude = audioAmplitude
                     )
                 }
             }
@@ -421,7 +411,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             previewMode = PreviewMode.StandardMode {},
-                    audioAmplitude = 0.0
+            audioAmplitude = 0.0
 
         )
     }
@@ -439,7 +429,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,

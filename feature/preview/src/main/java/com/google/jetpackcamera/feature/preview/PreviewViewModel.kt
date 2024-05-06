@@ -253,10 +253,7 @@ class PreviewViewModel @Inject constructor(
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
                             audioAmplitude = it.audioAmplitude
-                            if (audioAmplitude > 0.01)
-                                Log.d("HAMPTER", "$audioAmplitude")
                         }
-
                     }
 
                     viewModelScope.launch {
