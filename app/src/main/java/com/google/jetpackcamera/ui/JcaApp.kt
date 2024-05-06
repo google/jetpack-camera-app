@@ -15,13 +15,17 @@
  */
 package com.google.jetpackcamera.ui
 
+import android.Manifest
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
@@ -51,6 +55,7 @@ fun JcaApp(
 }
 
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun JetpackCameraNavHost(
     modifier: Modifier = Modifier,
@@ -72,6 +77,18 @@ private fun JetpackCameraNavHost(
         }
 
         composable(PREVIEW_ROUTE) {
+            val permissionStates = rememberMultiplePermissionsState(
+                permissions = listOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO
+                )
+            )
+            //WIP automatically navigate to permissions screen when camera permission revoked
+            LaunchedEffect(key1 = permissionStates.permissions[0].status) {
+                if(!permissionStates.permissions[0].status.isGranted)
+                    navController.navigate(PERMISSIONS_ROUTE)
+
+            }
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
