@@ -34,19 +34,19 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
@@ -73,7 +73,6 @@ import java.util.Locale
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -127,7 +126,7 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     override suspend fun initialize() {
-        cameraProvider = ProcessCameraProvider.getInstance(application).await()
+        cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -313,35 +312,24 @@ constructor(
             }
     }
 
-    override suspend fun takePicture() {
-        val imageDeferred = CompletableDeferred<ImageProxy>()
-
-        imageCaptureUseCase.takePicture(
-            defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageCapturedCallback() {
-                override fun onCaptureSuccess(imageProxy: ImageProxy) {
-                    Log.d(TAG, "onCaptureSuccess")
-                    imageDeferred.complete(imageProxy)
-                    imageProxy.close()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
-                    Log.d(TAG, "takePicture onError: $exception")
-                    imageDeferred.completeExceptionally(exception)
-                }
-            }
-        )
-        imageDeferred.await()
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
+        try {
+            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
+            Log.d(TAG, "onCaptureSuccess")
+            imageProxy.close()
+        } catch (exception: Exception) {
+            Log.d(TAG, "takePicture onError: $exception")
+            throw exception
+        }
     }
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     override suspend fun takePicture(
+        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
     ): ImageCapture.OutputFileResults {
-        val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
         if (ignoreUri) {
@@ -380,28 +368,22 @@ constructor(
                 throw e
             }
         }
-        imageCaptureUseCase.takePicture(
-            outputFileOptions,
-            defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val relativePath =
-                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
-                    val displayName = eligibleContentValues.getAsString(
-                        MediaStore.Images.Media.DISPLAY_NAME
-                    )
-                    Log.d(TAG, "Saved image to $relativePath/$displayName")
-                    imageDeferred.complete(outputFileResults)
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.d(TAG, "takePicture onError: $exception")
-                    imageDeferred.completeExceptionally(exception)
-                }
-            }
-        )
-        imageDeferred.await()
-        return imageDeferred.await()
+        try {
+            val outputFileResults = imageCaptureUseCase.takePicture(
+                outputFileOptions,
+                onCaptureStarted
+            )
+            val relativePath =
+                eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+            val displayName = eligibleContentValues.getAsString(
+                MediaStore.Images.Media.DISPLAY_NAME
+            )
+            Log.d(TAG, "Saved image to $relativePath/$displayName")
+            return outputFileResults
+        } catch (exception: ImageCaptureException) {
+            Log.d(TAG, "takePicture onError: $exception")
+            throw exception
+        }
     }
 
     private fun getEligibleContentValues(): ContentValues {
