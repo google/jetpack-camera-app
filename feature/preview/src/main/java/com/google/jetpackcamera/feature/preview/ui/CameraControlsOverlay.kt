@@ -56,7 +56,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(showInitially)
@@ -73,7 +72,6 @@ class ZoomLevelDisplayState(showInitially: Boolean = false) {
 fun CameraControlsOverlay(
     previewUiState: PreviewUiState.Ready,
     previewMode: PreviewMode,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
@@ -131,8 +129,7 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
         }
     }
@@ -200,8 +197,7 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
+    onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
@@ -232,8 +228,7 @@ private fun ControlsBottom(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
             Row(Modifier.weight(1f)) {
                 if (videoRecordingState == VideoRecordingState.ACTIVE) {
@@ -265,15 +260,13 @@ private fun CaptureButton(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
+    onStopVideoRecording: () -> Unit = {}
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
-            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
