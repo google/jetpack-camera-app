@@ -21,7 +21,6 @@ import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -81,45 +80,43 @@ private const val BLINK_TIME = 600L
 @Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
-    sizeScale: Int = 100,
+    size: Int = 100,
     audioAmplitude: Double
 ) {
-    val animatedSize by animateDpAsState(
-        targetValue = (
-            (sizeScale * 1.5)
-                .coerceAtMost(
-                    sizeScale *
-                        (
-                            1 + EaseOutExpo.transform(audioAmplitude.toFloat())
-                                .toDouble()
-                            )
-                )
-            ).dp,
+    //Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val animatedScaling by animateFloatAsState(
+        targetValue = EaseOutExpo.transform(1+ (1.75f * audioAmplitude.toFloat())),
         label = "AudioAnimation"
     )
     Box(modifier = modifier) {
+
+        // animated circle
         Canvas(
             modifier = Modifier
-                .size(animatedSize)
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
+                    // tweak the multiplier to size to adjust the maximum size of the visualizer
+                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
                     alpha = .5f,
                     color = Color.White
                 )
             }
         )
+
+        //static circle
         Canvas(
             modifier = Modifier
-                .size(sizeScale.dp)
                 .align(Alignment.Center),
-            onDraw = { drawCircle(color = Color.White) }
+            onDraw = { drawCircle(
+                radius = (size.toFloat()),
+                color = Color.White) }
         )
 
         Icon(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size((0.75 * sizeScale).dp),
+                .size((0.5 * size).dp),
             tint = Color.Black,
             imageVector = if (audioAmplitude != 0.0) {
                 Icons.Filled.Mic

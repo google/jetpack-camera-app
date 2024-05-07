@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -236,7 +235,7 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
-                        sizeScale = 50,
+                        size = 75,
                         audioAmplitude = audioAmplitude
                     )
                 }
@@ -444,7 +443,7 @@ private fun Preview_ControlsBottom_Recording() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
             previewMode = PreviewMode.StandardMode {},
-            audioAmplitude = 0.5
+            audioAmplitude = 0.9
         )
     }
 }
