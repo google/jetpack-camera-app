@@ -68,7 +68,12 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
-                onNavigateToPreview = { navController.navigate(PREVIEW_ROUTE) },
+                onNavigateToPreview = {
+                    navController.navigate(PREVIEW_ROUTE) {
+                        // cannot navigate back to permissions after leaving
+                        popUpTo(0)
+                    }
+                },
                 openAppSettings = onOpenAppSettings
             )
         }
@@ -83,7 +88,10 @@ private fun JetpackCameraNavHost(
             // WIP automatically navigate to permissions screen when camera permission revoked
             LaunchedEffect(key1 = permissionStates.permissions[0].status) {
                 if (!permissionStates.permissions[0].status.isGranted) {
-                    navController.navigate(PERMISSIONS_ROUTE)
+                    navController.navigate(PERMISSIONS_ROUTE) {
+                        // cannot navigate back to preview
+                        popUpTo(0)
+                    }
                 }
             }
             PreviewScreen(
