@@ -73,6 +73,7 @@ import java.util.Locale
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
+import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -90,7 +91,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
