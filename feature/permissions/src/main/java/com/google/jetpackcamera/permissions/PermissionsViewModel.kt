@@ -91,7 +91,8 @@ fun getRequestablePermissions(
             unGrantedPermissions.add(PermissionEnum.CAMERA)
         }
         // audio is optional
-        else if (!permission.status.shouldShowRationale && permission.permission ==
+        else if ((!permission.status.shouldShowRationale && !permission.status.isGranted) &&
+            permission.permission ==
             Manifest.permission.RECORD_AUDIO
         ) {
             unGrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
