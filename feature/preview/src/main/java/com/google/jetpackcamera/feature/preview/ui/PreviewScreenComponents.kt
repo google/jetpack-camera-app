@@ -19,7 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -64,14 +64,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
 import kotlin.math.roundToInt
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 
 private const val TAG = "PreviewScreen"
+private const val BLINK_TIME = 600L
 
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
@@ -158,13 +160,13 @@ fun TestableSnackbar(
  */
 @Composable
 fun PreviewDisplay(
+    previewUiState: PreviewUiState.Ready,
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier
 ) {
     val transformableState = rememberTransformableState(
@@ -174,6 +176,24 @@ fun PreviewDisplay(
     )
 
     val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
+    var imageVisible by remember { mutableStateOf(true) }
+
+    val imageAlpha: Float by animateFloatAsState(
+        targetValue = if (imageVisible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = (BLINK_TIME / 2).toInt(),
+            easing = LinearEasing
+        ),
+        label = ""
+    )
+
+    LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
+        if (previewUiState.lastBlinkTimeStamp != 0L) {
+            imageVisible = false
+            delay(BLINK_TIME)
+            imageVisible = true
+        }
+    }
 
     surfaceRequest?.let {
         Box(
@@ -222,7 +242,7 @@ fun PreviewDisplay(
                     }
                 }
                 .transformable(state = transformableState)
-                .alpha(blinkState.alpha),
+                .alpha(imageAlpha),
 
             contentAlignment = Alignment.Center
         ) {
@@ -232,20 +252,6 @@ fun PreviewDisplay(
                 onRequestWindowColorMode = onRequestWindowColorMode
             )
         }
-    }
-}
-
-class BlinkState(
-    initialAlpha: Float = 1F,
-    coroutineScope: CoroutineScope
-) {
-    private val animatable = Animatable(initialAlpha)
-    val alpha: Float get() = animatable.value
-    val scope = coroutineScope
-
-    suspend fun play() {
-        animatable.snapTo(0F)
-        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 

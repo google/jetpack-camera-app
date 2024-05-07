@@ -27,7 +27,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -75,9 +74,6 @@ private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
 
-    @VisibleForTesting
-    var previewViewModel: PreviewViewModel? = null
-
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,7 +119,6 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             JcaApp(
-                                onPreviewViewModel = { previewViewModel = it },
                                 previewMode = previewMode,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+

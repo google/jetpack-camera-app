@@ -19,7 +19,6 @@
             <option value="$PROJECT_DIR$/domain/camera" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/preview" />
-            <option value="$PROJECT_DIR$/feature/quicksettings" />
             <option value="$PROJECT_DIR$/feature/settings" />
           </set>
         </option>
