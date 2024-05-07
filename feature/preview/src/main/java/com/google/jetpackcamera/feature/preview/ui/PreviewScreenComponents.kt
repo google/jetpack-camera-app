@@ -78,18 +78,13 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 600L
 
 @Composable
-fun AmplitudeVisualizer(
-    modifier: Modifier = Modifier,
-    size: Int = 100,
-    audioAmplitude: Double
-) {
-    //Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
+    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1+ (1.75f * audioAmplitude.toFloat())),
+        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
         label = "AudioAnimation"
     )
     Box(modifier = modifier) {
-
         // animated circle
         Canvas(
             modifier = Modifier
@@ -104,13 +99,16 @@ fun AmplitudeVisualizer(
             }
         )
 
-        //static circle
+        // static circle
         Canvas(
             modifier = Modifier
                 .align(Alignment.Center),
-            onDraw = { drawCircle(
-                radius = (size.toFloat()),
-                color = Color.White) }
+            onDraw = {
+                drawCircle(
+                    radius = (size.toFloat()),
+                    color = Color.White
+                )
+            }
         )
 
         Icon(
