@@ -61,7 +61,7 @@ class FakeCameraUseCase(
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
-    override suspend fun initialize() {
+    override suspend fun initialize(disableVideoCapture: Boolean) {
         initialized = true
     }
 

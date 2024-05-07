@@ -73,6 +73,7 @@ import java.util.Locale
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
+import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -115,17 +116,19 @@ constructor(
     private val imageCaptureUseCase = ImageCapture.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
-    private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
+    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
+    private var disableVideoCapture by Delegates.notNull<Boolean>()
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize() {
+    override suspend fun initialize(disableVideoCapture: Boolean) {
+        this.disableVideoCapture = disableVideoCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -403,6 +406,9 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        if (videoCaptureUseCase == null) {
+            throw RuntimeException("Attempted video recording with null videoCapture use case")
+        }
         Log.d(TAG, "recordVideo")
         // todo(b/336886716): default setting to enable or disable audio when permission is granted
         // todo(b/336888844): mute/unmute audio while recording is active
@@ -437,7 +443,7 @@ constructor(
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
-            videoCaptureUseCase.output
+            videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
                 .apply { if (audioEnabled) withAudioEnabled() }
                 .start(callbackExecutor) { onVideoRecordEvent ->
@@ -599,7 +605,9 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
-        videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        if (!disableVideoCapture) {
+            videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        }
 
         setFlashModeInternal(
             flashMode = initialTransientSettings.flashMode,
@@ -617,7 +625,9 @@ constructor(
             if (sessionSettings.dynamicRange == DynamicRange.SDR) {
                 addUseCase(imageCaptureUseCase)
             }
-            addUseCase(videoCaptureUseCase)
+            if (videoCaptureUseCase != null) {
+                addUseCase(videoCaptureUseCase!!)
+            }
 
             effect?.let { addEffect(it) }
 
