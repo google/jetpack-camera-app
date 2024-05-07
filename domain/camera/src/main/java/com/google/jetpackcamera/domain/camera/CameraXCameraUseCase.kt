@@ -15,9 +15,11 @@
  */
 package com.google.jetpackcamera.domain.camera
 
+import android.Manifest
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -32,20 +34,21 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -70,7 +73,7 @@ import java.util.Locale
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
-import kotlinx.coroutines.CompletableDeferred
+import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -113,18 +116,20 @@ constructor(
     private val imageCaptureUseCase = ImageCapture.Builder().build()
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
-    private lateinit var videoCaptureUseCase: VideoCapture<Recorder>
+    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
+    private var disableVideoCapture by Delegates.notNull<Boolean>()
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize() {
-        cameraProvider = ProcessCameraProvider.getInstance(application).await()
+    override suspend fun initialize(disableVideoCapture: Boolean) {
+        this.disableVideoCapture = disableVideoCapture
+        cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -310,35 +315,24 @@ constructor(
             }
     }
 
-    override suspend fun takePicture() {
-        val imageDeferred = CompletableDeferred<ImageProxy>()
-
-        imageCaptureUseCase.takePicture(
-            defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageCapturedCallback() {
-                override fun onCaptureSuccess(imageProxy: ImageProxy) {
-                    Log.d(TAG, "onCaptureSuccess")
-                    imageDeferred.complete(imageProxy)
-                    imageProxy.close()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
-                    Log.d(TAG, "takePicture onError: $exception")
-                    imageDeferred.completeExceptionally(exception)
-                }
-            }
-        )
-        imageDeferred.await()
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
+        try {
+            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
+            Log.d(TAG, "onCaptureSuccess")
+            imageProxy.close()
+        } catch (exception: Exception) {
+            Log.d(TAG, "takePicture onError: $exception")
+            throw exception
+        }
     }
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     override suspend fun takePicture(
+        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
     ): ImageCapture.OutputFileResults {
-        val imageDeferred = CompletableDeferred<ImageCapture.OutputFileResults>()
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
         if (ignoreUri) {
@@ -377,28 +371,22 @@ constructor(
                 throw e
             }
         }
-        imageCaptureUseCase.takePicture(
-            outputFileOptions,
-            defaultDispatcher.asExecutor(),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val relativePath =
-                        eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
-                    val displayName = eligibleContentValues.getAsString(
-                        MediaStore.Images.Media.DISPLAY_NAME
-                    )
-                    Log.d(TAG, "Saved image to $relativePath/$displayName")
-                    imageDeferred.complete(outputFileResults)
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.d(TAG, "takePicture onError: $exception")
-                    imageDeferred.completeExceptionally(exception)
-                }
-            }
-        )
-        imageDeferred.await()
-        return imageDeferred.await()
+        try {
+            val outputFileResults = imageCaptureUseCase.takePicture(
+                outputFileOptions,
+                onCaptureStarted
+            )
+            val relativePath =
+                eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
+            val displayName = eligibleContentValues.getAsString(
+                MediaStore.Images.Media.DISPLAY_NAME
+            )
+            Log.d(TAG, "Saved image to $relativePath/$displayName")
+            return outputFileResults
+        } catch (exception: ImageCaptureException) {
+            Log.d(TAG, "takePicture onError: $exception")
+            throw exception
+        }
     }
 
     private fun getEligibleContentValues(): ContentValues {
@@ -418,7 +406,19 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        if (videoCaptureUseCase == null) {
+            throw RuntimeException("Attempted video recording with null videoCapture use case")
+        }
         Log.d(TAG, "recordVideo")
+        // todo(b/336886716): default setting to enable or disable audio when permission is granted
+        // todo(b/336888844): mute/unmute audio while recording is active
+        val audioEnabled = (
+            checkSelfPermission(
+                this.application.baseContext,
+                Manifest.permission.RECORD_AUDIO
+            )
+                == PackageManager.PERMISSION_GRANTED
+            )
         val captureTypeString =
             when (captureMode) {
                 CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -443,8 +443,9 @@ constructor(
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
-            videoCaptureUseCase.output
+            videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
+                .apply { if (audioEnabled) withAudioEnabled() }
                 .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
                         Log.d(TAG, onVideoRecordEvent.toString())
@@ -604,7 +605,9 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
-        videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        if (!disableVideoCapture) {
+            videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+        }
 
         setFlashModeInternal(
             flashMode = initialTransientSettings.flashMode,
@@ -622,7 +625,9 @@ constructor(
             if (sessionSettings.dynamicRange == DynamicRange.SDR) {
                 addUseCase(imageCaptureUseCase)
             }
-            addUseCase(videoCaptureUseCase)
+            if (videoCaptureUseCase != null) {
+                addUseCase(videoCaptureUseCase!!)
+            }
 
             effect?.let { addEffect(it) }
 

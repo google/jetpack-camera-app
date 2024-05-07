@@ -53,7 +53,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(showInitially)
@@ -69,8 +68,6 @@ class ZoomLevelDisplayState(showInitially: Boolean = false) {
 @Composable
 fun CameraControlsOverlay(
     previewUiState: PreviewUiState.Ready,
-    previewMode: PreviewMode,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
@@ -116,19 +113,18 @@ fun CameraControlsOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
+                previewUiState = previewUiState,
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
-                previewMode = previewMode,
                 onFlipCamera = onFlipCamera,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
         }
     }
@@ -178,12 +174,12 @@ private fun ControlsTop(
 
 @Composable
 private fun ControlsBottom(
+    previewUiState: PreviewUiState.Ready,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
-    previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
@@ -195,8 +191,7 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
+    onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
@@ -218,15 +213,14 @@ private fun ControlsBottom(
                 }
             }
             CaptureButton(
-                previewMode = previewMode,
+                previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
             Row(Modifier.weight(1f)) {
                 /*TODO("Place other components here") */
@@ -237,7 +231,7 @@ private fun ControlsBottom(
 
 @Composable
 private fun CaptureButton(
-    previewMode: PreviewMode,
+    previewUiState: PreviewUiState.Ready,
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
@@ -250,32 +244,30 @@ private fun CaptureButton(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
-    onStopVideoRecording: () -> Unit = {},
-    blinkState: BlinkState? = null
+    onStopVideoRecording: () -> Unit = {}
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
-            blinkState?.scope?.launch { blinkState.play() }
             multipleEventsCutter.processEvent {
-                when (previewMode) {
+                when (previewUiState.previewMode) {
                     is PreviewMode.StandardMode -> {
                         onCaptureImageWithUri(
                             context.contentResolver,
                             null,
                             true,
-                            previewMode.onImageCapture
+                            previewUiState.previewMode.onImageCapture
                         )
                     }
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
                             context.contentResolver,
-                            previewMode.imageCaptureUri,
+                            previewUiState.previewMode.imageCaptureUri,
                             false,
-                            previewMode.onImageCapture
+                            previewUiState.previewMode.onImageCapture
                         )
                     }
                 }
@@ -358,12 +350,16 @@ private fun Preview_ControlsTop_WithStabilization() {
 private fun Preview_ControlsBottom() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -373,12 +369,16 @@ private fun Preview_ControlsBottom() {
 private fun Preview_ControlsBottom_NoZoomLevel() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -388,12 +388,16 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
 private fun Preview_ControlsBottom_QuickSettingsOpen() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -403,6 +407,11 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
 private fun Preview_ControlsBottom_NoFlippableCamera() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
@@ -413,8 +422,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                         TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.INACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            videoRecordingState = VideoRecordingState.INACTIVE
         )
     }
 }
@@ -424,12 +432,16 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
 private fun Preview_ControlsBottom_Recording() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.ACTIVE,
-            previewMode = PreviewMode.StandardMode {}
+            videoRecordingState = VideoRecordingState.ACTIVE
         )
     }
 }
