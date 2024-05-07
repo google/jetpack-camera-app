@@ -38,7 +38,8 @@ sealed interface PreviewUiState {
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
-        val lastBlinkTimeStamp: Long = 0
+        val lastBlinkTimeStamp: Long = 0,
+        val previewMode: PreviewMode
     ) : PreviewUiState
 }
 

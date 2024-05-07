@@ -53,7 +53,7 @@ class FakeCameraUseCaseTest {
 
     @Test
     fun canInitialize() = runTest(testDispatcher) {
-        cameraUseCase.initialize()
+        cameraUseCase.initialize(false)
     }
 
     @Test
@@ -144,7 +144,7 @@ class FakeCameraUseCaseTest {
 
     private fun TestScope.initAndRunCamera() {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.initialize()
+            cameraUseCase.initialize(false)
             cameraUseCase.runCamera()
         }
     }
