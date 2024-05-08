@@ -91,7 +91,6 @@ android {
 
 dependencies {
     implementation(project(":feature:permissions"))
-    implementation(project(":feature:permissions"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
