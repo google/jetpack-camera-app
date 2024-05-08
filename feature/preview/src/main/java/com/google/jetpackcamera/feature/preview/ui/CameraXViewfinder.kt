@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.pm.ActivityInfo
 import android.os.Build
+import android.view.Surface
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
@@ -30,10 +31,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -153,10 +157,16 @@ fun CameraXViewfinder(
     }
 
     viewfinderArgs?.let { args ->
+        val displayRotation = key(LocalConfiguration.current) {
+            surfaceRotationToRotationDegrees(LocalView.current.display.rotation)
+        }
+
         Viewfinder(
             surfaceRequest = args.viewfinderSurfaceRequest,
             implementationMode = args.implementationMode,
-            transformationInfo = args.transformationInfo,
+            transformationInfo = args.transformationInfo.copy(
+                sourceRotation = (args.transformationInfo.sourceRotation + displayRotation) % 360
+            ),
             modifier = modifier.fillMaxSize()
         )
     }
@@ -169,3 +179,29 @@ private data class ViewfinderArgs(
     val implementationMode: ImplementationMode,
     val transformationInfo: TransformationInfo
 )
+
+private fun TransformationInfo.copy(
+    sourceRotation: Int = this.sourceRotation,
+    cropRectLeft: Int = this.cropRectLeft,
+    cropRectTop: Int = this.cropRectTop,
+    cropRectRight: Int = this.cropRectRight,
+    cropRectBottom: Int = this.cropRectBottom,
+    shouldMirror: Boolean = this.shouldMirror
+): TransformationInfo = TransformationInfo(
+    sourceRotation = sourceRotation,
+    cropRectLeft = cropRectLeft,
+    cropRectTop = cropRectTop,
+    cropRectRight = cropRectRight,
+    cropRectBottom = cropRectBottom,
+    shouldMirror = shouldMirror
+)
+
+private fun surfaceRotationToRotationDegrees(rotationValue: Int): Int = when (rotationValue) {
+    Surface.ROTATION_0 -> 0
+    Surface.ROTATION_90 -> 90
+    Surface.ROTATION_180 -> 180
+    Surface.ROTATION_270 -> 270
+    else -> throw UnsupportedOperationException(
+        "Unsupported display rotation: $rotationValue"
+    )
+}
