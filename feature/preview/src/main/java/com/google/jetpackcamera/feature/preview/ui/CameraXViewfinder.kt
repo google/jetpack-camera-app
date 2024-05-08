@@ -27,6 +27,7 @@ import androidx.camera.viewfinder.surface.TransformationInfo
 import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -161,6 +162,7 @@ fun CameraXViewfinder(
     }
 }
 
+@Immutable
 private data class ViewfinderArgs(
     val viewfinderSurfaceRequest: ViewfinderSurfaceRequest,
     val isSourceHdr: Boolean,

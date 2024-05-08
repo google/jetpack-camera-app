@@ -120,17 +120,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 previewMode = previewMode,
-                                onRequestWindowColorMode = { colorMode ->
-                                    // Window color mode APIs require API level 26+
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        Log.d(
-                                            TAG,
-                                            "Setting window color mode to:" +
-                                                " ${colorMode.toColorModeString()}"
-                                        )
-                                        window?.colorMode = colorMode
-                                    }
-                                }
+                                onRequestWindowColorMode = ::setWindowColorMode
                             )
                         }
                     }
@@ -171,6 +161,18 @@ class MainActivity : ComponentActivity() {
                     finish()
                 }
             }
+        }
+    }
+
+    private fun setWindowColorMode(colorMode: Int) {
+        // Window color mode APIs require API level 26+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(
+                TAG,
+                "Setting window color mode to:" +
+                        " ${colorMode.toColorModeString()}"
+            )
+            window?.colorMode = colorMode
         }
     }
 }
