@@ -26,7 +26,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
-import android.view.Surface
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector

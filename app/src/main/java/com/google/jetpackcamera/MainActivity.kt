@@ -170,7 +170,7 @@ class MainActivity : ComponentActivity() {
             Log.d(
                 TAG,
                 "Setting window color mode to:" +
-                        " ${colorMode.toColorModeString()}"
+                    " ${colorMode.toColorModeString()}"
             )
             window?.colorMode = colorMode
         }
