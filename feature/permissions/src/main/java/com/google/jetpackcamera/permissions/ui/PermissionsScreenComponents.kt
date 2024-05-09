@@ -81,13 +81,13 @@ fun PermissionTemplate(
 
         // if declined by user, must navigate to system app settings to enable permission
         bodyText =
-        if (!permissionState.status.shouldShowRationale) {
+        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = permissionEnum.getPermissionBodyTextResId())
         } else {
             stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
         },
         requestButtonText =
-        if (!permissionState.status.shouldShowRationale) {
+        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional() ) {
             stringResource(id = R.string.request_permission)
         } else {
             stringResource(id = R.string.navigate_to_settings)

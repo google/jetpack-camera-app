@@ -103,7 +103,7 @@ enum class PermissionEnum : PermissionInfoProvider {
     RECORD_AUDIO {
         override fun getPermission(): String = AUDIO_RECORD_PERMISSION
 
-        override fun isOptional(): Boolean = false
+        override fun isOptional(): Boolean = true
 
         override fun getDrawableResId(): Int? = null
 
