@@ -16,9 +16,7 @@
 package com.google.jetpackcamera.permissions
 
 import android.Manifest
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
@@ -30,7 +28,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.update
 
 /**
  * A [ViewModel] for [PermissionsScreen]]
@@ -44,7 +42,8 @@ class PermissionsViewModel @AssistedInject constructor(
     interface Factory {
         fun create(runtimeArg: MultiplePermissionsState): PermissionsViewModel
     }
-    private val permissionQueue = mutableStateListOf<PermissionEnum>()
+
+    private val permissionQueue = mutableListOf<PermissionEnum>()
 
     init {
         permissionQueue.addAll(getRequestablePermissions(permissionStates))
@@ -55,20 +54,19 @@ class PermissionsViewModel @AssistedInject constructor(
     val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
 
     private fun getCurrentPermission(): PermissionsUiState {
-        if (permissionQueue.isEmpty()) {
-            return PermissionsUiState.AllPermissionsGranted
+        return if (permissionQueue.isEmpty()) {
+            PermissionsUiState.AllPermissionsGranted
         } else {
-            return PermissionsUiState.PermissionsNeeded(permissionQueue.first())
+            PermissionsUiState.PermissionsNeeded(permissionQueue.first())
         }
     }
 
     fun dismissPermission() {
-        if (!permissionQueue.isEmpty()) {
+        if (permissionQueue.isNotEmpty()) {
             permissionQueue.removeFirst()
         }
-
-        viewModelScope.launch {
-            _permissionsUiState.emit(getCurrentPermission())
+        _permissionsUiState.update {
+            (getCurrentPermission())
         }
     }
 }

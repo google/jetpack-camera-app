@@ -90,7 +90,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":feature:permissions"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -143,6 +142,9 @@ dependencies {
 
     // Settings Screen
     implementation(project(":feature:settings"))
+
+    // Permissions Screen
+    implementation(project(":feature:permissions"))
 
     // benchmark
     implementation(libs.androidx.profileinstaller)

@@ -85,7 +85,7 @@ private fun JetpackCameraNavHost(
                     Manifest.permission.RECORD_AUDIO
                 )
             )
-            // WIP automatically navigate to permissions screen when camera permission revoked
+            // Automatically navigate to permissions screen when camera permission revoked
             LaunchedEffect(key1 = permissionStates.permissions[0].status) {
                 if (!permissionStates.permissions[0].status.isGranted) {
                     navController.navigate(PERMISSIONS_ROUTE) {
