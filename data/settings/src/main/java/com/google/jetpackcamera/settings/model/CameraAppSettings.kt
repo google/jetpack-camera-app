@@ -30,7 +30,8 @@ data class CameraAppSettings(
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
-    val targetFrameRate: Int = TARGET_FPS_AUTO
+    val targetFrameRate: Int = TARGET_FPS_AUTO,
+    val displayRotation: DisplayRotation = DisplayRotation.Natural
 )
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {

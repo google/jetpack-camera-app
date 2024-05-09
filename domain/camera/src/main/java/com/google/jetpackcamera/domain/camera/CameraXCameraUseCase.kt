@@ -26,6 +26,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
+import android.view.Surface
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -57,6 +58,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DisplayRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -226,7 +228,8 @@ constructor(
      */
     private data class TransientSessionSettings(
         val flashMode: FlashMode,
-        val zoomScale: Float
+        val zoomScale: Float,
+        val targetRotation: Int
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -238,7 +241,8 @@ constructor(
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    targetRotation = currentCameraSettings.displayRotation.value
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -307,6 +311,30 @@ constructor(
                                 isFrontFacing = sessionSettings.cameraSelector
                                     == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
+                        }
+
+                        if (prevTransientSettings.targetRotation
+                            != newTransientSettings.targetRotation
+                        ) {
+                            useCaseGroup.useCases.forEach {
+                                when (it) {
+                                    is Preview -> {
+                                        // Preview rotation should always be natural orientation
+                                        // in order to support seamless handling of orientation
+                                        // configuration changes in UI
+                                    }
+
+                                    is ImageCapture -> {
+                                        it.targetRotation =
+                                            newTransientSettings.targetRotation
+                                    }
+
+                                    is VideoCapture<*> -> {
+                                        it.targetRotation =
+                                            newTransientSettings.targetRotation
+                                    }
+                                }
+                            }
                         }
 
                         prevTransientSettings = newTransientSettings
@@ -640,6 +668,12 @@ constructor(
         }
     }
 
+    override fun setDisplayRotation(displayRotation: DisplayRotation) {
+        currentSettings.update { old ->
+            old?.copy(displayRotation = displayRotation)
+        }
+    }
+
     private fun createVideoUseCase(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: Set<SupportedStabilizationMode>
@@ -679,7 +713,9 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
-        val previewUseCaseBuilder = Preview.Builder()
+        val previewUseCaseBuilder = Preview.Builder().apply {
+            setTargetRotation(DisplayRotation.Natural.value)
+        }
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
