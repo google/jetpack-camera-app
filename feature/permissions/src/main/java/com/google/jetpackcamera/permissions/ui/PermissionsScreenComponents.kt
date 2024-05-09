@@ -68,8 +68,6 @@ fun PermissionTemplate(
     PermissionTemplate(
         modifier = modifier,
         onRequestPermission = {
-            // if declined by user, must navigate to system app settings to enable permission
-            // todo(b/337338326): open a dialog that tells user they must go to device's app settings to enable permissions
             if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
             } else {
@@ -80,8 +78,20 @@ fun PermissionTemplate(
         imageVector = permissionEnum.getImageVector()!!,
         iconAccessibilityText = stringResource(permissionEnum.getIconAccessibilityTextResId()),
         title = stringResource(permissionEnum.getPermissionTitleResId()),
-        bodyText = stringResource(id = permissionEnum.getPermissionBodyTextResId()),
-        requestButtonText = stringResource(id = R.string.request_permission)
+
+        // if declined by user, must navigate to system app settings to enable permission
+        bodyText =
+        if (!permissionState.status.shouldShowRationale) {
+            stringResource(id = permissionEnum.getPermissionBodyTextResId())
+        } else {
+            stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
+        },
+        requestButtonText =
+        if (!permissionState.status.shouldShowRationale) {
+            stringResource(id = R.string.request_permission)
+        } else {
+            stringResource(id = R.string.navigate_to_settings)
+        }
     )
 }
 

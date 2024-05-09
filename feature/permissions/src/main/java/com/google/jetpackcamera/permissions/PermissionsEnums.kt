@@ -67,6 +67,9 @@ sealed interface PermissionInfoProvider {
     fun getPermissionBodyTextResId(): Int
 
     @StringRes
+    fun getRationaleBodyTextResId(): Int?
+
+    @StringRes
     fun getIconAccessibilityTextResId(): Int
 }
 
@@ -90,6 +93,9 @@ enum class PermissionEnum : PermissionInfoProvider {
         override fun getPermissionBodyTextResId(): Int =
             R.string.camera_permission_required_rationale
 
+        override fun getRationaleBodyTextResId(): Int =
+            R.string.camera_permission_declined_rationale
+
         override fun getIconAccessibilityTextResId(): Int =
             R.string.camera_permission_accessibility_text
     },
@@ -107,6 +113,8 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getPermissionBodyTextResId(): Int =
             R.string.microphone_permission_required_rationale
+
+        override fun getRationaleBodyTextResId(): Int? = null
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.microphone_permission_accessibility_text

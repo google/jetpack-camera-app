@@ -63,11 +63,7 @@ fun PermissionsScreen(
     viewModel: PermissionsViewModel = hiltViewModel<
         PermissionsViewModel,
         PermissionsViewModel.Factory
-        > { factory ->
-        factory.create(
-            permissionStates
-        )
-    }
+        > { factory -> factory.create(permissionStates) }
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
