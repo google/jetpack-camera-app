@@ -72,7 +72,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.delay
 
 private const val TAG = "PreviewScreen"
-private const val BLINK_TIME = 600L
+private const val BLINK_TIME = 100L
 
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
