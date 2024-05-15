@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.content.res.Configuration
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
@@ -33,9 +34,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,7 +61,6 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,22 +76,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -401,40 +400,30 @@ fun ToggleButton(
     modifier: Modifier = Modifier.width(64.dp).height(32.dp),
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
-    isDisabled: Boolean = false,
+    enabled: Boolean = true,
     iconPadding: Dp = 8.dp
 ) {
-    val backgroundColor = MaterialTheme.colorScheme.surface
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
     val disableColor = MaterialTheme.colorScheme.onSurface
     val iconSelectionColor = MaterialTheme.colorScheme.onPrimary
     val iconUnSelectionColor = MaterialTheme.colorScheme.primary
     val circleSelectionColor = MaterialTheme.colorScheme.primary
-    val circleColor = if (isDisabled) disableColor.copy(alpha = 0.12f) else circleSelectionColor
-    val density = LocalDensity.current
-    var width by remember { mutableStateOf(0.dp) }
-    var height by remember { mutableStateOf(0.dp) }
+    val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
     var toggleState by remember { mutableStateOf(initialState) }
     val animatedTogglePosition by animateFloatAsState(
         when (toggleState) {
             ToggleState.Left -> 0f
             ToggleState.Right -> 1f
         },
-        label = "anchor"
+        label = "togglePosition"
     )
     val scope = rememberCoroutineScope()
 
     Surface(
         modifier = modifier
-            .onSizeChanged {
-                width = with(density) { it.width.toDp() }
-                height = with(density) { it.height.toDp() }
-            }
             .clip(shape = RoundedCornerShape(50))
-            .background(backgroundColor)
             .then(
-                if (isDisabled) {
-                    Modifier
-                } else {
+                if (enabled) {
                     Modifier.clickable {
                         scope.launch {
                             toggleState = when (toggleState) {
@@ -444,8 +433,11 @@ fun ToggleButton(
                             onToggleStateChanged(toggleState)
                         }
                     }
+                } else {
+                    Modifier
                 }
-            )
+            ),
+        color = backgroundColor
     ) {
         Box {
             Row(
@@ -454,22 +446,23 @@ fun ToggleButton(
             ) {
                 Box(
                     Modifier
-                        .offset {
-                            IntOffset(
-                                x = with(density) {
-                                    animatedTogglePosition * (width - height).toPx()
-                                }.roundToInt(),
-                                y = 0
-                            )
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                val xPos = animatedTogglePosition *
+                                    (constraints.maxWidth - placeable.width)
+                                placeable.placeRelative(xPos.toInt(), 0)
+                            }
                         }
-                        .size(height)
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
                         .clip(RoundedCornerShape(50))
                         .background(circleColor)
                 )
             }
             Row(
                 modifier = Modifier.matchParentSize().then(
-                    if (isDisabled) Modifier.alpha(0.38f) else Modifier
+                    if (enabled) Modifier else Modifier.alpha(0.38f)
                 ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -478,7 +471,7 @@ fun ToggleButton(
                     painter = leftIcon,
                     contentDescription = "leftIcon",
                     modifier = Modifier.padding(iconPadding),
-                    tint = if (isDisabled) {
+                    tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Left) {
                         iconSelectionColor
@@ -490,7 +483,7 @@ fun ToggleButton(
                     painter = rightIcon,
                     contentDescription = "rightIcon",
                     modifier = Modifier.padding(iconPadding),
-                    tint = if (isDisabled) {
+                    tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Right) {
                         iconSelectionColor
@@ -503,14 +496,15 @@ fun ToggleButton(
     }
 }
 
-@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Preview_ToggleButton_Selecting_Left() {
     val initialState = ToggleState.Left
     var toggleState by remember {
         mutableStateOf(initialState)
     }
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
+    PreviewPreviewTheme(dynamicColor = false) {
         ToggleButton(
             leftIcon = if (toggleState == ToggleState.Left) {
                 rememberVectorPainter(image = Icons.Filled.CameraAlt)
@@ -530,10 +524,10 @@ private fun Preview_ToggleButton_Selecting_Left() {
     }
 }
 
-@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Preview_ToggleButton_Selecting_Right() {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
+    PreviewPreviewTheme(dynamicColor = false) {
         ToggleButton(
             leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
             rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
@@ -542,15 +536,15 @@ private fun Preview_ToggleButton_Selecting_Right() {
     }
 }
 
-@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Preview_ToggleButton_Disabled() {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
+    PreviewPreviewTheme(dynamicColor = false) {
         ToggleButton(
             leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
             rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
             initialState = ToggleState.Right,
-            isDisabled = true
+            enabled = false
         )
     }
 }
