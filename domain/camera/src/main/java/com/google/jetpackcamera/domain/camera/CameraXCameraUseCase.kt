@@ -65,6 +65,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -668,6 +669,12 @@ constructor(
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+        currentSettings.update { old ->
+            old?.copy(lowLightBoost = lowLightBoost)
         }
     }
 

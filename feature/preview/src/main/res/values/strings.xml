@@ -62,4 +62,9 @@
 
     <string name="quick_settings_dropdown_open_description">Quick settings open</string>
     <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
+
+    <string name="quick_settings_lowlightboost_enabled">Low light boost on</string>
+    <string name="quick_settings_lowlightboost_disabled">Low light boost off</string>
+    <string name="quick_settings_lowlightboost_enabled_description">Low light boost on</string>
+    <string name="quick_settings_lowlightboost_disabled_description">Low light boost off</string>
 </resources>

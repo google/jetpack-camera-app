@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -195,6 +196,12 @@ class FakeCameraUseCase(
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+        currentSettings.update { old ->
+            old.copy(lowLightBoost = lowLightBoost)
         }
     }
 }
