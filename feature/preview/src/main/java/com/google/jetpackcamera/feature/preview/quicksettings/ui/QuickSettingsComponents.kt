@@ -51,12 +51,14 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
+import com.google.jetpackcamera.feature.preview.quicksettings.CameraLowLightBoost
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -126,6 +128,30 @@ fun QuickSetHdr(
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
         enabled = enabled
+    )
+}
+
+@Composable
+fun QuickSetLowLightBoost(
+    modifier: Modifier = Modifier,
+    onClick: (lowLightBoost: LowLightBoost) -> Unit,
+    selectedLowLightBoost: LowLightBoost,
+) {
+    val enum = when (selectedLowLightBoost) {
+        LowLightBoost.DISABLED -> CameraLowLightBoost.DISABLED
+        LowLightBoost.ENABLED -> CameraLowLightBoost.ENABLED
+    }
+
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (selectedLowLightBoost) {
+                LowLightBoost.DISABLED -> onClick(LowLightBoost.ENABLED)
+                LowLightBoost.ENABLED -> onClick(LowLightBoost.DISABLED)
+            }
+        },
+        isHighLighted = false
     )
 }
 

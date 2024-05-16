@@ -48,10 +48,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
+import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
@@ -93,6 +95,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -333,6 +336,28 @@ fun StabilizationIcon(
             contentDescription = descriptionText,
             modifier = modifier
         )
+    }
+}
+
+/**
+ * LowLightBoostIcon has 3 states
+ * - disabled: hidden
+ * - enabled and inactive: outline
+ * - enabled and active: filled
+ */
+@Composable
+fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifier) {
+    when (lowLightBoost) {
+        LowLightBoost.ENABLED -> {
+            Icon(
+                imageVector = Icons.Outlined.Nightlight,
+                contentDescription =
+                    stringResource(id = R.string.quick_settings_lowlightboost_enabled),
+                modifier = modifier.alpha(0.5f)
+            )
+        }
+        LowLightBoost.DISABLED -> {
+        }
     }
 }
 

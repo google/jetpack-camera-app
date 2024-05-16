@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
+import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -144,5 +146,24 @@ enum class CameraDynamicRange : QuickSettingsEnum {
         override fun getImageVector() = Icons.Filled.HdrOn
         override fun getTextResId() = R.string.quick_settings_dynamic_range_hdr
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hdr_description
+    }
+}
+
+enum class CameraLowLightBoost : QuickSettingsEnum {
+
+    ENABLED {
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Filled.Nightlight
+        override fun getTextResId() = R.string.quick_settings_lowlightboost_enabled
+        override fun getDescriptionResId() =
+            R.string.quick_settings_lowlightboost_enabled_description
+    },
+
+    DISABLED {
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Outlined.Nightlight
+        override fun getTextResId() = R.string.quick_settings_lowlightboost_disabled
+        override fun getDescriptionResId() =
+            R.string.quick_settings_lowlightboost_disabled_description
     }
 }
