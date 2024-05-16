@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -91,6 +92,8 @@ interface CameraUseCase {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
+    suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
