@@ -401,6 +401,8 @@ fun ToggleButton(
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
     enabled: Boolean = true,
+    leftIconDescription: String = "leftIcon",
+    rightIconDescription: String = "rightIcon",
     iconPadding: Dp = 8.dp
 ) {
     val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -469,7 +471,7 @@ fun ToggleButton(
             ) {
                 Icon(
                     painter = leftIcon,
-                    contentDescription = "leftIcon",
+                    contentDescription = leftIconDescription,
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor
@@ -481,7 +483,7 @@ fun ToggleButton(
                 )
                 Icon(
                     painter = rightIcon,
-                    contentDescription = "rightIcon",
+                    contentDescription = rightIconDescription,
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor
