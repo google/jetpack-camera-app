@@ -30,6 +30,7 @@ import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
+import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
@@ -59,6 +60,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
@@ -113,7 +115,7 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private lateinit var imageCaptureUseCase: ImageCapture
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
@@ -164,13 +166,15 @@ constructor(
                         }
 
                         val supportedFixedFrameRates = getSupportedFrameRates(camInfo)
+                        val supportedImageFormats = getSupportedImageFormats(camInfo)
 
                         put(
                             lensFacing,
                             CameraConstraints(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
-                                supportedDynamicRanges = supportedDynamicRanges
+                                supportedDynamicRanges = supportedDynamicRanges,
+                                supportedImageFormats = supportedImageFormats
                             )
                         )
                     }
@@ -180,8 +184,9 @@ constructor(
 
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
-        currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+        currentSettings.value = settingsRepository.defaultCameraAppSettings.first()
+            .tryApplyDynamicRangeConstraints()
+            .tryApplyImageFormatConstraints()
     }
 
     /**
@@ -214,7 +219,8 @@ constructor(
         val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization,
-        val dynamicRange: DynamicRange
+        val dynamicRange: DynamicRange,
+        val imageFormat: ImageOutputFormat
     )
 
     /**
@@ -253,7 +259,8 @@ constructor(
                     targetFrameRate = currentCameraSettings.targetFrameRate,
                     stabilizePreviewMode = currentCameraSettings.previewStabilization,
                     stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
-                    dynamicRange = currentCameraSettings.dynamicRange
+                    dynamicRange = currentCameraSettings.dynamicRange,
+                    imageFormat = currentCameraSettings.imageFormat
                 )
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
@@ -491,6 +498,7 @@ constructor(
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
+                    ?.tryApplyImageFormatConstraints()
             } else {
                 old
             }
@@ -508,6 +516,22 @@ constructor(
 
                 this@tryApplyDynamicRangeConstraints.copy(
                     dynamicRange = newDynamicRange
+                )
+            }
+        } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedImageFormats) {
+                val newImageFormat = if (contains(imageFormat)) {
+                    imageFormat
+                } else {
+                    ImageOutputFormat.JPEG
+                }
+
+                this@tryApplyImageFormatConstraints.copy(
+                    imageFormat = newImageFormat
                 )
             }
         } ?: this
@@ -592,8 +616,8 @@ constructor(
         }
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
-        currentSettings.update { old ->
+    override suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
+        return currentSettings.tryUpdate { old ->
             old?.copy(captureMode = captureMode)
         }
     }
@@ -605,6 +629,7 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
+        imageCaptureUseCase = createImageUseCase(sessionSettings)
         if (!disableVideoCapture) {
             videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
         }
@@ -622,10 +647,15 @@ constructor(
                 ).build()
             )
             addUseCase(previewUseCase)
-            if (sessionSettings.dynamicRange == DynamicRange.SDR) {
+            if (sessionSettings.dynamicRange == DynamicRange.SDR ||
+                sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) {
                 addUseCase(imageCaptureUseCase)
             }
-            if (videoCaptureUseCase != null) {
+            // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
+            if (videoCaptureUseCase != null &&
+                sessionSettings.imageFormat == ImageOutputFormat.JPEG
+            ) {
                 addUseCase(videoCaptureUseCase!!)
             }
 
@@ -638,6 +668,30 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
         }
+    }
+
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean {
+        return currentSettings.tryUpdate { old ->
+            old?.copy(imageFormat = imageFormat)
+        }
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
+        return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats
+            .mapNotNull(Int::toAppImageFormat)
+            .toSet()
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
+        val builder = ImageCapture.Builder()
+        if (sessionSettings.dynamicRange != DynamicRange.SDR &&
+            sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+        ) {
+            builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+        }
+        return builder.build()
     }
 
     private fun createVideoUseCase(
@@ -767,4 +821,26 @@ private fun CameraSelector.toAppLensFacing(): LensFacing = when (this) {
     else -> throw IllegalArgumentException(
         "Unknown CameraSelector -> LensFacing mapping. [CameraSelector: $this]"
     )
+}
+
+@androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+private fun Int.toAppImageFormat(): ImageOutputFormat? {
+    return when (this) {
+        ImageCapture.OUTPUT_FORMAT_JPEG -> ImageOutputFormat.JPEG
+        ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> ImageOutputFormat.JPEG_ULTRA_HDR
+        // All other output formats unsupported. Return null.
+        else -> null
+    }
+}
+
+private fun MutableStateFlow<CameraAppSettings?>.tryUpdate(
+    function: (CameraAppSettings?) -> CameraAppSettings?
+): Boolean {
+    val newValue = function(value)
+    if (newValue != null && !newValue.isCombinationSupported()) {
+        return false
+    } else {
+        update(function)
+        return true
+    }
 }

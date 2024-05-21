@@ -33,6 +33,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -63,7 +64,6 @@ class PreviewViewModel @AssistedInject constructor(
     @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
-
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -153,8 +153,9 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            // apply to cameraUseCase
-            cameraUseCase.setCaptureMode(captureMode)
+            if (!cameraUseCase.setCaptureMode(captureMode)) {
+                showFeatureCombinationNotSupportedMessage()
+            }
         }
     }
 
@@ -331,6 +332,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun setImageFormat(imageFormat: ImageOutputFormat) {
+        viewModelScope.launch {
+            if (!cameraUseCase.setImageFormat(imageFormat)) {
+                showFeatureCombinationNotSupportedMessage()
+            }
+        }
+    }
+
     // modify ui values
     fun toggleQuickSettings() {
         viewModelScope.launch {
@@ -378,6 +387,20 @@ class PreviewViewModel @AssistedInject constructor(
                         old
                     }
                 } ?: old
+            }
+        }
+    }
+
+    private fun showFeatureCombinationNotSupportedMessage() {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    snackBarToShow = SnackbarData(
+                        cookie = "Settings-FeatureCombinationNotSupported",
+                        stringResource = R.string.toast_unsupported_feature_combination,
+                        withDismissAction = true
+                    )
+                ) ?: old
             }
         }
     }

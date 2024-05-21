@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,15 +187,23 @@ class FakeCameraUseCase(
         TODO("Not yet implemented")
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+    override suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
         }
+        return true
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old.copy(dynamicRange = dynamicRange)
         }
+    }
+
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean {
+        currentSettings.update { old ->
+            old.copy(imageFormat = imageFormat)
+        }
+        return true
     }
 }

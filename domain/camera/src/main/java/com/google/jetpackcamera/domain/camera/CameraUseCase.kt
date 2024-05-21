@@ -25,6 +25,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,9 +89,17 @@ interface CameraUseCase {
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
-    suspend fun setCaptureMode(captureMode: CaptureMode)
+    /**
+     * Sets capture mode. Returns true if set successfully, otherwise returns false.
+     */
+    suspend fun setCaptureMode(captureMode: CaptureMode): Boolean
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
+    /**
+     * Sets format of captured image. Returns true if set successfully, otherwise returns false.
+     */
+    suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean
 
     /**
      * Represents the events required for screen flash.

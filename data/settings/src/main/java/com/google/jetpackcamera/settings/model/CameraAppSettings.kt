@@ -32,7 +32,14 @@ data class CameraAppSettings(
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG
-)
+) {
+    fun isCombinationSupported(): Boolean {
+        // Makes Ultra HDR and Single Stream Mode features mutually exclusive, since single-stream
+        // mode uses CameraEffect, which does not support HDR-related functions.
+        return imageFormat != ImageOutputFormat.JPEG_ULTRA_HDR ||
+            captureMode != CaptureMode.SINGLE_STREAM
+    }
+}
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
     return perLensConstraints[cameraAppSettings.cameraLensFacing]
