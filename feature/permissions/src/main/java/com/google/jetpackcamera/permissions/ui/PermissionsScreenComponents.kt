@@ -87,7 +87,7 @@ fun PermissionTemplate(
             stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
         },
         requestButtonText =
-        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional() ) {
+        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = R.string.request_permission)
         } else {
             stringResource(id = R.string.navigate_to_settings)
