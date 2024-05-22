@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -25,49 +25,75 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
+import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun JcaApp(
+    openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode,
     onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val permissionState =
-        rememberPermissionState(permission = Manifest.permission.CAMERA)
-
-    if (permissionState.status.isGranted) {
-        JetpackCameraNavHost(
-            previewMode = previewMode,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            modifier = modifier
-        )
-    } else {
-        CameraPermission(
-            modifier = modifier.fillMaxSize(),
-            cameraPermissionState = permissionState
-        )
-    }
+    JetpackCameraNavHost(
+        previewMode = previewMode,
+        onOpenAppSettings = openAppSettings,
+        onRequestWindowColorMode = onRequestWindowColorMode,
+        modifier = modifier
+    )
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun JetpackCameraNavHost(
-    previewMode: PreviewMode,
-    onRequestWindowColorMode: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    previewMode: PreviewMode,
+    onOpenAppSettings: () -> Unit,
+    onRequestWindowColorMode: (Int) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(navController = navController, startDestination = PREVIEW_ROUTE, modifier = modifier) {
+    NavHost(
+        navController = navController,
+        startDestination = PERMISSIONS_ROUTE,
+        modifier = modifier
+    ) {
+        composable(PERMISSIONS_ROUTE) {
+            PermissionsScreen(
+                onNavigateToPreview = {
+                    navController.navigate(PREVIEW_ROUTE) {
+                        // cannot navigate back to permissions after leaving
+                        popUpTo(0)
+                    }
+                },
+                openAppSettings = onOpenAppSettings
+            )
+        }
+
         composable(PREVIEW_ROUTE) {
+            val permissionStates = rememberMultiplePermissionsState(
+                permissions = listOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO
+                )
+            )
+            // Automatically navigate to permissions screen when camera permission revoked
+            LaunchedEffect(key1 = permissionStates.permissions[0].status) {
+                if (!permissionStates.permissions[0].status.isGranted) {
+                    navController.navigate(PERMISSIONS_ROUTE) {
+                        // cannot navigate back to preview
+                        popUpTo(0)
+                    }
+                }
+            }
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,

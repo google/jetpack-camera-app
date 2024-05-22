@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.permissions.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,41 +37,77 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
-import com.google.jetpackcamera.R
+import com.google.accompanist.permissions.shouldShowRationale
+import com.google.jetpackcamera.permissions.PermissionEnum
+import com.google.jetpackcamera.permissions.R
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun CameraPermission(cameraPermissionState: PermissionState, modifier: Modifier = Modifier) {
-    PermissionTemplate(
-        modifier = modifier,
-        permissionState = cameraPermissionState,
-        painter = painterResource(id = R.drawable.photo_camera),
-        iconAccessibilityText = stringResource(id = R.string.camera_permission_accessibility_text),
-        title = stringResource(id = R.string.camera_permission_screen_title),
-        bodyText = stringResource(id = R.string.camera_permission_required_rationale),
-        requestButtonText = stringResource(R.string.request_permission)
-    )
-}
-
+/**
+ * Template for a single page for the permissions Screen
+ *
+ * @param permissionEnum a [PermissionEnum] representing the target permission
+ * @param permissionState a [PermissionState] of the target permission
+ */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionTemplate(
+    modifier: Modifier = Modifier,
+    permissionEnum: PermissionEnum,
     permissionState: PermissionState,
-    painter: Painter,
+    onRequestPermission: () -> Unit,
+    onSkipPermission: (() -> Unit)? = null,
+    onOpenAppSettings: () -> Unit
+) {
+    PermissionTemplate(
+        modifier = modifier,
+        onRequestPermission = {
+            if (permissionState.status.shouldShowRationale) {
+                onOpenAppSettings()
+            } else {
+                onRequestPermission()
+            }
+        },
+        onSkipPermission = onSkipPermission,
+        imageVector = permissionEnum.getImageVector()!!,
+        iconAccessibilityText = stringResource(permissionEnum.getIconAccessibilityTextResId()),
+        title = stringResource(permissionEnum.getPermissionTitleResId()),
+
+        // if declined by user, must navigate to system app settings to enable permission
+        bodyText =
+        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+            stringResource(id = permissionEnum.getPermissionBodyTextResId())
+        } else {
+            stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
+        },
+        requestButtonText =
+        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+            stringResource(id = R.string.request_permission)
+        } else {
+            stringResource(id = R.string.navigate_to_settings)
+        }
+    )
+}
+
+/**
+ * Template for a Permission Screen page
+ */
+@Composable
+fun PermissionTemplate(
+    modifier: Modifier = Modifier,
+    onRequestPermission: () -> Unit,
+    onSkipPermission: (() -> Unit)? = null,
+    imageVector: ImageVector,
     iconAccessibilityText: String,
     title: String,
     bodyText: String,
-    requestButtonText: String,
-    modifier: Modifier = Modifier,
-    onSkipPermission: (() -> Unit)? = null
+    requestButtonText: String
 ) {
     Column(
         modifier = modifier.background(MaterialTheme.colorScheme.primary),
@@ -82,7 +118,7 @@ fun PermissionTemplate(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .align(Alignment.CenterHorizontally),
-            painter = painter,
+            imageVector = imageVector,
             accessibilityText = iconAccessibilityText
         )
         Spacer(modifier = Modifier.fillMaxHeight(.1f))
@@ -100,8 +136,8 @@ fun PermissionTemplate(
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),
-                permissionState = permissionState,
                 requestButtonText = requestButtonText,
+                onRequestPermission = onRequestPermission,
                 onSkipPermission = onSkipPermission
             )
         }
@@ -109,26 +145,61 @@ fun PermissionTemplate(
     }
 }
 
+/*
+Permission UI Previews
+ */
+@Preview(backgroundColor = 0xFF000000, showBackground = true)
 @Composable
-fun PermissionImage(painter: Painter, accessibilityText: String, modifier: Modifier = Modifier) {
+private fun Preview_Camera_Permission_Page() {
+    PermissionTemplate(
+        onRequestPermission = { /*TODO*/ },
+        imageVector = PermissionEnum.CAMERA.getImageVector()!!,
+        iconAccessibilityText = "",
+        title = stringResource(id = PermissionEnum.CAMERA.getPermissionTitleResId()),
+        bodyText = stringResource(id = PermissionEnum.CAMERA.getPermissionBodyTextResId()),
+        requestButtonText = stringResource(id = R.string.request_permission)
+    )
+}
+
+@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Composable
+private fun Preview_Audio_Permission_Page() {
+    PermissionTemplate(
+        onRequestPermission = { /*TODO*/ },
+        imageVector = PermissionEnum.RECORD_AUDIO.getImageVector()!!,
+        iconAccessibilityText = "",
+        title = stringResource(id = PermissionEnum.RECORD_AUDIO.getPermissionTitleResId()),
+        bodyText = stringResource(id = PermissionEnum.RECORD_AUDIO.getPermissionBodyTextResId()),
+        requestButtonText = stringResource(id = R.string.request_permission)
+    )
+}
+
+/*
+Permission UI Subcomponents
+ */
+@Composable
+fun PermissionImage(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector,
+    accessibilityText: String
+) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier
                 .size(300.dp)
                 .align(Alignment.BottomCenter),
-            painter = painter,
+            imageVector = imageVector,
             tint = MaterialTheme.colorScheme.onPrimary,
             contentDescription = accessibilityText
         )
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButtonSection(
-    permissionState: PermissionState,
-    requestButtonText: String,
     modifier: Modifier = Modifier,
+    onRequestPermission: () -> Unit,
+    requestButtonText: String,
     onSkipPermission: (() -> Unit)?
 ) {
     Box(modifier = modifier) {
@@ -138,7 +209,7 @@ fun PermissionButtonSection(
                 .align(Alignment.Center)
         ) {
             PermissionButton(
-                permissionState = permissionState,
+                onRequestPermission = { onRequestPermission() },
                 requestButtonText = requestButtonText
             )
             Spacer(modifier = Modifier.height(20.dp))
@@ -156,12 +227,11 @@ fun PermissionButtonSection(
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionButton(
-    permissionState: PermissionState,
-    requestButtonText: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRequestPermission: () -> Unit,
+    requestButtonText: String
 ) {
     Button(
         modifier = modifier,
@@ -169,7 +239,7 @@ fun PermissionButton(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
-        onClick = { permissionState.launchPermissionRequest() }
+        onClick = { onRequestPermission() }
     ) {
         Text(
             modifier = Modifier.padding(10.dp),
@@ -181,7 +251,7 @@ fun PermissionButton(
 }
 
 @Composable
-fun PermissionText(title: String, bodyText: String, modifier: Modifier = Modifier) {
+fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: String) {
     Box(
         modifier = modifier
             .height(IntrinsicSize.Min)
@@ -213,7 +283,7 @@ fun PermissionText(title: String, bodyText: String, modifier: Modifier = Modifie
 }
 
 @Composable
-fun PermissionTitleText(text: String, color: Color, modifier: Modifier = Modifier) {
+fun PermissionTitleText(modifier: Modifier = Modifier, text: String, color: Color) {
     Text(
         modifier = modifier,
         color = color,
@@ -224,7 +294,7 @@ fun PermissionTitleText(text: String, color: Color, modifier: Modifier = Modifie
 }
 
 @Composable
-fun PermissionBodyText(text: String, color: Color, modifier: Modifier = Modifier) {
+fun PermissionBodyText(modifier: Modifier = Modifier, text: String, color: Color) {
     Text(
         modifier = modifier,
         color = color,

@@ -143,6 +143,9 @@ dependencies {
     // Settings Screen
     implementation(project(":feature:settings"))
 
+    // Permissions Screen
+    implementation(project(":feature:permissions"))
+
     // benchmark
     implementation(libs.androidx.profileinstaller)
 
