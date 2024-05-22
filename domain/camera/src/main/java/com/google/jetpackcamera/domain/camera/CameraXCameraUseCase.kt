@@ -127,8 +127,8 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(disableVideoCapture: Boolean) {
-        this.disableVideoCapture = disableVideoCapture
+    override suspend fun initialize(externalImageCapture: Boolean) {
+        this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -181,7 +181,9 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+            settingsRepository.defaultCameraAppSettings.first()
+                .tryApplyDynamicRangeConstraints()
+                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
     }
 
     /**
@@ -511,6 +513,15 @@ constructor(
                 )
             }
         } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
+        externalImageCapture: Boolean
+    ): CameraAppSettings {
+        if (externalImageCapture) {
+            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        }
+        return this
     }
 
     override fun tapToFocus(
