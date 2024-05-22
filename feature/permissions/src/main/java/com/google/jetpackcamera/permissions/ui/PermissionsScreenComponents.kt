@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,6 +68,7 @@ fun PermissionTemplate(
 ) {
     PermissionTemplate(
         modifier = modifier,
+        testTag = permissionEnum.getTestTag(),
         onRequestPermission = {
             if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
@@ -101,6 +103,7 @@ fun PermissionTemplate(
 @Composable
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
+    testTag: String,
     onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     imageVector: ImageVector,
@@ -117,7 +120,8 @@ fun PermissionTemplate(
         PermissionImage(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
-                .align(Alignment.CenterHorizontally),
+                .align(Alignment.CenterHorizontally)
+                .testTag(testTag),
             imageVector = imageVector,
             accessibilityText = iconAccessibilityText
         )
@@ -133,6 +137,7 @@ fun PermissionTemplate(
             // permission button section
             PermissionButtonSection(
                 modifier = Modifier
+                    .testTag(REQUEST_PERMISSION_BUTTON_TAG)
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),
@@ -153,6 +158,7 @@ Permission UI Previews
 private fun Preview_Camera_Permission_Page() {
     PermissionTemplate(
         onRequestPermission = { /*TODO*/ },
+        testTag = "",
         imageVector = PermissionEnum.CAMERA.getImageVector()!!,
         iconAccessibilityText = "",
         title = stringResource(id = PermissionEnum.CAMERA.getPermissionTitleResId()),
@@ -166,6 +172,7 @@ private fun Preview_Camera_Permission_Page() {
 private fun Preview_Audio_Permission_Page() {
     PermissionTemplate(
         onRequestPermission = { /*TODO*/ },
+        testTag = "",
         imageVector = PermissionEnum.RECORD_AUDIO.getImageVector()!!,
         iconAccessibilityText = "",
         title = stringResource(id = PermissionEnum.RECORD_AUDIO.getPermissionTitleResId()),

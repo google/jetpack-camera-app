@@ -16,15 +16,19 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiSelector
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
+import org.junit.Assert.fail
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
@@ -74,5 +78,53 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
                 .assertExists()
                 .performClick()
         }
+    }
+}
+
+
+// functions for interacting with system permission dialog
+/**
+ *  Clicks ALLOW option on a permission dialog
+ */
+fun grantPermissionDialog(uiDevice: UiDevice) {
+    if (Build.VERSION.SDK_INT >= 23) {
+        val allowPermission = uiDevice.findObject(
+            UiSelector().text(
+                when {
+                    Build.VERSION.SDK_INT == 23 -> "Allow"
+                    Build.VERSION.SDK_INT <= 28 -> "ALLOW"
+                    Build.VERSION.SDK_INT == 29 -> "Allow only while using the app"
+                    else -> "While using the app"
+                }
+            )
+        )
+        if (allowPermission.exists()) {
+            allowPermission.click()
+        }
+    }
+}
+
+/**
+ * Clicks the DENY option on a permission dialog
+ */
+fun denyPermissionDialog(uiDevice: UiDevice) {
+    if (Build.VERSION.SDK_INT >= 23) {
+        println("sdk version ${Build.VERSION.SDK_INT}")
+        val denyPermission = uiDevice.findObject(
+            UiSelector().textContains(
+                when {
+                    //todo fix this to be "Don't allow"... lol
+                    // for some reason.... cannot find when the string has an apostrophe... i tried using \'...
+
+                    Build.VERSION.SDK_INT >= 30 -> "Don"
+                    Build.VERSION.SDK_INT in 24..29 -> "DENY"
+                    else -> "Deny"
+                }
+            )
+        )
+        if (denyPermission.exists())
+            denyPermission.click()
+        else
+            fail("Could not find the Deny button for the dialog")
     }
 }
