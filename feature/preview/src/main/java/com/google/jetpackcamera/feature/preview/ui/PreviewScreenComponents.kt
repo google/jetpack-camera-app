@@ -136,7 +136,13 @@ fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmp
         Icon(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size((0.5 * size).dp),
+                .size((0.5 * size).dp)
+                .apply {
+                    if (audioAmplitude != 0.0)
+                        testTag(AMPLITUDE_HOT_TAG)
+                    else
+                        testTag(AMPLITUDE_NONE_TAG)
+                },
             tint = Color.Black,
             imageVector = if (audioAmplitude != 0.0) {
                 Icons.Filled.Mic
@@ -449,7 +455,9 @@ enum class ToggleState {
 fun ToggleButton(
     leftIcon: Painter,
     rightIcon: Painter,
-    modifier: Modifier = Modifier.width(64.dp).height(32.dp),
+    modifier: Modifier = Modifier
+        .width(64.dp)
+        .height(32.dp),
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
     enabled: Boolean = true,
@@ -504,7 +512,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
@@ -515,9 +523,11 @@ fun ToggleButton(
                 )
             }
             Row(
-                modifier = Modifier.matchParentSize().then(
-                    if (enabled) Modifier else Modifier.alpha(0.38f)
-                ),
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        if (enabled) Modifier else Modifier.alpha(0.38f)
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
