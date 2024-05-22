@@ -76,6 +76,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onToggleAudioEnabled: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -126,6 +127,7 @@ fun CameraControlsOverlay(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
+                onToggleAudioEnabled = onToggleAudioEnabled,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
             )
@@ -194,6 +196,7 @@ private fun ControlsBottom(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
+    onToggleAudioEnabled: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
@@ -234,6 +237,7 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
+                        onClick = onToggleAudioEnabled,
                         size = 75,
                         audioAmplitude = audioAmplitude
                     )

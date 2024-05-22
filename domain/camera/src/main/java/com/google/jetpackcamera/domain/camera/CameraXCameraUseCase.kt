@@ -226,7 +226,8 @@ constructor(
      */
     private data class TransientSessionSettings(
         val flashMode: FlashMode,
-        val zoomScale: Float
+        val zoomScale: Float,
+        val audioEnabled: Boolean,
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -238,6 +239,7 @@ constructor(
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
+                    audioEnabled = currentCameraSettings.audioEnabled,
                     zoomScale = currentCameraSettings.zoomScale
                 )
 
@@ -418,7 +420,7 @@ constructor(
                 Manifest.permission.RECORD_AUDIO
             )
                 == PackageManager.PERMISSION_GRANTED
-            )
+            ) && currentSettings.value!!.audioEnabled
         val captureTypeString =
             when (captureMode) {
                 CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -645,6 +647,14 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
         }
+    }
+
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
+        currentSettings.update { old ->
+            old?.copy(audioEnabled = isAudioEnabled)
+        }
+
+        recording?.mute(!isAudioEnabled)
     }
 
     private fun createVideoUseCase(

@@ -109,6 +109,7 @@ fun PreviewScreen(
             onChangeCaptureMode = viewModel::setCaptureMode,
             onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
+            onToggleAudioEnabled = viewModel::toggleAudioEnabled,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
@@ -137,6 +138,7 @@ private fun ContentScreen(
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onToggleAudioEnabled: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -195,6 +197,7 @@ private fun ContentScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
+                onToggleAudioEnabled = onToggleAudioEnabled,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,

@@ -197,4 +197,9 @@ class FakeCameraUseCase(
             old.copy(dynamicRange = dynamicRange)
         }
     }
+
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
+        currentSettings.update { old ->
+            old.copy(audioEnabled = isAudioEnabled)
+        }    }
 }

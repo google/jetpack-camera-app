@@ -165,6 +165,20 @@ class PreviewViewModel @AssistedInject constructor(
             cameraUseCase.setLensFacing(newLensFacing)
         }
     }
+    fun toggleAudioEnabled() {
+        setAudioEnabled(
+            !(previewUiState.value as PreviewUiState.Ready)
+            .currentCameraSettings
+            .audioEnabled)
+    }
+    private fun setAudioEnabled(isAudioEnabled: Boolean) {
+        viewModelScope.launch {
+            cameraUseCase.setAudioEnabled(isAudioEnabled)
+        }
+        Log.d(TAG,
+            "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
+                .currentCameraSettings.audioEnabled}")
+    }
 
     fun captureImage() {
         Log.d(TAG, "captureImage")
