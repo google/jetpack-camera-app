@@ -26,6 +26,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
+import androidx.camera.core.AspectRatio.RATIO_16_9
+import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.AspectRatio.RATIO_DEFAULT
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -38,6 +41,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -113,9 +118,8 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private lateinit var imageCaptureUseCase: ImageCapture
 
-    private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
@@ -182,6 +186,11 @@ constructor(
 
         currentSettings.value =
             settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(
+                getResolutionSelector(
+                    settingsRepository.defaultCameraAppSettings.first().aspectRatio)).build()
     }
 
     /**
@@ -620,6 +629,8 @@ constructor(
             flashMode = initialTransientSettings.flashMode,
             isFrontFacing = sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
         )
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio)).build()
 
         return UseCaseGroup.Builder().apply {
             setViewPort(
@@ -651,6 +662,9 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: Set<SupportedStabilizationMode>
     ): VideoCapture<Recorder> {
+        val recorder = Recorder.Builder()
+            .setAspectRatio(getAspectRatioForUseCase(sessionSettings.aspectRatio))
+            .setExecutor(defaultDispatcher.asExecutor()).build()
         return VideoCapture.Builder(recorder).apply {
             // set video stabilization
             if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
@@ -666,6 +680,14 @@ constructor(
 
             setDynamicRange(sessionSettings.dynamicRange.toCXDynamicRange())
         }.build()
+    }
+
+    private fun getAspectRatioForUseCase(aspectRatio: AspectRatio): Int {
+        return when(aspectRatio) {
+            AspectRatio.THREE_FOUR -> RATIO_4_3
+            AspectRatio.NINE_SIXTEEN -> RATIO_16_9
+            else -> RATIO_DEFAULT
+        }
     }
 
     private fun shouldVideoBeStabilized(
@@ -692,11 +714,24 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
+        previewUseCaseBuilder.setResolutionSelector(
+            getResolutionSelector(sessionSettings.aspectRatio)
+        )
+
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->
                 _surfaceRequest.value = surfaceRequest
             }
         }
+    }
+
+    private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
+        val aspectRatioStrategy = when(aspectRatio) {
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        }
+        return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
 
     private fun shouldPreviewBeStabilized(
