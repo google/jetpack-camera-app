@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.google.jetpackcamera.settings.model.DisplayRotation
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import kotlin.math.abs
 import kotlin.math.min
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -145,13 +145,13 @@ fun debouncedOrientationFlow(context: Context) = callbackFlow {
         orientationListener.disable()
     }
 }.buffer(capacity = CONFLATED)
-    .runningFold(initial = DisplayRotation.Natural) { prevSnap, newDegrees ->
+    .runningFold(initial = DeviceRotation.Natural) { prevSnap, newDegrees ->
         if (
             newDegrees != ORIENTATION_UNKNOWN &&
             abs(prevSnap.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) } >=
             45 + ORIENTATION_HYSTERESIS
         ) {
-            DisplayRotation.snapFrom(newDegrees)
+            DeviceRotation.snapFrom(newDegrees)
         } else {
             prevSnap
         }

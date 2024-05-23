@@ -57,7 +57,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DisplayRotation
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -241,7 +241,7 @@ constructor(
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    targetRotation = currentCameraSettings.displayRotation.toSurfaceRotation()
+                    targetRotation = currentCameraSettings.deviceRotation.toUiSurfaceRotation()
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -674,9 +674,9 @@ constructor(
         }
     }
 
-    override fun setDisplayRotation(displayRotation: DisplayRotation) {
+    override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
-            old?.copy(displayRotation = displayRotation)
+            old?.copy(deviceRotation = deviceRotation)
         }
     }
 
@@ -720,7 +720,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
         val previewUseCaseBuilder = Preview.Builder().apply {
-            setTargetRotation(DisplayRotation.Natural.toSurfaceRotation())
+            setTargetRotation(DeviceRotation.Natural.toUiSurfaceRotation())
         }
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {

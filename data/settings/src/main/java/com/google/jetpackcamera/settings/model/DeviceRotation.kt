@@ -17,19 +17,25 @@ package com.google.jetpackcamera.settings.model
 
 import android.view.Surface
 
-enum class DisplayRotation {
+enum class DeviceRotation {
     Natural,
     Rotated90,
     Rotated180,
     Rotated270;
 
-    fun toSurfaceRotation(): Int {
+    /**
+     * Returns the rotation of the UI, expressed as a [Surface] rotation constant, needed to
+     * compensate for device rotation.
+     *
+     * These values do not match up with the device rotation angle. When the device is rotated,
+     * the UI must rotate in the opposite direction to compensate, so the angles 90 and 270 will
+     * be swapped in UI rotation compared to device rotation.
+     */
+    fun toUiSurfaceRotation(): Int {
         return when (this) {
             Natural -> Surface.ROTATION_0
-            // Display rotated 90 degrees must be rotated 270 to return to natural
             Rotated90 -> Surface.ROTATION_270
             Rotated180 -> Surface.ROTATION_180
-            // Display rotated 270 degrees must be rotated 90 to return to natural
             Rotated270 -> Surface.ROTATION_90
         }
     }
@@ -43,7 +49,7 @@ enum class DisplayRotation {
     }
 
     companion object {
-        fun snapFrom(degrees: Int): DisplayRotation {
+        fun snapFrom(degrees: Int): DeviceRotation {
             check(degrees in 0..359) {
                 "Degrees must be in the range [0, 360)"
             }

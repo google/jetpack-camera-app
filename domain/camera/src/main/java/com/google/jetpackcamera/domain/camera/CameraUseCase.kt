@@ -23,7 +23,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DisplayRotation
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -93,7 +93,7 @@ interface CameraUseCase {
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
-    fun setDisplayRotation(displayRotation: DisplayRotation)
+    fun setDisplayRotation(deviceRotation: DeviceRotation)
 
     /**
      * Represents the events required for screen flash.
