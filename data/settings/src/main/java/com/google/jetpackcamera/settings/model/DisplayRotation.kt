@@ -17,20 +17,46 @@ package com.google.jetpackcamera.settings.model
 
 import android.view.Surface
 
-enum class DisplayRotation(val value: Int) {
-    Natural(Surface.ROTATION_0),
-    Rotated90(Surface.ROTATION_90),
-    Rotated180(Surface.ROTATION_180),
-    Rotated270(Surface.ROTATION_270);
+enum class DisplayRotation {
+    Natural,
+    Rotated90,
+    Rotated180,
+    Rotated270;
+
+    fun toSurfaceRotation(): Int {
+        return when (this) {
+            Natural -> Surface.ROTATION_0
+            // Display rotated 90 degrees must be rotated 270 to return to natural
+            Rotated90 -> Surface.ROTATION_270
+            Rotated180 -> Surface.ROTATION_180
+            // Display rotated 270 degrees must be rotated 90 to return to natural
+            Rotated270 -> Surface.ROTATION_90
+        }
+    }
+    fun toClockwiseRotationDegrees(): Int {
+        return when (this) {
+            Natural -> 0
+            Rotated90 -> 90
+            Rotated180 -> 180
+            Rotated270 -> 270
+        }
+    }
 
     companion object {
-        fun of(value: Int): DisplayRotation {
-            return when (value) {
-                Surface.ROTATION_0 -> Natural
-                Surface.ROTATION_90 -> Rotated90
-                Surface.ROTATION_180 -> Rotated180
-                Surface.ROTATION_270 -> Rotated270
-                else -> throw IllegalArgumentException("Unsupported screen rotation: $value")
+        fun snapFrom(degrees: Int): DisplayRotation {
+            check(degrees in 0..359) {
+                "Degrees must be in the range [0, 360)"
+            }
+
+            return when (val snappedDegrees = ((degrees + 45) / 90 * 90) % 360) {
+                0 -> Natural
+                90 -> Rotated90
+                180 -> Rotated180
+                270 -> Rotated270
+                else -> throw IllegalStateException(
+                    "Unexpected snapped degrees: $snappedDegrees" +
+                        ". Should be one of 0, 90, 180 or 270."
+                )
             }
         }
     }

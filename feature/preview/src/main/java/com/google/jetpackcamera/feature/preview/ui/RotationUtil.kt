@@ -18,6 +18,8 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
+import android.view.OrientationEventListener
+import android.view.OrientationEventListener.ORIENTATION_UNKNOWN
 import android.view.Surface
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.ROTATION_ANIMATION_JUMPCUT
@@ -39,6 +41,15 @@ import androidx.compose.ui.unit.Constraints
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.jetpackcamera.settings.model.DisplayRotation
+import kotlin.math.abs
+import kotlin.math.min
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.runningFold
 
 /**
  * As long as this composable is active, the window will go into immersive mode and prevents the
@@ -95,20 +106,22 @@ fun Modifier.rotatedLayout(): Modifier {
             currentOrientation = newRotation
         }
     }
-    return this then Modifier.fillMaxSize().layout { measurable, constraints ->
-        val height = maxOf(constraints.maxWidth, constraints.maxHeight)
-        val width = minOf(constraints.maxWidth, constraints.maxHeight)
-        val placeable = measurable.measure(
-            Constraints.fixed(width, height)
-        )
-        layout(placeable.width, placeable.height) {
-            placeable.placeWithLayer(0, 0) {
-                if (constraints.maxWidth > constraints.maxHeight) {
-                    rotationZ = -currentDegrees
+    return this then Modifier
+        .fillMaxSize()
+        .layout { measurable, constraints ->
+            val height = maxOf(constraints.maxWidth, constraints.maxHeight)
+            val width = minOf(constraints.maxWidth, constraints.maxHeight)
+            val placeable = measurable.measure(
+                Constraints.fixed(width, height)
+            )
+            layout(placeable.width, placeable.height) {
+                placeable.placeWithLayer(0, 0) {
+                    if (constraints.maxWidth > constraints.maxHeight) {
+                        rotationZ = -currentDegrees
+                    }
                 }
             }
         }
-    }
 }
 
 private fun Context.getActivity(): ComponentActivity? = when (this) {
@@ -116,3 +129,30 @@ private fun Context.getActivity(): ComponentActivity? = when (this) {
     is ContextWrapper -> baseContext.getActivity()
     else -> null
 }
+
+/** Orientation hysteresis amount used in rounding, in degrees. */
+private const val ORIENTATION_HYSTERESIS = 5
+fun debouncedOrientationFlow(context: Context) = callbackFlow {
+    val orientationListener = object : OrientationEventListener(context) {
+        override fun onOrientationChanged(orientation: Int) {
+            trySend(orientation)
+        }
+    }
+
+    orientationListener.enable()
+
+    awaitClose {
+        orientationListener.disable()
+    }
+}.buffer(capacity = CONFLATED)
+    .runningFold(initial = DisplayRotation.Natural) { prevSnap, newDegrees ->
+        if (
+            newDegrees != ORIENTATION_UNKNOWN &&
+            abs(prevSnap.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) } >=
+            45 + ORIENTATION_HYSTERESIS
+        ) {
+            DisplayRotation.snapFrom(newDegrees)
+        } else {
+            prevSnap
+        }
+    }.distinctUntilChanged()

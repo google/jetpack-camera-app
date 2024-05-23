@@ -241,7 +241,7 @@ constructor(
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    targetRotation = currentCameraSettings.displayRotation.value
+                    targetRotation = currentCameraSettings.displayRotation.toSurfaceRotation()
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -713,7 +713,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
         val previewUseCaseBuilder = Preview.Builder().apply {
-            setTargetRotation(DisplayRotation.Natural.value)
+            setTargetRotation(DisplayRotation.Natural.toSurfaceRotation())
         }
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {

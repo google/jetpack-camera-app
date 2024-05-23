@@ -37,16 +37,11 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,11 +56,11 @@ import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SmoothImmersiveRotationEffect
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DisplayRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -105,6 +100,11 @@ fun PreviewScreen(
         }
     }
 
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+    }
+
     when (val currentUiState = previewUiState) {
         is PreviewUiState.NotReady -> LoadingScreen(modifier)
         is PreviewUiState.Ready -> ContentScreen(
@@ -128,8 +128,7 @@ fun PreviewScreen(
             onStopVideoRecording = viewModel::stopVideoRecording,
             onToastShown = viewModel::onToastShown,
             onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult,
-            onUpdateDisplayRotation = viewModel::setDisplayRotation
+            onSnackBarResult = viewModel::onSnackBarResult
         )
     }
 }
@@ -162,8 +161,7 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
-    onSnackBarResult: (String) -> Unit = {},
-    onUpdateDisplayRotation: (DisplayRotation) -> Unit = {}
+    onSnackBarResult: (String) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -176,17 +174,6 @@ private fun ContentScreen(
         val onFlipCamera = remember(lensFacing) {
             {
                 onSetLensFacing(lensFacing.flip())
-            }
-        }
-
-        key(LocalConfiguration.current) {
-            val displayRotation = DisplayRotation.of(LocalView.current.display.rotation)
-            val displayRotationState by rememberUpdatedState(displayRotation)
-            val currentOnUpdateDisplayRotation by rememberUpdatedState(onUpdateDisplayRotation)
-
-            LaunchedEffect(Unit) {
-                snapshotFlow { displayRotationState }
-                    .collect(currentOnUpdateDisplayRotation)
             }
         }
 
