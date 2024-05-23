@@ -38,6 +38,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -113,7 +115,7 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private lateinit var imageCaptureUseCase: ImageCapture
 
     private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
@@ -182,6 +184,11 @@ constructor(
 
         currentSettings.value =
             settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+        
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(
+                getResolutionSelector(
+                    settingsRepository.defaultCameraAppSettings.first().aspectRatio)).build()
     }
 
     /**
@@ -620,6 +627,8 @@ constructor(
             flashMode = initialTransientSettings.flashMode,
             isFrontFacing = sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
         )
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio)).build()
 
         return UseCaseGroup.Builder().apply {
             setViewPort(
@@ -692,11 +701,24 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
+        previewUseCaseBuilder.setResolutionSelector(
+            getResolutionSelector(sessionSettings.aspectRatio)
+        )
+
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->
                 _surfaceRequest.value = surfaceRequest
             }
         }
+    }
+
+    private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
+        val aspectRatioStrategy = when(aspectRatio) {
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        }
+        return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
 
     private fun shouldPreviewBeStabilized(
