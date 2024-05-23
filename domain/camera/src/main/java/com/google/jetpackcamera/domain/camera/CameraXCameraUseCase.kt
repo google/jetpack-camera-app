@@ -131,8 +131,8 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(disableVideoCapture: Boolean) {
-        this.disableVideoCapture = disableVideoCapture
+    override suspend fun initialize(externalImageCapture: Boolean) {
+        this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -185,12 +185,16 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+            settingsRepository.defaultCameraAppSettings.first()
+                .tryApplyDynamicRangeConstraints()
+                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
 
         imageCaptureUseCase = ImageCapture.Builder()
             .setResolutionSelector(
                 getResolutionSelector(
-                    settingsRepository.defaultCameraAppSettings.first().aspectRatio)).build()
+                    settingsRepository.defaultCameraAppSettings.first().aspectRatio
+                )
+            ).build()
     }
 
     /**
@@ -529,6 +533,15 @@ constructor(
         } ?: this
     }
 
+    private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
+        externalImageCapture: Boolean
+    ): CameraAppSettings {
+        if (externalImageCapture) {
+            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        }
+        return this
+    }
+
     override fun tapToFocus(
         display: Display,
         surfaceWidth: Int,
@@ -683,7 +696,7 @@ constructor(
     }
 
     private fun getAspectRatioForUseCase(aspectRatio: AspectRatio): Int {
-        return when(aspectRatio) {
+        return when (aspectRatio) {
             AspectRatio.THREE_FOUR -> RATIO_4_3
             AspectRatio.NINE_SIXTEEN -> RATIO_16_9
             else -> RATIO_DEFAULT
@@ -726,7 +739,7 @@ constructor(
     }
 
     private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
-        val aspectRatioStrategy = when(aspectRatio) {
+        val aspectRatioStrategy = when (aspectRatio) {
             AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
             AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
             else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
