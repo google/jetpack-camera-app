@@ -27,14 +27,17 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
@@ -55,8 +58,9 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * [ViewModel] for [PreviewScreen].
  */
-@HiltViewModel
-class PreviewViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
+class PreviewViewModel @AssistedInject constructor(
+    @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
 
@@ -81,7 +85,7 @@ class PreviewViewModel @Inject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize()
+        cameraUseCase.initialize(previewMode is PreviewMode.ExternalImageCaptureMode)
     }
 
     init {
@@ -97,14 +101,16 @@ class PreviewViewModel @Inject constructor(
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale
+                                zoomScale = zoomScale,
+                                previewMode = previewMode
                             )
 
                         is PreviewUiState.NotReady ->
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale
+                                zoomScale = zoomScale,
+                                previewMode = previewMode
                             )
                     }
                 }
@@ -163,7 +169,17 @@ class PreviewViewModel @Inject constructor(
     fun captureImage() {
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            captureImageInternal(cameraUseCase::takePicture)
+            captureImageInternal(
+                doTakePicture = {
+                    cameraUseCase.takePicture {
+                        _previewUiState.update { old ->
+                            (old as? PreviewUiState.Ready)?.copy(
+                                lastBlinkTimeStamp = System.currentTimeMillis()
+                            ) ?: old
+                        }
+                    }
+                }
+            )
         }
     }
 
@@ -177,7 +193,13 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             captureImageInternal(
                 doTakePicture = {
-                    cameraUseCase.takePicture(contentResolver, imageCaptureUri, ignoreUri).savedUri
+                    cameraUseCase.takePicture({
+                        _previewUiState.update { old ->
+                            (old as? PreviewUiState.Ready)?.copy(
+                                lastBlinkTimeStamp = System.currentTimeMillis()
+                            ) ?: old
+                        }
+                    }, contentResolver, imageCaptureUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri -> onImageCapture(ImageCaptureEvent.ImageSaved(savedUri)) },
                 onFailure = { exception ->
@@ -227,30 +249,59 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun startVideoRecording() {
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is
+                PreviewMode.ExternalImageCaptureMode
+        ) {
+            Log.d(TAG, "externalVideoRecording")
+            viewModelScope.launch {
+                _previewUiState.update { old ->
+                    (old as? PreviewUiState.Ready)?.copy(
+                        snackBarToShow = SnackbarData(
+                            cookie = "Video-ExternalImageCaptureMode",
+                            stringResource = R.string.toast_video_capture_external_unsupported,
+                            withDismissAction = true,
+                            testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                        )
+                    ) ?: old
+                }
+            }
+            return
+        }
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording {
-                    val snackBarData = when (it) {
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
-                            SnackbarData(
+                    var audioAmplitude = 0.0
+                    var snackbarToShow: SnackbarData? = null
+                    when (it) {
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                            snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
                                 withDismissAction = true
                             )
-                        else ->
-                            SnackbarData(
+                        }
+
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                            snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
                                 withDismissAction = true
                             )
+                        }
+
+                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
+                            audioAmplitude = it.audioAmplitude
+                        }
                     }
 
                     viewModelScope.launch {
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                snackBarToShow = snackBarData
+                                snackBarToShow = snackbarToShow,
+                                audioAmplitude = audioAmplitude
                             ) ?: old
                         }
                     }
@@ -339,6 +390,11 @@ class PreviewViewModel @Inject constructor(
                 } ?: old
             }
         }
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(previewMode: PreviewMode): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {

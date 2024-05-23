@@ -38,7 +38,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize()
+    suspend fun initialize(disableVideoCapture: Boolean)
 
     /**
      * Starts the camera.
@@ -50,7 +50,7 @@ interface CameraUseCase {
      */
     suspend fun runCamera()
 
-    suspend fun takePicture()
+    suspend fun takePicture(onCaptureStarted: (() -> Unit) = {})
 
     /**
      * Takes a picture with the camera. If ignoreUri is set to true, the picture taken will be saved
@@ -58,6 +58,7 @@ interface CameraUseCase {
      * location if the uri is not null. If it is null, an error will be thrown.
      */
     suspend fun takePicture(
+        onCaptureStarted: (() -> Unit) = {},
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean = false
@@ -106,6 +107,8 @@ interface CameraUseCase {
      */
     sealed interface OnVideoRecordEvent {
         object OnVideoRecorded : OnVideoRecordEvent
+
+        data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
 
         object OnVideoRecordError : OnVideoRecordEvent
     }

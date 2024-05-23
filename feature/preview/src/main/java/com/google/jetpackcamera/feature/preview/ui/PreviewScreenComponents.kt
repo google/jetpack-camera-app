@@ -15,62 +15,138 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.content.res.Configuration
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
+private const val BLINK_TIME = 600L
+
+@Composable
+fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
+    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val animatedScaling by animateFloatAsState(
+        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
+        label = "AudioAnimation"
+    )
+    Box(modifier = modifier) {
+        // animated circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    // tweak the multiplier to size to adjust the maximum size of the visualizer
+                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
+                    alpha = .5f,
+                    color = Color.White
+                )
+            }
+        )
+
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size.toFloat()),
+                    color = Color.White
+                )
+            }
+        )
+
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Black,
+            imageVector = if (audioAmplitude != 0.0) {
+                Icons.Filled.Mic
+            } else {
+                Icons.Filled.MicOff
+            },
+            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+        )
+    }
+}
 
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
@@ -157,13 +233,13 @@ fun TestableSnackbar(
  */
 @Composable
 fun PreviewDisplay(
+    previewUiState: PreviewUiState.Ready,
     onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
-    blinkState: BlinkState,
     modifier: Modifier = Modifier
 ) {
     val transformableState = rememberTransformableState(
@@ -197,13 +273,31 @@ fun PreviewDisplay(
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            var imageVisible by remember { mutableStateOf(true) }
+
+            val imageAlpha: Float by animateFloatAsState(
+                targetValue = if (imageVisible) 1f else 0f,
+                animationSpec = tween(
+                    durationMillis = (BLINK_TIME / 2).toInt(),
+                    easing = LinearEasing
+                ),
+                label = ""
+            )
+
+            LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
+                if (previewUiState.lastBlinkTimeStamp != 0L) {
+                    imageVisible = false
+                    delay(BLINK_TIME)
+                    imageVisible = true
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
-                    .alpha(blinkState.alpha)
-
+                    .alpha(imageAlpha)
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
@@ -212,20 +306,6 @@ fun PreviewDisplay(
                 )
             }
         }
-    }
-}
-
-class BlinkState(
-    initialAlpha: Float = 1F,
-    coroutineScope: CoroutineScope
-) {
-    private val animatable = Animatable(initialAlpha)
-    val alpha: Float get() = animatable.value
-    val scope = coroutineScope
-
-    suspend fun play() {
-        animatable.snapTo(0F)
-        animatable.animateTo(1F, animationSpec = tween(800))
     }
 }
 
@@ -276,7 +356,7 @@ fun FlipCameraButton(
         enabled = enabledCondition
     ) {
         Icon(
-            imageVector = Icons.Filled.Refresh,
+            imageVector = Icons.Filled.FlipCameraAndroid,
             contentDescription = stringResource(id = R.string.flip_camera_content_description),
             modifier = Modifier.size(72.dp)
         )
@@ -357,5 +437,168 @@ fun CaptureButton(
                 }
             )
         })
+    }
+}
+
+enum class ToggleState {
+    Left,
+    Right
+}
+
+@Composable
+fun ToggleButton(
+    leftIcon: Painter,
+    rightIcon: Painter,
+    modifier: Modifier = Modifier.width(64.dp).height(32.dp),
+    initialState: ToggleState = ToggleState.Left,
+    onToggleStateChanged: (newState: ToggleState) -> Unit = {},
+    enabled: Boolean = true,
+    leftIconDescription: String = "leftIcon",
+    rightIconDescription: String = "rightIcon",
+    iconPadding: Dp = 8.dp
+) {
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val disableColor = MaterialTheme.colorScheme.onSurface
+    val iconSelectionColor = MaterialTheme.colorScheme.onPrimary
+    val iconUnSelectionColor = MaterialTheme.colorScheme.primary
+    val circleSelectionColor = MaterialTheme.colorScheme.primary
+    val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
+    var toggleState by remember { mutableStateOf(initialState) }
+    val animatedTogglePosition by animateFloatAsState(
+        when (toggleState) {
+            ToggleState.Left -> 0f
+            ToggleState.Right -> 1f
+        },
+        label = "togglePosition"
+    )
+    val scope = rememberCoroutineScope()
+
+    Surface(
+        modifier = modifier
+            .clip(shape = RoundedCornerShape(50))
+            .then(
+                if (enabled) {
+                    Modifier.clickable {
+                        scope.launch {
+                            toggleState = when (toggleState) {
+                                ToggleState.Left -> ToggleState.Right
+                                ToggleState.Right -> ToggleState.Left
+                            }
+                            onToggleStateChanged(toggleState)
+                        }
+                    }
+                } else {
+                    Modifier
+                }
+            ),
+        color = backgroundColor
+    ) {
+        Box {
+            Row(
+                modifier = Modifier.matchParentSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                val xPos = animatedTogglePosition *
+                                    (constraints.maxWidth - placeable.width)
+                                placeable.placeRelative(xPos.toInt(), 0)
+                            }
+                        }
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(50))
+                        .background(circleColor)
+                )
+            }
+            Row(
+                modifier = Modifier.matchParentSize().then(
+                    if (enabled) Modifier else Modifier.alpha(0.38f)
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    painter = leftIcon,
+                    contentDescription = leftIconDescription,
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Left) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+                Icon(
+                    painter = rightIcon,
+                    contentDescription = rightIconDescription,
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Right) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_ToggleButton_Selecting_Left() {
+    val initialState = ToggleState.Left
+    var toggleState by remember {
+        mutableStateOf(initialState)
+    }
+    PreviewPreviewTheme(dynamicColor = false) {
+        ToggleButton(
+            leftIcon = if (toggleState == ToggleState.Left) {
+                rememberVectorPainter(image = Icons.Filled.CameraAlt)
+            } else {
+                rememberVectorPainter(image = Icons.Outlined.CameraAlt)
+            },
+            rightIcon = if (toggleState == ToggleState.Right) {
+                rememberVectorPainter(image = Icons.Filled.Videocam)
+            } else {
+                rememberVectorPainter(image = Icons.Outlined.Videocam)
+            },
+            initialState = ToggleState.Left,
+            onToggleStateChanged = {
+                toggleState = it
+            }
+        )
+    }
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_ToggleButton_Selecting_Right() {
+    PreviewPreviewTheme(dynamicColor = false) {
+        ToggleButton(
+            leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
+            rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
+            initialState = ToggleState.Right
+        )
+    }
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_ToggleButton_Disabled() {
+    PreviewPreviewTheme(dynamicColor = false) {
+        ToggleButton(
+            leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
+            rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
+            initialState = ToggleState.Right,
+            enabled = false
+        )
     }
 }

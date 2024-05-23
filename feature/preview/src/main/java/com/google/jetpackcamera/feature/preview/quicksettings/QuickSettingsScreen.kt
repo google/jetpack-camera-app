@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.quicksettings
+package com.google.jetpackcamera.feature.preview.quicksettings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
@@ -38,19 +38,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.google.jetpackcamera.feature.quicksettings.ui.ExpandedQuickSetRatio
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickFlipCamera
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetCaptureMode
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetFlash
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetHdr
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSetRatio
-import com.google.jetpackcamera.feature.quicksettings.ui.QuickSettingsGrid
-import com.google.jetpackcamera.quicksettings.R
+import com.google.jetpackcamera.feature.preview.PreviewMode
+import com.google.jetpackcamera.feature.preview.PreviewUiState
+import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.ExpandedQuickSetRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CAPTURE_MODE_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickFlipCamera
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetCaptureMode
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -66,6 +68,7 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
  */
 @Composable
 fun QuickSettingsScreenOverlay(
+    previewUiState: PreviewUiState.Ready,
     currentCameraSettings: CameraAppSettings,
     systemConstraints: SystemConstraints,
     toggleIsOpen: () -> Unit,
@@ -113,6 +116,7 @@ fun QuickSettingsScreenOverlay(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ExpandedQuickSettingsUi(
+                previewUiState = previewUiState,
                 currentCameraSettings = currentCameraSettings,
                 systemConstraints = systemConstraints,
                 shouldShowQuickSetting = shouldShowQuickSetting,
@@ -142,6 +146,7 @@ private enum class IsExpandedQuickSetting {
  */
 @Composable
 private fun ExpandedQuickSettingsUi(
+    previewUiState: PreviewUiState.Ready,
     currentCameraSettings: CameraAppSettings,
     systemConstraints: SystemConstraints,
     onLensFaceClick: (newLensFace: LensFacing) -> Unit,
@@ -210,8 +215,12 @@ private fun ExpandedQuickSettingsUi(
                                 onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                enabled = systemConstraints.forCurrentLens(currentCameraSettings)
-                                    ?.let { it.supportedDynamicRanges.size > 1 } ?: false
+                                enabled = previewUiState.previewMode !is
+                                    PreviewMode.ExternalImageCaptureMode &&
+                                    previewUiState.systemConstraints.forCurrentLens(
+                                        currentCameraSettings
+                                    )
+                                        ?.let { it.supportedDynamicRanges.size > 1 } ?: false
                             )
                         }
                     }
@@ -233,6 +242,11 @@ private fun ExpandedQuickSettingsUi(
 fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             onLensFaceClick = { },
@@ -251,6 +265,11 @@ fun ExpandedQuickSettingsUiPreview() {
 fun ExpandedQuickSettingsUiPreview_WithHdr() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
+            previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                previewMode = PreviewMode.StandardMode {}
+            ),
             currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR,
             onLensFaceClick = { },

@@ -38,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,13 +47,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
-import com.google.jetpackcamera.feature.preview.ui.BlinkState
+import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
-import com.google.jetpackcamera.feature.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -70,15 +68,14 @@ private const val TAG = "PreviewScreen"
  */
 @Composable
 fun PreviewScreen(
-    onPreviewViewModel: (PreviewViewModel) -> Unit,
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
-    viewModel: PreviewViewModel = hiltViewModel()
+    viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
+        { factory -> factory.create(previewMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
-    onPreviewViewModel(viewModel)
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
@@ -100,7 +97,6 @@ fun PreviewScreen(
         is PreviewUiState.Ready -> ContentScreen(
             modifier = modifier,
             previewUiState = currentUiState,
-            previewMode = previewMode,
             screenFlashUiState = screenFlashUiState,
             surfaceRequest = surfaceRequest,
             onNavigateToSettings = onNavigateToSettings,
@@ -128,7 +124,6 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     previewUiState: PreviewUiState.Ready,
-    previewMode: PreviewMode,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -169,22 +164,21 @@ private fun ContentScreen(
             }
         }
 
-        val scope = rememberCoroutineScope()
-        val blinkState = remember { BlinkState(coroutineScope = scope) }
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
+                previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
                 onZoomChange = onChangeZoomScale,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                blinkState = blinkState
+                onRequestWindowColorMode = onRequestWindowColorMode
             )
 
             QuickSettingsScreenOverlay(
                 modifier = Modifier,
+                previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = onToggleQuickSettings,
                 currentCameraSettings = previewUiState.currentCameraSettings,
@@ -199,15 +193,13 @@ private fun ContentScreen(
             CameraControlsOverlay(
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
-                previewMode = previewMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                blinkState = blinkState
+                onStopVideoRecording = onStopVideoRecording
             )
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {
@@ -259,7 +251,6 @@ private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
             previewUiState = FAKE_PREVIEW_UI_STATE_READY,
-            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -274,7 +265,6 @@ private fun ContentScreen_WhileRecording() {
             previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 videoRecordingState = VideoRecordingState.ACTIVE
             ),
-            previewMode = PreviewMode.StandardMode {},
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -283,5 +273,6 @@ private fun ContentScreen_WhileRecording() {
 
 private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
-    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+    previewMode = PreviewMode.StandardMode {}
 )

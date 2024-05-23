@@ -139,11 +139,12 @@ dependencies {
 
     // Camera Preview
     implementation(project(":feature:preview"))
-    // Only needed as androidTestImplementation for now since we only need it for string resources
-    androidTestImplementation(project(":feature:quicksettings"))
 
     // Settings Screen
     implementation(project(":feature:settings"))
+
+    // Permissions Screen
+    implementation(project(":feature:permissions"))
 
     // benchmark
     implementation(libs.androidx.profileinstaller)

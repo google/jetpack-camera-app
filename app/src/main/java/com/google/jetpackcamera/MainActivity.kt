@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.hardware.Camera
@@ -22,12 +23,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -74,9 +75,7 @@ private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
 
-    @VisibleForTesting
-    var previewViewModel: PreviewViewModel? = null
-
+    @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,7 +121,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 previewMode = getPreviewMode(),
-                                onPreviewViewModel = { previewViewModel = it },
+                                openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -199,4 +198,14 @@ private fun Int.toColorModeString(): String {
         ActivityInfo.COLOR_MODE_WIDE_COLOR_GAMUT -> "COLOR_MODE_WIDE_COLOR_GAMUT"
         else -> "<Unknown>"
     }
+}
+
+/**
+ * Open the app settings when necessary. I.e. to enable permissions that have been denied by a user
+ */
+private fun Activity.openAppSettings() {
+    Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
+    ).also(::startActivity)
 }

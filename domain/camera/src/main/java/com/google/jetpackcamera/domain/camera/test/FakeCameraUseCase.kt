@@ -61,7 +61,7 @@ class FakeCameraUseCase(
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
-    override suspend fun initialize() {
+    override suspend fun initialize(disableVideoCapture: Boolean) {
         initialized = true
     }
 
@@ -93,7 +93,7 @@ class FakeCameraUseCase(
             }
     }
 
-    override suspend fun takePicture() {
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
@@ -112,11 +112,12 @@ class FakeCameraUseCase(
 
     @SuppressLint("RestrictedApi")
     override suspend fun takePicture(
+        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
     ): ImageCapture.OutputFileResults {
-        takePicture()
+        takePicture(onCaptureStarted)
         return ImageCapture.OutputFileResults(null)
     }
 

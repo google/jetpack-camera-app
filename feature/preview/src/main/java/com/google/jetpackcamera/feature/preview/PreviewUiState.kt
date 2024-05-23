@@ -33,10 +33,13 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
         val quickSettingsIsOpen: Boolean = false,
+        val audioAmplitude: Double = 0.0,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
-        val snackBarToShow: SnackbarData? = null
+        val snackBarToShow: SnackbarData? = null,
+        val lastBlinkTimeStamp: Long = 0,
+        val previewMode: PreviewMode
     ) : PreviewUiState
 }
 
