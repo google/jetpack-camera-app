@@ -31,7 +31,7 @@ data class CameraAppSettings(
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
-    val audioEnabled: Boolean = true,
+    val audioMuted: Boolean = false,
 )
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {

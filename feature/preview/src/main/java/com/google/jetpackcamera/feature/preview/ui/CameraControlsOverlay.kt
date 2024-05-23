@@ -76,7 +76,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioEnabled: () -> Unit = {},
+    onToggleAudioMuted: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -127,7 +127,7 @@ fun CameraControlsOverlay(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
-                onToggleAudioEnabled = onToggleAudioEnabled,
+                onToggleAudioEnabled = onToggleAudioMuted,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
             )

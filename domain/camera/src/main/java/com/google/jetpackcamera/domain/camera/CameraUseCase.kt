@@ -92,7 +92,7 @@ interface CameraUseCase {
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
-    suspend fun setAudioEnabled(isAudioEnabled: Boolean)
+    suspend fun setAudioMuted(isAudioMuted: Boolean)
 
     /**
      * Represents the events required for screen flash.

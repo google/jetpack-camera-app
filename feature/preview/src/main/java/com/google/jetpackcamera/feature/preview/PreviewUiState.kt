@@ -34,7 +34,7 @@ sealed interface PreviewUiState {
         val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
         val quickSettingsIsOpen: Boolean = false,
         val audioAmplitude: Double = 0.0,
-        val audioEnabled: Boolean = true,
+        val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
