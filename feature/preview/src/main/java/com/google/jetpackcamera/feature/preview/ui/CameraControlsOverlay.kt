@@ -20,9 +20,11 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -114,6 +116,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
+                audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
@@ -174,13 +177,14 @@ private fun ControlsTop(
 
 @Composable
 private fun ControlsBottom(
+    modifier: Modifier = Modifier,
+    audioAmplitude: Double,
     previewUiState: PreviewUiState.Ready,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
-    modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -199,7 +203,9 @@ private fun ControlsBottom(
         }
 
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -223,7 +229,15 @@ private fun ControlsBottom(
                 onStopVideoRecording = onStopVideoRecording
             )
             Row(Modifier.weight(1f)) {
-                /*TODO("Place other components here") */
+                if (videoRecordingState == VideoRecordingState.ACTIVE) {
+                    AmplitudeVisualizer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        size = 75,
+                        audioAmplitude = audioAmplitude
+                    )
+                }
             }
         }
     }
@@ -359,7 +373,8 @@ private fun Preview_ControlsBottom() {
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -378,7 +393,8 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -397,7 +413,9 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
+
         )
     }
 }
@@ -422,7 +440,9 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                         TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
+
         )
     }
 }
@@ -441,7 +461,8 @@ private fun Preview_ControlsBottom_Recording() {
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.ACTIVE
+            videoRecordingState = VideoRecordingState.ACTIVE,
+            audioAmplitude = 0.9
         )
     }
 }
