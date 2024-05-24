@@ -99,7 +99,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
-private const val BLINK_TIME = 600L
+private const val BLINK_TIME = 100L
 
 @Composable
 fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
