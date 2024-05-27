@@ -272,25 +272,35 @@ class PreviewViewModel @AssistedInject constructor(
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording {
-                    val snackBarData = when (it) {
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded ->
-                            SnackbarData(
+                    var audioAmplitude = 0.0
+                    var snackbarToShow: SnackbarData? = null
+                    when (it) {
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                            snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
                                 withDismissAction = true
                             )
-                        else ->
-                            SnackbarData(
+                        }
+
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                            snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
                                 withDismissAction = true
                             )
+                        }
+
+                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
+                            audioAmplitude = it.audioAmplitude
+                        }
                     }
 
                     viewModelScope.launch {
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                snackBarToShow = snackBarData
+                                snackBarToShow = snackbarToShow,
+                                audioAmplitude = audioAmplitude
                             ) ?: old
                         }
                     }

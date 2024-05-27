@@ -19,6 +19,7 @@ import android.os.Build
 
 val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.CAMERA)
+    add(android.Manifest.permission.RECORD_AUDIO)
     if (Build.VERSION.SDK_INT <= 28) {
         add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }

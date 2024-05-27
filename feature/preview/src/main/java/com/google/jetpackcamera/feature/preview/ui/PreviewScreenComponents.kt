@@ -16,10 +16,13 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.res.Configuration
+import android.os.Build
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -46,6 +49,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -94,7 +99,56 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
-private const val BLINK_TIME = 600L
+private const val BLINK_TIME = 100L
+
+@Composable
+fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
+    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val animatedScaling by animateFloatAsState(
+        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
+        label = "AudioAnimation"
+    )
+    Box(modifier = modifier) {
+        // animated circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    // tweak the multiplier to size to adjust the maximum size of the visualizer
+                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
+                    alpha = .5f,
+                    color = Color.White
+                )
+            }
+        )
+
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size.toFloat()),
+                    color = Color.White
+                )
+            }
+        )
+
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Black,
+            imageVector = if (audioAmplitude != 0.0) {
+                Icons.Filled.Mic
+            } else {
+                Icons.Filled.MicOff
+            },
+            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+        )
+    }
+}
 
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
@@ -250,6 +304,10 @@ fun PreviewDisplay(
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
                     surfaceRequest = it,
+                    implementationMode = when {
+                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                        else -> ImplementationMode.EMBEDDED
+                    },
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
             }

@@ -26,6 +26,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
+import androidx.camera.core.AspectRatio.RATIO_16_9
+import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.AspectRatio.RATIO_DEFAULT
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -39,6 +42,8 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -117,7 +122,6 @@ constructor(
 
     private lateinit var imageCaptureUseCase: ImageCapture
 
-    private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
@@ -129,8 +133,8 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(disableVideoCapture: Boolean) {
-        this.disableVideoCapture = disableVideoCapture
+    override suspend fun initialize(externalImageCapture: Boolean) {
+        this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -190,9 +194,18 @@ constructor(
 
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
-        currentSettings.value = settingsRepository.defaultCameraAppSettings.first()
-            .tryApplyDynamicRangeConstraints()
-            .tryApplyImageFormatConstraints()
+        currentSettings.value =
+            settingsRepository.defaultCameraAppSettings.first()
+                .tryApplyDynamicRangeConstraints()
+                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
+                .tryApplyImageFormatConstraints()
+
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(
+                getResolutionSelector(
+                    settingsRepository.defaultCameraAppSettings.first().aspectRatio
+                )
+            ).build()
     }
 
     /**
@@ -475,6 +488,13 @@ constructor(
                                         )
                                 }
                             }
+                            is VideoRecordEvent.Status -> {
+                                onVideoRecord(
+                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -525,6 +545,15 @@ constructor(
                 )
             }
         } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
+        externalImageCapture: Boolean
+    ): CameraAppSettings {
+        if (externalImageCapture) {
+            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        }
+        return this
     }
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
@@ -692,6 +721,7 @@ constructor(
     @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
         val builder = ImageCapture.Builder()
+        builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
         if (sessionSettings.dynamicRange != DynamicRange.SDR &&
             sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
         ) {
@@ -704,6 +734,9 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: Set<SupportedStabilizationMode>
     ): VideoCapture<Recorder> {
+        val recorder = Recorder.Builder()
+            .setAspectRatio(getAspectRatioForUseCase(sessionSettings.aspectRatio))
+            .setExecutor(defaultDispatcher.asExecutor()).build()
         return VideoCapture.Builder(recorder).apply {
             // set video stabilization
             if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
@@ -719,6 +752,14 @@ constructor(
 
             setDynamicRange(sessionSettings.dynamicRange.toCXDynamicRange())
         }.build()
+    }
+
+    private fun getAspectRatioForUseCase(aspectRatio: AspectRatio): Int {
+        return when (aspectRatio) {
+            AspectRatio.THREE_FOUR -> RATIO_4_3
+            AspectRatio.NINE_SIXTEEN -> RATIO_16_9
+            else -> RATIO_DEFAULT
+        }
     }
 
     private fun shouldVideoBeStabilized(
@@ -745,11 +786,24 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
+        previewUseCaseBuilder.setResolutionSelector(
+            getResolutionSelector(sessionSettings.aspectRatio)
+        )
+
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->
                 _surfaceRequest.value = surfaceRequest
             }
         }
+    }
+
+    private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
+        val aspectRatioStrategy = when (aspectRatio) {
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        }
+        return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
 
     private fun shouldPreviewBeStabilized(

@@ -20,9 +20,11 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -124,6 +126,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
+                audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
@@ -186,6 +189,8 @@ private fun ControlsTop(
 
 @Composable
 private fun ControlsBottom(
+    modifier: Modifier = Modifier,
+    audioAmplitude: Double,
     previewUiState: PreviewUiState.Ready,
     zoomLevel: Float,
     showZoomLevel: Boolean,
@@ -193,7 +198,6 @@ private fun ControlsBottom(
     currentCameraSettings: CameraAppSettings,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
-    modifier: Modifier = Modifier,
     onFlipCamera: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -213,7 +217,9 @@ private fun ControlsBottom(
         }
 
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -237,16 +243,26 @@ private fun ControlsBottom(
                 onStopVideoRecording = onStopVideoRecording
             )
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                val isHdrEnabled = currentCameraSettings.dynamicRange != DynamicRange.SDR
-                if (!isQuickSettingsOpen && isHdrEnabled) {
-                    val cameraConstraints = systemConstraints.forCurrentLens(currentCameraSettings)
-                    HdrCaptureModeToggleButton(
-                        initialImageFormat = currentCameraSettings.imageFormat,
-                        supportedImageFormats = cameraConstraints?.supportedImageFormatsMap?.get(
-                            currentCameraSettings.captureMode
-                        ),
-                        onChangeImageFormat = onChangeImageFormat
+                if (videoRecordingState == VideoRecordingState.ACTIVE) {
+                    AmplitudeVisualizer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        size = 75,
+                        audioAmplitude = audioAmplitude
                     )
+                } else {
+                    val isHdrEnabled = currentCameraSettings.dynamicRange != DynamicRange.SDR
+                    if (!isQuickSettingsOpen && isHdrEnabled) {
+                        val cameraConstraints = systemConstraints.forCurrentLens(currentCameraSettings)
+                        HdrCaptureModeToggleButton(
+                            initialImageFormat = currentCameraSettings.imageFormat,
+                            supportedImageFormats = cameraConstraints?.supportedImageFormatsMap?.get(
+                                currentCameraSettings.captureMode
+                            ),
+                            onChangeImageFormat = onChangeImageFormat
+                        )
+                    }
                 }
             }
         }
@@ -423,7 +439,8 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -443,7 +460,8 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -463,7 +481,8 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             isQuickSettingsOpen = true,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -489,7 +508,8 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                         TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.INACTIVE
+            videoRecordingState = VideoRecordingState.INACTIVE,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -509,7 +529,8 @@ private fun Preview_ControlsBottom_Recording() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.ACTIVE
+            videoRecordingState = VideoRecordingState.ACTIVE,
+            audioAmplitude = 0.9
         )
     }
 }
