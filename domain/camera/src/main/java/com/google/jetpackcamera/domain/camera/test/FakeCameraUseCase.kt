@@ -187,11 +187,10 @@ class FakeCameraUseCase(
         TODO("Not yet implemented")
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
         }
-        return true
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
@@ -200,10 +199,9 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean {
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old.copy(imageFormat = imageFormat)
         }
-        return true
     }
 }

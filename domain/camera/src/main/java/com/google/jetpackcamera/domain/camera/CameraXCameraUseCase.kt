@@ -174,7 +174,13 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
-                                supportedImageFormats = supportedImageFormats
+                                supportedImageFormatsMap = mapOf(
+                                    // Only JPEG is supported in single-stream mode, since
+                                    // single-stream mode uses CameraEffect, which does not support
+                                    // Ultra HDR now.
+                                    Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
+                                )
                             )
                         )
                     }
@@ -523,8 +529,8 @@ constructor(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormats) {
-                val newImageFormat = if (contains(imageFormat)) {
+            with(constraints.supportedImageFormatsMap[captureMode]) {
+                val newImageFormat = if (this != null && contains(imageFormat)) {
                     imageFormat
                 } else {
                     ImageOutputFormat.JPEG
@@ -616,9 +622,9 @@ constructor(
         }
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode): Boolean {
-        return currentSettings.tryUpdate { old ->
-            old?.copy(captureMode = captureMode)
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        currentSettings.update { old ->
+            old?.copy(captureMode = captureMode)?.tryApplyImageFormatConstraints()
         }
     }
 
@@ -670,8 +676,8 @@ constructor(
         }
     }
 
-    override suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean {
-        return currentSettings.tryUpdate { old ->
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
+        currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
         }
     }
@@ -830,17 +836,5 @@ private fun Int.toAppImageFormat(): ImageOutputFormat? {
         ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> ImageOutputFormat.JPEG_ULTRA_HDR
         // All other output formats unsupported. Return null.
         else -> null
-    }
-}
-
-private fun MutableStateFlow<CameraAppSettings?>.tryUpdate(
-    function: (CameraAppSettings?) -> CameraAppSettings?
-): Boolean {
-    val newValue = function(value)
-    if (newValue != null && !newValue.isCombinationSupported()) {
-        return false
-    } else {
-        update(function)
-        return true
     }
 }

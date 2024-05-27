@@ -24,7 +24,7 @@ data class CameraConstraints(
     val supportedStabilizationModes: Set<SupportedStabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
-    val supportedImageFormats: Set<ImageOutputFormat>
+    val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>
 )
 
 /**
@@ -41,7 +41,10 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                         supportedFixedFrameRates = setOf(15, 30),
                         supportedStabilizationModes = emptySet(),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
-                        supportedImageFormats = setOf(ImageOutputFormat.JPEG)
+                        supportedImageFormatsMap = mapOf(
+                            Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                            Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
+                        )
                     )
                 )
             }

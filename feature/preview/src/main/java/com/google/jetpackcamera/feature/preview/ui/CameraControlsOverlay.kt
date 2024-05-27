@@ -239,11 +239,12 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 val isHdrEnabled = currentCameraSettings.dynamicRange != DynamicRange.SDR
                 if (!isQuickSettingsOpen && isHdrEnabled) {
+                    val cameraConstraints = systemConstraints.forCurrentLens(currentCameraSettings)
                     HdrCaptureModeToggleButton(
                         initialImageFormat = currentCameraSettings.imageFormat,
-                        supportedImageFormats = systemConstraints.forCurrentLens(
-                            currentCameraSettings
-                        )?.supportedImageFormats,
+                        supportedImageFormats = cameraConstraints?.supportedImageFormatsMap?.get(
+                            currentCameraSettings.captureMode
+                        ),
                         onChangeImageFormat = onChangeImageFormat
                     )
                 }

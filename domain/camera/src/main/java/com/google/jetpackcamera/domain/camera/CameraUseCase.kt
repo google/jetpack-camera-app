@@ -89,17 +89,11 @@ interface CameraUseCase {
 
     fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
 
-    /**
-     * Sets capture mode. Returns true if set successfully, otherwise returns false.
-     */
-    suspend fun setCaptureMode(captureMode: CaptureMode): Boolean
+    suspend fun setCaptureMode(captureMode: CaptureMode)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
-    /**
-     * Sets format of captured image. Returns true if set successfully, otherwise returns false.
-     */
-    suspend fun setImageFormat(imageFormat: ImageOutputFormat): Boolean
+    suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
     /**
      * Represents the events required for screen flash.

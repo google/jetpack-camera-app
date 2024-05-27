@@ -153,9 +153,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            if (!cameraUseCase.setCaptureMode(captureMode)) {
-                showFeatureCombinationNotSupportedMessage()
-            }
+            cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
@@ -334,9 +332,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setImageFormat(imageFormat: ImageOutputFormat) {
         viewModelScope.launch {
-            if (!cameraUseCase.setImageFormat(imageFormat)) {
-                showFeatureCombinationNotSupportedMessage()
-            }
+            cameraUseCase.setImageFormat(imageFormat)
         }
     }
 
@@ -387,20 +383,6 @@ class PreviewViewModel @AssistedInject constructor(
                         old
                     }
                 } ?: old
-            }
-        }
-    }
-
-    private fun showFeatureCombinationNotSupportedMessage() {
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    snackBarToShow = SnackbarData(
-                        cookie = "Settings-FeatureCombinationNotSupported",
-                        stringResource = R.string.toast_unsupported_feature_combination,
-                        withDismissAction = true
-                    )
-                ) ?: old
             }
         }
     }
