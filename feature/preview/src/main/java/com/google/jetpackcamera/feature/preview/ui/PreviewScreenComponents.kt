@@ -16,10 +16,12 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.res.Configuration
+import android.os.Build
 import android.util.Log
 import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -251,26 +253,27 @@ fun PreviewDisplay(
     )
 
     val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
-    var imageVisible by remember { mutableStateOf(true) }
-
-    val imageAlpha: Float by animateFloatAsState(
-        targetValue = if (imageVisible) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = (BLINK_TIME / 2).toInt(),
-            easing = LinearEasing
-        ),
-        label = ""
-    )
-
-    LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
-        if (previewUiState.lastBlinkTimeStamp != 0L) {
-            imageVisible = false
-            delay(BLINK_TIME)
-            imageVisible = true
-        }
-    }
 
     surfaceRequest?.let {
+        var imageVisible by remember { mutableStateOf(true) }
+
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = (BLINK_TIME / 2).toInt(),
+                easing = LinearEasing
+            ),
+            label = ""
+        )
+
+        LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
+            if (previewUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
+                delay(BLINK_TIME)
+                imageVisible = true
+            }
+        }
+
         Box(
             modifier
                 .testTag(PREVIEW_DISPLAY)
@@ -324,6 +327,10 @@ fun PreviewDisplay(
             CameraXViewfinder(
                 modifier = Modifier.fillMaxSize(),
                 surfaceRequest = it,
+                implementationMode = when {
+                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                    else -> ImplementationMode.EMBEDDED
+                },
                 onRequestWindowColorMode = onRequestWindowColorMode
             )
         }
