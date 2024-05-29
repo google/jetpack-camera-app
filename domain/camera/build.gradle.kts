@@ -24,6 +24,7 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.data.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
