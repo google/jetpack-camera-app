@@ -676,7 +676,7 @@ constructor(
             setViewPort(
                 ViewPort.Builder(
                     sessionSettings.aspectRatio.ratio,
-                    previewUseCase.targetRotation
+                    initialTransientSettings.targetRotation
                 ).build()
             )
             addUseCase(previewUseCase)

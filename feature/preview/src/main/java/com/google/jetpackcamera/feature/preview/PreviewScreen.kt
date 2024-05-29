@@ -100,36 +100,38 @@ fun PreviewScreen(
         }
     }
 
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
-    }
-
     when (val currentUiState = previewUiState) {
         is PreviewUiState.NotReady -> LoadingScreen(modifier)
-        is PreviewUiState.Ready -> ContentScreen(
-            modifier = modifier,
-            previewUiState = currentUiState,
-            screenFlashUiState = screenFlashUiState,
-            surfaceRequest = surfaceRequest,
-            onNavigateToSettings = onNavigateToSettings,
-            onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-            onSetLensFacing = viewModel::setLensFacing,
-            onTapToFocus = viewModel::tapToFocus,
-            onChangeZoomScale = viewModel::setZoomScale,
-            onChangeFlash = viewModel::setFlash,
-            onChangeAspectRatio = viewModel::setAspectRatio,
-            onChangeCaptureMode = viewModel::setCaptureMode,
-            onChangeDynamicRange = viewModel::setDynamicRange,
-            onToggleQuickSettings = viewModel::toggleQuickSettings,
-            onCaptureImage = viewModel::captureImage,
-            onCaptureImageWithUri = viewModel::captureImageWithUri,
-            onStartVideoRecording = viewModel::startVideoRecording,
-            onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult
-        )
+        is PreviewUiState.Ready -> {
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+            }
+
+            ContentScreen(
+                modifier = modifier,
+                previewUiState = currentUiState,
+                screenFlashUiState = screenFlashUiState,
+                surfaceRequest = surfaceRequest,
+                onNavigateToSettings = onNavigateToSettings,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onSetLensFacing = viewModel::setLensFacing,
+                onTapToFocus = viewModel::tapToFocus,
+                onChangeZoomScale = viewModel::setZoomScale,
+                onChangeFlash = viewModel::setFlash,
+                onChangeAspectRatio = viewModel::setAspectRatio,
+                onChangeCaptureMode = viewModel::setCaptureMode,
+                onChangeDynamicRange = viewModel::setDynamicRange,
+                onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onCaptureImage = viewModel::captureImage,
+                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onStartVideoRecording = viewModel::startVideoRecording,
+                onStopVideoRecording = viewModel::stopVideoRecording,
+                onToastShown = viewModel::onToastShown,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                onSnackBarResult = viewModel::onSnackBarResult
+            )
+        }
     }
 }
 
