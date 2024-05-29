@@ -133,6 +133,7 @@ fun QuickSetHdr(
 fun QuickSetLowLightBoost(
     modifier: Modifier = Modifier,
     onClick: (lowLightBoost: LowLightBoost) -> Unit,
+    enabled: Boolean,
     selectedLowLightBoost: LowLightBoost,
 ) {
     val enum = when (selectedLowLightBoost) {
@@ -149,7 +150,8 @@ fun QuickSetLowLightBoost(
                 LowLightBoost.ENABLED -> onClick(LowLightBoost.DISABLED)
             }
         },
-        isHighLighted = false
+        isHighLighted = false,
+        enabled = enabled
     )
 }
 

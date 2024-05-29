@@ -23,7 +23,8 @@ data class SystemConstraints(
 data class CameraConstraints(
     val supportedStabilizationModes: Set<SupportedStabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
-    val supportedDynamicRanges: Set<DynamicRange>
+    val supportedDynamicRanges: Set<DynamicRange>,
+    val lowLightBoostSupport: Boolean = false,
 )
 
 /**
@@ -39,7 +40,8 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                     CameraConstraints(
                         supportedFixedFrameRates = setOf(15, 30),
                         supportedStabilizationModes = emptySet(),
-                        supportedDynamicRanges = setOf(DynamicRange.SDR)
+                        supportedDynamicRanges = setOf(DynamicRange.SDR),
+                        lowLightBoostSupport = false,
                     )
                 )
             }

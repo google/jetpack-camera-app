@@ -20,12 +20,18 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.Display
+import androidx.annotation.RequiresApi
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.AspectRatio.RATIO_DEFAULT
@@ -132,6 +138,7 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
+    @ExperimentalCamera2Interop
     override suspend fun initialize(externalImageCapture: Boolean) {
         this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -170,14 +177,17 @@ constructor(
 
                         val supportedFixedFrameRates = getSupportedFrameRates(camInfo)
 
-                        put(
-                            lensFacing,
-                            CameraConstraints(
-                                supportedStabilizationModes = supportedStabilizationModes,
-                                supportedFixedFrameRates = supportedFixedFrameRates,
-                                supportedDynamicRanges = supportedDynamicRanges
+                        if (Build.VERSION.SDK_INT >= 35) {
+                            put(
+                                lensFacing,
+                                CameraConstraints(
+                                    supportedStabilizationModes = supportedStabilizationModes,
+                                    supportedFixedFrameRates = supportedFixedFrameRates,
+                                    supportedDynamicRanges = supportedDynamicRanges,
+                                    lowLightBoostSupport = getLowLightBoostDeviceSupport()
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -213,6 +223,17 @@ constructor(
             }
         }
         return deviceSupportedStabilizationModes
+    }
+
+    @RequiresApi(35)
+    @ExperimentalCamera2Interop
+    private fun getLowLightBoostDeviceSupport() : Boolean {
+        return cameraProvider.availableCameraInfos.map { cameraInfo ->
+            Camera2CameraInfo
+                .from(cameraInfo)
+                .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+                ?.contains(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+        }.any()
     }
 
     /**

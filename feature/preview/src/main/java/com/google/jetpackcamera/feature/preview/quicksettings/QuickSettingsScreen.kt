@@ -233,10 +233,13 @@ private fun ExpandedQuickSettingsUi(
                         add {
                             QuickSetLowLightBoost(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_LOW_LIGHT_BOOST_BUTTON),
-                                onClick = {
-                                        l: LowLightBoost ->
+                                onClick = { l: LowLightBoost ->
                                     onLowLightBoostClick(l)
                                 },
+                                enabled = previewUiState.previewMode !is PreviewMode.ExternalImageCaptureMode && previewUiState.systemConstraints.forCurrentLens(
+                                    currentCameraSettings
+                                )?.lowLightBoostSupport
+                                    ?: false,
                                 selectedLowLightBoost = currentCameraSettings.lowLightBoost,
                             )
                         }
