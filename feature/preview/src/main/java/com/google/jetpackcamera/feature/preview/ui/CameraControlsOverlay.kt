@@ -76,7 +76,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioMuted: () -> Unit = {},
+    onMuteAudio: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -127,7 +127,7 @@ fun CameraControlsOverlay(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
-                onToggleAudioEnabled = onToggleAudioMuted,
+                onToggleAudioMuted = onMuteAudio,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
             )
@@ -196,7 +196,7 @@ private fun ControlsBottom(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioEnabled: () -> Unit = {},
+    onToggleAudioMuted: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
@@ -237,7 +237,7 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
-                        onClick = onToggleAudioEnabled,
+                        onToggleMute = onToggleAudioMuted,
                         size = 75,
                         audioAmplitude = audioAmplitude
                     )
@@ -366,6 +366,7 @@ private fun Preview_ControlsTop_WithStabilization() {
 @Preview(backgroundColor = 0xFF000000, showBackground = true)
 @Composable
 private fun Preview_ControlsBottom() {
+    
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
@@ -419,7 +420,6 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             audioAmplitude = 0.0
-
         )
     }
 }

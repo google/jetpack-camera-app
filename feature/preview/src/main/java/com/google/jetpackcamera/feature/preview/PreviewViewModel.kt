@@ -171,10 +171,11 @@ class PreviewViewModel @AssistedInject constructor(
             .currentCameraSettings
             .audioMuted)
     }
-    private fun setAudioMuted(isAudioMuted: Boolean) {
+     fun setAudioMuted(shouldMuteAudio: Boolean) {
         viewModelScope.launch {
-            cameraUseCase.setAudioMuted(isAudioMuted)
+            cameraUseCase.setAudioMuted(shouldMuteAudio)
         }
+
         Log.d(TAG,
             "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
                 .currentCameraSettings.audioMuted}")

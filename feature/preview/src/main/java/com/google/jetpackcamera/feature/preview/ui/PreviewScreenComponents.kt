@@ -103,13 +103,13 @@ private const val BLINK_TIME = 600L
 fun AmplitudeVisualizer(modifier: Modifier = Modifier,
                         size: Int = 100,
                         audioAmplitude: Double,
-                        onClick: () -> Unit) {
+                        onToggleMute: () -> Unit) {
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
         targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier.clickable { onClick() }) {
+    Box(modifier = modifier.clickable { onToggleMute() }) {
         // animated circle
         Canvas(
             modifier = Modifier

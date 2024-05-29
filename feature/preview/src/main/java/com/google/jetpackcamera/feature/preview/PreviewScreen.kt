@@ -109,7 +109,7 @@ fun PreviewScreen(
             onChangeCaptureMode = viewModel::setCaptureMode,
             onChangeDynamicRange = viewModel::setDynamicRange,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
-            onToggleAudioMuted = viewModel::toggleAudioMuted,
+            onMuteAudio = viewModel::setAudioMuted,
             onCaptureImage = viewModel::captureImage,
             onCaptureImageWithUri = viewModel::captureImageWithUri,
             onStartVideoRecording = viewModel::startVideoRecording,
@@ -138,7 +138,7 @@ private fun ContentScreen(
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioMuted: () -> Unit = {},
+    onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -163,6 +163,15 @@ private fun ContentScreen(
         val onFlipCamera = remember(lensFacing) {
             {
                 onSetLensFacing(lensFacing.flip())
+            }
+        }
+
+        val isMuted = remember(previewUiState){
+            previewUiState.currentCameraSettings.audioMuted
+        }
+        val onToggleMuteAudio = remember(isMuted){
+            {
+                onMuteAudio(!isMuted)
             }
         }
 
@@ -197,7 +206,7 @@ private fun ContentScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
-                onToggleAudioMuted = onToggleAudioMuted,
+                onMuteAudio = onToggleMuteAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
