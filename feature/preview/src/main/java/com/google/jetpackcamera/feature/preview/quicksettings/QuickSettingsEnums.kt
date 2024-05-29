@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
-import androidx.compose.material.icons.filled.MoodBad
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
