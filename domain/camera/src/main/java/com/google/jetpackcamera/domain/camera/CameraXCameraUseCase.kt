@@ -775,7 +775,7 @@ constructor(
 
     private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
         val aspectRatioStrategy = when (aspectRatio) {
-            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
             AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
             else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
         }

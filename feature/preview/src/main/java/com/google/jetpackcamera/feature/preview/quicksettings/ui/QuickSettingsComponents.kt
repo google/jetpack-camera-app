@@ -67,12 +67,14 @@ fun ExpandedQuickSetRatio(
 ) {
     FlowRow(modifier) {
         QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
             onClick = { setRatio(AspectRatio.THREE_FOUR) },
             ratio = AspectRatio.THREE_FOUR,
             currentRatio = currentRatio,
             isHighlightEnabled = true
         )
         QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
             onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
             ratio = AspectRatio.NINE_SIXTEEN,
             currentRatio = currentRatio,
