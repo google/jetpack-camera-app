@@ -21,6 +21,7 @@ import android.opengl.EGLConfig
 import android.opengl.EGLExt
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
+import android.opengl.GLES30
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.WorkerThread
@@ -38,8 +39,17 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
     private var externalTextureId: Int = -1
     private var programHandle = -1
     private var texMatrixLoc = -1
+    private var samplerLoc = -1
     private var positionLoc = -1
     private var texCoordLoc = -1
+    private val glExtensions: Set<String> by lazy {
+        checkGlThread()
+        buildSet {
+            GLES20.glGetString(GLES20.GL_EXTENSIONS)?.split(" ")?.also {
+                addAll(it)
+            }
+        }
+    }
     private val use10bitPipeline: Boolean
         get() = dynamicRange.bitDepth == DynamicRange.BIT_DEPTH_10_BIT
 
@@ -78,6 +88,10 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
 
     override val initRenderer: () -> Unit
         get() = {
+            if (use10bitPipeline && glExtensions.contains("GL_KHR_debug")) {
+                GLDebug.enableES3DebugErrorLogging()
+            }
+
             createProgram(
                 if (use10bitPipeline) {
                     TEN_BIT_VERTEX_SHADER
@@ -123,6 +137,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         get() = { outputWidth: Int,
                 outputHeight: Int,
                 surfaceTransform: FloatArray ->
+            checkGlThread()
             GLES20.glViewport(
                 0,
                 0,
@@ -202,14 +217,36 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         // Set the texture.
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, externalTextureId)
+        GLES20.glUniform1i(samplerLoc, 0)
+
+        if (use10bitPipeline) {
+            val vaos = IntArray(1)
+            GLES30.glGenVertexArrays(1, vaos, 0)
+            GLES30.glBindVertexArray(vaos[0])
+            checkGlErrorOrThrow("glBindVertexArray")
+        }
+
+        val vbos = IntArray(2)
+        GLES20.glGenBuffers(2, vbos, 0)
+        checkGlErrorOrThrow("glGenBuffers")
+
+        // Connect vertexBuffer to "aPosition".
+        val coordsPerVertex = 2
+        val vertexStride = 0
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbos[0])
+        checkGlErrorOrThrow("glBindBuffer")
+        GLES20.glBufferData(
+            GLES20.GL_ARRAY_BUFFER,
+            VERTEX_BUF.capacity() * SIZEOF_FLOAT,
+            VERTEX_BUF,
+            GLES20.GL_STATIC_DRAW
+        )
+        checkGlErrorOrThrow("glBufferData")
 
         // Enable the "aPosition" vertex attribute.
         GLES20.glEnableVertexAttribArray(positionLoc)
         checkGlErrorOrThrow("glEnableVertexAttribArray")
 
-        // Connect vertexBuffer to "aPosition".
-        val coordsPerVertex = 2
-        val vertexStride = 0
         GLES20.glVertexAttribPointer(
             positionLoc,
             coordsPerVertex,
@@ -217,17 +254,29 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
             /*normalized=*/
             false,
             vertexStride,
-            VERTEX_BUF
+            0
         )
         checkGlErrorOrThrow("glVertexAttribPointer")
+
+
+        // Connect texBuffer to "aTextureCoord".
+        val coordsPerTex = 2
+        val texStride = 0
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbos[1])
+        checkGlErrorOrThrow("glBindBuffer")
+
+        GLES20.glBufferData(
+            GLES20.GL_ARRAY_BUFFER,
+            TEX_BUF.capacity() * SIZEOF_FLOAT,
+            TEX_BUF,
+            GLES20.GL_STATIC_DRAW
+        )
+        checkGlErrorOrThrow("glBufferData")
 
         // Enable the "aTextureCoord" vertex attribute.
         GLES20.glEnableVertexAttribArray(texCoordLoc)
         checkGlErrorOrThrow("glEnableVertexAttribArray")
 
-        // Connect texBuffer to "aTextureCoord".
-        val coordsPerTex = 2
-        val texStride = 0
         GLES20.glVertexAttribPointer(
             texCoordLoc,
             coordsPerTex,
@@ -235,7 +284,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
             /*normalized=*/
             false,
             texStride,
-            TEX_BUF
+            0
         )
         checkGlErrorOrThrow("glVertexAttribPointer")
     }
@@ -299,6 +348,8 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         checkLocationOrThrow(texCoordLoc, "aTextureCoord")
         texMatrixLoc = GLES20.glGetUniformLocation(programHandle, "uTexMatrix")
         checkLocationOrThrow(texMatrixLoc, "uTexMatrix")
+        samplerLoc = GLES20.glGetUniformLocation(programHandle, VAR_TEXTURE)
+        checkLocationOrThrow(samplerLoc, VAR_TEXTURE)
     }
 
     @WorkerThread
@@ -339,6 +390,8 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
     }
 
     companion object {
+        private const val EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR = 0x00000001
+
         private const val SIZEOF_FLOAT = 4
 
         private val VERTEX_BUF = floatArrayOf(
@@ -419,10 +472,20 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         precision mediump float;
         uniform __samplerExternal2DY2YEXT $VAR_TEXTURE;
         in vec2 $VAR_TEXTURE_COORD;
-        layout (yuv) out vec3 outColor;
+        out vec3 outColor;
+        
+        vec3 yuvToRgb(vec3 yuv) {
+          const vec3 yuvOffset = vec3(0.0625, 0.5, 0.5);
+          const mat3 yuvToRgbColorTransform = mat3(
+            1.1689f, 1.1689f, 1.1689f,
+            0.0000f, -0.1881f, 2.1502f,
+            1.6853f, -0.6530f, 0.0000f
+          );
+          return clamp(yuvToRgbColorTransform * (yuv - yuvOffset), 0.0, 1.0);
+        }
         
         void main() {
-          outColor = texture($VAR_TEXTURE, $VAR_TEXTURE_COORD).xyz;
+          outColor = yuvToRgb(texture($VAR_TEXTURE, $VAR_TEXTURE_COORD).xyz);
         }
             """.trimIndent()
 

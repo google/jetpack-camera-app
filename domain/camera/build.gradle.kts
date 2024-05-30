@@ -31,6 +31,36 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        @Suppress("UnstableApiUsage")
+        externalNativeBuild {
+            val versionScript = file("src/main/cpp/jni.lds").absolutePath
+            cmake {
+                cppFlags += listOf(
+                    "-std=c++17",
+                    "-O3",
+                    "-flto",
+                    "-fPIC",
+                    "-fno-exceptions",
+                    "-fno-rtti",
+                    "-fomit-frame-pointer",
+                    "-fdata-sections",
+                    "-ffunction-sections"
+                )
+                arguments += listOf(
+                    "-DCMAKE_VERBOSE_MAKEFILE=ON",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,--gc-sections " +
+                        "-Wl,--version-script=${versionScript}"
+                )
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version = libs.versions.cmake.get()
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
     }
 
     compileOptions {
