@@ -130,7 +130,8 @@ constructor(
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
-    private val cameraEvents = Channel<CameraEvent>()
+    private val focusMeteringEvents =
+        Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -305,15 +306,11 @@ constructor(
                     Log.d(TAG, "Camera session started")
 
                     launch {
-                        cameraEvents.consumeAsFlow().collect {
-                            when (it) {
-                                is CameraEvent.FocusMeteringEvent -> {
-                                    val focusMeteringAction =
-                                        FocusMeteringAction.Builder(it.meteringPoint).build()
-                                    Log.d(TAG, "Starting focus and metering")
-                                    camera.cameraControl.startFocusAndMetering(focusMeteringAction)
-                                }
-                            }
+                        focusMeteringEvents.consumeAsFlow().collect {
+                            val focusMeteringAction =
+                                FocusMeteringAction.Builder(it.meteringPoint).build()
+                            Log.d(TAG, "Starting focus and metering")
+                            camera.cameraControl.startFocusAndMetering(focusMeteringAction)
                         }
                     }
 
@@ -561,15 +558,15 @@ constructor(
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
-        getSurfaceRequest().value?.let { surfaceRequest ->
-            val meteringPointFactory =
-                SurfaceOrientedMeteringPointFactory(
-                    surfaceRequest.resolution.width.toFloat(),
-                    surfaceRequest.resolution.height.toFloat()
-                )
 
+        getSurfaceRequest().filterNotNull().map { surfaceRequest ->
+            SurfaceOrientedMeteringPointFactory(
+                surfaceRequest.resolution.width.toFloat(),
+                surfaceRequest.resolution.height.toFloat()
+            )
+        }.collectLatest { meteringPointFactory ->
             val meteringPoint = meteringPointFactory.createPoint(x, y)
-            cameraEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
+            focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
         }
     }
 
