@@ -339,6 +339,12 @@ fun StabilizationIcon(
     }
 }
 
+/**
+ * LowLightBoostIcon has 3 states
+ * - disabled: hidden
+ * - enabled and inactive: outline
+ * - enabled and active: filled
+ */
 @Composable
 fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifier) {
     when (lowLightBoost) {
@@ -347,7 +353,7 @@ fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifie
                 imageVector = Icons.Outlined.Nightlight,
                 contentDescription =
                     stringResource(id = R.string.quick_settings_lowlightboost_enabled),
-                modifier = modifier
+                modifier = modifier.alpha(0.5f)
             )
         }
         LowLightBoost.DISABLED -> {
