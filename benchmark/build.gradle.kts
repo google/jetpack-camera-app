@@ -37,7 +37,6 @@ android {
         //Our app has a minSDK of 21, but in order for the benchmark tool to function, it must be 23
         minSdk = 23
         targetSdk = libs.versions.targetSdk.get().toInt()
-        targetSdkPreview = libs.versions.targetSdkPreview.get()
 
         // allows the benchmark to be run on an emulator
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] =
@@ -54,6 +53,18 @@ android {
             isDebuggable = true
             signingConfig = getByName("debug").signingConfig
             matchingFallbacks += listOf("release")
+        }
+    }
+
+    flavorDimensions += "flavor"
+    productFlavors {
+        create("stable") {
+            dimension = "flavor"
+        }
+
+        create("preview") {
+            dimension = "flavor"
+            targetSdkPreview = libs.versions.targetSdkPreview.get()
         }
     }
 
