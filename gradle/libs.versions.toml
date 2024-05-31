@@ -2,6 +2,7 @@
 # Used directly in build.gradle.kts files
 compileSdk = "34"
 minSdk = "21"
+orchestrator = "1.4.2"
 targetSdk = "34"
 composeCompiler = "1.5.10"
 
@@ -59,6 +60,7 @@ androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTe
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
+androidx-orchestrator = { module = "androidx.test:orchestrator", version.ref = "orchestrator" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "androidxProfileinstaller" }
 androidx-rules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
 androidx-test-monitor = { module = "androidx.test:monitor", version.ref = "androidxTestMonitor" }

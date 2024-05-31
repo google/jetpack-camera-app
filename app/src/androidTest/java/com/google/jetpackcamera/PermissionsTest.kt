@@ -27,13 +27,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiSelector
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.permissions.ui.AUDIO_RECORD_PERMISSION_TAG
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_TAG
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON_TAG
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,9 +40,6 @@ const val RECORD_AUDIO_PERMISSION = "android.permission.RECORD_AUDIO"
 
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {
-    // todo: auto nav to camera permission from preview screen when camera permission revoked when app is backgrounded
-    // todo: permission screen is skipped when permission is granted in background.
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
@@ -68,10 +62,7 @@ class PermissionsTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
     private val packageName = "com.google.jetpackcamera"
 
-    @After
-    fun tearDown() {
-        clearPermissions(uiAutomation = instrumentation.uiAutomation)
-    }
+
 
     @Test
     fun noPermissionsScreenWhenAlreadyGranted() {
@@ -191,7 +182,6 @@ class PermissionsTest {
     //@Test
     // can't revoke permissions in middle of instrumentation
     fun minimizeRevokeCameraPermissionReopensPermissionScreen() {
-
         runScenarioTest<MainActivity> {
             // ensure preview is visible
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -206,7 +196,6 @@ class PermissionsTest {
                     CAMERA_PERMISSION
                 )
             )
-            println("reopening")
             runScenarioTest<MainActivity> {
                 //ensure preview is visible
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -218,6 +207,7 @@ class PermissionsTest {
     }
 }
 
+// unstable for testing
 fun clearPermissions(uiAutomation: UiAutomation) {
     uiAutomation.executeShellCommand("pm clear com.google.jetpackcamera") //pm reset-permissions
 // uiAutomation.executeShellCommand("pm reset-permissions")
@@ -225,6 +215,7 @@ fun clearPermissions(uiAutomation: UiAutomation) {
 
 }
 
+// this is unstable, will need to orchestrate tests instead
 /**
  * function to revoke only specific permissions in the instrumentation. revoked permissions are different from permissions that have been neither granted nor revoked.
  *
