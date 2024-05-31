@@ -150,55 +150,6 @@ fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmp
     }
 }
 
-@Composable
-fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
-    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
-    val animatedScaling by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
-        label = "AudioAnimation"
-    )
-    Box(modifier = modifier) {
-        // animated circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
-                    alpha = .5f,
-                    color = Color.White
-                )
-            }
-        )
-
-        // static circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    radius = (size.toFloat()),
-                    color = Color.White
-                )
-            }
-        )
-
-        Icon(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size((0.5 * size).dp),
-            tint = Color.Black,
-            imageVector = if (audioAmplitude != 0.0) {
-                Icons.Filled.Mic
-            } else {
-                Icons.Filled.MicOff
-            },
-            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
-        )
-    }
-}
-
 /**
  * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
  *

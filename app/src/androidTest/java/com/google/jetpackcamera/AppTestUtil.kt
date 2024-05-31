@@ -24,3 +24,5 @@ val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
         add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 }
+
+

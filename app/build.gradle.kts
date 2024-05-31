@@ -83,6 +83,14 @@ android {
                 }
             }
         }
+
+        unitTests.all {
+            it.testLogging {
+                events("failed", "standardOut", "standardError") // Log events
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL // Show full stack traces
+                showStackTraces = true
+            }
+        }
     }
 
     kotlinOptions {
@@ -149,7 +157,6 @@ dependencies {
 
     // benchmark
     implementation(libs.androidx.profileinstaller)
-
 }
 
 // Allow references to generated code
