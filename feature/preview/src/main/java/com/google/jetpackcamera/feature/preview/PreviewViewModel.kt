@@ -32,6 +32,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -62,7 +63,6 @@ class PreviewViewModel @AssistedInject constructor(
     @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
-
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -152,7 +152,6 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            // apply to cameraUseCase
             cameraUseCase.setCaptureMode(captureMode)
         }
     }
@@ -337,6 +336,12 @@ class PreviewViewModel @AssistedInject constructor(
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
             cameraUseCase.setDynamicRange(dynamicRange)
+        }
+    }
+
+    fun setImageFormat(imageFormat: ImageOutputFormat) {
+        viewModelScope.launch {
+            cameraUseCase.setImageFormat(imageFormat)
         }
     }
 
