@@ -138,10 +138,11 @@ fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmp
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
                 .apply {
-                    if (audioAmplitude != 0.0)
+                    if (audioAmplitude != 0.0) {
                         testTag(AMPLITUDE_HOT_TAG)
-                    else
+                    } else {
                         testTag(AMPLITUDE_NONE_TAG)
+                    }
                 },
             tint = Color.Black,
             imageVector = if (audioAmplitude != 0.0) {
@@ -512,7 +513,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
