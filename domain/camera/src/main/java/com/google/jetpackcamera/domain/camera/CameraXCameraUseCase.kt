@@ -25,7 +25,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
-import android.view.Display
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.AspectRatio.RATIO_DEFAULT
@@ -34,11 +33,13 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -72,7 +73,6 @@ import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.FileNotFoundException
-import java.lang.IllegalArgumentException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -84,6 +84,7 @@ import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -92,6 +93,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -130,6 +132,8 @@ constructor(
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
+    private val focusMeteringEvents =
+        Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -313,6 +317,16 @@ constructor(
                 var prevTransientSettings = initialTransientSettings
                 cameraProvider.runWith(sessionSettings.cameraSelector, useCaseGroup) { camera ->
                     Log.d(TAG, "Camera session started")
+
+                    launch {
+                        focusMeteringEvents.consumeAsFlow().collect {
+                            val focusMeteringAction =
+                                FocusMeteringAction.Builder(it.meteringPoint).build()
+                            Log.d(TAG, "Starting focus and metering")
+                            camera.cameraControl.startFocusAndMetering(focusMeteringAction)
+                        }
+                    }
+
                     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
                         // Apply camera control settings
                         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
@@ -572,15 +586,18 @@ constructor(
         } ?: this
     }
 
-    override fun tapToFocus(
-        display: Display,
-        surfaceWidth: Int,
-        surfaceHeight: Int,
-        x: Float,
-        y: Float
-    ) {
-        // TODO(tm):Convert API to use SurfaceOrientedMeteringPointFactory and
-        // use a Channel to get result of FocusMeteringAction
+    override suspend fun tapToFocus(x: Float, y: Float) {
+        Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
+
+        getSurfaceRequest().filterNotNull().map { surfaceRequest ->
+            SurfaceOrientedMeteringPointFactory(
+                surfaceRequest.resolution.width.toFloat(),
+                surfaceRequest.resolution.height.toFloat()
+            )
+        }.collectLatest { meteringPointFactory ->
+            val meteringPoint = meteringPointFactory.createPoint(x, y)
+            focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
+        }
     }
 
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
@@ -799,7 +816,7 @@ constructor(
 
     private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
         val aspectRatioStrategy = when (aspectRatio) {
-            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
             AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
             else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
         }

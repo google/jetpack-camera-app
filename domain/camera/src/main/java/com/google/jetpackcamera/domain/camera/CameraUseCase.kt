@@ -17,7 +17,6 @@ package com.google.jetpackcamera.domain.camera
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.view.Display
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -87,7 +86,7 @@ interface CameraUseCase {
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 
-    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
+    suspend fun tapToFocus(x: Float, y: Float)
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
