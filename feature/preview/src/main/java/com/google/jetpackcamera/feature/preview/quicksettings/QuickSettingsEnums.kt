@@ -139,10 +139,10 @@ enum class CameraDynamicRange : QuickSettingsEnum {
         override fun getTextResId() = R.string.quick_settings_dynamic_range_sdr
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_sdr_description
     },
-    HLG10 {
+    HDR {
         override fun getDrawableResId() = null
         override fun getImageVector() = Icons.Filled.HdrOn
-        override fun getTextResId() = R.string.quick_settings_dynamic_range_hlg10
-        override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hlg10_description
+        override fun getTextResId() = R.string.quick_settings_dynamic_range_hdr
+        override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hdr_description
     }
 }

@@ -17,7 +17,6 @@ package com.google.jetpackcamera.domain.camera
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.view.Display
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -25,6 +24,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,11 +86,13 @@ interface CameraUseCase {
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 
-    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float)
+    suspend fun tapToFocus(x: Float, y: Float)
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
+    suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
     /**
      * Represents the events required for screen flash.
