@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.permissions.ui
-
 
 const val REQUEST_PERMISSION_BUTTON_TAG = "RequestPermissionTag"
 const val CAMERA_PERMISSION_TAG = "CameraPermissionTag"

@@ -93,7 +93,7 @@ fun PermissionTemplate(
             stringResource(id = R.string.request_permission)
         } else {
             stringResource(id = R.string.navigate_to_settings)
-        },
+        }
     )
 }
 

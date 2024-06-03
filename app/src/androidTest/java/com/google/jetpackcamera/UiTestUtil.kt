@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -28,14 +27,11 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiObject2
-import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
-import org.junit.Assert
 import org.junit.Assert.fail
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -93,14 +89,14 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
 }
 
 /**
- * Allows you to specify test methods that will have permissions granted prior to starting
+ * Rule that you to specify test methods that will have permissions granted prior to starting
  *
  * @param permissions the permissions to be granted
  * @param targetTestNames the names of the tests that this rule will apply to
  */
 class IndividualTestGrantPermissionRule(
     private vararg val permissions: String,
-    private val targetTestNames: List<String> // List of test method names
+    private val targetTestNames: List<String>
 ) : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement {
@@ -120,8 +116,8 @@ class IndividualTestGrantPermissionRule(
 @SdkSuppress(minSdkVersion = 30)
 fun askEveryTimeDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 30) {
-        val askPermission = findObjectByText(uiDevice= uiDevice, text = "Only this time")
-            askPermission!!.click()
+        val askPermission = findObjectByText(uiDevice = uiDevice, text = "Only this time")
+        askPermission!!.click()
     }
 }
 
@@ -137,7 +133,7 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
                 Build.VERSION.SDK_INT <= 28 -> "ALLOW"
                 Build.VERSION.SDK_INT == 29 -> "Allow only while using the app"
                 else -> "While using the app"
-            },
+            }
         )
         allowPermission?.click()
     }
@@ -149,18 +145,20 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
 fun denyPermissionDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 23) {
         println("sdk version ${Build.VERSION.SDK_INT}")
-        val denyPermission = findObjectByText(uiDevice = uiDevice, text =  when {
-            //todo fix this to be "Don't allow"... lol
-            // for some reason.... cannot find when the string has an apostrophe...
-            // i tried using \'...
+        val denyPermission = findObjectByText(
+            uiDevice = uiDevice,
+            text = when {
+                // todo fix this to be "Don't allow"... lol
+                // for some reason.... cannot find when the string has an apostrophe...
+                // i tried using \'...
 
-            Build.VERSION.SDK_INT >= 30 -> "Don"
-            Build.VERSION.SDK_INT in 24..29 -> "DENY"
-            else -> "Deny"
-        },
-            )
+                Build.VERSION.SDK_INT >= 30 -> "Don"
+                Build.VERSION.SDK_INT in 24..29 -> "DENY"
+                else -> "Deny"
+            }
+        )
 
-            denyPermission!!.click()
+        denyPermission!!.click()
     }
 }
 

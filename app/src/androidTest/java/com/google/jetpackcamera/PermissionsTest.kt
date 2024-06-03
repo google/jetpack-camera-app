@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import android.app.UiAutomation
@@ -62,8 +61,6 @@ class PermissionsTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
     private val packageName = "com.google.jetpackcamera"
 
-
-
     @Test
     fun noPermissionsScreenWhenAlreadyGranted() {
         runScenarioTest<MainActivity> {
@@ -74,28 +71,27 @@ class PermissionsTest {
     }
 
     @Test
-    fun grantedCameraPermissionClosesPage() =
-        runScenarioTest<MainActivity> {
-            // Wait for the camera permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAMERA_PERMISSION_TAG).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON_TAG)
-                .assertExists()
-                .performClick()
-
-            uiDevice.waitForIdle()
-            // grant permission
-            grantPermissionDialog(uiDevice)
-
-            // Assert we're no longer on camera permission screen
-            composeTestRule.onNodeWithTag(CAMERA_PERMISSION_TAG).assertDoesNotExist()
-
-            // next permission should be on screen
-            composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_TAG).assertExists()
+    fun grantedCameraPermissionClosesPage() = runScenarioTest<MainActivity> {
+        // Wait for the camera permission screen to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAMERA_PERMISSION_TAG).isDisplayed()
         }
+
+        // Click button to request permission
+        composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON_TAG)
+            .assertExists()
+            .performClick()
+
+        uiDevice.waitForIdle()
+        // grant permission
+        grantPermissionDialog(uiDevice)
+
+        // Assert we're no longer on camera permission screen
+        composeTestRule.onNodeWithTag(CAMERA_PERMISSION_TAG).assertDoesNotExist()
+
+        // next permission should be on screen
+        composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_TAG).assertExists()
+    }
 
     @SdkSuppress(minSdkVersion = 30)
     @Test
@@ -125,7 +121,7 @@ class PermissionsTest {
 
     @Test
     fun declineCameraPermissionStaysOnScreen() {
-        //required permissions should persist on screen
+        // required permissions should persist on screen
         // Wait for the permission screen to be displayed
         runScenarioTest<MainActivity> {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -155,7 +151,7 @@ class PermissionsTest {
 
     @Test
     fun deniedRecordAudioPermissionClosesPage() {
-        //optional permissions should close the screen after declining
+        // optional permissions should close the screen after declining
         uiDevice.waitForIdle()
 
         runScenarioTest<MainActivity> {
@@ -179,7 +175,7 @@ class PermissionsTest {
         }
     }
 
-    //@Test
+    // @Test
     // can't revoke permissions in middle of instrumentation
     fun minimizeRevokeCameraPermissionReopensPermissionScreen() {
         runScenarioTest<MainActivity> {
@@ -197,7 +193,7 @@ class PermissionsTest {
                 )
             )
             runScenarioTest<MainActivity> {
-                //ensure preview is visible
+                // ensure preview is visible
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAMERA_PERMISSION_TAG).assertExists()
                         .isDisplayed()
@@ -209,10 +205,9 @@ class PermissionsTest {
 
 // unstable for testing
 fun clearPermissions(uiAutomation: UiAutomation) {
-    uiAutomation.executeShellCommand("pm clear com.google.jetpackcamera") //pm reset-permissions
+    uiAutomation.executeShellCommand("pm clear com.google.jetpackcamera") // pm reset-permissions
 // uiAutomation.executeShellCommand("pm reset-permissions")
     println("clearing perms")
-
 }
 
 // this is unstable, will need to orchestrate tests instead
@@ -223,11 +218,10 @@ fun clearPermissions(uiAutomation: UiAutomation) {
  */
 fun revokePermissions(packageName: String, uiAutomation: UiAutomation, permissions: List<String>) {
     permissions.forEach { perm ->
-        if (Build.VERSION.SDK_INT >= 34)
+        if (Build.VERSION.SDK_INT >= 34) {
             uiAutomation.revokeRuntimePermission(packageName, perm)
-        else
-            uiAutomation.executeShellCommand("pm revoke $packageName $perm") //pm reset-permissions
-
+        } else {
+            uiAutomation.executeShellCommand("pm revoke $packageName $perm") // pm reset-permissions
+        }
     }
 }
-
