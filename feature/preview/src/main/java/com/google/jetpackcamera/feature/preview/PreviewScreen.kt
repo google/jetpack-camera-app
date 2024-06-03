@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
-import android.view.Display
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +57,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 
@@ -108,6 +108,7 @@ fun PreviewScreen(
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
             onChangeDynamicRange = viewModel::setDynamicRange,
+            onChangeImageFormat = viewModel::setImageFormat,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onMuteAudio = viewModel::setAudioMuted,
             onCaptureImage = viewModel::captureImage,
@@ -131,12 +132,13 @@ private fun ContentScreen(
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
-    onTapToFocus: (Display, Int, Int, Float, Float) -> Unit = { _, _, _, _, _ -> },
+    onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
+    onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImage: () -> Unit = {},
@@ -208,6 +210,7 @@ private fun ContentScreen(
                 onChangeFlash = onChangeFlash,
                 onMuteAudio = onToggleMuteAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
+                onChangeImageFormat = onChangeImageFormat,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,

@@ -18,7 +18,6 @@ package com.google.jetpackcamera.domain.camera.test
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
-import android.view.Display
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
@@ -27,6 +26,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -176,13 +176,7 @@ class FakeCameraUseCase(
         }
     }
 
-    override fun tapToFocus(
-        display: Display,
-        surfaceWidth: Int,
-        surfaceHeight: Int,
-        x: Float,
-        y: Float
-    ) {
+    override suspend fun tapToFocus(x: Float, y: Float) {
         TODO("Not yet implemented")
     }
 
@@ -195,6 +189,12 @@ class FakeCameraUseCase(
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
+        currentSettings.update { old ->
+            old.copy(imageFormat = imageFormat)
         }
     }
 
