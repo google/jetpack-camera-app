@@ -256,7 +256,7 @@ constructor(
     private data class TransientSessionSettings(
         val flashMode: FlashMode,
         val zoomScale: Float,
-        val audioMuted: Boolean,
+        val audioMuted: Boolean
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -459,7 +459,7 @@ constructor(
         // if the video recording isnt started with audio enabled, you will not be able to unmute it
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
-        //todo rename methods and variables to be more precise to account for difference between muting and disabling audio
+        // todo rename methods and variables to be more precise to account for difference between muting and disabling audio
         val audioEnabled = (
             checkSelfPermission(
                 this.application.baseContext,
@@ -493,9 +493,11 @@ constructor(
         recording =
             videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
-                .apply { if (audioEnabled) {
-                    withAudioEnabled()
-                }}
+                .apply {
+                    if (audioEnabled) {
+                        withAudioEnabled()
+                    }
+                }
                 .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
                         Log.d(TAG, onVideoRecordEvent.toString())

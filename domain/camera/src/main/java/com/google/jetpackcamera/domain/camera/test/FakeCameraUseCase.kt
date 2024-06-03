@@ -201,5 +201,6 @@ class FakeCameraUseCase(
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         currentSettings.update { old ->
             old.copy(audioMuted = isAudioMuted)
-        }    }
+        }
+    }
 }

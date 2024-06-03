@@ -166,17 +166,20 @@ class PreviewViewModel @AssistedInject constructor(
     fun toggleAudioMuted() {
         setAudioMuted(
             !(previewUiState.value as PreviewUiState.Ready)
-            .currentCameraSettings
-            .audioMuted)
+                .currentCameraSettings
+                .audioMuted
+        )
     }
-     fun setAudioMuted(shouldMuteAudio: Boolean) {
+    fun setAudioMuted(shouldMuteAudio: Boolean) {
         viewModelScope.launch {
             cameraUseCase.setAudioMuted(shouldMuteAudio)
         }
 
-        Log.d(TAG,
+        Log.d(
+            TAG,
             "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
-                .currentCameraSettings.audioMuted}")
+                .currentCameraSettings.audioMuted}"
+        )
     }
 
     fun captureImage() {

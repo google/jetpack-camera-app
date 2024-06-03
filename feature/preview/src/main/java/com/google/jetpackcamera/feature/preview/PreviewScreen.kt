@@ -168,10 +168,10 @@ private fun ContentScreen(
             }
         }
 
-        val isMuted = remember(previewUiState){
+        val isMuted = remember(previewUiState) {
             previewUiState.currentCameraSettings.audioMuted
         }
-        val onToggleMuteAudio = remember(isMuted){
+        val onToggleMuteAudio = remember(isMuted) {
             {
                 onMuteAudio(!isMuted)
             }

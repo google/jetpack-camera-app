@@ -431,7 +431,6 @@ private fun Preview_ControlsTop_WithStabilization() {
 @Preview(backgroundColor = 0xFF000000, showBackground = true)
 @Composable
 private fun Preview_ControlsBottom() {
-
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
