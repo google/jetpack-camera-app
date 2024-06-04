@@ -37,7 +37,6 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import java.io.File
 import java.net.URLConnection
-import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,7 +57,7 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun image_capture() =  runScenarioTest<MainActivity> {
+    fun image_capture() = runScenarioTest<MainActivity> {
         val timeStamp = System.currentTimeMillis()
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -90,7 +89,7 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
                 /* This line needs to be uiDevice.wait() instead of composeTestRule.waitUntil()
-                * because the latter causes a strange behavior where the node is not found. */
+                 * because the latter causes a strange behavior where the node is not found. */
                 uiDevice.wait(
                     Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TAG)),
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
@@ -102,7 +101,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun image_capture_external_illegal_uri()  {
+    fun image_capture_external_illegal_uri() {
         val timeStamp = System.currentTimeMillis()
         val uri = Uri.parse("asdfasdf")
         activityScenario =
@@ -116,7 +115,7 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
                 /* This line needs to be uiDevice.wait() instead of composeTestRule.waitUntil()
-                * because the latter causes a strange behavior where the node is not found. */
+                 * because the latter causes a strange behavior where the node is not found. */
                 uiDevice.wait(
                     Until.findObject(By.res(IMAGE_CAPTURE_FAILURE_TAG)),
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
