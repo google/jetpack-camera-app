@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
+import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -33,6 +34,15 @@ inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
 ) {
     ActivityScenario.launch(T::class.java).use { scenario ->
+        scenario.apply(block)
+    }
+}
+
+inline fun <reified T : Activity> runScenarioTestForResult(
+    intent: Intent,
+    crossinline block: ActivityScenario<T>.() -> Unit
+): ActivityScenario<T> {
+    return ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
     }
 }
