@@ -17,6 +17,7 @@ package com.google.jetpackcamera.benchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.TraceSectionMetric
@@ -32,13 +33,21 @@ class FirstFrameBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun timeToFirstFrameNoFlashColdStartup() {
-        benchmarkFirstFrame()
+    fun timeToFirstFrameDefaultSettingsColdStartup() {
+        benchmarkFirstFrame(setupBlock = {
+            allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray())
+        })
     }
 
     @Test
-    fun timeToFirstFrameNoFlashHotStartup() {
-        benchmarkFirstFrame(startupMode = StartupMode.HOT)
+    fun timeToFirstFrameDefaultSettingsHotStartup() {
+        benchmarkFirstFrame(startupMode = StartupMode.HOT, setupBlock = {
+            allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray())})
+    }
+
+    @Test
+    fun timeToFirstFrameNoPerms() {
+        benchmarkFirstFrame()
     }
 
     /**
@@ -58,7 +67,8 @@ class FirstFrameBenchmark {
         startupMode: StartupMode? = StartupMode.COLD,
         iterations: Int = DEFAULT_TEST_ITERATIONS,
         timeout: Long = 15000,
-        intent: Intent? = null
+        intent: Intent? = null,
+        setupBlock: MacrobenchmarkScope.() -> Unit = {}
     ) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
@@ -72,9 +82,7 @@ class FirstFrameBenchmark {
             ),
             iterations = iterations,
             startupMode = startupMode,
-            setupBlock = {
-                allowCamera()
-            }
+            setupBlock = setupBlock
         ) {
             pressHome()
             if (intent == null) startActivityAndWait() else startActivityAndWait(intent)
