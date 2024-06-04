@@ -17,8 +17,11 @@ package com.google.jetpackcamera.settings
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
+import com.google.jetpackcamera.settings.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import org.junit.Test
 
 class ProtoConversionTest {
@@ -59,6 +62,46 @@ class ProtoConversionTest {
 
         enumValues<DynamicRangeProto>().forEach {
             assertThat(correctConversions(it)).isEqualTo(DynamicRange.fromProto(it))
+        }
+    }
+
+    @Test
+    fun imageOutputFormat_convertsToCorrectProto() {
+        val correctConversions = { imageOutputFormat: ImageOutputFormat ->
+            when (imageOutputFormat) {
+                ImageOutputFormat.JPEG -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG
+                ImageOutputFormat.JPEG_ULTRA_HDR
+                -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                else -> TODO(
+                    "Test does not yet contain correct conversion for image output format " +
+                        "type: ${imageOutputFormat.name}"
+                )
+            }
+        }
+
+        enumValues<ImageOutputFormat>().forEach {
+            assertThat(correctConversions(it)).isEqualTo(it.toProto())
+        }
+    }
+
+    @Test
+    fun imageOutputFormatProto_convertsToCorrectImageOutputFormat() {
+        val correctConversions = { imageOutputFormatProto: ImageOutputFormatProto ->
+            when (imageOutputFormatProto) {
+                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
+                ImageOutputFormatProto.UNRECOGNIZED
+                -> ImageOutputFormat.JPEG
+                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                -> ImageOutputFormat.JPEG_ULTRA_HDR
+                else -> TODO(
+                    "Test does not yet contain correct conversion for image output format " +
+                        "proto type: ${imageOutputFormatProto.name}"
+                )
+            }
+        }
+
+        enumValues<ImageOutputFormatProto>().forEach {
+            assertThat(correctConversions(it)).isEqualTo(ImageOutputFormat.fromProto(it))
         }
     }
 }

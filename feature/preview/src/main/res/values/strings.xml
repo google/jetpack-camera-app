@@ -40,9 +40,9 @@
     <string name="quick_settings_aspect_ratio_1_1">1:1</string>
 
     <string name="quick_settings_dynamic_range_sdr">SDR</string>
-    <string name="quick_settings_dynamic_range_hlg10">HLG10</string>
+    <string name="quick_settings_dynamic_range_hdr">HDR</string>
     <string name="quick_settings_dynamic_range_sdr_description">Standard dynamic range</string>
-    <string name="quick_settings_dynamic_range_hlg10_description">10-bit Hybrid Log Gamma dynamic range</string>
+    <string name="quick_settings_dynamic_range_hdr_description">High dynamic range</string>
 
     <string name="quick_settings_aspect_ratio_3_4_description">3 to 4 aspect ratio</string>
     <string name="quick_settings_aspect_ratio_9_16_description">9 to 16 aspect ratio</string>

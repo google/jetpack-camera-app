@@ -71,6 +71,7 @@ fun ExpandedQuickSetRatio(
         arrayOf(
             {
                 QuickSetRatio(
+                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
                     onClick = { setRatio(AspectRatio.THREE_FOUR) },
                     ratio = AspectRatio.THREE_FOUR,
                     currentRatio = currentRatio,
@@ -79,6 +80,7 @@ fun ExpandedQuickSetRatio(
             },
             {
                 QuickSetRatio(
+                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
                     onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
                     ratio = AspectRatio.NINE_SIXTEEN,
                     currentRatio = currentRatio,
@@ -109,7 +111,7 @@ fun QuickSetHdr(
     val enum =
         when (selectedDynamicRange) {
             DynamicRange.SDR -> CameraDynamicRange.SDR
-            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+            DynamicRange.HLG10 -> CameraDynamicRange.HDR
         }
     QuickSettingUiItem(
         modifier = modifier,

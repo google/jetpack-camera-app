@@ -16,10 +16,11 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.res.Configuration
+import android.os.Build
 import android.util.Log
-import android.view.Display
 import android.widget.Toast
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -97,7 +98,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
-private const val BLINK_TIME = 600L
+private const val BLINK_TIME = 100L
 
 @Composable
 fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
@@ -241,7 +242,7 @@ fun TestableSnackbar(
 @Composable
 fun PreviewDisplay(
     previewUiState: PreviewUiState.Ready,
-    onTapToFocus: (Display, Int, Int, Float, Float) -> Unit,
+    onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomChange: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
@@ -309,7 +310,12 @@ fun PreviewDisplay(
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
                     surfaceRequest = it,
-                    onRequestWindowColorMode = onRequestWindowColorMode
+                    implementationMode = when {
+                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                        else -> ImplementationMode.EMBEDDED
+                    },
+                    onRequestWindowColorMode = onRequestWindowColorMode,
+                    onTap = { x, y -> onTapToFocus(x, y) }
                 )
             }
         }

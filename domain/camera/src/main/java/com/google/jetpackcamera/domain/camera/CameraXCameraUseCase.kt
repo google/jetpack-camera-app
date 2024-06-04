@@ -25,19 +25,26 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
-import android.view.Display
+import androidx.camera.core.AspectRatio.RATIO_16_9
+import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.AspectRatio.RATIO_DEFAULT
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
+import androidx.camera.core.ExperimentalImageCaptureOutputFormat
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -59,13 +66,13 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.FileNotFoundException
-import java.lang.IllegalArgumentException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -77,6 +84,7 @@ import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -85,6 +93,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -113,9 +122,8 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private val imageCaptureUseCase = ImageCapture.Builder().build()
+    private lateinit var imageCaptureUseCase: ImageCapture
 
-    private val recorder = Recorder.Builder().setExecutor(defaultDispatcher.asExecutor()).build()
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
@@ -124,11 +132,13 @@ constructor(
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
+    private val focusMeteringEvents =
+        Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(disableVideoCapture: Boolean) {
-        this.disableVideoCapture = disableVideoCapture
+    override suspend fun initialize(externalImageCapture: Boolean) {
+        this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -164,13 +174,21 @@ constructor(
                         }
 
                         val supportedFixedFrameRates = getSupportedFrameRates(camInfo)
+                        val supportedImageFormats = getSupportedImageFormats(camInfo)
 
                         put(
                             lensFacing,
                             CameraConstraints(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
-                                supportedDynamicRanges = supportedDynamicRanges
+                                supportedDynamicRanges = supportedDynamicRanges,
+                                supportedImageFormatsMap = mapOf(
+                                    // Only JPEG is supported in single-stream mode, since
+                                    // single-stream mode uses CameraEffect, which does not support
+                                    // Ultra HDR now.
+                                    Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
+                                )
                             )
                         )
                     }
@@ -181,7 +199,17 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first().tryApplyDynamicRangeConstraints()
+            settingsRepository.defaultCameraAppSettings.first()
+                .tryApplyDynamicRangeConstraints()
+                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
+                .tryApplyImageFormatConstraints()
+
+        imageCaptureUseCase = ImageCapture.Builder()
+            .setResolutionSelector(
+                getResolutionSelector(
+                    settingsRepository.defaultCameraAppSettings.first().aspectRatio
+                )
+            ).build()
     }
 
     /**
@@ -214,7 +242,8 @@ constructor(
         val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization,
-        val dynamicRange: DynamicRange
+        val dynamicRange: DynamicRange,
+        val imageFormat: ImageOutputFormat
     )
 
     /**
@@ -253,7 +282,8 @@ constructor(
                     targetFrameRate = currentCameraSettings.targetFrameRate,
                     stabilizePreviewMode = currentCameraSettings.previewStabilization,
                     stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
-                    dynamicRange = currentCameraSettings.dynamicRange
+                    dynamicRange = currentCameraSettings.dynamicRange,
+                    imageFormat = currentCameraSettings.imageFormat
                 )
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
@@ -287,6 +317,16 @@ constructor(
                 var prevTransientSettings = initialTransientSettings
                 cameraProvider.runWith(sessionSettings.cameraSelector, useCaseGroup) { camera ->
                     Log.d(TAG, "Camera session started")
+
+                    launch {
+                        focusMeteringEvents.consumeAsFlow().collect {
+                            val focusMeteringAction =
+                                FocusMeteringAction.Builder(it.meteringPoint).build()
+                            Log.d(TAG, "Starting focus and metering")
+                            camera.cameraControl.startFocusAndMetering(focusMeteringAction)
+                        }
+                    }
+
                     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
                         // Apply camera control settings
                         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
@@ -498,6 +538,7 @@ constructor(
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
+                    ?.tryApplyImageFormatConstraints()
             } else {
                 old
             }
@@ -520,15 +561,43 @@ constructor(
         } ?: this
     }
 
-    override fun tapToFocus(
-        display: Display,
-        surfaceWidth: Int,
-        surfaceHeight: Int,
-        x: Float,
-        y: Float
-    ) {
-        // TODO(tm):Convert API to use SurfaceOrientedMeteringPointFactory and
-        // use a Channel to get result of FocusMeteringAction
+    private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
+        externalImageCapture: Boolean
+    ): CameraAppSettings {
+        if (externalImageCapture) {
+            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        }
+        return this
+    }
+
+    private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedImageFormatsMap[captureMode]) {
+                val newImageFormat = if (this != null && contains(imageFormat)) {
+                    imageFormat
+                } else {
+                    ImageOutputFormat.JPEG
+                }
+
+                this@tryApplyImageFormatConstraints.copy(
+                    imageFormat = newImageFormat
+                )
+            }
+        } ?: this
+    }
+
+    override suspend fun tapToFocus(x: Float, y: Float) {
+        Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
+
+        getSurfaceRequest().filterNotNull().map { surfaceRequest ->
+            SurfaceOrientedMeteringPointFactory(
+                surfaceRequest.resolution.width.toFloat(),
+                surfaceRequest.resolution.height.toFloat()
+            )
+        }.collectLatest { meteringPointFactory ->
+            val meteringPoint = meteringPointFactory.createPoint(x, y)
+            focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
+        }
     }
 
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
@@ -601,7 +670,7 @@ constructor(
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            old?.copy(captureMode = captureMode)?.tryApplyImageFormatConstraints()
         }
     }
 
@@ -612,6 +681,7 @@ constructor(
         effect: CameraEffect? = null
     ): UseCaseGroup {
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
+        imageCaptureUseCase = createImageUseCase(sessionSettings)
         if (!disableVideoCapture) {
             videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
         }
@@ -629,10 +699,15 @@ constructor(
                 ).build()
             )
             addUseCase(previewUseCase)
-            if (sessionSettings.dynamicRange == DynamicRange.SDR) {
+            if (sessionSettings.dynamicRange == DynamicRange.SDR ||
+                sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) {
                 addUseCase(imageCaptureUseCase)
             }
-            if (videoCaptureUseCase != null) {
+            // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
+            if (videoCaptureUseCase != null &&
+                sessionSettings.imageFormat == ImageOutputFormat.JPEG
+            ) {
                 addUseCase(videoCaptureUseCase!!)
             }
 
@@ -647,10 +722,38 @@ constructor(
         }
     }
 
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
+        currentSettings.update { old ->
+            old?.copy(imageFormat = imageFormat)
+        }
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
+        return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats
+            .mapNotNull(Int::toAppImageFormat)
+            .toSet()
+    }
+
+    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
+        val builder = ImageCapture.Builder()
+        builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
+        if (sessionSettings.dynamicRange != DynamicRange.SDR &&
+            sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+        ) {
+            builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+        }
+        return builder.build()
+    }
+
     private fun createVideoUseCase(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: Set<SupportedStabilizationMode>
     ): VideoCapture<Recorder> {
+        val recorder = Recorder.Builder()
+            .setAspectRatio(getAspectRatioForUseCase(sessionSettings.aspectRatio))
+            .setExecutor(defaultDispatcher.asExecutor()).build()
         return VideoCapture.Builder(recorder).apply {
             // set video stabilization
             if (shouldVideoBeStabilized(sessionSettings, supportedStabilizationMode)
@@ -666,6 +769,14 @@ constructor(
 
             setDynamicRange(sessionSettings.dynamicRange.toCXDynamicRange())
         }.build()
+    }
+
+    private fun getAspectRatioForUseCase(aspectRatio: AspectRatio): Int {
+        return when (aspectRatio) {
+            AspectRatio.THREE_FOUR -> RATIO_4_3
+            AspectRatio.NINE_SIXTEEN -> RATIO_16_9
+            else -> RATIO_DEFAULT
+        }
     }
 
     private fun shouldVideoBeStabilized(
@@ -692,11 +803,24 @@ constructor(
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)
         }
 
+        previewUseCaseBuilder.setResolutionSelector(
+            getResolutionSelector(sessionSettings.aspectRatio)
+        )
+
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->
                 _surfaceRequest.value = surfaceRequest
             }
         }
+    }
+
+    private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
+        val aspectRatioStrategy = when (aspectRatio) {
+            AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+            AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        }
+        return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
 
     private fun shouldPreviewBeStabilized(
@@ -774,4 +898,14 @@ private fun CameraSelector.toAppLensFacing(): LensFacing = when (this) {
     else -> throw IllegalArgumentException(
         "Unknown CameraSelector -> LensFacing mapping. [CameraSelector: $this]"
     )
+}
+
+@androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+private fun Int.toAppImageFormat(): ImageOutputFormat? {
+    return when (this) {
+        ImageCapture.OUTPUT_FORMAT_JPEG -> ImageOutputFormat.JPEG
+        ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> ImageOutputFormat.JPEG_ULTRA_HDR
+        // All other output formats unsupported. Return null.
+        else -> null
+    }
 }
