@@ -27,7 +27,6 @@ import android.util.Log
 import android.util.Range
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
-import androidx.camera.core.AspectRatio.RATIO_DEFAULT
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
