@@ -16,11 +16,15 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.SystemConstraints
 
 /**
  * Defines the current state of the [SettingsScreen].
  */
-data class SettingsUiState(
-    val cameraAppSettings: CameraAppSettings,
-    var disabled: Boolean = false
-)
+sealed interface SettingsUiState {
+    object Disabled : SettingsUiState
+    data class Enabled(
+        val cameraAppSettings: CameraAppSettings,
+        val systemConstraints: SystemConstraints
+    ) : SettingsUiState
+}

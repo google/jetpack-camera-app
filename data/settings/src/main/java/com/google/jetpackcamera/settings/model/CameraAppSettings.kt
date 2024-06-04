@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.settings.model
+const val TARGET_FPS_AUTO = 0
 
 /**
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
     val cameraLensFacing: LensFacing = LensFacing.BACK,
-    val isFrontCameraAvailable: Boolean = true,
-    val isBackCameraAvailable: Boolean = true,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
     val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val previewStabilization: Stabilization = Stabilization.UNDEFINED,
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
-    val supportedStabilizationModes: List<SupportedStabilizationMode> = emptyList(),
     val dynamicRange: DynamicRange = DynamicRange.SDR,
-    val supportedDynamicRanges: List<DynamicRange> = listOf(DynamicRange.SDR),
-    val zoomScale: Float = 1f
+    val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
+    val zoomScale: Float = 1f,
+    val targetFrameRate: Int = TARGET_FPS_AUTO,
+    val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG
 )
+
+fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
+    return perLensConstraints[cameraAppSettings.cameraLensFacing]
+}
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

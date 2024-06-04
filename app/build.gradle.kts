@@ -22,29 +22,25 @@ plugins {
 }
 
 android {
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "com.google.jetpackcamera"
-    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.google.jetpackcamera"
-        minSdk = 21
-        targetSdk = 34
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
-
+        versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     buildTypes {
-        release {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        getByName("release") {
             isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         create("benchmark") {
             initWith(buildTypes.getByName("release"))
@@ -60,15 +56,36 @@ android {
         jvmToolchain(17)
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.0"
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2Api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                }
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
+        }
+    }
+
+    kotlinOptions {
+        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 
@@ -80,6 +97,7 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -121,11 +139,12 @@ dependencies {
 
     // Camera Preview
     implementation(project(":feature:preview"))
-    // Only needed as androidTestImplementation for now since we only need it for string resources
-    androidTestImplementation(project(":feature:quicksettings"))
 
     // Settings Screen
     implementation(project(":feature:settings"))
+
+    // Permissions Screen
+    implementation(project(":feature:permissions"))
 
     // benchmark
     implementation(libs.androidx.profileinstaller)

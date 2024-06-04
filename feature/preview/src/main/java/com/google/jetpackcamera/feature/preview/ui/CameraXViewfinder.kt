@@ -15,28 +15,43 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.content.pm.ActivityInfo
+import android.os.Build
+import android.util.Log
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
+import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.camera.viewfinder.surface.TransformationInfo
 import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+
+private const val TAG = "CameraXViewfinder"
 
 /**
  * A composable viewfinder that adapts CameraX's [Preview.SurfaceProvider] to [Viewfinder]
@@ -46,17 +61,19 @@ import kotlinx.coroutines.launch
  *
  * @param[modifier] the modifier to be applied to the layout
  * @param[surfaceRequest] a [SurfaceRequest] from [Preview.SurfaceProvider].
- * @param[implementationMode] the implementation mode, either [ImplementationMode.PERFORMANCE] or
- * [ImplementationMode.COMPATIBLE]. Currently, only [ImplementationMode.PERFORMANCE] will produce
- * the correct orientation.
+ * @param[implementationMode] the implementation mode, either [ImplementationMode.EXTERNAL] or
+ * [ImplementationMode.EMBEDDED].
  */
 @Composable
 fun CameraXViewfinder(
-    modifier: Modifier = Modifier,
     surfaceRequest: SurfaceRequest,
-    implementationMode: ImplementationMode = ImplementationMode.PERFORMANCE
+    modifier: Modifier = Modifier,
+    implementationMode: ImplementationMode = ImplementationMode.EXTERNAL,
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    onTap: (x: Float, y: Float) -> Unit = { _, _ -> }
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
+    val currentOnRequestWindowColorMode by rememberUpdatedState(onRequestWindowColorMode)
 
     val viewfinderArgs by produceState<ViewfinderArgs?>(initialValue = null, surfaceRequest) {
         val viewfinderSurfaceRequest = ViewfinderSurfaceRequest.Builder(surfaceRequest.resolution)
@@ -108,31 +125,63 @@ fun CameraXViewfinder(
                 snapshotImplementationMode = implMode
                 value = ViewfinderArgs(
                     viewfinderSurfaceRequest,
+                    isSourceHdr = surfaceRequest.dynamicRange.encoding != DynamicRange.ENCODING_SDR,
                     implMode,
                     TransformationInfo(
-                        transformInfo.rotationDegrees,
-                        transformInfo.cropRect.left,
-                        transformInfo.cropRect.right,
-                        transformInfo.cropRect.top,
-                        transformInfo.cropRect.bottom,
-                        transformInfo.isMirroring
+                        sourceRotation = transformInfo.rotationDegrees,
+                        cropRectLeft = transformInfo.cropRect.left,
+                        cropRectTop = transformInfo.cropRect.top,
+                        cropRectRight = transformInfo.cropRect.right,
+                        cropRectBottom = transformInfo.cropRect.bottom,
+                        shouldMirror = transformInfo.isMirroring
                     )
                 )
             }
     }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        LaunchedEffect(Unit) {
+            snapshotFlow { viewfinderArgs }
+                .filterNotNull()
+                .map { args ->
+                    if (args.isSourceHdr &&
+                        args.implementationMode == ImplementationMode.EXTERNAL
+                    ) {
+                        ActivityInfo.COLOR_MODE_HDR
+                    } else {
+                        ActivityInfo.COLOR_MODE_DEFAULT
+                    }
+                }.distinctUntilChanged()
+                .onEach { currentOnRequestWindowColorMode(it) }
+                .onCompletion { currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT) }
+                .collect()
+        }
+    }
+
+    val coordinateTransformer = MutableCoordinateTransformer()
 
     viewfinderArgs?.let { args ->
         Viewfinder(
             surfaceRequest = args.viewfinderSurfaceRequest,
             implementationMode = args.implementationMode,
             transformationInfo = args.transformationInfo,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize().pointerInput(Unit) {
+                detectTapGestures {
+                    with(coordinateTransformer) {
+                        val tapOffset = it.transform()
+                        Log.d(TAG, "onTap: $tapOffset")
+                        onTap(tapOffset.x, tapOffset.y)
+                    }
+                }
+            },
+            coordinateTransformer = coordinateTransformer
         )
     }
 }
 
 private data class ViewfinderArgs(
     val viewfinderSurfaceRequest: ViewfinderSurfaceRequest,
+    val isSourceHdr: Boolean,
     val implementationMode: ImplementationMode,
     val transformationInfo: TransformationInfo
 )

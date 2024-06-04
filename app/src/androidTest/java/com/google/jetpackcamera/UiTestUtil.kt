@@ -16,30 +16,63 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import java.util.concurrent.atomic.AtomicReference
+import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.settings.model.LensFacing
 
-object UiTestUtil {
-    private fun getActivity(activityScenario: ActivityScenario<MainActivity>): MainActivity {
-        val activityRef: AtomicReference<MainActivity> = AtomicReference<MainActivity>()
-        activityScenario.onActivity(activityRef::set)
-        return activityRef.get()
-    }
-
-    fun getPreviewCameraAppSettings(
-        activityScenario: ActivityScenario<MainActivity>
-    ): CameraAppSettings {
-        return getActivity(
-            activityScenario
-        ).previewViewModel!!.previewUiState.value.currentCameraSettings
-    }
-}
+const val APP_START_TIMEOUT_MILLIS = 10_000L
+const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
 ) {
     ActivityScenario.launch(T::class.java).use { scenario ->
         scenario.apply(block)
+    }
+}
+
+context(ActivityScenario<MainActivity>)
+fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
+    var needReturnFromQuickSettings = false
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
+        if (isDisplayed()) {
+            performClick()
+            needReturnFromQuickSettings = true
+        }
+    }
+
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
+        "LensFacing can only be retrieved from PreviewScreen or QuickSettings screen"
+    )
+
+    try {
+        return onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
+            "Flip camera button is not visible when expected."
+        ).let { node ->
+            node.config[SemanticsProperties.ContentDescription].any { description ->
+                when (description) {
+                    getResString(R.string.quick_settings_front_camera_description) ->
+                        return@let LensFacing.FRONT
+
+                    getResString(R.string.quick_settings_back_camera_description) ->
+                        return@let LensFacing.BACK
+
+                    else -> false
+                }
+            }
+            throw AssertionError("Unable to determine lens facing from quick settings")
+        }
+    } finally {
+        if (needReturnFromQuickSettings) {
+            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
+                .assertExists()
+                .performClick()
+        }
     }
 }

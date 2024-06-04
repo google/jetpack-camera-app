@@ -23,25 +23,16 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.data.camera"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 21
-        targetSdk = 34
+        minSdk = libs.versions.minSdk.get().toInt()
+        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
+        lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -55,8 +46,8 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    testImplementation("org.mockito:mockito-core:5.2.0")
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockito.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -74,7 +65,10 @@ dependencies {
     kapt(libs.dagger.hilt.compiler)
 
     // Tracing
-    implementation("androidx.tracing:tracing-ktx:1.2.0")
+    implementation(libs.androidx.tracing)
+
+    // Graphics libraries
+    implementation(libs.androidx.graphics.core)
 
     // Project dependencies
     implementation(project(":data:settings"))

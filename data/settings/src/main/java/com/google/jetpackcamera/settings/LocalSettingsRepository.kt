@@ -29,13 +29,19 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+
+const val TARGET_FPS_NONE = 0
+const val TARGET_FPS_15 = 15
+const val TARGET_FPS_30 = 30
+const val TARGET_FPS_60 = 60
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
@@ -44,7 +50,7 @@ class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>
 ) : SettingsRepository {
 
-    override val cameraAppSettings = jcaSettings.data
+    override val defaultCameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
                 cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
@@ -60,29 +66,22 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
                     else -> FlashMode.OFF
                 },
-                isFrontCameraAvailable = it.frontCameraAvailable,
-                isBackCameraAvailable = it.backCameraAvailable,
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 previewStabilization = Stabilization.fromProto(it.stabilizePreview),
                 videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
-                supportedStabilizationModes = getSupportedStabilization(
-                    previewSupport = it.stabilizePreviewSupported,
-                    videoSupport = it.stabilizeVideoSupported
-                ),
+                targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                supportedDynamicRanges = it.supportedDynamicRangesList.map { dynRngProto ->
-                    DynamicRange.fromProto(dynRngProto)
-                }
-
+                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus)
             )
         }
 
-    override suspend fun getCameraAppSettings(): CameraAppSettings = cameraAppSettings.first()
+    override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
+        defaultCameraAppSettings.first()
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
@@ -118,22 +117,10 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateAvailableCameraLens(
-        frontLensAvailable: Boolean,
-        backLensAvailable: Boolean
-    ) {
-        // if a front or back lens is not present, the option to change
-        // the direction of the camera should be disabled
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
         jcaSettings.updateData { currentSettings ->
-            val newLensFacing = if (currentSettings.defaultFrontCamera) {
-                frontLensAvailable
-            } else {
-                false
-            }
             currentSettings.toBuilder()
-                .setDefaultFrontCamera(newLensFacing)
-                .setFrontCameraAvailable(frontLensAvailable)
-                .setBackCameraAvailable(backLensAvailable)
+                .setTargetFrameRate(targetFrameRate)
                 .build()
         }
     }
@@ -189,36 +176,6 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateVideoStabilizationSupported(isSupported: Boolean) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizeVideoSupported(isSupported)
-                .build()
-        }
-    }
-
-    override suspend fun updatePreviewStabilizationSupported(isSupported: Boolean) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizePreviewSupported(isSupported)
-                .build()
-        }
-    }
-
-    private fun getSupportedStabilization(
-        previewSupport: Boolean,
-        videoSupport: Boolean
-    ): List<SupportedStabilizationMode> {
-        return buildList {
-            if (previewSupport) {
-                add(SupportedStabilizationMode.ON)
-            }
-            if (videoSupport) {
-                add(SupportedStabilizationMode.HIGH_QUALITY)
-            }
-        }
-    }
-
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -227,15 +184,10 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateSupportedDynamicRanges(supportedDynamicRanges: List<DynamicRange>) {
+    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .clearSupportedDynamicRanges()
-                .addAllSupportedDynamicRanges(
-                    supportedDynamicRanges.map {
-                        it.toProto()
-                    }
-                )
+                .setImageFormatStatus(imageFormat.toProto())
                 .build()
         }
     }

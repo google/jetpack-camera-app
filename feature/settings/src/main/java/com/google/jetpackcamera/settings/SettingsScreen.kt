@@ -15,15 +15,27 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -32,64 +44,171 @@ import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
+import com.google.jetpackcamera.settings.ui.TargetFpsSetting
+import com.google.jetpackcamera.settings.ui.VersionInfo
+import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
  * Screen used for the Settings feature.
  */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigateBack: () -> Unit) {
+fun SettingsScreen(
+    versionInfo: VersionInfoHolder,
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
+) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
+    SettingsScreen(
+        uiState = settingsUiState,
+        versionInfo = versionInfo,
+        onNavigateBack = onNavigateBack,
+        setDefaultLensFacing = viewModel::setDefaultLensFacing,
+        setFlashMode = viewModel::setFlashMode,
+        setTargetFrameRate = viewModel::setTargetFrameRate,
+        setAspectRatio = viewModel::setAspectRatio,
+        setCaptureMode = viewModel::setCaptureMode,
+        setVideoStabilization = viewModel::setVideoStabilization,
+        setPreviewStabilization = viewModel::setPreviewStabilization,
+        setDarkMode = viewModel::setDarkMode
+    )
+}
+
+@Composable
+private fun SettingsScreen(
+    uiState: SettingsUiState,
+    versionInfo: VersionInfoHolder,
+    onNavigateBack: () -> Unit = {},
+    setDefaultLensFacing: (LensFacing) -> Unit = {},
+    setFlashMode: (FlashMode) -> Unit = {},
+    setTargetFrameRate: (Int) -> Unit = {},
+    setAspectRatio: (AspectRatio) -> Unit = {},
+    setCaptureMode: (CaptureMode) -> Unit = {},
+    setVideoStabilization: (Stabilization) -> Unit = {},
+    setPreviewStabilization: (Stabilization) -> Unit = {},
+    setDarkMode: (DarkMode) -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
         SettingsPageHeader(
             title = stringResource(id = R.string.settings_title),
             navBack = onNavigateBack
         )
-        SettingsList(uiState = settingsUiState, viewModel = viewModel)
+        if (uiState is SettingsUiState.Enabled) {
+            SettingsList(
+                uiState = uiState,
+                versionInfo = versionInfo,
+                setDefaultLensFacing = setDefaultLensFacing,
+                setFlashMode = setFlashMode,
+                setTargetFrameRate = setTargetFrameRate,
+                setAspectRatio = setAspectRatio,
+                setCaptureMode = setCaptureMode,
+                setVideoStabilization = setVideoStabilization,
+                setPreviewStabilization = setPreviewStabilization,
+                setDarkMode = setDarkMode
+            )
+        }
     }
 }
 
 @Composable
-fun SettingsList(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+fun SettingsList(
+    uiState: SettingsUiState.Enabled,
+    versionInfo: VersionInfoHolder,
+    setDefaultLensFacing: (LensFacing) -> Unit = {},
+    setFlashMode: (FlashMode) -> Unit = {},
+    setTargetFrameRate: (Int) -> Unit = {},
+    setAspectRatio: (AspectRatio) -> Unit = {},
+    setCaptureMode: (CaptureMode) -> Unit = {},
+    setVideoStabilization: (Stabilization) -> Unit = {},
+    setPreviewStabilization: (Stabilization) -> Unit = {},
+    setDarkMode: (DarkMode) -> Unit = {}
+) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        cameraAppSettings = uiState.cameraAppSettings,
-        setDefaultLensFacing = viewModel::setDefaultLensFacing
+        settingValue = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
+        enabled = with(uiState.systemConstraints.availableLenses) {
+            size > 1 && contains(LensFacing.FRONT)
+        },
+        setDefaultLensFacing = setDefaultLensFacing
     )
 
     FlashModeSetting(
         currentFlashMode = uiState.cameraAppSettings.flashMode,
-        setFlashMode = viewModel::setFlashMode
+        setFlashMode = setFlashMode
+    )
+
+    TargetFpsSetting(
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        supportedFps = uiState.systemConstraints.perLensConstraints.values.fold(emptySet()) {
+                union, constraints ->
+            union + constraints.supportedFixedFrameRates
+        },
+        setTargetFps = setTargetFrameRate
     )
 
     AspectRatioSetting(
         currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
-        setAspectRatio = viewModel::setAspectRatio
+        setAspectRatio = setAspectRatio
     )
 
     CaptureModeSetting(
         currentCaptureMode = uiState.cameraAppSettings.captureMode,
-        setCaptureMode = viewModel::setCaptureMode
+        setCaptureMode = setCaptureMode
     )
-
-    // TODO: b/326140212 - stabilization setting not changing active stabilization mode
 
     StabilizationSetting(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
-        supportedStabilizationMode = uiState.cameraAppSettings.supportedStabilizationModes,
-        setVideoStabilization = viewModel::setVideoStabilization,
-        setPreviewStabilization = viewModel::setPreviewStabilization
+        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
+        supportedStabilizationMode = uiState.systemConstraints.perLensConstraints.values.fold(
+            emptySet()
+        ) {
+                union, constraints ->
+            union + constraints.supportedStabilizationModes
+        },
+        setVideoStabilization = setVideoStabilization,
+        setPreviewStabilization = setPreviewStabilization
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
         currentDarkMode = uiState.cameraAppSettings.darkMode,
-        setDarkMode = viewModel::setDarkMode
+        setDarkMode = setDarkMode
     )
+
+    SectionHeader(title = stringResource(id = R.string.section_title_software_info))
+
+    VersionInfo(
+        versionName = versionInfo.versionName,
+        buildType = versionInfo.buildType
+    )
+}
+
+data class VersionInfoHolder(
+    val versionName: String,
+    val buildType: String
+)
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_SettingsScreen() {
+    SettingsPreviewTheme {
+        SettingsScreen(
+            uiState = SettingsUiState.Enabled(
+                DEFAULT_CAMERA_APP_SETTINGS,
+                TYPICAL_SYSTEM_CONSTRAINTS
+            ),
+            versionInfo = VersionInfoHolder(
+                versionName = "1.0.0",
+                buildType = "release"
+            )
+        )
+    }
 }

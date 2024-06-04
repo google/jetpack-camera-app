@@ -21,6 +21,7 @@ import "com/google/jetpackcamera/settings/capture_mode.proto";
 import "com/google/jetpackcamera/settings/dark_mode.proto";
 import "com/google/jetpackcamera/settings/dynamic_range.proto";
 import "com/google/jetpackcamera/settings/flash_mode.proto";
+import "com/google/jetpackcamera/settings/image_output_format.proto";
 import "com/google/jetpackcamera/settings/lens_facing.proto";
 import "com/google/jetpackcamera/settings/preview_stabilization.proto";
 import "com/google/jetpackcamera/settings/video_stabilization.proto";
@@ -30,18 +31,17 @@ option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
 message JcaSettings {
-  bool default_front_camera = 2 [deprecated = true];
-  bool front_camera_available = 3;
-  bool back_camera_available = 4;
-  DarkMode dark_mode_status = 5;
-  FlashMode flash_mode_status = 6;
-  AspectRatio aspect_ratio_status = 7;
-  CaptureMode capture_mode_status = 8;
-  PreviewStabilization stabilize_preview = 9;
-  VideoStabilization stabilize_video = 10;
-  bool stabilize_video_supported = 11;
-  bool stabilize_preview_supported = 12;
-  DynamicRange dynamic_range_status = 13;
-  repeated DynamicRange supported_dynamic_ranges = 14;
-  LensFacing default_lens_facing = 15;
+  // Camera settings
+  LensFacing default_lens_facing = 1;
+  FlashMode flash_mode_status = 2;
+  int32 target_frame_rate = 3;
+  AspectRatio aspect_ratio_status = 4;
+  CaptureMode capture_mode_status = 5;
+  PreviewStabilization stabilize_preview = 6;
+  VideoStabilization stabilize_video = 7;
+  DynamicRange dynamic_range_status = 8;
+  ImageOutputFormat image_format_status = 10;
+
+  // Non-camera app settings
+  DarkMode dark_mode_status = 9;
 }

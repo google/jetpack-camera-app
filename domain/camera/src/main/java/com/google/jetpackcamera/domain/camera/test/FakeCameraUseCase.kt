@@ -15,15 +15,18 @@
  */
 package com.google.jetpackcamera.domain.camera.test
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
-import android.view.Display
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +61,7 @@ class FakeCameraUseCase(
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
-    override suspend fun initialize() {
+    override suspend fun initialize(disableVideoCapture: Boolean) {
         initialized = true
     }
 
@@ -90,7 +93,7 @@ class FakeCameraUseCase(
             }
     }
 
-    override suspend fun takePicture() {
+    override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
@@ -106,8 +109,16 @@ class FakeCameraUseCase(
         }
         numPicturesTaken += 1
     }
-    override suspend fun takePicture(contentResolver: ContentResolver, imageCaptureUri: Uri?) {
-        takePicture()
+
+    @SuppressLint("RestrictedApi")
+    override suspend fun takePicture(
+        onCaptureStarted: (() -> Unit),
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean
+    ): ImageCapture.OutputFileResults {
+        takePicture(onCaptureStarted)
+        return ImageCapture.OutputFileResults(null)
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
@@ -116,7 +127,9 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun startVideoRecording() {
+    override suspend fun startVideoRecording(
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
@@ -136,9 +149,6 @@ class FakeCameraUseCase(
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
-    fun setSurfaceRequest(surfaceRequest: SurfaceRequest) {
-        _surfaceRequest.value = surfaceRequest
-    }
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
@@ -166,19 +176,25 @@ class FakeCameraUseCase(
         }
     }
 
-    override fun tapToFocus(
-        display: Display,
-        surfaceWidth: Int,
-        surfaceHeight: Int,
-        x: Float,
-        y: Float
-    ) {
+    override suspend fun tapToFocus(x: Float, y: Float) {
         TODO("Not yet implemented")
     }
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
+        }
+    }
+
+    override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
+        currentSettings.update { old ->
+            old.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
+        currentSettings.update { old ->
+            old.copy(imageFormat = imageFormat)
         }
     }
 }

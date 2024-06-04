@@ -15,12 +15,11 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -39,6 +38,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,17 +46,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.toUpperCase
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
+
+const val FPS_AUTO = 0
+const val FPS_15 = 15
+const val FPS_30 = 30
+const val FPS_60 = 60
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -65,7 +74,7 @@ import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(modifier: Modifier = Modifier, title: String, navBack: () -> Unit) {
+fun SettingsPageHeader(title: String, navBack: () -> Unit, modifier: Modifier = Modifier) {
     TopAppBar(
         modifier = modifier,
         title = {
@@ -86,7 +95,7 @@ fun SettingsPageHeader(modifier: Modifier = Modifier, title: String, navBack: ()
 }
 
 @Composable
-fun SectionHeader(modifier: Modifier = Modifier, title: String) {
+fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         modifier = modifier
             .padding(start = 20.dp, top = 10.dp),
@@ -98,9 +107,10 @@ fun SectionHeader(modifier: Modifier = Modifier, title: String) {
 
 @Composable
 fun DefaultCameraFacing(
-    modifier: Modifier = Modifier,
-    cameraAppSettings: CameraAppSettings,
-    setDefaultLensFacing: (LensFacing) -> Unit
+    settingValue: Boolean,
+    enabled: Boolean,
+    setDefaultLensFacing: (LensFacing) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     SwitchSettingUI(
         modifier = modifier,
@@ -110,17 +120,16 @@ fun DefaultCameraFacing(
         onSwitchChanged = { on ->
             setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
         },
-        settingValue = cameraAppSettings.cameraLensFacing == LensFacing.FRONT,
-        enabled = cameraAppSettings.isBackCameraAvailable &&
-            cameraAppSettings.isFrontCameraAvailable
+        settingValue = settingValue,
+        enabled = enabled
     )
 }
 
 @Composable
 fun DarkModeSetting(
-    modifier: Modifier = Modifier,
     currentDarkMode: DarkMode,
-    setDarkMode: (DarkMode) -> Unit
+    setDarkMode: (DarkMode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
@@ -155,9 +164,9 @@ fun DarkModeSetting(
 
 @Composable
 fun FlashModeSetting(
-    modifier: Modifier = Modifier,
     currentFlashMode: FlashMode,
-    setFlashMode: (FlashMode) -> Unit
+    setFlashMode: (FlashMode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
@@ -191,8 +200,13 @@ fun FlashModeSetting(
 }
 
 @Composable
-fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectRatio) -> Unit) {
+fun AspectRatioSetting(
+    currentAspectRatio: AspectRatio,
+    setAspectRatio: (AspectRatio) -> Unit,
+    modifier: Modifier = Modifier
+) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
         description = when (currentAspectRatio) {
@@ -223,8 +237,13 @@ fun AspectRatioSetting(currentAspectRatio: AspectRatio, setAspectRatio: (AspectR
 }
 
 @Composable
-fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (CaptureMode) -> Unit) {
+fun CaptureModeSetting(
+    currentCaptureMode: CaptureMode,
+    setCaptureMode: (CaptureMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(R.string.capture_mode_title),
         leadingIcon = null,
         description = when (currentCaptureMode) {
@@ -248,6 +267,56 @@ fun CaptureModeSetting(currentCaptureMode: CaptureMode, setCaptureMode: (Capture
                     selected = currentCaptureMode == CaptureMode.SINGLE_STREAM,
                     onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
+            }
+        }
+    )
+}
+
+@Composable
+fun TargetFpsSetting(
+    currentTargetFps: Int,
+    supportedFps: Set<Int>,
+    setTargetFps: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier,
+        title = stringResource(id = R.string.fps_title),
+        enabled = supportedFps.isNotEmpty(),
+        leadingIcon = null,
+        description = if (supportedFps.isEmpty()) {
+            stringResource(id = R.string.fps_description_unavailable)
+        } else {
+            when (currentTargetFps) {
+                FPS_15 -> stringResource(id = R.string.fps_description, FPS_15)
+                FPS_30 -> stringResource(id = R.string.fps_description, FPS_30)
+                FPS_60 -> stringResource(id = R.string.fps_description, FPS_60)
+                else -> stringResource(
+                    id = R.string.fps_description_auto
+                )
+            }
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                Text(
+                    text = stringResource(id = R.string.fps_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.fps_selector_auto),
+                    selected = currentTargetFps == FPS_AUTO,
+                    onClick = { setTargetFps(FPS_AUTO) }
+                )
+                listOf(FPS_15, FPS_30, FPS_60).forEach { fpsOption ->
+                    SingleChoiceSelector(
+                        text = "%d".format(fpsOption),
+                        selected = currentTargetFps == fpsOption,
+                        onClick = { setTargetFps(fpsOption) },
+                        enabled = supportedFps.contains(fpsOption)
+                    )
+                }
             }
         }
     )
@@ -289,16 +358,35 @@ private fun getStabilizationStringRes(
 fun StabilizationSetting(
     currentPreviewStabilization: Stabilization,
     currentVideoStabilization: Stabilization,
-    supportedStabilizationMode: List<SupportedStabilizationMode>,
+    currentTargetFps: Int,
+    supportedStabilizationMode: Set<SupportedStabilizationMode>,
     setVideoStabilization: (Stabilization) -> Unit,
-    setPreviewStabilization: (Stabilization) -> Unit
+    setPreviewStabilization: (Stabilization) -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    // if the preview stabilization was left ON and the target frame rate was set to 15,
+    // this setting needs to be reset to OFF
+    LaunchedEffect(key1 = currentTargetFps, key2 = currentPreviewStabilization) {
+        if (currentTargetFps == FPS_15 &&
+            currentPreviewStabilization == Stabilization.ON
+        ) {
+            setPreviewStabilization(Stabilization.UNDEFINED)
+        }
+    }
+    // entire setting disabled when no available fps or target fps = 60
+    // stabilization is unsupported >30 fps
     BasicPopupSetting(
+        modifier = modifier,
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
-        enabled = supportedStabilizationMode.isNotEmpty(),
+        enabled = (
+            supportedStabilizationMode.isNotEmpty() &&
+                currentTargetFps != FPS_60
+            ),
         description = if (supportedStabilizationMode.isEmpty()) {
-            stringResource(id = R.string.stabilization_description_unsupported)
+            stringResource(id = R.string.stabilization_description_unsupported_device)
+        } else if (currentTargetFps == FPS_60) {
+            stringResource(id = R.string.stabilization_description_unsupported_fps)
         } else {
             stringResource(
                 id = getStabilizationStringRes(
@@ -309,13 +397,26 @@ fun StabilizationSetting(
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(id = R.string.lens_stabilization_disclaimer),
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
 
-                // on selector
+                // on (preview) selector
+                // disabled if target fps != (30 or off)
+                // TODO(b/328223562): device always resolves to 30fps when using preview stabilization
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_on),
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                    enabled = supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                    enabled =
+                    (
+                        when (currentTargetFps) {
+                            FPS_AUTO, FPS_30 -> true
+                            else -> false
+                        }
+                        ) &&
+                        supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
                         (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
@@ -325,14 +426,16 @@ fun StabilizationSetting(
                 )
 
                 // high quality selector
+                // disabled if target fps = 60 (see VideoCapabilities.isStabilizationSupported)
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_high_quality),
                     secondaryText = stringResource(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
-                    enabled = supportedStabilizationMode.contains(
-                        SupportedStabilizationMode.HIGH_QUALITY
-                    ),
+                    enabled = (currentTargetFps != FPS_60) &&
+                        supportedStabilizationMode.contains(
+                            SupportedStabilizationMode.HIGH_QUALITY
+                        ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
                         (currentVideoStabilization == Stabilization.ON),
@@ -357,6 +460,23 @@ fun StabilizationSetting(
     )
 }
 
+@Composable
+fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
+    SettingUI(
+        modifier = modifier,
+        title = stringResource(id = R.string.version_info_title),
+        leadingIcon = null
+    ) {
+        val versionString = versionName +
+            if (buildType.isNotEmpty()) {
+                "/${buildType.toUpperCase(Locale.current)}"
+            } else {
+                ""
+            }
+        Text(text = versionString)
+    }
+}
+
 /*
  * Setting UI sub-Components
  * small and whimsical :)
@@ -367,12 +487,12 @@ fun StabilizationSetting(
 
 @Composable
 fun BasicPopupSetting(
-    modifier: Modifier = Modifier,
     title: String,
     description: String?,
-    enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)?,
-    popupContents: @Composable () -> Unit
+    popupContents: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
@@ -406,13 +526,13 @@ fun BasicPopupSetting(
  */
 @Composable
 fun SwitchSettingUI(
-    modifier: Modifier = Modifier,
     title: String,
     description: String?,
     leadingIcon: @Composable (() -> Unit)?,
     onSwitchChanged: (Boolean) -> Unit,
     settingValue: Boolean,
-    enabled: Boolean
+    enabled: Boolean,
+    modifier: Modifier = Modifier
 ) {
     SettingUI(
         modifier = modifier.toggleable(
@@ -442,11 +562,11 @@ fun SwitchSettingUI(
  */
 @Composable
 fun SettingUI(
-    modifier: Modifier = Modifier,
     title: String,
+    leadingIcon: @Composable (() -> Unit)?,
+    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     description: String? = null,
-    leadingIcon: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?
 ) {
     ListItem(
@@ -480,11 +600,11 @@ fun SettingUI(
  */
 @Composable
 fun SingleChoiceSelector(
-    modifier: Modifier = Modifier,
     text: String,
-    secondaryText: String? = null,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    secondaryText: String? = null,
     enabled: Boolean = true
 ) {
     Row(
@@ -511,5 +631,14 @@ fun SingleChoiceSelector(
             },
             trailingContent = null
         )
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_VersionInfo() {
+    SettingsPreviewTheme {
+        VersionInfo(versionName = "0.1.0", buildType = "debug")
     }
 }

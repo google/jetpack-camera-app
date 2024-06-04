@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera
 
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -28,14 +27,10 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
-import com.google.jetpackcamera.feature.preview.ui.QUICK_SETTINGS_BUTTON
-import com.google.jetpackcamera.feature.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_back_camera_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_dropdown_closed_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_dropdown_open_description
-import com.google.jetpackcamera.quicksettings.R.string.quick_settings_front_camera_description
 import com.google.jetpackcamera.settings.model.LensFacing
 import org.junit.Rule
 import org.junit.Test
@@ -44,8 +39,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SwitchCameraTest {
     @get:Rule
-    val cameraPermissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -107,7 +102,7 @@ class SwitchCameraTest {
     @Test
     fun canFlipCamera_fromQuickSettings() = runFlipCameraTest(composeTestRule) {
         // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BUTTON)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
             .assertExists()
             .performClick()
 
@@ -151,43 +146,4 @@ inline fun runFlipCameraTest(
     }
 
     block()
-}
-
-private fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(quick_settings_dropdown_closed_description).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromQuickSettings = true
-        }
-    }
-
-    onNodeWithContentDescription(quick_settings_dropdown_open_description).assertExists(
-        "LensFacing can only be retrieved from PreviewScreen or QuickSettings screen"
-    )
-
-    try {
-        return onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
-            "Flip camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].any { description ->
-                when (description) {
-                    getResString(quick_settings_front_camera_description) ->
-                        return@let LensFacing.FRONT
-
-                    getResString(quick_settings_back_camera_description) ->
-                        return@let LensFacing.BACK
-
-                    else -> false
-                }
-            }
-            throw AssertionError("Unable to determine lens facing from quick settings")
-        }
-    } finally {
-        if (needReturnFromQuickSettings) {
-            onNodeWithContentDescription(quick_settings_dropdown_open_description)
-                .assertExists()
-                .performClick()
-        }
-    }
 }

@@ -16,9 +16,14 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 const val CAPTURE_BUTTON = "CaptureButton"
-const val SETTINGS_BUTTON = "SettingsButton"
-const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
+const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
+const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
+const val PREVIEW_DISPLAY = "PreviewDisplay"
+const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
+const val SETTINGS_BUTTON = "SettingsButton"
+
 const val QUICK_SETTINGS_BUTTON = "QuickSettingDropDown"
 const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSetAspectRatio"
 const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSetAspectRatio1:1"
