@@ -30,7 +30,13 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
+import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.onNodeWithText
+import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +78,7 @@ class NavigationTest {
 
         // Assert we do not see the settings screen based on the title
         composeTestRule.onNodeWithText(
-            com.google.jetpackcamera.settings.R.string.settings_title
+            R.string.settings_title
         ).assertDoesNotExist()
     }
 
