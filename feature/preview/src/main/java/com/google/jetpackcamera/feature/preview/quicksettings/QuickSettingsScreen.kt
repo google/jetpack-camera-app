@@ -237,7 +237,7 @@ private fun ExpandedQuickSettingsUi(
                                         l: LowLightBoost ->
                                     onLowLightBoostClick(l)
                                 },
-                                selectedLowLightBoost = currentCameraSettings.lowLightBoost,
+                                selectedLowLightBoost = currentCameraSettings.lowLightBoost
                             )
                         }
                     }
