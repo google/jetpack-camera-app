@@ -76,8 +76,3 @@ class VideoAudioTest {
         }
     }
 }
-
-// todo assert device has audio settings enabled
-// todo mute while recording
-// todo unmute while recording
-// todo start recording muted
