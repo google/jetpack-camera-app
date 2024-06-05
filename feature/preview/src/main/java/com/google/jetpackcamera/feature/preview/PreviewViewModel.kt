@@ -163,13 +163,7 @@ class PreviewViewModel @AssistedInject constructor(
             cameraUseCase.setLensFacing(newLensFacing)
         }
     }
-    fun toggleAudioMuted() {
-        setAudioMuted(
-            !(previewUiState.value as PreviewUiState.Ready)
-                .currentCameraSettings
-                .audioMuted
-        )
-    }
+
     fun setAudioMuted(shouldMuteAudio: Boolean) {
         viewModelScope.launch {
             cameraUseCase.setAudioMuted(shouldMuteAudio)

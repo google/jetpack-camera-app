@@ -459,7 +459,6 @@ constructor(
         // if the video recording isnt started with audio enabled, you will not be able to unmute it
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
-        // todo rename methods and variables to be more precise to account for difference between muting and disabling audio
         val audioEnabled = (
             checkSelfPermission(
                 this.application.baseContext,
@@ -524,7 +523,7 @@ constructor(
                         }
                     }
                 }
-        recording?.mute(currentSettings.value!!.audioMuted)
+        currentSettings.value?.audioMuted?.let { recording?.mute(it) }
     }
 
     override fun stopVideoRecording() {
