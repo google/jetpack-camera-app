@@ -34,7 +34,6 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
-import androidx.camera.core.AspectRatio.RATIO_DEFAULT
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -814,7 +813,7 @@ constructor(
         return when (aspectRatio) {
             AspectRatio.THREE_FOUR -> RATIO_4_3
             AspectRatio.NINE_SIXTEEN -> RATIO_16_9
-            else -> RATIO_DEFAULT
+            else -> RATIO_4_3
         }
     }
 
@@ -857,7 +856,7 @@ constructor(
         val aspectRatioStrategy = when (aspectRatio) {
             AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
             AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
-            else -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            else -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
         }
         return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
