@@ -31,6 +31,7 @@ data class CameraAppSettings(
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
+    val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural
 )
 

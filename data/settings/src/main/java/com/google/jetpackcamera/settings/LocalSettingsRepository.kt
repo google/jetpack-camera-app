@@ -29,6 +29,8 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
@@ -73,7 +75,8 @@ class LocalSettingsRepository @Inject constructor(
                     CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
                     else -> CaptureMode.MULTI_STREAM
                 },
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus)
+                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
+                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus)
             )
         }
 
@@ -177,6 +180,14 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setDynamicRangeStatus(dynamicRange.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setImageFormatStatus(imageFormat.toProto())
                 .build()
         }
     }

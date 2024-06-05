@@ -101,7 +101,7 @@ fun QuickSetHdr(
     val enum =
         when (selectedDynamicRange) {
             DynamicRange.SDR -> CameraDynamicRange.SDR
-            DynamicRange.HLG10 -> CameraDynamicRange.HLG10
+            DynamicRange.HLG10 -> CameraDynamicRange.HDR
         }
     QuickSettingUiItem(
         modifier = modifier,

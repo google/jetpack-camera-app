@@ -18,7 +18,6 @@ package com.google.jetpackcamera.feature.preview
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
-import android.view.Display
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +33,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -64,7 +64,6 @@ class PreviewViewModel @AssistedInject constructor(
     @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
-
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -154,7 +153,6 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
-            // apply to cameraUseCase
             cameraUseCase.setCaptureMode(captureMode)
         }
     }
@@ -342,6 +340,12 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun setImageFormat(imageFormat: ImageOutputFormat) {
+        viewModelScope.launch {
+            cameraUseCase.setImageFormat(imageFormat)
+        }
+    }
+
     // modify ui values
     fun toggleQuickSettings() {
         viewModelScope.launch {
@@ -353,14 +357,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun tapToFocus(display: Display, surfaceWidth: Int, surfaceHeight: Int, x: Float, y: Float) {
-        cameraUseCase.tapToFocus(
-            display = display,
-            surfaceWidth = surfaceWidth,
-            surfaceHeight = surfaceHeight,
-            x = x,
-            y = y
-        )
+    fun tapToFocus(x: Float, y: Float) {
+        Log.d(TAG, "tapToFocus")
+        viewModelScope.launch {
+            cameraUseCase.tapToFocus(x, y)
+        }
     }
 
     /**

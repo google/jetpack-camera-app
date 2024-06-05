@@ -17,15 +17,18 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.pm.ActivityInfo
 import android.os.Build
+import android.util.Log
 import android.view.Surface
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
+import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.camera.viewfinder.surface.TransformationInfo
 import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -36,6 +39,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.CoroutineStart
@@ -51,6 +55,8 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+
+private const val TAG = "CameraXViewfinder"
 
 /**
  * A composable viewfinder that adapts CameraX's [Preview.SurfaceProvider] to [Viewfinder]
@@ -68,7 +74,8 @@ fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
     modifier: Modifier = Modifier,
     implementationMode: ImplementationMode = ImplementationMode.EXTERNAL,
-    onRequestWindowColorMode: (Int) -> Unit = {}
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    onTap: (x: Float, y: Float) -> Unit = { _, _ -> }
 ) {
     val currentImplementationMode by rememberUpdatedState(implementationMode)
     val currentOnRequestWindowColorMode by rememberUpdatedState(onRequestWindowColorMode)
@@ -156,6 +163,8 @@ fun CameraXViewfinder(
         }
     }
 
+    val coordinateTransformer = MutableCoordinateTransformer()
+
     viewfinderArgs?.let { args ->
         val displayRotation = key(LocalConfiguration.current) {
             surfaceRotationToRotationDegrees(LocalView.current.display.rotation)
@@ -167,7 +176,16 @@ fun CameraXViewfinder(
             transformationInfo = args.transformationInfo.copy(
                 sourceRotation = (args.transformationInfo.sourceRotation + displayRotation) % 360
             ),
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize().pointerInput(Unit) {
+                detectTapGestures {
+                    with(coordinateTransformer) {
+                        val tapOffset = it.transform()
+                        Log.d(TAG, "onTap: $tapOffset")
+                        onTap(tapOffset.x, tapOffset.y)
+                    }
+                }
+            },
+            coordinateTransformer = coordinateTransformer
         )
     }
 }
