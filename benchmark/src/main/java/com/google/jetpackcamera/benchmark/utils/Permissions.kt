@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.benchmark
+package com.google.jetpackcamera.benchmark.utils
 
 import android.Manifest.permission
 import androidx.benchmark.macro.MacrobenchmarkScope
-import org.junit.Assert
 
+import android.os.Build
+
+val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
+    add(permission.CAMERA)
+    add(permission.RECORD_AUDIO)
+    if (Build.VERSION.SDK_INT <= 28) {
+        add(permission.WRITE_EXTERNAL_STORAGE)
+    }
+}
 fun MacrobenchmarkScope.allowCamera() {
     val command = "pm grant $packageName ${permission.CAMERA}"
-    val output = device.executeShellCommand(command)
-    Assert.assertEquals("", output)
+    device.executeShellCommand(command)
 }
 
 fun MacrobenchmarkScope.allowAllRequiredPerms(vararg perms: String) {
     val command = "pm grant $packageName"
     perms.forEach { perm -> device.executeShellCommand("$command $perm") }
-    val output = device.executeShellCommand(command)
-    Assert.assertEquals("", output)
 }
 

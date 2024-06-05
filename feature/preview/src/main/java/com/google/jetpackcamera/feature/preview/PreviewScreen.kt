@@ -49,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
+import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_COOKIE
 import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_TRACE
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
@@ -77,8 +78,10 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(previewMode) }
 ) {
+    // start trace between preview screen starting and the earliest possible completed capture
+    //todo: only run traces on a specific build version or flavor(?)
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-        Trace.beginAsyncSection(FIRST_FRAME_TRACE, 12345)
+        Trace.beginAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
     }
     Log.d(TAG, "PreviewScreen")
 

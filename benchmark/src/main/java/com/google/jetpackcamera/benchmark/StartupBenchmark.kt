@@ -20,6 +20,10 @@ import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.jetpackcamera.benchmark.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.benchmark.utils.DEFAULT_TEST_ITERATIONS
+import com.google.jetpackcamera.benchmark.utils.JCA_PACKAGE_NAME
+import com.google.jetpackcamera.benchmark.utils.allowAllRequiredPerms
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,33 +38,33 @@ class StartupBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun startupColdWithoutCameraPermission() {
+    fun startupColdWithPermissionRequest() {
         benchmarkStartup()
     }
 
     @Test
-    fun startupCold() {
+    fun startupColdNoPermissionRequest() {
         benchmarkStartup(
             setupBlock =
-            { allowCamera() }
+            { allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray()) }
         )
     }
 
     @Test
-    fun startupWarm() {
+    fun startupWarmNoPermissionRequest() {
         benchmarkStartup(
             startupMode = StartupMode.WARM,
             setupBlock =
-            { allowCamera() }
+            { allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray()) }
         )
     }
 
     @Test
-    fun startupHot() {
+    fun startupHotNoPermissionRequest() {
         benchmarkStartup(
             startupMode = StartupMode.HOT,
             setupBlock =
-            { allowCamera() }
+            { allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray()) }
         )
     }
 

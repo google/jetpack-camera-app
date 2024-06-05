@@ -28,6 +28,7 @@ const val QUICK_SETTINGS_BUTTON = "QuickSettingDropDown"
 const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSetAspectRatio"
 const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSetAspectRatio1:1"
 const val FIRST_FRAME_TRACE = "FirstFrameTrace"
+const val FIRST_FRAME_COOKIE = 12345
 const val PREVIEW_TOGGLE_CAPTURE_MODE = "PreviewToggleCaptureMode"
 
 // toast test descriptions

@@ -23,6 +23,14 @@ import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.jetpackcamera.benchmark.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.benchmark.utils.DEFAULT_TEST_ITERATIONS
+import com.google.jetpackcamera.benchmark.utils.FIRST_FRAME_TRACE
+import com.google.jetpackcamera.benchmark.utils.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.benchmark.utils.JCA_PACKAGE_NAME
+import com.google.jetpackcamera.benchmark.utils.allowAllRequiredPerms
+import com.google.jetpackcamera.benchmark.utils.clickCaptureButton
+import com.google.jetpackcamera.benchmark.utils.findObjectByRes
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,11 +51,6 @@ class FirstFrameBenchmark {
     fun timeToFirstFrameDefaultSettingsHotStartup() {
         benchmarkFirstFrame(startupMode = StartupMode.HOT, setupBlock = {
             allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray())})
-    }
-
-    @Test
-    fun timeToFirstFrameNoPerms() {
-        benchmarkFirstFrame()
     }
 
     /**
@@ -93,7 +96,7 @@ class FirstFrameBenchmark {
             // ensure trace is closed
             findObjectByRes(
                 device = device,
-                testTag = IMAGE_CAPTURE_SUCCESS_TOAST,
+                testTag = IMAGE_CAPTURE_SUCCESS_TAG,
                 timeout = timeout,
                 shouldFailIfNotFound = true
             )

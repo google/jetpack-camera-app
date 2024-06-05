@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.benchmark
+package com.google.jetpackcamera.benchmark.utils
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
@@ -29,7 +29,7 @@ const val CAPTURE_BUTTON = "CaptureButton"
 const val QUICK_SETTINGS_DROP_DOWN_BUTTON = "QuickSettingsDropDown"
 const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlashButton"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
-const val IMAGE_CAPTURE_SUCCESS_TOAST = "ImageCaptureSuccessToast"
+const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
 
 // test descriptions
 const val QUICK_SETTINGS_FLASH_OFF = "QUICK SETTINGS FLASH IS OFF"

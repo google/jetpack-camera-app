@@ -114,6 +114,7 @@ const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 private const val FIRST_FRAME_TRACE = "FirstFrameTrace"
+private const val FIRST_FRAME_COOKIE = 12345
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -132,9 +133,11 @@ constructor(
 
     private lateinit var imageCaptureUseCase: ImageCapture
 
+    /**
+     * Applies a CaptureCallback to the provided image capture builder
+     */
     @OptIn(ExperimentalCamera2Interop::class)
-    private fun buildImageCaptureUseCase(): ImageCapture {
-        val imageCaptureBuilder = ImageCapture.Builder()
+    private fun onCaptureCompletedCallback(imageCaptureBuilder:ImageCapture.Builder)  {
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
@@ -144,7 +147,7 @@ constructor(
                 super.onCaptureCompleted(session, request, result)
                 try {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        Trace.endAsyncSection(FIRST_FRAME_TRACE, 12345)
+                        Trace.endAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
                     }
                 } catch (_: Exception) {}
             }
@@ -155,8 +158,6 @@ constructor(
 
         // Attach the Camera2 CaptureCallback
         previewExtender.setSessionCaptureCallback(captureCallback)
-
-        return imageCaptureBuilder.build()
     }
 
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
@@ -239,12 +240,14 @@ constructor(
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
 
-        imageCaptureUseCase = ImageCapture.Builder()
-            .setResolutionSelector(
-                getResolutionSelector(
-                    settingsRepository.defaultCameraAppSettings.first().aspectRatio
-                )
-            ).build()
+        val imageCaptureBuilder =  ImageCapture.Builder()
+        .setResolutionSelector(
+            getResolutionSelector(
+                settingsRepository.defaultCameraAppSettings.first().aspectRatio
+            )
+        )
+        onCaptureCompletedCallback(imageCaptureBuilder)
+        imageCaptureUseCase = imageCaptureBuilder.build()
     }
 
     /**
@@ -773,6 +776,7 @@ constructor(
     @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
         val builder = ImageCapture.Builder()
+        onCaptureCompletedCallback(builder)
         builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
         if (sessionSettings.dynamicRange != DynamicRange.SDR &&
             sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
