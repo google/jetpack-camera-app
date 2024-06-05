@@ -16,9 +16,8 @@
 package com.google.jetpackcamera.benchmark.utils
 
 import android.Manifest.permission
-import androidx.benchmark.macro.MacrobenchmarkScope
-
 import android.os.Build
+import androidx.benchmark.macro.MacrobenchmarkScope
 
 val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(permission.CAMERA)
@@ -36,4 +35,3 @@ fun MacrobenchmarkScope.allowAllRequiredPerms(vararg perms: String) {
     val command = "pm grant $packageName"
     perms.forEach { perm -> device.executeShellCommand("$command $perm") }
 }
-

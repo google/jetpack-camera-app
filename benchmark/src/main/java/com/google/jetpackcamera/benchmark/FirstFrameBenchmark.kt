@@ -50,7 +50,8 @@ class FirstFrameBenchmark {
     @Test
     fun timeToFirstFrameDefaultSettingsHotStartup() {
         benchmarkFirstFrame(startupMode = StartupMode.HOT, setupBlock = {
-            allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray())})
+            allowAllRequiredPerms(perms = APP_REQUIRED_PERMISSIONS.toTypedArray())
+        })
     }
 
     /**

@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
         // start trace between app starting and the earliest possible completed capture
-        //todo: only run traces on a specific build version or flavor(?)
+        // todo: only run traces on a specific build version or flavor(?)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Trace.beginAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
         }

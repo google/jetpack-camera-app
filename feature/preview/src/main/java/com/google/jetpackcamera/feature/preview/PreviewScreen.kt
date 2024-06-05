@@ -79,7 +79,7 @@ fun PreviewScreen(
         { factory -> factory.create(previewMode) }
 ) {
     // start trace between preview screen starting and the earliest possible completed capture
-    //todo: only run traces on a specific build version or flavor(?)
+    // todo: only run traces on a specific build version or flavor(?)
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
         Trace.beginAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
     }
