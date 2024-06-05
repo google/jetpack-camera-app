@@ -101,13 +101,18 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 
 @Composable
-fun AmplitudeVisualizer(modifier: Modifier = Modifier, size: Int = 100, audioAmplitude: Double) {
+fun AmplitudeVisualizer(
+    modifier: Modifier = Modifier,
+    size: Int = 100,
+    audioAmplitude: Double,
+    onToggleMute: () -> Unit
+) {
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
         targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier) {
+    Box(modifier = modifier.clickable { onToggleMute() }) {
         // animated circle
         Canvas(
             modifier = Modifier
