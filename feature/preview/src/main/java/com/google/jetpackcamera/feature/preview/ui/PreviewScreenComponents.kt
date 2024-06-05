@@ -48,14 +48,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
-import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -352,7 +352,7 @@ fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifie
             Icon(
                 imageVector = Icons.Outlined.Nightlight,
                 contentDescription =
-                    stringResource(id = R.string.quick_settings_lowlightboost_enabled),
+                stringResource(id = R.string.quick_settings_lowlightboost_enabled),
                 modifier = modifier.alpha(0.5f)
             )
         }
