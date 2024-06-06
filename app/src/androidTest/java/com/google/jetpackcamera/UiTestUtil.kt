@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -39,6 +40,7 @@ import org.junit.runners.model.Statement
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val TAG = "UiTestUtil"
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
@@ -95,20 +97,21 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
  * @param targetTestNames the names of the tests that this rule will apply to
  */
 class IndividualTestGrantPermissionRule(
-    private vararg val permissions: String,
-    private val targetTestNames: List<String>
-) : TestRule {
+    private val permissions: Array<String>,
+    private val targetTestNames: Array<String>
+) :
+    TestRule {
+    private lateinit var wrappedRule: GrantPermissionRule
 
     override fun apply(base: Statement, description: Description): Statement {
-        return object : Statement() {
-            override fun evaluate() {
-                if (targetTestNames.contains(description.methodName)) {
-                    GrantPermissionRule.grant(*permissions)
-                } else {
-                    base.evaluate() // Run the test without granting permissions
-                }
+        for (targetName in targetTestNames) {
+            if (description.methodName == targetName) {
+                wrappedRule = GrantPermissionRule.grant(*permissions)
+                return wrappedRule.apply(base, description)
             }
         }
+        // If no match, return the base statement without granting permissions
+        return base
     }
 }
 
@@ -116,7 +119,15 @@ class IndividualTestGrantPermissionRule(
 @SdkSuppress(minSdkVersion = 30)
 fun askEveryTimeDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 30) {
-        val askPermission = findObjectByText(uiDevice = uiDevice, text = "Only this time")
+        Log.d(TAG, "Searching for Allow Once Button...")
+
+        val askPermission = findObjectById(
+            uiDevice = uiDevice,
+            resId = "com.android.permissioncontroller:id/permission_allow_one_time_button"
+        )
+
+        Log.d(TAG, "Clicking Allow Once Button")
+
         askPermission!!.click()
     }
 }
@@ -126,16 +137,19 @@ fun askEveryTimeDialog(uiDevice: UiDevice) {
  */
 fun grantPermissionDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 23) {
-        val allowPermission = findObjectByText(
+        Log.d(TAG, "Searching for Allow Button...")
+
+        val allowPermission = findObjectById(
             uiDevice = uiDevice,
-            text = when {
-                Build.VERSION.SDK_INT == 23 -> "Allow"
-                Build.VERSION.SDK_INT <= 28 -> "ALLOW"
-                Build.VERSION.SDK_INT == 29 -> "Allow only while using the app"
-                else -> "While using the app"
+            resId = when {
+                Build.VERSION.SDK_INT <= 29 ->
+                    "com.android.packageinstaller:id/permission_allow_button"
+                else -> "com.android.permissioncontroller:id/permission_allow_button"
             }
         )
-        allowPermission?.click()
+        Log.d(TAG, "Clicking Allow Button")
+
+        allowPermission!!.click()
     }
 }
 
@@ -144,21 +158,40 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
  */
 fun denyPermissionDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 23) {
-        println("sdk version ${Build.VERSION.SDK_INT}")
-        val denyPermission = findObjectByText(
+        Log.d(TAG, "Searching for Deny Button...")
+        val denyPermission = findObjectById(
             uiDevice = uiDevice,
-            text = when {
-                // todo fix this to be "Don't allow"... lol
-                // for some reason.... cannot find when the string has an apostrophe...
-                // i tried using \'...
 
-                Build.VERSION.SDK_INT >= 30 -> "Don"
-                Build.VERSION.SDK_INT in 24..29 -> "DENY"
-                else -> "Deny"
+            resId = when {
+                Build.VERSION.SDK_INT <= 29 ->
+                    "com.android.packageinstaller:id/permission_deny_button"
+                else -> "com.android.permissioncontroller:id/permission_deny_button"
             }
         )
+        Log.d(TAG, "Clicking Deny Button")
 
         denyPermission!!.click()
+    }
+}
+
+/**
+ * Finds a system button by its resource ID.
+ * fails if not found
+ */
+fun findObjectById(
+    uiDevice: UiDevice,
+    resId: String,
+    timeout: Long = 10000,
+    shouldFailIfNotFound: Boolean = true
+): UiObject2? {
+    val selector = By.res(resId)
+    return if (!uiDevice.wait(Until.hasObject(selector), timeout)) {
+        if (shouldFailIfNotFound) {
+            fail("Could not find object with RESOURCE ID: $resId")
+        }
+        null
+    } else {
+        uiDevice.findObject(selector)
     }
 }
 
@@ -175,7 +208,7 @@ fun findObjectByText(
     val selector = By.textContains(text)
     return if (!uiDevice.wait(Until.hasObject(selector), timeout)) {
         if (shouldFailIfNotFound) {
-            fail("Could not find object with text $text")
+            fail("Could not find object with TEXT: $text")
         }
         null
     } else {

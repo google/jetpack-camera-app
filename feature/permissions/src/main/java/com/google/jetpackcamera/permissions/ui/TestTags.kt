@@ -15,6 +15,6 @@
  */
 package com.google.jetpackcamera.permissions.ui
 
-const val REQUEST_PERMISSION_BUTTON_TAG = "RequestPermissionTag"
-const val CAMERA_PERMISSION_TAG = "CameraPermissionTag"
-const val AUDIO_RECORD_PERMISSION_TAG = "RecordAudioPermissionTag"
+const val REQUEST_PERMISSION_BUTTON = "RequestPermissionButton"
+const val CAMERA_PERMISSION_BUTTON = "CameraPermissionButton"
+const val AUDIO_RECORD_PERMISSION_BUTTON = "RecordAudioPermissionButton"

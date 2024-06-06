@@ -72,7 +72,7 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
-            execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
 
         managedDevices {
             localDevices {
@@ -85,14 +85,6 @@ android {
                     apiLevel = 34
                     systemImageSource = "aosp_atd"
                 }
-            }
-        }
-
-        unitTests.all {
-            it.testLogging {
-                events("failed", "standardOut", "standardError") // Log events
-                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL // Show full stack traces
-                showStackTraces = true
             }
         }
     }

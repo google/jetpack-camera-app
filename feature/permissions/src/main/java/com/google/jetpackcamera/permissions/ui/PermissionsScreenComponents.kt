@@ -137,7 +137,7 @@ fun PermissionTemplate(
             // permission button section
             PermissionButtonSection(
                 modifier = Modifier
-                    .testTag(REQUEST_PERMISSION_BUTTON_TAG)
+                    .testTag(REQUEST_PERMISSION_BUTTON)
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),
