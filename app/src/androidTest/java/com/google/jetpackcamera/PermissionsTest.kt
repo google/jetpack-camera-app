@@ -27,6 +27,14 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.permissions.ui.AUDIO_RECORD_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IndividualTestGrantPermissionRule
+import com.google.jetpackcamera.utils.askEveryTimeDialog
+import com.google.jetpackcamera.utils.denyPermissionDialog
+import com.google.jetpackcamera.utils.grantPermissionDialog
+import com.google.jetpackcamera.utils.onNodeWithText
+import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

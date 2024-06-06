@@ -23,3 +23,5 @@ const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsuppor
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
 const val SETTINGS_BUTTON = "SettingsButton"
+const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
+const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"

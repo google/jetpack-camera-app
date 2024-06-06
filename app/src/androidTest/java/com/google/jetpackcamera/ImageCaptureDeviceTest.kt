@@ -36,6 +36,7 @@ import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import java.io.File
 import java.net.URLConnection
 import kotlinx.coroutines.test.runTest

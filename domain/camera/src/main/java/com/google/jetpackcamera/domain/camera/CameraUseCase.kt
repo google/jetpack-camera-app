@@ -94,6 +94,8 @@ interface CameraUseCase {
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
+    suspend fun setAudioMuted(isAudioMuted: Boolean)
+
     /**
      * Represents the events required for screen flash.
      */
