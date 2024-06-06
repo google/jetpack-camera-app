@@ -20,11 +20,16 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.AspectRatio.RATIO_DEFAULT
@@ -56,6 +61,7 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.core.os.BuildCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -183,6 +189,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                lowLightBoostSupport = getLowLightBoostDeviceSupport(),
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -212,6 +219,19 @@ constructor(
                 )
             ).build()
     }
+
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
+    @OptIn(BuildCompat.PrereleaseSdkCheck::class)
+    private fun getLowLightBoostDeviceSupport() =
+        when(BuildCompat.isAtLeastV()) {
+            true -> cameraProvider.availableCameraInfos.map { cameraInfo ->
+                Camera2CameraInfo
+                    .from(cameraInfo)
+                    .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+                    ?.contains(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+            }.any()
+            false -> false
+        }
 
     /**
      * Returns the union of supported stabilization modes for a device's cameras
