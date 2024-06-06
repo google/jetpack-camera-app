@@ -258,7 +258,6 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         )
         checkGlErrorOrThrow("glVertexAttribPointer")
 
-
         // Connect texBuffer to "aTextureCoord".
         val coordsPerTex = 2
         val texStride = 0
