@@ -389,8 +389,6 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
     }
 
     companion object {
-        private const val EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR = 0x00000001
-
         private const val SIZEOF_FLOAT = 4
 
         private val VERTEX_BUF = floatArrayOf(
