@@ -185,6 +185,9 @@ private fun ControlsTop(
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
                 previewStabilization = currentCameraSettings.previewStabilization
             )
+            LowLightBoostIcon(
+                lowLightBoost = currentCameraSettings.lowLightBoost
+            )
         }
     }
 }
