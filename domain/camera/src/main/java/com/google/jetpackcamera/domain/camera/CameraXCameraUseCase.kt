@@ -20,8 +20,13 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -29,6 +34,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
@@ -712,6 +718,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>,
         effect: CameraEffect? = null
     ): UseCaseGroup {
+        Log.d(TAG, "createUseCaseGroup")
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
         imageCaptureUseCase = createImageUseCase(sessionSettings)
         if (!disableVideoCapture) {
@@ -780,9 +787,25 @@ constructor(
     }
 
     override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        currentSettings.update { old ->
-            old?.copy(lowLightBoost = lowLightBoost)
+        when (lowLightBoost) {
+            LowLightBoost.DISABLED -> {
+                currentSettings.update { old ->
+                    old?.copy(
+                        lowLightBoost = lowLightBoost,
+                        captureMode = CaptureMode.MULTI_STREAM,
+                        flashMode = FlashMode.AUTO
+                    )
+                }
+            }
+            LowLightBoost.ENABLED -> currentSettings.update { old ->
+                old?.copy(
+                    lowLightBoost = lowLightBoost,
+                    captureMode = CaptureMode.SINGLE_STREAM,
+                    flashMode = FlashMode.OFF,
+                )
+            }
         }
+
     }
 
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
@@ -840,10 +863,12 @@ constructor(
                 )
     }
 
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun createPreviewUseCase(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
+        Log.d(TAG, "createPreviewUseCase")
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
@@ -853,6 +878,30 @@ constructor(
         previewUseCaseBuilder.setResolutionSelector(
             getResolutionSelector(sessionSettings.aspectRatio)
         )
+
+        if (currentSettings.value?.lowLightBoost == LowLightBoost.ENABLED) {
+            Log.d(TAG, "Adding Control AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+            val camera2Interop = Camera2Interop.Extender(previewUseCaseBuilder)
+            if (Build.VERSION.SDK_INT >= 35) {
+                camera2Interop.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+                camera2Interop.setSessionCaptureCallback( object : CaptureCallback() {
+                    override fun onCaptureCompleted(
+                        session: CameraCaptureSession,
+                        request: CaptureRequest,
+                        result: TotalCaptureResult
+                    ) {
+                        super.onCaptureCompleted(session, request, result)
+                        val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
+                        if (boostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE) {
+                            Log.d(TAG, "LLB Active")
+                        } else {
+                            Log.d(TAG, "LLB Inactive")
+                        }
+                    }
+                })
+            }
+        }
 
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->
