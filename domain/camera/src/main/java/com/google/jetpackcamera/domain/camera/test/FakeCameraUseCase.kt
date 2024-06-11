@@ -194,7 +194,7 @@ class FakeCameraUseCase(
         }
     }
 
-    override fun setDisplayRotation(deviceRotation: DeviceRotation) {
+    override fun setDeviceRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
         }

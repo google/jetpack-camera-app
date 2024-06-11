@@ -415,7 +415,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
-            cameraUseCase.setDisplayRotation(deviceRotation)
+            cameraUseCase.setDeviceRotation(deviceRotation)
         }
     }
 

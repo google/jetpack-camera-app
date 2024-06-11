@@ -94,7 +94,7 @@ interface CameraUseCase {
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
-    fun setDisplayRotation(deviceRotation: DeviceRotation)
+    fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
 
