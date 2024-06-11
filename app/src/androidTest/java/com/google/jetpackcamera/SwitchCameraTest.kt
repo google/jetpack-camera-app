@@ -32,6 +32,10 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.getCurrentLensFacing
+import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

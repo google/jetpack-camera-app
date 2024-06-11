@@ -29,9 +29,11 @@ data class CameraAppSettings(
     val videoCaptureStabilization: Stabilization = Stabilization.UNDEFINED,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
+    val lowLightBoost: LowLightBoost = LowLightBoost.DISABLED,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
+    val audioMuted: Boolean = false,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural
 )
 

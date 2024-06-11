@@ -86,6 +86,7 @@ fun CameraControlsOverlay(
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onMuteAudio: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -137,6 +138,7 @@ fun CameraControlsOverlay(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
+                onToggleAudioMuted = onMuteAudio,
                 onChangeImageFormat = onChangeImageFormat,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
@@ -183,6 +185,9 @@ private fun ControlsTop(
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
                 previewStabilization = currentCameraSettings.previewStabilization
             )
+            LowLightBoostIcon(
+                lowLightBoost = currentCameraSettings.lowLightBoost
+            )
         }
     }
 }
@@ -207,6 +212,7 @@ private fun ControlsBottom(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
+    onToggleAudioMuted: () -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
@@ -248,6 +254,7 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
+                        onToggleMute = onToggleAudioMuted,
                         size = 75,
                         audioAmplitude = audioAmplitude
                     )

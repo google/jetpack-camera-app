@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.utils
 
 import android.app.Activity
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -22,6 +22,7 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
+import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing

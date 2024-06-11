@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.utils
 
-const val CAPTURE_BUTTON = "CaptureButton"
-const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
-const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
-const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
-const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
-const val PREVIEW_DISPLAY = "PreviewDisplay"
-const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
-const val SETTINGS_BUTTON = "SettingsButton"
-const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
-const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
+import android.os.Build
+
+val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
+    add(android.Manifest.permission.CAMERA)
+    add(android.Manifest.permission.RECORD_AUDIO)
+    if (Build.VERSION.SDK_INT <= 28) {
+        add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    }
+}

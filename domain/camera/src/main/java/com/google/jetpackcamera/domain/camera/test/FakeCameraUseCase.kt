@@ -29,6 +29,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -202,6 +203,18 @@ class FakeCameraUseCase(
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old.copy(imageFormat = imageFormat)
+        }
+    }
+
+    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+        currentSettings.update { old ->
+            old.copy(lowLightBoost = lowLightBoost)
+        }
+    }
+
+    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+        currentSettings.update { old ->
+            old.copy(audioMuted = isAudioMuted)
         }
     }
 }

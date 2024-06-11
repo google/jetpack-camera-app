@@ -68,6 +68,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -254,9 +255,10 @@ constructor(
      * The use cases typically will not need to be re-bound.
      */
     private data class TransientSessionSettings(
+        val audioMuted: Boolean,
         val flashMode: FlashMode,
-        val zoomScale: Float,
-        val targetRotation: Int
+        val targetRotation: Int,
+        val zoomScale: Float
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -267,9 +269,10 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
+                    audioMuted = currentCameraSettings.audioMuted,
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale,
-                    targetRotation = currentCameraSettings.deviceRotation.toUiSurfaceRotation()
+                    targetRotation = currentCameraSettings.deviceRotation.toUiSurfaceRotation(),
+                    zoomScale = currentCameraSettings.zoomScale
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -477,7 +480,12 @@ constructor(
         }
         Log.d(TAG, "recordVideo")
         // todo(b/336886716): default setting to enable or disable audio when permission is granted
-        // todo(b/336888844): mute/unmute audio while recording is active
+
+        // ok. there is a difference between MUTING and ENABLING audio
+        // audio must be enabled in order to be muted
+        // if the video recording isnt started with audio enabled, you will not be able to unmute it
+        // the toggle should only affect whether or not the audio is muted.
+        // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
             checkSelfPermission(
                 this.application.baseContext,
@@ -511,7 +519,11 @@ constructor(
         recording =
             videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
-                .apply { if (audioEnabled) withAudioEnabled() }
+                .apply {
+                    if (audioEnabled) {
+                        withAudioEnabled()
+                    }
+                }
                 .start(callbackExecutor) { onVideoRecordEvent ->
                     run {
                         Log.d(TAG, onVideoRecordEvent.toString())
@@ -538,6 +550,7 @@ constructor(
                         }
                     }
                 }
+        currentSettings.value?.audioMuted?.let { recording?.mute(it) }
     }
 
     override fun stopVideoRecording() {
@@ -777,6 +790,21 @@ constructor(
             builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
         }
         return builder.build()
+    }
+
+    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+        currentSettings.update { old ->
+            old?.copy(lowLightBoost = lowLightBoost)
+        }
+    }
+
+    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+        // toggle mute for current in progress recording
+        recording?.mute(!isAudioMuted)
+
+        currentSettings.update { old ->
+            old?.copy(audioMuted = isAudioMuted)
+        }
     }
 
     private fun createVideoUseCase(

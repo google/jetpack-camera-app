@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -95,7 +96,11 @@ interface CameraUseCase {
 
     fun setDisplayRotation(deviceRotation: DeviceRotation)
 
+    suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
+
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
+
+    suspend fun setAudioMuted(isAudioMuted: Boolean)
 
     /**
      * Represents the events required for screen flash.
