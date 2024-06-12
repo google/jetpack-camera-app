@@ -47,7 +47,7 @@ fun PermissionsScreen(
             )
         } else {
             listOf(
-                Manifest.permission.CAMERA,
+                Manifest.permission.CAMERA
             )
         }
     )
@@ -71,9 +71,9 @@ fun PermissionsScreen(
     openAppSettings: () -> Unit,
     permissionStates: MultiplePermissionsState,
     viewModel: PermissionsViewModel = hiltViewModel<
-            PermissionsViewModel,
-            PermissionsViewModel.Factory
-            > { factory -> factory.create(permissionStates) }
+        PermissionsViewModel,
+        PermissionsViewModel.Factory
+        > { factory -> factory.create(permissionStates) }
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
