@@ -212,4 +212,3 @@ private fun TransformationInfo.copy(
     cropRectBottom = cropRectBottom,
     shouldMirror = shouldMirror
 )
-

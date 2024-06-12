@@ -40,14 +40,14 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.jetpackcamera.settings.model.DeviceRotation
+import kotlin.math.abs
+import kotlin.math.min
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.runningFold
-import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * As long as this composable is active, the window will go into immersive mode and prevents the
