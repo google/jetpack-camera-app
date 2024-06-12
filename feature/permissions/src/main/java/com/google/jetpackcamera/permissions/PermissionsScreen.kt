@@ -34,12 +34,22 @@ private const val TAG = "PermissionsScreen"
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun PermissionsScreen(onNavigateToPreview: () -> Unit, openAppSettings: () -> Unit) {
+fun PermissionsScreen(
+    shouldRequestAudioPermission: Boolean,
+    onNavigateToPreview: () -> Unit,
+    openAppSettings: () -> Unit
+) {
     val permissionStates = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO
-        )
+        permissions = if (shouldRequestAudioPermission) {
+            listOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO
+            )
+        } else {
+            listOf(
+                Manifest.permission.CAMERA
+            )
+        }
     )
     PermissionsScreen(
         permissionStates = permissionStates,

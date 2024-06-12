@@ -68,6 +68,7 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
+                shouldRequestAudioPermission = previewMode is PreviewMode.StandardMode,
                 onNavigateToPreview = {
                     navController.navigate(PREVIEW_ROUTE) {
                         // cannot navigate back to permissions after leaving
