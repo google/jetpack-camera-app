@@ -97,8 +97,10 @@ fun SmoothImmersiveRotationEffect(context: Context) {
 }
 
 /**
- * Rotate a layout based on the current screen orientation. The UI will always be laid out in a way
- * that width <= height, and rotated afterwards.
+ * Rotate a layout based on the current screen orientation.
+ *
+ * The UI will always be laid out in a way that matches how it would be laid out in the natural
+ * orientation of the device, and is then rotated to match.
  */
 @Composable
 fun Modifier.rotatedLayout(): Modifier {
@@ -110,16 +112,20 @@ fun Modifier.rotatedLayout(): Modifier {
     return this then Modifier
         .fillMaxSize()
         .layout { measurable, constraints ->
-            val height = maxOf(constraints.maxWidth, constraints.maxHeight)
-            val width = minOf(constraints.maxWidth, constraints.maxHeight)
+            val (width, height) = when (currentDisplayRotation) {
+                Surface.ROTATION_180,
+                Surface.ROTATION_0 -> Pair(constraints.maxWidth, constraints.maxHeight)
+                Surface.ROTATION_90,
+                Surface.ROTATION_270 -> Pair(constraints.maxHeight, constraints.maxWidth)
+                else -> throw IllegalStateException("Unexpected rotation: $currentDisplayRotation")
+            }
+
             val placeable = measurable.measure(
                 Constraints.fixed(width, height)
             )
             layout(placeable.width, placeable.height) {
                 placeable.placeWithLayer(0, 0) {
-                    if (constraints.maxWidth > constraints.maxHeight) {
-                        rotationZ = -currentDegrees
-                    }
+                    rotationZ = -currentDegrees
                 }
             }
         }
