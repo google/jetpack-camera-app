@@ -50,21 +50,21 @@ class PermissionsTest {
     val allPermissionsRule = IndividualTestGrantPermissionRule(
         permissions = APP_REQUIRED_PERMISSIONS.toTypedArray(),
         targetTestNames = arrayOf(
-            "noPermissionsScreenWhenAlreadyGranted"
+            "allPermissions_alreadyGranted_screenNotShown"
         )
     )
 
     @get:Rule
     val cameraPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA_PERMISSION),
-        targetTestNames = arrayOf("deniedRecordAudioPermissionClosesPage")
+        targetTestNames = arrayOf("recordAudioPermission_granted_closesPage","recordAudioPermission_denied_closesPage")
     )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun noPermissionsScreenWhenAlreadyGranted() {
+    fun allPermissions_alreadyGranted_screenNotShown() {
         runScenarioTest<MainActivity> {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -73,7 +73,7 @@ class PermissionsTest {
     }
 
     @Test
-    fun grantedCameraPermissionClosesPage() = runScenarioTest<MainActivity> {
+    fun cameraPermission_granted_closesPage() = runScenarioTest<MainActivity> {
         // Wait for the camera permission screen to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
@@ -90,14 +90,11 @@ class PermissionsTest {
 
         // Assert we're no longer on camera permission screen
         composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).assertDoesNotExist()
-
-        // next permission should be on screen
-        composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_BUTTON).assertExists()
     }
 
     @SdkSuppress(minSdkVersion = 30)
     @Test
-    fun askEveryTimeCameraPermissionClosesPage() {
+    fun cameraPermission_askEveryTime_closesPage() {
         uiDevice.waitForIdle()
         runScenarioTest<MainActivity> {
             // Wait for the camera permission screen to be displayed
@@ -115,14 +112,11 @@ class PermissionsTest {
 
             // Assert we're no longer on camera permission screen
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).assertDoesNotExist()
-
-            // next permission should be on screen
-            composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_BUTTON).assertExists()
         }
     }
 
     @Test
-    fun declineCameraPermissionStaysOnScreen() {
+    fun cameraPermission_declined_staysOnScreen() {
         // required permissions should persist on screen
         // Wait for the permission screen to be displayed
         runScenarioTest<MainActivity> {
@@ -152,7 +146,31 @@ class PermissionsTest {
     }
 
     @Test
-    fun deniedRecordAudioPermissionClosesPage() {
+    fun recordAudioPermission_granted_closesPage() {
+        // optional permissions should close the screen after declining
+        runScenarioTest<MainActivity> {
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_BUTTON).isDisplayed()
+            }
+
+            // Click button to request permission
+            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // deny permission
+            grantPermissionDialog(uiDevice)
+            uiDevice.waitForIdle()
+
+            // Assert we're now on preview screen
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().isDisplayed()
+            }
+        }
+    }
+
+    @Test
+    fun recordAudioPermission_denied_closesPage() {
         // optional permissions should close the screen after declining
         runScenarioTest<MainActivity> {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {

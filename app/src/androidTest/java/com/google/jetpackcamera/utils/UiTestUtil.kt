@@ -41,7 +41,7 @@ import org.junit.runners.model.Statement
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
-const val TAG = "UiTestUtil"
+private const val TAG = "UiTestUtil"
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
@@ -117,7 +117,6 @@ class IndividualTestGrantPermissionRule(
 }
 
 // functions for interacting with system permission dialog
-@SdkSuppress(minSdkVersion = 30)
 fun askEveryTimeDialog(uiDevice: UiDevice) {
     if (Build.VERSION.SDK_INT >= 30) {
         Log.d(TAG, "Searching for Allow Once Button...")
@@ -145,7 +144,7 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_allow_button"
-                else -> "com.android.permissioncontroller:id/permission_allow_button"
+                else -> "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
             }
         )
         Log.d(TAG, "Clicking Allow Button")
@@ -179,7 +178,7 @@ fun denyPermissionDialog(uiDevice: UiDevice) {
  * Finds a system button by its resource ID.
  * fails if not found
  */
-fun findObjectById(
+private fun findObjectById(
     uiDevice: UiDevice,
     resId: String,
     timeout: Long = 10000,
@@ -189,27 +188,6 @@ fun findObjectById(
     return if (!uiDevice.wait(Until.hasObject(selector), timeout)) {
         if (shouldFailIfNotFound) {
             fail("Could not find object with RESOURCE ID: $resId")
-        }
-        null
-    } else {
-        uiDevice.findObject(selector)
-    }
-}
-
-/**
- * Finds a system button by its string value.
- * fails if not found
- */
-fun findObjectByText(
-    uiDevice: UiDevice,
-    text: String,
-    timeout: Long = 2_500,
-    shouldFailIfNotFound: Boolean = true
-): UiObject2? {
-    val selector = By.textContains(text)
-    return if (!uiDevice.wait(Until.hasObject(selector), timeout)) {
-        if (shouldFailIfNotFound) {
-            fail("Could not find object with TEXT: $text")
         }
         null
     } else {
