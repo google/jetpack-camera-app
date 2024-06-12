@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
+import android.app.Instrumentation
 import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
@@ -41,9 +42,10 @@ inline fun <reified T : Activity> runScenarioTest(
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
     crossinline block: ActivityScenario<T>.() -> Unit
-): ActivityScenario<T> {
-    return ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
+): Instrumentation.ActivityResult? {
+    ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
+        return scenario.result
     }
 }
 

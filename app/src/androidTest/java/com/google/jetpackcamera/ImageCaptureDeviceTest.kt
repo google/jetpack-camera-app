@@ -25,13 +25,10 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
@@ -53,7 +50,6 @@ internal class ImageCaptureDeviceTest {
     val composeTestRule = createEmptyComposeRule()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private var activityScenario: ActivityScenario<MainActivity>? = null
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
@@ -78,8 +74,8 @@ internal class ImageCaptureDeviceTest {
     fun image_capture_external() {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(timeStamp)
-        activityScenario =
-            runScenarioTestForResult<MainActivity>(getIntent(timeStamp, uri)) {
+        val result =
+            runScenarioTestForResult<MainActivity>(getIntent(uri)) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -88,24 +84,17 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
                     .performClick()
-                /* This line needs to be uiDevice.wait() instead of composeTestRule.waitUntil()
-                 * because the latter causes a strange behavior where the node is not found. */
-                uiDevice.wait(
-                    Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TAG)),
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS
-                )
             }
-        assert(activityScenario!!.result.resultCode == Activity.RESULT_OK)
+        assert(result?.resultCode == Activity.RESULT_OK)
         assert(doesImageFileExist(uri))
         deleteFilesInDirAfterTimestamp(timeStamp)
     }
 
     @Test
     fun image_capture_external_illegal_uri() {
-        val timeStamp = System.currentTimeMillis()
         val uri = Uri.parse("asdfasdf")
-        activityScenario =
-            runScenarioTestForResult<MainActivity>(getIntent(timeStamp, uri)) {
+        val result =
+            runScenarioTestForResult<MainActivity>(getIntent(uri)) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -114,15 +103,12 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
                     .performClick()
-                /* This line needs to be uiDevice.wait() instead of composeTestRule.waitUntil()
-                 * because the latter causes a strange behavior where the node is not found. */
-                uiDevice.wait(
-                    Until.findObject(By.res(IMAGE_CAPTURE_FAILURE_TAG)),
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS
-                )
+                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
+                }
                 uiDevice.pressBack()
             }
-        assert(activityScenario!!.result.resultCode == Activity.RESULT_CANCELED)
+        assert(result?.resultCode == Activity.RESULT_CANCELED)
         assert(!doesImageFileExist(uri))
     }
 
@@ -161,7 +147,7 @@ internal class ImageCaptureDeviceTest {
         )
     }
 
-    private fun getIntent(timeStamp: Long, uri: Uri): Intent {
+    private fun getIntent(uri: Uri): Intent {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         intent.setComponent(
             ComponentName(
