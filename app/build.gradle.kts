@@ -23,12 +23,14 @@ plugins {
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
     namespace = "com.google.jetpackcamera"
 
     defaultConfig {
         applicationId = "com.google.jetpackcamera"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
+        targetSdkPreview = libs.versions.targetSdkPreview.get()
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
