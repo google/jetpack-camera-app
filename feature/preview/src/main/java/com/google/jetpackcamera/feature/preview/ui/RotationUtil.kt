@@ -21,10 +21,12 @@ import android.os.Build
 import android.view.OrientationEventListener
 import android.view.OrientationEventListener.ORIENTATION_UNKNOWN
 import android.view.Surface
-import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.ROTATION_ANIMATION_JUMPCUT
 import android.view.WindowManager.LayoutParams.ROTATION_ANIMATION_SEAMLESS
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.areSystemBarsVisible
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -42,14 +44,14 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.jetpackcamera.settings.model.DeviceRotation
-import kotlin.math.abs
-import kotlin.math.min
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.runningFold
+import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * As long as this composable is active, the window will go into immersive mode and prevents the
@@ -58,33 +60,41 @@ import kotlinx.coroutines.flow.runningFold
  * When used in combination with a composable that renders the same UI in both landscape and portrait,
  * it can create a smooth continuous feel between those two orientations.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SmoothImmersiveRotationEffect(context: Context) = DisposableEffect(context) {
-    var currentRotationAnimation: Int? = null
+fun SmoothImmersiveRotationEffect(context: Context) {
     context.getActivity()?.window?.let { window ->
-        window.attributes = window.attributes.apply {
-            currentRotationAnimation = rotationAnimation
-            rotationAnimation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ROTATION_ANIMATION_SEAMLESS
-            } else {
-                ROTATION_ANIMATION_JUMPCUT
-            }
-        }
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-    onDispose {
-        context.getActivity()?.window?.let { window ->
-            if (currentRotationAnimation != null) {
-                window.attributes = window.attributes.apply {
-                    rotationAnimation = WindowManager.LayoutParams.ROTATION_ANIMATION_ROTATE
+        val oldAreSystemBarsVisible = WindowInsets.areSystemBarsVisible
+        DisposableEffect(context) {
+            val oldRotationAnimation = window.attributes.rotationAnimation
+            window.attributes = window.attributes.apply {
+                rotationAnimation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ROTATION_ANIMATION_SEAMLESS
+                } else {
+                    ROTATION_ANIMATION_JUMPCUT
                 }
             }
-            WindowCompat.getInsetsController(window, window.decorView).apply {
-                show(WindowInsetsCompat.Type.systemBars())
+            val oldSystemBarsBehavior =
+                with(WindowCompat.getInsetsController(window, window.decorView)) {
+                    systemBarsBehavior.also {
+                        systemBarsBehavior =
+                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        if (oldAreSystemBarsVisible) {
+                            hide(WindowInsetsCompat.Type.systemBars())
+                        }
+                    }
+                }
+
+            onDispose {
+                window.attributes = window.attributes.apply {
+                    rotationAnimation = oldRotationAnimation
+                }
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    systemBarsBehavior = oldSystemBarsBehavior
+                    if (oldAreSystemBarsVisible) {
+                        show(WindowInsetsCompat.Type.systemBars())
+                    }
+                }
             }
         }
     }
