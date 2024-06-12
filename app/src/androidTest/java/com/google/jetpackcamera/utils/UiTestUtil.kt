@@ -24,7 +24,6 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
@@ -144,7 +143,8 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_allow_button"
-                else -> "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+                else ->
+                    "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
             }
         )
         Log.d(TAG, "Clicking Allow Button")

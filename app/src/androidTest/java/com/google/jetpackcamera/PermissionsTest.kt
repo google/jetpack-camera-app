@@ -57,7 +57,10 @@ class PermissionsTest {
     @get:Rule
     val cameraPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA_PERMISSION),
-        targetTestNames = arrayOf("recordAudioPermission_granted_closesPage","recordAudioPermission_denied_closesPage")
+        targetTestNames = arrayOf(
+            "recordAudioPermission_granted_closesPage",
+            "recordAudioPermission_denied_closesPage"
+        )
     )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
