@@ -30,11 +30,7 @@ import androidx.compose.foundation.layout.areSystemBarsVisible
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
@@ -106,16 +102,11 @@ fun SmoothImmersiveRotationEffect(context: Context) {
  */
 @Composable
 fun Modifier.rotatedLayout(): Modifier {
-    var currentOrientation by remember { mutableIntStateOf(Surface.ROTATION_0) }
-    val currentDegrees = currentOrientation * 90f
-    val newOrientation = LocalConfiguration.current.orientation
-    val display = LocalView.current.display
-    LaunchedEffect(newOrientation, display) {
-        val newRotation = display.rotation
-        if (currentOrientation != newRotation) {
-            currentOrientation = newRotation
-        }
+    val currentDisplayRotation = key(LocalConfiguration.current) {
+        LocalView.current.display.rotation
     }
+    val currentDegrees = surfaceRotationToRotationDegrees(currentDisplayRotation).toFloat()
+
     return this then Modifier
         .fillMaxSize()
         .layout { measurable, constraints ->
@@ -166,3 +157,13 @@ fun debouncedOrientationFlow(context: Context) = callbackFlow {
             prevSnap
         }
     }.distinctUntilChanged()
+
+fun surfaceRotationToRotationDegrees(rotationValue: Int): Int = when (rotationValue) {
+    Surface.ROTATION_0 -> 0
+    Surface.ROTATION_90 -> 90
+    Surface.ROTATION_180 -> 180
+    Surface.ROTATION_270 -> 270
+    else -> throw UnsupportedOperationException(
+        "Unsupported display rotation: $rotationValue"
+    )
+}

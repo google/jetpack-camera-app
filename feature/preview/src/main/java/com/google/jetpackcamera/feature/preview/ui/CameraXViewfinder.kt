@@ -18,7 +18,6 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
-import android.view.Surface
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
@@ -214,12 +213,3 @@ private fun TransformationInfo.copy(
     shouldMirror = shouldMirror
 )
 
-private fun surfaceRotationToRotationDegrees(rotationValue: Int): Int = when (rotationValue) {
-    Surface.ROTATION_0 -> 0
-    Surface.ROTATION_90 -> 90
-    Surface.ROTATION_180 -> 180
-    Surface.ROTATION_270 -> 270
-    else -> throw UnsupportedOperationException(
-        "Unsupported display rotation: $rotationValue"
-    )
-}
