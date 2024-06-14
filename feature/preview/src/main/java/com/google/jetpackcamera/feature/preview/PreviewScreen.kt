@@ -18,17 +18,14 @@ package com.google.jetpackcamera.feature.preview
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
-import android.os.Trace
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -51,8 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
-import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_COOKIE
-import com.google.jetpackcamera.feature.preview.ui.FIRST_FRAME_TRACE
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
@@ -80,11 +75,8 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(previewMode) }
 ) {
-    // start trace between preview screen starting and the earliest possible completed capture
-    // todo: only run traces on a specific build version or flavor(?)
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-        Trace.beginAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
-    }
+    // start first frame trace
+    viewModel.startFirstFrameTrace()
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()

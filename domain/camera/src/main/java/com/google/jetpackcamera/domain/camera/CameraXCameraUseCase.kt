@@ -61,6 +61,7 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import com.google.jetpackcamera.core.common.TraceManager
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -111,8 +112,6 @@ const val TARGET_FPS_AUTO = 0
 const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
-private const val FIRST_FRAME_TRACE = "FirstFrameTrace"
-private const val FIRST_FRAME_COOKIE = 12345
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -121,12 +120,12 @@ private const val FIRST_FRAME_COOKIE = 12345
 class CameraXCameraUseCase
 @Inject
 constructor(
-    private val onCloseTrace: () -> Unit,
     private val application: Application,
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: SettableConstraintsRepository
+    private val constraintsRepository: SettableConstraintsRepository,
+    private val traceManager: TraceManager
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -145,7 +144,7 @@ constructor(
             ) {
                 super.onCaptureCompleted(session, request, result)
                 try {
-                    onCloseTrace()
+                    traceManager.endFirstFrameTrace()
                 } catch (_: Exception) {}
             }
         }

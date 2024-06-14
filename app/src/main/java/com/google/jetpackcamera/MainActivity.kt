@@ -56,6 +56,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.core.common.TraceManager
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -65,9 +66,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
-const val FIRST_FRAME_COOKIE = 12345
 
 /**
  * Activity for the JetpackCameraApp.
@@ -75,12 +76,17 @@ const val FIRST_FRAME_COOKIE = 12345
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
+    @Inject
+    lateinit var traceManager: TraceManager
 
     @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
+
+        // any other calls to begin first frame trace should be ignored
+        traceManager.beginFirstFrameTrace()
 
         // start trace between app starting and the earliest possible completed capture
         // todo: only run traces on a specific build version or flavor(?)
