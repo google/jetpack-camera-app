@@ -22,7 +22,6 @@ import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Trace
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
@@ -68,7 +67,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
-const val FIRST_FRAME_TRACE = "FirstFrameTrace"
 const val FIRST_FRAME_COOKIE = 12345
 
 /**
@@ -86,9 +84,7 @@ class MainActivity : ComponentActivity() {
 
         // start trace between app starting and the earliest possible completed capture
         // todo: only run traces on a specific build version or flavor(?)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Trace.beginAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
-        }
+
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState

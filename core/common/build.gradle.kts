@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.android.material)
     implementation(libs.kotlinx.atomicfu)
+    implementation(libs.androidx.tracing)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)

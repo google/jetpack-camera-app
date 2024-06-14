@@ -25,7 +25,6 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Environment
-import android.os.Trace
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -122,6 +121,7 @@ private const val FIRST_FRAME_COOKIE = 12345
 class CameraXCameraUseCase
 @Inject
 constructor(
+    private val onCloseTrace: () -> Unit,
     private val application: Application,
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
@@ -136,7 +136,7 @@ constructor(
      * Applies a CaptureCallback to the provided image capture builder
      */
     @OptIn(ExperimentalCamera2Interop::class)
-    private fun onCaptureCompletedCallback(imageCaptureBuilder: ImageCapture.Builder) {
+    private fun setOnCaptureCompletedCallback(imageCaptureBuilder: ImageCapture.Builder) {
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
@@ -145,18 +145,16 @@ constructor(
             ) {
                 super.onCaptureCompleted(session, request, result)
                 try {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        Trace.endAsyncSection(FIRST_FRAME_TRACE, FIRST_FRAME_COOKIE)
-                    }
+                    onCloseTrace()
                 } catch (_: Exception) {}
             }
         }
 
         // Create an Extender to attach Camera2 options
-        val previewExtender = Camera2Interop.Extender(imageCaptureBuilder)
+        val imageCaptureExtender = Camera2Interop.Extender(imageCaptureBuilder)
 
         // Attach the Camera2 CaptureCallback
-        previewExtender.setSessionCaptureCallback(captureCallback)
+        imageCaptureExtender.setSessionCaptureCallback(captureCallback)
     }
 
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
@@ -245,7 +243,7 @@ constructor(
                     settingsRepository.defaultCameraAppSettings.first().aspectRatio
                 )
             )
-        onCaptureCompletedCallback(imageCaptureBuilder)
+        setOnCaptureCompletedCallback(imageCaptureBuilder)
         imageCaptureUseCase = imageCaptureBuilder.build()
     }
 
@@ -785,9 +783,9 @@ constructor(
     }
 
     @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
-    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
+    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings, onCloseTrace: () -> Unit = {}): ImageCapture {
         val builder = ImageCapture.Builder()
-        onCaptureCompletedCallback(builder)
+        setOnCaptureCompletedCallback(builder)
         builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
         if (sessionSettings.dynamicRange != DynamicRange.SDR &&
             sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
