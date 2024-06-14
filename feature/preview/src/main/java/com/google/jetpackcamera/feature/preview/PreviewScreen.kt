@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +57,7 @@ import com.google.jetpackcamera.feature.preview.ui.SmoothImmersiveRotationEffect
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
+import com.google.jetpackcamera.feature.preview.ui.padBottomForSafeContentInAllOrientations
 import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -139,6 +141,7 @@ fun PreviewScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
@@ -223,7 +226,9 @@ private fun ContentScreen(
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
-                modifier = Modifier.rotatedLayout(),
+                modifier = Modifier
+                    .rotatedLayout()
+                    .padBottomForSafeContentInAllOrientations(),
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
                 onFlipCamera = onFlipCamera,
@@ -283,7 +288,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Preview
 @Composable
 private fun ContentScreenPreview() {
-    MaterialTheme {
+    MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             previewUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),

@@ -27,15 +27,20 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.areSystemBarsVisible
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.max
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -115,8 +120,10 @@ fun Modifier.rotatedLayout(): Modifier {
             val (width, height) = when (currentDisplayRotation) {
                 Surface.ROTATION_180,
                 Surface.ROTATION_0 -> Pair(constraints.maxWidth, constraints.maxHeight)
+
                 Surface.ROTATION_90,
                 Surface.ROTATION_270 -> Pair(constraints.maxHeight, constraints.maxWidth)
+
                 else -> throw IllegalStateException("Unexpected rotation: $currentDisplayRotation")
             }
 
@@ -129,6 +136,28 @@ fun Modifier.rotatedLayout(): Modifier {
                 }
             }
         }
+}
+
+/**
+ * Ensures the bottom padding is large enough to handle the provided insets no matter the
+ * device orientation.
+ *
+ * This finds the maximum value of all insets in order to ensure that if the device is rotated
+ * the padding will be sufficient to ensure the composable does not intersect any insets.
+ *
+ * This makes the assumption that the maximum inset size will not change depending on orientation.
+ */
+@Composable
+fun Modifier.padBottomForSafeContentInAllOrientations(): Modifier {
+    val layoutDirection = LocalLayoutDirection.current
+    val maxPadding = WindowInsets.safeContent.asPaddingValues().let {
+        val maxVertical = max(it.calculateTopPadding(), it.calculateBottomPadding())
+        val maxHorizontal =
+            max(it.calculateLeftPadding(layoutDirection), it.calculateRightPadding(layoutDirection))
+        max(maxHorizontal, maxVertical)
+    }
+
+    return this then Modifier.padding(bottom = maxPadding)
 }
 
 private fun Context.getActivity(): ComponentActivity? = when (this) {
