@@ -782,7 +782,10 @@ constructor(
     }
 
     @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
-    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings, onCloseTrace: () -> Unit = {}): ImageCapture {
+    private fun createImageUseCase(
+        sessionSettings: PerpetualSessionSettings,
+        onCloseTrace: () -> Unit = {}
+    ): ImageCapture {
         val builder = ImageCapture.Builder()
         setOnCaptureCompletedCallback(builder)
         builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))

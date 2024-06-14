@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.common
 
 import android.content.Context
@@ -39,20 +38,21 @@ class TraceManager @Inject constructor(@ApplicationContext context: Context) {
     // if it is benchmark build, multiple attempts to start traces is allowed in different locations.
     // especially important for "hot startup" benchmark tests
     init {
-        if (context.resources.getBoolean(R.bool.is_benchmark_build))
+        if (context.resources.getBoolean(R.bool.is_benchmark_build)) {
             isBenchmarkBuild = true
+        }
         Log.d(TAG, "is in benchmark mode: $isBenchmarkBuild")
     }
 
-    fun beginFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE){
+    fun beginFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE) {
         if (isBenchmarkBuild || firstFrameTraceStatus == TraceStatus.NOT_STARTED) {
             beginAsyncSection(FIRST_FRAME_TRACE, cookie)
             firstFrameTraceStatus = TraceStatus.IN_PROGRESS
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
         }
     }
-    fun endFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE){
-        if(isBenchmarkBuild || firstFrameTraceStatus == TraceStatus.IN_PROGRESS) {
+    fun endFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE) {
+        if (isBenchmarkBuild || firstFrameTraceStatus == TraceStatus.IN_PROGRESS) {
             endAsyncSection(FIRST_FRAME_TRACE, cookie)
             firstFrameTraceStatus = TraceStatus.COMPLETE
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
