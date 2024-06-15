@@ -24,7 +24,7 @@ import javax.inject.Singleton
 
 private const val TAG = "TraceManagerTag"
 private const val FIRST_FRAME_TRACE = "firstFrameTrace"
-private const val FIRST_FRAME_COOKIE = 12345
+private const val FIRST_FRAME_COOKIE = 0
 var isBenchmarkBuild = false
 
 /**
