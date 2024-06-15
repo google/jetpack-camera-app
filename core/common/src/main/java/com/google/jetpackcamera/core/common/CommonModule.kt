@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.core.common
 
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,4 +38,11 @@ class CommonModule {
     @Singleton
     @Provides
     fun providesCoroutineScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+interface CommonTraceModule {
+    @Binds
+    fun bindsCameraUseCase(traceManager: LocalTraceManager): TraceManager
 }

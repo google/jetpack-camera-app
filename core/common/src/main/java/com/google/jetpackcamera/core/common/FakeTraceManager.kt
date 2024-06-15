@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.core.common
 
-interface TraceManager {
-    fun beginFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE)
-    fun endFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE)
+class FakeTraceManager() : TraceManager {
+    override fun beginFirstFrameTrace(cookie: Int) {}
+    override fun endFirstFrameTrace(cookie: Int) {}
 }
