@@ -38,9 +38,8 @@ class LocalTraceManager @Inject constructor(@ApplicationContext context: Context
     // if it is benchmark build, multiple attempts to start traces is allowed in different locations.
     // especially important for "hot startup" benchmark tests
     init {
-        if (context.resources.getBoolean(R.bool.is_benchmark_build)) {
-            isBenchmarkBuild = true
-        }
+        isBenchmarkBuild = context.resources.getBoolean(R.bool.is_benchmark_build)
+
         Log.d(TAG, "is in benchmark mode: $isBenchmarkBuild")
     }
 
@@ -53,6 +52,7 @@ class LocalTraceManager @Inject constructor(@ApplicationContext context: Context
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
         }
     }
+
     override fun endFirstFrameTrace(cookie: Int) {
         if (firstFrameTraceStatus == TraceStatus.IN_PROGRESS) {
             endAsyncSection(FIRST_FRAME_TRACE, cookie)
