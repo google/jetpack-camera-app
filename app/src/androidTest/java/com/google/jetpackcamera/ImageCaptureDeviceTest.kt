@@ -15,30 +15,30 @@
  */
 package com.google.jetpackcamera
 
-import android.app.Instrumentation
+import android.app.Activity
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import androidx.activity.result.ActivityResultRegistry
-import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityOptionsCompat
-import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ApplicationProvider
+import android.provider.MediaStore
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runScenarioTestForResult
 import java.io.File
 import java.net.URLConnection
-import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,71 +51,70 @@ internal class ImageCaptureDeviceTest {
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private var activityScenario: ActivityScenario<MainActivity>? = null
     private val uiDevice = UiDevice.getInstance(instrumentation)
-    private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun image_capture() = runTest {
+    fun image_capture() = runScenarioTest<MainActivity> {
         val timeStamp = System.currentTimeMillis()
-        activityScenario = ActivityScenario.launch(MainActivity::class.java)
-        uiDevice.wait(
-            Until.findObject(By.res(CAPTURE_BUTTON)),
-            5000
-        )
-        uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-        uiDevice.wait(
-            Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TAG)),
-            5000
-        )
-        assert(deleteFilesInDirAfterTimestamp(timeStamp))
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performClick()
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+        assert(File(DIR_PATH).lastModified() > timeStamp)
+        deleteFilesInDirAfterTimestamp(timeStamp)
     }
 
     @Test
-    fun image_capture_external() = runTest {
+    fun image_capture_external() {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(timeStamp)
-        getTestRegistry {
-            activityScenario = ActivityScenario.launchActivityForResult(it)
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-            uiDevice.wait(
-                Until.findObject(By.res(IMAGE_CAPTURE_SUCCESS_TAG)),
-                5000
-            )
-            activityScenario!!.result
-        }.register("key", TEST_CONTRACT) { result ->
-            assert(result)
-            assert(doesImageFileExist(uri))
-        }.launch(uri)
+        val result =
+            runScenarioTestForResult<MainActivity>(getIntent(uri)) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                    .assertExists()
+                    .performClick()
+            }
+        assert(result?.resultCode == Activity.RESULT_OK)
+        assert(doesImageFileExist(uri))
         deleteFilesInDirAfterTimestamp(timeStamp)
     }
 
     @Test
-    fun image_capture_external_illegal_uri() = runTest {
-        val timeStamp = System.currentTimeMillis()
-        val inputUri = Uri.parse("asdfasdf")
-        getTestRegistry {
-            activityScenario = ActivityScenario.launchActivityForResult(it)
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-            uiDevice.wait(
-                Until.findObject(By.res(IMAGE_CAPTURE_FAILURE_TAG)),
-                5000
-            )
-            uiDevice.pressBack()
-            activityScenario!!.result
-        }.register("key_illegal_uri", TEST_CONTRACT) { result ->
-            assert(!result)
-        }.launch(inputUri)
-        deleteFilesInDirAfterTimestamp(timeStamp)
+    fun image_capture_external_illegal_uri() {
+        val uri = Uri.parse("asdfasdf")
+        val result =
+            runScenarioTestForResult<MainActivity>(getIntent(uri)) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                    .assertExists()
+                    .performClick()
+                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
+                }
+                uiDevice.pressBack()
+            }
+        assert(result?.resultCode == Activity.RESULT_CANCELED)
+        assert(!doesImageFileExist(uri))
     }
 
     private fun doesImageFileExist(uri: Uri): Boolean {
@@ -144,28 +143,6 @@ internal class ImageCaptureDeviceTest {
         return hasDeletedFile
     }
 
-    private fun getTestRegistry(
-        launch: (Intent) -> Instrumentation.ActivityResult
-    ): ActivityResultRegistry {
-        val testRegistry = object : ActivityResultRegistry() {
-            override fun <I, O> onLaunch(
-                requestCode: Int,
-                contract: ActivityResultContract<I, O>,
-                input: I,
-                options: ActivityOptionsCompat?
-            ) {
-                // contract.create
-                val launchIntent = contract.createIntent(
-                    ApplicationProvider.getApplicationContext(),
-                    input
-                )
-                val result: Instrumentation.ActivityResult = launch(launchIntent)
-                dispatchResult(requestCode, result.resultCode, result.resultData)
-            }
-        }
-        return testRegistry
-    }
-
     private fun getTestUri(timeStamp: Long): Uri {
         return Uri.fromFile(
             File(
@@ -175,19 +152,20 @@ internal class ImageCaptureDeviceTest {
         )
     }
 
+    private fun getIntent(uri: Uri): Intent {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        intent.setComponent(
+            ComponentName(
+                "com.google.jetpackcamera",
+                "com.google.jetpackcamera.MainActivity"
+            )
+        )
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
+        return intent
+    }
+
     companion object {
         val DIR_PATH: String =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).path
-
-        val TEST_CONTRACT = object : ActivityResultContracts.TakePicture() {
-            override fun createIntent(context: Context, uri: Uri): Intent {
-                return super.createIntent(context, uri).apply {
-                    component = ComponentName(
-                        "com.google.jetpackcamera",
-                        "com.google.jetpackcamera.MainActivity"
-                    )
-                }
-            }
-        }
     }
 }

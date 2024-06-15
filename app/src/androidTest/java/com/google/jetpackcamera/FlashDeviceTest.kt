@@ -27,6 +27,7 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
@@ -34,6 +35,13 @@ import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.getCurrentLensFacing
+import com.google.jetpackcamera.utils.onNodeWithContentDescription
+import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -76,7 +84,7 @@ internal class FlashDeviceTest {
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
             .assertExists()
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_on_description
+            R.string.quick_settings_flash_on_description
         )
     }
 
@@ -99,7 +107,7 @@ internal class FlashDeviceTest {
             .performClick()
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_auto_description
+            R.string.quick_settings_flash_auto_description
         )
     }
 
@@ -111,7 +119,7 @@ internal class FlashDeviceTest {
         }
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_off_description
+            R.string.quick_settings_flash_off_description
         )
 
         // Navigate to quick settings
@@ -127,7 +135,7 @@ internal class FlashDeviceTest {
             .performClick()
 
         composeTestRule.onNodeWithContentDescription(
-            com.google.jetpackcamera.feature.preview.R.string.quick_settings_flash_off_description
+            R.string.quick_settings_flash_off_description
         )
     }
 

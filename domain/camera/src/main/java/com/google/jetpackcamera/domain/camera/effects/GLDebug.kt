@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.domain.camera.effects
 
-import android.os.Build
-
-val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
-    add(android.Manifest.permission.CAMERA)
-    add(android.Manifest.permission.RECORD_AUDIO)
-    if (Build.VERSION.SDK_INT <= 28) {
-        add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+object GLDebug {
+    init {
+        System.loadLibrary("opengl_debug_lib")
     }
+
+    external fun enableES3DebugErrorLogging()
 }

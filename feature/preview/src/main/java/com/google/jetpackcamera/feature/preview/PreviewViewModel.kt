@@ -35,6 +35,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -350,6 +351,12 @@ class PreviewViewModel @AssistedInject constructor(
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
             cameraUseCase.setDynamicRange(dynamicRange)
+        }
+    }
+
+    fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+        viewModelScope.launch {
+            cameraUseCase.setLowLightBoost(lowLightBoost)
         }
     }
 
