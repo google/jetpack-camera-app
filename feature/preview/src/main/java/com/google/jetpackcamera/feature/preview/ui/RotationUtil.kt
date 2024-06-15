@@ -24,6 +24,10 @@ import android.view.Surface
 import android.view.WindowManager.LayoutParams.ROTATION_ANIMATION_JUMPCUT
 import android.view.WindowManager.LayoutParams.ROTATION_ANIMATION_SEAMLESS
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.areSystemBarsVisible
@@ -33,8 +37,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -136,6 +143,47 @@ fun Modifier.rotatedLayout(): Modifier {
                 }
             }
         }
+}
+
+/**
+ * Animates orientation changes so the modified composable is upright when also using
+ * [Modifier.rotatedLayout].
+ */
+@Composable
+fun Modifier.animateToUpright(
+    animationSpec: AnimationSpec<Float> = spring(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+): Modifier {
+    val newDisplayRotation = key(LocalConfiguration.current) {
+        LocalView.current.display.rotation
+    }
+    val targetDegrees = surfaceRotationToRotationDegrees(newDisplayRotation).toFloat()
+    val animatedDegrees = remember { Animatable(targetDegrees) }
+    LaunchedEffect(targetDegrees) {
+        // Ensure startDegrees is in [0, 360)
+        val startDegrees = (animatedDegrees.value + 360) % 360
+        val difference = (targetDegrees - startDegrees + 360) % 360
+        val shortestPathTargetDegrees = if (difference < 180) {
+            // Clockwise rotation
+            startDegrees + difference
+        } else if (difference > 180) {
+            // Counter-clockwise rotation
+            startDegrees + difference - 360
+        } else {
+            // Difference is 180. Use clockwise or counter-clockwise depending on startDegrees
+            // so we don't always rotate the same direction for 180 degree rotations.
+            startDegrees + (startDegrees - targetDegrees)
+        }
+        animatedDegrees.snapTo(startDegrees)
+        animatedDegrees.animateTo(
+            targetValue = shortestPathTargetDegrees,
+            animationSpec = animationSpec
+        )
+    }
+
+    return this then Modifier.graphicsLayer { rotationZ = animatedDegrees.value }
 }
 
 /**

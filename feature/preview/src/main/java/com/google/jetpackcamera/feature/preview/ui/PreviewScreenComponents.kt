@@ -88,7 +88,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -450,7 +449,7 @@ fun ZoomScaleText(zoomScale: Float, modifier: Modifier = Modifier) {
         animationSpec = tween()
     )
     Text(
-        modifier = Modifier.alpha(contentAlpha.value),
+        modifier = modifier.alpha(contentAlpha.value),
         text = "%.1fx".format(zoomScale),
         fontSize = 20.sp
     )
@@ -514,15 +513,14 @@ enum class ToggleState {
 fun ToggleButton(
     leftIcon: Painter,
     rightIcon: Painter,
-    modifier: Modifier = Modifier
-        .width(64.dp)
-        .height(32.dp),
+    modifier: Modifier = Modifier,
+    leftIconModifier: Modifier = Modifier,
+    rightIconModifier: Modifier = Modifier,
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
     enabled: Boolean = true,
     leftIconDescription: String = "leftIcon",
-    rightIconDescription: String = "rightIcon",
-    iconPadding: Dp = 8.dp
+    rightIconDescription: String = "rightIcon"
 ) {
     val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
     val disableColor = MaterialTheme.colorScheme.onSurface
@@ -542,6 +540,8 @@ fun ToggleButton(
 
     Surface(
         modifier = modifier
+            .width(64.dp)
+            .height(32.dp)
             .clip(shape = RoundedCornerShape(50))
             .then(
                 if (enabled) {
@@ -557,7 +557,7 @@ fun ToggleButton(
                 } else {
                     Modifier
                 }
-            ),
+            ).then(modifier),
         color = backgroundColor
     ) {
         Box {
@@ -593,7 +593,7 @@ fun ToggleButton(
                 Icon(
                     painter = leftIcon,
                     contentDescription = leftIconDescription,
-                    modifier = Modifier.padding(iconPadding),
+                    modifier = leftIconModifier.padding(8.dp),
                     tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Left) {
@@ -605,7 +605,7 @@ fun ToggleButton(
                 Icon(
                     painter = rightIcon,
                     contentDescription = rightIconDescription,
-                    modifier = Modifier.padding(iconPadding),
+                    modifier = rightIconModifier.padding(8.dp),
                     tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Right) {
