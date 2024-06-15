@@ -45,8 +45,9 @@ class TraceManager @Inject constructor(@ApplicationContext context: Context) {
     }
 
     fun beginFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE) {
-        if ((isBenchmarkBuild && firstFrameTraceStatus != TraceStatus.IN_PROGRESS )
-            || firstFrameTraceStatus == TraceStatus.NOT_STARTED) {
+        if ((isBenchmarkBuild && firstFrameTraceStatus != TraceStatus.IN_PROGRESS) ||
+            firstFrameTraceStatus == TraceStatus.NOT_STARTED
+        ) {
             beginAsyncSection(FIRST_FRAME_TRACE, cookie)
             firstFrameTraceStatus = TraceStatus.IN_PROGRESS
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
