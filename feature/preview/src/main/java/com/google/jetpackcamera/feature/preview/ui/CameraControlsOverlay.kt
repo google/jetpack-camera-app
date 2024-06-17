@@ -242,7 +242,7 @@ private fun ControlsBottom(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
-                maxVideoDuration = currentCameraSettings.maxAudioDuration,
+                maxVideoDuration = currentCameraSettings.maxVideoDuration,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,

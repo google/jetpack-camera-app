@@ -34,7 +34,7 @@ data class CameraAppSettings(
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,
-    val maxAudioDuration: Long = -1
+    val maxVideoDuration: Long = -1
 )
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {

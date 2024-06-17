@@ -271,7 +271,7 @@ constructor(
                     flashMode = currentCameraSettings.flashMode,
                     audioMuted = currentCameraSettings.audioMuted,
                     zoomScale = currentCameraSettings.zoomScale,
-                    maxVideoDuration = currentCameraSettings.maxAudioDuration
+                    maxVideoDuration = currentCameraSettings.maxVideoDuration
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
