@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview.quicksettings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -30,6 +31,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +61,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetLowLightBoost
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
+import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -110,31 +116,47 @@ fun QuickSettingsScreenOverlay(
             }
         }
         BackHandler(onBack = onBack)
-        Column(
-            modifier =
-            modifier
-                .fillMaxSize()
-                .background(color = backgroundColor.value)
-                .alpha(alpha = contentAlpha.value)
-                .clickable(onClick = onBack),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ExpandedQuickSettingsUi(
-                previewUiState = previewUiState,
-                currentCameraSettings = currentCameraSettings,
-                systemConstraints = systemConstraints,
-                shouldShowQuickSetting = shouldShowQuickSetting,
-                setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
-                    shouldShowQuickSetting = enum
-                },
-                onLensFaceClick = onLensFaceClick,
-                onFlashModeClick = onFlashModeClick,
-                onAspectRatioClick = onAspectRatioClick,
-                onCaptureModeClick = onCaptureModeClick,
-                onDynamicRangeClick = onDynamicRangeClick,
-                onLowLightBoostClick = onLowLightBoostClick
-            )
+
+        // Only needed to initialize
+        val currentDisplayRotation = LocalView.current.display.rotation
+        var newSurfaceRotation by remember { mutableIntStateOf(currentDisplayRotation) }
+        var prevSurfaceRotation by remember { mutableIntStateOf(currentDisplayRotation) }
+        key(LocalConfiguration.current) {
+            prevSurfaceRotation = newSurfaceRotation
+            newSurfaceRotation = LocalView.current.display.rotation
+        }
+
+        AnimatedContent(
+            targetState = prevSurfaceRotation,
+            label = "QuickSettingOrientation",
+            modifier = Modifier.background(color = backgroundColor.value)
+        ) { prevRotation ->
+            Column(
+                modifier =
+                modifier
+                    .fillMaxSize()
+                    .alpha(alpha = contentAlpha.value)
+                    .clickable(onClick = onBack)
+                    .rotatedLayout(baseRotation = prevRotation),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ExpandedQuickSettingsUi(
+                    previewUiState = previewUiState,
+                    currentCameraSettings = currentCameraSettings,
+                    systemConstraints = systemConstraints,
+                    shouldShowQuickSetting = shouldShowQuickSetting,
+                    setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
+                        shouldShowQuickSetting = enum
+                    },
+                    onLensFaceClick = onLensFaceClick,
+                    onFlashModeClick = onFlashModeClick,
+                    onAspectRatioClick = onAspectRatioClick,
+                    onCaptureModeClick = onCaptureModeClick,
+                    onDynamicRangeClick = onDynamicRangeClick,
+                    onLowLightBoostClick = onLowLightBoostClick
+                )
+            }
         }
     } else {
         shouldShowQuickSetting = IsExpandedQuickSetting.NONE

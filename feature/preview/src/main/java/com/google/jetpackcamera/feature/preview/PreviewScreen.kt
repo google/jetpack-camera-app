@@ -211,7 +211,6 @@ private fun ContentScreen(
             )
 
             QuickSettingsScreenOverlay(
-                modifier = Modifier.rotatedLayout(),
                 previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = onToggleQuickSettings,

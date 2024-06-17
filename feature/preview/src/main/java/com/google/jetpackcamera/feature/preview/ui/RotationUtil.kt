@@ -115,23 +115,21 @@ fun SmoothImmersiveRotationEffect(context: Context) {
  * orientation of the device, and is then rotated to match.
  */
 @Composable
-fun Modifier.rotatedLayout(): Modifier {
+fun Modifier.rotatedLayout(baseRotation: Int = Surface.ROTATION_0): Modifier {
     val currentDisplayRotation = key(LocalConfiguration.current) {
         LocalView.current.display.rotation
     }
-    val currentDegrees = surfaceRotationToRotationDegrees(currentDisplayRotation).toFloat()
+    val baseDegrees = surfaceRotationToRotationDegrees(baseRotation)
+    val currentDegrees = surfaceRotationToRotationDegrees(currentDisplayRotation)
+    val rotationAmount = ((currentDegrees - baseDegrees + 360) % 360)
 
     return this then Modifier
         .fillMaxSize()
         .layout { measurable, constraints ->
-            val (width, height) = when (currentDisplayRotation) {
-                Surface.ROTATION_180,
-                Surface.ROTATION_0 -> Pair(constraints.maxWidth, constraints.maxHeight)
-
-                Surface.ROTATION_90,
-                Surface.ROTATION_270 -> Pair(constraints.maxHeight, constraints.maxWidth)
-
-                else -> throw IllegalStateException("Unexpected rotation: $currentDisplayRotation")
+            val (width, height) = if (rotationAmount % 180 == 90) {
+                Pair(constraints.maxHeight, constraints.maxWidth)
+            } else {
+                Pair(constraints.maxWidth, constraints.maxHeight)
             }
 
             val placeable = measurable.measure(
@@ -139,7 +137,7 @@ fun Modifier.rotatedLayout(): Modifier {
             )
             layout(placeable.width, placeable.height) {
                 placeable.placeWithLayer(0, 0) {
-                    rotationZ = -currentDegrees
+                    rotationZ = -rotationAmount.toFloat()
                 }
             }
         }
