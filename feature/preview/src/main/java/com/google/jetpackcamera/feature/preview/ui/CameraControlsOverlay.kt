@@ -217,7 +217,6 @@ private fun ControlsBottom(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
-
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
             ZoomScaleText(zoomLevel)
@@ -300,11 +299,12 @@ private fun CaptureButton(
     val context = LocalContext.current
 
     LaunchedEffect(previewUiState.recordingElapsedTime) {
-        if (videoRecordingState == VideoRecordingState.ACTIVE
-            && maxVideoDuration != -1L
-            && previewUiState.recordingElapsedTime >= maxVideoDuration
-        )
+        if (videoRecordingState == VideoRecordingState.ACTIVE &&
+            maxVideoDuration != -1L &&
+            previewUiState.recordingElapsedTime >= maxVideoDuration
+        ) {
             onStopVideoRecording()
+        }
     }
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
@@ -523,7 +523,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,

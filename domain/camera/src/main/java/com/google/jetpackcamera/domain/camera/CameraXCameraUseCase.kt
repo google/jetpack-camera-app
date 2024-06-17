@@ -100,8 +100,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Timer
-import java.util.TimerTask
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -520,8 +518,10 @@ constructor(
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        audioAmplitude = onVideoRecordEvent.recordingStats.audioStats.audioAmplitude,
-                                        timeStamp = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                                        audioAmplitude = onVideoRecordEvent.recordingStats
+                                            .audioStats.audioAmplitude,
+                                        timeStamp = onVideoRecordEvent.recordingStats
+                                            .recordedDurationNanos
                                     )
                                 )
                             }
