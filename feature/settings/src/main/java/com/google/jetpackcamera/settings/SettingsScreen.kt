@@ -39,6 +39,7 @@ import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
@@ -68,6 +69,7 @@ fun SettingsScreen(
         setCaptureMode = viewModel::setCaptureMode,
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization,
+        setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode
     )
 }
@@ -84,6 +86,7 @@ private fun SettingsScreen(
     setCaptureMode: (CaptureMode) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
     setPreviewStabilization: (Stabilization) -> Unit = {},
+    setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
     Column(
@@ -106,6 +109,7 @@ private fun SettingsScreen(
                 setCaptureMode = setCaptureMode,
                 setVideoStabilization = setVideoStabilization,
                 setPreviewStabilization = setPreviewStabilization,
+                setMaxVideoDuration = setMaxVideoDuration,
                 setDarkMode = setDarkMode
             )
         }
@@ -123,6 +127,7 @@ fun SettingsList(
     setCaptureMode: (CaptureMode) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
     setPreviewStabilization: (Stabilization) -> Unit = {},
+    setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
@@ -152,6 +157,7 @@ fun SettingsList(
         setCaptureMode = setCaptureMode
     )
 
+    MaxVideoDurationSetting(currentMaxVideoDuration = uiState.cameraAppSettings.maxVideoDuration, setMaxDuration = setMaxVideoDuration)
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
         setVideoStabilization = setVideoStabilization,

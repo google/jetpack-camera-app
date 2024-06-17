@@ -76,6 +76,13 @@ const val FPS_15 = 15
 const val FPS_30 = 30
 const val FPS_60 = 60
 
+const val NO_VIDEO_LIMIT = -1L
+const val TEN_SECONDS = 10L
+const val THIRTY_SECONDS = 30L
+const val SIXTY_SECONDS = 60L
+
+
+
 /**
  * MAJOR SETTING UI COMPONENTS
  * these are ready to be popped into the ui
@@ -325,6 +332,37 @@ fun CaptureModeSetting(
                     enabled = true,
                     onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
+            }
+        }
+    )
+}
+
+
+@Composable
+fun MaxVideoDurationSetting(
+    currentMaxVideoDuration: Long,
+    setMaxDuration: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier,
+        title = "set max video duration",
+        leadingIcon = null,
+        description = "Set maximum video duration in seconds",
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    text = "no max video length",
+                    selected = currentMaxVideoDuration == NO_VIDEO_LIMIT,
+                    onClick = { setMaxDuration(NO_VIDEO_LIMIT) }
+                )
+                listOf(TEN_SECONDS, THIRTY_SECONDS, SIXTY_SECONDS).forEach { maxDuration ->
+                    SingleChoiceSelector(
+                        text = "%d".format(maxDuration),
+                        selected = currentMaxVideoDuration == (maxDuration * 1_000_000_000),
+                        onClick = { setMaxDuration(maxDuration * 1_000_000_000) },
+                    )
+                }
             }
         }
     )

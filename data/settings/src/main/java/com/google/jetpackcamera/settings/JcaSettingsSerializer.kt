@@ -20,7 +20,7 @@ import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-
+const val NO_MAX_DURATION = -1L
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
@@ -33,6 +33,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
+        .setMaxVideoDuration(NO_MAX_DURATION)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

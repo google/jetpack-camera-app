@@ -16,12 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
-import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
-import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
-import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -34,9 +28,15 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toPro
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.Stabilization
-import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
+import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
+import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
+import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
+import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
 
 const val TARGET_FPS_NONE = 0
 const val TARGET_FPS_15 = 15
@@ -76,7 +76,8 @@ class LocalSettingsRepository @Inject constructor(
                     else -> CaptureMode.MULTI_STREAM
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus)
+                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
+                maxVideoDuration = it.maxVideoDuration
             )
         }
 
@@ -191,4 +192,11 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
-}
+    override suspend fun updateMaxVideoDuration(duration: Long) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setMaxVideoDuration(duration)
+                .build()
+        }
+    }
+    }
