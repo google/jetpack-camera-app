@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.google.jetpackcamera.utils
 import android.app.Activity
 import android.os.Build
 import android.util.Log
+import android.app.Instrumentation
+import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -47,6 +49,16 @@ inline fun <reified T : Activity> runScenarioTest(
 ) {
     ActivityScenario.launch(T::class.java).use { scenario ->
         scenario.apply(block)
+    }
+}
+
+inline fun <reified T : Activity> runScenarioTestForResult(
+    intent: Intent,
+    crossinline block: ActivityScenario<T>.() -> Unit
+): Instrumentation.ActivityResult? {
+    ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
+        scenario.apply(block)
+        return scenario.result
     }
 }
 
