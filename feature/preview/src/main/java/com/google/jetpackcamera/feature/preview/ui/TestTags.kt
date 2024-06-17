@@ -25,6 +25,3 @@ const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
 const val SETTINGS_BUTTON = "SettingsButton"
 const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
 const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
-
-const val FIRST_FRAME_TRACE = "FirstFrameTrace"
-const val FIRST_FRAME_COOKIE = 12345
