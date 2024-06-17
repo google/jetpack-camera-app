@@ -100,6 +100,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Timer
+import java.util.TimerTask
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -256,7 +258,8 @@ constructor(
     private data class TransientSessionSettings(
         val flashMode: FlashMode,
         val zoomScale: Float,
-        val audioMuted: Boolean
+        val audioMuted: Boolean,
+        val maxVideoDuration: Long
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -269,7 +272,8 @@ constructor(
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
                     audioMuted = currentCameraSettings.audioMuted,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    maxVideoDuration = currentCameraSettings.maxAudioDuration
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -516,7 +520,8 @@ constructor(
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                        audioAmplitude = onVideoRecordEvent.recordingStats.audioStats.audioAmplitude,
+                                        timeStamp = onVideoRecordEvent.recordingStats.recordedDurationNanos
                                     )
                                 )
                             }
