@@ -16,7 +16,7 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout

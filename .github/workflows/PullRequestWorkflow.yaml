@@ -13,7 +13,7 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -51,7 +51,7 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -83,7 +83,7 @@ jobs:
 
   android-test:
     name: Instrumentation Tests (${{ matrix.device.name }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -132,7 +132,7 @@ jobs:
 
   spotless:
     name: Spotless Check
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER }}
     timeout-minutes: 60
     steps:
       - name: Checkout
