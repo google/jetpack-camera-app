@@ -55,6 +55,7 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -261,12 +262,18 @@ private fun ControlsBottom(
                 } else {
                     val isHdrEnabled = currentCameraSettings.dynamicRange != DynamicRange.SDR
                     if (!isQuickSettingsOpen && isHdrEnabled) {
+                        val cameraConstraints = systemConstraints.forCurrentLens(
+                            currentCameraSettings
+                        )
+                        val supportedImageFormats = systemConstraints
+                            .forCurrentLens(currentCameraSettings)
+                            ?.supportedImageFormatsMap
+                            ?.get(currentCameraSettings.captureMode)
                         HdrCaptureModeToggleButton(
                             initialImageFormat = currentCameraSettings.imageFormat,
-                            supportedImageFormats = systemConstraints
-                                .forCurrentLens(currentCameraSettings)
-                                ?.supportedImageFormatsMap
-                                ?.get(currentCameraSettings.captureMode),
+                            hdrDynamicRangeSupported = cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } ?: false,
+                            hdrImageFormatSupported = supportedImageFormats != null && supportedImageFormats.size > 1,
+                            previewMode =  previewUiState.previewMode,
                             onChangeImageFormat = onChangeImageFormat
                         )
                     }
@@ -337,10 +344,11 @@ private fun CaptureButton(
 @Composable
 private fun HdrCaptureModeToggleButton(
     initialImageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
-    supportedImageFormats: Set<ImageOutputFormat>? = null,
+    hdrDynamicRangeSupported: Boolean,
+    hdrImageFormatSupported: Boolean,
+    previewMode: PreviewMode,
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {}
 ) {
-    val supportUltraHdr = supportedImageFormats != null && supportedImageFormats.size > 1
     var imageFormat by remember {
         mutableStateOf(initialImageFormat)
     }
@@ -369,7 +377,7 @@ private fun HdrCaptureModeToggleButton(
             }
             onChangeImageFormat(imageFormat)
         },
-        enabled = supportUltraHdr
+        enabled = previewMode is PreviewMode.StandardMode && hdrDynamicRangeSupported && hdrImageFormatSupported
     )
 }
 

@@ -204,6 +204,7 @@ private fun ContentScreen(
                 onAspectRatioClick = onChangeAspectRatio,
                 onCaptureModeClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
+                onImageOutputFormatClick = onChangeImageFormat,
                 onLowLightBoostClick = onLowLightBoost
             )
             // relative-grid style overlay on top of preview display
