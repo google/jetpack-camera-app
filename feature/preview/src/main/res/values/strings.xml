@@ -29,6 +29,8 @@
     <string name="toast_video_capture_external_unsupported">External video capture not supported</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
+    <string name="toast_hdr_photo_unsupported">HDR photo not supported</string>
+    <string name="toast_hdr_video_unsupported">HDR video not supported</string>
 
     <string name="quick_settings_front_camera_text">FRONT</string>
     <string name="quick_settings_back_camera_text">BACK</string>

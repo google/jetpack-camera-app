@@ -497,6 +497,7 @@ fun ToggleButton(
         .height(32.dp),
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
     enabled: Boolean = true,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
@@ -522,19 +523,19 @@ fun ToggleButton(
         modifier = modifier
             .clip(shape = RoundedCornerShape(50))
             .then(
-                if (enabled) {
                     Modifier.clickable {
                         scope.launch {
-                            toggleState = when (toggleState) {
-                                ToggleState.Left -> ToggleState.Right
-                                ToggleState.Right -> ToggleState.Left
+                            if (enabled) {
+                                toggleState = when (toggleState) {
+                                    ToggleState.Left -> ToggleState.Right
+                                    ToggleState.Right -> ToggleState.Left
+                                }
+                                onToggleStateChanged(toggleState)
+                            } else {
+                                onToggleWhenDisabled()
                             }
-                            onToggleStateChanged(toggleState)
                         }
                     }
-                } else {
-                    Modifier
-                }
             ),
         color = backgroundColor
     ) {

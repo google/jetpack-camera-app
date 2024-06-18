@@ -132,7 +132,8 @@ fun QuickSetHdr(
                     DynamicRange.SDR
                 }
             val newImageOutputFormat =
-                if (!hdrDynamicRangeSupported || previewMode is PreviewMode.ExternalImageCaptureMode) {
+                if (!hdrDynamicRangeSupported ||
+                    previewMode is PreviewMode.ExternalImageCaptureMode) {
                     hdrImageFormat
                 } else {
                     ImageOutputFormat.JPEG
@@ -140,7 +141,8 @@ fun QuickSetHdr(
             onClick(newDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
-        enabled = (hdrDynamicRangeSupported && previewMode is PreviewMode.StandardMode) || hdrImageFormatSupported
+        enabled = (hdrDynamicRangeSupported && previewMode is PreviewMode.StandardMode) ||
+                hdrImageFormatSupported
     )
 }
 

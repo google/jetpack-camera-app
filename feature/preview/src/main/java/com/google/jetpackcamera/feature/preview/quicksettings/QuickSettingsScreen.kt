@@ -233,7 +233,8 @@ private fun ExpandedQuickSettingsUi(
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
                                 hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
-                                hdrDynamicRangeSupported = cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } ?: false,
+                                hdrDynamicRangeSupported = cameraConstraints?.let
+                                { it.supportedDynamicRanges.size > 1 } ?: false,
                                 hdrImageFormatSupported = cameraConstraints?.let {
                                     it.supportedImageFormatsMap[CaptureMode.MULTI_STREAM]!!.size > 1
                                 } ?: false,

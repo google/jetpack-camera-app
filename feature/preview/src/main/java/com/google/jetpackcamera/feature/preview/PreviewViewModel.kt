@@ -23,6 +23,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -35,6 +37,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -254,6 +257,50 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     // todo: remove snackBar after postcapture screen implemented
                     snackBarToShow = snackBarData
+                ) ?: old
+            }
+        }
+    }
+
+    fun showToastForDisabledHdrToggle() {
+        if (previewUiState.value is PreviewUiState.NotReady) {
+            return
+        }
+        val readyState = previewUiState.value as PreviewUiState.Ready
+        val cameraConstraints = readyState.systemConstraints.forCurrentLens(
+            readyState.currentCameraSettings
+        )
+        val supportedImageFormats = readyState.systemConstraints
+            .forCurrentLens(readyState.currentCameraSettings)
+            ?.supportedImageFormatsMap
+            ?.get(readyState.currentCameraSettings.captureMode)
+        val hdrDynamicRangeSupported = cameraConstraints?.let {
+            it.supportedDynamicRanges.size > 1
+        } ?: false
+        val hdrImageFormatSupported = supportedImageFormats != null &&
+                supportedImageFormats.size > 1
+        val stringRes: Int
+        val testTag: String
+        if (readyState.previewMode is PreviewMode.ExternalImageCaptureMode) {
+            stringRes = R.string.toast_video_capture_external_unsupported
+            testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+        } else if (!hdrDynamicRangeSupported) {
+            stringRes = R.string.toast_hdr_video_unsupported
+            testTag = HDR_VIDEO_UNSUPPORTED_TAG
+
+        } else {
+            stringRes = R.string.toast_hdr_photo_unsupported
+            testTag = HDR_IMAGE_UNSUPPORTED_TAG
+        }
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    snackBarToShow = SnackbarData(
+                        cookie = "DisabledHdrToggle",
+                        stringResource = stringRes,
+                        withDismissAction = true,
+                        testTag = testTag
+                    )
                 ) ?: old
             }
         }

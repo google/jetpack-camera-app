@@ -55,7 +55,6 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -86,6 +85,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
@@ -141,6 +141,7 @@ fun CameraControlsOverlay(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudioMuted = onMuteAudio,
                 onChangeImageFormat = onChangeImageFormat,
+                onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
             )
@@ -215,6 +216,7 @@ private fun ControlsBottom(
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {}
 ) {
@@ -261,7 +263,10 @@ private fun ControlsBottom(
                     )
                 } else {
                     val isHdrEnabled = currentCameraSettings.dynamicRange != DynamicRange.SDR
-                    if (!isQuickSettingsOpen && isHdrEnabled) {
+                    if (!isQuickSettingsOpen &&
+                        (isHdrEnabled ||
+                                previewUiState.previewMode is PreviewMode.ExternalImageCaptureMode)
+                    ) {
                         val cameraConstraints = systemConstraints.forCurrentLens(
                             currentCameraSettings
                         )
@@ -271,10 +276,13 @@ private fun ControlsBottom(
                             ?.get(currentCameraSettings.captureMode)
                         HdrCaptureModeToggleButton(
                             initialImageFormat = currentCameraSettings.imageFormat,
-                            hdrDynamicRangeSupported = cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } ?: false,
-                            hdrImageFormatSupported = supportedImageFormats != null && supportedImageFormats.size > 1,
-                            previewMode =  previewUiState.previewMode,
-                            onChangeImageFormat = onChangeImageFormat
+                            hdrDynamicRangeSupported = cameraConstraints?.let
+                            { it.supportedDynamicRanges.size > 1 } ?: false,
+                            hdrImageFormatSupported = supportedImageFormats != null &&
+                                    supportedImageFormats.size > 1,
+                            previewMode = previewUiState.previewMode,
+                            onChangeImageFormat = onChangeImageFormat,
+                            onToggleWhenDisabled = onToggleWhenDisabled
                         )
                     }
                 }
@@ -347,16 +355,21 @@ private fun HdrCaptureModeToggleButton(
     hdrDynamicRangeSupported: Boolean,
     hdrImageFormatSupported: Boolean,
     previewMode: PreviewMode,
-    onChangeImageFormat: (ImageOutputFormat) -> Unit = {}
+    onChangeImageFormat: (ImageOutputFormat) -> Unit,
+    onToggleWhenDisabled: () -> Unit
 ) {
     var imageFormat by remember {
         mutableStateOf(initialImageFormat)
     }
 
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
-    val initialState = when (initialImageFormat) {
-        ImageOutputFormat.JPEG_ULTRA_HDR -> ToggleState.Left
-        ImageOutputFormat.JPEG -> ToggleState.Right
+    val initialState = if (previewMode is PreviewMode.ExternalImageCaptureMode) {
+        ToggleState.Left
+    } else {
+        when (initialImageFormat) {
+            ImageOutputFormat.JPEG_ULTRA_HDR -> ToggleState.Left
+            ImageOutputFormat.JPEG -> ToggleState.Right
+        }
     }
     ToggleButton(
         leftIcon = if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
@@ -377,7 +390,9 @@ private fun HdrCaptureModeToggleButton(
             }
             onChangeImageFormat(imageFormat)
         },
-        enabled = previewMode is PreviewMode.StandardMode && hdrDynamicRangeSupported && hdrImageFormatSupported
+        onToggleWhenDisabled = { onToggleWhenDisabled() },
+        enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
+                hdrDynamicRangeSupported && hdrImageFormatSupported
     )
 }
 
