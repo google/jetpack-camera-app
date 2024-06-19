@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -200,19 +201,26 @@ private fun ExpandedQuickSettingsUi(
         // to change the order of display just move these lines of code above or below each other
         when (shouldShowQuickSetting) {
             IsExpandedQuickSetting.NONE -> {
-                FlowRow {
+                FlowRow(
+                    maxItemsInEachRow = 3,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val itemModifier = Modifier.width(
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2
+                    )
                     QuickSetFlash(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
                         onClick = { f: FlashMode -> onFlashModeClick(f) },
                         currentFlashMode = currentCameraSettings.flashMode
                     )
                     QuickFlipCamera(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
                         setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
                         currentLensFacing = currentCameraSettings.cameraLensFacing
                     )
                     QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                         onClick = {
                             setVisibleQuickSetting(
                                 IsExpandedQuickSetting.ASPECT_RATIO
@@ -222,12 +230,12 @@ private fun ExpandedQuickSettingsUi(
                         currentRatio = currentCameraSettings.aspectRatio
                     )
                     QuickSetCaptureMode(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
                         setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
                         currentCaptureMode = currentCameraSettings.captureMode
                     )
                     QuickSetHdr(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
                         onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
                         selectedDynamicRange = currentCameraSettings.dynamicRange,
                         hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
@@ -238,7 +246,7 @@ private fun ExpandedQuickSettingsUi(
                             } ?: false
                     )
                     QuickSetLowLightBoost(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_LOW_LIGHT_BOOST_BUTTON),
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_LOW_LIGHT_BOOST_BUTTON),
                         onClick = {
                                 l: LowLightBoost ->
                             onLowLightBoostClick(l)
