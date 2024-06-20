@@ -147,6 +147,7 @@ fun AmplitudeVisualizer(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
+                .animateToUpright()
                 .apply {
                     if (audioAmplitude != 0.0) {
                         testTag(AMPLITUDE_HOT_TAG)
