@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview.quicksettings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -23,11 +24,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,7 +62,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetLowLightBoost
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
+import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -109,31 +117,47 @@ fun QuickSettingsScreenOverlay(
             }
         }
         BackHandler(onBack = onBack)
-        Column(
-            modifier =
-            modifier
-                .fillMaxSize()
-                .background(color = backgroundColor.value)
-                .alpha(alpha = contentAlpha.value)
-                .clickable(onClick = onBack),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ExpandedQuickSettingsUi(
-                previewUiState = previewUiState,
-                currentCameraSettings = currentCameraSettings,
-                systemConstraints = systemConstraints,
-                shouldShowQuickSetting = shouldShowQuickSetting,
-                setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
-                    shouldShowQuickSetting = enum
-                },
-                onLensFaceClick = onLensFaceClick,
-                onFlashModeClick = onFlashModeClick,
-                onAspectRatioClick = onAspectRatioClick,
-                onCaptureModeClick = onCaptureModeClick,
-                onDynamicRangeClick = onDynamicRangeClick,
-                onLowLightBoostClick = onLowLightBoostClick
-            )
+
+        // Only needed to initialize
+        val currentDisplayRotation = LocalView.current.display.rotation
+        var newSurfaceRotation by remember { mutableIntStateOf(currentDisplayRotation) }
+        var prevSurfaceRotation by remember { mutableIntStateOf(currentDisplayRotation) }
+        key(LocalConfiguration.current) {
+            prevSurfaceRotation = newSurfaceRotation
+            newSurfaceRotation = LocalView.current.display.rotation
+        }
+
+        AnimatedContent(
+            targetState = prevSurfaceRotation,
+            label = "QuickSettingOrientation",
+            modifier = Modifier.background(color = backgroundColor.value)
+        ) { prevRotation ->
+            Column(
+                modifier =
+                modifier
+                    .fillMaxSize()
+                    .alpha(alpha = contentAlpha.value)
+                    .clickable(onClick = onBack)
+                    .rotatedLayout(baseRotation = prevRotation),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ExpandedQuickSettingsUi(
+                    previewUiState = previewUiState,
+                    currentCameraSettings = currentCameraSettings,
+                    systemConstraints = systemConstraints,
+                    shouldShowQuickSetting = shouldShowQuickSetting,
+                    setVisibleQuickSetting = { enum: IsExpandedQuickSetting ->
+                        shouldShowQuickSetting = enum
+                    },
+                    onLensFaceClick = onLensFaceClick,
+                    onFlashModeClick = onFlashModeClick,
+                    onAspectRatioClick = onAspectRatioClick,
+                    onCaptureModeClick = onCaptureModeClick,
+                    onDynamicRangeClick = onDynamicRangeClick,
+                    onLowLightBoostClick = onLowLightBoostClick
+                )
+            }
         }
     } else {
         shouldShowQuickSetting = IsExpandedQuickSetting.NONE
@@ -149,6 +173,7 @@ private enum class IsExpandedQuickSetting {
 /**
  * The UI component for quick settings when it is expanded.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExpandedQuickSettingsUi(
     previewUiState: PreviewUiState.Ready,
@@ -176,72 +201,59 @@ private fun ExpandedQuickSettingsUi(
         // to change the order of display just move these lines of code above or below each other
         when (shouldShowQuickSetting) {
             IsExpandedQuickSetting.NONE -> {
-                val displayedQuickSettings: List<@Composable () -> Unit> =
-                    buildList {
-                        add {
-                            QuickSetFlash(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
-                                onClick = { f: FlashMode -> onFlashModeClick(f) },
-                                currentFlashMode = currentCameraSettings.flashMode
+                FlowRow(
+                    maxItemsInEachRow = 3,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val itemModifier = Modifier.width(
+                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
+                            dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2
+                    )
+                    QuickSetFlash(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
+                        onClick = { f: FlashMode -> onFlashModeClick(f) },
+                        currentFlashMode = currentCameraSettings.flashMode
+                    )
+                    QuickFlipCamera(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                        setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
+                        currentLensFacing = currentCameraSettings.cameraLensFacing
+                    )
+                    QuickSetRatio(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                        onClick = {
+                            setVisibleQuickSetting(
+                                IsExpandedQuickSetting.ASPECT_RATIO
                             )
-                        }
-
-                        add {
-                            QuickFlipCamera(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
-                                setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
-                                currentLensFacing = currentCameraSettings.cameraLensFacing
-                            )
-                        }
-
-                        add {
-                            QuickSetRatio(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
-                                onClick = {
-                                    setVisibleQuickSetting(
-                                        IsExpandedQuickSetting.ASPECT_RATIO
-                                    )
-                                },
-                                ratio = currentCameraSettings.aspectRatio,
-                                currentRatio = currentCameraSettings.aspectRatio
-                            )
-                        }
-
-                        add {
-                            QuickSetCaptureMode(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
-                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
-                                currentCaptureMode = currentCameraSettings.captureMode
-                            )
-                        }
-
-                        add {
-                            QuickSetHdr(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
-                                onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
-                                selectedDynamicRange = currentCameraSettings.dynamicRange,
-                                hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                enabled = previewUiState.previewMode !is
-                                    PreviewMode.ExternalImageCaptureMode &&
-                                    previewUiState.systemConstraints.forCurrentLens(
-                                        currentCameraSettings
-                                    )
-                                        ?.let { it.supportedDynamicRanges.size > 1 } ?: false
-                            )
-                        }
-
-                        add {
-                            QuickSetLowLightBoost(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_LOW_LIGHT_BOOST_BUTTON),
-                                onClick = {
-                                        l: LowLightBoost ->
-                                    onLowLightBoostClick(l)
-                                },
-                                selectedLowLightBoost = currentCameraSettings.lowLightBoost
-                            )
-                        }
-                    }
-                QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
+                        },
+                        ratio = currentCameraSettings.aspectRatio,
+                        currentRatio = currentCameraSettings.aspectRatio
+                    )
+                    QuickSetCaptureMode(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
+                        setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                        currentCaptureMode = currentCameraSettings.captureMode
+                    )
+                    QuickSetHdr(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                        onClick = { d: DynamicRange -> onDynamicRangeClick(d) },
+                        selectedDynamicRange = currentCameraSettings.dynamicRange,
+                        hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
+                        enabled = previewUiState.previewMode !is
+                            PreviewMode.ExternalImageCaptureMode &&
+                            systemConstraints.forCurrentLens(currentCameraSettings)?.let {
+                                it.supportedDynamicRanges.size > 1
+                            } ?: false
+                    )
+                    QuickSetLowLightBoost(
+                        modifier = itemModifier.testTag(QUICK_SETTINGS_LOW_LIGHT_BOOST_BUTTON),
+                        onClick = {
+                                l: LowLightBoost ->
+                            onLowLightBoostClick(l)
+                        },
+                        selectedLowLightBoost = currentCameraSettings.lowLightBoost
+                    )
+                }
             }
             // if a setting that can be expanded is selected, show it
             IsExpandedQuickSetting.ASPECT_RATIO -> {

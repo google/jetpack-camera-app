@@ -34,7 +34,6 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -43,6 +42,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -87,7 +87,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -97,6 +97,7 @@ import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -146,6 +147,7 @@ fun AmplitudeVisualizer(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
+                .animateToUpright()
                 .apply {
                     if (audioAmplitude != 0.0) {
                         testTag(AMPLITUDE_HOT_TAG)
@@ -267,11 +269,31 @@ fun PreviewDisplay(
     val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
 
     surfaceRequest?.let {
-        BoxWithConstraints(
-            Modifier
+        var imageVisible by remember { mutableStateOf(true) }
+
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = (BLINK_TIME / 2).toInt(),
+                easing = LinearEasing
+            ),
+            label = ""
+        )
+
+        LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
+            if (previewUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
+                delay(BLINK_TIME)
+                imageVisible = true
+            }
+        }
+
+        Box(
+            modifier
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black)
+                .wrapContentSize()
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = { offset ->
@@ -280,52 +302,52 @@ fun PreviewDisplay(
                             currentOnFlipCamera()
                         }
                     )
-                },
+                }
+                .layout { measurable, constraints ->
+                    val maxWidth = constraints.maxWidth.toFloat()
+                    val maxHeight = constraints.maxHeight.toFloat()
+                    val maxAspectRatio: Float = maxWidth / maxHeight
+                    val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+
+                    val correctAspectRation = if (
+                        (maxAspectRatio > 1 && aspectRatioFloat < 1) ||
+                        (maxAspectRatio < 1 && aspectRatioFloat > 1)
+                    ) {
+                        1 / aspectRatioFloat
+                    } else {
+                        aspectRatioFloat
+                    }
+                    val shouldUseMaxWidth = maxAspectRatio <= correctAspectRation
+                    val width = if (shouldUseMaxWidth) maxWidth else maxHeight * correctAspectRation
+                    val height =
+                        if (!shouldUseMaxWidth) maxHeight else maxWidth / correctAspectRation
+
+                    val placeable = measurable.measure(
+                        Constraints.fixed(
+                            width.roundToInt(),
+                            height.roundToInt()
+                        )
+                    )
+
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                    }
+                }
+                .transformable(state = transformableState)
+                .alpha(imageAlpha),
 
             contentAlignment = Alignment.Center
         ) {
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            var imageVisible by remember { mutableStateOf(true) }
-
-            val imageAlpha: Float by animateFloatAsState(
-                targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                ),
-                label = ""
+            CameraXViewfinder(
+                modifier = Modifier.fillMaxSize(),
+                surfaceRequest = it,
+                implementationMode = when {
+                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                    else -> ImplementationMode.EMBEDDED
+                },
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                onTap = { x, y -> onTapToFocus(x, y) }
             )
-
-            LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
-                if (previewUiState.lastBlinkTimeStamp != 0L) {
-                    imageVisible = false
-                    delay(BLINK_TIME)
-                    imageVisible = true
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(imageAlpha)
-            ) {
-                CameraXViewfinder(
-                    modifier = Modifier.fillMaxSize(),
-                    surfaceRequest = it,
-                    implementationMode = when {
-                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                        else -> ImplementationMode.EMBEDDED
-                    },
-                    onRequestWindowColorMode = onRequestWindowColorMode,
-                    onTap = { x, y -> onTapToFocus(x, y) }
-                )
-            }
         }
     }
 }
@@ -428,7 +450,7 @@ fun ZoomScaleText(zoomScale: Float, modifier: Modifier = Modifier) {
         animationSpec = tween()
     )
     Text(
-        modifier = Modifier.alpha(contentAlpha.value),
+        modifier = modifier.alpha(contentAlpha.value),
         text = "%.1fx".format(zoomScale),
         fontSize = 20.sp
     )
@@ -492,15 +514,14 @@ enum class ToggleState {
 fun ToggleButton(
     leftIcon: Painter,
     rightIcon: Painter,
-    modifier: Modifier = Modifier
-        .width(64.dp)
-        .height(32.dp),
+    modifier: Modifier = Modifier,
+    leftIconModifier: Modifier = Modifier,
+    rightIconModifier: Modifier = Modifier,
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
     enabled: Boolean = true,
     leftIconDescription: String = "leftIcon",
-    rightIconDescription: String = "rightIcon",
-    iconPadding: Dp = 8.dp
+    rightIconDescription: String = "rightIcon"
 ) {
     val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
     val disableColor = MaterialTheme.colorScheme.onSurface
@@ -520,6 +541,8 @@ fun ToggleButton(
 
     Surface(
         modifier = modifier
+            .width(64.dp)
+            .height(32.dp)
             .clip(shape = RoundedCornerShape(50))
             .then(
                 if (enabled) {
@@ -535,7 +558,7 @@ fun ToggleButton(
                 } else {
                     Modifier
                 }
-            ),
+            ).then(modifier),
         color = backgroundColor
     ) {
         Box {
@@ -571,7 +594,7 @@ fun ToggleButton(
                 Icon(
                     painter = leftIcon,
                     contentDescription = leftIconDescription,
-                    modifier = Modifier.padding(iconPadding),
+                    modifier = leftIconModifier.padding(8.dp),
                     tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Left) {
@@ -583,7 +606,7 @@ fun ToggleButton(
                 Icon(
                     painter = rightIcon,
                     contentDescription = rightIconDescription,
-                    modifier = Modifier.padding(iconPadding),
+                    modifier = rightIconModifier.padding(8.dp),
                     tint = if (!enabled) {
                         disableColor
                     } else if (toggleState == ToggleState.Right) {

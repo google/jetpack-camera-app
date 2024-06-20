@@ -16,11 +16,13 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.net.Uri
+import androidx.compose.runtime.Stable
 
 /**
  * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
  * UX differs depends on which mode the Preview is launched under.
  */
+@Stable
 sealed interface PreviewMode {
     /**
      * The default mode for the app.

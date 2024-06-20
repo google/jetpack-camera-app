@@ -162,11 +162,13 @@ private fun ControlsTop(
             SettingsNavButton(
                 modifier = Modifier
                     .padding(12.dp)
-                    .testTag(SETTINGS_BUTTON),
+                    .testTag(SETTINGS_BUTTON)
+                    .animateToUpright(),
                 onNavigateToSettings = onNavigateToSettings
             )
             if (!isQuickSettingsOpen) {
                 QuickSettingsIndicators(
+                    modifier = Modifier.animateToUpright(),
                     currentFlashMode = currentCameraSettings.flashMode,
                     onFlashModeClick = onChangeFlash
                 )
@@ -182,10 +184,12 @@ private fun ControlsTop(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StabilizationIcon(
+                modifier = Modifier.animateToUpright(),
                 videoStabilization = currentCameraSettings.videoCaptureStabilization,
                 previewStabilization = currentCameraSettings.previewStabilization
             )
             LowLightBoostIcon(
+                modifier = Modifier.animateToUpright(),
                 lowLightBoost = currentCameraSettings.lowLightBoost
             )
         }
@@ -219,7 +223,10 @@ private fun ControlsBottom(
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
-            ZoomScaleText(zoomLevel)
+            ZoomScaleText(
+                modifier = Modifier.animateToUpright(),
+                zoomScale = zoomLevel
+            )
         }
 
         Row(
@@ -231,7 +238,8 @@ private fun ControlsBottom(
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
-                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON)
+                            .animateToUpright(),
                         onClick = onFlipCamera,
                         // enable only when phone has front and rear camera
                         enabledCondition = systemConstraints.availableLenses.size > 1
@@ -296,7 +304,9 @@ private fun CaptureButton(
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
     CaptureButton(
-        modifier = modifier.testTag(CAPTURE_BUTTON),
+        modifier = modifier
+            .testTag(CAPTURE_BUTTON)
+            .animateToUpright(),
         onClick = {
             multipleEventsCutter.processEvent {
                 when (previewUiState.previewMode) {
@@ -361,6 +371,8 @@ private fun HdrCaptureModeToggleButton(
         } else {
             rememberVectorPainter(image = Icons.Outlined.Videocam)
         },
+        leftIconModifier = Modifier.animateToUpright(),
+        rightIconModifier = Modifier.animateToUpright(),
         initialState = initialState,
         onToggleStateChanged = {
             imageFormat = when (it) {

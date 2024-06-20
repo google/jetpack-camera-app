@@ -30,6 +30,7 @@ import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPP
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -409,6 +410,12 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                 } ?: old
             }
+        }
+    }
+
+    fun setDisplayRotation(deviceRotation: DeviceRotation) {
+        viewModelScope.launch {
+            cameraUseCase.setDeviceRotation(deviceRotation)
         }
     }
 

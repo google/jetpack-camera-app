@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,24 +35,30 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
+import com.google.jetpackcamera.feature.preview.ui.SmoothImmersiveRotationEffect
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
+import com.google.jetpackcamera.feature.preview.ui.padBottomForSafeContentInAllOrientations
+import com.google.jetpackcamera.feature.preview.ui.rotatedLayout
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -78,13 +85,16 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+    // For this screen, force an immersive view with smooth rotation.
+    SmoothImmersiveRotationEffect(LocalContext.current)
+
+    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsStateWithLifecycle()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsStateWithLifecycle()
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsStateWithLifecycle()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -94,36 +104,44 @@ fun PreviewScreen(
     }
 
     when (val currentUiState = previewUiState) {
-        is PreviewUiState.NotReady -> LoadingScreen()
-        is PreviewUiState.Ready -> ContentScreen(
-            modifier = modifier,
-            previewUiState = currentUiState,
-            screenFlashUiState = screenFlashUiState,
-            surfaceRequest = surfaceRequest,
-            onNavigateToSettings = onNavigateToSettings,
-            onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-            onSetLensFacing = viewModel::setLensFacing,
-            onTapToFocus = viewModel::tapToFocus,
-            onChangeZoomScale = viewModel::setZoomScale,
-            onChangeFlash = viewModel::setFlash,
-            onChangeAspectRatio = viewModel::setAspectRatio,
-            onChangeCaptureMode = viewModel::setCaptureMode,
-            onChangeDynamicRange = viewModel::setDynamicRange,
-            onLowLightBoost = viewModel::setLowLightBoost,
-            onChangeImageFormat = viewModel::setImageFormat,
-            onToggleQuickSettings = viewModel::toggleQuickSettings,
-            onMuteAudio = viewModel::setAudioMuted,
-            onCaptureImage = viewModel::captureImage,
-            onCaptureImageWithUri = viewModel::captureImageWithUri,
-            onStartVideoRecording = viewModel::startVideoRecording,
-            onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult
-        )
+        is PreviewUiState.NotReady -> LoadingScreen(modifier)
+        is PreviewUiState.Ready -> {
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+            }
+
+            ContentScreen(
+                modifier = modifier,
+                previewUiState = currentUiState,
+                screenFlashUiState = screenFlashUiState,
+                surfaceRequest = surfaceRequest,
+                onNavigateToSettings = onNavigateToSettings,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onSetLensFacing = viewModel::setLensFacing,
+                onTapToFocus = viewModel::tapToFocus,
+                onChangeZoomScale = viewModel::setZoomScale,
+                onChangeFlash = viewModel::setFlash,
+                onChangeAspectRatio = viewModel::setAspectRatio,
+                onChangeCaptureMode = viewModel::setCaptureMode,
+                onChangeDynamicRange = viewModel::setDynamicRange,
+                onLowLightBoost = viewModel::setLowLightBoost,
+                onChangeImageFormat = viewModel::setImageFormat,
+                onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onMuteAudio = viewModel::setAudioMuted,
+                onCaptureImage = viewModel::captureImage,
+                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onStartVideoRecording = viewModel::startVideoRecording,
+                onStopVideoRecording = viewModel::stopVideoRecording,
+                onToastShown = viewModel::onToastShown,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                onSnackBarResult = viewModel::onSnackBarResult
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
@@ -193,7 +211,6 @@ private fun ContentScreen(
             )
 
             QuickSettingsScreenOverlay(
-                modifier = Modifier,
                 previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = onToggleQuickSettings,
@@ -208,6 +225,9 @@ private fun ContentScreen(
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
+                modifier = Modifier
+                    .rotatedLayout()
+                    .padBottomForSafeContentInAllOrientations(),
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
                 onFlipCamera = onFlipCamera,
@@ -267,7 +287,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Preview
 @Composable
 private fun ContentScreenPreview() {
-    MaterialTheme {
+    MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             previewUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),

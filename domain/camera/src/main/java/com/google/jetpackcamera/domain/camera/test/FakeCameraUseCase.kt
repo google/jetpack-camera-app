@@ -24,6 +24,7 @@ import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -190,6 +191,12 @@ class FakeCameraUseCase(
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override fun setDeviceRotation(deviceRotation: DeviceRotation) {
+        currentSettings.update { old ->
+            old.copy(deviceRotation = deviceRotation)
         }
     }
 

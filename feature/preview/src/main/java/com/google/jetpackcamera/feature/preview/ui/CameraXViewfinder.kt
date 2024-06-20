@@ -30,13 +30,17 @@ import androidx.camera.viewfinder.surface.ViewfinderSurfaceRequest
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -161,10 +165,16 @@ fun CameraXViewfinder(
     val coordinateTransformer = MutableCoordinateTransformer()
 
     viewfinderArgs?.let { args ->
+        val displayRotation = key(LocalConfiguration.current) {
+            surfaceRotationToRotationDegrees(LocalView.current.display.rotation)
+        }
+
         Viewfinder(
             surfaceRequest = args.viewfinderSurfaceRequest,
             implementationMode = args.implementationMode,
-            transformationInfo = args.transformationInfo,
+            transformationInfo = args.transformationInfo.copy(
+                sourceRotation = (args.transformationInfo.sourceRotation + displayRotation) % 360
+            ),
             modifier = modifier.fillMaxSize().pointerInput(Unit) {
                 detectTapGestures {
                     with(coordinateTransformer) {
@@ -179,9 +189,26 @@ fun CameraXViewfinder(
     }
 }
 
+@Immutable
 private data class ViewfinderArgs(
     val viewfinderSurfaceRequest: ViewfinderSurfaceRequest,
     val isSourceHdr: Boolean,
     val implementationMode: ImplementationMode,
     val transformationInfo: TransformationInfo
+)
+
+private fun TransformationInfo.copy(
+    sourceRotation: Int = this.sourceRotation,
+    cropRectLeft: Int = this.cropRectLeft,
+    cropRectTop: Int = this.cropRectTop,
+    cropRectRight: Int = this.cropRectRight,
+    cropRectBottom: Int = this.cropRectBottom,
+    shouldMirror: Boolean = this.shouldMirror
+): TransformationInfo = TransformationInfo(
+    sourceRotation = sourceRotation,
+    cropRectLeft = cropRectLeft,
+    cropRectTop = cropRectTop,
+    cropRectRight = cropRectRight,
+    cropRectBottom = cropRectBottom,
+    shouldMirror = shouldMirror
 )

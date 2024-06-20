@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui
 import android.Manifest
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -96,7 +97,11 @@ private fun JetpackCameraNavHost(
                 }
             }
             PreviewScreen(
-                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onNavigateToSettings = remember(navController) {
+                    {
+                        navController.navigate(SETTINGS_ROUTE)
+                    }
+                },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 previewMode = previewMode
             )
@@ -107,7 +112,7 @@ private fun JetpackCameraNavHost(
                     versionName = BuildConfig.VERSION_NAME,
                     buildType = BuildConfig.BUILD_TYPE
                 ),
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = navController::popBackStack
             )
         }
     }
