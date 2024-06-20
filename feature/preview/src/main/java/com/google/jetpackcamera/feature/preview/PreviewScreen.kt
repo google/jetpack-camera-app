@@ -59,6 +59,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 
 private const val TAG = "PreviewScreen"
@@ -108,6 +109,7 @@ fun PreviewScreen(
             onChangeAspectRatio = viewModel::setAspectRatio,
             onChangeCaptureMode = viewModel::setCaptureMode,
             onChangeDynamicRange = viewModel::setDynamicRange,
+            onLowLightBoost = viewModel::setLowLightBoost,
             onChangeImageFormat = viewModel::setImageFormat,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onMuteAudio = viewModel::setAudioMuted,
@@ -138,6 +140,7 @@ private fun ContentScreen(
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
+    onLowLightBoost: (LowLightBoost) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
@@ -200,7 +203,8 @@ private fun ContentScreen(
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
                 onCaptureModeClick = onChangeCaptureMode,
-                onDynamicRangeClick = onChangeDynamicRange // onTimerClick = {}/*TODO*/
+                onDynamicRangeClick = onChangeDynamicRange,
+                onLowLightBoostClick = onLowLightBoost
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(

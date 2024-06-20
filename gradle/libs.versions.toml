@@ -15,7 +15,7 @@ accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.4.0-rc01"
+androidGradlePlugin = "8.4.2"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
