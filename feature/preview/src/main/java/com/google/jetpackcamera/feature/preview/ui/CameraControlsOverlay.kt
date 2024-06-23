@@ -242,6 +242,7 @@ private fun ControlsBottom(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
+                maxVideoDuration = currentCameraSettings.maxAudioDuration,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
@@ -282,6 +283,7 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
+    maxVideoDuration: Long,
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -295,6 +297,15 @@ private fun CaptureButton(
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
+
+    LaunchedEffect(previewUiState.recordingElapsedTime) {
+        if (videoRecordingState == VideoRecordingState.ACTIVE &&
+            maxVideoDuration != -1L &&
+            previewUiState.recordingElapsedTime >= maxVideoDuration
+        ) {
+            onStopVideoRecording()
+        }
+    }
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {

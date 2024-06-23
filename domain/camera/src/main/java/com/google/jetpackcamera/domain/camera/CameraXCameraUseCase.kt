@@ -256,7 +256,8 @@ constructor(
     private data class TransientSessionSettings(
         val flashMode: FlashMode,
         val zoomScale: Float,
-        val audioMuted: Boolean
+        val audioMuted: Boolean,
+        val maxVideoDuration: Long
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -269,7 +270,8 @@ constructor(
                 transientSettings.value = TransientSessionSettings(
                     flashMode = currentCameraSettings.flashMode,
                     audioMuted = currentCameraSettings.audioMuted,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    maxVideoDuration = currentCameraSettings.maxAudioDuration
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -516,7 +518,10 @@ constructor(
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                        audioAmplitude = onVideoRecordEvent.recordingStats
+                                            .audioStats.audioAmplitude,
+                                        timeStamp = onVideoRecordEvent.recordingStats
+                                            .recordedDurationNanos
                                     )
                                 )
                             }
