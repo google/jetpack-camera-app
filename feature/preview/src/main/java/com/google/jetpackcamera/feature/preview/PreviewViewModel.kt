@@ -229,8 +229,10 @@ class PreviewViewModel @AssistedInject constructor(
 
         Log.d(
             TAG,
-            "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
-                .currentCameraSettings.audioMuted}"
+            "Toggle Audio ${
+                (previewUiState.value as PreviewUiState.Ready)
+                    .currentCameraSettings.audioMuted
+            }"
         )
     }
 
@@ -318,8 +320,10 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun showToastForDisabledHdrToggle() {
         val disabledReason =
-            (previewUiState.value as? PreviewUiState.Ready)?.captureModeToggleUiState?.disabledReason
-                ?: throw RuntimeException("showing Hdr toggle disabled toast without disabled reason.")
+            (previewUiState.value as? PreviewUiState.Ready)?.captureModeToggleUiState
+                ?.disabledReason ?: throw RuntimeException(
+                "showing Hdr toggle disabled toast without disabled reason."
+            )
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
@@ -337,7 +341,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
