@@ -338,7 +338,6 @@ private fun CaptureModeToggleButton(
     onChangeImageFormat: (ImageOutputFormat) -> Unit,
     onToggleWhenDisabled: () -> Unit
 ) {
-
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val initialState =
         when (uiState.currentMode) {

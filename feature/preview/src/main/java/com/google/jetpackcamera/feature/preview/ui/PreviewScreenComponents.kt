@@ -523,19 +523,19 @@ fun ToggleButton(
         modifier = modifier
             .clip(shape = RoundedCornerShape(50))
             .then(
-                    Modifier.clickable {
-                        scope.launch {
-                            if (enabled) {
-                                toggleState = when (toggleState) {
-                                    ToggleState.Left -> ToggleState.Right
-                                    ToggleState.Right -> ToggleState.Left
-                                }
-                                onToggleStateChanged(toggleState)
-                            } else {
-                                onToggleWhenDisabled()
+                Modifier.clickable {
+                    scope.launch {
+                        if (enabled) {
+                            toggleState = when (toggleState) {
+                                ToggleState.Left -> ToggleState.Right
+                                ToggleState.Right -> ToggleState.Left
                             }
+                            onToggleStateChanged(toggleState)
+                        } else {
+                            onToggleWhenDisabled()
                         }
                     }
+                }
             ),
         color = backgroundColor
     ) {
@@ -550,7 +550,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

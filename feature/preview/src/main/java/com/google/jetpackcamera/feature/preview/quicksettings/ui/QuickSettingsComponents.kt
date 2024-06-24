@@ -147,7 +147,7 @@ fun QuickSetHdr(
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
         enabled = (hdrDynamicRangeSupported && previewMode is PreviewMode.StandardMode) ||
-                hdrImageFormatSupported
+            hdrImageFormatSupported
     )
 }
 
