@@ -107,7 +107,7 @@ fun ExpandedQuickSetRatio(
 @Composable
 fun QuickSetHdr(
     modifier: Modifier = Modifier,
-    onClick: (dynamicRange: DynamicRange, imageOutputFormat:ImageOutputFormat) -> Unit,
+    onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
     selectedDynamicRange: DynamicRange,
     selectedImageOutputFormat: ImageOutputFormat,
     hdrDynamicRange: DynamicRange,
@@ -117,9 +117,13 @@ fun QuickSetHdr(
     previewMode: PreviewMode
 ) {
     val enum =
-        if (selectedDynamicRange == hdrDynamicRange || selectedImageOutputFormat == hdrImageFormat)
+        if (selectedDynamicRange == hdrDynamicRange ||
+            selectedImageOutputFormat == hdrImageFormat
+        ) {
             CameraDynamicRange.HDR
-        else CameraDynamicRange.SDR
+        } else {
+            CameraDynamicRange.SDR
+        }
 
     QuickSettingUiItem(
         modifier = modifier,
