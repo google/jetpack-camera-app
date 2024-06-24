@@ -24,6 +24,7 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.feature.preview"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -31,6 +32,19 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions += "flavor"
+    productFlavors {
+        create("stable") {
+            dimension = "flavor"
+            isDefault = true
+        }
+
+        create("preview") {
+            dimension = "flavor"
+            targetSdkPreview = libs.versions.targetSdkPreview.get()
+        }
     }
 
     compileOptions {

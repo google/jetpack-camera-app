@@ -24,6 +24,7 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.data.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -60,6 +61,19 @@ android {
         cmake {
             version = libs.versions.cmake.get()
             path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
+
+    flavorDimensions += "flavor"
+    productFlavors {
+        create("stable") {
+            dimension = "flavor"
+            isDefault = true
+        }
+
+        create("preview") {
+            dimension = "flavor"
+            targetSdkPreview = libs.versions.targetSdkPreview.get()
         }
     }
 

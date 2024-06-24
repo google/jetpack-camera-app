@@ -1,9 +1,11 @@
 [versions]
 # Used directly in build.gradle.kts files
 compileSdk = "34"
+compileSdkPreview = "VanillaIceCream"
 minSdk = "21"
 orchestrator = "1.4.2"
 targetSdk = "34"
+targetSdkPreview = "VanillaIceCream"
 composeCompiler = "1.5.10"
 
 # Used below in dependency definitions
@@ -14,7 +16,7 @@ accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.4.0-rc01"
+androidGradlePlugin = "8.4.2"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
