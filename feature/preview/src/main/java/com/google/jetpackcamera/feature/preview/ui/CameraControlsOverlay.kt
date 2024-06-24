@@ -56,14 +56,12 @@ import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import com.google.jetpackcamera.settings.model.forCurrentLens
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(showInitially: Boolean = false) {
@@ -264,7 +262,7 @@ private fun ControlsBottom(
                     )
                 } else {
                     if (!isQuickSettingsOpen && previewUiState.captureModeToggleUiState.isShown) {
-                        HdrCaptureModeToggleButton(
+                        CaptureModeToggleButton(
                             uiState = previewUiState.captureModeToggleUiState,
                             onChangeImageFormat = onChangeImageFormat,
                             onToggleWhenDisabled = onToggleWhenDisabled
@@ -335,7 +333,7 @@ private fun CaptureButton(
 }
 
 @Composable
-private fun HdrCaptureModeToggleButton(
+private fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState,
     onChangeImageFormat: (ImageOutputFormat) -> Unit,
     onToggleWhenDisabled: () -> Unit
