@@ -137,7 +137,8 @@ fun QuickSetHdr(
                 }
             val newImageOutputFormat =
                 if (!hdrDynamicRangeSupported ||
-                    previewMode is PreviewMode.ExternalImageCaptureMode) {
+                    previewMode is PreviewMode.ExternalImageCaptureMode
+                ) {
                     hdrImageFormat
                 } else {
                     ImageOutputFormat.JPEG

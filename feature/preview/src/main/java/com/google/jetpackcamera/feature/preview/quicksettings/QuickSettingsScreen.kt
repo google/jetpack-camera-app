@@ -235,7 +235,7 @@ private fun ExpandedQuickSettingsUi(
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
                                 hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported = cameraConstraints?.let
-                                { it.supportedDynamicRanges.size > 1 } ?: false,
+                                    { it.supportedDynamicRanges.size > 1 } ?: false,
                                 hdrImageFormatSupported = cameraConstraints?.let {
                                     it.supportedImageFormatsMap[CaptureMode.MULTI_STREAM]!!.size > 1
                                 } ?: false,
@@ -276,7 +276,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState =  CaptureModeToggleUiState()
+                captureModeToggleUiState = CaptureModeToggleUiState()
             ),
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,

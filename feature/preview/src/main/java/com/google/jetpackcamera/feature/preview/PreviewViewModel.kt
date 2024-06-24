@@ -167,7 +167,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun getCaptureToggleUiStateDisabledReason(
         hdrDynamicRangeSupported: Boolean,
-        hdrImageFormatSupported: Boolean,
+        hdrImageFormatSupported: Boolean
     ): CaptureModeToggleUiState.CaptureModeUnsupportedReason? {
         return if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             CaptureModeToggleUiState.CaptureModeUnsupportedReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
@@ -346,7 +346,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
