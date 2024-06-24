@@ -22,7 +22,6 @@ import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
-import com.google.jetpackcamera.core.common.TraceManager
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -66,7 +65,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class PreviewViewModel @AssistedInject constructor(
     @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
-    private val constraintsRepository: ConstraintsRepository,
+    private val constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -391,7 +390,7 @@ class PreviewViewModel @AssistedInject constructor(
     // give ability to reset first frame capture so the hot start trace can be read
     fun traceFirstFrame() {
         (_previewUiState.value as? PreviewUiState.Ready)?.let { uiState ->
-            if(uiState.firstFrameCaptured) {
+            if (uiState.firstFrameCaptured) {
                 viewModelScope.launch {
                     cameraUseCase.setFirstFrameCaptured(false)
                 }

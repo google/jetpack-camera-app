@@ -42,6 +42,7 @@ const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 const val FIRST_FRAME_TRACE_PREVIEW = "firstFrameTracePreview"
 const val FIRST_FRAME_TRACE_MAIN_ACTIVITY = "firstFrameTraceMainActivity"
+
 // enums
 enum class FlashMode {
     ON,

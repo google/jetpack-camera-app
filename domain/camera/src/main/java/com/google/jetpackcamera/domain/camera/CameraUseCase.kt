@@ -99,7 +99,7 @@ interface CameraUseCase {
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
-    suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean){}
+    suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean) {}
 
     /**
      * Represents the events required for screen flash.

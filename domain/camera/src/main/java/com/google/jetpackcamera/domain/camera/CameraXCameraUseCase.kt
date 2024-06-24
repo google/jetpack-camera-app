@@ -61,7 +61,6 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import com.google.jetpackcamera.core.common.TraceManager
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -125,7 +124,7 @@ constructor(
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: SettableConstraintsRepository,
+    private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -816,8 +815,8 @@ constructor(
         }
     }
 
-    //only to be used in benchmark mode for hot capturing traces
-    override suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean){
+    // only to be used in benchmark mode for hot capturing traces
+    override suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean) {
         _currentCameraState.update { old ->
             old.copy(firstFrameCaptured = isFirstFrameCaptured)
         }

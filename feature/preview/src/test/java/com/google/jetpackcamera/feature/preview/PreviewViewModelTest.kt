@@ -48,7 +48,7 @@ class PreviewViewModelTest {
         previewViewModel = PreviewViewModel(
             PreviewMode.StandardMode {},
             cameraUseCase,
-            constraintsRepository,
+            constraintsRepository
         )
         advanceUntilIdle()
     }

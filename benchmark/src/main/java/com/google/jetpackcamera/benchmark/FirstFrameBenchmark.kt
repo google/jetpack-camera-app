@@ -79,7 +79,7 @@ class FirstFrameBenchmark {
             packageName = JCA_PACKAGE_NAME,
             metrics = buildList {
                 add(StartupTimingMetric())
-                if (startupMode == StartupMode.COLD)
+                if (startupMode == StartupMode.COLD) {
                     add(
                         TraceSectionMetric(
                             sectionName = FIRST_FRAME_TRACE_MAIN_ACTIVITY,
@@ -87,6 +87,7 @@ class FirstFrameBenchmark {
                             mode = TraceSectionMetric.Mode.First
                         )
                     )
+                }
                 add(
                     TraceSectionMetric(
                         sectionName = FIRST_FRAME_TRACE_PREVIEW,

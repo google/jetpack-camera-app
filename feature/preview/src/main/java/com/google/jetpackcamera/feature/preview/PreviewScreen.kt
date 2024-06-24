@@ -79,21 +79,22 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-    { factory -> factory.create(previewMode) }
+        { factory -> factory.create(previewMode) }
 ) {
     // only run this trace in benchmark build. difference from release is by name only
     // this check allows it to run in the cold run...
-    if (booleanResource(id = R.bool.is_benchmark_build))
+    if (booleanResource(id = R.bool.is_benchmark_build)) {
         viewModel.traceFirstFrame()
+    }
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
