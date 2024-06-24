@@ -16,10 +16,10 @@
 package com.google.jetpackcamera.utils
 
 import android.app.Activity
-import android.os.Build
-import android.util.Log
 import android.app.Instrumentation
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
