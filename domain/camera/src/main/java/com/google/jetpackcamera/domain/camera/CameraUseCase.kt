@@ -71,7 +71,7 @@ interface CameraUseCase {
 
     fun setZoomScale(scale: Float)
 
-    fun getZoomScale(): StateFlow<Float>
+    fun getCurrentCameraState(): StateFlow<CameraState>
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
@@ -99,6 +99,8 @@ interface CameraUseCase {
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
+    suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean){}
+
     /**
      * Represents the events required for screen flash.
      */
@@ -120,3 +122,8 @@ interface CameraUseCase {
         object OnVideoRecordError : OnVideoRecordEvent
     }
 }
+
+data class CameraState(
+    val zoomScale: Float = 1f,
+    val firstFrameCaptured: Boolean = false
+)

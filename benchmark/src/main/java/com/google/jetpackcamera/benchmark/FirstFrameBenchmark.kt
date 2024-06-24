@@ -25,7 +25,8 @@ import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.benchmark.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.benchmark.utils.DEFAULT_TEST_ITERATIONS
-import com.google.jetpackcamera.benchmark.utils.FIRST_FRAME_TRACE
+import com.google.jetpackcamera.benchmark.utils.FIRST_FRAME_TRACE_MAIN_ACTIVITY
+import com.google.jetpackcamera.benchmark.utils.FIRST_FRAME_TRACE_PREVIEW
 import com.google.jetpackcamera.benchmark.utils.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.benchmark.utils.JCA_PACKAGE_NAME
 import com.google.jetpackcamera.benchmark.utils.allowAllRequiredPerms
@@ -76,14 +77,24 @@ class FirstFrameBenchmark {
     ) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
-            metrics = listOf(
-                StartupTimingMetric(),
-                TraceSectionMetric(
-                    sectionName = FIRST_FRAME_TRACE,
-                    targetPackageOnly = false,
-                    mode = TraceSectionMetric.Mode.First
+            metrics = buildList {
+                add(StartupTimingMetric())
+                if (startupMode == StartupMode.COLD)
+                    add(
+                        TraceSectionMetric(
+                            sectionName = FIRST_FRAME_TRACE_MAIN_ACTIVITY,
+                            targetPackageOnly = false,
+                            mode = TraceSectionMetric.Mode.First
+                        )
+                    )
+                add(
+                    TraceSectionMetric(
+                        sectionName = FIRST_FRAME_TRACE_PREVIEW,
+                        targetPackageOnly = false,
+                        mode = TraceSectionMetric.Mode.First
+                    )
                 )
-            ),
+            },
             iterations = iterations,
             startupMode = startupMode,
             setupBlock = setupBlock

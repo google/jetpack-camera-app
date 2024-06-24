@@ -39,8 +39,9 @@ const val QUICK_SETTINGS_LENS_FRONT = "QUICK SETTINGS LENS FACING FRONT"
 
 // trace tags
 const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
-const val FIRST_FRAME_TRACE = "FirstFrameTrace"
 
+const val FIRST_FRAME_TRACE_PREVIEW = "firstFrameTracePreview"
+const val FIRST_FRAME_TRACE_MAIN_ACTIVITY = "firstFrameTraceMainActivity"
 // enums
 enum class FlashMode {
     ON,

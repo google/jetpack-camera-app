@@ -40,7 +40,8 @@ sealed interface PreviewUiState {
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode
+        val previewMode: PreviewMode,
+        val firstFrameCaptured: Boolean = false
     ) : PreviewUiState
 }
 

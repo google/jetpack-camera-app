@@ -34,13 +34,16 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.booleanResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,6 +64,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
 
@@ -73,26 +77,45 @@ fun PreviewScreen(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
+    onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode) }
+    { factory -> factory.create(previewMode) }
 ) {
-    // start first frame trace
-    viewModel.startFirstFrameTrace()
+    // only run this trace in benchmark build. difference from release is by name only
+    // this check allows it to run in the cold run...
+    if (booleanResource(id = R.bool.is_benchmark_build))
+        viewModel.traceFirstFrame()
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+            by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+            by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
         onStopOrDispose {
             viewModel.stopCamera()
         }
+    }
+
+    LaunchedEffect(onFirstFrameCaptureCompleted) {
+        snapshotFlow { previewUiState }
+            .transformWhile {
+                var continueCollecting = true
+                (it as? PreviewUiState.Ready)?.let { ready ->
+                    if (ready.firstFrameCaptured) {
+                        emit(Unit)
+                        continueCollecting = false
+                    }
+                }
+                continueCollecting
+            }.collect {
+                onFirstFrameCaptureCompleted()
+            }
     }
 
     when (val currentUiState = previewUiState) {

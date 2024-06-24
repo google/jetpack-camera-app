@@ -56,14 +56,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
-import com.google.jetpackcamera.core.common.TraceManager
+import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
+import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -77,17 +78,11 @@ private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
 
-    @Inject
-    lateinit var traceManager: TraceManager
-
     @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
-
-        // any other calls to begin first frame trace should be ignored
-        traceManager.beginFirstFrameTrace()
 
         // start trace between app starting and the earliest possible completed capture
         // todo: only run traces on a specific build version or flavor(?)
@@ -101,6 +96,14 @@ class MainActivity : ComponentActivity() {
                     .collect()
             }
         }
+
+        val firstFrameComplete = CompletableDeferred<Unit>()
+        lifecycleScope.launch {
+            traceFirstFrameMainActivity(cookie = 0) {
+                firstFrameComplete.await()
+            }
+        }
+
         setContent {
             when (uiState) {
                 Loading -> {
@@ -143,6 +146,9 @@ class MainActivity : ComponentActivity() {
                                         )
                                         window?.colorMode = colorMode
                                     }
+                                },
+                                onFirstFrameCaptureCompleted = {
+                                    firstFrameComplete.complete(Unit)
                                 }
                             )
                         }

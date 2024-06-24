@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.common.TraceManager
+import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
@@ -51,6 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -65,7 +67,6 @@ class PreviewViewModel @AssistedInject constructor(
     @Assisted previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository,
-    private val traceManager: TraceManager
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -95,15 +96,16 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getZoomScale()
-            ) { cameraAppSettings, systemConstraints, zoomScale ->
+                cameraUseCase.getCurrentCameraState()
+            ) { cameraAppSettings, systemConstraints, cameraState ->
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.Ready ->
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale,
+                                zoomScale = cameraState.zoomScale,
+                                firstFrameCaptured = cameraState.firstFrameCaptured,
                                 previewMode = previewMode
                             )
 
@@ -111,7 +113,8 @@ class PreviewViewModel @AssistedInject constructor(
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale,
+                                zoomScale = cameraState.zoomScale,
+                                firstFrameCaptured = cameraState.firstFrameCaptured,
                                 previewMode = previewMode
                             )
                     }
@@ -384,8 +387,30 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun startFirstFrameTrace() {
-        traceManager.beginFirstFrameTrace()
+    // this version of tracefirstframe only runs when app is in benchmark mode.
+    // give ability to reset first frame capture so the hot start trace can be read
+    fun traceFirstFrame() {
+        (_previewUiState.value as? PreviewUiState.Ready)?.let { uiState ->
+            if(uiState.firstFrameCaptured) {
+                viewModelScope.launch {
+                    cameraUseCase.setFirstFrameCaptured(false)
+                }
+            }
+        }
+        viewModelScope.launch {
+            traceFirstFramePreview(cookie = 1) {
+                _previewUiState.transformWhile {
+                    var continueCollecting = true
+                    (it as? PreviewUiState.Ready)?.let { uiState ->
+                        if (uiState.firstFrameCaptured) {
+                            emit(Unit)
+                            continueCollecting = false
+                        }
+                    }
+                    continueCollecting
+                }.collect {}
+            }
+        }
     }
 
     /**

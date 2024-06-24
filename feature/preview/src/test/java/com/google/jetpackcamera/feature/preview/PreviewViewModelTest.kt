@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.common.FakeTraceManager
 import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -41,7 +40,6 @@ class PreviewViewModelTest {
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
-    private val fakeTraceManager = FakeTraceManager()
     private lateinit var previewViewModel: PreviewViewModel
 
     @Before
@@ -51,7 +49,6 @@ class PreviewViewModelTest {
             PreviewMode.StandardMode {},
             cameraUseCase,
             constraintsRepository,
-            fakeTraceManager
         )
         advanceUntilIdle()
     }

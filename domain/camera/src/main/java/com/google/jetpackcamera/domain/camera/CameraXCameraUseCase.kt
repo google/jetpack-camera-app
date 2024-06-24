@@ -126,7 +126,6 @@ constructor(
     private val defaultDispatcher: CoroutineDispatcher,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
-    private val traceManager: TraceManager
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -145,7 +144,9 @@ constructor(
             ) {
                 super.onCaptureCompleted(session, request, result)
                 try {
-                    traceManager.endFirstFrameTrace()
+                    _currentCameraState.update { old ->
+                        old.copy(firstFrameCaptured = true)
+                    }
                 } catch (_: Exception) {}
             }
         }
@@ -374,7 +375,9 @@ constructor(
                                         zoomState.maxZoomRatio
                                     )
                                 camera.cameraControl.setZoomRatio(finalScale)
-                                _zoomScale.value = finalScale
+                                _currentCameraState.update { old ->
+                                    old.copy(zoomScale = finalScale)
+                                }
                             }
                         }
 
@@ -573,8 +576,8 @@ constructor(
     }
 
     // Could be improved by setting initial value only when camera is initialized
-    private val _zoomScale = MutableStateFlow(1f)
-    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
+    private val _currentCameraState = MutableStateFlow(CameraState())
+    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
@@ -810,6 +813,13 @@ constructor(
 
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
+        }
+    }
+
+    //only to be used in benchmark mode for hot capturing traces
+    override suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean){
+        _currentCameraState.update { old ->
+            old.copy(firstFrameCaptured = isFirstFrameCaptured)
         }
     }
 

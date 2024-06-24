@@ -44,6 +44,12 @@ android {
         buildConfig = true
         compose = true
     }
+    buildTypes {
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+             matchingFallbacks += listOf("release")
+        }
+    }
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }

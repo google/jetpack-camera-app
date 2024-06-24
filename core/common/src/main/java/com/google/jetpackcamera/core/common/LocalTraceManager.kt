@@ -23,7 +23,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "TraceManagerTag"
-private const val FIRST_FRAME_TRACE = "firstFrameTrace"
+
 const val FIRST_FRAME_COOKIE = 0
 var isBenchmarkBuild = false
 
@@ -47,7 +47,7 @@ class LocalTraceManager @Inject constructor(@ApplicationContext context: Context
         if ((isBenchmarkBuild && firstFrameTraceStatus != TraceStatus.IN_PROGRESS) ||
             firstFrameTraceStatus == TraceStatus.NOT_STARTED
         ) {
-            beginAsyncSection(FIRST_FRAME_TRACE, cookie)
+            beginAsyncSection(FIRST_FRAME_TRACE_PREVIEW, cookie)
             firstFrameTraceStatus = TraceStatus.IN_PROGRESS
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
         }
@@ -55,7 +55,7 @@ class LocalTraceManager @Inject constructor(@ApplicationContext context: Context
 
     override fun endFirstFrameTrace(cookie: Int) {
         if (firstFrameTraceStatus == TraceStatus.IN_PROGRESS) {
-            endAsyncSection(FIRST_FRAME_TRACE, cookie)
+            endAsyncSection(FIRST_FRAME_TRACE_PREVIEW, cookie)
             firstFrameTraceStatus = TraceStatus.COMPLETE
             Log.d(TAG, "First frame trace $firstFrameTraceStatus with cookie $cookie")
         }
