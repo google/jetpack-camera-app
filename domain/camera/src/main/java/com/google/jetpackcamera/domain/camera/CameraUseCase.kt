@@ -73,6 +73,8 @@ interface CameraUseCase {
 
     fun getZoomScale(): StateFlow<Float>
 
+    fun getLowLightBoostActiveStatus(): StateFlow<Boolean>
+
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
     fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>

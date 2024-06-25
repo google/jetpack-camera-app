@@ -20,11 +20,22 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCaptureSession.CaptureCallback
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.CameraEffect
@@ -55,6 +66,7 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.core.os.BuildCompat
 import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -182,6 +194,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                lowLightBoostSupport = getLowLightBoostDeviceSupport(),
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -210,6 +223,20 @@ constructor(
                     settingsRepository.defaultCameraAppSettings.first().aspectRatio
                 )
             ).build()
+    }
+
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
+    @OptIn(BuildCompat.PrereleaseSdkCheck::class)
+    private fun getLowLightBoostDeviceSupport() = when (BuildCompat.isAtLeastV()) {
+        true -> cameraProvider.availableCameraInfos.map { cameraInfo ->
+            Camera2CameraInfo
+                .from(cameraInfo)
+                .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+                ?.contains(
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+        }.any()
+        false -> false
     }
 
     /**
@@ -541,6 +568,10 @@ constructor(
     private val _zoomScale = MutableStateFlow(1f)
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    private val _lowLightBoostActiveStatus = MutableStateFlow(true)
+    override fun getLowLightBoostActiveStatus(): StateFlow<Boolean> =
+        _lowLightBoostActiveStatus.asStateFlow()
+
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
@@ -692,6 +723,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>,
         effect: CameraEffect? = null
     ): UseCaseGroup {
+        Log.d(TAG, "createUseCaseGroup")
         val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
         imageCaptureUseCase = createImageUseCase(sessionSettings)
         if (!disableVideoCapture) {
@@ -760,8 +792,23 @@ constructor(
     }
 
     override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        currentSettings.update { old ->
-            old?.copy(lowLightBoost = lowLightBoost)
+        when (lowLightBoost) {
+            LowLightBoost.DISABLED -> {
+                currentSettings.update { old ->
+                    old?.copy(
+                        lowLightBoost = lowLightBoost,
+                        captureMode = CaptureMode.MULTI_STREAM,
+                        flashMode = FlashMode.AUTO
+                    )
+                }
+            }
+            LowLightBoost.ENABLED -> currentSettings.update { old ->
+                old?.copy(
+                    lowLightBoost = lowLightBoost,
+                    captureMode = CaptureMode.SINGLE_STREAM,
+                    flashMode = FlashMode.OFF
+                )
+            }
         }
     }
 
@@ -820,10 +867,12 @@ constructor(
                 )
     }
 
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun createPreviewUseCase(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
+        Log.d(TAG, "createPreviewUseCase")
         val previewUseCaseBuilder = Preview.Builder()
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
@@ -833,6 +882,34 @@ constructor(
         previewUseCaseBuilder.setResolutionSelector(
             getResolutionSelector(sessionSettings.aspectRatio)
         )
+
+        if (currentSettings.value?.lowLightBoost == LowLightBoost.ENABLED) {
+            Log.d(TAG, "Adding Control AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+            val camera2Interop = Camera2Interop.Extender(previewUseCaseBuilder)
+            if (Build.VERSION.SDK_INT >= 35) {
+                camera2Interop.setCaptureRequestOption(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+                camera2Interop.setSessionCaptureCallback(object : CaptureCallback() {
+                    override fun onCaptureCompleted(
+                        session: CameraCaptureSession,
+                        request: CaptureRequest,
+                        result: TotalCaptureResult
+                    ) {
+                        super.onCaptureCompleted(session, request, result)
+                        val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
+                        if (boostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE) {
+                            Log.d(TAG, "LLB Active")
+                            _lowLightBoostActiveStatus.value = true
+                        } else {
+                            Log.d(TAG, "LLB Inactive")
+                            _lowLightBoostActiveStatus.value = false
+                        }
+                    }
+                })
+            }
+        }
 
         return previewUseCaseBuilder.build().apply {
             setSurfaceProvider { surfaceRequest ->

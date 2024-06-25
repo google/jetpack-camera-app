@@ -31,6 +31,7 @@ sealed interface PreviewUiState {
         val currentCameraSettings: CameraAppSettings,
         val systemConstraints: SystemConstraints,
         val zoomScale: Float = 1f,
+        val lowLightBoostActiveStatus: Boolean = false,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
         val quickSettingsIsOpen: Boolean = false,
         val audioAmplitude: Double = 0.0,

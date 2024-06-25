@@ -116,6 +116,7 @@ fun CameraControlsOverlay(
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                     currentCameraSettings = previewUiState.currentCameraSettings,
+                    lowLightBoostActiveStatus = previewUiState.lowLightBoostActiveStatus,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings
@@ -151,6 +152,7 @@ fun CameraControlsOverlay(
 private fun ControlsTop(
     isQuickSettingsOpen: Boolean,
     currentCameraSettings: CameraAppSettings,
+    lowLightBoostActiveStatus: Boolean = false,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
@@ -186,7 +188,8 @@ private fun ControlsTop(
                 previewStabilization = currentCameraSettings.previewStabilization
             )
             LowLightBoostIcon(
-                lowLightBoost = currentCameraSettings.lowLightBoost
+                lowLightBoost = currentCameraSettings.lowLightBoost,
+                active = lowLightBoostActiveStatus
             )
         }
     }
