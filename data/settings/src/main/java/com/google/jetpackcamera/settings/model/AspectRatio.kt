@@ -23,6 +23,8 @@ enum class AspectRatio(val ratio: Rational) {
     NINE_SIXTEEN(Rational(9, 16)),
     ONE_ONE(Rational(1, 1));
 
+    val landscapeRatio: Rational = Rational(ratio.denominator, ratio.numerator)
+
     companion object {
 
         /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
