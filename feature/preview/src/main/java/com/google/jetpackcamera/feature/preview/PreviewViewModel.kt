@@ -17,10 +17,12 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.domain.camera.CameraUseCase
@@ -42,6 +44,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -104,7 +107,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = cameraState.zoomScale,
-                                firstFrameCaptured = cameraState.firstFrameCaptured,
+                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 previewMode = previewMode
                             )
 
@@ -113,7 +116,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = cameraState.zoomScale,
-                                firstFrameCaptured = cameraState.firstFrameCaptured,
+                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 previewMode = previewMode
                             )
                     }
@@ -126,10 +129,28 @@ class PreviewViewModel @AssistedInject constructor(
         Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            if (Trace.isEnabled()) {
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
+                    traceFirstFramePreview(cookie = 1) {
+                        _previewUiState.transformWhile {
+                            var continueCollecting = true
+                            (it as? PreviewUiState.Ready)?.let { uiState ->
+                                if (uiState.sessionFirstFrameTimestamp > startTraceTimestamp) {
+                                    emit(Unit)
+                                    continueCollecting = false
+                                }
+                            }
+                            continueCollecting
+                        }.collect {}
+                    }
+                }
+            }
             // Ensure CameraUseCase is initialized before starting camera
             initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera()
+
         }
     }
 
@@ -176,8 +197,10 @@ class PreviewViewModel @AssistedInject constructor(
 
         Log.d(
             TAG,
-            "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
-                .currentCameraSettings.audioMuted}"
+            "Toggle Audio ${
+                (previewUiState.value as PreviewUiState.Ready)
+                    .currentCameraSettings.audioMuted
+            }"
         )
     }
 
@@ -266,7 +289,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
@@ -386,31 +409,6 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    // this version of tracefirstframe only runs when app is in benchmark mode.
-    // give ability to reset first frame capture so the hot start trace can be read
-    fun traceFirstFrame() {
-        (_previewUiState.value as? PreviewUiState.Ready)?.let { uiState ->
-            if (uiState.firstFrameCaptured) {
-                viewModelScope.launch {
-                    cameraUseCase.setFirstFrameCaptured(false)
-                }
-            }
-        }
-        viewModelScope.launch {
-            traceFirstFramePreview(cookie = 1) {
-                _previewUiState.transformWhile {
-                    var continueCollecting = true
-                    (it as? PreviewUiState.Ready)?.let { uiState ->
-                        if (uiState.firstFrameCaptured) {
-                            emit(Unit)
-                            continueCollecting = false
-                        }
-                    }
-                    continueCollecting
-                }.collect {}
-            }
-        }
-    }
 
     /**
      * Sets current value of [PreviewUiState.Ready.toastMessageToShow] to null.

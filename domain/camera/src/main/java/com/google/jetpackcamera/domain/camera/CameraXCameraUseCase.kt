@@ -25,6 +25,7 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -36,7 +37,6 @@ import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -78,15 +78,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executor
-import javax.inject.Inject
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.properties.Delegates
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -106,6 +98,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executor
+import javax.inject.Inject
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.properties.Delegates
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -134,7 +136,8 @@ constructor(
      * Applies a CaptureCallback to the provided image capture builder
      */
     @OptIn(ExperimentalCamera2Interop::class)
-    private fun setOnCaptureCompletedCallback(imageCaptureBuilder: ImageCapture.Builder) {
+    private fun setOnCaptureCompletedCallback(previewBuilder: Preview.Builder) {
+        val isFirstFrameTimestampUpdated = atomic(false)
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
@@ -143,15 +146,18 @@ constructor(
             ) {
                 super.onCaptureCompleted(session, request, result)
                 try {
-                    _currentCameraState.update { old ->
-                        old.copy(firstFrameCaptured = true)
+                    if(!isFirstFrameTimestampUpdated.value) {
+                        _currentCameraState.update { old ->
+                            old.copy(sessionFirstFrameTimestamp = SystemClock.elapsedRealtimeNanos())
+                        }
+                        isFirstFrameTimestampUpdated.value = true
                     }
                 } catch (_: Exception) {}
             }
         }
 
         // Create an Extender to attach Camera2 options
-        val imageCaptureExtender = Camera2Interop.Extender(imageCaptureBuilder)
+        val imageCaptureExtender = Camera2Interop.Extender(previewBuilder)
 
         // Attach the Camera2 CaptureCallback
         imageCaptureExtender.setSessionCaptureCallback(captureCallback)
@@ -243,7 +249,6 @@ constructor(
                     settingsRepository.defaultCameraAppSettings.first().aspectRatio
                 )
             )
-        setOnCaptureCompletedCallback(imageCaptureBuilder)
         imageCaptureUseCase = imageCaptureBuilder.build()
     }
 
@@ -790,7 +795,6 @@ constructor(
         onCloseTrace: () -> Unit = {}
     ): ImageCapture {
         val builder = ImageCapture.Builder()
-        setOnCaptureCompletedCallback(builder)
         builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
         if (sessionSettings.dynamicRange != DynamicRange.SDR &&
             sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -815,12 +819,7 @@ constructor(
         }
     }
 
-    // only to be used in benchmark mode for hot capturing traces
-    override suspend fun setFirstFrameCaptured(isFirstFrameCaptured: Boolean) {
-        _currentCameraState.update { old ->
-            old.copy(firstFrameCaptured = isFirstFrameCaptured)
-        }
-    }
+
 
     private fun createVideoUseCase(
         sessionSettings: PerpetualSessionSettings,
@@ -873,6 +872,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
         val previewUseCaseBuilder = Preview.Builder()
+        setOnCaptureCompletedCallback(previewUseCaseBuilder)
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)

@@ -41,7 +41,7 @@ sealed interface PreviewUiState {
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode,
-        val firstFrameCaptured: Boolean = false
+        val sessionFirstFrameTimestamp: Long = 0L
     ) : PreviewUiState
 }
 

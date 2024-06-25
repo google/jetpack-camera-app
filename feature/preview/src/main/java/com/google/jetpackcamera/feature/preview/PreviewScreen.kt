@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.tracing.Trace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -83,9 +84,8 @@ fun PreviewScreen(
 ) {
     // only run this trace in benchmark build. difference from release is by name only
     // this check allows it to run in the cold run...
-    if (booleanResource(id = R.bool.is_benchmark_build)) {
-        viewModel.traceFirstFrame()
-    }
+    //if (booleanResource(id = R.bool.is_benchmark_build)) {
+
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
@@ -103,20 +103,22 @@ fun PreviewScreen(
         }
     }
 
-    LaunchedEffect(onFirstFrameCaptureCompleted) {
-        snapshotFlow { previewUiState }
-            .transformWhile {
-                var continueCollecting = true
-                (it as? PreviewUiState.Ready)?.let { ready ->
-                    if (ready.firstFrameCaptured) {
-                        emit(Unit)
-                        continueCollecting = false
+    if (Trace.isEnabled()) {
+        LaunchedEffect(onFirstFrameCaptureCompleted) {
+            snapshotFlow { previewUiState }
+                .transformWhile {
+                    var continueCollecting = true
+                    (it as? PreviewUiState.Ready)?.let { ready ->
+                        if (ready.sessionFirstFrameTimestamp > 0) {
+                            emit(Unit)
+                            continueCollecting = false
+                        }
                     }
+                    continueCollecting
+                }.collect {
+                    onFirstFrameCaptureCompleted()
                 }
-                continueCollecting
-            }.collect {
-                onFirstFrameCaptureCompleted()
-            }
+        }
     }
 
     when (val currentUiState = previewUiState) {

@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
@@ -96,10 +97,13 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val firstFrameComplete = CompletableDeferred<Unit>()
-        lifecycleScope.launch {
-            traceFirstFrameMainActivity(cookie = 0) {
-                firstFrameComplete.await()
+        var firstFrameComplete : CompletableDeferred<Unit>? = null
+        if (Trace.isEnabled()) {
+            firstFrameComplete = CompletableDeferred()
+            lifecycleScope.launch {
+                traceFirstFrameMainActivity(cookie = 0) {
+                    firstFrameComplete.await()
+                }
             }
         }
 
@@ -147,7 +151,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onFirstFrameCaptureCompleted = {
-                                    firstFrameComplete.complete(Unit)
+                                    firstFrameComplete?.complete(Unit)
                                 }
                             )
                         }
