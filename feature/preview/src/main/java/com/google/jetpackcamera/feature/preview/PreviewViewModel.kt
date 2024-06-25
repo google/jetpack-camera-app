@@ -140,10 +140,10 @@ class PreviewViewModel @AssistedInject constructor(
             it.supportedImageFormatsMap[CaptureMode.MULTI_STREAM]!!.size > 1
         } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-                hdrDynamicRangeSupported && hdrImageFormatSupported
+            hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -156,7 +156,8 @@ class PreviewViewModel @AssistedInject constructor(
                 CaptureModeToggleUiState.Enabled(currentMode)
             } else {
                 CaptureModeToggleUiState.Disabled(
-                    currentMode, getCaptureToggleUiStateDisabledReason(
+                    currentMode,
+                    getCaptureToggleUiStateDisabledReason(
                         hdrDynamicRangeSupported,
                         hdrDynamicRangeSupported
                     )

@@ -19,7 +19,7 @@ import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 
-sealed interface CaptureModeToggleUiState{
+sealed interface CaptureModeToggleUiState {
 
     data object Invisible : CaptureModeToggleUiState
 
