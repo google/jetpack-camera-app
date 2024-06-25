@@ -119,7 +119,7 @@ jobs:
       - name: Run instrumentation tests
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: ${{ matrix.device.name }}DebugAndroidTest
+          arguments: ${{ matrix.device.name }}StableDebugAndroidTest
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
