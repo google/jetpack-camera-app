@@ -361,15 +361,15 @@ fun StabilizationIcon(
 fun LowLightBoostIcon(
     lowLightBoost: LowLightBoost,
     modifier: Modifier = Modifier,
-    active: Boolean = false,
+    active: Boolean = false
 ) {
     when (lowLightBoost) {
         LowLightBoost.ENABLED -> {
             Icon(
-                imageVector = if(active) Icons.Filled.Nightlight else Icons.Outlined.Nightlight,
+                imageVector = if (active) Icons.Filled.Nightlight else Icons.Outlined.Nightlight,
                 contentDescription =
                 stringResource(id = R.string.quick_settings_lowlightboost_enabled),
-                modifier = modifier.alpha(if(active) 1.0f else 0.5f)
+                modifier = modifier.alpha(if (active) 1.0f else 0.5f)
             )
         }
         LowLightBoost.DISABLED -> {

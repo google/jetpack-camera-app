@@ -227,16 +227,17 @@ constructor(
 
     @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     @OptIn(BuildCompat.PrereleaseSdkCheck::class)
-    private fun getLowLightBoostDeviceSupport() =
-        when(BuildCompat.isAtLeastV()) {
-            true -> cameraProvider.availableCameraInfos.map { cameraInfo ->
-                Camera2CameraInfo
-                    .from(cameraInfo)
-                    .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
-                    ?.contains(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
-            }.any()
-            false -> false
-        }
+    private fun getLowLightBoostDeviceSupport() = when (BuildCompat.isAtLeastV()) {
+        true -> cameraProvider.availableCameraInfos.map { cameraInfo ->
+            Camera2CameraInfo
+                .from(cameraInfo)
+                .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+                ?.contains(
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+        }.any()
+        false -> false
+    }
 
     /**
      * Returns the union of supported stabilization modes for a device's cameras
@@ -568,7 +569,8 @@ constructor(
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
     private val _lowLightBoostActiveStatus = MutableStateFlow(true)
-    override fun getLowLightBoostActiveStatus(): StateFlow<Boolean> = _lowLightBoostActiveStatus.asStateFlow()
+    override fun getLowLightBoostActiveStatus(): StateFlow<Boolean> =
+        _lowLightBoostActiveStatus.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
@@ -804,11 +806,10 @@ constructor(
                 old?.copy(
                     lowLightBoost = lowLightBoost,
                     captureMode = CaptureMode.SINGLE_STREAM,
-                    flashMode = FlashMode.OFF,
+                    flashMode = FlashMode.OFF
                 )
             }
         }
-
     }
 
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
@@ -886,9 +887,11 @@ constructor(
             Log.d(TAG, "Adding Control AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
             val camera2Interop = Camera2Interop.Extender(previewUseCaseBuilder)
             if (Build.VERSION.SDK_INT >= 35) {
-                camera2Interop.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
-                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
-                camera2Interop.setSessionCaptureCallback( object : CaptureCallback() {
+                camera2Interop.setCaptureRequestOption(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+                camera2Interop.setSessionCaptureCallback(object : CaptureCallback() {
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,

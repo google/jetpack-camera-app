@@ -17,5 +17,5 @@ package com.google.jetpackcamera.settings.model
 
 enum class LowLightBoost {
     DISABLED,
-    ENABLED,
+    ENABLED
 }
