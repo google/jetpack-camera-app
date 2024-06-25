@@ -567,6 +567,9 @@ constructor(
     private val _zoomScale = MutableStateFlow(1f)
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    private val _lowLightBoostActiveStatus = MutableStateFlow(true)
+    override fun getLowLightBoostActiveStatus(): StateFlow<Boolean> = _lowLightBoostActiveStatus.asStateFlow()
+
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
@@ -895,8 +898,10 @@ constructor(
                         val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                         if (boostState == CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE) {
                             Log.d(TAG, "LLB Active")
+                            _lowLightBoostActiveStatus.value = true
                         } else {
                             Log.d(TAG, "LLB Inactive")
+                            _lowLightBoostActiveStatus.value = false
                         }
                     }
                 })

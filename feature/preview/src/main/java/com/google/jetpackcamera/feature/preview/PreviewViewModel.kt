@@ -93,8 +93,9 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getZoomScale()
-            ) { cameraAppSettings, systemConstraints, zoomScale ->
+                cameraUseCase.getZoomScale(),
+                cameraUseCase.getLowLightBoostActiveStatus()
+            ) { cameraAppSettings, systemConstraints, zoomScale, lowLightBoostActiveStatus ->
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.Ready ->
@@ -102,6 +103,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = zoomScale,
+                                lowLightBoostActiveStatus = lowLightBoostActiveStatus,
                                 previewMode = previewMode
                             )
 
@@ -110,6 +112,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = zoomScale,
+                                lowLightBoostActiveStatus = lowLightBoostActiveStatus,
                                 previewMode = previewMode
                             )
                     }

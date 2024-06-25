@@ -149,6 +149,10 @@ class FakeCameraUseCase(
     }
     override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
 
+    override fun getLowLightBoostActiveStatus(): StateFlow<Boolean> {
+        TODO("Not yet implemented")
+    }
+
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
