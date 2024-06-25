@@ -140,41 +140,43 @@ class PreviewViewModel @AssistedInject constructor(
             it.supportedImageFormatsMap[CaptureMode.MULTI_STREAM]!!.size > 1
         } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            hdrDynamicRangeSupported && hdrImageFormatSupported
-        return CaptureModeToggleUiState(
-            isShown = isShown,
-            enabled = enabled,
-            disabledReason = if (!isShown || enabled) {
-                null
-            } else {
-                getCaptureToggleUiStateDisabledReason(
-                    hdrDynamicRangeSupported,
-                    hdrDynamicRangeSupported
-                )
-            },
-            currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
+                hdrDynamicRangeSupported && hdrImageFormatSupported
+        return if (isShown) {
+            val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
             ) {
-                CaptureModeToggleUiState.CaptureToggleMode.CAPTURE_TOGGLE_IMAGE
+                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
             } else {
-                CaptureModeToggleUiState.CaptureToggleMode.CAPTURE_TOGGLE_VIDEO
+                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO
             }
-        )
+            if (enabled) {
+                CaptureModeToggleUiState.Enabled(currentMode)
+            } else {
+                CaptureModeToggleUiState.Disabled(
+                    currentMode, getCaptureToggleUiStateDisabledReason(
+                        hdrDynamicRangeSupported,
+                        hdrDynamicRangeSupported
+                    )
+                )
+            }
+        } else {
+            CaptureModeToggleUiState.Invisible
+        }
     }
 
     private fun getCaptureToggleUiStateDisabledReason(
         hdrDynamicRangeSupported: Boolean,
         hdrImageFormatSupported: Boolean
-    ): CaptureModeToggleUiState.CaptureModeUnsupportedReason? {
+    ): CaptureModeToggleUiState.DisabledReason {
         return if (previewMode is PreviewMode.ExternalImageCaptureMode) {
-            CaptureModeToggleUiState.CaptureModeUnsupportedReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+            CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
         } else if (!hdrImageFormatSupported) {
-            CaptureModeToggleUiState.CaptureModeUnsupportedReason.HDR_IMAGE_UNSUPPORTED
+            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED
         } else if (!hdrDynamicRangeSupported) {
-            CaptureModeToggleUiState.CaptureModeUnsupportedReason.HDR_VIDEO_UNSUPPORTED
+            CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED
         } else {
             throw RuntimeException("Unknown CaptureModeUnsupportedReason.")
         }
@@ -323,12 +325,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun showToastForDisabledHdrToggle() {
-        val disabledReason =
-            (previewUiState.value as? PreviewUiState.Ready)?.captureModeToggleUiState
-                ?.disabledReason ?: throw RuntimeException(
-                "showing Hdr toggle disabled toast without disabled reason."
-            )
+    fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(

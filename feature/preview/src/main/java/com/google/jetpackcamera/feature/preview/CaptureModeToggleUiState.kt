@@ -19,13 +19,22 @@ import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 
-data class CaptureModeToggleUiState(
-    val isShown: Boolean = false,
-    val enabled: Boolean = false,
-    val disabledReason: CaptureModeUnsupportedReason? = null,
-    val currentMode: CaptureToggleMode = CaptureToggleMode.CAPTURE_TOGGLE_VIDEO
-) {
-    enum class CaptureModeUnsupportedReason(val testTag: String, val reasonTextResId: Int) {
+sealed interface CaptureModeToggleUiState{
+
+    data object Invisible : CaptureModeToggleUiState
+
+    sealed interface Visible : CaptureModeToggleUiState {
+        val currentMode: ToggleMode
+    }
+
+    data class Enabled(override val currentMode: ToggleMode) : Visible
+
+    data class Disabled(
+        override val currentMode: ToggleMode,
+        val disabledReason: DisabledReason
+    ) : Visible
+
+    enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
             VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
             R.string.toast_video_capture_external_unsupported
@@ -34,7 +43,7 @@ data class CaptureModeToggleUiState(
         HDR_IMAGE_UNSUPPORTED(HDR_IMAGE_UNSUPPORTED_TAG, R.string.toast_hdr_photo_unsupported)
     }
 
-    enum class CaptureToggleMode {
+    enum class ToggleMode {
         CAPTURE_TOGGLE_IMAGE,
         CAPTURE_TOGGLE_VIDEO
     }

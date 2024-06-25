@@ -276,7 +276,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState()
+                captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -302,7 +302,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState()
+                captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR,

@@ -111,7 +111,7 @@ fun PreviewScreen(
             onChangeDynamicRange = viewModel::setDynamicRange,
             onLowLightBoost = viewModel::setLowLightBoost,
             onChangeImageFormat = viewModel::setImageFormat,
-            onToggleWhenDisabled = viewModel::showToastForDisabledHdrToggle,
+            onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
             onToggleQuickSettings = viewModel::toggleQuickSettings,
             onMuteAudio = viewModel::setAudioMuted,
             onCaptureImage = viewModel::captureImage,
@@ -143,7 +143,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onLowLightBoost: (LowLightBoost) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: () -> Unit = {},
+    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImage: () -> Unit = {},
@@ -298,5 +298,5 @@ private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
     previewMode = PreviewMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeToggleUiState()
+    captureModeToggleUiState = CaptureModeToggleUiState.Invisible
 )
