@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.data.camera"
+    namespace = "com.google.jetpackcamera.core.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
     compileSdkPreview = libs.versions.compileSdkPreview.get()
 

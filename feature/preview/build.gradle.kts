@@ -145,7 +145,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":data:settings"))
-    implementation(project(":domain:camera"))
+    implementation(project(":core:camera"))
 }
 
 // Allow references to generated code
