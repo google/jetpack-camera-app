@@ -20,7 +20,6 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
-import androidx.core.util.Preconditions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
@@ -178,7 +177,7 @@ class PreviewViewModel @AssistedInject constructor(
         hdrDynamicRangeSupported: Boolean,
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
-        currentLensFacing: LensFacing,
+        currentLensFacing: LensFacing
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
@@ -190,7 +189,8 @@ class PreviewViewModel @AssistedInject constructor(
                 for (captureMode in CaptureMode.entries) {
                     if (cameraConstraints?.supportedImageFormatsMap?.get(captureMode)?.let {
                             it.size > 1
-                        } == true) {
+                        } == true
+                    ) {
                         return if (lens == currentLensFacing) {
                             when (captureMode) {
                                 CaptureMode.MULTI_STREAM ->
@@ -204,7 +204,6 @@ class PreviewViewModel @AssistedInject constructor(
                         } else {
                             CaptureModeToggleUiState.DisabledReason
                                 .HDR_IMAGE_UNSUPPORTED_ON_LENS
-
                         }
                     }
                 }
