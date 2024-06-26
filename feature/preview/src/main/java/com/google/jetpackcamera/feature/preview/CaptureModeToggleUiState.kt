@@ -44,16 +44,20 @@ sealed interface CaptureModeToggleUiState {
             R.string.toast_video_capture_external_unsupported
         ),
         HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
-            HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_video_unsupported_on_device
+            HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG,
+            R.string.toast_hdr_video_unsupported_on_device
         ),
         HDR_VIDEO_UNSUPPORTED_ON_LENS(
-            HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_video_unsupported_on_lens
+            HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG,
+            R.string.toast_hdr_video_unsupported_on_lens
         ),
         HDR_IMAGE_UNSUPPORTED_ON_DEVICE(
-            HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_photo_unsupported_on_device
+            HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG,
+            R.string.toast_hdr_photo_unsupported_on_device
         ),
         HDR_IMAGE_UNSUPPORTED_ON_LENS(
-            HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_photo_unsupported_on_lens
+            HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG,
+            R.string.toast_hdr_photo_unsupported_on_lens
         ),
         HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(
             HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG,

@@ -208,7 +208,6 @@ class PreviewViewModel @AssistedInject constructor(
                         }
                     }
                 }
-
             }
             CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
         } else if (!hdrDynamicRangeSupported) {
