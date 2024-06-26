@@ -17,7 +17,6 @@ package com.google.jetpackcamera.permissions
 
 import android.Manifest
 import androidx.lifecycle.ViewModel
-import kotlin.collections.removeFirst as ktRemoveFirst
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
@@ -26,6 +25,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlin.collections.removeFirst as ktRemoveFirst
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,7 +64,6 @@ class PermissionsViewModel @AssistedInject constructor(
 
     fun dismissPermission() {
         if (permissionQueue.isNotEmpty()) {
-
             permissionQueue.ktRemoveFirst()
         }
         _permissionsUiState.update {

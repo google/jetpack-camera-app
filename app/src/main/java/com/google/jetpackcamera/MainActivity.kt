@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        var firstFrameComplete : CompletableDeferred<Unit>? = null
+        var firstFrameComplete: CompletableDeferred<Unit>? = null
         if (Trace.isEnabled()) {
             firstFrameComplete = CompletableDeferred()
             lifecycleScope.launch {

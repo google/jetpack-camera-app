@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.booleanResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -84,7 +83,7 @@ fun PreviewScreen(
 ) {
     // only run this trace in benchmark build. difference from release is by name only
     // this check allows it to run in the cold run...
-    //if (booleanResource(id = R.bool.is_benchmark_build)) {
+    // if (booleanResource(id = R.bool.is_benchmark_build)) {
 
     Log.d(TAG, "PreviewScreen")
 

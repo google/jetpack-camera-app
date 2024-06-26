@@ -150,7 +150,6 @@ class PreviewViewModel @AssistedInject constructor(
             initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraUseCase.runCamera()
-
         }
     }
 
@@ -289,7 +288,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
@@ -408,7 +407,6 @@ class PreviewViewModel @AssistedInject constructor(
             cameraUseCase.tapToFocus(x, y)
         }
     }
-
 
     /**
      * Sets current value of [PreviewUiState.Ready.toastMessageToShow] to null.
