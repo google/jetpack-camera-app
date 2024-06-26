@@ -236,11 +236,10 @@ private fun ExpandedQuickSettingsUi(
                                 hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported = cameraConstraints?.let
                                     { it.supportedDynamicRanges.size > 1 } ?: false,
-                                hdrImageFormatSupported = cameraConstraints?.let {
-                                    it.supportedImageFormatsMap[
-                                        currentCameraSettings.captureMode
-                                    ]!!.size > 1
-                                } ?: false,
+                                hdrImageFormatSupported =
+                                cameraConstraints?.supportedImageFormatsMap?.get(
+                                    currentCameraSettings.captureMode
+                                )?.let { it.size > 1 } ?: false,
                                 previewMode = previewUiState.previewMode
                             )
                         }

@@ -138,9 +138,10 @@ class PreviewViewModel @AssistedInject constructor(
         val hdrDynamicRangeSupported = cameraConstraints?.let {
             it.supportedDynamicRanges.size > 1
         } ?: false
-        val hdrImageFormatSupported = cameraConstraints?.let {
-            it.supportedImageFormatsMap[cameraAppSettings.captureMode]!!.size > 1
-        } ?: false
+        val hdrImageFormatSupported =
+            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.captureMode)?.let {
+                it.size > 1
+            } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
             cameraAppSettings.dynamicRange == DynamicRange.HLG10
@@ -164,7 +165,6 @@ class PreviewViewModel @AssistedInject constructor(
                         hdrDynamicRangeSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.captureMode
                     )
                 )
             }
@@ -179,21 +179,19 @@ class PreviewViewModel @AssistedInject constructor(
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
-        currentCaptureMode: CaptureMode
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
         }
-        return if (!hdrImageFormatSupported) {
-            for (lens in LensFacing.values()) {
+        if (!hdrImageFormatSupported) {
+            systemConstraints.perLensConstraints.forEach { entry ->
+                val lens = entry.key
                 val cameraConstraints = systemConstraints.perLensConstraints[lens]
-                for (captureMode in CaptureMode.values()) {
-                    if (cameraConstraints?.let {
-                            it.supportedImageFormatsMap[captureMode]!!.size > 1
-                        } == true
-                    ) {
-                        if (lens == currentLensFacing) {
-                            Preconditions.checkState(captureMode != currentCaptureMode)
+                for (captureMode in CaptureMode.entries) {
+                    if (cameraConstraints?.supportedImageFormatsMap?.get(captureMode)?.let {
+                            it.size > 1
+                        } == true) {
+                        return if (lens == currentLensFacing) {
                             when (captureMode) {
                                 CaptureMode.MULTI_STREAM ->
                                     CaptureModeToggleUiState.DisabledReason
@@ -204,23 +202,25 @@ class PreviewViewModel @AssistedInject constructor(
                                         .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
                             }
                         } else {
-                            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                            CaptureModeToggleUiState.DisabledReason
+                                .HDR_IMAGE_UNSUPPORTED_ON_LENS
+
                         }
                     }
                 }
             }
-            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
+            return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
         } else if (!hdrDynamicRangeSupported) {
-            for (lens in LensFacing.values()) {
-                if (lens == currentLensFacing) {
-                    continue
-                }
-                val cameraConstraints = systemConstraints.perLensConstraints[lens]
-                if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
-                    CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
+            systemConstraints.perLensConstraints.forEach { entry ->
+                val lens = entry.key
+                if (lens != currentLensFacing) {
+                    val cameraConstraints = systemConstraints.perLensConstraints[lens]
+                    if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
+                        return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
+                    }
                 }
             }
-            CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
+            return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
         } else {
             throw RuntimeException("Unknown CaptureModeUnsupportedReason.")
         }
