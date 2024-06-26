@@ -15,10 +15,12 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
+import androidx.core.util.Preconditions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.traceAsync
@@ -83,7 +85,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
-    private val imageCaptureCalledCount = atomic(0)
+    private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
 
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
@@ -137,7 +139,7 @@ class PreviewViewModel @AssistedInject constructor(
             it.supportedDynamicRanges.size > 1
         } ?: false
         val hdrImageFormatSupported = cameraConstraints?.let {
-            it.supportedImageFormatsMap[CaptureMode.MULTI_STREAM]!!.size > 1
+            it.supportedImageFormatsMap[cameraAppSettings.captureMode]!!.size > 1
         } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
@@ -159,7 +161,10 @@ class PreviewViewModel @AssistedInject constructor(
                     currentMode,
                     getCaptureToggleUiStateDisabledReason(
                         hdrDynamicRangeSupported,
-                        hdrDynamicRangeSupported
+                        hdrDynamicRangeSupported,
+                        systemConstraints,
+                        cameraAppSettings.cameraLensFacing,
+                        cameraAppSettings.captureMode
                     )
                 )
             }
@@ -168,16 +173,54 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    @SuppressLint("RestrictedApi")
     private fun getCaptureToggleUiStateDisabledReason(
         hdrDynamicRangeSupported: Boolean,
-        hdrImageFormatSupported: Boolean
+        hdrImageFormatSupported: Boolean,
+        systemConstraints: SystemConstraints,
+        currentLensFacing: LensFacing,
+        currentCaptureMode: CaptureMode
     ): CaptureModeToggleUiState.DisabledReason {
-        return if (previewMode is PreviewMode.ExternalImageCaptureMode) {
-            CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
-        } else if (!hdrImageFormatSupported) {
-            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED
+        if (previewMode is PreviewMode.ExternalImageCaptureMode) {
+            return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+        }
+        return if (!hdrImageFormatSupported) {
+            for (lens in LensFacing.values()) {
+                val cameraConstraints = systemConstraints.perLensConstraints[lens]
+                for (captureMode in CaptureMode.values()) {
+                    if (cameraConstraints?.let {
+                            it.supportedImageFormatsMap[captureMode]!!.size > 1
+                        } == true) {
+                        if (lens == currentLensFacing) {
+                            Preconditions.checkState(captureMode != currentCaptureMode)
+                            when (captureMode) {
+                                CaptureMode.MULTI_STREAM ->
+                                    CaptureModeToggleUiState.DisabledReason
+                                        .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
+
+                                CaptureMode.SINGLE_STREAM ->
+                                    CaptureModeToggleUiState.DisabledReason
+                                        .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
+                            }
+                        } else {
+                            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                        }
+                    }
+                }
+
+            }
+            CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
         } else if (!hdrDynamicRangeSupported) {
-            CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED
+            for (lens in LensFacing.values()) {
+                if (lens == currentLensFacing) {
+                    continue
+                }
+                val cameraConstraints = systemConstraints.perLensConstraints[lens]
+                if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
+                    CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
+                }
+            }
+            CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
         } else {
             throw RuntimeException("Unknown CaptureModeUnsupportedReason.")
         }
@@ -219,6 +262,15 @@ class PreviewViewModel @AssistedInject constructor(
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
             cameraUseCase.setCaptureMode(captureMode)
+        }.also {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    captureModeToggleUiState = getCaptureToggleUiState(
+                        old.systemConstraints,
+                        cameraUseCase.getCurrentSettings().value!!
+                    )
+                ) ?: old
+            }
         }
     }
 
@@ -292,7 +344,7 @@ class PreviewViewModel @AssistedInject constructor(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
-        val cookieInt = imageCaptureCalledCount.incrementAndGet()
+        val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "Image-$cookieInt"
         try {
             traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
@@ -327,11 +379,13 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
+        val cookieInt = snackBarCount.incrementAndGet()
+        val cookie = "DisabledHdrToggle-$cookieInt"
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
                     snackBarToShow = SnackbarData(
-                        cookie = "DisabledHdrToggle",
+                        cookie = cookie,
                         stringResource = disabledReason.reasonTextResId,
                         withDismissAction = true,
                         testTag = disabledReason.testTag

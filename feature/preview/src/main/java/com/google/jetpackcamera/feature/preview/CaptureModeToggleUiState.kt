@@ -15,8 +15,12 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 
 sealed interface CaptureModeToggleUiState {
@@ -39,8 +43,16 @@ sealed interface CaptureModeToggleUiState {
             VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
             R.string.toast_video_capture_external_unsupported
         ),
-        HDR_VIDEO_UNSUPPORTED(HDR_VIDEO_UNSUPPORTED_TAG, R.string.toast_hdr_video_unsupported),
-        HDR_IMAGE_UNSUPPORTED(HDR_IMAGE_UNSUPPORTED_TAG, R.string.toast_hdr_photo_unsupported)
+        HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
+            HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_video_unsupported_on_device
+        ),
+        HDR_VIDEO_UNSUPPORTED_ON_LENS(
+            HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_video_unsupported_on_lens
+        ),
+        HDR_IMAGE_UNSUPPORTED_ON_DEVICE(HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_photo_unsupported_on_device),
+        HDR_IMAGE_UNSUPPORTED_ON_LENS(HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_photo_unsupported_on_lens),
+        HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG, R.string.toast_hdr_photo_unsupported_on_lens_single_stream),
+        HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG, R.string.toast_hdr_photo_unsupported_on_lens_multi_stream)
     }
 
     enum class ToggleMode {
