@@ -58,12 +58,6 @@ android {
         buildConfig = true
         compose = true
     }
-    buildTypes {
-        create("benchmark") {
-            initWith(buildTypes.getByName("release"))
-             matchingFallbacks += listOf("release")
-        }
-    }
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
@@ -95,8 +89,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:common"))
-    testImplementation(project(":core:common"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -154,6 +146,8 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":domain:camera"))
+    implementation(project(":core:common"))
+    testImplementation(project(":core:common"))
 }
 
 // Allow references to generated code
