@@ -49,10 +49,20 @@ sealed interface CaptureModeToggleUiState {
         HDR_VIDEO_UNSUPPORTED_ON_LENS(
             HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_video_unsupported_on_lens
         ),
-        HDR_IMAGE_UNSUPPORTED_ON_DEVICE(HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_photo_unsupported_on_device),
-        HDR_IMAGE_UNSUPPORTED_ON_LENS(HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_photo_unsupported_on_lens),
-        HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG, R.string.toast_hdr_photo_unsupported_on_lens_single_stream),
-        HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG, R.string.toast_hdr_photo_unsupported_on_lens_multi_stream)
+        HDR_IMAGE_UNSUPPORTED_ON_DEVICE(
+            HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG, R.string.toast_hdr_photo_unsupported_on_device
+        ),
+        HDR_IMAGE_UNSUPPORTED_ON_LENS(
+            HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG, R.string.toast_hdr_photo_unsupported_on_lens
+        ),
+        HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(
+            HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG,
+            R.string.toast_hdr_photo_unsupported_on_lens_single_stream
+        ),
+        HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(
+            HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG,
+            R.string.toast_hdr_photo_unsupported_on_lens_multi_stream
+        )
     }
 
     enum class ToggleMode {

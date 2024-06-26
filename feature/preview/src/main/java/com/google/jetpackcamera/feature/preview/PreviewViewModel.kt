@@ -190,7 +190,8 @@ class PreviewViewModel @AssistedInject constructor(
                 for (captureMode in CaptureMode.values()) {
                     if (cameraConstraints?.let {
                             it.supportedImageFormatsMap[captureMode]!!.size > 1
-                        } == true) {
+                        } == true
+                    ) {
                         if (lens == currentLensFacing) {
                             Preconditions.checkState(captureMode != currentCaptureMode)
                             when (captureMode) {
