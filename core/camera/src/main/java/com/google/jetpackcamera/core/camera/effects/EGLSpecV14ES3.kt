@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera.effects
+package com.google.jetpackcamera.core.camera.effects
 
 import android.opengl.EGL14
 import android.opengl.EGLConfig

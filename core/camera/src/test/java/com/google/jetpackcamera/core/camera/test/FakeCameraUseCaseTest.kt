@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera.test
 
-import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.domain.camera.CameraUseCase
+package com.google.jetpackcamera.core.camera.test
+
+import com.google.common.truth.Truth
+import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,7 @@ class FakeCameraUseCaseTest {
     @Test
     fun canRunCamera() = runTest(testDispatcher) {
         initAndRunCamera()
-        assertThat(cameraUseCase.isPreviewStarted())
+        Truth.assertThat(cameraUseCase.isPreviewStarted())
     }
 
     @Test
@@ -70,7 +71,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setFlashMode(flashMode = FlashMode.OFF)
         advanceUntilIdle()
 
-        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
@@ -81,7 +82,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
@@ -92,7 +93,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
-        assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
@@ -103,7 +104,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
+        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
@@ -114,7 +115,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
-        assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
+        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
@@ -134,7 +135,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.takePicture()
 
         advanceUntilIdle()
-        assertThat(events.map { it.type }).containsExactlyElementsIn(
+        Truth.assertThat(events.map { it.type }).containsExactlyElementsIn(
             listOf(
                 CameraUseCase.ScreenFlashEvent.Type.APPLY_UI,
                 CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI

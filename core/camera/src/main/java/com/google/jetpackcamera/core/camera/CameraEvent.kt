@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera.effects
+package com.google.jetpackcamera.core.camera
 
-object GLDebug {
-    init {
-        System.loadLibrary("opengl_debug_lib")
-    }
+import androidx.camera.core.MeteringPoint
 
-    external fun enableES3DebugErrorLogging()
+/**
+ * An event that can be sent to the camera coroutine.
+ */
+sealed interface CameraEvent {
+
+    /**
+     * Represents a focus metering event, that the camera can act on.
+     */
+    class FocusMeteringEvent(val meteringPoint: MeteringPoint) : CameraEvent
 }

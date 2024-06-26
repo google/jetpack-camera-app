@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera
+package com.google.jetpackcamera.core.camera
 
 import android.Manifest
 import android.app.Application
@@ -55,8 +55,8 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import com.google.jetpackcamera.domain.camera.CameraUseCase.ScreenFlashEvent.Type
-import com.google.jetpackcamera.domain.camera.effects.SingleSurfaceForcingEffect
+import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
+import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio

@@ -13,17 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera
+package com.google.jetpackcamera.core.camera.effects
 
-import androidx.camera.core.MeteringPoint
+import androidx.camera.core.CameraEffect
+import kotlinx.coroutines.CoroutineScope
+
+private const val TARGETS =
+    CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE
 
 /**
- * An event that can be sent to the camera coroutine.
+ * [CameraEffect] that applies a no-op effect.
+ *
+ * Essentially copying the camera input to the targets,
+ * Preview, VideoCapture and ImageCapture.
+ *
+ * Used as a workaround to force the above 3 use cases to use a single camera stream.
  */
-sealed interface CameraEvent {
-
-    /**
-     * Represents a focus metering event, that the camera can act on.
-     */
-    class FocusMeteringEvent(val meteringPoint: MeteringPoint) : CameraEvent
-}
+class SingleSurfaceForcingEffect(coroutineScope: CoroutineScope) : CameraEffect(
+    TARGETS,
+    Runnable::run,
+    CopyingSurfaceProcessor(coroutineScope),
+    {}
+)

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.domain.camera.test
+package com.google.jetpackcamera.core.camera.test
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
-import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
