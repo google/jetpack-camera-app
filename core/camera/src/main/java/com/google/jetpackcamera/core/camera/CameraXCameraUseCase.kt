@@ -20,11 +20,15 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.CameraEffect
@@ -80,6 +84,7 @@ import java.util.Locale
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -203,30 +208,6 @@ constructor(
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
-
-        imageCaptureUseCase = ImageCapture.Builder()
-            .setResolutionSelector(
-                getResolutionSelector(
-                    settingsRepository.defaultCameraAppSettings.first().aspectRatio
-                )
-            ).build()
-    }
-
-    /**
-     * Returns the union of supported stabilization modes for a device's cameras
-     */
-    private fun getDeviceSupportedStabilizations(): Set<SupportedStabilizationMode> {
-        val deviceSupportedStabilizationModes = mutableSetOf<SupportedStabilizationMode>()
-
-        cameraProvider.availableCameraInfos.forEach { cameraInfo ->
-            if (isPreviewStabilizationSupported(cameraInfo)) {
-                deviceSupportedStabilizationModes.add(SupportedStabilizationMode.ON)
-            }
-            if (isVideoStabilizationSupported(cameraInfo)) {
-                deviceSupportedStabilizationModes.add(SupportedStabilizationMode.HIGH_QUALITY)
-            }
-        }
-        return deviceSupportedStabilizationModes
     }
 
     /**
@@ -307,6 +288,7 @@ constructor(
                     .first()
 
                 val useCaseGroup = createUseCaseGroup(
+                    cameraInfo,
                     sessionSettings,
                     initialTransientSettings,
                     cameraConstraints.supportedStabilizationModes,
@@ -687,15 +669,18 @@ constructor(
     }
 
     private fun createUseCaseGroup(
+        cameraInfo: CameraInfo,
         sessionSettings: PerpetualSessionSettings,
         initialTransientSettings: TransientSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>,
         effect: CameraEffect? = null
     ): UseCaseGroup {
-        val previewUseCase = createPreviewUseCase(sessionSettings, supportedStabilizationModes)
-        imageCaptureUseCase = createImageUseCase(sessionSettings)
+        val previewUseCase =
+            createPreviewUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
+        imageCaptureUseCase = createImageUseCase(cameraInfo, sessionSettings)
         if (!disableVideoCapture) {
-            videoCaptureUseCase = createVideoUseCase(sessionSettings, supportedStabilizationModes)
+            videoCaptureUseCase =
+                createVideoUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
         }
 
         setFlashModeInternal(
@@ -740,17 +725,22 @@ constructor(
         }
     }
 
-    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+    @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
         return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats
             .mapNotNull(Int::toAppImageFormat)
             .toSet()
     }
 
-    @androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
-    private fun createImageUseCase(sessionSettings: PerpetualSessionSettings): ImageCapture {
+    @OptIn(ExperimentalImageCaptureOutputFormat::class)
+    private fun createImageUseCase(
+        cameraInfo: CameraInfo,
+        sessionSettings: PerpetualSessionSettings
+    ): ImageCapture {
         val builder = ImageCapture.Builder()
-        builder.setResolutionSelector(getResolutionSelector(sessionSettings.aspectRatio))
+        builder.setResolutionSelector(
+            getResolutionSelector(cameraInfo.sensorLandscapeRatio, sessionSettings.aspectRatio)
+        )
         if (sessionSettings.dynamicRange != DynamicRange.SDR &&
             sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
         ) {
@@ -775,11 +765,15 @@ constructor(
     }
 
     private fun createVideoUseCase(
+        cameraInfo: CameraInfo,
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationMode: Set<SupportedStabilizationMode>
     ): VideoCapture<Recorder> {
+        val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
         val recorder = Recorder.Builder()
-            .setAspectRatio(getAspectRatioForUseCase(sessionSettings.aspectRatio))
+            .setAspectRatio(
+                getAspectRatioForUseCase(sensorLandscapeRatio, sessionSettings.aspectRatio)
+            )
             .setExecutor(defaultDispatcher.asExecutor()).build()
         return VideoCapture.Builder(recorder).apply {
             // set video stabilization
@@ -798,11 +792,24 @@ constructor(
         }.build()
     }
 
-    private fun getAspectRatioForUseCase(aspectRatio: AspectRatio): Int {
+    private fun getAspectRatioForUseCase(
+        sensorLandscapeRatio: Float,
+        aspectRatio: AspectRatio
+    ): Int {
         return when (aspectRatio) {
             AspectRatio.THREE_FOUR -> RATIO_4_3
             AspectRatio.NINE_SIXTEEN -> RATIO_16_9
-            else -> RATIO_4_3
+            else -> {
+                // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
+                if (
+                    abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
+                    abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+                ) {
+                    RATIO_16_9
+                } else {
+                    RATIO_4_3
+                }
+            }
         }
     }
 
@@ -821,6 +828,7 @@ constructor(
     }
 
     private fun createPreviewUseCase(
+        cameraInfo: CameraInfo,
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
@@ -831,7 +839,7 @@ constructor(
         }
 
         previewUseCaseBuilder.setResolutionSelector(
-            getResolutionSelector(sessionSettings.aspectRatio)
+            getResolutionSelector(cameraInfo.sensorLandscapeRatio, sessionSettings.aspectRatio)
         )
 
         return previewUseCaseBuilder.build().apply {
@@ -841,11 +849,25 @@ constructor(
         }
     }
 
-    private fun getResolutionSelector(aspectRatio: AspectRatio): ResolutionSelector {
+    private fun getResolutionSelector(
+        sensorLandscapeRatio: Float,
+        aspectRatio: AspectRatio
+    ): ResolutionSelector {
         val aspectRatioStrategy = when (aspectRatio) {
             AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
             AspectRatio.NINE_SIXTEEN -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
-            else -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+            else -> {
+                // Choose the resolution selector strategy which maximizes FOV by being closest
+                // to the sensor aspect ratio
+                if (
+                    abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
+                    abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+                ) {
+                    AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+                } else {
+                    AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+                }
+            }
         }
         return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
     }
@@ -927,7 +949,19 @@ private fun CameraSelector.toAppLensFacing(): LensFacing = when (this) {
     )
 }
 
-@androidx.annotation.OptIn(ExperimentalImageCaptureOutputFormat::class)
+private val CameraInfo.sensorLandscapeRatio: Float
+    @OptIn(ExperimentalCamera2Interop::class)
+    get() = Camera2CameraInfo.from(this)
+        .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+        ?.let { sensorRect ->
+            if (sensorRect.width() > sensorRect.height()) {
+                sensorRect.width().toFloat() / sensorRect.height()
+            } else {
+                sensorRect.height().toFloat() / sensorRect.width()
+            }
+        } ?: Float.NaN
+
+@OptIn(ExperimentalImageCaptureOutputFormat::class)
 private fun Int.toAppImageFormat(): ImageOutputFormat? {
     return when (this) {
         ImageCapture.OUTPUT_FORMAT_JPEG -> ImageOutputFormat.JPEG
