@@ -84,9 +84,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
-        // start trace between app starting and the earliest possible completed capture
-        // todo: only run traces on a specific build version or flavor(?)
-
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState
@@ -100,6 +97,7 @@ class MainActivity : ComponentActivity() {
         var firstFrameComplete: CompletableDeferred<Unit>? = null
         if (Trace.isEnabled()) {
             firstFrameComplete = CompletableDeferred()
+            // start trace between app starting and the earliest possible completed capture
             lifecycleScope.launch {
                 traceFirstFrameMainActivity(cookie = 0) {
                     firstFrameComplete.await()

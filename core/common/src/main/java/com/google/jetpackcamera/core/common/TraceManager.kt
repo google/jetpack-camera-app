@@ -17,11 +17,6 @@ package com.google.jetpackcamera.core.common
 
 import androidx.tracing.traceAsync
 
-interface TraceManager {
-    fun beginFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE)
-    fun endFirstFrameTrace(cookie: Int = FIRST_FRAME_COOKIE)
-}
-
 const val FIRST_FRAME_TRACE_PREVIEW = "firstFrameTracePreview"
 const val FIRST_FRAME_TRACE_MAIN_ACTIVITY = "firstFrameTraceMainActivity"
 

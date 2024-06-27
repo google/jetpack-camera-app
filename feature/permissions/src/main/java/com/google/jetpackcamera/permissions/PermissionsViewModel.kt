@@ -25,7 +25,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.collections.removeFirst as ktRemoveFirst
+import kotlin.collections.removeFirst as ktRemoveFirst // alias must be used now. see https://issuetracker.google.com/348683480
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

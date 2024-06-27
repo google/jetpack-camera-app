@@ -39,10 +39,3 @@ class CommonModule {
     @Provides
     fun providesCoroutineScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }
-
-@Module
-@InstallIn(SingletonComponent::class)
-interface CommonTraceModule {
-    @Binds
-    fun bindsCameraUseCase(traceManager: LocalTraceManager): TraceManager
-}
