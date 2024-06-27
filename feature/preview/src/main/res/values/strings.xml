@@ -29,8 +29,8 @@
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
-    <string name="toast_hdr_photo_unsupported_on_device">UltraHDR photos not supported on this device</string>
-    <string name="toast_hdr_photo_unsupported_on_lens">UltraHDR photos not supported by current lens</string>
+    <string name="toast_hdr_photo_unsupported_on_device">Ultra HDR photos not supported on this device</string>
+    <string name="toast_hdr_photo_unsupported_on_lens">Ultra HDR photos not supported by current lens</string>
     <string name="toast_hdr_photo_unsupported_on_lens_single_stream">Single-stream mode does not support UltraHDR photo capture for current lens</string>
     <string name="toast_hdr_photo_unsupported_on_lens_multi_stream">Multi-stream mode does not support UltraHDR photo capture for current lens</string>
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>

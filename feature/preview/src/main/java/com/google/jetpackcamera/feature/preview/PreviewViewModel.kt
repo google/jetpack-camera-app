@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
@@ -107,7 +106,11 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = zoomScale,
-                                previewMode = previewMode
+                                previewMode = previewMode,
+                                captureModeToggleUiState = getCaptureToggleUiState(
+                                    systemConstraints,
+                                    cameraAppSettings
+                                )
                             )
 
                         is PreviewUiState.NotReady ->
@@ -161,9 +164,10 @@ class PreviewViewModel @AssistedInject constructor(
                     currentMode,
                     getCaptureToggleUiStateDisabledReason(
                         hdrDynamicRangeSupported,
-                        hdrDynamicRangeSupported,
+                        hdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
+                        cameraAppSettings.captureMode
                     )
                 )
             }
@@ -172,42 +176,54 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    @SuppressLint("RestrictedApi")
     private fun getCaptureToggleUiStateDisabledReason(
         hdrDynamicRangeSupported: Boolean,
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
-        currentLensFacing: LensFacing
+        currentLensFacing: LensFacing,
+        currentCaptureMode: CaptureMode
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
         }
         if (!hdrImageFormatSupported) {
-            systemConstraints.perLensConstraints.forEach { entry ->
-                val lens = entry.key
-                val cameraConstraints = systemConstraints.perLensConstraints[lens]
-                for (captureMode in CaptureMode.entries) {
-                    if (cameraConstraints?.supportedImageFormatsMap?.get(captureMode)?.let {
-                            it.size > 1
-                        } == true
-                    ) {
-                        return if (lens == currentLensFacing) {
-                            when (captureMode) {
-                                CaptureMode.MULTI_STREAM ->
-                                    CaptureModeToggleUiState.DisabledReason
-                                        .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
-
-                                CaptureMode.SINGLE_STREAM ->
-                                    CaptureModeToggleUiState.DisabledReason
-                                        .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
-                            }
-                        } else {
-                            CaptureModeToggleUiState.DisabledReason
-                                .HDR_IMAGE_UNSUPPORTED_ON_LENS
+            // First assume HDR image is only unsupported on this capture mode
+            var disabledReason = when (currentCaptureMode) {
+                CaptureMode.MULTI_STREAM ->
+                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
+                CaptureMode.SINGLE_STREAM ->
+                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
+            }
+            // Check if other capture modes supports HDR image on this lens
+            systemConstraints
+                .perLensConstraints[currentLensFacing]
+                ?.supportedImageFormatsMap
+                ?.filterKeys { it != currentCaptureMode }
+                ?.values
+                ?.forEach { supportedFormats ->
+                    if (supportedFormats.size > 1) {
+                        // Found another capture mode that supports HDR image,
+                        // return previously discovered disabledReason
+                        return disabledReason
+                    }
+                }
+            // HDR image is not supported by this lens
+            disabledReason = CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+            // Check if any other lens supports HDR image
+            systemConstraints
+                .perLensConstraints
+                .filterKeys { it != currentLensFacing }
+                .values
+                .forEach { constraints ->
+                    constraints.supportedImageFormatsMap.values.forEach { supportedFormats ->
+                        if (supportedFormats.size > 1) {
+                            // Found another lens that supports HDR image,
+                            // return previously discovered disabledReason
+                            return disabledReason
                         }
                     }
                 }
-            }
+            // No lenses support HDR image on device
             return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
         } else if (!hdrDynamicRangeSupported) {
             systemConstraints.perLensConstraints.forEach { entry ->
