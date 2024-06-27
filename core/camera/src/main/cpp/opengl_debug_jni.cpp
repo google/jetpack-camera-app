@@ -36,7 +36,7 @@ namespace {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_com_google_jetpackcamera_domain_camera_effects_GLDebug_enableES3DebugErrorLogging(
+Java_com_google_jetpackcamera_core_camera_effects_GLDebug_enableES3DebugErrorLogging(
         JNIEnv *env, jobject clazz) {
     glDebugMessageCallbackKHR(gl_debug_cb, nullptr);
     glEnable(GL_DEBUG_OUTPUT_KHR);

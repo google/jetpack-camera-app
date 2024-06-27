@@ -15,7 +15,7 @@
 #
 cmake_minimum_required(VERSION 3.22.1)
 
-project(domain_camera_jni)
+project(core_camera_jni)
 
 add_library(
         opengl_debug_lib
