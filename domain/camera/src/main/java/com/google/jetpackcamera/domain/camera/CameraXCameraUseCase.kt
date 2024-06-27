@@ -149,6 +149,18 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
+    private val CameraInfo.isLowLightBoostSupported: Boolean
+        @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
+        @OptIn(BuildCompat.PrereleaseSdkCheck::class)
+        get() =
+            BuildCompat.isAtLeastV() &&
+                    Camera2CameraInfo
+                        .from(this)
+                        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+                        ?.contains(
+                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                        ) ?: false
+
     override suspend fun initialize(externalImageCapture: Boolean) {
         this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -194,7 +206,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
-                                lowLightBoostSupport = getLowLightBoostDeviceSupport(),
+                                lowLightBoostSupport = camInfo.isLowLightBoostSupported,
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -223,20 +235,6 @@ constructor(
                     settingsRepository.defaultCameraAppSettings.first().aspectRatio
                 )
             ).build()
-    }
-
-    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
-    @OptIn(BuildCompat.PrereleaseSdkCheck::class)
-    private fun getLowLightBoostDeviceSupport() = when (BuildCompat.isAtLeastV()) {
-        true -> cameraProvider.availableCameraInfos.map { cameraInfo ->
-            Camera2CameraInfo
-                .from(cameraInfo)
-                .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
-                ?.contains(
-                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                )
-        }.any()
-        false -> false
     }
 
     /**
