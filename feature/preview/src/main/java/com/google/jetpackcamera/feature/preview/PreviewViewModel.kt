@@ -227,9 +227,8 @@ class PreviewViewModel @AssistedInject constructor(
             return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
         } else if (!hdrDynamicRangeSupported) {
             systemConstraints.perLensConstraints.forEach { entry ->
-                val lens = entry.key
-                if (lens != currentLensFacing) {
-                    val cameraConstraints = systemConstraints.perLensConstraints[lens]
+                if (entry.key != currentLensFacing) {
+                    val cameraConstraints = systemConstraints.perLensConstraints[entry.key]
                     if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
                         return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
                     }
@@ -277,15 +276,6 @@ class PreviewViewModel @AssistedInject constructor(
     fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
             cameraUseCase.setCaptureMode(captureMode)
-        }.also {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    captureModeToggleUiState = getCaptureToggleUiState(
-                        old.systemConstraints,
-                        cameraUseCase.getCurrentSettings().value!!
-                    )
-                ) ?: old
-            }
         }
     }
 
@@ -499,17 +489,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
-            cameraUseCase.setDynamicRange(dynamicRange).also {
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        captureModeToggleUiState =
-                        getCaptureToggleUiState(
-                            old.systemConstraints,
-                            cameraUseCase.getCurrentSettings().value!!
-                        )
-                    ) ?: old
-                }
-            }
+            cameraUseCase.setDynamicRange(dynamicRange)
         }
     }
 
@@ -521,17 +501,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setImageFormat(imageFormat: ImageOutputFormat) {
         viewModelScope.launch {
-            cameraUseCase.setImageFormat(imageFormat).also {
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        captureModeToggleUiState =
-                        getCaptureToggleUiState(
-                            old.systemConstraints,
-                            cameraUseCase.getCurrentSettings().value!!
-                        )
-                    ) ?: old
-                }
-            }
+            cameraUseCase.setImageFormat(imageFormat)
         }
     }
 
