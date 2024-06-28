@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
@@ -57,6 +58,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlin.math.min
@@ -105,29 +107,47 @@ fun ExpandedQuickSetRatio(
 @Composable
 fun QuickSetHdr(
     modifier: Modifier = Modifier,
-    onClick: (dynamicRange: DynamicRange) -> Unit,
+    onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
     selectedDynamicRange: DynamicRange,
+    selectedImageOutputFormat: ImageOutputFormat,
     hdrDynamicRange: DynamicRange,
-    enabled: Boolean = true
+    hdrImageFormat: ImageOutputFormat,
+    hdrDynamicRangeSupported: Boolean,
+    hdrImageFormatSupported: Boolean,
+    previewMode: PreviewMode
 ) {
     val enum =
-        when (selectedDynamicRange) {
-            DynamicRange.SDR -> CameraDynamicRange.SDR
-            DynamicRange.HLG10 -> CameraDynamicRange.HDR
+        if (selectedDynamicRange == hdrDynamicRange ||
+            selectedImageOutputFormat == hdrImageFormat
+        ) {
+            CameraDynamicRange.HDR
+        } else {
+            CameraDynamicRange.SDR
         }
+
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
         onClick = {
-            val newDynamicRange = if (selectedDynamicRange == DynamicRange.SDR) {
-                hdrDynamicRange
-            } else {
-                DynamicRange.SDR
-            }
-            onClick(newDynamicRange)
+            val newDynamicRange =
+                if (selectedDynamicRange == DynamicRange.SDR && hdrDynamicRangeSupported) {
+                    hdrDynamicRange
+                } else {
+                    DynamicRange.SDR
+                }
+            val newImageOutputFormat =
+                if (!hdrDynamicRangeSupported ||
+                    previewMode is PreviewMode.ExternalImageCaptureMode
+                ) {
+                    hdrImageFormat
+                } else {
+                    ImageOutputFormat.JPEG
+                }
+            onClick(newDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
-        enabled = enabled
+        enabled = (hdrDynamicRangeSupported && previewMode is PreviewMode.StandardMode) ||
+            hdrImageFormatSupported
     )
 }
 

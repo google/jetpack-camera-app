@@ -29,12 +29,16 @@ import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -61,7 +65,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  */
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
-    @Assisted previewMode: PreviewMode,
+    @Assisted val previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
     private val constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
@@ -79,7 +83,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
-    private val imageCaptureCalledCount = atomic(0)
+    private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
 
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
@@ -102,7 +106,11 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = zoomScale,
-                                previewMode = previewMode
+                                previewMode = previewMode,
+                                captureModeToggleUiState = getCaptureToggleUiState(
+                                    systemConstraints,
+                                    cameraAppSettings
+                                )
                             )
 
                         is PreviewUiState.NotReady ->
@@ -110,11 +118,125 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
                                 zoomScale = zoomScale,
-                                previewMode = previewMode
+                                previewMode = previewMode,
+                                captureModeToggleUiState = getCaptureToggleUiState(
+                                    systemConstraints,
+                                    cameraAppSettings
+                                )
                             )
                     }
                 }
             }.collect {}
+        }
+    }
+
+    private fun getCaptureToggleUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): CaptureModeToggleUiState {
+        val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
+            cameraAppSettings
+        )
+        val hdrDynamicRangeSupported = cameraConstraints?.let {
+            it.supportedDynamicRanges.size > 1
+        } ?: false
+        val hdrImageFormatSupported =
+            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.captureMode)?.let {
+                it.size > 1
+            } ?: false
+        val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+        val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
+            hdrDynamicRangeSupported && hdrImageFormatSupported
+        return if (isShown) {
+            val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) {
+                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
+            } else {
+                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO
+            }
+            if (enabled) {
+                CaptureModeToggleUiState.Enabled(currentMode)
+            } else {
+                CaptureModeToggleUiState.Disabled(
+                    currentMode,
+                    getCaptureToggleUiStateDisabledReason(
+                        hdrDynamicRangeSupported,
+                        hdrImageFormatSupported,
+                        systemConstraints,
+                        cameraAppSettings.cameraLensFacing,
+                        cameraAppSettings.captureMode
+                    )
+                )
+            }
+        } else {
+            CaptureModeToggleUiState.Invisible
+        }
+    }
+
+    private fun getCaptureToggleUiStateDisabledReason(
+        hdrDynamicRangeSupported: Boolean,
+        hdrImageFormatSupported: Boolean,
+        systemConstraints: SystemConstraints,
+        currentLensFacing: LensFacing,
+        currentCaptureMode: CaptureMode
+    ): CaptureModeToggleUiState.DisabledReason {
+        if (previewMode is PreviewMode.ExternalImageCaptureMode) {
+            return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+        }
+        if (!hdrImageFormatSupported) {
+            // First assume HDR image is only unsupported on this capture mode
+            var disabledReason = when (currentCaptureMode) {
+                CaptureMode.MULTI_STREAM ->
+                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
+                CaptureMode.SINGLE_STREAM ->
+                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
+            }
+            // Check if other capture modes supports HDR image on this lens
+            systemConstraints
+                .perLensConstraints[currentLensFacing]
+                ?.supportedImageFormatsMap
+                ?.filterKeys { it != currentCaptureMode }
+                ?.values
+                ?.forEach { supportedFormats ->
+                    if (supportedFormats.size > 1) {
+                        // Found another capture mode that supports HDR image,
+                        // return previously discovered disabledReason
+                        return disabledReason
+                    }
+                }
+            // HDR image is not supported by this lens
+            disabledReason = CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+            // Check if any other lens supports HDR image
+            systemConstraints
+                .perLensConstraints
+                .filterKeys { it != currentLensFacing }
+                .values
+                .forEach { constraints ->
+                    constraints.supportedImageFormatsMap.values.forEach { supportedFormats ->
+                        if (supportedFormats.size > 1) {
+                            // Found another lens that supports HDR image,
+                            // return previously discovered disabledReason
+                            return disabledReason
+                        }
+                    }
+                }
+            // No lenses support HDR image on device
+            return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
+        } else if (!hdrDynamicRangeSupported) {
+            systemConstraints.perLensConstraints.forEach { entry ->
+                if (entry.key != currentLensFacing) {
+                    val cameraConstraints = systemConstraints.perLensConstraints[entry.key]
+                    if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
+                        return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
+                    }
+                }
+            }
+            return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
+        } else {
+            throw RuntimeException("Unknown CaptureModeUnsupportedReason.")
         }
     }
 
@@ -172,8 +294,10 @@ class PreviewViewModel @AssistedInject constructor(
 
         Log.d(
             TAG,
-            "Toggle Audio ${(previewUiState.value as PreviewUiState.Ready)
-                .currentCameraSettings.audioMuted}"
+            "Toggle Audio ${
+                (previewUiState.value as PreviewUiState.Ready)
+                    .currentCameraSettings.audioMuted
+            }"
         )
     }
 
@@ -225,7 +349,7 @@ class PreviewViewModel @AssistedInject constructor(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
-        val cookieInt = imageCaptureCalledCount.incrementAndGet()
+        val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "Image-$cookieInt"
         try {
             traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
@@ -254,6 +378,23 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     // todo: remove snackBar after postcapture screen implemented
                     snackBarToShow = snackBarData
+                ) ?: old
+            }
+        }
+    }
+
+    fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
+        val cookieInt = snackBarCount.incrementAndGet()
+        val cookie = "DisabledHdrToggle-$cookieInt"
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    snackBarToShow = SnackbarData(
+                        cookie = cookie,
+                        stringResource = disabledReason.reasonTextResId,
+                        withDismissAction = true,
+                        testTag = disabledReason.testTag
+                    )
                 ) ?: old
             }
         }
