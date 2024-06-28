@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.feature.preview"
+    namespace = "com.google.jetpackcamera.core.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
     compileSdkPreview = libs.versions.compileSdkPreview.get()
 
@@ -32,6 +32,36 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        @Suppress("UnstableApiUsage")
+        externalNativeBuild {
+            val versionScript = file("src/main/cpp/jni.lds").absolutePath
+            cmake {
+                cppFlags += listOf(
+                    "-std=c++17",
+                    "-O3",
+                    "-flto",
+                    "-fPIC",
+                    "-fno-exceptions",
+                    "-fno-rtti",
+                    "-fomit-frame-pointer",
+                    "-fdata-sections",
+                    "-ffunction-sections"
+                )
+                arguments += listOf(
+                    "-DCMAKE_VERBOSE_MAKEFILE=ON",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,--gc-sections " +
+                        "-Wl,--version-script=${versionScript}"
+                )
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version = libs.versions.cmake.get()
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
     }
 
     flavorDimensions += "flavor"
@@ -54,76 +84,14 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        unitTests {
-            isReturnDefaultValues = true
-            isIncludeAndroidResources = true
-        }
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
-    }
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
-
-    // Compose - Material Design 3
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
-
-    // Compose - Android Studio Preview support
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
-
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
-
-    // Compose - Lifecycle utilities
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-
-    // Compose - Testing
-    androidTestImplementation(libs.compose.junit)
-    debugImplementation(libs.compose.test.manifest)
-    // noinspection TestManifestGradleConfiguration: required for release build unit tests
-    testImplementation(libs.compose.test.manifest)
-    testImplementation(libs.compose.junit)
-
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.mockito.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -132,20 +100,23 @@ dependencies {
 
     // CameraX
     implementation(libs.camera.core)
-    implementation(libs.camera.viewfinder.compose)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.video)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    //Tracing
+    // Tracing
     implementation(libs.androidx.tracing)
 
-    implementation(libs.kotlinx.atomicfu)
+    // Graphics libraries
+    implementation(libs.androidx.graphics.core)
 
     // Project dependencies
     implementation(project(":data:settings"))
-    implementation(project(":core:camera"))
+    implementation(project(":core:common"))
 }
 
 // Allow references to generated code

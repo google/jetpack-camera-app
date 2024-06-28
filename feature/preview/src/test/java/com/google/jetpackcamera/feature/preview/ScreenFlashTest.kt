@@ -17,8 +17,8 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.domain.camera.CameraUseCase
-import com.google.jetpackcamera.domain.camera.test.FakeCameraUseCase
+import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
