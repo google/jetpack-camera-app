@@ -24,7 +24,7 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
  * Defines the current state of the [PreviewScreen].
  */
 sealed interface PreviewUiState {
-    object NotReady : PreviewUiState
+    data object NotReady : PreviewUiState
 
     data class Ready(
         // "quick" settings
