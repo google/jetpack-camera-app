@@ -81,10 +81,6 @@ fun PreviewScreen(
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(previewMode) }
 ) {
-    // only run this trace in benchmark build. difference from release is by name only
-    // this check allows it to run in the cold run...
-    // if (booleanResource(id = R.bool.is_benchmark_build)) {
-
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
