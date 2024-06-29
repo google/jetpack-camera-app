@@ -54,14 +54,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -90,6 +93,18 @@ class MainActivity : ComponentActivity() {
                     .collect()
             }
         }
+
+        var firstFrameComplete: CompletableDeferred<Unit>? = null
+        if (Trace.isEnabled()) {
+            firstFrameComplete = CompletableDeferred()
+            // start trace between app starting and the earliest possible completed capture
+            lifecycleScope.launch {
+                traceFirstFrameMainActivity(cookie = 0) {
+                    firstFrameComplete.await()
+                }
+            }
+        }
+
         setContent {
             when (uiState) {
                 Loading -> {
@@ -132,6 +147,9 @@ class MainActivity : ComponentActivity() {
                                         )
                                         window?.colorMode = colorMode
                                     }
+                                },
+                                onFirstFrameCaptureCompleted = {
+                                    firstFrameComplete?.complete(Unit)
                                 }
                             )
                         }

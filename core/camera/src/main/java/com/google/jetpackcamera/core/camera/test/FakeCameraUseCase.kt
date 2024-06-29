@@ -20,6 +20,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -90,7 +91,9 @@ class FakeCameraUseCase(
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
 
-                _zoomScale.value = it.zoomScale
+                _currentCameraState.update { old ->
+                    old.copy(zoomScale = it.zoomScale)
+                }
             }
     }
 
@@ -141,13 +144,13 @@ class FakeCameraUseCase(
         recordingInProgress = false
     }
 
-    private val _zoomScale = MutableStateFlow(1f)
+    private val _currentCameraState = MutableStateFlow(CameraState())
     override fun setZoomScale(scale: Float) {
         currentSettings.update { old ->
             old.copy(zoomScale = scale)
         }
     }
-    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
+    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()

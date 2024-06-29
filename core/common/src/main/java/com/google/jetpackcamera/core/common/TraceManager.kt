@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.benchmark
+package com.google.jetpackcamera.core.common
 
-import android.Manifest.permission
-import androidx.benchmark.macro.MacrobenchmarkScope
-import org.junit.Assert
+import androidx.tracing.traceAsync
 
-fun MacrobenchmarkScope.allowCamera() {
-    val command = "pm grant $packageName ${permission.CAMERA}"
-    val output = device.executeShellCommand(command)
-    Assert.assertEquals("", output)
+const val FIRST_FRAME_TRACE_PREVIEW = "firstFrameTracePreview"
+const val FIRST_FRAME_TRACE_MAIN_ACTIVITY = "firstFrameTraceMainActivity"
+
+suspend inline fun traceFirstFramePreview(cookie: Int, crossinline block: suspend () -> Unit) {
+    traceAsync(FIRST_FRAME_TRACE_PREVIEW, cookie) {
+        block()
+    }
+}
+suspend inline fun traceFirstFrameMainActivity(cookie: Int, crossinline block: suspend () -> Unit) {
+    traceAsync(FIRST_FRAME_TRACE_MAIN_ACTIVITY, cookie) {
+        block()
+    }
 }

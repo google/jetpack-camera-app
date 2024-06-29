@@ -110,6 +110,7 @@ dependencies {
 
     // Tracing
     implementation(libs.androidx.tracing)
+    implementation(libs.kotlinx.atomicfu)
 
     // Graphics libraries
     implementation(libs.androidx.graphics.core)

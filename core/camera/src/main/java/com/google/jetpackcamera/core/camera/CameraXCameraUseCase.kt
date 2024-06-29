@@ -20,14 +20,19 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
@@ -86,6 +91,7 @@ import javax.inject.Inject
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlin.properties.Delegates
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -128,6 +134,39 @@ constructor(
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private lateinit var imageCaptureUseCase: ImageCapture
+
+    /**
+     * Applies a CaptureCallback to the provided image capture builder
+     */
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun setOnCaptureCompletedCallback(previewBuilder: Preview.Builder) {
+        val isFirstFrameTimestampUpdated = atomic(false)
+        val captureCallback = object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult
+            ) {
+                super.onCaptureCompleted(session, request, result)
+                try {
+                    if (!isFirstFrameTimestampUpdated.value) {
+                        _currentCameraState.update { old ->
+                            old.copy(
+                                sessionFirstFrameTimestamp = SystemClock.elapsedRealtimeNanos()
+                            )
+                        }
+                        isFirstFrameTimestampUpdated.value = true
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        // Create an Extender to attach Camera2 options
+        val imageCaptureExtender = Camera2Interop.Extender(previewBuilder)
+
+        // Attach the Camera2 CaptureCallback
+        imageCaptureExtender.setSessionCaptureCallback(captureCallback)
+    }
 
     private var videoCaptureUseCase: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
@@ -321,7 +360,9 @@ constructor(
                                         zoomState.maxZoomRatio
                                     )
                                 camera.cameraControl.setZoomRatio(finalScale)
-                                _zoomScale.value = finalScale
+                                _currentCameraState.update { old ->
+                                    old.copy(zoomScale = finalScale)
+                                }
                             }
                         }
 
@@ -520,8 +561,8 @@ constructor(
     }
 
     // Could be improved by setting initial value only when camera is initialized
-    private val _zoomScale = MutableStateFlow(1f)
-    override fun getZoomScale(): StateFlow<Float> = _zoomScale.asStateFlow()
+    private val _currentCameraState = MutableStateFlow(CameraState())
+    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
@@ -735,7 +776,8 @@ constructor(
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun createImageUseCase(
         cameraInfo: CameraInfo,
-        sessionSettings: PerpetualSessionSettings
+        sessionSettings: PerpetualSessionSettings,
+        onCloseTrace: () -> Unit = {}
     ): ImageCapture {
         val builder = ImageCapture.Builder()
         builder.setResolutionSelector(
@@ -833,6 +875,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
         val previewUseCaseBuilder = Preview.Builder()
+        setOnCaptureCompletedCallback(previewUseCaseBuilder)
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)

@@ -71,7 +71,7 @@ interface CameraUseCase {
 
     fun setZoomScale(scale: Float)
 
-    fun getZoomScale(): StateFlow<Float>
+    fun getCurrentCameraState(): StateFlow<CameraState>
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
@@ -120,3 +120,8 @@ interface CameraUseCase {
         object OnVideoRecordError : OnVideoRecordEvent
     }
 }
+
+data class CameraState(
+    val zoomScale: Float = 1f,
+    val sessionFirstFrameTimestamp: Long = 0L
+)
