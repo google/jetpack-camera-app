@@ -34,9 +34,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.tracing.Trace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -61,6 +64,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
 
@@ -73,6 +77,7 @@ fun PreviewScreen(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
+    onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(previewMode) }
 ) {
@@ -90,6 +95,24 @@ fun PreviewScreen(
         viewModel.startCamera()
         onStopOrDispose {
             viewModel.stopCamera()
+        }
+    }
+
+    if (Trace.isEnabled()) {
+        LaunchedEffect(onFirstFrameCaptureCompleted) {
+            snapshotFlow { previewUiState }
+                .transformWhile {
+                    var continueCollecting = true
+                    (it as? PreviewUiState.Ready)?.let { ready ->
+                        if (ready.sessionFirstFrameTimestamp > 0) {
+                            emit(Unit)
+                            continueCollecting = false
+                        }
+                    }
+                    continueCollecting
+                }.collect {
+                    onFirstFrameCaptureCompleted()
+                }
         }
     }
 

@@ -17,12 +17,15 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -45,6 +48,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -54,6 +58,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -97,16 +102,16 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getZoomScale()
-            ) { cameraAppSettings, systemConstraints, zoomScale ->
+                cameraUseCase.getCurrentCameraState()
+            ) { cameraAppSettings, systemConstraints, cameraState ->
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.Ready ->
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale,
-                                previewMode = previewMode,
+                                zoomScale = cameraState.zoomScale,
+                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 captureModeToggleUiState = getCaptureToggleUiState(
                                     systemConstraints,
                                     cameraAppSettings
@@ -117,7 +122,8 @@ class PreviewViewModel @AssistedInject constructor(
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                zoomScale = zoomScale,
+                                zoomScale = cameraState.zoomScale,
+                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 previewMode = previewMode,
                                 captureModeToggleUiState = getCaptureToggleUiState(
                                     systemConstraints,
@@ -244,6 +250,23 @@ class PreviewViewModel @AssistedInject constructor(
         Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
+            if (Trace.isEnabled()) {
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
+                    traceFirstFramePreview(cookie = 1) {
+                        _previewUiState.transformWhile {
+                            var continueCollecting = true
+                            (it as? PreviewUiState.Ready)?.let { uiState ->
+                                if (uiState.sessionFirstFrameTimestamp > startTraceTimestamp) {
+                                    emit(Unit)
+                                    continueCollecting = false
+                                }
+                            }
+                            continueCollecting
+                        }.collect {}
+                    }
+                }
+            }
             // Ensure CameraUseCase is initialized before starting camera
             initializationDeferred.await()
             // TODO(yasith): Handle Exceptions from binding use cases

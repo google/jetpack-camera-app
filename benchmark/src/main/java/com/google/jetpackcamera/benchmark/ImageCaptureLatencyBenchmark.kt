@@ -20,6 +20,17 @@ import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.jetpackcamera.benchmark.utils.DEFAULT_TEST_ITERATIONS
+import com.google.jetpackcamera.benchmark.utils.FlashMode
+import com.google.jetpackcamera.benchmark.utils.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.benchmark.utils.IMAGE_CAPTURE_TRACE
+import com.google.jetpackcamera.benchmark.utils.JCA_PACKAGE_NAME
+import com.google.jetpackcamera.benchmark.utils.allowCamera
+import com.google.jetpackcamera.benchmark.utils.clickCaptureButton
+import com.google.jetpackcamera.benchmark.utils.findObjectByRes
+import com.google.jetpackcamera.benchmark.utils.setQuickFrontFacingCamera
+import com.google.jetpackcamera.benchmark.utils.setQuickSetFlash
+import com.google.jetpackcamera.benchmark.utils.toggleQuickSettings
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,7 +108,7 @@ class ImageCaptureLatencyBenchmark {
             // ensure trace is closed
             findObjectByRes(
                 device = device,
-                testTag = IMAGE_CAPTURE_SUCCESS_TOAST,
+                testTag = IMAGE_CAPTURE_SUCCESS_TAG,
                 timeout = timeout,
                 shouldFailIfNotFound = true
             )
