@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.core.common
 
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
