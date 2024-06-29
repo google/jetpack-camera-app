@@ -24,7 +24,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.permissions.ui.AUDIO_RECORD_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
@@ -153,7 +153,7 @@ class PermissionsTest {
         // optional permissions should close the screen after declining
         runScenarioTest<MainActivity> {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_BUTTON).isDisplayed()
+                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
             }
 
             // Click button to request permission
@@ -177,7 +177,7 @@ class PermissionsTest {
         // optional permissions should close the screen after declining
         runScenarioTest<MainActivity> {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(AUDIO_RECORD_PERMISSION_BUTTON).isDisplayed()
+                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
             }
 
             // Click button to request permission
