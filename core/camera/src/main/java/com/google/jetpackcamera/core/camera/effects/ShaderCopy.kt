@@ -490,8 +490,7 @@ class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
         private const val EGL_GL_COLORSPACE_BT2020_HLG_EXT = 0x3540
 
         private val TEN_BIT_REQUIRED_EGL_EXTENSIONS = listOf(
-            "EGL_EXT_gl_colorspace_bt2020_hlg",
-            "EGL_EXT_yuv_surface"
+            "EGL_EXT_gl_colorspace_bt2020_hlg"
         )
 
         private fun FloatArray.toBuffer(): FloatBuffer {
