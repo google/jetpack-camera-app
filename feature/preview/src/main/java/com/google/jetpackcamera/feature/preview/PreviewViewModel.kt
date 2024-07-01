@@ -31,6 +31,7 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -72,6 +74,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class PreviewViewModel @AssistedInject constructor(
     @Assisted val previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
+    private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
@@ -94,7 +97,9 @@ class PreviewViewModel @AssistedInject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize(previewMode is PreviewMode.ExternalImageCaptureMode)
+        cameraUseCase.initialize(
+            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
+            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode)
     }
 
     init {

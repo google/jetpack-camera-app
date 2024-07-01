@@ -39,7 +39,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(disableVideoCapture: Boolean)
+    suspend fun initialize(cameraAppSettings: CameraAppSettings, disableVideoCapture: Boolean)
 
     /**
      * Starts the camera.

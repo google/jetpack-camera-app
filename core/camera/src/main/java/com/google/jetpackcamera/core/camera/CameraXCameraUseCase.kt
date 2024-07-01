@@ -128,7 +128,6 @@ constructor(
     private val application: Application,
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
-    private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -181,7 +180,7 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(externalImageCapture: Boolean) {
+    override suspend fun initialize(cameraAppSettings: CameraAppSettings, externalImageCapture: Boolean) {
         this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
@@ -243,7 +242,7 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first()
+                cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
