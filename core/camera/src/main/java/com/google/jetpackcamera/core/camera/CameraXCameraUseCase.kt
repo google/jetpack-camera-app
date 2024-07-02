@@ -765,6 +765,18 @@ constructor(
         }
     }
 
+    override suspend fun setPreviewStabilization(previewStabilization: Stabilization){
+        currentSettings.update { old ->
+            old?.copy(previewStabilization = previewStabilization)
+        }
+    }
+
+    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization){
+        currentSettings.update { old ->
+            old?.copy(videoCaptureStabilization = videoCaptureStabilization)
+        }
+    }
+
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
         return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats

@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -119,6 +120,9 @@ interface CameraUseCase {
 
         object OnVideoRecordError : OnVideoRecordEvent
     }
+
+    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
+    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
 }
 
 data class CameraState(
