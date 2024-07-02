@@ -134,6 +134,7 @@ class PreviewViewModel @AssistedInject constructor(
                                     cameraAppSettings
                                 )
                             )
+
                         is PreviewUiState.NotReady ->
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
@@ -153,7 +154,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-     * Returns the diff of new default settings and the previous default settings as a queue of [Pair]<[SettingNames],[Any]>
+     * Returns the diff of new default settings and the previous default settings as a queue of [Pair]<[SettingNames], [Any]>
      */
     private fun diffNewSettings(
         newCameraAppSettings: CameraAppSettings
@@ -161,7 +162,6 @@ class PreviewViewModel @AssistedInject constructor(
         val queue = ArrayDeque<Pair<SettingNames, Any>>()
         if (newCameraAppSettings.cameraLensFacing != oldCameraDefaultSettings.cameraLensFacing) {
             queue.add(Pair(SettingNames.CAMERA_LENS_FACING, newCameraAppSettings.cameraLensFacing))
-
         }
         if (newCameraAppSettings.flashMode != oldCameraDefaultSettings.flashMode) {
             queue.add(Pair(SettingNames.FLASH_MODE, newCameraAppSettings.flashMode))
@@ -172,7 +172,9 @@ class PreviewViewModel @AssistedInject constructor(
         if (newCameraAppSettings.aspectRatio != oldCameraDefaultSettings.aspectRatio) {
             queue.add(Pair(SettingNames.ASPECT_RATIO, newCameraAppSettings.aspectRatio))
         }
-        if (newCameraAppSettings.previewStabilization != oldCameraDefaultSettings.previewStabilization) {
+        if (newCameraAppSettings.previewStabilization != oldCameraDefaultSettings
+                .previewStabilization
+        ) {
             queue.add(
                 Pair(
                     SettingNames.PREVIEW_STABILIZATION,
@@ -180,7 +182,9 @@ class PreviewViewModel @AssistedInject constructor(
                 )
             )
         }
-        if (newCameraAppSettings.videoCaptureStabilization != oldCameraDefaultSettings.videoCaptureStabilization) {
+        if (newCameraAppSettings.videoCaptureStabilization != oldCameraDefaultSettings
+                .videoCaptureStabilization
+        ) {
             queue.add(
                 Pair(
                     SettingNames.VIDEO_CAPTURE_STABILIZATION,
@@ -198,7 +202,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-     * Iterates through a queue of [Pair]<[SettingNames],[Any]> and attempt to apply them
+     * Iterates through a queue of [Pair]<[SettingNames], [Any]> and attempt to apply them
      */
     private suspend fun applyDiff(newSettings: ArrayDeque<Pair<SettingNames, Any>>) {
         newSettings.forEach { pair ->
@@ -221,7 +225,6 @@ class PreviewViewModel @AssistedInject constructor(
 
                 SettingNames.PREVIEW_STABILIZATION -> {
                     cameraUseCase.setPreviewStabilization(pair.second as Stabilization)
-
                 }
 
                 SettingNames.VIDEO_CAPTURE_STABILIZATION -> {
@@ -236,7 +239,7 @@ class PreviewViewModel @AssistedInject constructor(
                 SettingNames.MUTE_AUDIO -> TODO()
                 SettingNames.LOW_LIGHT_BOOST -> TODO()
             }
-            //newSettings.removeFirst()
+            // newSettings.removeFirst()
             Log.d(TAG, "${newSettings.size} changed default settings")
         }
     }
@@ -256,10 +259,10 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-                hdrDynamicRangeSupported && hdrImageFormatSupported
+            hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -532,7 +535,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {

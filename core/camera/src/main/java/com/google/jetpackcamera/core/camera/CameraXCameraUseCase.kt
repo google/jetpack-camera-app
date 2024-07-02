@@ -67,7 +67,6 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
-import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
@@ -180,7 +179,10 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(cameraAppSettings: CameraAppSettings, externalImageCapture: Boolean) {
+    override suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        externalImageCapture: Boolean
+    ) {
         this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
@@ -242,7 +244,7 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-                cameraAppSettings
+            cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
@@ -765,13 +767,13 @@ constructor(
         }
     }
 
-    override suspend fun setPreviewStabilization(previewStabilization: Stabilization){
+    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(previewStabilization = previewStabilization)
         }
     }
 
-    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization){
+    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(videoCaptureStabilization = videoCaptureStabilization)
         }
