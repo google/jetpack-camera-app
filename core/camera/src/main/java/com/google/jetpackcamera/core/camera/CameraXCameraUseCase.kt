@@ -779,6 +779,12 @@ constructor(
         }
     }
 
+    override suspend fun setTargetFrameRate(targetFrameRate: Int) {
+        currentSettings.update { old ->
+            old?.copy(targetFrameRate = targetFrameRate)
+        }
+    }
+
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
         return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats

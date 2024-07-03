@@ -48,7 +48,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -61,9 +60,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -94,7 +97,6 @@ class PreviewViewModel @AssistedInject constructor(
 
     private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
-    private lateinit var oldCameraDefaultSettings: CameraAppSettings
 
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
@@ -107,13 +109,16 @@ class PreviewViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            oldCameraDefaultSettings = settingsRepository.defaultCameraAppSettings.first()
-
             launch {
-                settingsRepository.defaultCameraAppSettings.collect { newDefault ->
-                    val newDiff = diffNewSettings(newDefault)
-                    println(newDiff.size)
-                    applyDiff(newDiff)
+                var oldCameraAppSettings: CameraAppSettings? = null
+                settingsRepository.defaultCameraAppSettings.transform { new ->
+                    val old = oldCameraAppSettings
+                    if (old != null) {
+                        emit(getSettingsDiff(old, new))
+                    }
+                    oldCameraAppSettings = new
+                }.collect { diffQueue ->
+                    applySettingsDiff(diffQueue)
                 }
             }
             combine(
@@ -154,93 +159,71 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-     * Returns the diff of new default settings and the previous default settings as a queue of [Pair]<[SettingNames], [Any]>
+     * Returns the difference between two [CameraAppSettings] as a queue of
+     * [Pair]<[SettingNames], [Any]>.
      */
-    private fun diffNewSettings(
+    private fun getSettingsDiff(
+        oldCameraAppSettings: CameraAppSettings,
         newCameraAppSettings: CameraAppSettings
-    ): ArrayDeque<Pair<SettingNames, Any>> {
-        val queue = ArrayDeque<Pair<SettingNames, Any>>()
-        if (newCameraAppSettings.cameraLensFacing != oldCameraDefaultSettings.cameraLensFacing) {
-            queue.add(Pair(SettingNames.CAMERA_LENS_FACING, newCameraAppSettings.cameraLensFacing))
+    ): ArrayDeque<Pair<KProperty<Any?>, Any?>> {
+        val queue = ArrayDeque<Pair<KProperty<Any?>, Any?>>()
+        CameraAppSettings::class.memberProperties.forEach { property ->
+            if (property.get(oldCameraAppSettings) != property.get(newCameraAppSettings)) {
+                queue.add(Pair(property, property.get(newCameraAppSettings)))
+            }
         }
-        if (newCameraAppSettings.flashMode != oldCameraDefaultSettings.flashMode) {
-            queue.add(Pair(SettingNames.FLASH_MODE, newCameraAppSettings.flashMode))
-        }
-        if (newCameraAppSettings.captureMode != oldCameraDefaultSettings.captureMode) {
-            queue.add(Pair(SettingNames.CAPTURE_MODE, newCameraAppSettings.captureMode))
-        }
-        if (newCameraAppSettings.aspectRatio != oldCameraDefaultSettings.aspectRatio) {
-            queue.add(Pair(SettingNames.ASPECT_RATIO, newCameraAppSettings.aspectRatio))
-        }
-        if (newCameraAppSettings.previewStabilization != oldCameraDefaultSettings
-                .previewStabilization
-        ) {
-            queue.add(
-                Pair(
-                    SettingNames.PREVIEW_STABILIZATION,
-                    newCameraAppSettings.previewStabilization
-                )
-            )
-        }
-        if (newCameraAppSettings.videoCaptureStabilization != oldCameraDefaultSettings
-                .videoCaptureStabilization
-        ) {
-            queue.add(
-                Pair(
-                    SettingNames.VIDEO_CAPTURE_STABILIZATION,
-                    newCameraAppSettings.videoCaptureStabilization
-                )
-            )
-        }
-        if (newCameraAppSettings.dynamicRange != oldCameraDefaultSettings.dynamicRange) {
-            queue.add(Pair(SettingNames.DYNAMIC_RANGE, newCameraAppSettings.dynamicRange))
-        }
-        oldCameraDefaultSettings = newCameraAppSettings
-        Log.d(TAG, "Changed default settings: ${queue.size}")
-
         return queue
     }
 
     /**
-     * Iterates through a queue of [Pair]<[SettingNames], [Any]> and attempt to apply them
+     * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
+     * [CameraUseCase].
      */
-    private suspend fun applyDiff(newSettings: ArrayDeque<Pair<SettingNames, Any>>) {
-        newSettings.forEach { pair ->
+    private suspend fun applySettingsDiff(newSettingsDiff: ArrayDeque<Pair<KProperty<Any?>, Any?>>) {
+        newSettingsDiff.forEach { pair ->
             when (pair.first) {
-                SettingNames.CAMERA_LENS_FACING -> {
+                CameraAppSettings::cameraLensFacing -> {
                     cameraUseCase.setLensFacing(pair.second as LensFacing)
                 }
 
-                SettingNames.FLASH_MODE -> {
+                CameraAppSettings::flashMode -> {
                     cameraUseCase.setFlashMode(pair.second as FlashMode)
                 }
 
-                SettingNames.CAPTURE_MODE -> {
+                CameraAppSettings::captureMode -> {
                     cameraUseCase.setCaptureMode(pair.second as CaptureMode)
                 }
 
-                SettingNames.ASPECT_RATIO -> {
+                CameraAppSettings::aspectRatio -> {
                     cameraUseCase.setAspectRatio(pair.second as AspectRatio)
                 }
 
-                SettingNames.PREVIEW_STABILIZATION -> {
+                CameraAppSettings::previewStabilization -> {
                     cameraUseCase.setPreviewStabilization(pair.second as Stabilization)
                 }
 
-                SettingNames.VIDEO_CAPTURE_STABILIZATION -> {
+                CameraAppSettings::videoCaptureStabilization -> {
                     cameraUseCase.setVideoCaptureStabilization(pair.second as Stabilization)
                 }
 
-                SettingNames.DYNAMIC_RANGE -> {
-                    cameraUseCase.setDynamicRange(pair.second as DynamicRange)
+                CameraAppSettings::targetFrameRate -> {
+                    cameraUseCase.setTargetFrameRate(pair.second as Int)
                 }
 
-                SettingNames.TARGET_FPS -> TODO()
-                SettingNames.MUTE_AUDIO -> TODO()
-                SettingNames.LOW_LIGHT_BOOST -> TODO()
+                CameraAppSettings::lowLightBoost -> {
+                    cameraUseCase.setLowLightBoost(pair.second as LowLightBoost)
+                }
+
+                CameraAppSettings::audioMuted -> {
+                    cameraUseCase.setAudioMuted(pair.second as Boolean)
+                }
+
+                CameraAppSettings::imageFormat -> {
+                    cameraUseCase.setImageFormat(pair.second as ImageOutputFormat)
+                }
+
+                else -> TODO("Unhandled CameraAppSetting $pair")
             }
-            // newSettings.removeFirst()
-            Log.d(TAG, "${newSettings.size} changed default settings")
         }
     }
 
@@ -259,10 +242,10 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            hdrDynamicRangeSupported && hdrImageFormatSupported
+                hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -535,7 +518,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
@@ -683,22 +666,6 @@ class PreviewViewModel @AssistedInject constructor(
                 } ?: old
             }
         }
-    }
-
-    /**
-     * Enum class representing the names of the [CameraAppSettings] values
-     */
-    enum class SettingNames {
-        CAMERA_LENS_FACING,
-        FLASH_MODE,
-        CAPTURE_MODE,
-        TARGET_FPS,
-        MUTE_AUDIO,
-        ASPECT_RATIO,
-        PREVIEW_STABILIZATION,
-        VIDEO_CAPTURE_STABILIZATION,
-        LOW_LIGHT_BOOST,
-        DYNAMIC_RANGE
     }
 
     @AssistedFactory

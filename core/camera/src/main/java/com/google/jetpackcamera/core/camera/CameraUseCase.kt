@@ -123,6 +123,7 @@ interface CameraUseCase {
 
     suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
     suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+    suspend fun setTargetFrameRate(targetFrameRate: Int)
 }
 
 data class CameraState(
