@@ -229,4 +229,10 @@ class FakeCameraUseCase(
             old.copy(previewStabilization = previewStabilization)
         }
     }
+
+    override suspend fun setTargetFrameRate(targetFrameRate: Int) {
+        currentSettings.update { old ->
+            old.copy(targetFrameRate = targetFrameRate)
+        }
+    }
 }
