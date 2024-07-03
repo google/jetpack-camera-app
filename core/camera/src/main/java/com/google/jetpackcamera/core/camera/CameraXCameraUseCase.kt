@@ -155,7 +155,8 @@ constructor(
                         }
                         isFirstFrameTimestampUpdated.value = true
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
         }
 
@@ -531,12 +532,14 @@ constructor(
                                         onVideoRecord(
                                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
                                         )
+
                                     else ->
                                         onVideoRecord(
                                             CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
                                         )
                                 }
                             }
+
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
@@ -755,6 +758,7 @@ constructor(
             captureMode = sessionSettings.captureMode
         }.build()
     }
+
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
@@ -795,8 +799,7 @@ constructor(
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun createImageUseCase(
         cameraInfo: CameraInfo,
-        sessionSettings: PerpetualSessionSettings,
-        onCloseTrace: () -> Unit = {}
+        sessionSettings: PerpetualSessionSettings
     ): ImageCapture {
         val builder = ImageCapture.Builder()
         builder.setResolutionSelector(
