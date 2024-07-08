@@ -627,7 +627,6 @@ constructor(
         } ?: this
     }
 
-
     private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFixedFrameRates) {
@@ -654,8 +653,7 @@ constructor(
                 }
                 val newPreviewStabilization = if (contains(SupportedStabilizationMode.ON)) {
                     previewStabilization
-                }
-                else {
+                } else {
                     Stabilization.UNDEFINED
                 }
 
@@ -666,8 +664,6 @@ constructor(
             }
         } ?: this
     }
-
-
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
@@ -817,13 +813,17 @@ constructor(
 
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
-            old?.copy(previewStabilization = previewStabilization)?.tryApplyStabilizationConstraints()
+            old?.copy(
+                previewStabilization = previewStabilization
+            )?.tryApplyStabilizationConstraints()
         }
     }
 
     override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
         currentSettings.update { old ->
-            old?.copy(videoCaptureStabilization = videoCaptureStabilization)?.tryApplyStabilizationConstraints()
+            old?.copy(
+                videoCaptureStabilization = videoCaptureStabilization
+            )?.tryApplyStabilizationConstraints()
         }
     }
 
