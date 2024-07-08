@@ -249,6 +249,8 @@ constructor(
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
+                .tryApplyFrameRateConstraints()
+                .tryApplyStabilizationConstraints()
     }
 
     /**
@@ -625,6 +627,48 @@ constructor(
         } ?: this
     }
 
+
+    private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedFixedFrameRates) {
+                val newTargetFrameRate = if (contains(targetFrameRate)) {
+                    targetFrameRate
+                } else {
+                    TARGET_FPS_AUTO
+                }
+
+                this@tryApplyFrameRateConstraints.copy(
+                    targetFrameRate = newTargetFrameRate
+                )
+            }
+        } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedStabilizationModes) {
+                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY)) {
+                    videoCaptureStabilization
+                } else {
+                    Stabilization.UNDEFINED
+                }
+                val newPreviewStabilization = if (contains(SupportedStabilizationMode.ON)) {
+                    previewStabilization
+                }
+                else {
+                    Stabilization.UNDEFINED
+                }
+
+                this@tryApplyStabilizationConstraints.copy(
+                    previewStabilization = newPreviewStabilization,
+                    videoCaptureStabilization = newVideoStabilization
+                )
+            }
+        } ?: this
+    }
+
+
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
 
@@ -773,19 +817,19 @@ constructor(
 
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
-            old?.copy(previewStabilization = previewStabilization)
+            old?.copy(previewStabilization = previewStabilization)?.tryApplyStabilizationConstraints()
         }
     }
 
     override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
         currentSettings.update { old ->
-            old?.copy(videoCaptureStabilization = videoCaptureStabilization)
+            old?.copy(videoCaptureStabilization = videoCaptureStabilization)?.tryApplyStabilizationConstraints()
         }
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
         currentSettings.update { old ->
-            old?.copy(targetFrameRate = targetFrameRate)
+            old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
         }
     }
 

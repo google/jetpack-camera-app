@@ -160,7 +160,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     /**
      * Returns the difference between two [CameraAppSettings] as a queue of
-     * [Pair]<[SettingNames], [Any]>.
+     * [Pair]<[KProperty], [Any]>.
      */
     private fun getSettingsDiff(
         oldCameraAppSettings: CameraAppSettings,
@@ -212,17 +212,7 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setTargetFrameRate(pair.second as Int)
                 }
 
-                CameraAppSettings::lowLightBoost -> {
-                    cameraUseCase.setLowLightBoost(pair.second as LowLightBoost)
-                }
-
-                CameraAppSettings::audioMuted -> {
-                    cameraUseCase.setAudioMuted(pair.second as Boolean)
-                }
-
-                CameraAppSettings::imageFormat -> {
-                    cameraUseCase.setImageFormat(pair.second as ImageOutputFormat)
-                }
+                CameraAppSettings::darkMode -> {}
 
                 else -> TODO("Unhandled CameraAppSetting $pair")
             }
