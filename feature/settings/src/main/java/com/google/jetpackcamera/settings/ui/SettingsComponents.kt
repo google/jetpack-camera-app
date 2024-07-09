@@ -81,8 +81,6 @@ const val TEN_SECONDS = 10L
 const val THIRTY_SECONDS = 30L
 const val SIXTY_SECONDS = 60L
 
-
-
 /**
  * MAJOR SETTING UI COMPONENTS
  * these are ready to be popped into the ui
@@ -337,7 +335,6 @@ fun CaptureModeSetting(
     )
 }
 
-
 @Composable
 fun MaxVideoDurationSetting(
     currentMaxVideoDuration: Long,
@@ -360,7 +357,7 @@ fun MaxVideoDurationSetting(
                     SingleChoiceSelector(
                         text = "%d".format(maxDuration),
                         selected = currentMaxVideoDuration == (maxDuration * 1_000_000_000),
-                        onClick = { setMaxDuration(maxDuration * 1_000_000_000) },
+                        onClick = { setMaxDuration(maxDuration * 1_000_000_000) }
                     )
                 }
             }

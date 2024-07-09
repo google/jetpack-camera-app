@@ -424,7 +424,8 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setMaxVideoDuration(duration: Long) {
-        viewModelScope.launch { settingsRepository.updateMaxVideoDuration(duration)
+        viewModelScope.launch {
+            settingsRepository.updateMaxVideoDuration(duration)
             Log.d(TAG, "set video duration: $duration ns")
         }
     }
