@@ -48,6 +48,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.HashMap
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
@@ -159,62 +160,61 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-     * Returns the difference between two [CameraAppSettings] as a queue of
-     * [Pair]<[KProperty], [Any]>.
+     * Returns the difference between two [CameraAppSettings] as a mapping of <[KProperty], [Any]>.
      */
     private fun getSettingsDiff(
         oldCameraAppSettings: CameraAppSettings,
         newCameraAppSettings: CameraAppSettings
-    ): ArrayDeque<Pair<KProperty<Any?>, Any?>> {
-        val queue = ArrayDeque<Pair<KProperty<Any?>, Any?>>()
+    ): Map<KProperty<Any?>, Any?> {
+        val diffSettingsMap = HashMap<KProperty<Any?>, Any?>()
         CameraAppSettings::class.memberProperties.forEach { property ->
             if (property.get(oldCameraAppSettings) != property.get(newCameraAppSettings)) {
-                queue.add(Pair(property, property.get(newCameraAppSettings)))
+                diffSettingsMap[property] = property.get(newCameraAppSettings)
             }
         }
-        return queue
+        return diffSettingsMap
     }
 
     /**
      * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
      * [CameraUseCase].
      */
-    private suspend fun applySettingsDiff(
-        newSettingsDiff: ArrayDeque<Pair<KProperty<Any?>, Any?>>
-    ) {
-        newSettingsDiff.forEach { pair ->
-            when (pair.first) {
+    private suspend fun applySettingsDiff(diffSettingsMap: Map<KProperty<Any?>, Any?>) {
+        diffSettingsMap.keys.forEach { key ->
+            when (key) {
                 CameraAppSettings::cameraLensFacing -> {
-                    cameraUseCase.setLensFacing(pair.second as LensFacing)
+                    cameraUseCase.setLensFacing(diffSettingsMap[key] as LensFacing)
                 }
 
                 CameraAppSettings::flashMode -> {
-                    cameraUseCase.setFlashMode(pair.second as FlashMode)
+                    cameraUseCase.setFlashMode(diffSettingsMap[key] as FlashMode)
                 }
 
                 CameraAppSettings::captureMode -> {
-                    cameraUseCase.setCaptureMode(pair.second as CaptureMode)
+                    cameraUseCase.setCaptureMode(diffSettingsMap[key] as CaptureMode)
                 }
 
                 CameraAppSettings::aspectRatio -> {
-                    cameraUseCase.setAspectRatio(pair.second as AspectRatio)
+                    cameraUseCase.setAspectRatio(diffSettingsMap[key] as AspectRatio)
                 }
 
                 CameraAppSettings::previewStabilization -> {
-                    cameraUseCase.setPreviewStabilization(pair.second as Stabilization)
+                    cameraUseCase.setPreviewStabilization(diffSettingsMap[key] as Stabilization)
                 }
 
                 CameraAppSettings::videoCaptureStabilization -> {
-                    cameraUseCase.setVideoCaptureStabilization(pair.second as Stabilization)
+                    cameraUseCase.setVideoCaptureStabilization(
+                        diffSettingsMap[key] as Stabilization
+                    )
                 }
 
                 CameraAppSettings::targetFrameRate -> {
-                    cameraUseCase.setTargetFrameRate(pair.second as Int)
+                    cameraUseCase.setTargetFrameRate(diffSettingsMap[key] as Int)
                 }
 
                 CameraAppSettings::darkMode -> {}
 
-                else -> TODO("Unhandled CameraAppSetting $pair")
+                else -> TODO("Unhandled CameraAppSetting $key")
             }
         }
     }
