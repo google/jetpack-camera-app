@@ -137,7 +137,8 @@ fun SettingsList(
 
     DefaultCameraFacing(
         currentLensFacing = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
-        //to be able to flip camera, must have multiple lenses and flipped camera must not break constraints
+        // to be able to flip camera, must have multiple lenses and flipped camera must not break
+        // constraints
         enabled = checkLensConstraints(uiState.cameraAppSettings, uiState.systemConstraints),
         setDefaultLensFacing = setDefaultLensFacing
     )
@@ -213,25 +214,40 @@ private fun checkLensConstraints(
     // if there is only one lens, stop here
     if (!with(systemConstraints.availableLenses) {
             size > 1 && contains(com.google.jetpackcamera.settings.model.LensFacing.FRONT)
-        })
+        }
+    ) {
         return false
+    }
 
     // If multiple lens available, continue
-    val newLensFacing = if (currentSettings.cameraLensFacing == LensFacing.FRONT)
+    val newLensFacing = if (currentSettings.cameraLensFacing == LensFacing.FRONT) {
         LensFacing.BACK
-    else
+    } else {
         LensFacing.FRONT
+    }
 
     val newLensConstraints = systemConstraints.perLensConstraints[newLensFacing]!!
-    //make sure all current settings can transfer to new default lens
-    if (currentSettings.targetFrameRate != FPS_AUTO && !newLensConstraints.supportedFixedFrameRates.contains(currentSettings.targetFrameRate))
+    // make sure all current settings can transfer to new default lens
+    if (currentSettings.targetFrameRate != FPS_AUTO && !newLensConstraints.supportedFixedFrameRates
+            .contains(currentSettings.targetFrameRate)
+    ) {
         return false
-    if (currentSettings.previewStabilization == Stabilization.ON)
-        if (!newLensConstraints.supportedStabilizationModes.contains(SupportedStabilizationMode.ON))
+    }
+    if (currentSettings.previewStabilization == Stabilization.ON) {
+        if (!newLensConstraints.supportedStabilizationModes.contains(
+                SupportedStabilizationMode.ON
+            )
+        ) {
             return false
-    if (currentSettings.videoCaptureStabilization == Stabilization.ON)
-        if (!newLensConstraints.supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY))
+        }
+    }
+    if (currentSettings.videoCaptureStabilization == Stabilization.ON) {
+        if (!newLensConstraints.supportedStabilizationModes
+                .contains(SupportedStabilizationMode.HIGH_QUALITY)
+        ) {
             return false
+        }
+    }
 
     return true
 }
@@ -244,10 +260,11 @@ private fun isFpsOptionEnabled(
     previewStabilization: Stabilization,
     videoStabilization: Stabilization
 ): Boolean {
-    if (previewStabilization == Stabilization.ON)
+    if (previewStabilization == Stabilization.ON) {
         return fpsOption == FPS_30 || fpsOption == FPS_AUTO
-    else if (videoStabilization == Stabilization.ON)
+    } else if (videoStabilization == Stabilization.ON) {
         return fpsOption != FPS_60
+    }
     return true
 }
 

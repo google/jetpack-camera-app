@@ -315,15 +315,14 @@ fun TargetFpsSetting(
                         text = "%d".format(fpsOption),
                         selected = currentTargetFps == fpsOption,
                         onClick = { setTargetFps(fpsOption) },
-                        enabled = supportedFps.contains(fpsOption)
-                                && checkFpsOptionEnabled(fpsOption)
+                        enabled = supportedFps.contains(fpsOption) &&
+                            checkFpsOptionEnabled(fpsOption)
                     )
                 }
             }
         }
     )
 }
-
 
 /**
  * Returns the description text depending on the preview/video stabilization configuration.
@@ -383,9 +382,9 @@ fun StabilizationSetting(
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
         enabled = (
-                supportedStabilizationMode.isNotEmpty() &&
-                        currentTargetFps != FPS_60
-                ),
+            supportedStabilizationMode.isNotEmpty() &&
+                currentTargetFps != FPS_60
+            ),
         description = if (supportedStabilizationMode.isEmpty()) {
             stringResource(id = R.string.stabilization_description_unsupported_device)
         } else if (currentTargetFps == FPS_60) {
@@ -414,14 +413,14 @@ fun StabilizationSetting(
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     enabled =
                     (
-                            when (currentTargetFps) {
-                                FPS_AUTO, FPS_30 -> true
-                                else -> false
-                            }
-                            ) &&
-                            supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
+                        when (currentTargetFps) {
+                            FPS_AUTO, FPS_30 -> true
+                            else -> false
+                        }
+                        ) &&
+                        supportedStabilizationMode.contains(SupportedStabilizationMode.ON),
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
+                        (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.UNDEFINED)
                         setPreviewStabilization(Stabilization.ON)
@@ -436,12 +435,12 @@ fun StabilizationSetting(
                         id = R.string.stabilization_selector_high_quality_info
                     ),
                     enabled = (currentTargetFps != FPS_60) &&
-                            supportedStabilizationMode.contains(
-                                SupportedStabilizationMode.HIGH_QUALITY
-                            ),
+                        supportedStabilizationMode.contains(
+                            SupportedStabilizationMode.HIGH_QUALITY
+                        ),
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                            (currentVideoStabilization == Stabilization.ON),
+                        (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -452,7 +451,7 @@ fun StabilizationSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.ON),
+                        (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
@@ -471,11 +470,11 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
         leadingIcon = null
     ) {
         val versionString = versionName +
-                if (buildType.isNotEmpty()) {
-                    "/${buildType.toUpperCase(Locale.current)}"
-                } else {
-                    ""
-                }
+            if (buildType.isNotEmpty()) {
+                "/${buildType.toUpperCase(Locale.current)}"
+            } else {
+                ""
+            }
         Text(text = versionString)
     }
 }
