@@ -644,7 +644,8 @@ constructor(
     }
 
     private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
-        val currentFrameRate = currentSettings.value!!.targetFrameRate
+        val currentFrameRate = currentSettings.value?.targetFrameRate ?: return this
+
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedStabilizationModes) {
                 val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY) &&
