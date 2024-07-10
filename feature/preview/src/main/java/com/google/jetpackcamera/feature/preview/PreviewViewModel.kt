@@ -48,7 +48,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.HashMap
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
@@ -173,7 +172,6 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-
     /**
      * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
      * [CameraUseCase].
@@ -194,11 +192,11 @@ class PreviewViewModel @AssistedInject constructor(
                 }
 
                 CameraAppSettings::aspectRatio -> {
-                    cameraUseCase.setAspectRatio(entry.value  as AspectRatio)
+                    cameraUseCase.setAspectRatio(entry.value as AspectRatio)
                 }
 
                 CameraAppSettings::previewStabilization -> {
-                    cameraUseCase.setPreviewStabilization(entry.value  as Stabilization)
+                    cameraUseCase.setPreviewStabilization(entry.value as Stabilization)
                 }
 
                 CameraAppSettings::videoCaptureStabilization -> {
@@ -233,10 +231,10 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-                hdrDynamicRangeSupported && hdrImageFormatSupported
+            hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -509,7 +507,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {

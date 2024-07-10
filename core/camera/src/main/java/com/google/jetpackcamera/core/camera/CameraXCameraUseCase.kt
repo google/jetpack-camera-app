@@ -647,15 +647,16 @@ constructor(
         val currentFrameRate = currentSettings.value!!.targetFrameRate
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedStabilizationModes) {
-                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY)
-                    && currentFrameRate <= TARGET_FPS_60 ) {
-                    //unlike shouldVideoBeStabilized, doesn't check value of previewStabilization
+                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY) &&
+                    currentFrameRate <= TARGET_FPS_60
+                ) {
+                    // unlike shouldVideoBeStabilized, doesn't check value of previewStabilization
                     videoCaptureStabilization
                 } else {
                     Stabilization.UNDEFINED
                 }
-                val newPreviewStabilization = if ( contains(SupportedStabilizationMode.ON)
-                    && currentFrameRate <= TARGET_FPS_15
+                val newPreviewStabilization = if (contains(SupportedStabilizationMode.ON) &&
+                    currentFrameRate <= TARGET_FPS_15
                 ) {
                     previewStabilization
                 } else {
