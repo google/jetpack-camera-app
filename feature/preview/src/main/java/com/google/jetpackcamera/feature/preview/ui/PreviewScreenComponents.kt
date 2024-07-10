@@ -314,6 +314,7 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
+                    .clip(RoundedCornerShape(16.dp))
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
