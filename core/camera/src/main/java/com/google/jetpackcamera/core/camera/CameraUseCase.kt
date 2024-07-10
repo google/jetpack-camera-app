@@ -100,6 +100,12 @@ interface CameraUseCase {
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
+    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
+
+    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+
+    suspend fun setTargetFrameRate(targetFrameRate: Int)
+
     /**
      * Represents the events required for screen flash.
      */
@@ -120,10 +126,6 @@ interface CameraUseCase {
 
         object OnVideoRecordError : OnVideoRecordEvent
     }
-
-    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
-    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
-    suspend fun setTargetFrameRate(targetFrameRate: Int)
 }
 
 data class CameraState(

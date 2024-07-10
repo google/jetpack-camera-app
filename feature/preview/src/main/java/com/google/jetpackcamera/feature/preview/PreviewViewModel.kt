@@ -165,56 +165,55 @@ class PreviewViewModel @AssistedInject constructor(
     private fun getSettingsDiff(
         oldCameraAppSettings: CameraAppSettings,
         newCameraAppSettings: CameraAppSettings
-    ): Map<KProperty<Any?>, Any?> {
-        val diffSettingsMap = HashMap<KProperty<Any?>, Any?>()
+    ): Map<KProperty<Any?>, Any?> = buildMap<KProperty<Any?>, Any?> {
         CameraAppSettings::class.memberProperties.forEach { property ->
             if (property.get(oldCameraAppSettings) != property.get(newCameraAppSettings)) {
-                diffSettingsMap[property] = property.get(newCameraAppSettings)
+                put(property, property.get(newCameraAppSettings))
             }
         }
-        return diffSettingsMap
     }
+
 
     /**
      * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
      * [CameraUseCase].
      */
     private suspend fun applySettingsDiff(diffSettingsMap: Map<KProperty<Any?>, Any?>) {
-        diffSettingsMap.keys.forEach { key ->
-            when (key) {
+        diffSettingsMap.entries.forEach { entry ->
+            when (entry.key) {
                 CameraAppSettings::cameraLensFacing -> {
-                    cameraUseCase.setLensFacing(diffSettingsMap[key] as LensFacing)
+                    cameraUseCase.setLensFacing(entry.value as LensFacing)
                 }
 
                 CameraAppSettings::flashMode -> {
-                    cameraUseCase.setFlashMode(diffSettingsMap[key] as FlashMode)
+                    cameraUseCase.setFlashMode(entry.value as FlashMode)
                 }
 
                 CameraAppSettings::captureMode -> {
-                    cameraUseCase.setCaptureMode(diffSettingsMap[key] as CaptureMode)
+                    cameraUseCase.setCaptureMode(entry.value as CaptureMode)
                 }
 
                 CameraAppSettings::aspectRatio -> {
-                    cameraUseCase.setAspectRatio(diffSettingsMap[key] as AspectRatio)
+                    cameraUseCase.setAspectRatio(entry.value  as AspectRatio)
                 }
 
                 CameraAppSettings::previewStabilization -> {
-                    cameraUseCase.setPreviewStabilization(diffSettingsMap[key] as Stabilization)
+                    cameraUseCase.setPreviewStabilization(entry.value  as Stabilization)
                 }
 
                 CameraAppSettings::videoCaptureStabilization -> {
                     cameraUseCase.setVideoCaptureStabilization(
-                        diffSettingsMap[key] as Stabilization
+                        entry.value as Stabilization
                     )
                 }
 
                 CameraAppSettings::targetFrameRate -> {
-                    cameraUseCase.setTargetFrameRate(diffSettingsMap[key] as Int)
+                    cameraUseCase.setTargetFrameRate(entry.value as Int)
                 }
 
                 CameraAppSettings::darkMode -> {}
 
-                else -> TODO("Unhandled CameraAppSetting $key")
+                else -> TODO("Unhandled CameraAppSetting $entry")
             }
         }
     }
@@ -234,10 +233,10 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            hdrDynamicRangeSupported && hdrImageFormatSupported
+                hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -510,7 +509,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun startVideoRecording() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {
