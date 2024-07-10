@@ -29,17 +29,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
+import com.google.jetpackcamera.settings.ui.FPS_30
+import com.google.jetpackcamera.settings.ui.FPS_60
+import com.google.jetpackcamera.settings.ui.FPS_AUTO
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
@@ -130,10 +136,9 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        settingValue = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
-        enabled = with(uiState.systemConstraints.availableLenses) {
-            size > 1 && contains(LensFacing.FRONT)
-        },
+        currentLensFacing = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
+        //to be able to flip camera, must have multiple lenses and flipped camera must not break constraints
+        enabled = checkLensConstraints(uiState.cameraAppSettings, uiState.systemConstraints),
         setDefaultLensFacing = setDefaultLensFacing
     )
 
@@ -144,9 +149,16 @@ fun SettingsList(
 
     TargetFpsSetting(
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedFps = uiState.systemConstraints.perLensConstraints.values.fold(emptySet()) {
-                union, constraints ->
-            union + constraints.supportedFixedFrameRates
+        supportedFps = uiState.systemConstraints
+            .perLensConstraints[uiState.cameraAppSettings.cameraLensFacing]
+            ?.supportedFixedFrameRates
+            ?: emptySet(),
+        checkFpsOptionEnabled = { option: Int ->
+            isFpsOptionEnabled(
+                fpsOption = option,
+                previewStabilization = uiState.cameraAppSettings.previewStabilization,
+                videoStabilization = uiState.cameraAppSettings.videoCaptureStabilization
+            )
         },
         setTargetFps = setTargetFrameRate
     )
@@ -165,12 +177,10 @@ fun SettingsList(
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedStabilizationMode = uiState.systemConstraints.perLensConstraints.values.fold(
-            emptySet()
-        ) {
-                union, constraints ->
-            union + constraints.supportedStabilizationModes
-        },
+        supportedStabilizationMode = uiState.systemConstraints
+            .perLensConstraints[uiState.cameraAppSettings.cameraLensFacing]
+            ?.supportedStabilizationModes
+            ?: emptySet(),
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
     )
@@ -188,6 +198,57 @@ fun SettingsList(
         versionName = versionInfo.versionName,
         buildType = versionInfo.buildType
     )
+}
+
+/**
+ * Enables or disables default camera switch based on:
+ * - number of cameras available
+ * - if there is a front and rear camera, the camera that the setting would switch to must also
+ * support the other settings
+ * */
+private fun checkLensConstraints(
+    currentSettings: CameraAppSettings,
+    systemConstraints: SystemConstraints
+): Boolean {
+    // if there is only one lens, stop here
+    if (!with(systemConstraints.availableLenses) {
+            size > 1 && contains(com.google.jetpackcamera.settings.model.LensFacing.FRONT)
+        })
+        return false
+
+    // If multiple lens available, continue
+    val newLensFacing = if (currentSettings.cameraLensFacing == LensFacing.FRONT)
+        LensFacing.BACK
+    else
+        LensFacing.FRONT
+
+    val newLensConstraints = systemConstraints.perLensConstraints[newLensFacing]!!
+    //make sure all current settings can transfer to new default lens
+    if (currentSettings.targetFrameRate != FPS_AUTO && !newLensConstraints.supportedFixedFrameRates.contains(currentSettings.targetFrameRate))
+        return false
+    if (currentSettings.previewStabilization == Stabilization.ON)
+        if (!newLensConstraints.supportedStabilizationModes.contains(SupportedStabilizationMode.ON))
+            return false
+    if (currentSettings.videoCaptureStabilization == Stabilization.ON)
+        if (!newLensConstraints.supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY))
+            return false
+
+    return true
+}
+
+/**
+ * Auxiliary function to determine if an FPS option should be disabled or not
+ */
+private fun isFpsOptionEnabled(
+    fpsOption: Int,
+    previewStabilization: Stabilization,
+    videoStabilization: Stabilization
+): Boolean {
+    if (previewStabilization == Stabilization.ON)
+        return fpsOption == FPS_30 || fpsOption == FPS_AUTO
+    else if (videoStabilization == Stabilization.ON)
+        return fpsOption != FPS_60
+    return true
 }
 
 data class VersionInfoHolder(
