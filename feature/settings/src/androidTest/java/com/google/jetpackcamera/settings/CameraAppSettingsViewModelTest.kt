@@ -25,7 +25,11 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.ui.FPS_15
+import com.google.jetpackcamera.settings.ui.FPS_30
+import com.google.jetpackcamera.settings.ui.FPS_60
 import java.io.File
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +52,20 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
+    val fpsOptionsStates: FpsUiState = FpsUiState(
+        SettingEnabledState.Enabled,
+        mapOf(
+            Pair(FPS_15, SettingEnabledState.Enabled),
+            Pair(FPS_30, SettingEnabledState.Enabled),
+            Pair(FPS_60, SettingEnabledState.Enabled)
+        )
+    )
+    val lensUiState = FlipLensUiState(SettingEnabledState.Enabled)
+    val stabilizationUiState = StabilizationUiState(
+        SettingEnabledState.Enabled,
+        SettingEnabledState.Enabled,
+        SettingEnabledState.Enabled
+    )
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
@@ -87,7 +105,10 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(uiState).isEqualTo(
             SettingsUiState.Enabled(
                 cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+                lensFlipUiState = lensUiState,
+                stabilizationUiState = stabilizationUiState,
+                fpsUiState = fpsOptionsStates
             )
         )
     }
