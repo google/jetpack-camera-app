@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (C) 2023 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,6 +100,11 @@
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
 
+    <!-- disabled reason strings-->
+    <string name="device_unsupported">Unsupported by device</string>
+    <string name="fps_unsupported">Unsupported by fps</string>
+    <string name="stabilization_unsupported">Unsupported by Stabilization</string>
+    <string name="lens_unsupported">Unsupported by lens</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>

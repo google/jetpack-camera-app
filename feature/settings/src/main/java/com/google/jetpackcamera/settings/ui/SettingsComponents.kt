@@ -289,8 +289,6 @@ fun TargetFpsSetting(
         enabled = SettingEnabledState.Enabled,
         leadingIcon = null,
         description = if (fpsUiState.settingEnabledState.isEnabled) {
-            stringResource(id = R.string.fps_description_unavailable)
-        } else {
             when (currentTargetFps) {
                 FPS_15 -> stringResource(id = R.string.fps_description, FPS_15)
                 FPS_30 -> stringResource(id = R.string.fps_description, FPS_30)
@@ -299,6 +297,8 @@ fun TargetFpsSetting(
                     id = R.string.fps_description_auto
                 )
             }
+        } else {
+            stringResource(id = R.string.fps_description_unavailable)
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -392,8 +392,10 @@ fun StabilizationSetting(
                 )
             )
         } else
-            stringResource(id = (stabilizationUiState.settingEnabledState as SettingEnabledState.Disabled)
-                .disabledRationale.first().reasonTextResId ),
+            stringResource(
+                id = (stabilizationUiState.settingEnabledState as SettingEnabledState.Disabled)
+                    .disabledRationale.first().reasonTextResId
+            ),
 
         popupContents = {
             Column(Modifier.selectableGroup()) {
