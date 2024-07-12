@@ -71,6 +71,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -278,9 +279,10 @@ constructor(
      * The use cases typically will not need to be re-bound.
      */
     private data class TransientSessionSettings(
+        val audioMuted: Boolean,
+        val deviceRotation: DeviceRotation,
         val flashMode: FlashMode,
-        val zoomScale: Float,
-        val audioMuted: Boolean
+        val zoomScale: Float
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -291,8 +293,9 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    flashMode = currentCameraSettings.flashMode,
                     audioMuted = currentCameraSettings.audioMuted,
+                    deviceRotation = currentCameraSettings.deviceRotation,
+                    flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale
                 )
 
@@ -376,6 +379,36 @@ constructor(
                                 isFrontFacing = sessionSettings.cameraSelector
                                     == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
+                        }
+
+                        if (prevTransientSettings.deviceRotation
+                            != newTransientSettings.deviceRotation
+                        ) {
+                            Log.d(
+                                TAG,
+                                "Updating device rotation from " +
+                                    "${prevTransientSettings.deviceRotation} -> " +
+                                    "${newTransientSettings.deviceRotation}"
+                            )
+                            val targetRotation =
+                                newTransientSettings.deviceRotation.toUiSurfaceRotation()
+                            useCaseGroup.useCases.forEach {
+                                when (it) {
+                                    is Preview -> {
+                                        // Preview rotation should always be natural orientation
+                                        // in order to support seamless handling of orientation
+                                        // configuration changes in UI
+                                    }
+
+                                    is ImageCapture -> {
+                                        it.targetRotation = targetRotation
+                                    }
+
+                                    is VideoCapture<*> -> {
+                                        it.targetRotation = targetRotation
+                                    }
+                                }
+                            }
                         }
 
                         prevTransientSettings = newTransientSettings
@@ -781,10 +814,14 @@ constructor(
         )
 
         return UseCaseGroup.Builder().apply {
+            Log.d(
+                TAG,
+                "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
+            )
             setViewPort(
                 ViewPort.Builder(
                     sessionSettings.aspectRatio.ratio,
-                    previewUseCase.targetRotation
+                    initialTransientSettings.deviceRotation.toUiSurfaceRotation()
                 ).build()
             )
             addUseCase(previewUseCase)
@@ -809,6 +846,12 @@ constructor(
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
+        }
+    }
+
+    override fun setDeviceRotation(deviceRotation: DeviceRotation) {
+        currentSettings.update { old ->
+            old?.copy(deviceRotation = deviceRotation)
         }
     }
 
@@ -947,8 +990,12 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
-        val previewUseCaseBuilder = Preview.Builder()
+        val previewUseCaseBuilder = Preview.Builder().apply {
+            setTargetRotation(DeviceRotation.Natural.toUiSurfaceRotation())
+        }
+
         setOnCaptureCompletedCallback(previewUseCaseBuilder)
+
         // set preview stabilization
         if (shouldPreviewBeStabilized(sessionSettings, supportedStabilizationModes)) {
             previewUseCaseBuilder.setPreviewStabilizationEnabled(true)

@@ -22,6 +22,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -93,6 +94,8 @@ interface CameraUseCase {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
+
+    fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
 
