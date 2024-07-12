@@ -391,11 +391,12 @@ fun StabilizationSetting(
                     videoStabilization = currentVideoStabilization
                 )
             )
-        } else
+        } else {
             stringResource(
                 id = (stabilizationUiState.settingEnabledState as SettingEnabledState.Disabled)
                     .disabledRationale.first().reasonTextResId
-            ),
+            )
+        },
 
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -413,7 +414,7 @@ fun StabilizationSetting(
                     secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
                     enabled = stabilizationUiState.previewStabilizationState,
                     selected = (currentPreviewStabilization == Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.OFF),
+                        (currentVideoStabilization != Stabilization.OFF),
                     onClick = {
                         setVideoStabilization(Stabilization.UNDEFINED)
                         setPreviewStabilization(Stabilization.ON)
@@ -430,7 +431,7 @@ fun StabilizationSetting(
                     enabled = stabilizationUiState.videoStabilizationState,
 
                     selected = (currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                            (currentVideoStabilization == Stabilization.ON),
+                        (currentVideoStabilization == Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.ON)
                         setPreviewStabilization(Stabilization.UNDEFINED)
@@ -441,7 +442,7 @@ fun StabilizationSetting(
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stabilization_selector_off),
                     selected = (currentPreviewStabilization != Stabilization.ON) &&
-                            (currentVideoStabilization != Stabilization.ON),
+                        (currentVideoStabilization != Stabilization.ON),
                     onClick = {
                         setVideoStabilization(Stabilization.OFF)
                         setPreviewStabilization(Stabilization.OFF)
@@ -460,11 +461,11 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
         leadingIcon = null
     ) {
         val versionString = versionName +
-                if (buildType.isNotEmpty()) {
-                    "/${buildType.toUpperCase(Locale.current)}"
-                } else {
-                    ""
-                }
+            if (buildType.isNotEmpty()) {
+                "/${buildType.toUpperCase(Locale.current)}"
+            } else {
+                ""
+            }
         Text(text = versionString)
     }
 }

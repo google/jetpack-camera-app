@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
-
 
 val deviceUnsupported =
     SettingEnabledState.Disabled(disabledRationale = setOf(DisabledRationale.DEVICE_UNSUPPORTED))
@@ -33,14 +31,13 @@ sealed interface SettingEnabledState {
     val isEnabled: Boolean
 
     data class Disabled(
-        val disabledRationale: Set<DisabledRationale>,
+        val disabledRationale: Set<DisabledRationale>
     ) : SettingEnabledState {
         override val isEnabled: Boolean = false
     }
 
     data object Enabled : SettingEnabledState {
         override val isEnabled: Boolean = true
-
     }
 }
 
@@ -56,10 +53,10 @@ class StabilizationUiState(
     val videoStabilizationState: SettingEnabledState
 ) : SettingUiState
 
-
 enum class DisabledRationale(val testTag: String, val reasonTextResId: Int) {
     DEVICE_UNSUPPORTED(
-        DEVICE_UNSUPPORTED_TAG, R.string.device_unsupported
+        DEVICE_UNSUPPORTED_TAG,
+        R.string.device_unsupported
     ),
     FPS(FPS_UNSUPPORTED_TAG, R.string.fps_unsupported),
     STABILIZATION_UNSUPPORTED(STABILIZATION_UNSUPPORTED_TAG, R.string.stabilization_unsupported),
