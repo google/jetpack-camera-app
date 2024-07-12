@@ -22,9 +22,12 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
  * Defines the current state of the [SettingsScreen].
  */
 sealed interface SettingsUiState {
-    object Disabled : SettingsUiState
+    data object Disabled : SettingsUiState
     data class Enabled(
         val cameraAppSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints
+        val systemConstraints: SystemConstraints,
+        val fpsUiState: FpsUiState,
+        val lensFlipUiState: FlipLensUiState,
+        val stabilizationUiState: StabilizationUiState
     ) : SettingsUiState
 }

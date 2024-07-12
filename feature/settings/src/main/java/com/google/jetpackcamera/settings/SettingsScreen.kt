@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -139,7 +140,7 @@ fun SettingsList(
         currentLensFacing = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
         // to be able to flip camera, must have multiple lenses and flipped camera must not break
         // constraints
-        enabled = checkLensConstraints(uiState.cameraAppSettings, uiState.systemConstraints),
+        lensUiState = uiState.lensFlipUiState,
         setDefaultLensFacing = setDefaultLensFacing
     )
 
@@ -149,18 +150,8 @@ fun SettingsList(
     )
 
     TargetFpsSetting(
+        fpsUiState = uiState.fpsUiState,
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedFps = uiState.systemConstraints
-            .perLensConstraints[uiState.cameraAppSettings.cameraLensFacing]
-            ?.supportedFixedFrameRates
-            ?: emptySet(),
-        checkFpsOptionEnabled = { option: Int ->
-            isFpsOptionEnabled(
-                fpsOption = option,
-                previewStabilization = uiState.cameraAppSettings.previewStabilization,
-                videoStabilization = uiState.cameraAppSettings.videoCaptureStabilization
-            )
-        },
         setTargetFps = setTargetFrameRate
     )
 
@@ -175,13 +166,10 @@ fun SettingsList(
     )
 
     StabilizationSetting(
+        stabilizationUiState = uiState.stabilizationUiState,
         currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
         currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
         currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedStabilizationMode = uiState.systemConstraints
-            .perLensConstraints[uiState.cameraAppSettings.cameraLensFacing]
-            ?.supportedStabilizationModes
-            ?: emptySet(),
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
     )
@@ -201,78 +189,17 @@ fun SettingsList(
     )
 }
 
-/**
- * Enables or disables default camera switch based on:
- * - number of cameras available
- * - if there is a front and rear camera, the camera that the setting would switch to must also
- * support the other settings
- * */
-private fun checkLensConstraints(
-    currentSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints
-): Boolean {
-    // if there is only one lens, stop here
-    if (!with(systemConstraints.availableLenses) {
-            size > 1 && contains(com.google.jetpackcamera.settings.model.LensFacing.FRONT)
-        }
-    ) {
-        return false
-    }
 
-    // If multiple lens available, continue
-    val newLensFacing = if (currentSettings.cameraLensFacing == LensFacing.FRONT) {
-        LensFacing.BACK
-    } else {
-        LensFacing.FRONT
-    }
 
-    val newLensConstraints = systemConstraints.perLensConstraints[newLensFacing]!!
-    // make sure all current settings can transfer to new default lens
-    if (currentSettings.targetFrameRate != FPS_AUTO && !newLensConstraints.supportedFixedFrameRates
-            .contains(currentSettings.targetFrameRate)
-    ) {
-        return false
-    }
-    if (currentSettings.previewStabilization == Stabilization.ON) {
-        if (!newLensConstraints.supportedStabilizationModes.contains(
-                SupportedStabilizationMode.ON
-            )
-        ) {
-            return false
-        }
-    }
-    if (currentSettings.videoCaptureStabilization == Stabilization.ON) {
-        if (!newLensConstraints.supportedStabilizationModes
-                .contains(SupportedStabilizationMode.HIGH_QUALITY)
-        ) {
-            return false
-        }
-    }
 
-    return true
-}
+//will allow you to open stabilization popup or give disabled rationale
 
-/**
- * Auxiliary function to determine if an FPS option should be disabled or not
- */
-private fun isFpsOptionEnabled(
-    fpsOption: Int,
-    previewStabilization: Stabilization,
-    videoStabilization: Stabilization
-): Boolean {
-    if (previewStabilization == Stabilization.ON) {
-        return fpsOption == FPS_30 || fpsOption == FPS_AUTO
-    } else if (videoStabilization == Stabilization.ON) {
-        return fpsOption != FPS_60
-    }
-    return true
-}
 
 data class VersionInfoHolder(
     val versionName: String,
     val buildType: String
 )
-
+/*
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -290,3 +217,5 @@ private fun Preview_SettingsScreen() {
         )
     }
 }
+
+ */
