@@ -42,6 +42,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,6 +56,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -118,33 +120,40 @@ fun PreviewScreen(
 
     when (val currentUiState = previewUiState) {
         is PreviewUiState.NotReady -> LoadingScreen()
-        is PreviewUiState.Ready -> ContentScreen(
-            modifier = modifier,
-            previewUiState = currentUiState,
-            screenFlashUiState = screenFlashUiState,
-            surfaceRequest = surfaceRequest,
-            onNavigateToSettings = onNavigateToSettings,
-            onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-            onSetLensFacing = viewModel::setLensFacing,
-            onTapToFocus = viewModel::tapToFocus,
-            onChangeZoomScale = viewModel::setZoomScale,
-            onChangeFlash = viewModel::setFlash,
-            onChangeAspectRatio = viewModel::setAspectRatio,
-            onChangeCaptureMode = viewModel::setCaptureMode,
-            onChangeDynamicRange = viewModel::setDynamicRange,
-            onLowLightBoost = viewModel::setLowLightBoost,
-            onChangeImageFormat = viewModel::setImageFormat,
-            onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
-            onToggleQuickSettings = viewModel::toggleQuickSettings,
-            onMuteAudio = viewModel::setAudioMuted,
-            onCaptureImage = viewModel::captureImage,
-            onCaptureImageWithUri = viewModel::captureImageWithUri,
-            onStartVideoRecording = viewModel::startVideoRecording,
-            onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult
-        )
+        is PreviewUiState.Ready -> {
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+            }
+
+            ContentScreen(
+                modifier = modifier,
+                previewUiState = currentUiState,
+                screenFlashUiState = screenFlashUiState,
+                surfaceRequest = surfaceRequest,
+                onNavigateToSettings = onNavigateToSettings,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onSetLensFacing = viewModel::setLensFacing,
+                onTapToFocus = viewModel::tapToFocus,
+                onChangeZoomScale = viewModel::setZoomScale,
+                onChangeFlash = viewModel::setFlash,
+                onChangeAspectRatio = viewModel::setAspectRatio,
+                onChangeCaptureMode = viewModel::setCaptureMode,
+                onChangeDynamicRange = viewModel::setDynamicRange,
+                onLowLightBoost = viewModel::setLowLightBoost,
+                onChangeImageFormat = viewModel::setImageFormat,
+                onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
+                onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onMuteAudio = viewModel::setAudioMuted,
+                onCaptureImage = viewModel::captureImage,
+                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onStartVideoRecording = viewModel::startVideoRecording,
+                onStopVideoRecording = viewModel::stopVideoRecording,
+                onToastShown = viewModel::onToastShown,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                onSnackBarResult = viewModel::onSnackBarResult
+            )
+        }
     }
 }
 
