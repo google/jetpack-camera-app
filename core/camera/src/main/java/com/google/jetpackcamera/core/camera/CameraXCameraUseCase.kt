@@ -326,7 +326,7 @@ constructor(
                     systemConstraints.perLensConstraints[lensFacing]
                 ) {
                     "Unable to retrieve CameraConstraints for $lensFacing. " +
-                            "Was the use case initialized?"
+                        "Was the use case initialized?"
                 }
 
                 val initialTransientSettings = transientSettings
@@ -377,7 +377,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -387,8 +387,8 @@ constructor(
                             Log.d(
                                 TAG,
                                 "Updating device rotation from " +
-                                        "${prevTransientSettings.deviceRotation} -> " +
-                                        "${newTransientSettings.deviceRotation}"
+                                    "${prevTransientSettings.deviceRotation} -> " +
+                                    "${newTransientSettings.deviceRotation}"
                             )
                             val targetRotation =
                                 newTransientSettings.deviceRotation.toUiSurfaceRotation()
@@ -520,12 +520,12 @@ constructor(
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
-                checkSelfPermission(
-                    this.application.baseContext,
-                    Manifest.permission.RECORD_AUDIO
-                )
-                        == PackageManager.PERMISSION_GRANTED
-                )
+            checkSelfPermission(
+                this.application.baseContext,
+                Manifest.permission.RECORD_AUDIO
+            )
+                == PackageManager.PERMISSION_GRANTED
+            )
         val captureTypeString =
             when (captureMode) {
                 CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -546,9 +546,9 @@ constructor(
 
         val callbackExecutor: Executor =
             (
-                    currentCoroutineContext()[ContinuationInterceptor] as?
-                            CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
             videoCaptureUseCase!!.output
                 .prepareRecording(application, mediaStoreOutput)
@@ -681,8 +681,8 @@ constructor(
 
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedStabilizationModes) {
-                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY)
-                    && (currentFrameRate != TARGET_FPS_60)
+                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY) &&
+                    (currentFrameRate != TARGET_FPS_60)
                 ) {
                     // unlike shouldVideoBeStabilized, doesn't check value of previewStabilization
                     videoCaptureStabilization
@@ -779,7 +779,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase.screenFlash != null
+            imageCaptureUseCase.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -977,12 +977,12 @@ constructor(
     ): Boolean {
         // video is on and target fps is not 60
         return (sessionSettings.targetFrameRate != TARGET_FPS_60) &&
-                (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
-                // high quality (video only) selected
-                (
-                        sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                                sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                        )
+            (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            // high quality (video only) selected
+            (
+                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
+                )
     }
 
     private fun createPreviewUseCase(
@@ -1040,9 +1040,11 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Boolean {
         // only supported if target fps is 30 or none
-        return ((sessionSettings.targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30)))
-                && (supportedStabilizationModes.contains(SupportedStabilizationMode.ON)
-                && sessionSettings.stabilizePreviewMode == Stabilization.ON)
+        return ((sessionSettings.targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30))) &&
+            (
+                supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.ON
+                )
     }
 
     companion object {
