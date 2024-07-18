@@ -65,7 +65,11 @@ interface CameraUseCase {
         ignoreUri: Boolean = false
     ): ImageCapture.OutputFileResults
 
-    suspend fun startVideoRecording(onVideoRecord: (OnVideoRecordEvent) -> Unit)
+    suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        ignoreUri: Boolean = false,
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
+    )
 
     fun stopVideoRecording()
 
@@ -113,11 +117,11 @@ interface CameraUseCase {
      * Represents the events for video recording.
      */
     sealed interface OnVideoRecordEvent {
-        object OnVideoRecorded : OnVideoRecordEvent
+        data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
         data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
 
-        object OnVideoRecordError : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
     }
 }
 

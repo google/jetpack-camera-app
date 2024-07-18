@@ -56,6 +56,7 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -81,6 +82,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -181,8 +183,8 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(externalImageCapture: Boolean) {
-        this.disableVideoCapture = externalImageCapture
+    override suspend fun initialize(disableVideoCapture: Boolean) {
+        this.disableVideoCapture = disableVideoCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -245,7 +247,7 @@ constructor(
         currentSettings.value =
             settingsRepository.defaultCameraAppSettings.first()
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
+                .tryApplyAspectRatioForExternalCapture(disableVideoCapture)
                 .tryApplyImageFormatConstraints()
     }
 
@@ -469,10 +471,18 @@ constructor(
     }
 
     override suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        ignoreUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (videoCaptureUseCase == null) {
             throw RuntimeException("Attempted video recording with null videoCapture use case")
+        }
+
+        if (!ignoreUri && videoCaptureUri == null) {
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            throw e
         }
         Log.d(TAG, "recordVideo")
         // todo(b/336886716): default setting to enable or disable audio when permission is granted
@@ -489,63 +499,75 @@ constructor(
             )
                 == PackageManager.PERMISSION_GRANTED
             )
-        val captureTypeString =
-            when (captureMode) {
-                CaptureMode.MULTI_STREAM -> "MultiStream"
-                CaptureMode.SINGLE_STREAM -> "SingleStream"
-            }
-        val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
-        val contentValues =
-            ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, name)
-            }
-        val mediaStoreOutput =
-            MediaStoreOutputOptions.Builder(
-                application.contentResolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            )
-                .setContentValues(contentValues)
-                .build()
 
+        val pendingRecord = if (!ignoreUri) {
+            val fileOutputOptions = FileOutputOptions.Builder(
+                File(videoCaptureUri!!.getPath())
+            ).build()
+            videoCaptureUseCase!!.output.prepareRecording(application, fileOutputOptions)
+        } else {
+            val captureTypeString =
+                when (captureMode) {
+                    CaptureMode.MULTI_STREAM -> "MultiStream"
+                    CaptureMode.SINGLE_STREAM -> "SingleStream"
+                }
+            val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
+            val contentValues =
+                ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                }
+            val mediaStoreOutput =
+                MediaStoreOutputOptions.Builder(
+                    application.contentResolver,
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                )
+                    .setContentValues(contentValues)
+                    .build()
+            videoCaptureUseCase!!.output.prepareRecording(application, mediaStoreOutput)
+        }
+        pendingRecord.apply {
+            if (audioEnabled) {
+                withAudioEnabled()
+            }
+        }
         val callbackExecutor: Executor =
             (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                    CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                    currentCoroutineContext()[ContinuationInterceptor] as?
+                            CoroutineDispatcher
+                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
-            videoCaptureUseCase!!.output
-                .prepareRecording(application, mediaStoreOutput)
-                .apply {
-                    if (audioEnabled) {
-                        withAudioEnabled()
-                    }
-                }
-                .start(callbackExecutor) { onVideoRecordEvent ->
-                    run {
-                        Log.d(TAG, onVideoRecordEvent.toString())
-                        when (onVideoRecordEvent) {
-                            is VideoRecordEvent.Finalize -> {
-                                when (onVideoRecordEvent.error) {
-                                    ERROR_NONE ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
+            pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+                run {
+                    Log.d(TAG, onVideoRecordEvent.toString())
+                    when (onVideoRecordEvent) {
+                        is VideoRecordEvent.Finalize -> {
+                            when (onVideoRecordEvent.error) {
+                                ERROR_NONE ->
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                            onVideoRecordEvent.outputResults.outputUri
                                         )
-                                    else ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-                                        )
-                                }
-                            }
-                            is VideoRecordEvent.Status -> {
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
                                     )
-                                )
+
+                                else ->
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                            onVideoRecordEvent.cause
+                                        )
+                                    )
                             }
+                        }
+
+                        is VideoRecordEvent.Status -> {
+                            onVideoRecord(
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                                    onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                )
+                            )
                         }
                     }
                 }
+            }
         currentSettings.value?.audioMuted?.let { recording?.mute(it) }
     }
 

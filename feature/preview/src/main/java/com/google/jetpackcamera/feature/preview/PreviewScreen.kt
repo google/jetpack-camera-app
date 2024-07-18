@@ -176,7 +176,11 @@ private fun ContentScreen(
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: () -> Unit = {},
+    onStartVideoRecording: (
+        Uri?,
+        Boolean,
+        (PreviewViewModel.VideoCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
