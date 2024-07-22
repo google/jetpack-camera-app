@@ -22,6 +22,7 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.benchmark"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -52,6 +53,18 @@ android {
             isDebuggable = true
             signingConfig = getByName("debug").signingConfig
             matchingFallbacks += listOf("release")
+        }
+    }
+
+    flavorDimensions += "flavor"
+    productFlavors {
+        create("stable") {
+            dimension = "flavor"
+        }
+
+        create("preview") {
+            dimension = "flavor"
+            targetSdkPreview = libs.versions.targetSdkPreview.get()
         }
     }
 

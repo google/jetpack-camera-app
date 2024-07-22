@@ -34,24 +34,29 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.tracing.Trace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -61,6 +66,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
 
@@ -73,6 +79,7 @@ fun PreviewScreen(
     previewMode: PreviewMode,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
+    onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(previewMode) }
 ) {
@@ -93,34 +100,60 @@ fun PreviewScreen(
         }
     }
 
+    if (Trace.isEnabled()) {
+        LaunchedEffect(onFirstFrameCaptureCompleted) {
+            snapshotFlow { previewUiState }
+                .transformWhile {
+                    var continueCollecting = true
+                    (it as? PreviewUiState.Ready)?.let { ready ->
+                        if (ready.sessionFirstFrameTimestamp > 0) {
+                            emit(Unit)
+                            continueCollecting = false
+                        }
+                    }
+                    continueCollecting
+                }.collect {
+                    onFirstFrameCaptureCompleted()
+                }
+        }
+    }
+
     when (val currentUiState = previewUiState) {
         is PreviewUiState.NotReady -> LoadingScreen()
-        is PreviewUiState.Ready -> ContentScreen(
-            modifier = modifier,
-            previewUiState = currentUiState,
-            screenFlashUiState = screenFlashUiState,
-            surfaceRequest = surfaceRequest,
-            onNavigateToSettings = onNavigateToSettings,
-            onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
-            onSetLensFacing = viewModel::setLensFacing,
-            onTapToFocus = viewModel::tapToFocus,
-            onChangeZoomScale = viewModel::setZoomScale,
-            onChangeFlash = viewModel::setFlash,
-            onChangeAspectRatio = viewModel::setAspectRatio,
-            onChangeCaptureMode = viewModel::setCaptureMode,
-            onChangeDynamicRange = viewModel::setDynamicRange,
-            onLowLightBoost = viewModel::setLowLightBoost,
-            onChangeImageFormat = viewModel::setImageFormat,
-            onToggleQuickSettings = viewModel::toggleQuickSettings,
-            onMuteAudio = viewModel::setAudioMuted,
-            onCaptureImage = viewModel::captureImage,
-            onCaptureImageWithUri = viewModel::captureImageWithUri,
-            onStartVideoRecording = viewModel::startVideoRecording,
-            onStopVideoRecording = viewModel::stopVideoRecording,
-            onToastShown = viewModel::onToastShown,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            onSnackBarResult = viewModel::onSnackBarResult
-        )
+        is PreviewUiState.Ready -> {
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+            }
+
+            ContentScreen(
+                modifier = modifier,
+                previewUiState = currentUiState,
+                screenFlashUiState = screenFlashUiState,
+                surfaceRequest = surfaceRequest,
+                onNavigateToSettings = onNavigateToSettings,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onSetLensFacing = viewModel::setLensFacing,
+                onTapToFocus = viewModel::tapToFocus,
+                onChangeZoomScale = viewModel::setZoomScale,
+                onChangeFlash = viewModel::setFlash,
+                onChangeAspectRatio = viewModel::setAspectRatio,
+                onChangeCaptureMode = viewModel::setCaptureMode,
+                onChangeDynamicRange = viewModel::setDynamicRange,
+                onLowLightBoost = viewModel::setLowLightBoost,
+                onChangeImageFormat = viewModel::setImageFormat,
+                onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
+                onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onMuteAudio = viewModel::setAudioMuted,
+                onCaptureImage = viewModel::captureImage,
+                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onStartVideoRecording = viewModel::startVideoRecording,
+                onStopVideoRecording = viewModel::stopVideoRecording,
+                onToastShown = viewModel::onToastShown,
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                onSnackBarResult = viewModel::onSnackBarResult
+            )
+        }
     }
 }
 
@@ -142,6 +175,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onLowLightBoost: (LowLightBoost) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
+    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImage: () -> Unit = {},
@@ -204,6 +238,7 @@ private fun ContentScreen(
                 onAspectRatioClick = onChangeAspectRatio,
                 onCaptureModeClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
+                onImageOutputFormatClick = onChangeImageFormat,
                 onLowLightBoostClick = onLowLightBoost
             )
             // relative-grid style overlay on top of preview display
@@ -215,6 +250,7 @@ private fun ContentScreen(
                 onMuteAudio = onToggleMuteAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onChangeImageFormat = onChangeImageFormat,
+                onToggleWhenDisabled = onToggleWhenDisabled,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
@@ -293,5 +329,6 @@ private fun ContentScreen_WhileRecording() {
 private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-    previewMode = PreviewMode.StandardMode {}
+    previewMode = PreviewMode.StandardMode {},
+    captureModeToggleUiState = CaptureModeToggleUiState.Invisible
 )

@@ -23,6 +23,8 @@ plugins {
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkPreview = libs.versions.compileSdkPreview.get()
+
     namespace = "com.google.jetpackcamera"
 
     defaultConfig {
@@ -48,6 +50,20 @@ android {
             matchingFallbacks += listOf("release")
         }
     }
+
+    flavorDimensions += "flavor"
+    productFlavors {
+        create("stable") {
+            dimension = "flavor"
+            isDefault = true
+        }
+
+        create("preview") {
+            dimension = "flavor"
+            targetSdkPreview = libs.versions.targetSdkPreview.get()
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -90,6 +106,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.tracing)
+    implementation(project(":core:common"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

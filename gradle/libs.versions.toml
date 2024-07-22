@@ -1,8 +1,10 @@
 [versions]
 # Used directly in build.gradle.kts files
 compileSdk = "34"
+compileSdkPreview = "VanillaIceCream"
 minSdk = "21"
 targetSdk = "34"
+targetSdkPreview = "VanillaIceCream"
 composeCompiler = "1.5.10"
 
 # Used below in dependency definitions
@@ -13,7 +15,7 @@ accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.4.0-rc01"
+androidGradlePlugin = "8.4.2"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
@@ -82,6 +84,7 @@ dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref
 futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "androidxConcurrentFutures" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlinPlugin" }
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "kotlinxAtomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }

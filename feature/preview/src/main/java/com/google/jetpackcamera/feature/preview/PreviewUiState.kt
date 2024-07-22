@@ -24,7 +24,7 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
  * Defines the current state of the [PreviewScreen].
  */
 sealed interface PreviewUiState {
-    object NotReady : PreviewUiState
+    data object NotReady : PreviewUiState
 
     data class Ready(
         // "quick" settings
@@ -41,7 +41,9 @@ sealed interface PreviewUiState {
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode
+        val previewMode: PreviewMode,
+        val captureModeToggleUiState: CaptureModeToggleUiState,
+        val sessionFirstFrameTimestamp: Long = 0L
     ) : PreviewUiState
 }
 

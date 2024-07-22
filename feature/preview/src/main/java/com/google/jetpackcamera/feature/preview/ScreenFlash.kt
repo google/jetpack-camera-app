@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import com.google.jetpackcamera.domain.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.CameraUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
