@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -40,7 +41,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(disableVideoCapture: Boolean)
+    suspend fun initialize(cameraAppSettings: CameraAppSettings, disableVideoCapture: Boolean)
 
     /**
      * Starts the camera.
@@ -101,6 +102,12 @@ interface CameraUseCase {
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
+
+    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
+
+    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+
+    suspend fun setTargetFrameRate(targetFrameRate: Int)
 
     /**
      * Represents the events required for screen flash.

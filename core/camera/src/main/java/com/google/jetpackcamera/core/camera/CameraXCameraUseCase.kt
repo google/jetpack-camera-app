@@ -67,7 +67,6 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
-import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
@@ -129,7 +128,6 @@ constructor(
     private val application: Application,
     private val coroutineScope: CoroutineScope,
     private val defaultDispatcher: CoroutineDispatcher,
-    private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -158,7 +156,8 @@ constructor(
                         }
                         isFirstFrameTimestampUpdated.value = true
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
         }
 
@@ -182,7 +181,10 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    override suspend fun initialize(externalImageCapture: Boolean) {
+    override suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        externalImageCapture: Boolean
+    ) {
         this.disableVideoCapture = externalImageCapture
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
@@ -244,10 +246,12 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            settingsRepository.defaultCameraAppSettings.first()
+            cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(externalImageCapture)
                 .tryApplyImageFormatConstraints()
+                .tryApplyFrameRateConstraints()
+                .tryApplyStabilizationConstraints()
     }
 
     /**
@@ -563,12 +567,14 @@ constructor(
                                         onVideoRecord(
                                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
                                         )
+
                                     else ->
                                         onVideoRecord(
                                             CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
                                         )
                                 }
                             }
+
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
@@ -649,6 +655,49 @@ constructor(
 
                 this@tryApplyImageFormatConstraints.copy(
                     imageFormat = newImageFormat
+                )
+            }
+        } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedFixedFrameRates) {
+                val newTargetFrameRate = if (contains(targetFrameRate)) {
+                    targetFrameRate
+                } else {
+                    TARGET_FPS_AUTO
+                }
+
+                this@tryApplyFrameRateConstraints.copy(
+                    targetFrameRate = newTargetFrameRate
+                )
+            }
+        } ?: this
+    }
+
+    private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedStabilizationModes) {
+                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY) &&
+                    (targetFrameRate != TARGET_FPS_60)
+                ) {
+                    // unlike shouldVideoBeStabilized, doesn't check value of previewStabilization
+                    videoCaptureStabilization
+                } else {
+                    Stabilization.UNDEFINED
+                }
+                val newPreviewStabilization = if (contains(SupportedStabilizationMode.ON) &&
+                    (targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30))
+                ) {
+                    previewStabilization
+                } else {
+                    Stabilization.UNDEFINED
+                }
+
+                this@tryApplyStabilizationConstraints.copy(
+                    previewStabilization = newPreviewStabilization,
+                    videoCaptureStabilization = newVideoStabilization
                 )
             }
         } ?: this
@@ -791,6 +840,7 @@ constructor(
             captureMode = sessionSettings.captureMode
         }.build()
     }
+
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
@@ -809,6 +859,28 @@ constructor(
         }
     }
 
+    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
+        currentSettings.update { old ->
+            old?.copy(
+                previewStabilization = previewStabilization
+            )?.tryApplyStabilizationConstraints()
+        }
+    }
+
+    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
+        currentSettings.update { old ->
+            old?.copy(
+                videoCaptureStabilization = videoCaptureStabilization
+            )?.tryApplyStabilizationConstraints()
+        }
+    }
+
+    override suspend fun setTargetFrameRate(targetFrameRate: Int) {
+        currentSettings.update { old ->
+            old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
+        }
+    }
+
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {
         return ImageCapture.getImageCaptureCapabilities(cameraInfo).supportedOutputFormats
@@ -819,8 +891,7 @@ constructor(
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun createImageUseCase(
         cameraInfo: CameraInfo,
-        sessionSettings: PerpetualSessionSettings,
-        onCloseTrace: () -> Unit = {}
+        sessionSettings: PerpetualSessionSettings
     ): ImageCapture {
         val builder = ImageCapture.Builder()
         builder.setResolutionSelector(
@@ -967,12 +1038,7 @@ constructor(
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Boolean {
         // only supported if target fps is 30 or none
-        return (
-            when (sessionSettings.targetFrameRate) {
-                TARGET_FPS_AUTO, TARGET_FPS_30 -> true
-                else -> false
-            }
-            ) &&
+        return ((sessionSettings.targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30))) &&
             (
                 supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
                     sessionSettings.stabilizePreviewMode == Stabilization.ON
