@@ -39,7 +39,6 @@ import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -81,16 +80,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executor
-import javax.inject.Inject
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.properties.Delegates
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -111,6 +100,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executor
+import javax.inject.Inject
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.properties.Delegates
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -282,7 +282,8 @@ constructor(
         val audioMuted: Boolean,
         val deviceRotation: DeviceRotation,
         val flashMode: FlashMode,
-        val zoomScale: Float
+        val zoomScale: Float,
+        val maxVideoDuration: Long
     )
 
     override suspend fun runCamera() = coroutineScope {
@@ -296,7 +297,8 @@ constructor(
                     audioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    maxVideoDuration = currentCameraSettings.maxVideoDuration
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -578,7 +580,10 @@ constructor(
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
                                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                        audioAmplitude = onVideoRecordEvent.recordingStats
+                                            .audioStats.audioAmplitude,
+                                        timeStamp = onVideoRecordEvent.recordingStats
+                                            .recordedDurationNanos
                                     )
                                 )
                             }

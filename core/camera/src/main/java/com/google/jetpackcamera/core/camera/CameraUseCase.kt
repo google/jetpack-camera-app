@@ -125,7 +125,10 @@ interface CameraUseCase {
     sealed interface OnVideoRecordEvent {
         object OnVideoRecorded : OnVideoRecordEvent
 
-        data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
+        data class OnVideoRecordStatus(
+            val audioAmplitude: Double,
+            val timeStamp: Long
+        ) : OnVideoRecordEvent
 
         object OnVideoRecordError : OnVideoRecordEvent
     }

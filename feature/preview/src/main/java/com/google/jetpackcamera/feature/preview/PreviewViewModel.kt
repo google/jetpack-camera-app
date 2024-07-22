@@ -531,6 +531,7 @@ class PreviewViewModel @AssistedInject constructor(
             try {
                 cameraUseCase.startVideoRecording {
                     var audioAmplitude = 0.0
+                    var timer = 0L
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
@@ -551,6 +552,7 @@ class PreviewViewModel @AssistedInject constructor(
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
                             audioAmplitude = it.audioAmplitude
+                            timer = it.timeStamp
                         }
                     }
 
@@ -558,7 +560,8 @@ class PreviewViewModel @AssistedInject constructor(
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
                                 snackBarToShow = snackbarToShow,
-                                audioAmplitude = audioAmplitude
+                                audioAmplitude = audioAmplitude,
+                                recordingElapsedTime = timer
                             ) ?: old
                         }
                     }
