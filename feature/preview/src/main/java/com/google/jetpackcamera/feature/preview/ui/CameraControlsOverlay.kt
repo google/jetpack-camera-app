@@ -356,7 +356,7 @@ private fun CaptureButton(
                         previewUiState.previewMode.videoCaptureUri,
                         false,
                         previewUiState.previewMode.onVideoCapture
-                        )
+                    )
                 }
 
                 else -> {

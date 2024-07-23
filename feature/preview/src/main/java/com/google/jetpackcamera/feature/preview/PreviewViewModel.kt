@@ -559,9 +559,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun startVideoRecording(videoCaptureUri: Uri?,
-                            ignoreUri: Boolean = false,
-                            onVideoCapture: (VideoCaptureEvent) -> Unit) {
+    fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        ignoreUri: Boolean = false,
+        onVideoCapture: (VideoCaptureEvent) -> Unit
+    ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
                 PreviewMode.ExternalImageCaptureMode
