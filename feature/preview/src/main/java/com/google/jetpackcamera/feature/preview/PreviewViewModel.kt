@@ -233,12 +233,12 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-                previewMode is PreviewMode.ExternalVideoCaptureMode ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            previewMode is PreviewMode.ExternalVideoCaptureMode ||
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-                previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-                hdrDynamicRangeSupported && hdrImageFormatSupported
+            previewMode !is PreviewMode.ExternalVideoCaptureMode &&
+            hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -430,7 +430,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun captureImage() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             showExternalVideoCaptureUnsupportedToast()
             return
@@ -459,7 +459,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             showExternalVideoCaptureUnsupportedToast()
             return
@@ -467,7 +467,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             viewModelScope.launch {
                 _previewUiState.update { old ->
