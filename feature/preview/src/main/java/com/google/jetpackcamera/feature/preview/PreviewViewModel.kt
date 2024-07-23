@@ -234,11 +234,11 @@ class PreviewViewModel @AssistedInject constructor(
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
                 previewMode is PreviewMode.ExternalVideoCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-                previewMode !is PreviewMode.ExternalVideoCaptureMode
-            hdrDynamicRangeSupported && hdrImageFormatSupported
+                previewMode !is PreviewMode.ExternalVideoCaptureMode &&
+                hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
@@ -413,19 +413,18 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun showExternalVideoCaptureUnsupportedToast() {
-            viewModelScope.launch {
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        snackBarToShow = SnackbarData(
-                            cookie = "Image-ExternalVideoCaptureMode",
-                            stringResource = R.string.toast_image_capture_external_unsupported,
-                            withDismissAction = true,
-                            testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                        )
-                    ) ?: old
-                }
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    snackBarToShow = SnackbarData(
+                        cookie = "Image-ExternalVideoCaptureMode",
+                        stringResource = R.string.toast_image_capture_external_unsupported,
+                        withDismissAction = true,
+                        testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                    )
+                ) ?: old
             }
-            return
+        }
     }
 
     fun captureImage() {
