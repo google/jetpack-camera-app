@@ -329,7 +329,7 @@ fun TargetFpsSetting(
                 )
             }
         } else {
-            stringResource(id = R.string.fps_description_unavailable)
+            stringResource(id = (fpsUiState as FpsUiState.Disabled).disabledRationale.first().reasonTextResId)
         },
         popupContents = {
             if (fpsUiState is FpsUiState.Enabled) {
@@ -421,7 +421,7 @@ fun StabilizationSetting(
         } else {
             // disabled setting description
             stringResource(
-                id = (stabilizationUiState as StabilizationUiState.Disabled).disabledRationale.reasonTextResId
+                id = (stabilizationUiState as StabilizationUiState.Disabled).disabledRationale.first().reasonTextResId
             )
         },
 

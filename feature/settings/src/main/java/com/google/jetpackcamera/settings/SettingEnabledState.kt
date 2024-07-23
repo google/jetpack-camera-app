@@ -35,6 +35,7 @@ sealed interface SingleSelectableState {
 }
 
 /* Settings that currently have constraints **/
+
 sealed interface FpsUiState {
     data class Enabled(
         val currentSelection: Int,
@@ -117,6 +118,7 @@ sealed interface DarkModeUiState {
     ) : DarkModeUiState
 }
 
+// Disabled Rationale Enum
 enum class DisabledRationale(val testTag: String, val reasonTextResId: Int) {
     DEVICE_UNSUPPORTED(
         DEVICE_UNSUPPORTED_TAG,
