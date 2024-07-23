@@ -15,43 +15,107 @@
  */
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
-val deviceUnsupported =
-    SettingEnabledState.Disabled(disabledRationale = setOf(DisabledRationale.DEVICE_UNSUPPORTED))
-
-sealed interface SettingUiState {
-    val settingEnabledState: SettingEnabledState
+sealed interface SingleSelectableState {
+    data object Selectable : SingleSelectableState
+    data class Disabled(val disabledRationale: Set<DisabledRationale>) : SingleSelectableState {
+        init {
+            require(disabledRationale.isNotEmpty())
+        }
+    }
 }
 
-sealed interface SettingEnabledState {
-    val isEnabled: Boolean
+/* Settings that currently have constraints **/
+sealed interface FpsUiState {
+    data class Enabled(
+        val currentSelection: Int,
+        val fpsAutoState: SingleSelectableState,
+        val fpsFifteenState: SingleSelectableState,
+        val fpsThirtyState: SingleSelectableState,
+        val fpsSixtyState: SingleSelectableState,
+        // Contains text like "Selected FPS only supported by rear lens"
+        val additionalContext: String = "",
+    ) : FpsUiState
+
+    // FPS selection completely disabled. Cannot open dialog.
+    data class Disabled(val disabledRationale: Set<DisabledRationale>) : FpsUiState {
+        init {
+            require(disabledRationale.isNotEmpty())
+        }
+    }
+}
+
+sealed interface FlipLensUiState {
+    val isDefaultToFront: Boolean
+
+    data class Enabled(
+        override val isDefaultToFront: Boolean,
+    ) : FlipLensUiState
 
     data class Disabled(
+        override val isDefaultToFront: Boolean,
         val disabledRationale: Set<DisabledRationale>
-    ) : SettingEnabledState {
-        override val isEnabled: Boolean = false
-    }
-
-    data object Enabled : SettingEnabledState {
-        override val isEnabled: Boolean = true
+    ) : FlipLensUiState {
+        init {
+            require(disabledRationale.isNotEmpty())
+        }
     }
 }
 
-class FpsUiState(
-    override val settingEnabledState: SettingEnabledState,
-    val optionsStates: Map<Int, SettingEnabledState>
-) : SettingUiState
+sealed interface StabilizationUiState {
+    data class Enabled(
+        val currentPreviewStabilization: Stabilization,
+        val currentVideoStabilization: Stabilization,
+        val stabilizationOnState: SingleSelectableState,
+        val stabilizationHighQualityState: SingleSelectableState,
+        // Contains text like "Selected stabilization mode only supported by rear lens"
+        val additionalContext: String = ""
+    ) : StabilizationUiState
 
-class FlipLensUiState(override val settingEnabledState: SettingEnabledState) : SettingUiState
-class StabilizationUiState(
-    override val settingEnabledState: SettingEnabledState,
-    val previewStabilizationState: SettingEnabledState,
-    val videoStabilizationState: SettingEnabledState
-) : SettingUiState
+    // Stabilization selection completely disabled. Cannot open dialog.
+    data class Disabled(val disabledRationale: Set<DisabledRationale>) : StabilizationUiState
+}
+
+
+/* Settings that don't currently depend on constraints */
+
+// this could be constrained w/ a check to see if a torch is available?
+sealed interface FlashUiState {
+    data class Enabled(
+        val currentFlashMode: FlashMode,
+        val additionalContext: String = ""
+    ) : FlashUiState
+}
+
+sealed interface AspectRatioUiState {
+    data class Enabled(
+        val currentAspectRatio: AspectRatio,
+        val additionalContext: String = ""
+    ) : AspectRatioUiState
+}
+
+sealed interface CaptureModeUiState {
+    data class Enabled(
+        val currentCaptureMode: CaptureMode,
+        val additionalContext: String = ""
+    ) : CaptureModeUiState
+}
+
+sealed interface DarkModeUiState {
+    data class Enabled(
+        val currentDarkMode: DarkMode,
+        val additionalContext: String = ""
+    ) : DarkModeUiState
+}
 
 enum class DisabledRationale(val testTag: String, val reasonTextResId: Int) {
     DEVICE_UNSUPPORTED(

@@ -24,10 +24,12 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
 sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
-        val cameraAppSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints,
+        val aspectRatioUiState: AspectRatioUiState,
+        val captureModeUiState: CaptureModeUiState,
+        val darkModeUiState: DarkModeUiState,
+        val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
-        val stabilizationUiState: StabilizationUiState
-    ) : SettingsUiState
+        val stabilizationUiState: StabilizationUiState,
+        ) : SettingsUiState
 }

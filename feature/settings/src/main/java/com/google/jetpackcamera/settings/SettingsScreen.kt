@@ -125,39 +125,32 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        currentLensFacing = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
-        // to be able to flip camera, must have multiple lenses and flipped camera must not break
-        // constraints
         lensUiState = uiState.lensFlipUiState,
         setDefaultLensFacing = setDefaultLensFacing
     )
 
     FlashModeSetting(
-        currentFlashMode = uiState.cameraAppSettings.flashMode,
+        flashUiState = uiState.flashUiState,
         setFlashMode = setFlashMode
     )
 
     TargetFpsSetting(
         fpsUiState = uiState.fpsUiState,
-        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         setTargetFps = setTargetFrameRate
     )
 
     AspectRatioSetting(
-        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        aspectRatioUiState = uiState.aspectRatioUiState,
         setAspectRatio = setAspectRatio
     )
 
     CaptureModeSetting(
-        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        captureModeUiState = uiState.captureModeUiState,
         setCaptureMode = setCaptureMode
     )
 
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
-        currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
-        currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
-        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
     )
@@ -165,7 +158,7 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
-        currentDarkMode = uiState.cameraAppSettings.darkMode,
+        darkModeUiState = uiState.darkModeUiState,
         setDarkMode = setDarkMode
     )
 
