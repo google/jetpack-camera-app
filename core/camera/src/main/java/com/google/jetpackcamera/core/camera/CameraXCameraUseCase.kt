@@ -584,20 +584,13 @@ constructor(
                                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                             onVideoRecordEvent.outputResults.outputUri
                                         )
+                                    )
 
-                                    else ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                                                onVideoRecordEvent.cause
-                                            )
+                                else ->
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                            onVideoRecordEvent.cause
                                         )
-                                }
-                            }
-
-                            is VideoRecordEvent.Status -> {
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
                                     )
                             }
                         }
