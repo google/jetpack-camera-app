@@ -532,9 +532,9 @@ constructor(
         }
         val callbackExecutor: Executor =
             (
-                    currentCoroutineContext()[ContinuationInterceptor] as?
-                            CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         recording =
             pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
                 run {

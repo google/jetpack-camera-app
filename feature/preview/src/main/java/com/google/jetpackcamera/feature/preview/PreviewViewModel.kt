@@ -152,9 +152,11 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
+                previewMode is PreviewMode.ExternalVideoCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
             cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
+                previewMode !is PreviewMode.ExternalVideoCaptureMode
             hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
@@ -192,6 +194,9 @@ class PreviewViewModel @AssistedInject constructor(
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+        }
+        if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
+            return CaptureModeToggleUiState.DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
         }
         if (!hdrImageFormatSupported) {
             // First assume HDR image is only unsupported on this capture mode

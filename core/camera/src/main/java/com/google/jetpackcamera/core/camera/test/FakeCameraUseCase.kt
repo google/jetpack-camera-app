@@ -133,7 +133,7 @@ class FakeCameraUseCase(
 
     override suspend fun startVideoRecording(
         videoCaptureUri: Uri?,
-        ignoreUri: Boolean ,
+        ignoreUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
