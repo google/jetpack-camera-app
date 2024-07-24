@@ -51,20 +51,24 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
-    val fpsOptionsStates: FpsUiState = FpsUiState(
-        SettingEnabledState.Enabled,
-        mapOf(
-            Pair(FPS_15, SettingEnabledState.Enabled),
-            Pair(FPS_30, SettingEnabledState.Enabled),
-            Pair(FPS_60, SettingEnabledState.Enabled)
-        )
+
+    private val flashUiState =
+        FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode)
+    private val captureModeUiState =
+        CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
+    private val aspectRatioUiState =
+        AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
+    private val darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode)
+    private val fpsUiState = FpsUiState.Enabled(
+        currentSelection = DEFAULT_CAMERA_APP_SETTINGS.targetFrameRate,
+        fpsAutoState = SingleSelectableState.Selectable,
+        fpsFifteenState = SingleSelectableState.Selectable,
+        fpsThirtyState = SingleSelectableState.Selectable,
+        fpsSixtyState = SingleSelectableState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
     )
-    val lensUiState = FlipLensUiState(SettingEnabledState.Enabled)
-    val stabilizationUiState = StabilizationUiState(
-        SettingEnabledState.Enabled,
-        SettingEnabledState.Enabled,
-        SettingEnabledState.Enabled
-    )
+    private val lensUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing)
+    private val stabilizationUiState =
+        StabilizationUiState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
@@ -103,11 +107,13 @@ internal class CameraAppSettingsViewModelTest {
 
         assertThat(uiState).isEqualTo(
             SettingsUiState.Enabled(
-                cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 lensFlipUiState = lensUiState,
                 stabilizationUiState = stabilizationUiState,
-                fpsUiState = fpsOptionsStates
+                fpsUiState = fpsUiState,
+                flashUiState = flashUiState,
+                darkModeUiState = darkModeUiState,
+                captureModeUiState = captureModeUiState,
+                aspectRatioUiState = aspectRatioUiState
             )
         )
     }
@@ -119,8 +125,8 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val initialCameraLensFacing = assertIsEnabled(initialState)
-            .cameraAppSettings.cameraLensFacing
+        val initialCameraLensFacing =
+            assertIsEnabled(initialState).lensFlipUiState.currentLensFacing
         val nextCameraLensFacing = if (initialCameraLensFacing == LensFacing.FRONT) {
             LensFacing.BACK
         } else {
@@ -131,7 +137,7 @@ internal class CameraAppSettingsViewModelTest {
         advanceUntilIdle()
 
         assertIsEnabled(settingsViewModel.settingsUiState.value).also {
-            assertThat(it.cameraAppSettings.cameraLensFacing).isEqualTo(nextCameraLensFacing)
+            assertThat(it.lensFlipUiState.currentLensFacing).isEqualTo(nextCameraLensFacing)
         }
     }
 
@@ -142,14 +148,15 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val initialDarkMode = assertIsEnabled(initialState).cameraAppSettings.darkMode
+        val initialDarkMode =
+            (assertIsEnabled(initialState).darkModeUiState as DarkModeUiState.Enabled).currentDarkMode
 
         settingsViewModel.setDarkMode(DarkMode.DARK)
 
         advanceUntilIdle()
 
-        val newDarkMode = assertIsEnabled(settingsViewModel.settingsUiState.value)
-            .cameraAppSettings.darkMode
+        val newDarkMode =
+            (assertIsEnabled(settingsViewModel.settingsUiState.value).darkModeUiState as DarkModeUiState.Enabled).currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
         assertEquals(DarkMode.DARK, newDarkMode)

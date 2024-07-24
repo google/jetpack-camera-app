@@ -107,14 +107,16 @@ class SettingsViewModel @Inject constructor(
                 stabilizationOnState = getPreviewStabilizationState(
                     currentFrameRate = cameraAppSettings.targetFrameRate,
                     deviceStabilizations = deviceStabilizations,
-                    currentLensStabilizations = systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+                    currentLensStabilizations = systemConstraints
+                        .perLensConstraints[cameraAppSettings.cameraLensFacing]
                         ?.supportedStabilizationModes
                 ),
                 stabilizationHighQualityState =
                 getVideoStabilizationState(
                     currentFrameRate = cameraAppSettings.targetFrameRate,
                     deviceStabilizations = deviceStabilizations,
-                    currentLensStabilizations = systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+                    currentLensStabilizations = systemConstraints
+                        .perLensConstraints[cameraAppSettings.cameraLensFacing]
                         ?.supportedStabilizationModes
                 )
             )
@@ -202,7 +204,7 @@ class SettingsViewModel @Inject constructor(
             }
         ) {
             return FlipLensUiState.Disabled(
-                isDefaultToFront = currentSettings.cameraLensFacing == LensFacing.FRONT,
+                currentLensFacing = currentSettings.cameraLensFacing,
                 disabledRationale = setOf(DisabledRationale.LENS_UNSUPPORTED)
             )
         }
@@ -244,10 +246,10 @@ class SettingsViewModel @Inject constructor(
         }
 
         return if (constraintsRationale.isEmpty()) {
-            FlipLensUiState.Enabled(isDefaultToFront = currentSettings.cameraLensFacing == LensFacing.FRONT)
+            FlipLensUiState.Enabled(currentLensFacing = currentSettings.cameraLensFacing)
         } else {
             FlipLensUiState.Disabled(
-                isDefaultToFront = currentSettings.cameraLensFacing == LensFacing.FRONT,
+                currentLensFacing = currentSettings.cameraLensFacing,
                 constraintsRationale
             )
         }
@@ -302,7 +304,7 @@ class SettingsViewModel @Inject constructor(
         val constraintsRationale: MutableSet<DisabledRationale> = mutableSetOf()
 
         // if device doesnt support the fps option, disable
-        if (deviceFrameRates.contains(fpsOption)) {
+        if (!deviceFrameRates.contains(fpsOption)) {
             return SingleSelectableState.Disabled(
                 disabledRationale = setOf(DisabledRationale.DEVICE_UNSUPPORTED)
             )

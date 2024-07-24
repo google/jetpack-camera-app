@@ -19,6 +19,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
@@ -56,14 +57,14 @@ sealed interface FpsUiState {
 }
 
 sealed interface FlipLensUiState {
-    val isDefaultToFront: Boolean
+    val currentLensFacing: LensFacing
 
     data class Enabled(
-        override val isDefaultToFront: Boolean,
+        override val currentLensFacing: LensFacing,
     ) : FlipLensUiState
 
     data class Disabled(
-        override val isDefaultToFront: Boolean,
+        override val currentLensFacing: LensFacing,
         val disabledRationale: Set<DisabledRationale>
     ) : FlipLensUiState {
         init {

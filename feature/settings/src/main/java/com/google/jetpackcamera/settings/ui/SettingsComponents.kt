@@ -125,7 +125,7 @@ fun DefaultCameraFacing(
         onSwitchChanged = { on ->
             setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
         },
-        settingValue = lensUiState.isDefaultToFront,
+        settingValue = lensUiState.currentLensFacing == LensFacing.FRONT,
         enabled = lensUiState is FlipLensUiState.Enabled
     )
 }
