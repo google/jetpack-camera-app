@@ -15,9 +15,6 @@
  */
 package com.google.jetpackcamera.settings
 
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
-
 /**
  * Defines the current state of the [SettingsScreen].
  */
@@ -30,6 +27,6 @@ sealed interface SettingsUiState {
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
-        val stabilizationUiState: StabilizationUiState,
-        ) : SettingsUiState
+        val stabilizationUiState: StabilizationUiState
+    ) : SettingsUiState
 }

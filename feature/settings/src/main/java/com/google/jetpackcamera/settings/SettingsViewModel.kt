@@ -64,9 +64,9 @@ class SettingsViewModel @Inject constructor(
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
 
-                )
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -316,9 +316,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, add to rationale
         if ((
-                    previewStabilization == Stabilization.ON &&
-                            (fpsOption == FPS_30 || fpsOption == FPS_AUTO)
-                    ) ||
+                previewStabilization == Stabilization.ON &&
+                    (fpsOption == FPS_30 || fpsOption == FPS_AUTO)
+                ) ||
             (videoStabilization == Stabilization.ON && fpsOption != FPS_60)
         ) {
             constraintsRationale.add(DisabledRationale.STABILIZATION_UNSUPPORTED)

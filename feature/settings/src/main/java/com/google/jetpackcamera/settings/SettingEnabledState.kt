@@ -45,7 +45,7 @@ sealed interface FpsUiState {
         val fpsThirtyState: SingleSelectableState,
         val fpsSixtyState: SingleSelectableState,
         // Contains text like "Selected FPS only supported by rear lens"
-        val additionalContext: String = "",
+        val additionalContext: String = ""
     ) : FpsUiState
 
     // FPS selection completely disabled. Cannot open dialog.
@@ -60,7 +60,7 @@ sealed interface FlipLensUiState {
     val currentLensFacing: LensFacing
 
     data class Enabled(
-        override val currentLensFacing: LensFacing,
+        override val currentLensFacing: LensFacing
     ) : FlipLensUiState
 
     data class Disabled(
@@ -86,7 +86,6 @@ sealed interface StabilizationUiState {
     // Stabilization selection completely disabled. Cannot open dialog.
     data class Disabled(val disabledRationale: Set<DisabledRationale>) : StabilizationUiState
 }
-
 
 /* Settings that don't currently depend on constraints */
 

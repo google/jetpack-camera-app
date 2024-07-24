@@ -115,7 +115,7 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 fun DefaultCameraFacing(
     modifier: Modifier = Modifier,
     lensUiState: FlipLensUiState,
-    setDefaultLensFacing: (LensFacing) -> Unit,
+    setDefaultLensFacing: (LensFacing) -> Unit
 ) {
     SwitchSettingUI(
         modifier = modifier,
@@ -147,8 +147,9 @@ fun DarkModeSetting(
                 DarkMode.DARK -> stringResource(id = R.string.dark_mode_description_dark)
                 DarkMode.LIGHT -> stringResource(id = R.string.dark_mode_description_light)
             }
-        }
-        else TODO("dark mode currently has no disabled criteria"),
+        } else {
+            TODO("dark mode currently has no disabled criteria")
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
@@ -174,7 +175,7 @@ fun DarkModeSetting(
     )
 }
 
-//todo uistate for flash
+// todo uistate for flash
 @Composable
 fun FlashModeSetting(
     flashUiState: FlashUiState,
@@ -193,8 +194,9 @@ fun FlashModeSetting(
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
             }
-        }
-        else TODO("flash mode currently has no disabled option"),
+        } else {
+            TODO("flash mode currently has no disabled option")
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
@@ -233,12 +235,16 @@ fun AspectRatioSetting(
         description =
         if (aspectRatioUiState is AspectRatioUiState.Enabled) {
             when (aspectRatioUiState.currentAspectRatio) {
-                AspectRatio.NINE_SIXTEEN -> stringResource(id = R.string.aspect_ratio_description_9_16)
+                AspectRatio.NINE_SIXTEEN -> stringResource(
+                    id = R.string.aspect_ratio_description_9_16
+                )
+
                 AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
                 AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
             }
-        }
-        else TODO("aspect ratio currently has no disabled criteria"),
+        } else {
+            TODO("aspect ratio currently has no disabled criteria")
+        },
         enabled = true,
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -246,13 +252,13 @@ fun AspectRatioSetting(
                     text = stringResource(id = R.string.aspect_ratio_selector_9_16),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
                     enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) },
+                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
                     enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.THREE_FOUR) },
+                    onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
                 )
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.aspect_ratio_selector_1_1),
@@ -267,7 +273,7 @@ fun AspectRatioSetting(
 
 @Composable
 fun CaptureModeSetting(
-captureModeUiState: CaptureModeUiState,
+    captureModeUiState: CaptureModeUiState,
     setCaptureMode: (CaptureMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -287,8 +293,9 @@ captureModeUiState: CaptureModeUiState,
                     id = R.string.capture_mode_description_single_stream
                 )
             }
-        }
-        else TODO("capture mode currently has no disabled criteria"),
+        } else {
+            TODO("capture mode currently has no disabled criteria")
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
@@ -329,7 +336,10 @@ fun TargetFpsSetting(
                 )
             }
         } else {
-            stringResource(id = (fpsUiState as FpsUiState.Disabled).disabledRationale.first().reasonTextResId)
+            stringResource(
+                id = (fpsUiState as FpsUiState.Disabled).disabledRationale.first()
+                    .reasonTextResId
+            )
         },
         popupContents = {
             if (fpsUiState is FpsUiState.Enabled) {
@@ -352,9 +362,18 @@ fun TargetFpsSetting(
                             selected = fpsUiState.currentSelection == fpsOption,
                             onClick = { setTargetFps(fpsOption) },
                             enabled = when (fpsOption) {
-                                FPS_15 -> fpsUiState.fpsFifteenState is SingleSelectableState.Selectable
-                                FPS_30 -> fpsUiState.fpsThirtyState is SingleSelectableState.Selectable
-                                FPS_60 -> fpsUiState.fpsSixtyState is SingleSelectableState.Selectable
+                                FPS_15 ->
+                                    fpsUiState.fpsFifteenState is
+                                        SingleSelectableState.Selectable
+
+                                FPS_30 ->
+                                    fpsUiState.fpsThirtyState is
+                                        SingleSelectableState.Selectable
+
+                                FPS_60 ->
+                                    fpsUiState.fpsSixtyState is
+                                        SingleSelectableState.Selectable
+
                                 else -> false
                             }
                         )
@@ -421,7 +440,8 @@ fun StabilizationSetting(
         } else {
             // disabled setting description
             stringResource(
-                id = (stabilizationUiState as StabilizationUiState.Disabled).disabledRationale.first().reasonTextResId
+                id = (stabilizationUiState as StabilizationUiState.Disabled).disabledRationale
+                    .first().reasonTextResId
             )
         },
 
@@ -439,10 +459,19 @@ fun StabilizationSetting(
                 if (stabilizationUiState is StabilizationUiState.Enabled) {
                     SingleChoiceSelector(
                         text = stringResource(id = R.string.stabilization_selector_on),
-                        secondaryText = stringResource(id = R.string.stabilization_selector_on_info),
-                        enabled = stabilizationUiState.stabilizationOnState is SingleSelectableState.Selectable,
-                        selected = (stabilizationUiState.currentPreviewStabilization == Stabilization.ON) &&
-                                (stabilizationUiState.currentVideoStabilization != Stabilization.OFF),
+                        secondaryText = stringResource(
+                            id = R.string.stabilization_selector_on_info
+                        ),
+                        enabled = stabilizationUiState.stabilizationOnState is
+                            SingleSelectableState.Selectable,
+                        selected = (
+                            stabilizationUiState.currentPreviewStabilization
+                                == Stabilization.ON
+                            ) &&
+                            (
+                                stabilizationUiState.currentVideoStabilization
+                                    != Stabilization.OFF
+                                ),
                         onClick = {
                             setVideoStabilization(Stabilization.UNDEFINED)
                             setPreviewStabilization(Stabilization.ON)
@@ -456,10 +485,17 @@ fun StabilizationSetting(
                         secondaryText = stringResource(
                             id = R.string.stabilization_selector_high_quality_info
                         ),
-                        enabled = stabilizationUiState.stabilizationHighQualityState == SingleSelectableState.Selectable,
+                        enabled = stabilizationUiState.stabilizationHighQualityState
+                            == SingleSelectableState.Selectable,
 
-                        selected = (stabilizationUiState.currentPreviewStabilization == Stabilization.UNDEFINED) &&
-                                (stabilizationUiState.currentVideoStabilization == Stabilization.ON),
+                        selected = (
+                            stabilizationUiState.currentPreviewStabilization
+                                == Stabilization.UNDEFINED
+                            ) &&
+                            (
+                                stabilizationUiState.currentVideoStabilization
+                                    == Stabilization.ON
+                                ),
                         onClick = {
                             setVideoStabilization(Stabilization.ON)
                             setPreviewStabilization(Stabilization.UNDEFINED)
@@ -469,8 +505,14 @@ fun StabilizationSetting(
                     // off selector
                     SingleChoiceSelector(
                         text = stringResource(id = R.string.stabilization_selector_off),
-                        selected = (stabilizationUiState.currentPreviewStabilization != Stabilization.ON) &&
-                                (stabilizationUiState.currentVideoStabilization != Stabilization.ON),
+                        selected = (
+                            stabilizationUiState.currentPreviewStabilization
+                                != Stabilization.ON
+                            ) &&
+                            (
+                                stabilizationUiState.currentVideoStabilization
+                                    != Stabilization.ON
+                                ),
                         onClick = {
                             setVideoStabilization(Stabilization.OFF)
                             setPreviewStabilization(Stabilization.OFF)
@@ -492,11 +534,11 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
         enabled = true
     ) {
         val versionString = versionName +
-                if (buildType.isNotEmpty()) {
-                    "/${buildType.toUpperCase(Locale.current)}"
-                } else {
-                    ""
-                }
+            if (buildType.isNotEmpty()) {
+                "/${buildType.toUpperCase(Locale.current)}"
+            } else {
+                ""
+            }
         Text(text = versionString)
     }
 }
@@ -598,18 +640,20 @@ fun SettingUI(
         headlineContent = {
             if (enabled) {
                 Text(title)
-            } else
+            } else {
                 Text(text = title, color = LocalContentColor.current.copy(alpha = .7f))
+            }
         },
         supportingContent = {
             if (description != null) {
                 if (enabled) {
                     Text(description)
-                } else
+                } else {
                     Text(
                         text = description,
                         color = LocalContentColor.current.copy(alpha = .7f)
                     )
+                }
             }
         },
         leadingContent = leadingIcon,
