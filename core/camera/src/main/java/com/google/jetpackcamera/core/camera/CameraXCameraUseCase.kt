@@ -36,6 +36,7 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -49,6 +50,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.TorchState
+import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -62,8 +65,10 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
+import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -92,6 +97,7 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlin.properties.Delegates
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -168,8 +174,6 @@ constructor(
         imageCaptureExtender.setSessionCaptureCallback(captureCallback)
     }
 
-    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
-    private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
     private var disableVideoCapture by Delegates.notNull<Boolean>()
@@ -178,6 +182,7 @@ constructor(
         MutableSharedFlow()
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
+    private var videoCaptureControlEvents: Channel<VideoCaptureControlEvent>? = null
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -222,6 +227,7 @@ constructor(
 
                         val supportedFixedFrameRates = getSupportedFrameRates(camInfo)
                         val supportedImageFormats = getSupportedImageFormats(camInfo)
+                        val hasFlashUnit = camInfo.hasFlashUnit()
 
                         put(
                             lensFacing,
@@ -235,7 +241,8 @@ constructor(
                                     // Ultra HDR now.
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
-                                )
+                                ),
+                                hasFlashUnit = hasFlashUnit
                             )
                         )
                     }
@@ -354,6 +361,39 @@ constructor(
                                 FocusMeteringAction.Builder(it.meteringPoint).build()
                             Log.d(TAG, "Starting focus and metering")
                             camera.cameraControl.startFocusAndMetering(focusMeteringAction)
+                        }
+                    }
+
+                    val channelToClose = videoCaptureControlEvents
+                    videoCaptureControlEvents = Channel()
+                    channelToClose?.close()
+                    launch {
+                        val videoCapture = useCaseGroup.getVideoCapture()
+                        var recording: Recording? = null
+                        videoCaptureControlEvents!!.consumeAsFlow().collect { event ->
+                            when (event) {
+                                is VideoCaptureControlEvent.StartRecordingEvent -> {
+                                    recording = startVideoRecordingInternal(
+                                        camera,
+                                        videoCapture!!,
+                                        event.onVideoRecord
+                                    )
+                                }
+                                VideoCaptureControlEvent.StopRecordingEvent -> {
+                                    recording?.stop()
+                                }
+                                is VideoCaptureControlEvent.MuteEvent -> {
+                                    recording?.mute(event.muted)
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        cameraInfo.torchState.asFlow().collectLatest { torchState ->
+                            _currentCameraState.update { old ->
+                                old.copy(torchEnabled = torchState == TorchState.ON)
+                            }
                         }
                     }
 
@@ -508,9 +548,24 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        if (videoCaptureUseCase == null) {
-            throw RuntimeException("Attempted video recording with null videoCapture use case")
+        if (videoCaptureControlEvents == null) {
+            throw RuntimeException("Attempted video recording with null videoCapture control")
         }
+
+        videoCaptureControlEvents!!.send(
+            VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
+        )
+    }
+
+    override fun stopVideoRecording() {
+        videoCaptureControlEvents?.trySend(VideoCaptureControlEvent.StopRecordingEvent)
+    }
+
+    private suspend fun startVideoRecordingInternal(
+        camera: Camera,
+        videoCaptureUseCase: VideoCapture<Recorder>,
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ): Recording {
         Log.d(TAG, "recordVideo")
         // todo(b/336886716): default setting to enable or disable audio when permission is granted
 
@@ -543,54 +598,71 @@ constructor(
             )
                 .setContentValues(contentValues)
                 .build()
-
+        val torchDisableDeferred = if (currentSettings.value?.flashMode == FlashMode.ON) {
+            // If there is no flash unit, the await() call will throw exception immediately.
+            camera.cameraControl.enableTorch(true).await()
+            CompletableDeferred<Unit>().also {
+                it.invokeOnCompletion {
+                    camera.cameraControl.enableTorch(false)
+                }
+            }
+        } else {
+            null
+        }
         val callbackExecutor: Executor =
             (
                 currentCoroutineContext()[ContinuationInterceptor] as?
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
-        recording =
-            videoCaptureUseCase!!.output
-                .prepareRecording(application, mediaStoreOutput)
-                .apply {
-                    if (audioEnabled) {
-                        withAudioEnabled()
+        val recording: Recording
+        try {
+            recording =
+                videoCaptureUseCase.output
+                    .prepareRecording(application, mediaStoreOutput)
+                    .apply {
+                        if (audioEnabled) {
+                            withAudioEnabled()
+                        }
                     }
-                }
-                .start(callbackExecutor) { onVideoRecordEvent ->
-                    run {
-                        Log.d(TAG, onVideoRecordEvent.toString())
-                        when (onVideoRecordEvent) {
-                            is VideoRecordEvent.Finalize -> {
-                                when (onVideoRecordEvent.error) {
-                                    ERROR_NONE ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
-                                        )
+                    .start(callbackExecutor) { onVideoRecordEvent ->
+                        run {
+                            Log.d(TAG, onVideoRecordEvent.toString())
+                            when (onVideoRecordEvent) {
+                                is VideoRecordEvent.Finalize -> {
+                                    torchDisableDeferred?.complete(Unit)
+                                    when (onVideoRecordEvent.error) {
+                                        ERROR_NONE ->
+                                            onVideoRecord(
+                                                CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                                    onVideoRecordEvent.outputResults.outputUri
+                                                )
+                                            )
 
-                                    else ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-                                        )
+                                        else ->
+                                            onVideoRecord(
+                                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
+                                            )
+                                    }
                                 }
-                            }
 
-                            is VideoRecordEvent.Status -> {
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                                is VideoRecordEvent.Status -> {
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                                            onVideoRecordEvent.recordingStats.audioStats
+                                                .audioAmplitude
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
-                }
-        currentSettings.value?.audioMuted?.let { recording?.mute(it) }
-    }
+            currentSettings.value?.audioMuted?.let { recording.mute(it) }
+        } catch (e: Exception) {
+            torchDisableDeferred?.complete(Unit)
+            throw e
+        }
 
-    override fun stopVideoRecording() {
-        Log.d(TAG, "stopRecording")
-        recording?.stop()
+        return recording
     }
 
     override fun setZoomScale(scale: Float) {
@@ -801,6 +873,7 @@ constructor(
         val previewUseCase =
             createPreviewUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
         imageCaptureUseCase = createImageUseCase(cameraInfo, sessionSettings)
+        var videoCaptureUseCase: VideoCapture<Recorder>? = null
         if (!disableVideoCapture) {
             videoCaptureUseCase =
                 createVideoUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
@@ -832,7 +905,7 @@ constructor(
             if (videoCaptureUseCase != null &&
                 sessionSettings.imageFormat == ImageOutputFormat.JPEG
             ) {
-                addUseCase(videoCaptureUseCase!!)
+                addUseCase(videoCaptureUseCase)
             }
 
             effect?.let { addEffect(it) }
@@ -913,7 +986,7 @@ constructor(
 
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         // toggle mute for current in progress recording
-        recording?.mute(!isAudioMuted)
+        videoCaptureControlEvents?.send(VideoCaptureControlEvent.MuteEvent(!isAudioMuted))
 
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
@@ -1125,4 +1198,10 @@ private fun Int.toAppImageFormat(): ImageOutputFormat? {
         // All other output formats unsupported. Return null.
         else -> null
     }
+}
+
+private fun UseCaseGroup.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
+
+private inline fun <reified T : UseCase> UseCaseGroup.getUseCaseOrNull(): T? {
+    return useCases.filterIsInstance<T>().singleOrNull()
 }
