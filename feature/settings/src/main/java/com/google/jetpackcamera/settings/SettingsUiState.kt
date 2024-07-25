@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+
 /**
  * Defines the current state of the [SettingsScreen].
  */
@@ -30,3 +32,25 @@ sealed interface SettingsUiState {
         val stabilizationUiState: StabilizationUiState
     ) : SettingsUiState
 }
+
+/**
+ * Settings Ui State for testing, based on Typical System Constraints.
+ * @see[com.google.jetpackcamera.settings.model.SystemConstraints]
+ */
+val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
+    aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+    captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+    darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
+    flashUiState =
+    FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+    fpsUiState = FpsUiState.Enabled(
+        currentSelection = DEFAULT_CAMERA_APP_SETTINGS.targetFrameRate,
+        fpsAutoState = SingleSelectableState.Selectable,
+        fpsFifteenState = SingleSelectableState.Selectable,
+        fpsThirtyState = SingleSelectableState.Selectable,
+        fpsSixtyState = SingleSelectableState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
+    ),
+    lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
+    stabilizationUiState =
+    StabilizationUiState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
+)

@@ -22,11 +22,9 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import java.io.File
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +39,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CameraAppSettingsViewModelTest {
@@ -48,24 +47,6 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
-
-    private val flashUiState =
-        FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode)
-    private val captureModeUiState =
-        CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
-    private val aspectRatioUiState =
-        AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
-    private val darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode)
-    private val fpsUiState = FpsUiState.Enabled(
-        currentSelection = DEFAULT_CAMERA_APP_SETTINGS.targetFrameRate,
-        fpsAutoState = SingleSelectableState.Selectable,
-        fpsFifteenState = SingleSelectableState.Selectable,
-        fpsThirtyState = SingleSelectableState.Selectable,
-        fpsSixtyState = SingleSelectableState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
-    )
-    private val lensUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing)
-    private val stabilizationUiState =
-        StabilizationUiState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
@@ -103,15 +84,7 @@ internal class CameraAppSettingsViewModelTest {
         }
 
         assertThat(uiState).isEqualTo(
-            SettingsUiState.Enabled(
-                lensFlipUiState = lensUiState,
-                stabilizationUiState = stabilizationUiState,
-                fpsUiState = fpsUiState,
-                flashUiState = flashUiState,
-                darkModeUiState = darkModeUiState,
-                captureModeUiState = captureModeUiState,
-                aspectRatioUiState = aspectRatioUiState
-            )
+            TYPICAL_SETTINGS_UISTATE
         )
     }
 
@@ -146,22 +119,17 @@ internal class CameraAppSettingsViewModelTest {
         }
 
         val initialDarkMode =
-            (
-                assertIsEnabled(
-                    initialState
-                ).darkModeUiState as DarkModeUiState.Enabled
-                ).currentDarkMode
+            (assertIsEnabled(initialState).darkModeUiState as DarkModeUiState.Enabled)
+                .currentDarkMode
 
         settingsViewModel.setDarkMode(DarkMode.DARK)
 
         advanceUntilIdle()
 
         val newDarkMode =
-            (
-                assertIsEnabled(
-                    settingsViewModel.settingsUiState.value
-                ).darkModeUiState as DarkModeUiState.Enabled
-                ).currentDarkMode
+            (assertIsEnabled(settingsViewModel.settingsUiState.value)
+                .darkModeUiState as DarkModeUiState.Enabled)
+                .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
         assertEquals(DarkMode.DARK, newDarkMode)
