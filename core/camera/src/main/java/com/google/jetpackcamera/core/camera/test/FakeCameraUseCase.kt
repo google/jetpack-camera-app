@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,7 +65,10 @@ class FakeCameraUseCase(
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
-    override suspend fun initialize(disableVideoCapture: Boolean) {
+    override suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        disableVideoCapture: Boolean
+    ) {
         initialized = true
     }
 
@@ -218,6 +222,24 @@ class FakeCameraUseCase(
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         currentSettings.update { old ->
             old.copy(audioMuted = isAudioMuted)
+        }
+    }
+
+    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
+        currentSettings.update { old ->
+            old.copy(videoCaptureStabilization = videoCaptureStabilization)
+        }
+    }
+
+    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
+        currentSettings.update { old ->
+            old.copy(previewStabilization = previewStabilization)
+        }
+    }
+
+    override suspend fun setTargetFrameRate(targetFrameRate: Int) {
+        currentSettings.update { old ->
+            old.copy(targetFrameRate = targetFrameRate)
         }
     }
 }
