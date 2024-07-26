@@ -25,6 +25,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import java.io.File
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +40,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CameraAppSettingsViewModelTest {
@@ -127,8 +127,10 @@ internal class CameraAppSettingsViewModelTest {
         advanceUntilIdle()
 
         val newDarkMode =
-            (assertIsEnabled(settingsViewModel.settingsUiState.value)
-                .darkModeUiState as DarkModeUiState.Enabled)
+            (
+                assertIsEnabled(settingsViewModel.settingsUiState.value)
+                    .darkModeUiState as DarkModeUiState.Enabled
+                )
                 .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)

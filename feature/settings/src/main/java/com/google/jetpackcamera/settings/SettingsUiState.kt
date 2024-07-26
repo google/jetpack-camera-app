@@ -49,9 +49,14 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         fpsAutoState = SingleSelectableState.Selectable,
         fpsFifteenState = SingleSelectableState.Selectable,
         fpsThirtyState = SingleSelectableState.Selectable,
-        fpsSixtyState = SingleSelectableState.Disabled(setOf(DeviceUnsupportedRationale(
-            FORMAT_FPS_PREFIX.format(FPS_60)))
-    )),
+        fpsSixtyState = SingleSelectableState.Disabled(
+            setOf(
+                DeviceUnsupportedRationale(
+                    FORMAT_FPS_PREFIX.format(FPS_60)
+                )
+            )
+        )
+    ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     stabilizationUiState =
     StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX)))

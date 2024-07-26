@@ -18,6 +18,10 @@ package com.google.jetpackcamera.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
+import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
+import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
+import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -39,11 +43,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
-import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
-import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
-import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
-
 
 private const val TAG = "SettingsViewModel"
 val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -90,8 +89,13 @@ class SettingsViewModel @Inject constructor(
         val constraintRationale: MutableSet<DisabledRationale> = mutableSetOf()
         // if no lens supports
         if (deviceStabilizations.isEmpty()) {
-            return StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(
-                STABILIZATION_SETTING_PREFIX)))
+            return StabilizationUiState.Disabled(
+                setOf(
+                    DeviceUnsupportedRationale(
+                        STABILIZATION_SETTING_PREFIX
+                    )
+                )
+            )
         }
 
         // if a lens supports but it isn't the current
@@ -151,7 +155,12 @@ class SettingsViewModel @Inject constructor(
         }
         // if fps is unsupported by preview stabilization
         if (currentFrameRate == TARGET_FPS_60 || currentFrameRate == TARGET_FPS_15) {
-            constraintRationale.add(FpsUnsupportedRationale(STABILIZATION_SETTING_PREFIX, currentFrameRate))
+            constraintRationale.add(
+                FpsUnsupportedRationale(
+                    STABILIZATION_SETTING_PREFIX,
+                    currentFrameRate
+                )
+            )
         }
 
         return if (constraintRationale.isEmpty()) {
@@ -182,7 +191,12 @@ class SettingsViewModel @Inject constructor(
         }
         // if fps is unsupported by preview stabilization
         if (currentFrameRate == TARGET_FPS_60) {
-            constraintRationale.add(FpsUnsupportedRationale(STABILIZATION_SETTING_PREFIX, currentFrameRate))
+            constraintRationale.add(
+                FpsUnsupportedRationale(
+                    STABILIZATION_SETTING_PREFIX,
+                    currentFrameRate
+                )
+            )
         }
 
         return if (constraintRationale.isEmpty()) {
@@ -230,7 +244,12 @@ class SettingsViewModel @Inject constructor(
             !newLensConstraints.supportedFixedFrameRates
                 .contains(currentSettings.targetFrameRate)
         ) {
-            constraintsRationale.add(FpsUnsupportedRationale(LENS_SETTING_PREFIX, currentSettings.targetFrameRate))
+            constraintsRationale.add(
+                FpsUnsupportedRationale(
+                    LENS_SETTING_PREFIX,
+                    currentSettings.targetFrameRate
+                )
+            )
         }
 
         // if preview stabilization is currently on and the other lens won't support it
@@ -312,7 +331,11 @@ class SettingsViewModel @Inject constructor(
         // if device doesnt support the fps option, disable
         if (!deviceFrameRates.contains(fpsOption)) {
             return SingleSelectableState.Disabled(
-                disabledRationale = setOf(DeviceUnsupportedRationale(FORMAT_FPS_PREFIX.format(fpsOption)))
+                disabledRationale = setOf(
+                    DeviceUnsupportedRationale(
+                        FORMAT_FPS_PREFIX.format(fpsOption)
+                    )
+                )
             )
         }
         // if the current lens doesnt support the fps, add to rationale
@@ -327,7 +350,11 @@ class SettingsViewModel @Inject constructor(
                 ) ||
             (videoStabilization == Stabilization.ON && fpsOption != FPS_60)
         ) {
-            constraintsRationale.add(StabilizationUnsupportedRationale(FORMAT_FPS_PREFIX.format(fpsOption)))
+            constraintsRationale.add(
+                StabilizationUnsupportedRationale(
+                    FORMAT_FPS_PREFIX.format(fpsOption)
+                )
+            )
         }
 
         return if (constraintsRationale.isEmpty()) {
