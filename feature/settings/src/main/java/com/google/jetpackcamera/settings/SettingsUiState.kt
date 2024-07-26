@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.settings
-
+import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.FPS_60
 
 /**
  * Defines the current state of the [SettingsScreen].
@@ -48,9 +49,10 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         fpsAutoState = SingleSelectableState.Selectable,
         fpsFifteenState = SingleSelectableState.Selectable,
         fpsThirtyState = SingleSelectableState.Selectable,
-        fpsSixtyState = SingleSelectableState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
-    ),
+        fpsSixtyState = SingleSelectableState.Disabled(setOf(DeviceUnsupportedRationale(
+            FORMAT_FPS_PREFIX.format(FPS_60)))
+    )),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     stabilizationUiState =
-    StabilizationUiState.Disabled(setOf(DisabledRationale.DEVICE_UNSUPPORTED))
+    StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX)))
 )

@@ -102,10 +102,10 @@
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
 
     <!-- disabled reason strings-->
-    <string name="device_unsupported">Unsupported by device</string>
-    <string name="fps_unsupported">Unsupported by fps</string>
-    <string name="stabilization_unsupported">Unsupported by Stabilization</string>
-    <string name="lens_unsupported">Unsupported by lens</string>
+    <string name="device_unsupported">%1$s is unsupported by the device</string>
+    <string name="fps_unsupported"> %1$s is unsupported at %1$d fps</string>
+    <string name="stabilization_unsupported">%$1s is Unsupported by current stabilization</string>
+    <string name="lens_unsupported">%$s is unsupported by the current lens</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>

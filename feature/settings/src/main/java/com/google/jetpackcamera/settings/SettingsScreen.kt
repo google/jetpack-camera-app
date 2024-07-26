@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -187,10 +188,7 @@ data class VersionInfoHolder(
 private fun Preview_SettingsScreen() {
     SettingsPreviewTheme {
         SettingsScreen(
-            uiState = SettingsUiState.Enabled(
-                DEFAULT_CAMERA_APP_SETTINGS,
-                TYPICAL_SYSTEM_CONSTRAINTS
-            ),
+            uiState = TYPICAL_SETTINGS_UISTATE,
             versionInfo = VersionInfoHolder(
                 versionName = "1.0.0",
                 buildType = "release"

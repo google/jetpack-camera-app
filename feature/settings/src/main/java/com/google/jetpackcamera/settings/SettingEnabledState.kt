@@ -25,6 +25,10 @@ import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
+const val STABILIZATION_SETTING_PREFIX = "Stabilization"
+const val LENS_SETTING_PREFIX = "Lens flip"
+const val FORMAT_FPS_PREFIX = "%d FPS"
+const val FIXED_FPS_PREFIX = "Fixed Fps"
 
 sealed interface SingleSelectableState {
     data object Selectable : SingleSelectableState
@@ -118,13 +122,24 @@ sealed interface DarkModeUiState {
     ) : DarkModeUiState
 }
 
-// Disabled Rationale Enum
-enum class DisabledRationale(val testTag: String, val reasonTextResId: Int) {
-    DEVICE_UNSUPPORTED(
-        DEVICE_UNSUPPORTED_TAG,
-        R.string.device_unsupported
-    ),
-    FPS(FPS_UNSUPPORTED_TAG, R.string.fps_unsupported),
-    STABILIZATION_UNSUPPORTED(STABILIZATION_UNSUPPORTED_TAG, R.string.stabilization_unsupported),
-    LENS_UNSUPPORTED(LENS_UNSUPPORTED_TAG, R.string.lens_unsupported)
+sealed interface DisabledRationale{
+    val affectedSettingName: String
+    val reasonTextResId: Int
+    val testTag: String
+    data class DeviceUnsupportedRationale(override val affectedSettingName: String): DisabledRationale {
+        override val reasonTextResId: Int = R.string.device_unsupported
+        override val testTag = DEVICE_UNSUPPORTED_TAG
+    }
+    data class FpsUnsupportedRationale(override val affectedSettingName: String, val currentFps: Int ): DisabledRationale {
+        override val reasonTextResId: Int = R.string.fps_unsupported
+        override val testTag = FPS_UNSUPPORTED_TAG
+    }
+    data class StabilizationUnsupportedRationale(override val affectedSettingName: String): DisabledRationale {
+        override val reasonTextResId = R.string.stabilization_unsupported
+        override val testTag = STABILIZATION_UNSUPPORTED_TAG
+    }
+    data class LensUnsupportedRationale(override val affectedSettingName: String): DisabledRationale {
+        override val reasonTextResId: Int = R.string.lens_unsupported
+        override val testTag = LENS_UNSUPPORTED_TAG
+    }
 }
