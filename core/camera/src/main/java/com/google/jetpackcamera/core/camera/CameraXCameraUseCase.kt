@@ -414,15 +414,13 @@ constructor(
 
     private suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
         getSurfaceRequest().map { surfaceRequest ->
-            surfaceRequest?.let {
-                with(surfaceRequest.resolution) {
-                    Log.d(
-                        TAG,
-                        "Waiting to process focus points for surface with resolution:" +
-                            " $width x $height"
-                    )
-                    SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
-                }
+            surfaceRequest?.resolution?.run {
+                Log.d(
+                    TAG,
+                    "Waiting to process focus points for surface with resolution: " +
+                        "$width x $height"
+                )
+                SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
             }
         }.collectLatest { meteringPointFactory ->
             for (event in focusMeteringEvents) {
