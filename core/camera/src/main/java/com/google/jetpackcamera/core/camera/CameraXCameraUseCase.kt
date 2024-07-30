@@ -36,6 +36,7 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -104,7 +105,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -349,12 +349,7 @@ constructor(
                     Log.d(TAG, "Camera session started")
 
                     launch {
-                        focusMeteringEvents.consumeAsFlow().collect {
-                            val focusMeteringAction =
-                                FocusMeteringAction.Builder(it.meteringPoint).build()
-                            Log.d(TAG, "Starting focus and metering")
-                            camera.cameraControl.startFocusAndMetering(focusMeteringAction)
-                        }
+                        processFocusMeteringEvents(camera.cameraControl)
                     }
 
                     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
@@ -415,6 +410,32 @@ constructor(
                     }
                 }
             }
+    }
+
+    private suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
+        getSurfaceRequest().map { surfaceRequest ->
+            surfaceRequest?.let {
+                with(surfaceRequest.resolution) {
+                    Log.d(
+                        TAG,
+                        "Waiting to process focus points for surface with resolution:" +
+                            " $width x $height"
+                    )
+                    SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
+                }
+            }
+        }.collectLatest { meteringPointFactory ->
+            for (event in focusMeteringEvents) {
+                meteringPointFactory?.apply {
+                    Log.d(TAG, "tapToFocus, processing event: $event")
+                    val meteringPoint = createPoint(event.x, event.y)
+                    val action = FocusMeteringAction.Builder(meteringPoint).build()
+                    cameraControl.startFocusAndMetering(action)
+                } ?: run {
+                    Log.w(TAG, "Ignoring event due to no SurfaceRequest: $event")
+                }
+            }
+        }
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
@@ -704,17 +725,7 @@ constructor(
     }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
-        Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
-
-        getSurfaceRequest().filterNotNull().map { surfaceRequest ->
-            SurfaceOrientedMeteringPointFactory(
-                surfaceRequest.resolution.width.toFloat(),
-                surfaceRequest.resolution.height.toFloat()
-            )
-        }.collectLatest { meteringPointFactory ->
-            val meteringPoint = meteringPointFactory.createPoint(x, y)
-            focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
-        }
+        focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
 
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
