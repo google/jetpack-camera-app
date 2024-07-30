@@ -102,6 +102,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -182,7 +183,7 @@ constructor(
         MutableSharedFlow()
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
-    private var videoCaptureControlEvents: Channel<VideoCaptureControlEvent>? = null
+    private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -364,15 +365,17 @@ constructor(
                         }
                     }
 
-                    val channelToClose = videoCaptureControlEvents
-                    videoCaptureControlEvents = Channel()
-                    channelToClose?.close()
                     launch {
                         val videoCapture = useCaseGroup.getVideoCapture()
                         var recording: Recording? = null
-                        videoCaptureControlEvents!!.consumeAsFlow().collect { event ->
+                        for (event in videoCaptureControlEvents) {
                             when (event) {
                                 is VideoCaptureControlEvent.StartRecordingEvent -> {
+                                    if (videoCapture == null) {
+                                        throw RuntimeException(
+                                            "Attempted video recording with null videoCapture"
+                                        )
+                                    }
                                     recording = startVideoRecordingInternal(
                                         camera,
                                         videoCapture!!,
@@ -548,17 +551,13 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        if (videoCaptureControlEvents == null) {
-            throw RuntimeException("Attempted video recording with null videoCapture control")
-        }
-
-        videoCaptureControlEvents!!.send(
+        videoCaptureControlEvents.send(
             VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
         )
     }
 
     override fun stopVideoRecording() {
-        videoCaptureControlEvents?.trySend(VideoCaptureControlEvent.StopRecordingEvent)
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
     private suspend fun startVideoRecordingInternal(
@@ -986,7 +985,7 @@ constructor(
 
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         // toggle mute for current in progress recording
-        videoCaptureControlEvents?.send(VideoCaptureControlEvent.MuteEvent(!isAudioMuted))
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.MuteEvent(!isAudioMuted))
 
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
