@@ -32,11 +32,4 @@ sealed interface VideoCaptureControlEvent {
      * Stops video recording.
      */
     data object StopRecordingEvent : VideoCaptureControlEvent
-
-    /**
-     * Mutes or unmutes the audio during video capture.
-     *
-     * @param muted Indicates whether audio is muted (`true`) or not (`false`).
-     */
-    class MuteEvent(val muted: Boolean) : VideoCaptureControlEvent
 }
