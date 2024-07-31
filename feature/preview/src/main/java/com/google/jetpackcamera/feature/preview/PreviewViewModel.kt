@@ -31,21 +31,26 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
+import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
@@ -58,6 +63,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -72,6 +79,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class PreviewViewModel @AssistedInject constructor(
     @Assisted val previewMode: PreviewMode,
     private val cameraUseCase: CameraUseCase,
+    private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
@@ -94,11 +102,26 @@ class PreviewViewModel @AssistedInject constructor(
     // Eagerly initialize the CameraUseCase and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraUseCase.initialize(previewMode is PreviewMode.ExternalImageCaptureMode)
+        cameraUseCase.initialize(
+            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
+            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode
+        )
     }
 
     init {
         viewModelScope.launch {
+            launch {
+                var oldCameraAppSettings: CameraAppSettings? = null
+                settingsRepository.defaultCameraAppSettings.transform { new ->
+                    val old = oldCameraAppSettings
+                    if (old != null) {
+                        emit(getSettingsDiff(old, new))
+                    }
+                    oldCameraAppSettings = new
+                }.collect { diffQueue ->
+                    applySettingsDiff(diffQueue)
+                }
+            }
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
@@ -133,6 +156,64 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                 }
             }.collect {}
+        }
+    }
+
+    /**
+     * Returns the difference between two [CameraAppSettings] as a mapping of <[KProperty], [Any]>.
+     */
+    private fun getSettingsDiff(
+        oldCameraAppSettings: CameraAppSettings,
+        newCameraAppSettings: CameraAppSettings
+    ): Map<KProperty<Any?>, Any?> = buildMap<KProperty<Any?>, Any?> {
+        CameraAppSettings::class.memberProperties.forEach { property ->
+            if (property.get(oldCameraAppSettings) != property.get(newCameraAppSettings)) {
+                put(property, property.get(newCameraAppSettings))
+            }
+        }
+    }
+
+    /**
+     * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
+     * [CameraUseCase].
+     */
+    private suspend fun applySettingsDiff(diffSettingsMap: Map<KProperty<Any?>, Any?>) {
+        diffSettingsMap.entries.forEach { entry ->
+            when (entry.key) {
+                CameraAppSettings::cameraLensFacing -> {
+                    cameraUseCase.setLensFacing(entry.value as LensFacing)
+                }
+
+                CameraAppSettings::flashMode -> {
+                    cameraUseCase.setFlashMode(entry.value as FlashMode)
+                }
+
+                CameraAppSettings::captureMode -> {
+                    cameraUseCase.setCaptureMode(entry.value as CaptureMode)
+                }
+
+                CameraAppSettings::aspectRatio -> {
+                    cameraUseCase.setAspectRatio(entry.value as AspectRatio)
+                }
+
+                CameraAppSettings::previewStabilization -> {
+                    cameraUseCase.setPreviewStabilization(entry.value as Stabilization)
+                }
+
+                CameraAppSettings::videoCaptureStabilization -> {
+                    cameraUseCase.setVideoCaptureStabilization(
+                        entry.value as Stabilization
+                    )
+                }
+
+                CameraAppSettings::targetFrameRate -> {
+                    cameraUseCase.setTargetFrameRate(entry.value as Int)
+                }
+
+                CameraAppSettings::darkMode -> {}
+
+                else -> TODO("Unhandled CameraAppSetting $entry")
+            }
         }
     }
 
@@ -197,6 +278,7 @@ class PreviewViewModel @AssistedInject constructor(
             var disabledReason = when (currentCaptureMode) {
                 CaptureMode.MULTI_STREAM ->
                     CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
+
                 CaptureMode.SINGLE_STREAM ->
                     CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
             }
@@ -573,6 +655,12 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                 } ?: old
             }
+        }
+    }
+
+    fun setDisplayRotation(deviceRotation: DeviceRotation) {
+        viewModelScope.launch {
+            cameraUseCase.setDeviceRotation(deviceRotation)
         }
     }
 
