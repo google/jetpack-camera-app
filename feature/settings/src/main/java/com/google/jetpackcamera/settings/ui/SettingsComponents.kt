@@ -127,10 +127,14 @@ fun DefaultCameraFacing(
             }
         },
         title = stringResource(id = R.string.default_facing_camera_title),
-        description = if (lensUiState is FlipLensUiState.Disabled) {
-            disabledRationaleString(disabledRationale = lensUiState.disabledRationale.first())
-        } else {
-            null
+        description = when (lensUiState) {
+            is FlipLensUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = lensUiState.disabledRationale.first())
+            }
+
+            is FlipLensUiState.Enabled -> {
+                null
+            }
         },
         leadingIcon = null,
         onSwitchChanged = { on ->
@@ -152,14 +156,14 @@ fun DarkModeSetting(
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         enabled = true,
-        description = if (darkModeUiState is DarkModeUiState.Enabled) {
-            when (darkModeUiState.currentDarkMode) {
-                DarkMode.SYSTEM -> stringResource(id = R.string.dark_mode_description_system)
-                DarkMode.DARK -> stringResource(id = R.string.dark_mode_description_dark)
-                DarkMode.LIGHT -> stringResource(id = R.string.dark_mode_description_light)
+        description = when (darkModeUiState) {
+            is DarkModeUiState.Enabled -> {
+                when (darkModeUiState.currentDarkMode) {
+                    DarkMode.SYSTEM -> stringResource(id = R.string.dark_mode_description_system)
+                    DarkMode.DARK -> stringResource(id = R.string.dark_mode_description_dark)
+                    DarkMode.LIGHT -> stringResource(id = R.string.dark_mode_description_light)
+                }
             }
-        } else {
-            TODO("dark mode currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -376,15 +380,15 @@ fun TargetFpsSetting(
                             enabled = when (fpsOption) {
                                 FPS_15 ->
                                     fpsUiState.fpsFifteenState is
-                                        SingleSelectableState.Selectable
+                                            SingleSelectableState.Selectable
 
                                 FPS_30 ->
                                     fpsUiState.fpsThirtyState is
-                                        SingleSelectableState.Selectable
+                                            SingleSelectableState.Selectable
 
                                 FPS_60 ->
                                     fpsUiState.fpsSixtyState is
-                                        SingleSelectableState.Selectable
+                                            SingleSelectableState.Selectable
 
                                 else -> false
                             }
@@ -439,26 +443,32 @@ fun StabilizationSetting(
     // stabilization is unsupported >30 fps
     BasicPopupSetting(
         modifier = modifier.apply {
-            if (stabilizationUiState is StabilizationUiState.Disabled) {
-                testTag(stabilizationUiState.disabledRationale.first().testTag)
+            when (stabilizationUiState) {
+                is StabilizationUiState.Disabled ->
+                    testTag(stabilizationUiState.disabledRationale.first().testTag)
+
+                else -> {}
             }
         },
         title = stringResource(R.string.video_stabilization_title),
         leadingIcon = null,
         enabled = stabilizationUiState is StabilizationUiState.Enabled,
-        description = if (stabilizationUiState is StabilizationUiState.Enabled) {
-            stringResource(
-                id = getStabilizationStringRes(
-                    previewStabilization = stabilizationUiState.currentPreviewStabilization,
-                    videoStabilization = stabilizationUiState.currentVideoStabilization
+        description = when (stabilizationUiState) {
+            is StabilizationUiState.Enabled ->
+                stringResource(
+                    id = getStabilizationStringRes(
+                        previewStabilization = stabilizationUiState.currentPreviewStabilization,
+                        videoStabilization = stabilizationUiState.currentVideoStabilization
+                    )
                 )
-            )
-        } else {
-            // disabled setting description
-            disabledRationaleString(
-                (stabilizationUiState as StabilizationUiState.Disabled)
-                    .disabledRationale.first()
-            )
+
+            is StabilizationUiState.Disabled -> {
+                // disabled setting description
+                disabledRationaleString(
+                    (stabilizationUiState as StabilizationUiState.Disabled)
+                        .disabledRationale.first()
+                )
+            }
         },
 
         popupContents = {
@@ -472,89 +482,93 @@ fun StabilizationSetting(
                 // on (preview) selector
                 // disabled if target fps != (30 or off)
                 // TODO(b/328223562): device always resolves to 30fps when using preview stabilization
-                if (stabilizationUiState is StabilizationUiState.Enabled) {
-                    SingleChoiceSelector(
-                        modifier = Modifier.apply {
-                            if (stabilizationUiState.stabilizationOnState
-                                    is SingleSelectableState.Disabled
-                            ) {
-                                testTag(
-                                    stabilizationUiState.stabilizationOnState
-                                        .disabledRationale.first().testTag
-                                )
+                when (stabilizationUiState) {
+                    is StabilizationUiState.Enabled -> {
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationOnState
+                                            is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationOnState
+                                            .disabledRationale.first().testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(id = R.string.stabilization_selector_on),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_on_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationOnState is
+                                    SingleSelectableState.Selectable,
+                            selected = (
+                                    stabilizationUiState.currentPreviewStabilization
+                                            == Stabilization.ON
+                                    ) &&
+                                    (
+                                            stabilizationUiState.currentVideoStabilization
+                                                    != Stabilization.OFF
+                                            ),
+                            onClick = {
+                                setVideoStabilization(Stabilization.UNDEFINED)
+                                setPreviewStabilization(Stabilization.ON)
                             }
-                        },
-                        text = stringResource(id = R.string.stabilization_selector_on),
-                        secondaryText = stringResource(
-                            id = R.string.stabilization_selector_on_info
-                        ),
-                        enabled = stabilizationUiState.stabilizationOnState is
-                            SingleSelectableState.Selectable,
-                        selected = (
-                            stabilizationUiState.currentPreviewStabilization
-                                == Stabilization.ON
-                            ) &&
-                            (
-                                stabilizationUiState.currentVideoStabilization
-                                    != Stabilization.OFF
-                                ),
-                        onClick = {
-                            setVideoStabilization(Stabilization.UNDEFINED)
-                            setPreviewStabilization(Stabilization.ON)
-                        }
-                    )
+                        )
 
-                    // high quality selector
-                    // disabled if target fps = 60 (see VideoCapabilities.isStabilizationSupported)
-                    SingleChoiceSelector(
-                        modifier = Modifier.apply {
-                            if (stabilizationUiState.stabilizationHighQualityState
-                                    is SingleSelectableState.Disabled
-                            ) {
-                                testTag(
-                                    stabilizationUiState.stabilizationHighQualityState
-                                        .disabledRationale.first().testTag
-                                )
+                        // high quality selector
+                        // disabled if target fps = 60 (see VideoCapabilities.isStabilizationSupported)
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationHighQualityState
+                                            is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationHighQualityState
+                                            .disabledRationale.first().testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(id = R.string.stabilization_selector_high_quality),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_high_quality_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationHighQualityState
+                                    == SingleSelectableState.Selectable,
+
+                            selected = (
+                                    stabilizationUiState.currentPreviewStabilization
+                                            == Stabilization.UNDEFINED
+                                    ) &&
+                                    (
+                                            stabilizationUiState.currentVideoStabilization
+                                                    == Stabilization.ON
+                                            ),
+                            onClick = {
+                                setVideoStabilization(Stabilization.ON)
+                                setPreviewStabilization(Stabilization.UNDEFINED)
                             }
-                        },
-                        text = stringResource(id = R.string.stabilization_selector_high_quality),
-                        secondaryText = stringResource(
-                            id = R.string.stabilization_selector_high_quality_info
-                        ),
-                        enabled = stabilizationUiState.stabilizationHighQualityState
-                            == SingleSelectableState.Selectable,
+                        )
 
-                        selected = (
-                            stabilizationUiState.currentPreviewStabilization
-                                == Stabilization.UNDEFINED
-                            ) &&
-                            (
-                                stabilizationUiState.currentVideoStabilization
-                                    == Stabilization.ON
-                                ),
-                        onClick = {
-                            setVideoStabilization(Stabilization.ON)
-                            setPreviewStabilization(Stabilization.UNDEFINED)
-                        }
-                    )
+                        // off selector
+                        SingleChoiceSelector(
+                            text = stringResource(id = R.string.stabilization_selector_off),
+                            selected = (
+                                    stabilizationUiState.currentPreviewStabilization
+                                            != Stabilization.ON
+                                    ) &&
+                                    (
+                                            stabilizationUiState.currentVideoStabilization
+                                                    != Stabilization.ON
+                                            ),
+                            onClick = {
+                                setVideoStabilization(Stabilization.OFF)
+                                setPreviewStabilization(Stabilization.OFF)
+                            },
+                            enabled = true
+                        )
+                    }
 
-                    // off selector
-                    SingleChoiceSelector(
-                        text = stringResource(id = R.string.stabilization_selector_off),
-                        selected = (
-                            stabilizationUiState.currentPreviewStabilization
-                                != Stabilization.ON
-                            ) &&
-                            (
-                                stabilizationUiState.currentVideoStabilization
-                                    != Stabilization.ON
-                                ),
-                        onClick = {
-                            setVideoStabilization(Stabilization.OFF)
-                            setPreviewStabilization(Stabilization.OFF)
-                        },
-                        enabled = true
-                    )
+                    else -> {}
                 }
             }
         }
@@ -570,11 +584,11 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
         enabled = true
     ) {
         val versionString = versionName +
-            if (buildType.isNotEmpty()) {
-                "/${buildType.toUpperCase(Locale.current)}"
-            } else {
-                ""
-            }
+                if (buildType.isNotEmpty()) {
+                    "/${buildType.toUpperCase(Locale.current)}"
+                } else {
+                    ""
+                }
         Text(text = versionString)
     }
 }
