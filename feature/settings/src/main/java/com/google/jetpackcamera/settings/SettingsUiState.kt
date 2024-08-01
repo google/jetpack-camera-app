@@ -49,18 +49,20 @@ sealed interface SettingsUiState {
         val stabilizationUiState: StabilizationUiState
     ) : SettingsUiState
 }
+
 /** State for the individual options on Popup dialog settings */
 sealed interface SingleSelectableState {
     data object Selectable : SingleSelectableState
     data class Disabled(val disabledRationale: Set<DisabledRationale>) : SingleSelectableState {
         init {
-            //There should always be at least one reason a setting is disabled
+            // There should always be at least one reason a setting is disabled
             require(disabledRationale.isNotEmpty())
         }
     }
 }
+
 /** Contains information on why a setting is disabled */
-//TODO(): Display information on UI regarding disabled rationale
+// TODO(): Display information on UI regarding disabled rationale
 sealed interface DisabledRationale {
     val affectedSettingName: String
     val reasonTextResId: Int
@@ -175,7 +177,6 @@ sealed interface DarkModeUiState {
         val additionalContext: String = ""
     ) : DarkModeUiState
 }
-
 
 /**
  * Settings Ui State for testing, based on Typical System Constraints.
