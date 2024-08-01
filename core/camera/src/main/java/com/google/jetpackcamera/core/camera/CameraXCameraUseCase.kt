@@ -515,14 +515,14 @@ constructor(
 
     override suspend fun startVideoRecording(
         videoCaptureUri: Uri?,
-        ignoreUri: Boolean,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (videoCaptureUseCase == null) {
             throw RuntimeException("Attempted video recording with null videoCapture use case")
         }
 
-        if (!ignoreUri && videoCaptureUri == null) {
+        if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
             throw e
@@ -543,7 +543,7 @@ constructor(
                 == PackageManager.PERMISSION_GRANTED
             )
 
-        val pendingRecord = if (!ignoreUri) {
+        val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
                 File(videoCaptureUri!!.getPath())
             ).build()

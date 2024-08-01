@@ -69,7 +69,7 @@ interface CameraUseCase {
 
     suspend fun startVideoRecording(
         videoCaptureUri: Uri?,
-        ignoreUri: Boolean = false,
+        shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 

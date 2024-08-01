@@ -348,19 +348,19 @@ private fun CaptureButton(
         onLongPress = {
             when (previewUiState.previewMode) {
                 is PreviewMode.StandardMode -> {
-                    onStartVideoRecording(null, true) {}
+                    onStartVideoRecording(null, false) {}
                 }
 
                 is PreviewMode.ExternalVideoCaptureMode -> {
                     onStartVideoRecording(
                         previewUiState.previewMode.videoCaptureUri,
-                        false,
+                        true,
                         previewUiState.previewMode.onVideoCapture
                     )
                 }
 
                 else -> {
-                    onStartVideoRecording(null, true) {}
+                    onStartVideoRecording(null, false) {}
                 }
             }
             if (isQuickSettingsOpen) {

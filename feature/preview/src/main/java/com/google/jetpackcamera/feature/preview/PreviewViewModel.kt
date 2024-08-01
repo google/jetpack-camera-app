@@ -571,7 +571,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun startVideoRecording(
         videoCaptureUri: Uri?,
-        ignoreUri: Boolean = false,
+        shouldUseUri: Boolean,
         onVideoCapture: (VideoCaptureEvent) -> Unit
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
@@ -597,7 +597,7 @@ class PreviewViewModel @AssistedInject constructor(
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
-                cameraUseCase.startVideoRecording(videoCaptureUri, ignoreUri) {
+                cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
                     var audioAmplitude = 0.0
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
