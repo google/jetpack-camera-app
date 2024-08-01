@@ -201,8 +201,10 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                else ->
+                else -> {
+                    Log.w(TAG, "Ignoring external intent with unknown action.")
                     getStandardMode()
+                }
             }
         } ?: getStandardMode()
     }

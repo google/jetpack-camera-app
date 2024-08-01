@@ -840,7 +840,8 @@ constructor(
         if (imageCaptureUseCase != null) {
             setFlashModeInternal(
                 flashMode = initialTransientSettings.flashMode,
-                isFrontFacing = sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+                isFrontFacing =
+                sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
             )
         }
 
