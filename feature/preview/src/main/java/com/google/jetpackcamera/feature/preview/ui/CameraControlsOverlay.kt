@@ -367,7 +367,9 @@ private fun CaptureButton(
                 onToggleQuickSettings()
             }
         },
-        onRelease = { onStopVideoRecording() },
+        onRelease = {
+            onStopVideoRecording()
+                    },
         videoRecordingState = videoRecordingState
     )
 }

@@ -31,6 +31,8 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -105,7 +107,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode
+            getUseCaseMode(previewMode)
         )
     }
 
@@ -157,6 +159,14 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                 }
             }.collect {}
+        }
+    }
+
+    private fun getUseCaseMode(previewMode: PreviewMode): CameraUseCase.UseCaseMode {
+        return when (previewMode) {
+            is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
+            is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
+            is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
         }
     }
 
@@ -596,7 +606,8 @@ class PreviewViewModel @AssistedInject constructor(
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
-                                withDismissAction = true
+                                withDismissAction = true,
+                                testTag = VIDEO_CAPTURE_SUCCESS_TAG
                             )
                         }
 
@@ -605,7 +616,8 @@ class PreviewViewModel @AssistedInject constructor(
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
-                                withDismissAction = true
+                                withDismissAction = true,
+                                testTag = VIDEO_CAPTURE_FAILURE_TAG
                             )
                         }
 
