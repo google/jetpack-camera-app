@@ -24,7 +24,8 @@ data class CameraConstraints(
     val supportedStabilizationModes: Set<SupportedStabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
-    val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>
+    val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,
+    val hasFlashUnit: Boolean
 )
 
 /**
@@ -44,7 +45,8 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                         supportedImageFormatsMap = mapOf(
                             Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                             Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
-                        )
+                        ),
+                        hasFlashUnit = lensFacing == LensFacing.BACK
                     )
                 )
             }
