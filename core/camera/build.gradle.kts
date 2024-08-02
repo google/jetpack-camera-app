@@ -94,9 +94,15 @@ dependencies {
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.rules)
+    androidTestImplementation(libs.truth)
 
     // Futures
     implementation(libs.futures.ktx)
+
+    // LiveData
+    implementation(libs.androidx.lifecycle.livedata)
 
     // CameraX
     implementation(libs.camera.core)
