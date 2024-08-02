@@ -369,7 +369,7 @@ private fun CaptureButton(
         },
         onRelease = {
             onStopVideoRecording()
-                    },
+        },
         videoRecordingState = videoRecordingState
     )
 }
