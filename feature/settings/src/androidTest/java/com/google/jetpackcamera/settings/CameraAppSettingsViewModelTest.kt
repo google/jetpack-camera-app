@@ -22,7 +22,6 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
@@ -85,10 +84,7 @@ internal class CameraAppSettingsViewModelTest {
         }
 
         assertThat(uiState).isEqualTo(
-            SettingsUiState.Enabled(
-                cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS
-            )
+            TYPICAL_SETTINGS_UISTATE
         )
     }
 
@@ -99,8 +95,8 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val initialCameraLensFacing = assertIsEnabled(initialState)
-            .cameraAppSettings.cameraLensFacing
+        val initialCameraLensFacing =
+            assertIsEnabled(initialState).lensFlipUiState.currentLensFacing
         val nextCameraLensFacing = if (initialCameraLensFacing == LensFacing.FRONT) {
             LensFacing.BACK
         } else {
@@ -111,7 +107,7 @@ internal class CameraAppSettingsViewModelTest {
         advanceUntilIdle()
 
         assertIsEnabled(settingsViewModel.settingsUiState.value).also {
-            assertThat(it.cameraAppSettings.cameraLensFacing).isEqualTo(nextCameraLensFacing)
+            assertThat(it.lensFlipUiState.currentLensFacing).isEqualTo(nextCameraLensFacing)
         }
     }
 
@@ -122,14 +118,20 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val initialDarkMode = assertIsEnabled(initialState).cameraAppSettings.darkMode
+        val initialDarkMode =
+            (assertIsEnabled(initialState).darkModeUiState as DarkModeUiState.Enabled)
+                .currentDarkMode
 
         settingsViewModel.setDarkMode(DarkMode.DARK)
 
         advanceUntilIdle()
 
-        val newDarkMode = assertIsEnabled(settingsViewModel.settingsUiState.value)
-            .cameraAppSettings.darkMode
+        val newDarkMode =
+            (
+                assertIsEnabled(settingsViewModel.settingsUiState.value)
+                    .darkModeUiState as DarkModeUiState.Enabled
+                )
+                .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
         assertEquals(DarkMode.DARK, newDarkMode)
