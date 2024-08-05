@@ -143,5 +143,6 @@ interface CameraUseCase {
 
 data class CameraState(
     val zoomScale: Float = 1f,
-    val sessionFirstFrameTimestamp: Long = 0L
+    val sessionFirstFrameTimestamp: Long = 0L,
+    val torchEnabled: Boolean = false
 )
