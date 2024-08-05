@@ -408,7 +408,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -748,7 +748,7 @@ constructor(
             mute(initialMuted)
         }
     }
-    
+
     override fun setZoomScale(scale: Float) {
         currentSettings.update { old ->
             old?.copy(zoomScale = scale)
@@ -935,8 +935,7 @@ constructor(
         Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase!!.flashMode}")
     }
 
-    override fun isScreenFlashEnabled() =
-        imageCaptureUseCase != null &&
+    override fun isScreenFlashEnabled() = imageCaptureUseCase != null &&
             imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
             imageCaptureUseCase!!.screenFlash != null
 
@@ -990,8 +989,10 @@ constructor(
             )
             addUseCase(previewUseCase)
             if (imageCaptureUseCase != null &&
-                (sessionSettings.dynamicRange == DynamicRange.SDR ||
-                        sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR)
+                (
+                    sessionSettings.dynamicRange == DynamicRange.SDR ||
+                        sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                    )
             ) {
                 addUseCase(imageCaptureUseCase!!)
             }

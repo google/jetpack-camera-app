@@ -27,10 +27,11 @@ sealed interface VideoCaptureControlEvent {
      *
      * @param onVideoRecord Callback to handle video recording events.
      */
-    class StartRecordingEvent(val videoCaptureUri: Uri?,
-                              val shouldUseUri: Boolean,
-                              val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit) :
-        VideoCaptureControlEvent
+    class StartRecordingEvent(
+        val videoCaptureUri: Uri?,
+        val shouldUseUri: Boolean,
+        val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ) : VideoCaptureControlEvent
 
                               /**
      * Stops video recording.
