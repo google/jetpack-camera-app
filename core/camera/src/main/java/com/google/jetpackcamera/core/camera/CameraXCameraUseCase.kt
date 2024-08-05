@@ -470,6 +470,8 @@ constructor(
                             videoCapture,
                             sessionSettings,
                             transientSettings,
+                            event.videoCaptureUri,
+                            event.shouldUseUri,
                             event.onVideoRecord
                         )
                     }
@@ -488,12 +490,16 @@ constructor(
         videoCapture: VideoCapture<Recorder>,
         sessionSettings: PerpetualSessionSettings,
         transientSettings: StateFlow<TransientSessionSettings?>,
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         var currentSettings = transientSettings.filterNotNull().first()
 
         startVideoRecordingInternal(
             initialMuted = currentSettings.audioMuted,
+            videoCaptureUri,
+            shouldUseUri,
             videoCapture,
             onVideoRecord
         ).use { recording ->
@@ -631,17 +637,17 @@ constructor(
         shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        if (videoCaptureUseCase == null) {
-            throw RuntimeException("Attempted video recording with null videoCapture use case")
-        }
-
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
             throw e
         }
         videoCaptureControlEvents.send(
-            VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
+            VideoCaptureControlEvent.StartRecordingEvent(
+                videoCaptureUri,
+                shouldUseUri,
+                onVideoRecord
+            )
         )
     }
 
@@ -651,6 +657,8 @@ constructor(
 
     private suspend fun startVideoRecordingInternal(
         initialMuted: Boolean,
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         videoCaptureUseCase: VideoCapture<Recorder>,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ): Recording {
@@ -663,18 +671,18 @@ constructor(
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
-            checkSelfPermission(
-                this.application.baseContext,
-                Manifest.permission.RECORD_AUDIO
-            )
-                == PackageManager.PERMISSION_GRANTED
-            )
+                checkSelfPermission(
+                    this.application.baseContext,
+                    Manifest.permission.RECORD_AUDIO
+                )
+                        == PackageManager.PERMISSION_GRANTED
+                )
 
         val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
                 File(videoCaptureUri!!.getPath())
             ).build()
-            videoCaptureUseCase!!.output.prepareRecording(application, fileOutputOptions)
+            videoCaptureUseCase.output.prepareRecording(application, fileOutputOptions)
         } else {
             val captureTypeString =
                 when (captureMode) {
@@ -693,7 +701,7 @@ constructor(
                 )
                     .setContentValues(contentValues)
                     .build()
-            videoCaptureUseCase!!.output.prepareRecording(application, mediaStoreOutput)
+            videoCaptureUseCase.output.prepareRecording(application, mediaStoreOutput)
         }
         pendingRecord.apply {
             if (audioEnabled) {
@@ -702,60 +710,44 @@ constructor(
         }
         val callbackExecutor: Executor =
             (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                    CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
-        return videoCaptureUseCase.output
-            .prepareRecording(application, mediaStoreOutput)
-            .apply {
-                if (audioEnabled) {
-                    withAudioEnabled()
-                }
-            }
-            .start(callbackExecutor) { onVideoRecordEvent ->
-                run {
-                    Log.d(TAG, onVideoRecordEvent.toString())
-                    when (onVideoRecordEvent) {
-                        is VideoRecordEvent.Finalize -> {
-                            when (onVideoRecordEvent.error) {
-                                ERROR_NONE ->
-                                    onVideoRecord(
-                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                            onVideoRecordEvent.outputResults.outputUri
-                                        )
-                                    )
-
-                                else ->
-                                    onVideoRecord(
-                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                                            onVideoRecordEvent.cause
-                                    )
-                                )
-                            }
-                        }
-
-                        is VideoRecordEvent.Status -> {
+                    currentCoroutineContext()[ContinuationInterceptor] as?
+                            CoroutineDispatcher
+                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+        return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+            Log.d(TAG, onVideoRecordEvent.toString())
+            when (onVideoRecordEvent) {
+                is VideoRecordEvent.Finalize -> {
+                    when (onVideoRecordEvent.error) {
+                        ERROR_NONE ->
                             onVideoRecord(
-                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                    onVideoRecordEvent.recordingStats.audioStats
-                                        .audioAmplitude
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                    onVideoRecordEvent.outputResults.outputUri
                                 )
                             )
-                        }
-                    }
 
-                    is VideoRecordEvent.Status -> {
-                        onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                onVideoRecordEvent.recordingStats.audioStats.audioAmplitude
+                        else ->
+                            onVideoRecord(
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                    onVideoRecordEvent.cause
+                                )
                             )
-                        )
                     }
                 }
-            }.apply {
-                mute(initialMuted)
+
+                is VideoRecordEvent.Status -> {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                            onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude
+                        )
+                    )
+                }
             }
+        }.apply {
+            mute(initialMuted)
+        }
     }
+
 
     override fun setZoomScale(scale: Float) {
         currentSettings.update { old ->
