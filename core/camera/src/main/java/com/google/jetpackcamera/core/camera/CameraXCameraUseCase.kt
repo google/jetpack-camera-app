@@ -403,11 +403,12 @@ constructor(
                         }
 
                         if (imageCaptureUseCase != null &&
-                            prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+                            prevTransientSettings.flashMode != newTransientSettings.flashMode
+                        ) {
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                    == CameraSelector.DEFAULT_FRONT_CAMERA
+                                        == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -671,12 +672,12 @@ constructor(
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
-                checkSelfPermission(
-                    this.application.baseContext,
-                    Manifest.permission.RECORD_AUDIO
-                )
-                        == PackageManager.PERMISSION_GRANTED
-                )
+            checkSelfPermission(
+                this.application.baseContext,
+                Manifest.permission.RECORD_AUDIO
+            )
+                == PackageManager.PERMISSION_GRANTED
+            )
 
         val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
@@ -710,9 +711,9 @@ constructor(
         }
         val callbackExecutor: Executor =
             (
-                    currentCoroutineContext()[ContinuationInterceptor] as?
-                            CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
             when (onVideoRecordEvent) {
@@ -747,8 +748,7 @@ constructor(
             mute(initialMuted)
         }
     }
-
-
+    
     override fun setZoomScale(scale: Float) {
         currentSettings.update { old ->
             old?.copy(zoomScale = scale)
