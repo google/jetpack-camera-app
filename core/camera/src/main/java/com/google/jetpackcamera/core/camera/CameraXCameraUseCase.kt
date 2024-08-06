@@ -936,8 +936,8 @@ constructor(
     }
 
     override fun isScreenFlashEnabled() = imageCaptureUseCase != null &&
-            imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase!!.screenFlash != null
+        imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+        imageCaptureUseCase!!.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

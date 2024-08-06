@@ -33,7 +33,7 @@ sealed interface VideoCaptureControlEvent {
         val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent
 
-                              /**
+    /**
      * Stops video recording.
      */
     data object StopRecordingEvent : VideoCaptureControlEvent
