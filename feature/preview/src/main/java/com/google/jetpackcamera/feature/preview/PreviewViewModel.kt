@@ -533,7 +533,7 @@ class PreviewViewModel @AssistedInject constructor(
                     var audioAmplitude = 0.0
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
