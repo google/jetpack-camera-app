@@ -384,6 +384,7 @@ constructor(
                         }
                     }
 
+                    applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
                     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
                         // Apply camera control settings
                         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
@@ -417,31 +418,36 @@ constructor(
                                     "${prevTransientSettings.deviceRotation} -> " +
                                     "${newTransientSettings.deviceRotation}"
                             )
-                            val targetRotation =
-                                newTransientSettings.deviceRotation.toUiSurfaceRotation()
-                            useCaseGroup.useCases.forEach {
-                                when (it) {
-                                    is Preview -> {
-                                        // Preview rotation should always be natural orientation
-                                        // in order to support seamless handling of orientation
-                                        // configuration changes in UI
-                                    }
-
-                                    is ImageCapture -> {
-                                        it.targetRotation = targetRotation
-                                    }
-
-                                    is VideoCapture<*> -> {
-                                        it.targetRotation = targetRotation
-                                    }
-                                }
-                            }
+                            applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
                         }
 
                         prevTransientSettings = newTransientSettings
                     }
                 }
             }
+    }
+
+    private fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+        val targetRotation = deviceRotation.toUiSurfaceRotation()
+        useCaseGroup.useCases.forEach {
+            when (it) {
+                is Preview -> {
+                    // Preview's target rotation should not be updated with device rotation.
+                    // Instead, preview rotation should match the display rotation.
+                    // When Preview is created, it is initialized with the display rotation.
+                    // This will need to be updated separately if the display rotation is not
+                    // locked. Currently the app is locked to portrait orientation.
+                }
+
+                is ImageCapture -> {
+                    it.targetRotation = targetRotation
+                }
+
+                is VideoCapture<*> -> {
+                    it.targetRotation = targetRotation
+                }
+            }
+        }
     }
 
     private suspend fun processVideoControlEvents(
@@ -941,7 +947,8 @@ constructor(
             setViewPort(
                 ViewPort.Builder(
                     sessionSettings.aspectRatio.ratio,
-                    initialTransientSettings.deviceRotation.toUiSurfaceRotation()
+                    // Initialize rotation to Preview's rotation, which comes from Display rotation
+                    previewUseCase.targetRotation
                 ).build()
             )
             addUseCase(previewUseCase)
@@ -1107,9 +1114,7 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
-        val previewUseCaseBuilder = Preview.Builder().apply {
-            setTargetRotation(DeviceRotation.Natural.toUiSurfaceRotation())
-        }
+        val previewUseCaseBuilder = Preview.Builder()
 
         setOnCaptureCompletedCallback(previewUseCaseBuilder)
 
