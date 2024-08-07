@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.test
 
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,10 @@ class FakeCameraUseCaseTest {
 
     @Test
     fun canInitialize() = runTest(testDispatcher) {
-        cameraUseCase.initialize(false)
+        cameraUseCase.initialize(
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
+            disableVideoCapture = false
+        )
     }
 
     @Test
@@ -144,7 +148,10 @@ class FakeCameraUseCaseTest {
 
     private fun TestScope.initAndRunCamera() {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.initialize(false)
+            cameraUseCase.initialize(
+                cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
+                disableVideoCapture = false
+            )
             cameraUseCase.runCamera()
         }
     }

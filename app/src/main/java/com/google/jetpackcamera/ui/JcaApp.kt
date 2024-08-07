@@ -41,13 +41,15 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     previewMode: PreviewMode,
+    modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    onFirstFrameCaptureCompleted: () -> Unit
 ) {
     JetpackCameraNavHost(
         previewMode = previewMode,
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
+        onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
         modifier = modifier
     )
 }
@@ -59,6 +61,7 @@ private fun JetpackCameraNavHost(
     previewMode: PreviewMode,
     onOpenAppSettings: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
+    onFirstFrameCaptureCompleted: () -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(
@@ -98,6 +101,7 @@ private fun JetpackCameraNavHost(
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
+                onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 previewMode = previewMode
             )
         }

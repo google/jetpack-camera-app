@@ -314,6 +314,7 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
+                    .clip(RoundedCornerShape(16.dp))
             ) {
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
@@ -497,6 +498,7 @@ fun ToggleButton(
         .height(32.dp),
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
     enabled: Boolean = true,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
@@ -522,18 +524,18 @@ fun ToggleButton(
         modifier = modifier
             .clip(shape = RoundedCornerShape(50))
             .then(
-                if (enabled) {
-                    Modifier.clickable {
-                        scope.launch {
+                Modifier.clickable {
+                    scope.launch {
+                        if (enabled) {
                             toggleState = when (toggleState) {
                                 ToggleState.Left -> ToggleState.Right
                                 ToggleState.Right -> ToggleState.Left
                             }
                             onToggleStateChanged(toggleState)
+                        } else {
+                            onToggleWhenDisabled()
                         }
                     }
-                } else {
-                    Modifier
                 }
             ),
         color = backgroundColor

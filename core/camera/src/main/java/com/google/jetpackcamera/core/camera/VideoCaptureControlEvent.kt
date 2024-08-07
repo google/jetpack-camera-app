@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.benchmark
+package com.google.jetpackcamera.core.camera
 
-import android.Manifest.permission
-import androidx.benchmark.macro.MacrobenchmarkScope
-import org.junit.Assert
+/**
+ * Represents events that control video capture operations.
+ */
+sealed interface VideoCaptureControlEvent {
 
-fun MacrobenchmarkScope.allowCamera() {
-    val command = "pm grant $packageName ${permission.CAMERA}"
-    val output = device.executeShellCommand(command)
-    Assert.assertEquals("", output)
+    /**
+     * Starts video recording.
+     *
+     * @param onVideoRecord Callback to handle video recording events.
+     */
+    class StartRecordingEvent(val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit) :
+        VideoCaptureControlEvent
+
+    /**
+     * Stops video recording.
+     */
+    data object StopRecordingEvent : VideoCaptureControlEvent
 }
