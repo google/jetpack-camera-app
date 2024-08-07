@@ -21,6 +21,7 @@ import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_MULT
 import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 
 sealed interface CaptureModeToggleUiState {
@@ -42,6 +43,10 @@ sealed interface CaptureModeToggleUiState {
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
             VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
             R.string.toast_video_capture_external_unsupported
+        ),
+        IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED(
+            IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+            R.string.toast_image_capture_external_unsupported
         ),
         HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
             HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG,

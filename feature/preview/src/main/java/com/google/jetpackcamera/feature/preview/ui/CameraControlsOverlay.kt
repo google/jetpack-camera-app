@@ -96,7 +96,11 @@ fun CameraControlsOverlay(
         Boolean,
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: () -> Unit = {},
+    onStartVideoRecording: (
+        Uri?,
+        Boolean,
+        (PreviewViewModel.VideoCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
@@ -218,7 +222,11 @@ private fun ControlsBottom(
     onToggleAudioMuted: () -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
-    onStartVideoRecording: () -> Unit = {},
+    onStartVideoRecording: (
+        Uri?,
+        Boolean,
+        (PreviewViewModel.VideoCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -292,7 +300,11 @@ private fun CaptureButton(
         (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
-    onStartVideoRecording: () -> Unit = {},
+    onStartVideoRecording: (
+        Uri?,
+        Boolean,
+        (PreviewViewModel.VideoCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
@@ -319,6 +331,14 @@ private fun CaptureButton(
                             previewUiState.previewMode.onImageCapture
                         )
                     }
+
+                    else -> {
+                        onCaptureImageWithUri(
+                            context.contentResolver,
+                            null,
+                            false
+                        ) {}
+                    }
                 }
             }
             if (isQuickSettingsOpen) {
@@ -326,12 +346,30 @@ private fun CaptureButton(
             }
         },
         onLongPress = {
-            onStartVideoRecording()
+            when (previewUiState.previewMode) {
+                is PreviewMode.StandardMode -> {
+                    onStartVideoRecording(null, false) {}
+                }
+
+                is PreviewMode.ExternalVideoCaptureMode -> {
+                    onStartVideoRecording(
+                        previewUiState.previewMode.videoCaptureUri,
+                        true,
+                        previewUiState.previewMode.onVideoCapture
+                    )
+                }
+
+                else -> {
+                    onStartVideoRecording(null, false) {}
+                }
+            }
             if (isQuickSettingsOpen) {
                 onToggleQuickSettings()
             }
         },
-        onRelease = { onStopVideoRecording() },
+        onRelease = {
+            onStopVideoRecording()
+        },
         videoRecordingState = videoRecordingState
     )
 }

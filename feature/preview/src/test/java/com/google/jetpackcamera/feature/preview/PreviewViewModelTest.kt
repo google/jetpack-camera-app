@@ -89,7 +89,7 @@ class PreviewViewModelTest {
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording()
+        previewViewModel.startVideoRecording(null, false) {}
         advanceUntilIdle()
         assertThat(cameraUseCase.recordingInProgress).isTrue()
     }
@@ -97,7 +97,7 @@ class PreviewViewModelTest {
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording()
+        previewViewModel.startVideoRecording(null, false) {}
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
         assertThat(cameraUseCase.recordingInProgress).isFalse()

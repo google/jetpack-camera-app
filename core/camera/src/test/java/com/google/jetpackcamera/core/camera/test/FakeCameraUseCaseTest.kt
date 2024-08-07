@@ -56,7 +56,7 @@ class FakeCameraUseCaseTest {
     fun canInitialize() = runTest(testDispatcher) {
         cameraUseCase.initialize(
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-            disableVideoCapture = false
+            useCaseMode = CameraUseCase.UseCaseMode.STANDARD
         )
     }
 
@@ -150,7 +150,7 @@ class FakeCameraUseCaseTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraUseCase.initialize(
                 cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-                disableVideoCapture = false
+                useCaseMode = CameraUseCase.UseCaseMode.STANDARD
             )
             cameraUseCase.runCamera()
         }

@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
