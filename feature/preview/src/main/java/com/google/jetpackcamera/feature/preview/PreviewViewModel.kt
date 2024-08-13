@@ -210,6 +210,10 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setTargetFrameRate(entry.value as Int)
                 }
 
+                CameraAppSettings::maxVideoDuration -> {
+                    cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
                 CameraAppSettings::darkMode -> {}
 
                 else -> TODO("Unhandled CameraAppSetting $entry")

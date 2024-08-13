@@ -1003,7 +1003,13 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
-
+    override suspend fun setMaxVideoDuration(durationInNanos: Long) {
+        currentSettings.update { old ->
+            old?.copy(
+                maxVideoDuration = durationInNanos
+            )
+        }
+    }
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(
@@ -1025,6 +1031,7 @@ constructor(
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
         }
     }
+
 
     @OptIn(ExperimentalImageCaptureOutputFormat::class)
     private fun getSupportedImageFormats(cameraInfo: CameraInfo): Set<ImageOutputFormat> {

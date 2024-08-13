@@ -158,7 +158,7 @@ fun SettingsList(
     )
 
     MaxVideoDurationSetting(
-        currentMaxVideoDuration = uiState.cameraAppSettings.maxVideoDuration,
+        maxVideoDurationUiState = uiState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
     )
     StabilizationSetting(

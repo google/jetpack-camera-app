@@ -24,7 +24,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
-import com.google.jetpackcamera.settings.ui.FPS_60
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
@@ -33,6 +32,16 @@ const val STABILIZATION_SETTING_PREFIX = "Stabilization"
 const val LENS_SETTING_PREFIX = "Lens flip"
 const val FORMAT_FPS_PREFIX = "%d FPS"
 const val FIXED_FPS_PREFIX = "Fixed Fps"
+
+const val FPS_AUTO = 0
+const val FPS_15 = 15
+const val FPS_30 = 30
+const val FPS_60 = 60
+
+const val NO_VIDEO_LIMIT = -1L
+const val TEN_SECONDS = 10_000_000_000L
+const val THIRTY_SECONDS = 30_000_000_000L
+const val SIXTY_SECONDS = 60_000_000_000L
 
 /**
  * Defines the current state of the [SettingsScreen].
@@ -46,7 +55,8 @@ sealed interface SettingsUiState {
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
-        val stabilizationUiState: StabilizationUiState
+        val stabilizationUiState: StabilizationUiState,
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
     ) : SettingsUiState
 }
 
@@ -178,6 +188,13 @@ sealed interface DarkModeUiState {
     ) : DarkModeUiState
 }
 
+sealed interface MaxVideoDurationUiState {
+    data class Enabled(
+        val currentTimeLimit: Long,
+        val additionalContext: String = ""
+    ): MaxVideoDurationUiState
+}
+
 /**
  * Settings Ui State for testing, based on Typical System Constraints.
  * @see[com.google.jetpackcamera.settings.model.SystemConstraints]
@@ -203,5 +220,6 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     stabilizationUiState =
-    StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX)))
+    StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX))),
+    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(NO_VIDEO_LIMIT)
 )

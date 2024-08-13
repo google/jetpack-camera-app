@@ -31,10 +31,6 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.ui.FPS_15
-import com.google.jetpackcamera.settings.ui.FPS_30
-import com.google.jetpackcamera.settings.ui.FPS_60
-import com.google.jetpackcamera.settings.ui.FPS_AUTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -64,12 +60,12 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
-                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(updatedSettings.maxVideoDuration),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
+                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
-
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
             )
         }.stateIn(
             scope = viewModelScope,

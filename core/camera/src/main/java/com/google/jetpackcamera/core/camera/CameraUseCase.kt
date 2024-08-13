@@ -109,6 +109,8 @@ interface CameraUseCase {
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
+    suspend fun setMaxVideoDuration(durationInNanos: Long)
+
     /**
      * Represents the events required for screen flash.
      */
