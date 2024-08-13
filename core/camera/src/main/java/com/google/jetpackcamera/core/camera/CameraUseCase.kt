@@ -123,7 +123,7 @@ interface CameraUseCase {
      * Represents the events for video recording.
      */
     sealed interface OnVideoRecordEvent {
-        object OnVideoRecorded : OnVideoRecordEvent
+        data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
         data class OnVideoRecordStatus(
             val audioAmplitude: Double,
@@ -136,5 +136,6 @@ interface CameraUseCase {
 
 data class CameraState(
     val zoomScale: Float = 1f,
-    val sessionFirstFrameTimestamp: Long = 0L
+    val sessionFirstFrameTimestamp: Long = 0L,
+    val torchEnabled: Boolean = false
 )

@@ -16,12 +16,20 @@
 package com.google.jetpackcamera.core.camera
 
 /**
- * An event that can be sent to the camera coroutine.
+ * Represents events that control video capture operations.
  */
-sealed interface CameraEvent {
+sealed interface VideoCaptureControlEvent {
 
     /**
-     * Represents a focus metering event, that the camera can act on.
+     * Starts video recording.
+     *
+     * @param onVideoRecord Callback to handle video recording events.
      */
-    data class FocusMeteringEvent(val x: Float, val y: Float) : CameraEvent
+    class StartRecordingEvent(val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit) :
+        VideoCaptureControlEvent
+
+    /**
+     * Stops video recording.
+     */
+    data object StopRecordingEvent : VideoCaptureControlEvent
 }

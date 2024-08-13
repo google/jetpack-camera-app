@@ -36,6 +36,8 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -48,6 +50,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.TorchState
+import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -61,8 +65,10 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
+import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -83,8 +89,11 @@ import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -93,11 +102,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
@@ -168,8 +177,6 @@ constructor(
         imageCaptureExtender.setSessionCaptureCallback(captureCallback)
     }
 
-    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
-    private var recording: Recording? = null
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
     private var disableVideoCapture by Delegates.notNull<Boolean>()
@@ -178,6 +185,7 @@ constructor(
         MutableSharedFlow()
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
+    private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -222,6 +230,7 @@ constructor(
 
                         val supportedFixedFrameRates = getSupportedFrameRates(camInfo)
                         val supportedImageFormats = getSupportedImageFormats(camInfo)
+                        val hasFlashUnit = camInfo.hasFlashUnit()
 
                         put(
                             lensFacing,
@@ -235,7 +244,8 @@ constructor(
                                     // Ultra HDR now.
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
-                                )
+                                ),
+                                hasFlashUnit = hasFlashUnit
                             )
                         )
                     }
@@ -328,7 +338,7 @@ constructor(
                     systemConstraints.perLensConstraints[lensFacing]
                 ) {
                     "Unable to retrieve CameraConstraints for $lensFacing. " +
-                        "Was the use case initialized?"
+                            "Was the use case initialized?"
                 }
 
                 val initialTransientSettings = transientSettings
@@ -351,14 +361,27 @@ constructor(
                     Log.d(TAG, "Camera session started")
 
                     launch {
-                        focusMeteringEvents.consumeAsFlow().collect {
-                            val focusMeteringAction =
-                                FocusMeteringAction.Builder(it.meteringPoint).build()
-                            Log.d(TAG, "Starting focus and metering")
-                            camera.cameraControl.startFocusAndMetering(focusMeteringAction)
+                        processFocusMeteringEvents(camera.cameraControl)
+                    }
+
+                    launch {
+                        processVideoControlEvents(
+                            camera,
+                            useCaseGroup.getVideoCapture(),
+                            sessionSettings,
+                            transientSettings
+                        )
+                    }
+
+                    launch {
+                        cameraInfo.torchState.asFlow().collectLatest { torchState ->
+                            _currentCameraState.update { old ->
+                                old.copy(torchEnabled = torchState == TorchState.ON)
+                            }
                         }
                     }
 
+                    applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
                     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
                         // Apply camera control settings
                         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
@@ -379,7 +402,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                    == CameraSelector.DEFAULT_FRONT_CAMERA
+                                        == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -389,34 +412,148 @@ constructor(
                             Log.d(
                                 TAG,
                                 "Updating device rotation from " +
-                                    "${prevTransientSettings.deviceRotation} -> " +
-                                    "${newTransientSettings.deviceRotation}"
+                                        "${prevTransientSettings.deviceRotation} -> " +
+                                        "${newTransientSettings.deviceRotation}"
                             )
-                            val targetRotation =
-                                newTransientSettings.deviceRotation.toUiSurfaceRotation()
-                            useCaseGroup.useCases.forEach {
-                                when (it) {
-                                    is Preview -> {
-                                        // Preview rotation should always be natural orientation
-                                        // in order to support seamless handling of orientation
-                                        // configuration changes in UI
-                                    }
-
-                                    is ImageCapture -> {
-                                        it.targetRotation = targetRotation
-                                    }
-
-                                    is VideoCapture<*> -> {
-                                        it.targetRotation = targetRotation
-                                    }
-                                }
-                            }
+                            applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
                         }
 
                         prevTransientSettings = newTransientSettings
                     }
                 }
             }
+    }
+
+    private fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+        val targetRotation = deviceRotation.toUiSurfaceRotation()
+        useCaseGroup.useCases.forEach {
+            when (it) {
+                is Preview -> {
+                    // Preview's target rotation should not be updated with device rotation.
+                    // Instead, preview rotation should match the display rotation.
+                    // When Preview is created, it is initialized with the display rotation.
+                    // This will need to be updated separately if the display rotation is not
+                    // locked. Currently the app is locked to portrait orientation.
+                }
+
+                is ImageCapture -> {
+                    it.targetRotation = targetRotation
+                }
+
+                is VideoCapture<*> -> {
+                    it.targetRotation = targetRotation
+                }
+            }
+        }
+    }
+
+    private suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
+        getSurfaceRequest().map { surfaceRequest ->
+            surfaceRequest?.resolution?.run {
+                Log.d(
+                    TAG,
+                    "Waiting to process focus points for surface with resolution: " +
+                        "$width x $height"
+                )
+                SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
+            }
+        }.collectLatest { meteringPointFactory ->
+            for (event in focusMeteringEvents) {
+                meteringPointFactory?.apply {
+                    Log.d(TAG, "tapToFocus, processing event: $event")
+                    val meteringPoint = createPoint(event.x, event.y)
+                    val action = FocusMeteringAction.Builder(meteringPoint).build()
+                    cameraControl.startFocusAndMetering(action)
+                } ?: run {
+                    Log.w(TAG, "Ignoring event due to no SurfaceRequest: $event")
+                }
+            }
+        }
+    }
+
+    private suspend fun processVideoControlEvents(
+        camera: Camera,
+        videoCapture: VideoCapture<Recorder>?,
+        sessionSettings: PerpetualSessionSettings,
+        transientSettings: StateFlow<TransientSessionSettings?>
+    ) = coroutineScope {
+        var recordingJob: Job? = null
+
+        for (event in videoCaptureControlEvents) {
+            when (event) {
+                is VideoCaptureControlEvent.StartRecordingEvent -> {
+                    if (videoCapture == null) {
+                        throw RuntimeException(
+                            "Attempted video recording with null videoCapture"
+                        )
+                    }
+
+                    recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
+                        runVideoRecording(
+                            camera,
+                            videoCapture,
+                            sessionSettings,
+                            transientSettings,
+                            event.onVideoRecord
+                        )
+                    }
+                }
+
+                VideoCaptureControlEvent.StopRecordingEvent -> {
+                    recordingJob?.cancel()
+                    recordingJob = null
+                }
+            }
+        }
+    }
+
+    private suspend fun runVideoRecording(
+        camera: Camera,
+        videoCapture: VideoCapture<Recorder>,
+        sessionSettings: PerpetualSessionSettings,
+        transientSettings: StateFlow<TransientSessionSettings?>,
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ) {
+        var currentSettings = transientSettings.filterNotNull().first()
+
+        startVideoRecordingInternal(
+            initialMuted = currentSettings.audioMuted,
+            videoCapture,
+            onVideoRecord
+        ).use { recording ->
+
+            fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
+            val isFrontCameraSelector =
+                sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+
+            if (currentSettings.isFlashModeOn()) {
+                if (!isFrontCameraSelector) {
+                    camera.cameraControl.enableTorch(true).await()
+                } else {
+                    Log.d(TAG, "Unable to enable torch for front camera.")
+                }
+            }
+
+            transientSettings.filterNotNull()
+                .onCompletion {
+                    // Could do some fancier tracking of whether the torch was enabled before
+                    // calling this.
+                    camera.cameraControl.enableTorch(false)
+                }
+                .collectLatest { newTransientSettings ->
+                    if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
+                        recording.mute(newTransientSettings.audioMuted)
+                    }
+                    if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
+                        if (!isFrontCameraSelector) {
+                            camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
+                        } else {
+                            Log.d(TAG, "Unable to update torch for front camera.")
+                        }
+                    }
+                    currentSettings = newTransientSettings
+                }
+        }
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
@@ -510,9 +647,20 @@ constructor(
     override suspend fun startVideoRecording(
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        if (videoCaptureUseCase == null) {
-            throw RuntimeException("Attempted video recording with null videoCapture use case")
-        }
+        videoCaptureControlEvents.send(
+            VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
+        )
+    }
+
+    override fun stopVideoRecording() {
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
+    }
+
+    private suspend fun startVideoRecordingInternal(
+        initialMuted: Boolean,
+        videoCaptureUseCase: VideoCapture<Recorder>,
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ): Recording {
         Log.d(TAG, "recordVideo")
         // todo(b/336886716): default setting to enable or disable audio when permission is granted
 
@@ -551,31 +699,32 @@ constructor(
                 currentCoroutineContext()[ContinuationInterceptor] as?
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
-        recording =
-            videoCaptureUseCase!!.output
-                .prepareRecording(application, mediaStoreOutput)
-                .apply {
-                    if (audioEnabled) {
-                        withAudioEnabled()
-                    }
+        return videoCaptureUseCase.output
+            .prepareRecording(application, mediaStoreOutput)
+            .apply {
+                if (audioEnabled) {
+                    withAudioEnabled()
                 }
-                .start(callbackExecutor) { onVideoRecordEvent ->
-                    run {
-                        Log.d(TAG, onVideoRecordEvent.toString())
-                        when (onVideoRecordEvent) {
-                            is VideoRecordEvent.Finalize -> {
-                                when (onVideoRecordEvent.error) {
-                                    ERROR_NONE ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
+            }
+            .start(callbackExecutor) { onVideoRecordEvent ->
+                run {
+                    Log.d(TAG, onVideoRecordEvent.toString())
+                    when (onVideoRecordEvent) {
+                        is VideoRecordEvent.Finalize -> {
+                            when (onVideoRecordEvent.error) {
+                                ERROR_NONE ->
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                            onVideoRecordEvent.outputResults.outputUri
                                         )
+                                    )
 
-                                    else ->
-                                        onVideoRecord(
-                                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-                                        )
-                                }
+                                else ->
+                                    onVideoRecord(
+                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
+                                    )
                             }
+                        }
 
                             is VideoRecordEvent.Status -> {
                                 onVideoRecord(
@@ -589,13 +738,9 @@ constructor(
                             }
                         }
                     }
-                }
-        currentSettings.value?.audioMuted?.let { recording?.mute(it) }
-    }
-
-    override fun stopVideoRecording() {
-        Log.d(TAG, "stopRecording")
-        recording?.stop()
+            }.apply {
+                mute(initialMuted)
+            }
     }
 
     override fun setZoomScale(scale: Float) {
@@ -709,17 +854,7 @@ constructor(
     }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
-        Log.d(TAG, "tapToFocus, sending FocusMeteringEvent")
-
-        getSurfaceRequest().filterNotNull().map { surfaceRequest ->
-            SurfaceOrientedMeteringPointFactory(
-                surfaceRequest.resolution.width.toFloat(),
-                surfaceRequest.resolution.height.toFloat()
-            )
-        }.collectLatest { meteringPointFactory ->
-            val meteringPoint = meteringPointFactory.createPoint(x, y)
-            focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(meteringPoint))
-        }
+        focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
 
     override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
@@ -806,6 +941,7 @@ constructor(
         val previewUseCase =
             createPreviewUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
         imageCaptureUseCase = createImageUseCase(cameraInfo, sessionSettings)
+        var videoCaptureUseCase: VideoCapture<Recorder>? = null
         if (!disableVideoCapture) {
             videoCaptureUseCase =
                 createVideoUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
@@ -824,7 +960,8 @@ constructor(
             setViewPort(
                 ViewPort.Builder(
                     sessionSettings.aspectRatio.ratio,
-                    initialTransientSettings.deviceRotation.toUiSurfaceRotation()
+                    // Initialize rotation to Preview's rotation, which comes from Display rotation
+                    previewUseCase.targetRotation
                 ).build()
             )
             addUseCase(previewUseCase)
@@ -837,7 +974,7 @@ constructor(
             if (videoCaptureUseCase != null &&
                 sessionSettings.imageFormat == ImageOutputFormat.JPEG
             ) {
-                addUseCase(videoCaptureUseCase!!)
+                addUseCase(videoCaptureUseCase)
             }
 
             effect?.let { addEffect(it) }
@@ -917,9 +1054,6 @@ constructor(
     }
 
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
-        // toggle mute for current in progress recording
-        recording?.mute(!isAudioMuted)
-
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
         }
@@ -993,9 +1127,7 @@ constructor(
         sessionSettings: PerpetualSessionSettings,
         supportedStabilizationModes: Set<SupportedStabilizationMode>
     ): Preview {
-        val previewUseCaseBuilder = Preview.Builder().apply {
-            setTargetRotation(DeviceRotation.Natural.toUiSurfaceRotation())
-        }
+        val previewUseCaseBuilder = Preview.Builder()
 
         setOnCaptureCompletedCallback(previewUseCaseBuilder)
 
@@ -1130,4 +1262,10 @@ private fun Int.toAppImageFormat(): ImageOutputFormat? {
         // All other output formats unsupported. Return null.
         else -> null
     }
+}
+
+private fun UseCaseGroup.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
+
+private inline fun <reified T : UseCase> UseCaseGroup.getUseCaseOrNull(): T? {
+    return useCases.filterIsInstance<T>().singleOrNull()
 }

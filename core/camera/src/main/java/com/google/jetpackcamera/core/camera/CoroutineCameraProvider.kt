@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 
@@ -36,7 +37,7 @@ import kotlinx.coroutines.coroutineScope
 suspend fun <R> ProcessCameraProvider.runWith(
     cameraSelector: CameraSelector,
     useCases: UseCaseGroup,
-    block: suspend (Camera) -> R
+    block: suspend CoroutineScope.(Camera) -> R
 ): R = coroutineScope {
     val scopedLifecycle = CoroutineLifecycleOwner(coroutineContext)
     block(this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases))

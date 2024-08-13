@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera
+package com.google.jetpackcamera.core.camera.utils
 
-/**
- * An event that can be sent to the camera coroutine.
- */
-sealed interface CameraEvent {
+import android.os.Build
 
-    /**
-     * Represents a focus metering event, that the camera can act on.
-     */
-    data class FocusMeteringEvent(val x: Float, val y: Float) : CameraEvent
+val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
+    add(android.Manifest.permission.CAMERA)
+    add(android.Manifest.permission.RECORD_AUDIO)
+    if (Build.VERSION.SDK_INT <= 28) {
+        add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    }
 }
