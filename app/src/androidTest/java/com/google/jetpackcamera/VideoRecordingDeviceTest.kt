@@ -73,7 +73,7 @@ internal class VideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        Truth.assertThat(File(DIR_PATH).lastModified()  > timeStamp).isTrue()
+        Truth.assertThat(File(DIR_PATH).lastModified() > timeStamp).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 

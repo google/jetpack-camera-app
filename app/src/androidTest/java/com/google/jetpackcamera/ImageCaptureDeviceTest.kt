@@ -77,7 +77,7 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        Truth.assertThat(File(DIR_PATH).lastModified()  > timeStamp).isTrue()
+        Truth.assertThat(File(DIR_PATH).lastModified() > timeStamp).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
