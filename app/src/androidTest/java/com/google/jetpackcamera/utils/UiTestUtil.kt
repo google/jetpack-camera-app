@@ -17,21 +17,29 @@ package com.google.jetpackcamera.utils
 
 import android.app.Activity
 import android.app.Instrumentation
+import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
+import com.google.jetpackcamera.ImageCaptureDeviceTest
 import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
+import java.io.File
+import java.net.URLConnection
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val VIDEO_DURATION_MILLIS = 2_000L
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
@@ -89,4 +97,55 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
                 .performClick()
         }
     }
+}
+
+fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri {
+    return Uri.fromFile(
+        File(
+            directoryPath,
+            "$timeStamp.$suffix"
+        )
+    )
+}
+
+fun deleteFilesInDirAfterTimestamp(
+    directoryPath: String,
+    instrumentation: Instrumentation,
+    timeStamp: Long
+): Boolean {
+    var hasDeletedFile = false
+    for (file in File(directoryPath).listFiles()) {
+        if (file.lastModified() >= timeStamp) {
+            file.delete()
+            if (file.exists()) {
+                file.getCanonicalFile().delete()
+                if (file.exists()) {
+                    instrumentation.targetContext.applicationContext.deleteFile(file.getName())
+                }
+            }
+            hasDeletedFile = true
+        }
+    }
+    return hasDeletedFile
+}
+
+fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
+    val file = File(uri.path)
+    if (file.exists()) {
+        val mimeType = URLConnection.guessContentTypeFromName(uri.path)
+        return mimeType != null && mimeType.startsWith(prefix)
+    }
+    return false
+}
+
+fun getIntent(uri: Uri, action: String): Intent {
+    val intent = Intent(action)
+    intent.setComponent(
+        ComponentName(
+            "com.google.jetpackcamera",
+            "com.google.jetpackcamera.MainActivity"
+        )
+    )
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
+    return intent
 }

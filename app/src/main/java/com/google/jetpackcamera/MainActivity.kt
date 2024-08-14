@@ -183,20 +183,24 @@ class MainActivity : ComponentActivity() {
             when (action) {
                 MediaStore.ACTION_IMAGE_CAPTURE ->
                     PreviewMode.ExternalImageCaptureMode(getExternalCaptureUri()) { event ->
+                        Log.d(TAG, "onImageCapture, event: $event")
                         if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
                             val resultIntent = Intent()
                             resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
                             setResult(RESULT_OK, resultIntent)
+                            Log.d(TAG, "onImageCapture, finish()")
                             finish()
                         }
                     }
 
                 MediaStore.ACTION_VIDEO_CAPTURE ->
                     PreviewMode.ExternalVideoCaptureMode(getExternalCaptureUri()) { event ->
+                        Log.d(TAG, "onVideoCapture, event: $event")
                         if (event is PreviewViewModel.VideoCaptureEvent.VideoSaved) {
                             val resultIntent = Intent()
                             resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
                             setResult(RESULT_OK, resultIntent)
+                            Log.d(TAG, "onVideoCapture, finish()")
                             finish()
                         }
                     }

@@ -22,9 +22,19 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -36,9 +46,24 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.VIDEO_DURATION_MILLIS
+import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
+import com.google.jetpackcamera.utils.doesImageFileExist
+import com.google.jetpackcamera.utils.getIntent
+import com.google.jetpackcamera.utils.getTestUri
+import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runScenarioTestForResult
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -50,149 +75,129 @@ internal class VideoRecordingDeviceTest {
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private var activityScenario: ActivityScenario<MainActivity>? = null
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun video_capture_external_with_image_capture_intent() = run {
+    fun video_capture() = runScenarioTest<MainActivity> {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(timeStamp)
-        getTestRegistry {
-            activityScenario = ActivityScenario.launchActivityForResult(it)
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).longClick()
-            uiDevice.wait(
-                Until.findObject(By.res(VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)),
-                5000
-            )
-            uiDevice.pressBack()
-            activityScenario!!.result
-        }.register("key", TEST_CONTRACT) { result ->
-            assert(!result)
-            assert(activityScenario!!.result.resultCode == Activity.RESULT_CANCELED)
-        }.launch(uri)
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+        longClickForVideoRecording()
+        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+        assert(File(DIR_PATH).lastModified() > timeStamp)
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test
-    fun video_capture_external_intent() = run {
+    fun video_capture_external_intent() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(timeStamp)
-        getTestRegistry {
-            activityScenario = ActivityScenario.launchActivityForResult(it)
-            // Wait for the capture button to be displayed
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).longClick()
-            uiDevice.wait(
-                Until.findObject(By.res(VIDEO_CAPTURE_SUCCESS_TAG)),
-                5000
-            )
-            activityScenario!!.result
-        }.register("key", VIDEO_TEST_CONTRACT) { _ ->
-            assert(activityScenario!!.result.resultCode == Activity.RESULT_OK)
-            deleteFilesInDirAfterTimestamp(timeStamp)
-        }.launch(uri)
-    }
-
-    @Test
-    fun image_capture_external_with_video_capture_intent() = run {
-        val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(timeStamp)
-        getTestRegistry {
-            activityScenario = ActivityScenario.launchActivityForResult(it)
-            // Wait for the capture button to be displayed
-            uiDevice.wait(
-                Until.findObject(By.res(CAPTURE_BUTTON)),
-                5000
-            )
-            uiDevice.findObject(By.res(CAPTURE_BUTTON)).click()
-            uiDevice.wait(
-                Until.findObject(By.res(IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)),
-                5000
-            )
-            uiDevice.pressBack()
-            activityScenario!!.result
-        }.register("key", VIDEO_TEST_CONTRACT) { result ->
-            assert(!result)
-            assert(activityScenario!!.result.resultCode == Activity.RESULT_CANCELED)
-        }.launch(uri)
-    }
-
-    private fun getTestRegistry(
-        launch: (Intent) -> Instrumentation.ActivityResult
-    ): ActivityResultRegistry {
-        val testRegistry = object : ActivityResultRegistry() {
-            override fun <I, O> onLaunch(
-                requestCode: Int,
-                contract: ActivityResultContract<I, O>,
-                input: I,
-                options: ActivityOptionsCompat?
-            ) {
-                // contract.create
-                val launchIntent = contract.createIntent(
-                    ApplicationProvider.getApplicationContext(),
-                    input
+        val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getIntent(
+                    uri,
+                    MediaStore.ACTION_VIDEO_CAPTURE
                 )
-                val result: Instrumentation.ActivityResult = launch(launchIntent)
-                dispatchResult(requestCode, result.resultCode, result.resultData)
-            }
-        }
-        return testRegistry
-    }
-
-    private fun getTestUri(timeStamp: Long): Uri {
-        return Uri.fromFile(
-            File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "$timeStamp.mp4"
-            )
-        )
-    }
-
-    private fun deleteFilesInDirAfterTimestamp(timeStamp: Long): Boolean {
-        var hasDeletedFile = false
-        for (file in File(ImageCaptureDeviceTest.DIR_PATH).listFiles()) {
-            if (file.lastModified() >= timeStamp) {
-                file.delete()
-                if (file.exists()) {
-                    file.getCanonicalFile().delete()
-                    if (file.exists()) {
-                        instrumentation.targetContext.applicationContext.deleteFile(file.getName())
-                    }
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                hasDeletedFile = true
+                longClickForVideoRecording()
             }
+        assert(result?.resultCode == Activity.RESULT_OK)
+        assert(doesImageFileExist(uri, "video"))
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    @Test
+    fun video_capture_external_illegal_uri() {
+        val uri = Uri.parse("asdfasdf")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getIntent(
+                    uri,
+                    MediaStore.ACTION_VIDEO_CAPTURE
+                )
+            ) {
+                // Wait for the capture button to be displayed
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+                longClickForVideoRecording()
+                composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
+                }
+                uiDevice.pressBack()
+            }
+        assert(result?.resultCode == Activity.RESULT_CANCELED)
+        assert(!doesImageFileExist(uri, "video"))
+    }
+
+    @Test
+    fun image_capture_during_video_capture_external() {
+        val timeStamp = System.currentTimeMillis()
+        val uri = getTestUri(ImageCaptureDeviceTest.DIR_PATH, timeStamp, "mp4")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getIntent(
+                    uri,
+                    MediaStore.ACTION_VIDEO_CAPTURE
+                )
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                    .assertExists()
+                    .performClick()
+                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(
+                        IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                    ).isDisplayed()
+                }
+                uiDevice.pressBack()
+            }
+        assert(result?.resultCode == Activity.RESULT_CANCELED)
+        assert(!doesImageFileExist(uri, "video"))
+    }
+
+    private fun longClickForVideoRecording() {
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performTouchInput {
+                down(center)
+            }
+        idleForVideoDuration()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performTouchInput {
+                up()
+            }
+    }
+
+    private fun idleForVideoDuration() {
+        try {
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
+                composeTestRule.onNodeWithTag("asf").isDisplayed()
+            }
+        } catch (e: ComposeTimeoutException) {
         }
-        return hasDeletedFile
     }
 
     companion object {
-        private val TEST_CONTRACT = object : ActivityResultContracts.TakePicture() {
-            override fun createIntent(context: Context, uri: Uri): Intent {
-                return super.createIntent(context, uri).apply {
-                    component = ComponentName(
-                        ApplicationProvider.getApplicationContext(),
-                        MainActivity::class.java
-                    )
-                }
-            }
-        }
-
-        private val VIDEO_TEST_CONTRACT = object : ActivityResultContracts.CaptureVideo() {
-            override fun createIntent(context: Context, uri: Uri): Intent {
-                return super.createIntent(context, uri).apply {
-                    component = ComponentName(
-                        ApplicationProvider.getApplicationContext(),
-                        MainActivity::class.java
-                    )
-                }
-            }
-        }
+        val DIR_PATH: String =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).path
     }
 }

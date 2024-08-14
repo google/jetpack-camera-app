@@ -602,6 +602,7 @@ class PreviewViewModel @AssistedInject constructor(
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                            Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
@@ -612,6 +613,7 @@ class PreviewViewModel @AssistedInject constructor(
                         }
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                            Log.d(TAG, "cameraUseCase.startRecording OnVideoRecordError")
                             onVideoCapture(VideoCaptureEvent.VideoCaptureError(it.error))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
