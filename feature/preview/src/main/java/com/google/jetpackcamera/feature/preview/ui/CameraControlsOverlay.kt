@@ -223,7 +223,7 @@ private fun ControlsBottom(
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showZoomLevel) {
-            ZoomScaleText(zoomLevel)
+            ZoomScaleText(zoomLevel, Modifier.testTag(ZOOM_RATIO_TAG))
         }
 
         Row(

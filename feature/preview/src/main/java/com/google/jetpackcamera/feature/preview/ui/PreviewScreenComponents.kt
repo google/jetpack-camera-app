@@ -429,7 +429,7 @@ fun ZoomScaleText(zoomScale: Float, modifier: Modifier = Modifier) {
         animationSpec = tween()
     )
     Text(
-        modifier = Modifier.alpha(contentAlpha.value),
+        modifier = modifier.alpha(contentAlpha.value),
         text = "%.1fx".format(zoomScale),
         fontSize = 20.sp
     )
