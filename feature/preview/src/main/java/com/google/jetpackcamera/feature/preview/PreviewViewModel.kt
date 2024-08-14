@@ -107,7 +107,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            getUseCaseMode(previewMode)
+            previewMode.toUseCaseMode()
         )
     }
 
@@ -162,12 +162,10 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun getUseCaseMode(previewMode: PreviewMode): CameraUseCase.UseCaseMode {
-        return when (previewMode) {
-            is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
-            is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
-            is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
-        }
+    private fun PreviewMode.toUseCaseMode() = when (this) {
+        is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
+        is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
+        is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
     }
 
     /**

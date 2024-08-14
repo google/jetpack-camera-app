@@ -16,39 +16,22 @@
 package com.google.jetpackcamera
 
 import android.app.Activity
-import android.app.Instrumentation
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
-import androidx.activity.result.ActivityResultRegistry
-import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.core.app.ActivityOptionsCompat
-import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
+import com.google.common.truth.Truth
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
@@ -62,8 +45,6 @@ import com.google.jetpackcamera.utils.getIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.runScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -92,7 +73,7 @@ internal class VideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assert(File(DIR_PATH).lastModified() > timeStamp)
+        Truth.assertThat(File(DIR_PATH).lastModified()  > timeStamp).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -102,10 +83,7 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(
-                    uri,
-                    MediaStore.ACTION_VIDEO_CAPTURE
-                )
+                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -113,8 +91,8 @@ internal class VideoRecordingDeviceTest {
                 }
                 longClickForVideoRecording()
             }
-        assert(result?.resultCode == Activity.RESULT_OK)
-        assert(doesImageFileExist(uri, "video"))
+        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_OK)
+        Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -123,10 +101,7 @@ internal class VideoRecordingDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(
-                    uri,
-                    MediaStore.ACTION_VIDEO_CAPTURE
-                )
+                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 // Wait for the capture button to be displayed
@@ -139,8 +114,8 @@ internal class VideoRecordingDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        assert(result?.resultCode == Activity.RESULT_CANCELED)
-        assert(!doesImageFileExist(uri, "video"))
+        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
     }
 
     @Test
@@ -149,10 +124,7 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(ImageCaptureDeviceTest.DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(
-                    uri,
-                    MediaStore.ACTION_VIDEO_CAPTURE
-                )
+                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -169,8 +141,8 @@ internal class VideoRecordingDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        assert(result?.resultCode == Activity.RESULT_CANCELED)
-        assert(!doesImageFileExist(uri, "video"))
+        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
     }
 
     private fun longClickForVideoRecording() {
