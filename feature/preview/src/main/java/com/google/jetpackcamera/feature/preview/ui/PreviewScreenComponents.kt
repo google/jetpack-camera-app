@@ -422,14 +422,16 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomScaleText(zoomScale: Float, modifier: Modifier = Modifier) {
+fun ZoomScaleText(zoomScale: Float) {
     val contentAlpha = animateFloatAsState(
         targetValue = 10f,
         label = "zoomScaleAlphaAnimation",
         animationSpec = tween()
     )
     Text(
-        modifier = modifier.alpha(contentAlpha.value),
+        modifier = Modifier
+            .alpha(contentAlpha.value)
+            .testTag(ZOOM_RATIO_TAG),
         text = "%.1fx".format(zoomScale),
         fontSize = 20.sp
     )
@@ -551,7 +553,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
