@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import androidx.camera.core.MeteringPoint
-
 /**
  * An event that can be sent to the camera coroutine.
  */
@@ -25,5 +23,5 @@ sealed interface CameraEvent {
     /**
      * Represents a focus metering event, that the camera can act on.
      */
-    class FocusMeteringEvent(val meteringPoint: MeteringPoint) : CameraEvent
+    data class FocusMeteringEvent(val x: Float, val y: Float) : CameraEvent
 }
