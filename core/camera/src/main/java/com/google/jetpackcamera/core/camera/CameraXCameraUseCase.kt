@@ -727,6 +727,7 @@ constructor(
                     application.contentResolver,
                     MediaStore.Video.Media.EXTERNAL_CONTENT_URI
                 ).apply {
+                    // apply duration limit if applicable
                     if (currentSettings.value?.maxVideoDuration != -1L)
                         setDurationLimitMillis(currentSettings.value!!.maxVideoDuration)
                 }
