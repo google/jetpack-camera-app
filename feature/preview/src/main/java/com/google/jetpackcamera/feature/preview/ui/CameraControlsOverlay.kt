@@ -131,6 +131,7 @@ fun CameraControlsOverlay(
                 previewUiState = previewUiState,
                 audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
+                currentCameraId = previewUiState.currentCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 currentCameraSettings = previewUiState.currentCameraSettings,
@@ -200,6 +201,7 @@ private fun ControlsBottom(
     modifier: Modifier = Modifier,
     audioAmplitude: Double,
     previewUiState: PreviewUiState.Ready,
+    currentCameraId: String? = null,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -222,8 +224,11 @@ private fun ControlsBottom(
     onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (showZoomLevel) {
-            ZoomScaleText(zoomLevel)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (showZoomLevel) {
+                ZoomScaleText(zoomLevel)
+            }
+            CurrentCameraIdText(currentCameraId = currentCameraId)
         }
 
         Row(

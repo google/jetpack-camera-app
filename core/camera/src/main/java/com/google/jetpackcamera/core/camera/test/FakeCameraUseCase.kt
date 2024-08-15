@@ -67,7 +67,8 @@ class FakeCameraUseCase(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        disableVideoCapture: Boolean
+        disableVideoCapture: Boolean,
+        onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener
     ) {
         initialized = true
     }

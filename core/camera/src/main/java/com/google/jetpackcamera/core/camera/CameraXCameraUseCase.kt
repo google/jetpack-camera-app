@@ -23,8 +23,10 @@ import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -150,12 +152,19 @@ constructor(
     private fun setOnCaptureCompletedCallback(previewBuilder: Preview.Builder) {
         val isFirstFrameTimestampUpdated = atomic(false)
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
+            private var cameraId: String? = null
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
                 request: CaptureRequest,
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val cameraId = result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
+                    if (onCameraIdChangeListener != null && !cameraId.equals(this.cameraId)) {
+                        onCameraIdChangeListener!!.onCameraIdChange(cameraId)
+                    }
+                }
                 try {
                     if (!isFirstFrameTimestampUpdated.value) {
                         _currentCameraState.update { old ->
@@ -189,11 +198,15 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
+    private var onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener? = null
+
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        externalImageCapture: Boolean
+        externalImageCapture: Boolean,
+        onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener
     ) {
         this.disableVideoCapture = externalImageCapture
+        this.onCameraIdChangeListener = onCameraIdChangeListener
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras

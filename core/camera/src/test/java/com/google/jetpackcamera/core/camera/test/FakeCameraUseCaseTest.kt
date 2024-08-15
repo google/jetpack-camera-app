@@ -56,7 +56,11 @@ class FakeCameraUseCaseTest {
     fun canInitialize() = runTest(testDispatcher) {
         cameraUseCase.initialize(
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-            disableVideoCapture = false
+            disableVideoCapture = false,
+            onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
+                override fun onCameraIdChange(cameraId: String?) {
+                }
+            }
         )
     }
 
@@ -150,7 +154,11 @@ class FakeCameraUseCaseTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraUseCase.initialize(
                 cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-                disableVideoCapture = false
+                disableVideoCapture = false,
+                onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
+                    override fun onCameraIdChange(cameraId: String?) {
+                    }
+                }
             )
             cameraUseCase.runCamera()
         }

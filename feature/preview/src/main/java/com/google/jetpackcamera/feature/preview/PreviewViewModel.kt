@@ -104,7 +104,16 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode
+            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode,
+            onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
+                override fun onCameraIdChange(cameraId: String?) {
+                    _previewUiState.update { old ->
+                        (old as? PreviewUiState.Ready)?.copy(
+                            currentCameraId = cameraId
+                        ) ?: old
+                    }
+                }
+            }
         )
     }
 

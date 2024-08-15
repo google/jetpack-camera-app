@@ -41,7 +41,11 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(cameraAppSettings: CameraAppSettings, disableVideoCapture: Boolean)
+    suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        disableVideoCapture: Boolean,
+        onCameraIdChangeListener: OnCameraIdChangeListener
+    )
 
     /**
      * Starts the camera.
@@ -128,6 +132,10 @@ interface CameraUseCase {
         data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
 
         object OnVideoRecordError : OnVideoRecordEvent
+    }
+
+    interface OnCameraIdChangeListener {
+        fun onCameraIdChange(cameraId: String?)
     }
 }
 
