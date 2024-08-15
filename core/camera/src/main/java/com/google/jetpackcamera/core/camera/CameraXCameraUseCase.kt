@@ -690,7 +690,10 @@ constructor(
             MediaStoreOutputOptions.Builder(
                 application.contentResolver,
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            )
+            ).apply {
+                if (currentSettings.value?.maxVideoDuration != -1L)
+                    setDurationLimitMillis(currentSettings.value!!.maxVideoDuration)
+            }
                 .setContentValues(contentValues)
                 .build()
 

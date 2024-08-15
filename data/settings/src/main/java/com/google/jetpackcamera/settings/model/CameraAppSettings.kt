@@ -35,7 +35,7 @@ data class CameraAppSettings(
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,
-    val deviceRotation: DeviceRotation = DeviceRotation.Natural
+    val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val maxVideoDuration: Long = -1
 )
 

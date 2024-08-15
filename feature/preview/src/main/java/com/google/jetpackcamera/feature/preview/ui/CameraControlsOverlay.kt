@@ -305,6 +305,7 @@ private fun CaptureButton(
             maxVideoDuration != -1L &&
             previewUiState.recordingElapsedTime >= maxVideoDuration
         ) {
+            //still called to trigger UI changes
             onStopVideoRecording()
         }
     }
