@@ -84,6 +84,10 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+
+    kotlinOptions {
+        freeCompilerArgs += "-Xcontext-receivers"
+    }
 }
 
 dependencies {
