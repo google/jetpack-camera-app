@@ -104,7 +104,6 @@ internal class VideoRecordingDeviceTest {
                 getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
@@ -162,7 +161,7 @@ internal class VideoRecordingDeviceTest {
     private fun idleForVideoDuration() {
         try {
             composeTestRule.waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
-                composeTestRule.onNodeWithTag("asf").isDisplayed()
+                composeTestRule.onNodeWithTag("dummyTagForLongPress").isDisplayed()
             }
         } catch (e: ComposeTimeoutException) {
         }
