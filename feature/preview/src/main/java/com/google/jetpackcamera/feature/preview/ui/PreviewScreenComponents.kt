@@ -442,7 +442,7 @@ fun ZoomScaleText(zoomScale: Float) {
 fun CurrentCameraIdText(currentCameraId: String?) {
     Text(
         modifier = Modifier
-            .testTag(ZOOM_RATIO_TAG),
+            .testTag(CURRENT_CAMERA_ID_TAG),
         text = "camera id: $currentCameraId",
         fontSize = 20.sp
     )
