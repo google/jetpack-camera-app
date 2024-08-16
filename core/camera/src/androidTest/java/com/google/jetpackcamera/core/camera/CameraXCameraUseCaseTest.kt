@@ -159,7 +159,8 @@ class CameraXCameraUseCaseTest {
             object : CameraUseCase.OnCameraIdChangeListener {
                 override fun onCameraIdChange(cameraId: String?) {
                 }
-            })
+            }
+        )
         providePreviewSurface()
     }
 
