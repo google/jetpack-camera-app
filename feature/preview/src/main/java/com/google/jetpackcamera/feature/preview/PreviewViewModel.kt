@@ -565,7 +565,7 @@ class PreviewViewModel @AssistedInject constructor(
                             (old as? PreviewUiState.Ready)?.copy(
                                 snackBarToShow = snackbarToShow,
                                 audioAmplitude = audioAmplitude,
-                                recordingElapsedTime = timer
+                                recordingElapsedTimeNanos = timer
                             ) ?: old
                         }
                     }

@@ -64,6 +64,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
@@ -715,7 +716,7 @@ constructor(
                     when (onVideoRecordEvent) {
                         is VideoRecordEvent.Finalize -> {
                             when (onVideoRecordEvent.error) {
-                                ERROR_NONE ->
+                                ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
                                     onVideoRecord(
                                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                             onVideoRecordEvent.outputResults.outputUri

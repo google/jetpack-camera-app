@@ -38,10 +38,12 @@ const val FPS_15 = 15
 const val FPS_30 = 30
 const val FPS_60 = 60
 
+// seconds duration in millis
 const val NO_VIDEO_LIMIT = -1L
-const val TEN_SECONDS = 10_000_000_000L
-const val THIRTY_SECONDS = 30_000_000_000L
-const val SIXTY_SECONDS = 60_000_000_000L
+const val FIVE_SECONDS = 5000L
+const val TEN_SECONDS = 10000L
+const val THIRTY_SECONDS = 30000L
+const val SIXTY_SECONDS = 60000L
 
 /**
  * Defines the current state of the [SettingsScreen].
@@ -190,7 +192,7 @@ sealed interface DarkModeUiState {
 
 sealed interface MaxVideoDurationUiState {
     data class Enabled(
-        val currentTimeLimit: Long,
+        val currentTimeLimitMillis: Long,
         val additionalContext: String = ""
     ): MaxVideoDurationUiState
 }
