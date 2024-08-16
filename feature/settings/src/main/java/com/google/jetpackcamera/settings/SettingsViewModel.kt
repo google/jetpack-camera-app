@@ -60,12 +60,14 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
-                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(updatedSettings.maxVideoDurationMillis),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
+                    updatedSettings.maxVideoDurationMillis
+                ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,

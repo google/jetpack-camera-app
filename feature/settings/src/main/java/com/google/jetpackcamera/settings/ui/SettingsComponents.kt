@@ -66,13 +66,13 @@ import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
-import com.google.jetpackcamera.settings.UNLIMITED_DURATION
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
+import com.google.jetpackcamera.settings.UNLIMITED_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -348,7 +348,7 @@ fun MaxVideoDurationSetting(
         leadingIcon = null,
         description = when (val maxDuration = maxVideoDurationUiState.currentTimeLimitMillis) {
             UNLIMITED_DURATION -> stringResource(R.string.duration_description_none)
-            else ->  stringResource(R.string.duration_description_seconds, (maxDuration/1000))
+            else -> stringResource(R.string.duration_description_seconds, (maxDuration / 1000))
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -358,10 +358,18 @@ fun MaxVideoDurationSetting(
                     selected = maxVideoDurationUiState.currentTimeLimitMillis == UNLIMITED_DURATION,
                     onClick = { setMaxDuration(UNLIMITED_DURATION) }
                 )
-                listOf(FIVE_SECONDS_DURATION, TEN_SECONDS_DURATION, THIRTY_SECONDS_DURATION, SIXTY_SECONDS_DURATION).forEach { maxDuration ->
+                listOf(
+                    FIVE_SECONDS_DURATION,
+                    TEN_SECONDS_DURATION,
+                    THIRTY_SECONDS_DURATION,
+                    SIXTY_SECONDS_DURATION
+                ).forEach { maxDuration ->
                     SingleChoiceSelector(
                         enabled = true,
-                        text = stringResource(R.string.duration_description_seconds, (maxDuration/1000)),
+                        text = stringResource(
+                            R.string.duration_description_seconds,
+                            (maxDuration / 1000)
+                        ),
                         selected = maxVideoDurationUiState.currentTimeLimitMillis == maxDuration,
                         onClick = { setMaxDuration(maxDuration) }
                     )

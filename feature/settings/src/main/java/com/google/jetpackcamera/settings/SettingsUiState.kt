@@ -58,7 +58,7 @@ sealed interface SettingsUiState {
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
-        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled
     ) : SettingsUiState
 }
 
@@ -194,7 +194,7 @@ sealed interface MaxVideoDurationUiState {
     data class Enabled(
         val currentTimeLimitMillis: Long,
         val additionalContext: String = ""
-    ): MaxVideoDurationUiState
+    ) : MaxVideoDurationUiState
 }
 
 /**
