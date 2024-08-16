@@ -59,6 +59,7 @@ import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -140,6 +141,7 @@ fun PreviewScreen(
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onChangeCaptureMode = viewModel::setCaptureMode,
                 onChangeDynamicRange = viewModel::setDynamicRange,
+                onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onLowLightBoost = viewModel::setLowLightBoost,
                 onChangeImageFormat = viewModel::setImageFormat,
                 onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
@@ -173,6 +175,7 @@ private fun ContentScreen(
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
+    onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onLowLightBoost: (LowLightBoost) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
@@ -232,13 +235,13 @@ private fun ContentScreen(
                 isOpen = previewUiState.quickSettingsIsOpen,
                 toggleIsOpen = onToggleQuickSettings,
                 currentCameraSettings = previewUiState.currentCameraSettings,
-                systemConstraints = previewUiState.systemConstraints,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
                 onCaptureModeClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
+                onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
                 onLowLightBoostClick = onLowLightBoost
             )
             // relative-grid style overlay on top of preview display

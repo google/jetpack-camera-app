@@ -38,6 +38,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -186,6 +187,7 @@ constructor(
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
+                .tryApplyConcurrentCameraModeConstraints()
     }
 
     override suspend fun runCamera() = coroutineScope {
@@ -202,47 +204,49 @@ constructor(
                     zoomScale = currentCameraSettings.zoomScale
                 )
 
-                if (systemConstraints.concurrentCamerasSupported) {
-                    val primaryFacing = currentCameraSettings.cameraLensFacing
-                    val secondaryFacing = primaryFacing.flip()
-                    cameraProvider.availableConcurrentCameraInfos.firstNotNullOf {
-                        var primaryCameraInfo: CameraInfo? = null
-                        var secondaryCameraInfo: CameraInfo? = null
-                        it.forEach { cameraInfo ->
-                            if (cameraInfo.appLensFacing == primaryFacing) {
-                                primaryCameraInfo = cameraInfo
-                            } else if (cameraInfo.appLensFacing == secondaryFacing) {
-                                secondaryCameraInfo = cameraInfo
-                            }
+                when (currentCameraSettings.concurrentCameraMode) {
+                    ConcurrentCameraMode.OFF -> {
+                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
+                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
                         }
 
-                        primaryCameraInfo?.let { nonNullPrimary ->
-                            secondaryCameraInfo?.let { nonNullSecondary ->
-                                PerpetualSessionSettings.ConcurrentCamera(
-                                    primaryCameraInfo = nonNullPrimary,
-                                    secondaryCameraInfo = nonNullSecondary,
-                                    aspectRatio = currentCameraSettings.aspectRatio,
-                                    captureMode = currentCameraSettings.captureMode
-                                )
+                        PerpetualSessionSettings.SingleCamera(
+                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
+                            aspectRatio = currentCameraSettings.aspectRatio,
+                            captureMode = currentCameraSettings.captureMode,
+                            targetFrameRate = currentCameraSettings.targetFrameRate,
+                            stabilizePreviewMode = currentCameraSettings.previewStabilization,
+                            stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
+                            dynamicRange = currentCameraSettings.dynamicRange,
+                            imageFormat = currentCameraSettings.imageFormat
+                        )
+                    }
+                    ConcurrentCameraMode.DUAL -> {
+                        val primaryFacing = currentCameraSettings.cameraLensFacing
+                        val secondaryFacing = primaryFacing.flip()
+                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOf {
+                            var primaryCameraInfo: CameraInfo? = null
+                            var secondaryCameraInfo: CameraInfo? = null
+                            it.forEach { cameraInfo ->
+                                if (cameraInfo.appLensFacing == primaryFacing) {
+                                    primaryCameraInfo = cameraInfo
+                                } else if (cameraInfo.appLensFacing == secondaryFacing) {
+                                    secondaryCameraInfo = cameraInfo
+                                }
+                            }
+
+                            primaryCameraInfo?.let { nonNullPrimary ->
+                                secondaryCameraInfo?.let { nonNullSecondary ->
+                                    PerpetualSessionSettings.ConcurrentCamera(
+                                        primaryCameraInfo = nonNullPrimary,
+                                        secondaryCameraInfo = nonNullSecondary,
+                                        aspectRatio = currentCameraSettings.aspectRatio
+                                    )
+                                }
                             }
                         }
                     }
-                } else {
-                    val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                        LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                        LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-                    }
-
-                    PerpetualSessionSettings.SingleCamera(
-                        cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
-                        aspectRatio = currentCameraSettings.aspectRatio,
-                        captureMode = currentCameraSettings.captureMode,
-                        targetFrameRate = currentCameraSettings.targetFrameRate,
-                        stabilizePreviewMode = currentCameraSettings.previewStabilization,
-                        stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
-                        dynamicRange = currentCameraSettings.dynamicRange,
-                        imageFormat = currentCameraSettings.imageFormat
-                    )
                 }
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
@@ -260,25 +264,26 @@ constructor(
                             transientSettings = transientSettings
                         )
                     ) {
-                        when (sessionSettings) {
-                            is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                sessionSettings,
-                                useVideoCapture = !disableVideoCapture
-                            ) { imageCapture ->
-                                imageCaptureUseCase = imageCapture
-                            }
-
-                            is PerpetualSessionSettings.ConcurrentCamera -> try {
-                                runConcurrentCameraSession(
+                        try {
+                            when (sessionSettings) {
+                                is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    useImageCapture = false
-                                )
-                            } finally {
-                                // TODO(tm): This shouldn't be necessary. Cancellation of the
-                                //  coroutineScope by collectLatest should cause this to
-                                //  occur naturally.
-                                cameraProvider.unbindAll()
+                                    useVideoCapture = !disableVideoCapture
+                                ) { imageCapture ->
+                                    imageCaptureUseCase = imageCapture
+                                }
+
+                                is PerpetualSessionSettings.ConcurrentCamera ->
+                                    runConcurrentCameraSession(
+                                        sessionSettings,
+                                        useImageCapture = false
+                                    )
                             }
+                        } finally {
+                            // TODO(tm): This shouldn't be necessary. Cancellation of the
+                            //  coroutineScope by collectLatest should cause this to
+                            //  occur naturally.
+                            cameraProvider.unbindAll()
                         }
                     }
                 }
@@ -488,6 +493,23 @@ constructor(
         } ?: this
     }
 
+    private fun CameraAppSettings.tryApplyConcurrentCameraModeConstraints(): CameraAppSettings =
+        when (concurrentCameraMode) {
+            ConcurrentCameraMode.OFF -> this
+            else ->
+                if (systemConstraints.concurrentCamerasSupported) {
+                    copy(
+                        targetFrameRate = TARGET_FPS_AUTO,
+                        previewStabilization = Stabilization.OFF,
+                        videoCaptureStabilization = Stabilization.OFF,
+                        dynamicRange = DynamicRange.SDR,
+                        captureMode = CaptureMode.MULTI_STREAM
+                    )
+                } else {
+                    copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
+                }
+        }
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
@@ -526,6 +548,13 @@ constructor(
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
             old?.copy(deviceRotation = deviceRotation)
+        }
+    }
+
+    override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        currentSettings.update { old ->
+            old?.copy(concurrentCameraMode = concurrentCameraMode)
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 

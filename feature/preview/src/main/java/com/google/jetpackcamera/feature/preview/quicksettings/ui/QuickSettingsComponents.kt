@@ -49,6 +49,7 @@ import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
@@ -56,6 +57,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraLowLightBoos
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -264,6 +266,29 @@ fun QuickSetCaptureMode(
             when (currentCaptureMode) {
                 CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
                 CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
+            }
+        }
+    )
+}
+
+@Composable
+fun QuickSetConcurrentCamera(
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
+    currentConcurrentCameraMode: ConcurrentCameraMode,
+    modifier: Modifier = Modifier
+) {
+    val enum: CameraConcurrentCameraMode =
+        when (currentConcurrentCameraMode) {
+            ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
+            ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
+        }
+    QuickSettingUiItem(
+        modifier = modifier,
+        enum = enum,
+        onClick = {
+            when (currentConcurrentCameraMode) {
+                ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+                ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
             }
         }
     )

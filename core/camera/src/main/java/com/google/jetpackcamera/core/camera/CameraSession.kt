@@ -129,7 +129,10 @@ internal suspend fun runSingleCameraSession(
             processVideoControlEvents(
                 camera,
                 useCaseGroup.getVideoCapture(),
-                sessionSettings.captureMode
+                captureTypeSuffix = when (sessionSettings.captureMode) {
+                    CaptureMode.MULTI_STREAM -> "MultiStream"
+                    CaptureMode.SINGLE_STREAM -> "SingleStream"
+                }
             )
         }
 
@@ -465,7 +468,7 @@ private fun setFlashModeInternal(
 private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     videoCaptureUseCase: VideoCapture<Recorder>,
-    captureMode: CaptureMode,
+    captureTypeSuffix: String,
     context: Context,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
@@ -481,12 +484,7 @@ private suspend fun startVideoRecordingInternal(
         context,
         Manifest.permission.RECORD_AUDIO
     ) == PackageManager.PERMISSION_GRANTED
-    val captureTypeString =
-        when (captureMode) {
-            CaptureMode.MULTI_STREAM -> "MultiStream"
-            CaptureMode.SINGLE_STREAM -> "SingleStream"
-        }
-    val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
+    val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
     val contentValues =
         ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, name)
@@ -549,7 +547,7 @@ private suspend fun startVideoRecordingInternal(
 private suspend fun runVideoRecording(
     camera: Camera,
     videoCapture: VideoCapture<Recorder>,
-    captureMode: CaptureMode,
+    captureTypeSuffix: String,
     context: Context,
     transientSettings: StateFlow<TransientSessionSettings?>,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
@@ -559,7 +557,7 @@ private suspend fun runVideoRecording(
     startVideoRecordingInternal(
         initialMuted = currentSettings.audioMuted,
         videoCapture,
-        captureMode,
+        captureTypeSuffix,
         context,
         onVideoRecord
     ).use { recording ->
@@ -627,7 +625,7 @@ context(CameraSessionContext)
 internal suspend fun processVideoControlEvents(
     camera: Camera,
     videoCapture: VideoCapture<Recorder>?,
-    captureMode: CaptureMode
+    captureTypeSuffix: String
 ) = coroutineScope {
     var recordingJob: Job? = null
 
@@ -644,7 +642,7 @@ internal suspend fun processVideoControlEvents(
                     runVideoRecording(
                         camera,
                         videoCapture,
-                        captureMode,
+                        captureTypeSuffix,
                         context,
                         transientSettings,
                         event.onVideoRecord

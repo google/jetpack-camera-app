@@ -32,12 +32,11 @@ import com.google.jetpackcamera.settings.model.Stabilization
  */
 internal sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
-    val captureMode: CaptureMode
 
     data class SingleCamera(
         val cameraInfo: CameraInfo,
         override val aspectRatio: AspectRatio,
-        override val captureMode: CaptureMode,
+        val captureMode: CaptureMode,
         val targetFrameRate: Int,
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization,
@@ -48,8 +47,7 @@ internal sealed interface PerpetualSessionSettings {
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,
-        override val aspectRatio: AspectRatio,
-        override val captureMode: CaptureMode
+        override val aspectRatio: AspectRatio
     ) : PerpetualSessionSettings
 }
 

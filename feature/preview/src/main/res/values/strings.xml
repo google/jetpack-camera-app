@@ -74,4 +74,9 @@
     <string name="quick_settings_lowlightboost_disabled">Low light boost off</string>
     <string name="quick_settings_lowlightboost_enabled_description">Low light boost on</string>
     <string name="quick_settings_lowlightboost_disabled_description">Low light boost off</string>
+
+    <string name="quick_settings_concurrent_camera_off">SINGLE</string>
+    <string name="quick_settings_concurrent_camera_dual">DUAL</string>
+    <string name="quick_settings_concurrent_camera_off_description">Concurrent cameras off</string>
+    <string name="quick_settings_concurrent_camera_dual_description">Concurrent dual camera on</string>
 </resources>

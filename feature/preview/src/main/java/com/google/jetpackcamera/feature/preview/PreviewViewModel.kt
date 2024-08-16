@@ -36,6 +36,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -595,6 +596,12 @@ class PreviewViewModel @AssistedInject constructor(
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
             cameraUseCase.setDynamicRange(dynamicRange)
+        }
+    }
+
+    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        viewModelScope.launch {
+            cameraUseCase.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 

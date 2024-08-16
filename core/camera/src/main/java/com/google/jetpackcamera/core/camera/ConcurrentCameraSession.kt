@@ -97,7 +97,7 @@ internal suspend fun runConcurrentCameraSession(
             processVideoControlEvents(
                 primaryCamera,
                 useCaseGroup.getVideoCapture(),
-                sessionSettings.captureMode
+                captureTypeSuffix = "DualCam"
             )
         }
 
