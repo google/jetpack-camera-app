@@ -234,11 +234,16 @@ class PreviewViewModel @AssistedInject constructor(
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
+            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            hdrDynamicRangeSupported && hdrImageFormatSupported
+            hdrDynamicRangeSupported &&
+            hdrImageFormatSupported &&
+            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
         return if (isShown) {
-            val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
+            val currentMode = if (
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
+                previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
             ) {
                 CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
@@ -255,7 +260,8 @@ class PreviewViewModel @AssistedInject constructor(
                         hdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.captureMode
+                        cameraAppSettings.captureMode,
+                        cameraAppSettings.concurrentCameraMode
                     )
                 )
             }
@@ -269,10 +275,15 @@ class PreviewViewModel @AssistedInject constructor(
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
-        currentCaptureMode: CaptureMode
+        currentCaptureMode: CaptureMode,
+        concurrentCameraMode: ConcurrentCameraMode
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+        }
+        if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return CaptureModeToggleUiState.DisabledReason
+                .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
         }
         if (!hdrImageFormatSupported) {
             // First assume HDR image is only unsupported on this capture mode

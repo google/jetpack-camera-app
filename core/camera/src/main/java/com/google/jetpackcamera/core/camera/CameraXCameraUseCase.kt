@@ -535,13 +535,16 @@ constructor(
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)?.tryApplyImageFormatConstraints()
+            old?.copy(captureMode = captureMode)
+                ?.tryApplyImageFormatConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
@@ -569,6 +572,7 @@ constructor(
             old?.copy(
                 previewStabilization = previewStabilization
             )?.tryApplyStabilizationConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
@@ -577,12 +581,14 @@ constructor(
             old?.copy(
                 videoCaptureStabilization = videoCaptureStabilization
             )?.tryApplyStabilizationConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
         currentSettings.update { old ->
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 

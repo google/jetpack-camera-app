@@ -115,8 +115,8 @@ fun QuickSetHdr(
     hdrDynamicRange: DynamicRange,
     hdrImageFormat: ImageOutputFormat,
     hdrDynamicRangeSupported: Boolean,
-    hdrImageFormatSupported: Boolean,
-    previewMode: PreviewMode
+    previewMode: PreviewMode,
+    enabled: Boolean
 ) {
     val enum =
         if (selectedDynamicRange == hdrDynamicRange ||
@@ -148,8 +148,7 @@ fun QuickSetHdr(
             onClick(newDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
-        enabled = (hdrDynamicRangeSupported && previewMode is PreviewMode.StandardMode) ||
-            hdrImageFormatSupported
+        enabled = enabled
     )
 }
 
@@ -252,7 +251,8 @@ fun QuickFlipCamera(
 fun QuickSetCaptureMode(
     setCaptureMode: (CaptureMode) -> Unit,
     currentCaptureMode: CaptureMode,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val enum: CameraCaptureMode =
         when (currentCaptureMode) {
@@ -267,7 +267,8 @@ fun QuickSetCaptureMode(
                 CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
                 CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
             }
-        }
+        },
+        enabled = enabled
     )
 }
 
@@ -275,7 +276,8 @@ fun QuickSetCaptureMode(
 fun QuickSetConcurrentCamera(
     setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
     currentConcurrentCameraMode: ConcurrentCameraMode,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val enum: CameraConcurrentCameraMode =
         when (currentConcurrentCameraMode) {
@@ -290,7 +292,8 @@ fun QuickSetConcurrentCamera(
                 ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
                 ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
             }
-        }
+        },
+        enabled = enabled
     )
 }
 

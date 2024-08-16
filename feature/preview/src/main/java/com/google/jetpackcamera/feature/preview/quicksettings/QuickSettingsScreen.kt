@@ -58,6 +58,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -216,7 +217,9 @@ private fun ExpandedQuickSettingsUi(
                             QuickSetCaptureMode(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
                                 setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
-                                currentCaptureMode = currentCameraSettings.captureMode
+                                currentCaptureMode = currentCameraSettings.captureMode,
+                                enabled = currentCameraSettings.concurrentCameraMode ==
+                                    ConcurrentCameraMode.OFF
                             )
                         }
 
@@ -224,6 +227,24 @@ private fun ExpandedQuickSettingsUi(
                             currentCameraSettings
                         )
                         add {
+                            fun CameraConstraints.hdrDynamicRangeSupported(): Boolean =
+                                this.supportedDynamicRanges.size > 1
+
+                            fun CameraConstraints.hdrImageFormatSupported(): Boolean =
+                                supportedImageFormatsMap[currentCameraSettings.captureMode]
+                                    ?.let { it.size > 1 } ?: false
+
+                            // TODO(tm): Move this to PreviewUiState
+                            fun shouldEnable(): Boolean = when {
+                                currentCameraSettings.concurrentCameraMode !=
+                                    ConcurrentCameraMode.OFF -> false
+                                else -> (
+                                    cameraConstraints?.hdrDynamicRangeSupported() == true &&
+                                        previewUiState.previewMode is PreviewMode.StandardMode
+                                    ) ||
+                                    cameraConstraints?.hdrImageFormatSupported() == true
+                            }
+
                             QuickSetHdr(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
                                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
@@ -234,13 +255,10 @@ private fun ExpandedQuickSettingsUi(
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
                                 hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
                                 hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
-                                hdrDynamicRangeSupported = cameraConstraints?.let
-                                    { it.supportedDynamicRanges.size > 1 } ?: false,
-                                hdrImageFormatSupported =
-                                cameraConstraints?.supportedImageFormatsMap?.get(
-                                    currentCameraSettings.captureMode
-                                )?.let { it.size > 1 } ?: false,
-                                previewMode = previewUiState.previewMode
+                                hdrDynamicRangeSupported =
+                                cameraConstraints?.hdrDynamicRangeSupported() ?: false,
+                                previewMode = previewUiState.previewMode,
+                                enabled = shouldEnable()
                             )
                         }
 
