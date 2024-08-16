@@ -116,7 +116,8 @@ class ScreenFlashTest {
                 onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
                     override fun onCameraIdChange(cameraId: String?) {
                     }
-                })
+                }
+            )
             cameraUseCase.runCamera()
         }
 
