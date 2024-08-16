@@ -309,7 +309,7 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    maxVideoDuration = currentCameraSettings.maxVideoDuration
+                    maxVideoDuration = currentCameraSettings.maxVideoDurationMillis
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -692,8 +692,8 @@ constructor(
                 application.contentResolver,
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             ).apply {
-                if (currentSettings.value?.maxVideoDuration != -1L)
-                    setDurationLimitMillis(currentSettings.value!!.maxVideoDuration)
+                if (currentSettings.value?.maxVideoDurationMillis != -1L)
+                    setDurationLimitMillis(currentSettings.value!!.maxVideoDurationMillis)
             }
                 .setContentValues(contentValues)
                 .build()
@@ -716,12 +716,14 @@ constructor(
                     when (onVideoRecordEvent) {
                         is VideoRecordEvent.Finalize -> {
                             when (onVideoRecordEvent.error) {
-                                ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
+                                ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
+                                    // duration limit error is actually fine
                                     onVideoRecord(
                                         CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                             onVideoRecordEvent.outputResults.outputUri
                                         )
                                     )
+                                }
 
                                 else ->
                                     onVideoRecord(
@@ -1007,7 +1009,7 @@ constructor(
     override suspend fun setMaxVideoDuration(durationInNanos: Long) {
         currentSettings.update { old ->
             old?.copy(
-                maxVideoDuration = durationInNanos
+                maxVideoDurationMillis = durationInNanos
             )
         }
     }

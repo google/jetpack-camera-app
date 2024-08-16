@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.model
 const val TARGET_FPS_AUTO = 0
+const val UNLIMITED_VIDEO_DURATION = -1L
 
 /**
  * Data layer representation for settings.
@@ -36,7 +37,7 @@ data class CameraAppSettings(
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
-    val maxVideoDuration: Long = -1
+    val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
 )
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {

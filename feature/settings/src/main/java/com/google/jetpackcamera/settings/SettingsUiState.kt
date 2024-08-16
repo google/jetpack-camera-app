@@ -39,11 +39,11 @@ const val FPS_30 = 30
 const val FPS_60 = 60
 
 // seconds duration in millis
-const val NO_VIDEO_LIMIT = -1L
-const val FIVE_SECONDS = 5000L
-const val TEN_SECONDS = 10000L
-const val THIRTY_SECONDS = 30000L
-const val SIXTY_SECONDS = 60000L
+const val UNLIMITED_DURATION = -1L
+const val FIVE_SECONDS_DURATION = 5000L
+const val TEN_SECONDS_DURATION = 10000L
+const val THIRTY_SECONDS_DURATION = 30000L
+const val SIXTY_SECONDS_DURATION = 60000L
 
 /**
  * Defines the current state of the [SettingsScreen].
@@ -223,5 +223,5 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     stabilizationUiState =
     StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX))),
-    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(NO_VIDEO_LIMIT)
+    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_DURATION)
 )

@@ -84,7 +84,7 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(imageFormat = imageFormat)
     }
 
-    override suspend fun updateMaxVideoDuration(duration: Long) {
-        currentCameraSettings = currentCameraSettings.copy(maxVideoDuration = duration)
+    override suspend fun updateMaxVideoDuration(durationMillis: Long) {
+        currentCameraSettings = currentCameraSettings.copy(maxVideoDurationMillis = durationMillis)
     }
 }

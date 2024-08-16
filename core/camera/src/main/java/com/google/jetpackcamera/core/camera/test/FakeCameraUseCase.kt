@@ -245,7 +245,7 @@ class FakeCameraUseCase(
 
     override suspend fun setMaxVideoDuration(durationInNanos: Long) {
         currentSettings.update { old ->
-            old.copy(maxVideoDuration = durationInNanos)
+            old.copy(maxVideoDurationMillis = durationInNanos)
         }
     }
 }

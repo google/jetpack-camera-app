@@ -210,7 +210,7 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setTargetFrameRate(entry.value as Int)
                 }
 
-                CameraAppSettings::maxVideoDuration -> {
+                CameraAppSettings::maxVideoDurationMillis -> {
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
                 }
 

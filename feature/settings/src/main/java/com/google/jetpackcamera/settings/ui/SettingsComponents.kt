@@ -57,7 +57,7 @@ import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
-import com.google.jetpackcamera.settings.FIVE_SECONDS
+import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FPS_15
 import com.google.jetpackcamera.settings.FPS_30
 import com.google.jetpackcamera.settings.FPS_60
@@ -66,13 +66,13 @@ import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
-import com.google.jetpackcamera.settings.NO_VIDEO_LIMIT
+import com.google.jetpackcamera.settings.UNLIMITED_DURATION
 import com.google.jetpackcamera.settings.R
-import com.google.jetpackcamera.settings.SIXTY_SECONDS
+import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
-import com.google.jetpackcamera.settings.TEN_SECONDS
-import com.google.jetpackcamera.settings.THIRTY_SECONDS
+import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
+import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -346,27 +346,22 @@ fun MaxVideoDurationSetting(
         enabled = true,
         title = "Set maximum video duration",
         leadingIcon = null,
-        description = when (maxVideoDurationUiState.currentTimeLimitMillis) {
-            NO_VIDEO_LIMIT -> "Unlimited duration"
-            FIVE_SECONDS -> "Five seconds"
-            TEN_SECONDS -> "Ten seconds"
-            THIRTY_SECONDS -> "Thirty seconds"
-            SIXTY_SECONDS -> "Sixty seconds"
-            else ->(" unexpected" + maxVideoDurationUiState.currentTimeLimitMillis)
+        description = when (val maxDuration = maxVideoDurationUiState.currentTimeLimitMillis) {
+            UNLIMITED_DURATION -> stringResource(R.string.duration_description_none)
+            else ->  stringResource(R.string.duration_description_seconds, (maxDuration/1000))
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
                     enabled = true,
-                    text = "Unlimited Duration",
-                    selected = maxVideoDurationUiState.currentTimeLimitMillis == NO_VIDEO_LIMIT,
-                    onClick = { setMaxDuration(NO_VIDEO_LIMIT) }
+                    text = stringResource(R.string.duration_description_none),
+                    selected = maxVideoDurationUiState.currentTimeLimitMillis == UNLIMITED_DURATION,
+                    onClick = { setMaxDuration(UNLIMITED_DURATION) }
                 )
-                listOf(FIVE_SECONDS, TEN_SECONDS, THIRTY_SECONDS, SIXTY_SECONDS).forEach { maxDuration ->
+                listOf(FIVE_SECONDS_DURATION, TEN_SECONDS_DURATION, THIRTY_SECONDS_DURATION, SIXTY_SECONDS_DURATION).forEach { maxDuration ->
                     SingleChoiceSelector(
                         enabled = true,
-                        //todo USE STRING RESOURCE
-                        text = "%d second limit".format(maxDuration / 1000),
+                        text = stringResource(R.string.duration_description_seconds, (maxDuration/1000)),
                         selected = maxVideoDurationUiState.currentTimeLimitMillis == maxDuration,
                         onClick = { setMaxDuration(maxDuration) }
                     )

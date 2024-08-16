@@ -38,11 +38,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-const val TARGET_FPS_NONE = 0
-const val TARGET_FPS_15 = 15
-const val TARGET_FPS_30 = 30
-const val TARGET_FPS_60 = 60
-
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
@@ -77,7 +72,7 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
-                maxVideoDuration = it.maxVideoDuration
+                maxVideoDurationMillis = it.maxVideoDurationMillis
             )
         }
 
@@ -192,10 +187,10 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
-    override suspend fun updateMaxVideoDuration(duration: Long) {
+    override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setMaxVideoDuration(duration)
+                .setMaxVideoDurationMillis(durationMillis)
                 .build()
         }
     }

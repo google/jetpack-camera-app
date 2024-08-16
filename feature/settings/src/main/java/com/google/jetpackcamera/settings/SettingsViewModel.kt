@@ -60,7 +60,7 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
-                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(updatedSettings.maxVideoDuration),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(updatedSettings.maxVideoDurationMillis),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
@@ -102,7 +102,7 @@ class SettingsViewModel @Inject constructor(
         }
 
         // if fps is too high for any stabilization
-        if (cameraAppSettings.targetFrameRate >= TARGET_FPS_60) {
+        if (cameraAppSettings.targetFrameRate >= FPS_60) {
             constraintRationale.add(FpsUnsupportedRationale(STABILIZATION_SETTING_PREFIX, FPS_60))
         }
 
@@ -150,7 +150,7 @@ class SettingsViewModel @Inject constructor(
             constraintRationale.add(LensUnsupportedRationale(STABILIZATION_SETTING_PREFIX))
         }
         // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60 || currentFrameRate == TARGET_FPS_15) {
+        if (currentFrameRate == FPS_60 || currentFrameRate == FPS_15) {
             constraintRationale.add(
                 FpsUnsupportedRationale(
                     STABILIZATION_SETTING_PREFIX,
@@ -186,7 +186,7 @@ class SettingsViewModel @Inject constructor(
             constraintRationale.add(LensUnsupportedRationale(STABILIZATION_SETTING_PREFIX))
         }
         // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60) {
+        if (currentFrameRate == FPS_60) {
             constraintRationale.add(
                 FpsUnsupportedRationale(
                     STABILIZATION_SETTING_PREFIX,
