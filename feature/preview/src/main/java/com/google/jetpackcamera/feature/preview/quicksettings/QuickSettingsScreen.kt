@@ -270,7 +270,9 @@ private fun ExpandedQuickSettingsUi(
                                     onConcurrentCameraModeClick(c)
                                 },
                                 currentConcurrentCameraMode =
-                                currentCameraSettings.concurrentCameraMode
+                                currentCameraSettings.concurrentCameraMode,
+                                enabled =
+                                previewUiState.systemConstraints.concurrentCamerasSupported
                             )
                         }
                     }
