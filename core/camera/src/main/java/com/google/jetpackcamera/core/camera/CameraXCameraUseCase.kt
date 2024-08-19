@@ -168,7 +168,8 @@ constructor(
                 }
                 val logicalCameraId = session.device.id
                 if (onCameraIdChangeListener != null &&
-                    (!physicalCameraId.equals(this.physicalCameraId) ||
+                    (
+                        !physicalCameraId.equals(this.physicalCameraId) ||
                             logicalCameraId != this.logicalCameraId)
                 ) {
                     onCameraIdChangeListener!!.onCameraIdChange(

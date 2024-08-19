@@ -157,10 +157,7 @@ class CameraXCameraUseCaseTest {
             appSettings,
             CameraUseCase.UseCaseMode.STANDARD,
             object : CameraUseCase.OnCameraIdChangeListener {
-                override fun onCameraIdChange(
-                    physicalCameraId: String?,
-                    logicalCameraId: String
-                ) {
+                override fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String) {
                 }
             }
         )

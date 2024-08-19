@@ -48,9 +48,10 @@ class PreviewViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
             PreviewMode.StandardMode {},
+            false,
             cameraUseCase = cameraUseCase,
             constraintsRepository = constraintsRepository,
-            settingsRepository = FakeSettingsRepository
+            settingsRepository = FakeSettingsRepository,
         )
         advanceUntilIdle()
     }

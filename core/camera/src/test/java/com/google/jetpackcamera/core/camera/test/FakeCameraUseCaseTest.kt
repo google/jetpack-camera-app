@@ -58,10 +58,7 @@ class FakeCameraUseCaseTest {
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
             useCaseMode = CameraUseCase.UseCaseMode.STANDARD,
             onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
-                override fun onCameraIdChange(
-                    physicalCameraId: String?,
-                    logicalCameraId: String
-                ) {
+                override fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String) {
                 }
             }
         )

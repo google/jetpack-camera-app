@@ -42,9 +42,9 @@ interface CameraUseCase {
      * @return list of available lenses.
      */
     suspend fun initialize(
-      cameraAppSettings: CameraAppSettings,
-      useCaseMode: UseCaseMode,
-      onCameraIdChangeListener: OnCameraIdChangeListener
+        cameraAppSettings: CameraAppSettings,
+        useCaseMode: UseCaseMode,
+        onCameraIdChangeListener: OnCameraIdChangeListener
     )
 
     /**
