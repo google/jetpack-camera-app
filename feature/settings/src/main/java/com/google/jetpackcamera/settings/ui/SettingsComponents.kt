@@ -755,27 +755,27 @@ fun SingleChoiceSelector(
 @Composable
 @ReadOnlyComposable
 fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    val context = LocalContext.current
     return when (disabledRationale) {
-        is DisabledRationale.DeviceUnsupportedRationale -> context.getString(
+        is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
+
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
 
-        is DisabledRationale.FpsUnsupportedRationale -> context.getString(
+        is DisabledRationale.FpsUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName,
+            disabledRationale.affectedSettingNameResId,
             disabledRationale.currentFps
         )
 
-        is DisabledRationale.LensUnsupportedRationale -> context.getString(
+        is DisabledRationale.LensUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
 
-        is DisabledRationale.StabilizationUnsupportedRationale -> context.getString(
+        is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
     }
 }

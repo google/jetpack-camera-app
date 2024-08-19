@@ -38,9 +38,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-const val TARGET_FPS_NONE = 0
 const val TARGET_FPS_15 = 15
-const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
 /**
