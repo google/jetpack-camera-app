@@ -78,6 +78,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
     @Assisted val previewMode: PreviewMode,
+    @Assisted val isDebugMode: Boolean,
     private val cameraUseCase: CameraUseCase,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository
@@ -147,7 +148,8 @@ class PreviewViewModel @AssistedInject constructor(
                                 captureModeToggleUiState = getCaptureToggleUiState(
                                     systemConstraints,
                                     cameraAppSettings
-                                )
+                                ),
+                                isDebugMode = isDebugMode
                             )
 
                         is PreviewUiState.NotReady ->
@@ -160,7 +162,8 @@ class PreviewViewModel @AssistedInject constructor(
                                 captureModeToggleUiState = getCaptureToggleUiState(
                                     systemConstraints,
                                     cameraAppSettings
-                                )
+                                ),
+                                isDebugMode = isDebugMode
                             )
                     }
                 }
@@ -675,7 +678,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(previewMode: PreviewMode): PreviewViewModel
+        fun create(previewMode: PreviewMode, isDebugMode: Boolean): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {

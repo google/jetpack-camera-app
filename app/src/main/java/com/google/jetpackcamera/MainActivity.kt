@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
+private const val ACTION_DEBUG_MODE = "com.google.jetpackcamera.ACTION_DEBUG_MODE"
 
 /**
  * Activity for the JetpackCameraApp.
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 previewMode = getPreviewMode(),
+                                isDebugMode = isDebugMode(),
                                 openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
@@ -157,6 +159,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun isDebugMode(): Boolean {
+        return intent != null && ACTION_DEBUG_MODE == intent.action
     }
 
     private fun getPreviewMode(): PreviewMode {

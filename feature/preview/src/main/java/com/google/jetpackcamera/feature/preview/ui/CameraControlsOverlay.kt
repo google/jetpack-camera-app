@@ -228,7 +228,9 @@ private fun ControlsBottom(
             if (showZoomLevel) {
                 ZoomScaleText(zoomLevel)
             }
-            CurrentCameraIdText(currentCameraId = currentCameraId)
+            if (previewUiState.isDebugMode) {
+                CurrentCameraIdText(currentCameraId = currentCameraId)
+            }
         }
 
         Row(

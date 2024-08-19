@@ -43,7 +43,8 @@ sealed interface PreviewUiState {
         val previewMode: PreviewMode,
         val captureModeToggleUiState: CaptureModeToggleUiState,
         val sessionFirstFrameTimestamp: Long = 0L,
-        val currentCameraId: String? = null
+        val currentCameraId: String? = null,
+        val isDebugMode: Boolean = false
     ) : PreviewUiState
 }
 
