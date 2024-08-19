@@ -35,13 +35,13 @@ import com.google.jetpackcamera.settings.ui.FPS_30
 import com.google.jetpackcamera.settings.ui.FPS_60
 import com.google.jetpackcamera.settings.ui.FPS_AUTO
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -78,7 +78,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings,
+        cameraAppSettings: CameraAppSettings
     ): StabilizationUiState {
         val deviceStabilizations: Set<SupportedStabilizationMode> =
             systemConstraints
@@ -406,9 +406,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, add to rationale
         if ((
-                    previewStabilization == Stabilization.ON &&
-                            (fpsOption == FPS_30 || fpsOption == FPS_AUTO)
-                    ) ||
+                previewStabilization == Stabilization.ON &&
+                    (fpsOption == FPS_30 || fpsOption == FPS_AUTO)
+                ) ||
             (videoStabilization == Stabilization.ON && fpsOption != FPS_60)
         ) {
             constraintsRationale.add(
