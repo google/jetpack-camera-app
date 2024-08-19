@@ -159,6 +159,7 @@ internal class VideoRecordingDeviceTest {
     }
 
     private fun idleForVideoDuration() {
+        // TODO: replace with a check for the timestamp UI of the video duration
         try {
             composeTestRule.waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
                 composeTestRule.onNodeWithTag("dummyTagForLongPress").isDisplayed()
