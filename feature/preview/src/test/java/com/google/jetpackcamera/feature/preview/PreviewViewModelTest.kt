@@ -51,7 +51,7 @@ class PreviewViewModelTest {
             false,
             cameraUseCase = cameraUseCase,
             constraintsRepository = constraintsRepository,
-            settingsRepository = FakeSettingsRepository,
+            settingsRepository = FakeSettingsRepository
         )
         advanceUntilIdle()
     }
