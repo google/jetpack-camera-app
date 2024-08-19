@@ -36,4 +36,12 @@ sealed interface PreviewMode {
         val imageCaptureUri: Uri?,
         val onImageCapture: (PreviewViewModel.ImageCaptureEvent) -> Unit
     ) : PreviewMode
+
+    /**
+     * Under this mode, the app is launched by an external intent to capture a video.
+     */
+    data class ExternalVideoCaptureMode(
+        val videoCaptureUri: Uri?,
+        val onVideoCapture: (PreviewViewModel.VideoCaptureEvent) -> Unit
+    ) : PreviewMode
 }
