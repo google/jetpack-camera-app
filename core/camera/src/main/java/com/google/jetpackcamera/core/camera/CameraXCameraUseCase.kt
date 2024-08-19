@@ -730,7 +730,7 @@ constructor(
 
         val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
-                File(videoCaptureUri!!.getPath())
+                File(videoCaptureUri!!.path!!)
             ).build()
             videoCaptureUseCase.output.prepareRecording(application, fileOutputOptions)
         } else {

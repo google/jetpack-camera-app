@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
 
     private fun isDebugMode(): Boolean {
         return intent != null && intent.hasExtra(KEY_DEBUG_MODE) &&
-                intent.getBooleanExtra(KEY_DEBUG_MODE, false)
+            intent.getBooleanExtra(KEY_DEBUG_MODE, false)
     }
 
     private fun getStandardMode(): PreviewMode.StandardMode {
