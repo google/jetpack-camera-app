@@ -170,7 +170,8 @@ constructor(
                 if (onCameraIdChangeListener != null &&
                     (
                         !physicalCameraId.equals(this.physicalCameraId) ||
-                            logicalCameraId != this.logicalCameraId)
+                            logicalCameraId != this.logicalCameraId
+                        )
                 ) {
                     onCameraIdChangeListener!!.onCameraIdChange(
                         physicalCameraId,
