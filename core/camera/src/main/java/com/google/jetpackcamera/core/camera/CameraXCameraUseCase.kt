@@ -152,18 +152,29 @@ constructor(
     private fun setOnCaptureCompletedCallback(previewBuilder: Preview.Builder) {
         val isFirstFrameTimestampUpdated = atomic(false)
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
-            private var cameraId: String? = null
+            private var physicalCameraId: String? = null
+            private var logicalCameraId: String? = null
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
                 request: CaptureRequest,
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+                var physicalCameraId: String? = null
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val cameraId = result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
-                    if (onCameraIdChangeListener != null && !cameraId.equals(this.cameraId)) {
-                        onCameraIdChangeListener!!.onCameraIdChange(cameraId)
-                    }
+                    physicalCameraId = result.get(
+                        CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID
+                    )
+                }
+                val logicalCameraId = session.device.id
+                if (onCameraIdChangeListener != null &&
+                    (!physicalCameraId.equals(this.physicalCameraId) ||
+                            logicalCameraId != this.logicalCameraId)
+                ) {
+                    onCameraIdChangeListener!!.onCameraIdChange(
+                        physicalCameraId,
+                        logicalCameraId
+                    )
                 }
                 try {
                     if (!isFirstFrameTimestampUpdated.value) {
@@ -204,7 +215,7 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode
+        useCaseMode: CameraUseCase.UseCaseMode,
         onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener
     ) {
         this.useCaseMode = useCaseMode

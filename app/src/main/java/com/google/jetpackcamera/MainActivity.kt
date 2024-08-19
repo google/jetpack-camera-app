@@ -71,7 +71,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
-private const val ACTION_DEBUG_MODE = "com.google.jetpackcamera.ACTION_DEBUG_MODE"
+private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
 
 /**
  * Activity for the JetpackCameraApp.
@@ -163,7 +163,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun isDebugMode(): Boolean {
-        return intent != null && ACTION_DEBUG_MODE == intent.action
+        return intent != null && intent.hasExtra(KEY_DEBUG_MODE) &&
+                intent.getBooleanExtra(KEY_DEBUG_MODE, false)
     }
 
     private fun getStandardMode(): PreviewMode.StandardMode {

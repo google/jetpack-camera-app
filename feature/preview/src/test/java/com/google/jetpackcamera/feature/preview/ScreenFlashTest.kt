@@ -114,7 +114,10 @@ class ScreenFlashTest {
                 DEFAULT_CAMERA_APP_SETTINGS,
                 CameraUseCase.UseCaseMode.STANDARD,
                 onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
-                    override fun onCameraIdChange(cameraId: String?) {
+                    override fun onCameraIdChange(
+                        physicalCameraId: String?,
+                        logicalCameraId: String
+                    ) {
                     }
                 }
             )

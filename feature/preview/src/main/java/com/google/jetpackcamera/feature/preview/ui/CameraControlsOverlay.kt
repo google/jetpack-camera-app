@@ -135,7 +135,8 @@ fun CameraControlsOverlay(
                 previewUiState = previewUiState,
                 audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
-                currentCameraId = previewUiState.currentCameraId,
+                physicalCameraId = previewUiState.currentPhysicalCameraId,
+                logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 currentCameraSettings = previewUiState.currentCameraSettings,
@@ -205,7 +206,8 @@ private fun ControlsBottom(
     modifier: Modifier = Modifier,
     audioAmplitude: Double,
     previewUiState: PreviewUiState.Ready,
-    currentCameraId: String? = null,
+    physicalCameraId: String? = null,
+    logicalCameraId: String? = null,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -237,7 +239,7 @@ private fun ControlsBottom(
                 ZoomScaleText(zoomLevel)
             }
             if (previewUiState.isDebugMode) {
-                CurrentCameraIdText(currentCameraId = currentCameraId)
+                CurrentCameraIdText(physicalCameraId, logicalCameraId)
             }
         }
 

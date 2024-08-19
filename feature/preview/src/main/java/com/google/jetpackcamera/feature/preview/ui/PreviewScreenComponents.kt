@@ -439,11 +439,11 @@ fun ZoomScaleText(zoomScale: Float) {
 }
 
 @Composable
-fun CurrentCameraIdText(currentCameraId: String?) {
+fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     Text(
         modifier = Modifier
             .testTag(CURRENT_CAMERA_ID_TAG),
-        text = "camera id: $currentCameraId",
+        text = "physical id: $physicalCameraId, logical id: $logicalCameraId",
         fontSize = 20.sp
     )
 }

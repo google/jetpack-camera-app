@@ -145,7 +145,7 @@ interface CameraUseCase {
     }
 
     interface OnCameraIdChangeListener {
-        fun onCameraIdChange(cameraId: String?)
+        fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String)
     }
 }
 

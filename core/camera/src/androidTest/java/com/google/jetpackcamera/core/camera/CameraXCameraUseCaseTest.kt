@@ -155,9 +155,12 @@ class CameraXCameraUseCaseTest {
     ).apply {
         initialize(
             appSettings,
-            false,
+            CameraUseCase.UseCaseMode.STANDARD,
             object : CameraUseCase.OnCameraIdChangeListener {
-                override fun onCameraIdChange(cameraId: String?) {
+                override fun onCameraIdChange(
+                    physicalCameraId: String?,
+                    logicalCameraId: String
+                ) {
                 }
             }
         )
@@ -190,7 +193,7 @@ class CameraXCameraUseCaseTest {
         val onRecorded = CompletableDeferred<Unit>()
         val onRecordStatus = CompletableDeferred<Unit>()
         var statusCount = 0
-        startVideoRecording {
+        startVideoRecording(null, false) {
             when (it) {
                 is OnVideoRecorded -> {
                     val videoUri = it.savedUri
