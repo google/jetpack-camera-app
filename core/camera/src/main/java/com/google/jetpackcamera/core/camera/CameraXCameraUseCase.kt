@@ -311,7 +311,7 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    maxVideoDuration = currentCameraSettings.maxVideoDuration
+                    maxVideoDuration = currentCameraSettings.maxVideoDurationMillis
                 )
 
                 val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -729,8 +729,8 @@ constructor(
                     MediaStore.Video.Media.EXTERNAL_CONTENT_URI
                 ).apply {
                     // apply duration limit if applicable
-                    if (currentSettings.value?.maxVideoDuration != -1L)
-                        setDurationLimitMillis(currentSettings.value!!.maxVideoDuration)
+                    if (currentSettings.value?.maxVideoDurationMillis != -1L)
+                        setDurationLimitMillis(currentSettings.value!!.maxVideoDurationMillis)
                 }
                     .setContentValues(contentValues)
                     .build()
@@ -752,6 +752,7 @@ constructor(
                 is VideoRecordEvent.Finalize -> {
                     when (onVideoRecordEvent.error) {
                         ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
+                            // duration limit error is actually fine
                             onVideoRecord(
                                 CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                     onVideoRecordEvent.outputResults.outputUri
