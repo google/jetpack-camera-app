@@ -272,7 +272,8 @@ private fun ExpandedQuickSettingsUi(
                                 currentConcurrentCameraMode =
                                 currentCameraSettings.concurrentCameraMode,
                                 enabled =
-                                previewUiState.systemConstraints.concurrentCamerasSupported
+                                previewUiState.systemConstraints.concurrentCamerasSupported &&
+                                previewUiState.previewMode !is PreviewMode.ExternalImageCaptureMode
                             )
                         }
                     }
