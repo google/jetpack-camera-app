@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.util.Preconditions
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
@@ -234,12 +236,16 @@ private fun ControlsBottom(
     onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (showZoomLevel) {
-                ZoomScaleText(zoomLevel)
-            }
-            if (previewUiState.isDebugMode) {
-                CurrentCameraIdText(physicalCameraId, logicalCameraId)
+        CompositionLocalProvider(
+            LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (showZoomLevel) {
+                    ZoomScaleText(zoomLevel)
+                }
+                if (previewUiState.isDebugMode) {
+                    CurrentCameraIdText(physicalCameraId, logicalCameraId)
+                }
             }
         }
 

@@ -153,14 +153,7 @@ class CameraXCameraUseCaseTest {
         Dispatchers.Default,
         constraintsRepository
     ).apply {
-        initialize(
-            appSettings,
-            CameraUseCase.UseCaseMode.STANDARD,
-            object : CameraUseCase.OnCameraIdChangeListener {
-                override fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String) {
-                }
-            }
-        )
+        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD)
         providePreviewSurface()
     }
 

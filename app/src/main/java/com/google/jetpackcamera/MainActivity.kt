@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 previewMode = getPreviewMode(),
-                                isDebugMode = isDebugMode(),
+                                isDebugMode = isDebugMode,
                                 openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
@@ -162,10 +162,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun isDebugMode(): Boolean {
-        return intent != null && intent.hasExtra(KEY_DEBUG_MODE) &&
-            intent.getBooleanExtra(KEY_DEBUG_MODE, false)
-    }
+    private val isDebugMode: Boolean
+        get() = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false
 
     private fun getStandardMode(): PreviewMode.StandardMode {
         return PreviewMode.StandardMode { event ->

@@ -109,16 +109,6 @@ class PreviewViewModel @AssistedInject constructor(
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
             previewMode.toUseCaseMode(),
-            onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
-                override fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String) {
-                    _previewUiState.update { old ->
-                        (old as? PreviewUiState.Ready)?.copy(
-                            currentPhysicalCameraId = physicalCameraId,
-                            currentLogicalCameraId = logicalCameraId
-                        ) ?: old
-                    }
-                }
-            }
         )
     }
 
@@ -153,7 +143,9 @@ class PreviewViewModel @AssistedInject constructor(
                                     systemConstraints,
                                     cameraAppSettings
                                 ),
-                                isDebugMode = isDebugMode
+                                isDebugMode = isDebugMode,
+                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
                             )
 
                         is PreviewUiState.NotReady ->
@@ -167,7 +159,9 @@ class PreviewViewModel @AssistedInject constructor(
                                     systemConstraints,
                                     cameraAppSettings
                                 ),
-                                isDebugMode = isDebugMode
+                                isDebugMode = isDebugMode,
+                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
                             )
                     }
                 }

@@ -167,16 +167,14 @@ constructor(
                     )
                 }
                 val logicalCameraId = session.device.id
-                if (onCameraIdChangeListener != null &&
-                    (
-                        !physicalCameraId.equals(this.physicalCameraId) ||
-                            logicalCameraId != this.logicalCameraId
-                        )
+                if (!physicalCameraId.equals(this.physicalCameraId) ||
+                    logicalCameraId != this.logicalCameraId
                 ) {
-                    onCameraIdChangeListener!!.onCameraIdChange(
-                        physicalCameraId,
-                        logicalCameraId
-                    )
+                    _currentCameraState.update { old ->
+                        old.copy(
+                            debugInfo = DebugInfo(logicalCameraId, physicalCameraId)
+                        )
+                    }
                 }
                 try {
                     if (!isFirstFrameTimestampUpdated.value) {
@@ -213,15 +211,11 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    private var onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener? = null
-
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         useCaseMode: CameraUseCase.UseCaseMode,
-        onCameraIdChangeListener: CameraUseCase.OnCameraIdChangeListener
     ) {
         this.useCaseMode = useCaseMode
-        this.onCameraIdChangeListener = onCameraIdChangeListener
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras

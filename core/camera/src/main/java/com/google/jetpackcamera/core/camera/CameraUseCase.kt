@@ -41,11 +41,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(
-        cameraAppSettings: CameraAppSettings,
-        useCaseMode: UseCaseMode,
-        onCameraIdChangeListener: OnCameraIdChangeListener
-    )
+    suspend fun initialize(cameraAppSettings: CameraAppSettings, useCaseMode: UseCaseMode)
 
     /**
      * Starts the camera.
@@ -143,14 +139,13 @@ interface CameraUseCase {
         IMAGE_ONLY,
         VIDEO_ONLY
     }
-
-    interface OnCameraIdChangeListener {
-        fun onCameraIdChange(physicalCameraId: String?, logicalCameraId: String)
-    }
 }
 
 data class CameraState(
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
-    val torchEnabled: Boolean = false
+    val torchEnabled: Boolean = false,
+    val debugInfo: DebugInfo = DebugInfo(null, null)
 )
+
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)

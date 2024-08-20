@@ -430,11 +430,9 @@ fun ZoomScaleText(zoomScale: Float) {
     )
     Text(
         modifier = Modifier
-            .padding(horizontal = 10.dp)
             .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
         text = "%.1fx".format(zoomScale),
-        fontSize = 20.sp
     )
 }
 
@@ -444,8 +442,7 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
         modifier = Modifier
             .testTag(CURRENT_CAMERA_ID_TAG),
         text = "physical id: $physicalCameraId, logical id: $logicalCameraId",
-        fontSize = 20.sp
-    )
+     )
 }
 
 @Composable

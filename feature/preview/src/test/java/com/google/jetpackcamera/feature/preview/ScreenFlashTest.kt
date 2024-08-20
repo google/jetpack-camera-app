@@ -112,14 +112,7 @@ class ScreenFlashTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraUseCase.initialize(
                 DEFAULT_CAMERA_APP_SETTINGS,
-                CameraUseCase.UseCaseMode.STANDARD,
-                onCameraIdChangeListener = object : CameraUseCase.OnCameraIdChangeListener {
-                    override fun onCameraIdChange(
-                        physicalCameraId: String?,
-                        logicalCameraId: String
-                    ) {
-                    }
-                }
+                CameraUseCase.UseCaseMode.STANDARD
             )
             cameraUseCase.runCamera()
         }
