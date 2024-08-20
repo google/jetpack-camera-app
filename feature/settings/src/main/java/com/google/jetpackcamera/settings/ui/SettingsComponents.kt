@@ -43,7 +43,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -755,27 +754,27 @@ fun SingleChoiceSelector(
 @Composable
 @ReadOnlyComposable
 fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    val context = LocalContext.current
     return when (disabledRationale) {
-        is DisabledRationale.DeviceUnsupportedRationale -> context.getString(
+        is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
+
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
 
-        is DisabledRationale.FpsUnsupportedRationale -> context.getString(
+        is DisabledRationale.FpsUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName,
+            disabledRationale.affectedSettingNameResId,
             disabledRationale.currentFps
         )
 
-        is DisabledRationale.LensUnsupportedRationale -> context.getString(
+        is DisabledRationale.LensUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
 
-        is DisabledRationale.StabilizationUnsupportedRationale -> context.getString(
+        is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingName
+            disabledRationale.affectedSettingNameResId
         )
     }
 }
