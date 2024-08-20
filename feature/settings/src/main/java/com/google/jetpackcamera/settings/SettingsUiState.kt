@@ -89,13 +89,13 @@ sealed interface DisabledRationale {
     sealed interface LensUnsupportedRationale : DisabledRationale {
         data class FrontLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
             LensUnsupportedRationale {
-            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val reasonTextResId: Int = R.string.front_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
 
         data class RearLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
             LensUnsupportedRationale {
-            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val reasonTextResId: Int = R.string.rear_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
     }

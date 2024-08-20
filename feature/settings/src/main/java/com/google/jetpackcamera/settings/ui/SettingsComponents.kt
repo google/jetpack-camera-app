@@ -758,23 +758,23 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
 
         is DisabledRationale.FpsUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId,
+            stringResource(disabledRationale.affectedSettingNameResId),
             disabledRationale.currentFps
         )
 
         is DisabledRationale.LensUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
 }
