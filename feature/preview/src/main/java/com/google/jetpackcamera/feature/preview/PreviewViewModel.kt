@@ -658,6 +658,8 @@ class PreviewViewModel @AssistedInject constructor(
                     videoRecordingState = VideoRecordingState.INACTIVE
                 ) ?: old
             }
+            Log.d(TAG, (previewUiState.value as PreviewUiState.Ready).videoRecordingState.toString())
+
         }
         cameraUseCase.stopVideoRecording()
         recordingJob?.cancel()

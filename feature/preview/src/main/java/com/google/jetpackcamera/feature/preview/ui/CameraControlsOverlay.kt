@@ -312,15 +312,10 @@ private fun CaptureButton(
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
-    LaunchedEffect(previewUiState.recordingElapsedTimeNanos) {
-        if (videoRecordingState == VideoRecordingState.ACTIVE &&
-            maxVideoDurationMillis != -1L &&
-            previewUiState.recordingElapsedTimeNanos >= (maxVideoDurationMillis * 1_000_000)
-        ) {
-            //still called to trigger UI changes
-            onStopVideoRecording()
-        }
-    }
+    // TODO: b/361133784 - [JCA] Update VideoRecordingState when recording reaches time limit
+    // recording actually stops a few ms before its reflected in recordingElapsedTimeNanos, so a
+    // launchedEffect cannot depend on it to trigger the UI change
+
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {
