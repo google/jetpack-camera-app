@@ -60,6 +60,7 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -87,6 +88,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -141,8 +143,6 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private lateinit var imageCaptureUseCase: ImageCapture
-
     /**
      * Applies a CaptureCallback to the provided image capture builder
      */
@@ -177,9 +177,11 @@ constructor(
         imageCaptureExtender.setSessionCaptureCallback(captureCallback)
     }
 
+    private var imageCaptureUseCase: ImageCapture? = null
+
     private lateinit var captureMode: CaptureMode
     private lateinit var systemConstraints: SystemConstraints
-    private var disableVideoCapture by Delegates.notNull<Boolean>()
+    private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
@@ -191,9 +193,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        externalImageCapture: Boolean
+        useCaseMode: CameraUseCase.UseCaseMode
     ) {
-        this.disableVideoCapture = externalImageCapture
+        this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -258,7 +260,7 @@ constructor(
         currentSettings.value =
             cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
+                .tryApplyAspectRatioForExternalCapture(this.useCaseMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
@@ -396,7 +398,9 @@ constructor(
                             }
                         }
 
-                        if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+                        if (imageCaptureUseCase != null &&
+                            prevTransientSettings.flashMode != newTransientSettings.flashMode
+                        ) {
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
@@ -492,6 +496,8 @@ constructor(
                             videoCapture,
                             sessionSettings,
                             transientSettings,
+                            event.videoCaptureUri,
+                            event.shouldUseUri,
                             event.onVideoRecord
                         )
                     }
@@ -510,12 +516,16 @@ constructor(
         videoCapture: VideoCapture<Recorder>,
         sessionSettings: PerpetualSessionSettings,
         transientSettings: StateFlow<TransientSessionSettings?>,
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         var currentSettings = transientSettings.filterNotNull().first()
 
         startVideoRecordingInternal(
             initialMuted = currentSettings.audioMuted,
+            videoCaptureUri,
+            shouldUseUri,
             videoCapture,
             onVideoRecord
         ).use { recording ->
@@ -555,8 +565,11 @@ constructor(
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
+        if (imageCaptureUseCase == null) {
+            throw RuntimeException("Attempted take picture with null imageCapture use case")
+        }
         try {
-            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
+            val imageProxy = imageCaptureUseCase!!.takePicture(onCaptureStarted)
             Log.d(TAG, "onCaptureSuccess")
             imageProxy.close()
         } catch (exception: Exception) {
@@ -572,6 +585,9 @@ constructor(
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
     ): ImageCapture.OutputFileResults {
+        if (imageCaptureUseCase == null) {
+            throw RuntimeException("Attempted take picture with null imageCapture use case")
+        }
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
         if (ignoreUri) {
@@ -611,7 +627,7 @@ constructor(
             }
         }
         try {
-            val outputFileResults = imageCaptureUseCase.takePicture(
+            val outputFileResults = imageCaptureUseCase!!.takePicture(
                 outputFileOptions,
                 onCaptureStarted
             )
@@ -643,10 +659,21 @@ constructor(
     }
 
     override suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        if (shouldUseUri && videoCaptureUri == null) {
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            throw e
+        }
         videoCaptureControlEvents.send(
-            VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
+            VideoCaptureControlEvent.StartRecordingEvent(
+                videoCaptureUri,
+                shouldUseUri,
+                onVideoRecord
+            )
         )
     }
 
@@ -656,6 +683,8 @@ constructor(
 
     private suspend fun startVideoRecordingInternal(
         initialMuted: Boolean,
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         videoCaptureUseCase: VideoCapture<Recorder>,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ): Recording {
@@ -674,69 +703,75 @@ constructor(
             )
                 == PackageManager.PERMISSION_GRANTED
             )
-        val captureTypeString =
-            when (captureMode) {
-                CaptureMode.MULTI_STREAM -> "MultiStream"
-                CaptureMode.SINGLE_STREAM -> "SingleStream"
-            }
-        val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
-        val contentValues =
-            ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, name)
-            }
-        val mediaStoreOutput =
-            MediaStoreOutputOptions.Builder(
-                application.contentResolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            )
-                .setContentValues(contentValues)
-                .build()
 
+        val pendingRecord = if (shouldUseUri) {
+            val fileOutputOptions = FileOutputOptions.Builder(
+                File(videoCaptureUri!!.getPath())
+            ).build()
+            videoCaptureUseCase.output.prepareRecording(application, fileOutputOptions)
+        } else {
+            val captureTypeString =
+                when (captureMode) {
+                    CaptureMode.MULTI_STREAM -> "MultiStream"
+                    CaptureMode.SINGLE_STREAM -> "SingleStream"
+                }
+            val name = "JCA-recording-${Date()}-$captureTypeString.mp4"
+            val contentValues =
+                ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                }
+            val mediaStoreOutput =
+                MediaStoreOutputOptions.Builder(
+                    application.contentResolver,
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                )
+                    .setContentValues(contentValues)
+                    .build()
+            videoCaptureUseCase.output.prepareRecording(application, mediaStoreOutput)
+        }
+        pendingRecord.apply {
+            if (audioEnabled) {
+                withAudioEnabled()
+            }
+        }
         val callbackExecutor: Executor =
             (
                 currentCoroutineContext()[ContinuationInterceptor] as?
                     CoroutineDispatcher
                 )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
-        return videoCaptureUseCase.output
-            .prepareRecording(application, mediaStoreOutput)
-            .apply {
-                if (audioEnabled) {
-                    withAudioEnabled()
-                }
-            }
-            .start(callbackExecutor) { onVideoRecordEvent ->
-                run {
-                    Log.d(TAG, onVideoRecordEvent.toString())
-                    when (onVideoRecordEvent) {
-                        is VideoRecordEvent.Finalize -> {
-                            when (onVideoRecordEvent.error) {
-                                ERROR_NONE ->
-                                    onVideoRecord(
-                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                            onVideoRecordEvent.outputResults.outputUri
-                                        )
-                                    )
-
-                                else ->
-                                    onVideoRecord(
-                                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-                                    )
-                            }
-                        }
-
-                        is VideoRecordEvent.Status -> {
+        return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+            Log.d(TAG, onVideoRecordEvent.toString())
+            when (onVideoRecordEvent) {
+                is VideoRecordEvent.Finalize -> {
+                    when (onVideoRecordEvent.error) {
+                        ERROR_NONE ->
                             onVideoRecord(
-                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                    onVideoRecordEvent.recordingStats.audioStats
-                                        .audioAmplitude
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                    onVideoRecordEvent.outputResults.outputUri
                                 )
                             )
-                        }
+
+                        else ->
+                            onVideoRecord(
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                    onVideoRecordEvent.cause
+                                )
+                            )
                     }
                 }
-            }.apply {
-                mute(initialMuted)
+
+                is VideoRecordEvent.Status -> {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                            onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude
+                        )
+                    )
+                }
             }
+        }.apply {
+            mute(initialMuted)
+        }
     }
 
     override fun setZoomScale(scale: Float) {
@@ -782,12 +817,16 @@ constructor(
     }
 
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
-        externalImageCapture: Boolean
+        useCaseMode: CameraUseCase.UseCaseMode
     ): CameraAppSettings {
-        if (externalImageCapture) {
-            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        return when (useCaseMode) {
+            CameraUseCase.UseCaseMode.STANDARD -> this
+            CameraUseCase.UseCaseMode.IMAGE_ONLY ->
+                this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+
+            CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+                this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
         }
-        return this
     }
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
@@ -867,7 +906,7 @@ constructor(
             isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
         if (isScreenFlashRequired) {
-            imageCaptureUseCase.screenFlash = object : ScreenFlash {
+            imageCaptureUseCase!!.screenFlash = object : ScreenFlash {
                 override fun apply(
                     expirationTimeMillis: Long,
                     listener: ImageCapture.ScreenFlashListener
@@ -893,7 +932,7 @@ constructor(
             }
         }
 
-        imageCaptureUseCase.flashMode = when (flashMode) {
+        imageCaptureUseCase!!.flashMode = when (flashMode) {
             FlashMode.OFF -> ImageCapture.FLASH_MODE_OFF // 2
 
             FlashMode.ON -> if (isScreenFlashRequired) {
@@ -908,12 +947,12 @@ constructor(
                 ImageCapture.FLASH_MODE_AUTO // 0
             }
         }
-        Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase.flashMode}")
+        Log.d(TAG, "Set flash mode to: ${imageCaptureUseCase!!.flashMode}")
     }
 
-    override fun isScreenFlashEnabled() =
-        imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+    override fun isScreenFlashEnabled() = imageCaptureUseCase != null &&
+        imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+        imageCaptureUseCase!!.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -936,17 +975,21 @@ constructor(
     ): UseCaseGroup {
         val previewUseCase =
             createPreviewUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
-        imageCaptureUseCase = createImageUseCase(cameraInfo, sessionSettings)
+        if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
+            imageCaptureUseCase = createImageUseCase(cameraInfo, sessionSettings)
+        }
         var videoCaptureUseCase: VideoCapture<Recorder>? = null
-        if (!disableVideoCapture) {
+        if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
             videoCaptureUseCase =
                 createVideoUseCase(cameraInfo, sessionSettings, supportedStabilizationModes)
         }
 
-        setFlashModeInternal(
-            flashMode = initialTransientSettings.flashMode,
-            isFrontFacing = sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
-        )
+        if (imageCaptureUseCase != null) {
+            setFlashModeInternal(
+                initialTransientSettings.flashMode,
+                sessionSettings.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+            )
+        }
 
         return UseCaseGroup.Builder().apply {
             Log.d(
@@ -961,10 +1004,13 @@ constructor(
                 ).build()
             )
             addUseCase(previewUseCase)
-            if (sessionSettings.dynamicRange == DynamicRange.SDR ||
-                sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            if (imageCaptureUseCase != null &&
+                (
+                    sessionSettings.dynamicRange == DynamicRange.SDR ||
+                        sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                    )
             ) {
-                addUseCase(imageCaptureUseCase)
+                addUseCase(imageCaptureUseCase!!)
             }
             // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
             if (videoCaptureUseCase != null &&
