@@ -108,7 +108,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            previewMode.toUseCaseMode(),
+            previewMode.toUseCaseMode()
         )
     }
 
