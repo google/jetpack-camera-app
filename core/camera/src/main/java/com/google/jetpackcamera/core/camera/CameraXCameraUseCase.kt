@@ -41,6 +41,7 @@ import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -88,6 +89,17 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executor
+import javax.inject.Inject
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.properties.Delegates
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -111,18 +123,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executor
-import javax.inject.Inject
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.properties.Delegates
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -341,7 +341,7 @@ constructor(
                     systemConstraints.perLensConstraints[lensFacing]
                 ) {
                     "Unable to retrieve CameraConstraints for $lensFacing. " +
-                            "Was the use case initialized?"
+                        "Was the use case initialized?"
                 }
 
                 val initialTransientSettings = transientSettings
@@ -407,7 +407,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -417,8 +417,8 @@ constructor(
                             Log.d(
                                 TAG,
                                 "Updating device rotation from " +
-                                        "${prevTransientSettings.deviceRotation} -> " +
-                                        "${newTransientSettings.deviceRotation}"
+                                    "${prevTransientSettings.deviceRotation} -> " +
+                                    "${newTransientSettings.deviceRotation}"
                             )
                             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
                         }
@@ -729,8 +729,9 @@ constructor(
                     MediaStore.Video.Media.EXTERNAL_CONTENT_URI
                 ).apply {
                     // apply duration limit if applicable
-                    if (currentSettings.value?.maxVideoDurationMillis != -1L)
+                    if (currentSettings.value?.maxVideoDurationMillis != -1L) {
                         setDurationLimitMillis(currentSettings.value!!.maxVideoDurationMillis)
+                    }
                 }
                     .setContentValues(contentValues)
                     .build()
@@ -768,20 +769,20 @@ constructor(
                     }
                 }
 
-                            is VideoRecordEvent.Status -> {
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                        audioAmplitude = onVideoRecordEvent.recordingStats
-                                            .audioStats.audioAmplitude,
-                                        timeStamp = onVideoRecordEvent.recordingStats
-                                            .recordedDurationNanos
-                                    )
-                                )
-                            }
-                        }
-            }.apply {
-                mute(initialMuted)
+                is VideoRecordEvent.Status -> {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                            audioAmplitude = onVideoRecordEvent.recordingStats
+                                .audioStats.audioAmplitude,
+                            timeStamp = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
+                        )
+                    )
+                }
             }
+        }.apply {
+            mute(initialMuted)
+        }
     }
 
     override fun setZoomScale(scale: Float) {
