@@ -26,10 +26,13 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -104,7 +107,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            disableVideoCapture = previewMode is PreviewMode.ExternalImageCaptureMode
+            previewMode.toUseCaseMode()
         )
     }
 
@@ -157,6 +160,12 @@ class PreviewViewModel @AssistedInject constructor(
                 }
             }.collect {}
         }
+    }
+
+    private fun PreviewMode.toUseCaseMode() = when (this) {
+        is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
+        is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
+        is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
     }
 
     /**
@@ -232,9 +241,11 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
+            previewMode is PreviewMode.ExternalVideoCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
             cameraAppSettings.dynamicRange == DynamicRange.HLG10
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
+            previewMode !is PreviewMode.ExternalVideoCaptureMode &&
             hdrDynamicRangeSupported && hdrImageFormatSupported
         return if (isShown) {
             val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
@@ -272,6 +283,9 @@ class PreviewViewModel @AssistedInject constructor(
     ): CaptureModeToggleUiState.DisabledReason {
         if (previewMode is PreviewMode.ExternalImageCaptureMode) {
             return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+        }
+        if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
+            return CaptureModeToggleUiState.DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
         }
         if (!hdrImageFormatSupported) {
             // First assume HDR image is only unsupported on this capture mode
@@ -406,7 +420,29 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
+    private fun showExternalVideoCaptureUnsupportedToast() {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    snackBarToShow = SnackbarData(
+                        cookie = "Image-ExternalVideoCaptureMode",
+                        stringResource = R.string.toast_image_capture_external_unsupported,
+                        withDismissAction = true,
+                        testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                    )
+                ) ?: old
+            }
+        }
+    }
+
     fun captureImage() {
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is
+                PreviewMode.ExternalVideoCaptureMode
+        ) {
+            showExternalVideoCaptureUnsupportedToast()
+            return
+        }
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
             captureImageInternal(
@@ -429,6 +465,32 @@ class PreviewViewModel @AssistedInject constructor(
         ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent) -> Unit
     ) {
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is
+                PreviewMode.ExternalVideoCaptureMode
+        ) {
+            showExternalVideoCaptureUnsupportedToast()
+            return
+        }
+
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is
+                PreviewMode.ExternalVideoCaptureMode
+        ) {
+            viewModelScope.launch {
+                _previewUiState.update { old ->
+                    (old as? PreviewUiState.Ready)?.copy(
+                        snackBarToShow = SnackbarData(
+                            cookie = "Image-ExternalVideoCaptureMode",
+                            stringResource = R.string.toast_image_capture_external_unsupported,
+                            withDismissAction = true,
+                            testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                        )
+                    ) ?: old
+                }
+            }
+            return
+        }
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
             captureImageInternal(
@@ -505,7 +567,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun startVideoRecording() {
+    fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
+        onVideoCapture: (VideoCaptureEvent) -> Unit
+    ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
                 PreviewMode.ExternalImageCaptureMode
@@ -529,23 +595,29 @@ class PreviewViewModel @AssistedInject constructor(
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
-                cameraUseCase.startVideoRecording {
+                cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
                     var audioAmplitude = 0.0
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                            Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
+                            onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
-                                withDismissAction = true
+                                withDismissAction = true,
+                                testTag = VIDEO_CAPTURE_SUCCESS_TAG
                             )
                         }
 
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                            Log.d(TAG, "cameraUseCase.startRecording OnVideoRecordError")
+                            onVideoCapture(VideoCaptureEvent.VideoCaptureError(it.error))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
-                                withDismissAction = true
+                                withDismissAction = true,
+                                testTag = VIDEO_CAPTURE_FAILURE_TAG
                             )
                         }
 
@@ -677,5 +749,15 @@ class PreviewViewModel @AssistedInject constructor(
         data class ImageCaptureError(
             val exception: Exception
         ) : ImageCaptureEvent
+    }
+
+    sealed interface VideoCaptureEvent {
+        data class VideoSaved(
+            val savedUri: Uri
+        ) : VideoCaptureEvent
+
+        data class VideoCaptureError(
+            val error: Throwable?
+        ) : VideoCaptureEvent
     }
 }
