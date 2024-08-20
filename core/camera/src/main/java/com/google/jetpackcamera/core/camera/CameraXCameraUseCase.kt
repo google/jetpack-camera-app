@@ -65,6 +65,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
@@ -695,7 +696,7 @@ constructor(
 
         // ok. there is a difference between MUTING and ENABLING audio
         // audio must be enabled in order to be muted
-        // if the video recording isnt started with audio enabled, you will not be able to unmute it
+        // if the video recording isn't started with audio enabled, you will not be able to unmute it
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
@@ -750,7 +751,7 @@ constructor(
             when (onVideoRecordEvent) {
                 is VideoRecordEvent.Finalize -> {
                     when (onVideoRecordEvent.error) {
-                        ERROR_NONE ->
+                        ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
                             onVideoRecord(
                                 CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                     onVideoRecordEvent.outputResults.outputUri

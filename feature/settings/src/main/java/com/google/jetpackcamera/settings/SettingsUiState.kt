@@ -34,6 +34,11 @@ const val LENS_SETTING_PREFIX = "Lens flip"
 const val FORMAT_FPS_PREFIX = "%d FPS"
 const val FIXED_FPS_PREFIX = "Fixed Fps"
 
+const val FPS_AUTO = 0
+const val FPS_15 = 15
+const val FPS_30 = 30
+const val FPS_60 = 60
+
 /**
  * Defines the current state of the [SettingsScreen].
  */
