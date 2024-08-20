@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
+import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -29,9 +30,6 @@ import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
 const val STABILIZATION_SETTING_PREFIX = "Stabilization"
-const val LENS_SETTING_PREFIX = "Lens flip"
-const val FORMAT_FPS_PREFIX = "%d FPS"
-const val FIXED_FPS_PREFIX = "Fixed Fps"
 
 const val FPS_AUTO = 0
 const val FPS_15 = 15
@@ -76,34 +74,60 @@ sealed interface SingleSelectableState {
 /** Contains information on why a setting is disabled */
 // TODO(): Display information on UI regarding disabled rationale
 sealed interface DisabledRationale {
-    val affectedSettingName: String
+    val affectedSettingNameResId: Int
     val reasonTextResId: Int
     val testTag: String
 
-    data class DeviceUnsupportedRationale(override val affectedSettingName: String) :
+    /**
+     * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
+     */
+    data class DeviceUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.device_unsupported
         override val testTag = DEVICE_UNSUPPORTED_TAG
     }
 
     data class FpsUnsupportedRationale(
-        override val affectedSettingName: String,
+        override val affectedSettingNameResId: Int,
         val currentFps: Int
     ) : DisabledRationale {
         override val reasonTextResId: Int = R.string.fps_unsupported
         override val testTag = FPS_UNSUPPORTED_TAG
     }
 
-    data class StabilizationUnsupportedRationale(override val affectedSettingName: String) :
+    data class StabilizationUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId = R.string.stabilization_unsupported
         override val testTag = STABILIZATION_UNSUPPORTED_TAG
     }
 
-    data class LensUnsupportedRationale(override val affectedSettingName: String) :
-        DisabledRationale {
-        override val reasonTextResId: Int = R.string.lens_unsupported
-        override val testTag = LENS_UNSUPPORTED_TAG
+    sealed interface LensUnsupportedRationale : DisabledRationale {
+        data class FrontLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
+            LensUnsupportedRationale {
+            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val testTag = LENS_UNSUPPORTED_TAG
+        }
+
+        data class RearLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
+            LensUnsupportedRationale {
+            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val testTag = LENS_UNSUPPORTED_TAG
+        }
+    }
+}
+
+fun getLensUnsupportedRationale(
+    lensFacing: LensFacing,
+    affectedSettingNameResId: Int
+): LensUnsupportedRationale {
+    return when (lensFacing) {
+        LensFacing.BACK -> LensUnsupportedRationale.RearLensUnsupportedRationale(
+            affectedSettingNameResId
+        )
+
+        LensFacing.FRONT -> LensUnsupportedRationale.FrontLensUnsupportedRationale(
+            affectedSettingNameResId
+        )
     }
 }
 
@@ -215,13 +239,16 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         fpsSixtyState = SingleSelectableState.Disabled(
             setOf(
                 DeviceUnsupportedRationale(
-                    FORMAT_FPS_PREFIX.format(FPS_60)
+                    R.string.fps_rationale_prefix
                 )
             )
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
-    stabilizationUiState =
-    StabilizationUiState.Disabled(setOf(DeviceUnsupportedRationale(STABILIZATION_SETTING_PREFIX))),
-    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_DURATION)
+    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_DURATION),
+    stabilizationUiState = StabilizationUiState.Disabled(
+        setOf(
+            DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
+        )
+    )
 )
