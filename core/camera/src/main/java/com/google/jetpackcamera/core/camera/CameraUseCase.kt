@@ -42,7 +42,7 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(cameraAppSettings: CameraAppSettings, disableVideoCapture: Boolean)
+    suspend fun initialize(cameraAppSettings: CameraAppSettings, useCaseMode: UseCaseMode)
 
     /**
      * Starts the camera.
@@ -68,7 +68,11 @@ interface CameraUseCase {
         ignoreUri: Boolean = false
     ): ImageCapture.OutputFileResults
 
-    suspend fun startVideoRecording(onVideoRecord: (OnVideoRecordEvent) -> Unit)
+    suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
+    )
 
     fun stopVideoRecording()
 
@@ -130,7 +134,13 @@ interface CameraUseCase {
 
         data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
 
-        object OnVideoRecordError : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+    }
+
+    enum class UseCaseMode {
+        STANDARD,
+        IMAGE_ONLY,
+        VIDEO_ONLY
     }
 }
 

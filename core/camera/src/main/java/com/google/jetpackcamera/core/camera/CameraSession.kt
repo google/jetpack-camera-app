@@ -22,6 +22,7 @@ import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
+import android.net.Uri
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
@@ -44,11 +45,13 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
@@ -62,6 +65,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
+import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
@@ -87,8 +91,7 @@ private const val TAG = "CameraSession"
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    useVideoCapture: Boolean = true,
-    useImageCapture: Boolean = true,
+    useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
@@ -108,8 +111,7 @@ internal suspend fun runSingleCameraSession(
         targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
         imageFormat = sessionSettings.imageFormat,
-        useVideoCapture = useVideoCapture,
-        useImageCapture = useImageCapture,
+        useCaseMode = useCaseMode,
         effect = when (sessionSettings.captureMode) {
             CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
             CaptureMode.MULTI_STREAM -> null
@@ -237,8 +239,7 @@ internal fun createUseCaseGroup(
     targetFrameRate: Int,
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
-    useVideoCapture: Boolean,
-    useImageCapture: Boolean,
+    useCaseMode: CameraUseCase.UseCaseMode,
     effect: CameraEffect? = null
 ): UseCaseGroup {
     val previewUseCase =
@@ -247,12 +248,12 @@ internal fun createUseCaseGroup(
             aspectRatio,
             stabilizePreviewMode
         )
-    val imageCaptureUseCase = if (useImageCapture) {
+    val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
     } else {
         null
     }
-    val videoCaptureUseCase = if (useVideoCapture) {
+    val videoCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
         createVideoUseCase(
             cameraInfo,
             aspectRatio,
@@ -470,6 +471,8 @@ private suspend fun startVideoRecordingInternal(
     videoCaptureUseCase: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
+    videoCaptureUri: Uri?,
+    shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     Log.d(TAG, "recordVideo")
@@ -484,64 +487,70 @@ private suspend fun startVideoRecordingInternal(
         context,
         Manifest.permission.RECORD_AUDIO
     ) == PackageManager.PERMISSION_GRANTED
-    val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
-    val contentValues =
-        ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, name)
-        }
-    val mediaStoreOutput =
-        MediaStoreOutputOptions.Builder(
-            context.contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        )
-            .setContentValues(contentValues)
-            .build()
 
+    val pendingRecord = if (shouldUseUri) {
+        val fileOutputOptions = FileOutputOptions.Builder(
+            File(videoCaptureUri!!.getPath())
+        ).build()
+        videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+    } else {
+        val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
+        val contentValues =
+            ContentValues().apply {
+                put(MediaStore.Video.Media.DISPLAY_NAME, name)
+            }
+        val mediaStoreOutput =
+            MediaStoreOutputOptions.Builder(
+                context.contentResolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            )
+                .setContentValues(contentValues)
+                .build()
+        videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
+    }
+    pendingRecord.apply {
+        if (audioEnabled) {
+            withAudioEnabled()
+        }
+    }
     val callbackExecutor: Executor =
         (
             currentCoroutineContext()[ContinuationInterceptor] as?
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return videoCaptureUseCase.output
-        .prepareRecording(context, mediaStoreOutput)
-        .apply {
-            if (audioEnabled) {
-                withAudioEnabled()
-            }
-        }
-        .start(callbackExecutor) { onVideoRecordEvent ->
-            run {
-                Log.d(TAG, onVideoRecordEvent.toString())
-                when (onVideoRecordEvent) {
-                    is VideoRecordEvent.Finalize -> {
-                        when (onVideoRecordEvent.error) {
-                            VideoRecordEvent.Finalize.ERROR_NONE ->
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                        onVideoRecordEvent.outputResults.outputUri
-                                    )
-                                )
-
-                            else ->
-                                onVideoRecord(
-                                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-                                )
-                        }
-                    }
-
-                    is VideoRecordEvent.Status -> {
+    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+        Log.d(TAG, onVideoRecordEvent.toString())
+        when (onVideoRecordEvent) {
+            is VideoRecordEvent.Finalize -> {
+                when (onVideoRecordEvent.error) {
+                    ERROR_NONE ->
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                                onVideoRecordEvent.recordingStats.audioStats
-                                    .audioAmplitude
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                onVideoRecordEvent.outputResults.outputUri
                             )
                         )
-                    }
+
+                    else ->
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                onVideoRecordEvent.cause
+                            )
+                        )
                 }
             }
-        }.apply {
-            mute(initialMuted)
+
+            is VideoRecordEvent.Status -> {
+                onVideoRecord(
+                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                        onVideoRecordEvent.recordingStats.audioStats
+                            .audioAmplitude
+                    )
+                )
+            }
         }
+    }.apply {
+        mute(initialMuted)
+    }
 }
 
 private suspend fun runVideoRecording(
@@ -550,6 +559,8 @@ private suspend fun runVideoRecording(
     captureTypeSuffix: String,
     context: Context,
     transientSettings: StateFlow<TransientSessionSettings?>,
+    videoCaptureUri: Uri?,
+    shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ) {
     var currentSettings = transientSettings.filterNotNull().first()
@@ -559,6 +570,8 @@ private suspend fun runVideoRecording(
         videoCapture,
         captureTypeSuffix,
         context,
+        videoCaptureUri,
+        shouldUseUri,
         onVideoRecord
     ).use { recording ->
 
@@ -645,6 +658,8 @@ internal suspend fun processVideoControlEvents(
                         captureTypeSuffix,
                         context,
                         transientSettings,
+                        event.videoCaptureUri,
+                        event.shouldUseUri,
                         event.onVideoRecord
                     )
                 }

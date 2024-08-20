@@ -110,7 +110,10 @@ class ScreenFlashTest {
 
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.initialize(DEFAULT_CAMERA_APP_SETTINGS, false)
+            cameraUseCase.initialize(
+                DEFAULT_CAMERA_APP_SETTINGS,
+                CameraUseCase.UseCaseMode.STANDARD
+            )
             cameraUseCase.runCamera()
         }
 

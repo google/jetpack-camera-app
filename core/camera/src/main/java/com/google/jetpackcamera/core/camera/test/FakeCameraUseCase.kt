@@ -68,7 +68,7 @@ class FakeCameraUseCase(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        disableVideoCapture: Boolean
+        useCaseMode: CameraUseCase.UseCaseMode
     ) {
         initialized = true
     }
@@ -138,6 +138,8 @@ class FakeCameraUseCase(
     }
 
     override suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {

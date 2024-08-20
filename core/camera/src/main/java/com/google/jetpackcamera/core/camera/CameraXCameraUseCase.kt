@@ -89,10 +89,10 @@ constructor(
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private lateinit var imageCaptureUseCase: ImageCapture
+    private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var systemConstraints: SystemConstraints
-    private var disableVideoCapture by Delegates.notNull<Boolean>()
+    private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
     private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
         MutableSharedFlow()
@@ -111,9 +111,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        externalImageCapture: Boolean
+        useCaseMode: CameraUseCase.UseCaseMode
     ) {
-        this.disableVideoCapture = externalImageCapture
+        this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -183,7 +183,7 @@ constructor(
         currentSettings.value =
             cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(externalImageCapture)
+                .tryApplyAspectRatioForExternalCapture(this.useCaseMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
@@ -268,7 +268,7 @@ constructor(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    useVideoCapture = !disableVideoCapture
+                                    useCaseMode = useCaseMode
                                 ) { imageCapture ->
                                     imageCaptureUseCase = imageCapture
                                 }
@@ -276,7 +276,7 @@ constructor(
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
                                         sessionSettings,
-                                        useImageCapture = false
+                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
                                     )
                             }
                         } finally {
@@ -291,8 +291,11 @@ constructor(
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
+        if (imageCaptureUseCase == null) {
+            throw RuntimeException("Attempted take picture with null imageCapture use case")
+        }
         try {
-            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
+            val imageProxy = imageCaptureUseCase!!.takePicture(onCaptureStarted)
             Log.d(TAG, "onCaptureSuccess")
             imageProxy.close()
         } catch (exception: Exception) {
@@ -308,6 +311,9 @@ constructor(
         imageCaptureUri: Uri?,
         ignoreUri: Boolean
     ): ImageCapture.OutputFileResults {
+        if (imageCaptureUseCase == null) {
+            throw RuntimeException("Attempted take picture with null imageCapture use case")
+        }
         val eligibleContentValues = getEligibleContentValues()
         val outputFileOptions: OutputFileOptions
         if (ignoreUri) {
@@ -347,7 +353,7 @@ constructor(
             }
         }
         try {
-            val outputFileResults = imageCaptureUseCase.takePicture(
+            val outputFileResults = imageCaptureUseCase!!.takePicture(
                 outputFileOptions,
                 onCaptureStarted
             )
@@ -379,10 +385,21 @@ constructor(
     }
 
     override suspend fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        if (shouldUseUri && videoCaptureUri == null) {
+            val e = RuntimeException("Null Uri is provided.")
+            Log.d(TAG, "takePicture onError: $e")
+            throw e
+        }
         videoCaptureControlEvents.send(
-            VideoCaptureControlEvent.StartRecordingEvent(onVideoRecord)
+            VideoCaptureControlEvent.StartRecordingEvent(
+                videoCaptureUri,
+                shouldUseUri,
+                onVideoRecord
+            )
         )
     }
 
@@ -426,12 +443,16 @@ constructor(
     }
 
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
-        externalImageCapture: Boolean
+        useCaseMode: CameraUseCase.UseCaseMode
     ): CameraAppSettings {
-        if (externalImageCapture) {
-            return this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        return when (useCaseMode) {
+            CameraUseCase.UseCaseMode.STANDARD -> this
+            CameraUseCase.UseCaseMode.IMAGE_ONLY ->
+                this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+
+            CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+                this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
         }
-        return this
     }
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
@@ -524,8 +545,8 @@ constructor(
     }
 
     override fun isScreenFlashEnabled() =
-        imageCaptureUseCase.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase.screenFlash != null
+        imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+            imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

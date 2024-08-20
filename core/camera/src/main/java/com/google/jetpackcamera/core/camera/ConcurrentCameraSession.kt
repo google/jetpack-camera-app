@@ -36,8 +36,7 @@ context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
-    useVideoCapture: Boolean = true,
-    useImageCapture: Boolean = true
+    useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
     val secondaryLensFacing = sessionSettings.secondaryCameraInfo.appLensFacing
@@ -60,8 +59,7 @@ internal suspend fun runConcurrentCameraSession(
         targetFrameRate = TARGET_FPS_AUTO,
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
-        useVideoCapture = useVideoCapture,
-        useImageCapture = useImageCapture
+        useCaseMode = useCaseMode
     )
 
     val cameraConfigs = listOf(

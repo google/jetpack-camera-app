@@ -27,6 +27,7 @@
     <string name="toast_capture_failure">Image Capture Failure</string>
     <string name="toast_video_capture_failure">Video Capture Failure</string>
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
+    <string name="toast_image_capture_external_unsupported">Image capture not supported while app is in video-only capture mode</string>
     <string name="toast_image_capture_unsupported_concurrent_camera">Image capture not supported in dual camera mode</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
