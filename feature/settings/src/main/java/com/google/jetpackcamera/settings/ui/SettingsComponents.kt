@@ -71,7 +71,7 @@ import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
-import com.google.jetpackcamera.settings.UNLIMITED_DURATION
+import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -345,8 +345,8 @@ fun MaxVideoDurationSetting(
         enabled = true,
         title = "Set maximum video duration",
         leadingIcon = null,
-        description = when (val maxDuration = maxVideoDurationUiState.currentTimeLimitMillis) {
-            UNLIMITED_DURATION -> stringResource(R.string.duration_description_none)
+        description = when (val maxDuration = maxVideoDurationUiState.currentMaxDurationMillis) {
+            UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
             else -> stringResource(R.string.duration_description_seconds, (maxDuration / 1000))
         },
         popupContents = {
@@ -354,8 +354,8 @@ fun MaxVideoDurationSetting(
                 SingleChoiceSelector(
                     enabled = true,
                     text = stringResource(R.string.duration_description_none),
-                    selected = maxVideoDurationUiState.currentTimeLimitMillis == UNLIMITED_DURATION,
-                    onClick = { setMaxDuration(UNLIMITED_DURATION) }
+                    selected = maxVideoDurationUiState.currentMaxDurationMillis == UNLIMITED_VIDEO_DURATION,
+                    onClick = { setMaxDuration(UNLIMITED_VIDEO_DURATION) }
                 )
                 listOf(
                     FIVE_SECONDS_DURATION,
@@ -369,7 +369,7 @@ fun MaxVideoDurationSetting(
                             R.string.duration_description_seconds,
                             (maxDuration / 1000)
                         ),
-                        selected = maxVideoDurationUiState.currentTimeLimitMillis == maxDuration,
+                        selected = maxVideoDurationUiState.currentMaxDurationMillis == maxDuration,
                         onClick = { setMaxDuration(maxDuration) }
                     )
                 }

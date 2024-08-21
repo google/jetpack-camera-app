@@ -29,15 +29,13 @@ import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
-const val STABILIZATION_SETTING_PREFIX = "Stabilization"
-
 const val FPS_AUTO = 0
 const val FPS_15 = 15
 const val FPS_30 = 30
 const val FPS_60 = 60
 
 // seconds duration in millis
-const val UNLIMITED_DURATION = -1L
+const val UNLIMITED_VIDEO_DURATION = -1L
 const val FIVE_SECONDS_DURATION = 5000L
 const val TEN_SECONDS_DURATION = 10000L
 const val THIRTY_SECONDS_DURATION = 30000L
@@ -216,7 +214,7 @@ sealed interface DarkModeUiState {
 
 sealed interface MaxVideoDurationUiState {
     data class Enabled(
-        val currentTimeLimitMillis: Long,
+        val currentMaxDurationMillis: Long,
         val additionalContext: String = ""
     ) : MaxVideoDurationUiState
 }
@@ -245,7 +243,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
-    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_DURATION),
+    maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_VIDEO_DURATION),
     stabilizationUiState = StabilizationUiState.Disabled(
         setOf(
             DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
