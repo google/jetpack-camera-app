@@ -35,13 +35,13 @@ import com.google.jetpackcamera.settings.ui.FPS_30
 import com.google.jetpackcamera.settings.ui.FPS_60
 import com.google.jetpackcamera.settings.ui.FPS_AUTO
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -146,7 +146,6 @@ class SettingsViewModel @Inject constructor(
         deviceStabilizations: Set<SupportedStabilizationMode>,
         currentLensStabilizations: Set<SupportedStabilizationMode>?
     ): SingleSelectableState {
-
         // if unsupported by device
         if (!deviceStabilizations.contains(SupportedStabilizationMode.ON)) {
             return SingleSelectableState.Disabled(
@@ -333,8 +332,9 @@ class SettingsViewModel @Inject constructor(
                 cameraAppSettings.previewStabilization,
                 cameraAppSettings.videoCaptureStabilization
             )
-            if (fpsUiState is SingleSelectableState.Disabled)
+            if (fpsUiState is SingleSelectableState.Disabled) {
                 Log.d(TAG, "fps option $fpsOption disabled. ${fpsUiState.disabledRationale::class}")
+            }
             optionConstraintRationale[fpsOption] = fpsUiState
         }
         return FpsUiState.Enabled(
@@ -373,9 +373,11 @@ class SettingsViewModel @Inject constructor(
         }
 
         // if stabilization is on and the option is incompatible, disable
-        if ((previewStabilization == Stabilization.ON
-                    && (fpsOption == FPS_15 || fpsOption == FPS_60))
-            || (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
+        if ((
+                previewStabilization == Stabilization.ON &&
+                    (fpsOption == FPS_15 || fpsOption == FPS_60)
+                ) ||
+            (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
         ) {
             return SingleSelectableState.Disabled(
                 StabilizationUnsupportedRationale(R.string.fps_rationale_prefix)

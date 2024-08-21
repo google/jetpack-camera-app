@@ -137,7 +137,7 @@ sealed interface FlipLensUiState {
 
     data class Disabled(
         override val currentLensFacing: LensFacing,
-        val disabledRationale:DisabledRationale
+        val disabledRationale: DisabledRationale
     ) : FlipLensUiState
 }
 
@@ -152,7 +152,7 @@ sealed interface StabilizationUiState {
     ) : StabilizationUiState
 
     // Stabilization selection completely disabled. Cannot open dialog.
-    data class Disabled(val disabledRationale:DisabledRationale) : StabilizationUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
 
 /* Settings that don't currently depend on constraints */
@@ -202,12 +202,12 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         fpsFifteenState = SingleSelectableState.Selectable,
         fpsThirtyState = SingleSelectableState.Selectable,
         fpsSixtyState = SingleSelectableState.Disabled(
-                DeviceUnsupportedRationale(R.string.fps_rationale_prefix)
+            DeviceUnsupportedRationale(R.string.fps_rationale_prefix)
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     stabilizationUiState =
     StabilizationUiState.Disabled(
-            DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
+        DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
     )
 )
