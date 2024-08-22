@@ -76,7 +76,7 @@ internal class VideoRecordingDeviceTest {
         val dir = File(DIR_PATH)
         Truth.assertWithMessage(
             "Parent dir: ${dir.parentFile.absolutePath}, " +
-                    "last modified: ${dir.lastModified()}"
+                "last modified: ${dir.lastModified()}"
         ).that(dir.parentFile.lastModified()).isGreaterThan(timeStamp)
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
