@@ -61,16 +61,11 @@ sealed interface SettingsUiState {
 /** State for the individual options on Popup dialog settings */
 sealed interface SingleSelectableState {
     data object Selectable : SingleSelectableState
-    data class Disabled(val disabledRationale: Set<DisabledRationale>) : SingleSelectableState {
-        init {
-            // There should always be at least one reason a setting is disabled
-            require(disabledRationale.isNotEmpty())
-        }
-    }
+    data class Disabled(val disabledRationale: DisabledRationale) : SingleSelectableState
 }
 
 /** Contains information on why a setting is disabled */
-// TODO(): Display information on UI regarding disabled rationale
+// TODO(b/360921588): Display information on UI regarding disabled rationale
 sealed interface DisabledRationale {
     val affectedSettingNameResId: Int
     val reasonTextResId: Int
@@ -102,13 +97,13 @@ sealed interface DisabledRationale {
     sealed interface LensUnsupportedRationale : DisabledRationale {
         data class FrontLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
             LensUnsupportedRationale {
-            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val reasonTextResId: Int = R.string.front_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
 
         data class RearLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
             LensUnsupportedRationale {
-            override val reasonTextResId: Int = R.string.current_lens_unsupported
+            override val reasonTextResId: Int = R.string.rear_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
     }
@@ -143,11 +138,7 @@ sealed interface FpsUiState {
     ) : FpsUiState
 
     // FPS selection completely disabled. Cannot open dialog.
-    data class Disabled(val disabledRationale: Set<DisabledRationale>) : FpsUiState {
-        init {
-            require(disabledRationale.isNotEmpty())
-        }
-    }
+    data class Disabled(val disabledRationale: DisabledRationale) : FpsUiState
 }
 
 sealed interface FlipLensUiState {
@@ -159,12 +150,8 @@ sealed interface FlipLensUiState {
 
     data class Disabled(
         override val currentLensFacing: LensFacing,
-        val disabledRationale: Set<DisabledRationale>
-    ) : FlipLensUiState {
-        init {
-            require(disabledRationale.isNotEmpty())
-        }
-    }
+        val disabledRationale: DisabledRationale
+    ) : FlipLensUiState
 }
 
 sealed interface StabilizationUiState {
@@ -178,7 +165,7 @@ sealed interface StabilizationUiState {
     ) : StabilizationUiState
 
     // Stabilization selection completely disabled. Cannot open dialog.
-    data class Disabled(val disabledRationale: Set<DisabledRationale>) : StabilizationUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
 
 /* Settings that don't currently depend on constraints */
@@ -235,18 +222,13 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         fpsFifteenState = SingleSelectableState.Selectable,
         fpsThirtyState = SingleSelectableState.Selectable,
         fpsSixtyState = SingleSelectableState.Disabled(
-            setOf(
-                DeviceUnsupportedRationale(
-                    R.string.fps_rationale_prefix
-                )
-            )
+            DeviceUnsupportedRationale(R.string.fps_rationale_prefix)
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
     maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_VIDEO_DURATION),
-    stabilizationUiState = StabilizationUiState.Disabled(
-        setOf(
-            DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-        )
-    )
+    stabilizationUiState =
+    StabilizationUiState.Disabled(
+        DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
+    ),
 )
