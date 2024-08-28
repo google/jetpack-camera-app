@@ -122,13 +122,13 @@ fun DefaultCameraFacing(
     SwitchSettingUI(
         modifier = modifier.apply {
             if (lensUiState is FlipLensUiState.Disabled) {
-                testTag(lensUiState.disabledRationale.first().testTag)
+                testTag(lensUiState.disabledRationale.testTag)
             }
         },
         title = stringResource(id = R.string.default_facing_camera_title),
         description = when (lensUiState) {
             is FlipLensUiState.Disabled -> {
-                disabledRationaleString(disabledRationale = lensUiState.disabledRationale.first())
+                disabledRationaleString(disabledRationale = lensUiState.disabledRationale)
             }
 
             is FlipLensUiState.Enabled -> {
@@ -209,7 +209,7 @@ fun FlashModeSetting(
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
             }
         } else {
-            TODO("flash mode currently has no disabled option")
+            TODO("flash mode currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -338,7 +338,7 @@ fun TargetFpsSetting(
     BasicPopupSetting(
         modifier = modifier.apply {
             if (fpsUiState is FpsUiState.Disabled) {
-                testTag(fpsUiState.disabledRationale.first().testTag)
+                testTag(fpsUiState.disabledRationale.testTag)
             }
         },
         title = stringResource(id = R.string.fps_title),
@@ -354,7 +354,7 @@ fun TargetFpsSetting(
                 )
             }
         } else {
-            disabledRationaleString((fpsUiState as FpsUiState.Disabled).disabledRationale.first())
+            disabledRationaleString((fpsUiState as FpsUiState.Disabled).disabledRationale)
         },
         popupContents = {
             if (fpsUiState is FpsUiState.Enabled) {
@@ -444,7 +444,7 @@ fun StabilizationSetting(
         modifier = modifier.apply {
             when (stabilizationUiState) {
                 is StabilizationUiState.Disabled ->
-                    testTag(stabilizationUiState.disabledRationale.first().testTag)
+                    testTag(stabilizationUiState.disabledRationale.testTag)
 
                 else -> {}
             }
@@ -463,10 +463,7 @@ fun StabilizationSetting(
 
             is StabilizationUiState.Disabled -> {
                 // disabled setting description
-                disabledRationaleString(
-                    (stabilizationUiState as StabilizationUiState.Disabled)
-                        .disabledRationale.first()
-                )
+                disabledRationaleString(stabilizationUiState.disabledRationale)
             }
         },
 
@@ -490,7 +487,7 @@ fun StabilizationSetting(
                                 ) {
                                     testTag(
                                         stabilizationUiState.stabilizationOnState
-                                            .disabledRationale.first().testTag
+                                            .disabledRationale.testTag
                                     )
                                 }
                             },
@@ -523,7 +520,7 @@ fun StabilizationSetting(
                                 ) {
                                     testTag(
                                         stabilizationUiState.stabilizationHighQualityState
-                                            .disabledRationale.first().testTag
+                                            .disabledRationale.testTag
                                     )
                                 }
                             },
@@ -758,23 +755,23 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
 
         is DisabledRationale.FpsUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId,
+            stringResource(disabledRationale.affectedSettingNameResId),
             disabledRationale.currentFps
         )
 
         is DisabledRationale.LensUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
-            disabledRationale.affectedSettingNameResId
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
 }
