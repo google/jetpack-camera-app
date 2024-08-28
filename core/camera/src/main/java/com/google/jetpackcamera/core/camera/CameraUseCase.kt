@@ -113,6 +113,9 @@ interface CameraUseCase {
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
+    // todo(): Pause video recording
+    // todo(): Resume video recording
+
     /**
      * Represents the events required for screen flash.
      */
@@ -127,11 +130,11 @@ interface CameraUseCase {
      * Represents the events for video recording.
      */
     sealed interface OnVideoRecordEvent {
-        data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
+        data class Recorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
+        data class Status(val audioAmplitude: Double) : OnVideoRecordEvent
 
-        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+        data class Error(val error: Throwable?) : OnVideoRecordEvent
     }
 
     enum class UseCaseMode {
@@ -141,7 +144,27 @@ interface CameraUseCase {
     }
 }
 
+
+/**
+ * Defines the current state of Video Recording
+ */
+sealed interface VideoRecordingState {
+    /**
+     * Camera is not currently recording a video
+     */
+    data object Inactive : VideoRecordingState
+
+    /**
+     * Camera is currently active; paused or recording a video
+     */
+    sealed interface Active : VideoRecordingState {
+        data object Recording : Active
+        data object Paused : Active
+    }
+}
+
 data class CameraState(
+    val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive,
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false

@@ -90,9 +90,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
@@ -475,11 +475,13 @@ fun CaptureButton(
             drawCircle(
                 color =
                 when (videoRecordingState) {
-                    VideoRecordingState.INACTIVE -> {
+                    VideoRecordingState.Inactive -> {
                         if (isPressedDown) currentColor else Color.Transparent
                     }
 
-                    VideoRecordingState.ACTIVE -> Color.Red
+                    VideoRecordingState.Active.Recording -> { Color.Red }
+
+                    VideoRecordingState.Active.Paused -> TODO()
                 }
             )
         })
@@ -553,7 +555,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

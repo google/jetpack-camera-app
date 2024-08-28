@@ -49,12 +49,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.util.Preconditions
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
-import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -115,7 +115,7 @@ fun CameraControlsOverlay(
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         Box(modifier.fillMaxSize()) {
-            if (previewUiState.videoRecordingState == VideoRecordingState.INACTIVE) {
+            if (previewUiState.videoRecordingState == VideoRecordingState.Inactive) {
                 ControlsTop(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -241,7 +241,7 @@ private fun ControlsBottom(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
+                if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.Inactive) {
                     FlipCameraButton(
                         modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,
@@ -261,7 +261,7 @@ private fun ControlsBottom(
                 onStopVideoRecording = onStopVideoRecording
             )
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (videoRecordingState == VideoRecordingState.ACTIVE) {
+                if (videoRecordingState == VideoRecordingState.Active.Recording) {
                     AmplitudeVisualizer(
                         modifier = Modifier
                             .weight(1f)
@@ -485,6 +485,7 @@ private fun Preview_ControlsBottom() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive,
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             zoomLevel = 1.3f,
@@ -492,7 +493,7 @@ private fun Preview_ControlsBottom() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.Inactive,
             audioAmplitude = 0.0
         )
     }
@@ -507,6 +508,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive,
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             zoomLevel = 1.3f,
@@ -514,7 +516,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.Inactive,
             audioAmplitude = 0.0
         )
     }
@@ -529,6 +531,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive,
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             zoomLevel = 1.3f,
@@ -536,7 +539,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             isQuickSettingsOpen = true,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.Inactive,
             audioAmplitude = 0.0
         )
     }
@@ -551,6 +554,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive,
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             zoomLevel = 1.3f,
@@ -561,10 +565,10 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.INACTIVE,
+            videoRecordingState = VideoRecordingState.Inactive,
             audioAmplitude = 0.0
         )
     }
@@ -579,6 +583,7 @@ private fun Preview_ControlsBottom_Recording() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive,
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             zoomLevel = 1.3f,
@@ -586,7 +591,7 @@ private fun Preview_ControlsBottom_Recording() {
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.ACTIVE,
+            videoRecordingState = VideoRecordingState.Active.Recording,
             audioAmplitude = 0.9
         )
     }

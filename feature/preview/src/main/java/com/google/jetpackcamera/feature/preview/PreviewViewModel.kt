@@ -25,6 +25,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -136,6 +137,7 @@ class PreviewViewModel @AssistedInject constructor(
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
+                                videoRecordingState =  cameraState.videoRecordingState,
                                 zoomScale = cameraState.zoomScale,
                                 sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 captureModeToggleUiState = getCaptureToggleUiState(
@@ -148,6 +150,7 @@ class PreviewViewModel @AssistedInject constructor(
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
+                                videoRecordingState = cameraState.videoRecordingState,
                                 zoomScale = cameraState.zoomScale,
                                 sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 previewMode = previewMode,
@@ -599,7 +602,7 @@ class PreviewViewModel @AssistedInject constructor(
                     var audioAmplitude = 0.0
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
-                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
+                        is CameraUseCase.OnVideoRecordEvent.Recorded -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
@@ -610,7 +613,7 @@ class PreviewViewModel @AssistedInject constructor(
                             )
                         }
 
-                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
+                        is CameraUseCase.OnVideoRecordEvent.Error -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecordError")
                             onVideoCapture(VideoCaptureEvent.VideoCaptureError(it.error))
                             snackbarToShow = SnackbarData(
@@ -621,7 +624,7 @@ class PreviewViewModel @AssistedInject constructor(
                             )
                         }
 
-                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
+                        is CameraUseCase.OnVideoRecordEvent.Status -> {
                             audioAmplitude = it.audioAmplitude
                         }
                     }
@@ -637,7 +640,7 @@ class PreviewViewModel @AssistedInject constructor(
                 }
                 _previewUiState.update { old ->
                     (old as? PreviewUiState.Ready)?.copy(
-                        videoRecordingState = VideoRecordingState.ACTIVE
+                        videoRecordingState = VideoRecordingState.Active.Recording
                     ) ?: old
                 }
                 Log.d(TAG, "cameraUseCase.startRecording success")
@@ -652,7 +655,7 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
-                    videoRecordingState = VideoRecordingState.INACTIVE
+                    videoRecordingState = VideoRecordingState.Inactive
                 ) ?: old
             }
         }

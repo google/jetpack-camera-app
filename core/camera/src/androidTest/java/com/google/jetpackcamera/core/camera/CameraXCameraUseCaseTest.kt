@@ -25,9 +25,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Error
+import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Status
+import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Recorded
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -185,15 +185,15 @@ class CameraXCameraUseCaseTest {
         var statusCount = 0
         startVideoRecording {
             when (it) {
-                is OnVideoRecorded -> {
+                is Recorded -> {
                     val videoUri = it.savedUri
                     if (videoUri != Uri.EMPTY) {
                         videosToDelete.add(videoUri)
                     }
                     onRecorded.complete(Unit)
                 }
-                is OnVideoRecordError -> onRecorded.complete(Unit)
-                is OnVideoRecordStatus -> {
+                is Error -> onRecorded.complete(Unit)
+                is Status -> {
                     statusCount++
                     if (statusCount == statusVerifyCount) {
                         onRecordStatus.complete(Unit)
