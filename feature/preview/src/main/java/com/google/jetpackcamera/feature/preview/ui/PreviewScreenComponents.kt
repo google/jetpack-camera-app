@@ -479,7 +479,9 @@ fun CaptureButton(
                         if (isPressedDown) currentColor else Color.Transparent
                     }
 
-                    VideoRecordingState.Active.Recording -> { Color.Red }
+                    VideoRecordingState.Active.Recording -> {
+                        Color.Red
+                    }
 
                     VideoRecordingState.Active.Paused -> TODO()
                 }
@@ -555,7 +557,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

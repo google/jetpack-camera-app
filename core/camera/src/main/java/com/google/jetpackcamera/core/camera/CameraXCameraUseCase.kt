@@ -338,7 +338,7 @@ constructor(
                     systemConstraints.perLensConstraints[lensFacing]
                 ) {
                     "Unable to retrieve CameraConstraints for $lensFacing. " +
-                            "Was the use case initialized?"
+                        "Was the use case initialized?"
                 }
 
                 val initialTransientSettings = transientSettings
@@ -404,7 +404,7 @@ constructor(
                             setFlashModeInternal(
                                 flashMode = newTransientSettings.flashMode,
                                 isFrontFacing = sessionSettings.cameraSelector
-                                        == CameraSelector.DEFAULT_FRONT_CAMERA
+                                    == CameraSelector.DEFAULT_FRONT_CAMERA
                             )
                         }
 
@@ -414,8 +414,8 @@ constructor(
                             Log.d(
                                 TAG,
                                 "Updating device rotation from " +
-                                        "${prevTransientSettings.deviceRotation} -> " +
-                                        "${newTransientSettings.deviceRotation}"
+                                    "${prevTransientSettings.deviceRotation} -> " +
+                                    "${newTransientSettings.deviceRotation}"
                             )
                             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
                         }
@@ -455,7 +455,7 @@ constructor(
                 Log.d(
                     TAG,
                     "Waiting to process focus points for surface with resolution: " +
-                            "$width x $height"
+                        "$width x $height"
                 )
                 SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
             }
@@ -528,7 +528,7 @@ constructor(
                         }
                     }
                 }
-                //set state to recording
+                // set state to recording
                 VideoCaptureControlEvent.ResumeRecordingEvent -> {
                     launch {
                         _currentCameraState.update { old ->
@@ -726,12 +726,12 @@ constructor(
         // the toggle should only affect whether or not the audio is muted.
         // the permission will determine whether or not the audio is enabled.
         val audioEnabled = (
-                checkSelfPermission(
-                    this.application.baseContext,
-                    Manifest.permission.RECORD_AUDIO
-                )
-                        == PackageManager.PERMISSION_GRANTED
-                )
+            checkSelfPermission(
+                this.application.baseContext,
+                Manifest.permission.RECORD_AUDIO
+            )
+                == PackageManager.PERMISSION_GRANTED
+            )
 
         val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
@@ -765,25 +765,22 @@ constructor(
         }
         val callbackExecutor: Executor =
             (
-                    currentCoroutineContext()[ContinuationInterceptor] as?
-                            CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(application)
         return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
             when (onVideoRecordEvent) {
                 is VideoRecordEvent.Start -> {
                     setRecordingState(VideoRecordingState.Active.Recording)
-
                 }
 
                 is VideoRecordEvent.Pause -> {
                     setRecordingState(VideoRecordingState.Active.Paused)
-
                 }
 
                 is VideoRecordEvent.Resume -> {
                     setRecordingState(VideoRecordingState.Inactive)
-
                 }
 
                 is VideoRecordEvent.Finalize -> {
@@ -1004,8 +1001,8 @@ constructor(
     }
 
     override fun isScreenFlashEnabled() = imageCaptureUseCase != null &&
-            imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase!!.screenFlash != null
+        imageCaptureUseCase!!.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+        imageCaptureUseCase!!.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -1059,9 +1056,9 @@ constructor(
             addUseCase(previewUseCase)
             if (imageCaptureUseCase != null &&
                 (
-                        sessionSettings.dynamicRange == DynamicRange.SDR ||
-                                sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-                        )
+                    sessionSettings.dynamicRange == DynamicRange.SDR ||
+                        sessionSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                    )
             ) {
                 addUseCase(imageCaptureUseCase!!)
             }
@@ -1209,12 +1206,12 @@ constructor(
     ): Boolean {
         // video is on and target fps is not 60
         return (sessionSettings.targetFrameRate != TARGET_FPS_60) &&
-                (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
-                // high quality (video only) selected
-                (
-                        sessionSettings.stabilizeVideoMode == Stabilization.ON &&
-                                sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
-                        )
+            (supportedStabilizationModes.contains(SupportedStabilizationMode.HIGH_QUALITY)) &&
+            // high quality (video only) selected
+            (
+                sessionSettings.stabilizeVideoMode == Stabilization.ON &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.UNDEFINED
+                )
     }
 
     private fun createPreviewUseCase(
@@ -1271,10 +1268,10 @@ constructor(
     ): Boolean {
         // only supported if target fps is 30 or none
         return ((sessionSettings.targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30))) &&
-                (
-                        supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
-                                sessionSettings.stabilizePreviewMode == Stabilization.ON
-                        )
+            (
+                supportedStabilizationModes.contains(SupportedStabilizationMode.ON) &&
+                    sessionSettings.stabilizePreviewMode == Stabilization.ON
+                )
     }
 
     companion object {

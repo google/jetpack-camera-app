@@ -137,7 +137,7 @@ class PreviewViewModel @AssistedInject constructor(
                             old.copy(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
-                                videoRecordingState =  cameraState.videoRecordingState,
+                                videoRecordingState = cameraState.videoRecordingState,
                                 zoomScale = cameraState.zoomScale,
                                 sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 captureModeToggleUiState = getCaptureToggleUiState(

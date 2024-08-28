@@ -144,7 +144,6 @@ interface CameraUseCase {
     }
 }
 
-
 /**
  * Defines the current state of Video Recording
  */

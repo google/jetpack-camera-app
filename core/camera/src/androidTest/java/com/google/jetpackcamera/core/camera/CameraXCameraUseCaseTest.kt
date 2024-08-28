@@ -26,8 +26,8 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Error
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Status
 import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Recorded
+import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.Status
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
