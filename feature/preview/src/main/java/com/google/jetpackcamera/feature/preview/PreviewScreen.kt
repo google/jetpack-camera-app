@@ -77,11 +77,12 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     previewMode: PreviewMode,
+    isDebugMode: Boolean,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode) }
+        { factory -> factory.create(previewMode, isDebugMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
 

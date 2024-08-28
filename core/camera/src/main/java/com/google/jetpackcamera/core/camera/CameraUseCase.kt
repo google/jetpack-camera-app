@@ -144,5 +144,8 @@ interface CameraUseCase {
 data class CameraState(
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
-    val torchEnabled: Boolean = false
+    val torchEnabled: Boolean = false,
+    val debugInfo: DebugInfo = DebugInfo(null, null)
 )
+
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)

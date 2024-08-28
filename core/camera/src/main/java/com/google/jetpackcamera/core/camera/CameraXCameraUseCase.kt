@@ -23,8 +23,10 @@ import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -150,12 +152,30 @@ constructor(
     private fun setOnCaptureCompletedCallback(previewBuilder: Preview.Builder) {
         val isFirstFrameTimestampUpdated = atomic(false)
         val captureCallback = object : CameraCaptureSession.CaptureCallback() {
+            private var physicalCameraId: String? = null
+            private var logicalCameraId: String? = null
             override fun onCaptureCompleted(
                 session: CameraCaptureSession,
                 request: CaptureRequest,
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+                var physicalCameraId: String? = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    physicalCameraId = result.get(
+                        CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID
+                    )
+                }
+                val logicalCameraId = session.device.id
+                if (!physicalCameraId.equals(this.physicalCameraId) ||
+                    logicalCameraId != this.logicalCameraId
+                ) {
+                    _currentCameraState.update { old ->
+                        old.copy(
+                            debugInfo = DebugInfo(logicalCameraId, physicalCameraId)
+                        )
+                    }
+                }
                 try {
                     if (!isFirstFrameTimestampUpdated.value) {
                         _currentCameraState.update { old ->
@@ -706,7 +726,7 @@ constructor(
 
         val pendingRecord = if (shouldUseUri) {
             val fileOutputOptions = FileOutputOptions.Builder(
-                File(videoCaptureUri!!.getPath())
+                File(videoCaptureUri!!.path!!)
             ).build()
             videoCaptureUseCase.output.prepareRecording(application, fileOutputOptions)
         } else {
