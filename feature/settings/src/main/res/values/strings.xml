@@ -101,6 +101,24 @@
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
 
+    <!-- disabled rationale strings-->
+    <string name="device_unsupported">%1$s is unsupported by the device</string>
+    <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
+    <string name="stabilization_unsupported">%$1s is unsupported by the current stabilization</string>
+    <string name="current_lens_unsupported">%$s is unsupported by the current lens</string>
+    <string name="rear_lens_unsupported">%$s is unsupported by the rear lens</string>
+    <string name="front_lens_unsupported">%$s is unsupported by the front lens</string>
+
+
+    <!-- Rationale prefixes -->
+    <string name="stabilization_rationale_prefix">Stabilization</string>
+    <string name="lens_rationale_prefix">Lens flip</string>
+    <string name="fps_rationale_prefix">Fps</string>
+
+    <string name="front_lens_rationale_prefix">Front lens</string>
+    <string name="rear_lens_rationale_prefix">Rear lens</string>
+    <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
+
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>

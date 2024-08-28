@@ -16,3 +16,9 @@
 package com.google.jetpackcamera.settings.ui
 
 const val BACK_BUTTON = "BackButton"
+
+// unsupported rationale tags
+const val DEVICE_UNSUPPORTED_TAG = "DeviceUnsupportedTag"
+const val STABILIZATION_UNSUPPORTED_TAG = "StabilizationUnsupportedTag"
+const val LENS_UNSUPPORTED_TAG = "LensUnsupportedTag"
+const val FPS_UNSUPPORTED_TAG = "FpsUnsupportedTag"
