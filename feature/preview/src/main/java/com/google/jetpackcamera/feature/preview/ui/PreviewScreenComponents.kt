@@ -35,6 +35,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -431,17 +432,28 @@ fun ZoomScaleText(zoomScale: Float) {
         modifier = Modifier
             .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = "%.1fx".format(zoomScale)
+        text = stringResource(id = R.string.zoom_scale_text, zoomScale)
     )
 }
 
 @Composable
 fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
-    Text(
-        modifier = Modifier
-            .testTag(CURRENT_CAMERA_ID_TAG),
-        text = "physical id: $physicalCameraId, logical id: $logicalCameraId"
-    )
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row {
+            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
+            Text(
+                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
+                text = logicalCameraId ?: "---"
+            )
+        }
+        Row {
+            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
+            Text(
+                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
+                text = physicalCameraId ?: "---"
+            )
+        }
+    }
 }
 
 @Composable
@@ -560,7 +572,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
