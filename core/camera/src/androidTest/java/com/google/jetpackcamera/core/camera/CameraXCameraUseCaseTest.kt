@@ -153,7 +153,7 @@ class CameraXCameraUseCaseTest {
         Dispatchers.Default,
         constraintsRepository
     ).apply {
-        initialize(appSettings, false)
+        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD)
         providePreviewSurface()
     }
 
@@ -183,7 +183,7 @@ class CameraXCameraUseCaseTest {
         val onRecorded = CompletableDeferred<Unit>()
         val onRecordStatus = CompletableDeferred<Unit>()
         var statusCount = 0
-        startVideoRecording {
+        startVideoRecording(null, false) {
             when (it) {
                 is OnVideoRecorded -> {
                     val videoUri = it.savedUri
