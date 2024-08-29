@@ -19,20 +19,32 @@ import android.Manifest
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
+import android.hardware.camera2.CameraCharacteristics.LENS_DISTORTION
+import android.hardware.camera2.CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS
+import android.hardware.camera2.CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE
+import android.hardware.camera2.CameraCharacteristics.LENS_INTRINSIC_CALIBRATION
+import android.hardware.camera2.CameraCharacteristics.LENS_POSE_ROTATION
+import android.hardware.camera2.CameraCharacteristics.LENS_POSE_TRANSLATION
+import android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
+import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Environment.DIRECTORY_DOCUMENTS
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -43,7 +55,6 @@ import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -90,17 +101,6 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executor
-import javax.inject.Inject
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.properties.Delegates
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -124,6 +124,22 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executor
+import javax.inject.Inject
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.properties.Delegates
+import androidx.camera.core.DynamicRange as CXDynamicRange
+
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -170,6 +186,8 @@ constructor(
                 if (!physicalCameraId.equals(this.physicalCameraId) ||
                     logicalCameraId != this.logicalCameraId
                 ) {
+                    this.physicalCameraId = physicalCameraId
+                    this.logicalCameraId = logicalCameraId
                     _currentCameraState.update { old ->
                         old.copy(
                             debugInfo = DebugInfo(logicalCameraId, physicalCameraId)
@@ -197,6 +215,87 @@ constructor(
         imageCaptureExtender.setSessionCaptureCallback(captureCallback)
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun getAllCamerasPropertiesJSONArray(): JSONArray {
+        val cameraManager =
+            this.application.baseContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val result = JSONArray()
+        for (logicalCameraId in cameraManager.cameraIdList) {
+            val logicalCameraData = JSONObject()
+            logicalCameraData.put(
+                "logical-$logicalCameraId",
+                getCameraPropertiesJSONObject(logicalCameraId, cameraManager)
+            )
+            for (physicalCameraId in
+            cameraManager.getCameraCharacteristics(logicalCameraId).physicalCameraIds) {
+                logicalCameraData.put(
+                    "physical-$physicalCameraId",
+                    getCameraPropertiesJSONObject(physicalCameraId, cameraManager)
+                )
+            }
+            result.put(logicalCameraData)
+        }
+        return result
+    }
+
+    private fun getCameraPropertiesJSONObject(
+        cameraId: String,
+        cameraManager: CameraManager
+    ): JSONObject {
+        val cameraCharacteristics =
+            cameraManager.getCameraCharacteristics(cameraId)
+        val jsonObject = JSONObject()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            cameraCharacteristics.get(LENS_POSE_ROTATION)
+                ?.let { jsonObject.put(LENS_POSE_ROTATION.name, it) }
+            cameraCharacteristics.get(LENS_POSE_TRANSLATION)
+                ?.let { jsonObject.put(LENS_POSE_TRANSLATION.name, it) }
+            cameraCharacteristics.get(LENS_INTRINSIC_CALIBRATION)
+                ?.let { jsonObject.put(LENS_INTRINSIC_CALIBRATION.name, it) }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            cameraCharacteristics.get(LENS_DISTORTION)
+                ?.let { jsonObject.put(LENS_DISTORTION.name, it) }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            cameraCharacteristics.get(CONTROL_ZOOM_RATIO_RANGE)
+                ?.let { jsonObject.put(CONTROL_ZOOM_RATIO_RANGE.name, it) }
+        }
+        cameraCharacteristics.get(LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
+            ?.let { jsonObject.put(LENS_INFO_AVAILABLE_FOCAL_LENGTHS.name, it) }
+        cameraCharacteristics.get(LENS_INFO_MINIMUM_FOCUS_DISTANCE)
+            ?.let { jsonObject.put(LENS_INFO_MINIMUM_FOCUS_DISTANCE.name, it) }
+        cameraCharacteristics.get(REQUEST_AVAILABLE_CAPABILITIES)
+            ?.let { jsonObject.put(REQUEST_AVAILABLE_CAPABILITIES.name, it) }
+
+        return jsonObject
+    }
+
+    private fun writeFileExternalStorage(file: File, textToWrite: String) {
+        //Checking the availability state of the External Storage.
+        val state = Environment.getExternalStorageState()
+        if (Environment.MEDIA_MOUNTED != state) {
+            //If it isn't mounted - we can't write into it.
+
+            return
+        }
+
+        //This point and below is responsible for the write operation
+        var outputStream: FileOutputStream? = null
+        try {
+            file.createNewFile()
+            //second argument of FileOutputStream constructor indicates whether
+            //to append or create new file if one exists
+            outputStream = FileOutputStream(file, true)
+
+            outputStream.write(textToWrite.toByteArray())
+            outputStream.flush()
+            outputStream.close()
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var captureMode: CaptureMode
@@ -213,7 +312,8 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode
+        useCaseMode: CameraUseCase.UseCaseMode,
+        isDebugMode: Boolean
     ) {
         this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -284,6 +384,15 @@ constructor(
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
+        if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val cameraProperties = getAllCamerasPropertiesJSONArray().toString()
+            val file = File(
+                Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
+                "JCACameraProperties"
+            )
+            writeFileExternalStorage(file, cameraProperties)
+            Log.d(TAG, "JCACameraProperties written to ${file.path}. \n" + "$cameraProperties")
+        }
     }
 
     /**

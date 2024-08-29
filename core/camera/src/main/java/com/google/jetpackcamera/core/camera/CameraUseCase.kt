@@ -41,7 +41,11 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(cameraAppSettings: CameraAppSettings, useCaseMode: UseCaseMode)
+    suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        useCaseMode: UseCaseMode,
+        isDebugMode: Boolean = false
+    )
 
     /**
      * Starts the camera.
