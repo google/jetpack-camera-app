@@ -19,10 +19,10 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Intent
-import android.os.Build
-import android.util.Log
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
