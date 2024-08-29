@@ -30,12 +30,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -130,47 +128,32 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        settingValue = (uiState.cameraAppSettings.cameraLensFacing == LensFacing.FRONT),
-        enabled = with(uiState.systemConstraints.availableLenses) {
-            size > 1 && contains(LensFacing.FRONT)
-        },
+        lensUiState = uiState.lensFlipUiState,
         setDefaultLensFacing = setDefaultLensFacing
     )
 
     FlashModeSetting(
-        currentFlashMode = uiState.cameraAppSettings.flashMode,
+        flashUiState = uiState.flashUiState,
         setFlashMode = setFlashMode
     )
 
     TargetFpsSetting(
-        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedFps = uiState.systemConstraints.perLensConstraints.values.fold(emptySet()) {
-                union, constraints ->
-            union + constraints.supportedFixedFrameRates
-        },
+        fpsUiState = uiState.fpsUiState,
         setTargetFps = setTargetFrameRate
     )
 
     AspectRatioSetting(
-        currentAspectRatio = uiState.cameraAppSettings.aspectRatio,
+        aspectRatioUiState = uiState.aspectRatioUiState,
         setAspectRatio = setAspectRatio
     )
 
     CaptureModeSetting(
-        currentCaptureMode = uiState.cameraAppSettings.captureMode,
+        captureModeUiState = uiState.captureModeUiState,
         setCaptureMode = setCaptureMode
     )
 
     StabilizationSetting(
-        currentVideoStabilization = uiState.cameraAppSettings.videoCaptureStabilization,
-        currentPreviewStabilization = uiState.cameraAppSettings.previewStabilization,
-        currentTargetFps = uiState.cameraAppSettings.targetFrameRate,
-        supportedStabilizationMode = uiState.systemConstraints.perLensConstraints.values.fold(
-            emptySet()
-        ) {
-                union, constraints ->
-            union + constraints.supportedStabilizationModes
-        },
+        stabilizationUiState = uiState.stabilizationUiState,
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
     )
@@ -178,7 +161,7 @@ fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
-        currentDarkMode = uiState.cameraAppSettings.darkMode,
+        darkModeUiState = uiState.darkModeUiState,
         setDarkMode = setDarkMode
     )
 
@@ -189,6 +172,8 @@ fun SettingsList(
         buildType = versionInfo.buildType
     )
 }
+
+// will allow you to open stabilization popup or give disabled rationale
 
 data class VersionInfoHolder(
     val versionName: String,
@@ -201,10 +186,7 @@ data class VersionInfoHolder(
 private fun Preview_SettingsScreen() {
     SettingsPreviewTheme {
         SettingsScreen(
-            uiState = SettingsUiState.Enabled(
-                DEFAULT_CAMERA_APP_SETTINGS,
-                TYPICAL_SYSTEM_CONSTRAINTS
-            ),
+            uiState = TYPICAL_SETTINGS_UISTATE,
             versionInfo = VersionInfoHolder(
                 versionName = "1.0.0",
                 buildType = "release"
