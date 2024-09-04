@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
@@ -21,10 +20,10 @@ import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.Environment
 import androidx.annotation.RequiresApi
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import org.json.JSONArray
+import org.json.JSONObject
 
 private const val TAG = "DebugCameraInfoUtil"
 object DebugCameraInfoUtil {
@@ -37,8 +36,10 @@ object DebugCameraInfoUtil {
                 "logical-$logicalCameraId",
                 getCameraPropertiesJSONObject(logicalCameraId, cameraManager)
             )
-            for (physicalCameraId in
-            cameraManager.getCameraCharacteristics(logicalCameraId).physicalCameraIds) {
+            for (
+            physicalCameraId in
+            cameraManager.getCameraCharacteristics(logicalCameraId).physicalCameraIds
+            ) {
                 logicalCameraData.put(
                     "physical-$physicalCameraId",
                     getCameraPropertiesJSONObject(physicalCameraId, cameraManager)

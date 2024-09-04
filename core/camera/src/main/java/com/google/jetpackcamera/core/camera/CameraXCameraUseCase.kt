@@ -297,7 +297,7 @@ constructor(
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(Dispatchers.IO) {
                 val cameraManager = application.baseContext.getSystemService(Context.CAMERA_SERVICE)
-                        as CameraManager
+                    as CameraManager
                 val cameraProperties = getAllCamerasPropertiesJSONArray(cameraManager).toString()
                 val file = File(
                     Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
@@ -306,7 +306,6 @@ constructor(
                 writeFileExternalStorage(file, cameraProperties)
                 Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraProperties")
             }
-
         }
     }
 
