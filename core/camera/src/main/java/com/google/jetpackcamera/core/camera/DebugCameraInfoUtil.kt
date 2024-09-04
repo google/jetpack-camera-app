@@ -94,18 +94,15 @@ object DebugCameraInfoUtil {
     }
 
     fun writeFileExternalStorage(file: File, textToWrite: String) {
-        //Checking the availability state of the External Storage.
+        // Checking the availability state of the External Storage.
         val state = Environment.getExternalStorageState()
         if (Environment.MEDIA_MOUNTED != state) {
-            //If it isn't mounted - we can't write into it.
+            // If it isn't mounted - we can't write into it.
             return
         }
 
-        //This point and below is responsible for the write operation
         var outputStream: FileOutputStream? = null
         file.createNewFile()
-        //second argument of FileOutputStream constructor indicates whether
-        //to append or create new file if one exists
         outputStream = FileOutputStream(file, true)
 
         FileOutputStream(file).use { outputStream ->
