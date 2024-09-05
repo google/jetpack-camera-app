@@ -30,6 +30,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
@@ -378,7 +379,7 @@ private fun createPreviewUseCase(
     aspectRatio: AspectRatio,
     stabilizePreviewMode: Stabilization
 ): Preview = Preview.Builder().apply {
-    updateCameraStateWithCaptureResults()
+    updateCameraStateWithCaptureResults(targetCameraInfo = cameraInfo)
 
     // set preview stabilization
     if (stabilizePreviewMode == Stabilization.ON) {
@@ -680,8 +681,11 @@ internal suspend fun processVideoControlEvents(
  */
 context(CameraSessionContext)
 @OptIn(ExperimentalCamera2Interop::class)
-private fun Preview.Builder.updateCameraStateWithCaptureResults(): Preview.Builder {
+private fun Preview.Builder.updateCameraStateWithCaptureResults(
+    targetCameraInfo: CameraInfo
+): Preview.Builder {
     val isFirstFrameTimestampUpdated = atomic(false)
+    val targetCameraLogicalId = Camera2CameraInfo.from(targetCameraInfo).cameraId
     Camera2Interop.Extender(this).setSessionCaptureCallback(
         object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
@@ -690,8 +694,9 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(): Preview.Build
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+                val logicalCameraId = session.device.id
+                if (logicalCameraId != targetCameraLogicalId) return
                 try {
-                    val logicalCameraId = session.device.id
                     val physicalCameraId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
                     } else {
@@ -699,7 +704,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(): Preview.Build
                     }
                     currentCameraState.update { old ->
                         if (old.debugInfo.logicalCameraId != logicalCameraId ||
-                            old.debugInfo.physicalCameraId != physicalCameraId) {
+                            old.debugInfo.physicalCameraId != physicalCameraId
+                        ) {
                             old.copy(debugInfo = DebugInfo(logicalCameraId, physicalCameraId))
                         } else {
                             old
