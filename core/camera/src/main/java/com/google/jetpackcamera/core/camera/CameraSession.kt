@@ -21,8 +21,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
+import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
@@ -490,7 +492,7 @@ private suspend fun startVideoRecordingInternal(
 
     val pendingRecord = if (shouldUseUri) {
         val fileOutputOptions = FileOutputOptions.Builder(
-            File(videoCaptureUri!!.getPath())
+            File(videoCaptureUri!!.path!!)
         ).build()
         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
     } else {
@@ -689,6 +691,20 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(): Preview.Build
             ) {
                 super.onCaptureCompleted(session, request, result)
                 try {
+                    val logicalCameraId = session.device.id
+                    val physicalCameraId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        result.get(CaptureResult.LOGICAL_MULTI_CAMERA_ACTIVE_PHYSICAL_ID)
+                    } else {
+                        null
+                    }
+                    currentCameraState.update { old ->
+                        if (old.debugInfo.logicalCameraId != logicalCameraId ||
+                            old.debugInfo.physicalCameraId != physicalCameraId) {
+                            old.copy(debugInfo = DebugInfo(logicalCameraId, physicalCameraId))
+                        } else {
+                            old
+                        }
+                    }
                     if (!isFirstFrameTimestampUpdated.value) {
                         currentCameraState.update { old ->
                             old.copy(

@@ -20,6 +20,10 @@
     <string name="flip_camera_content_description">Flip Camera</string>
 
     <string name="audio_visualizer_icon">An icon of a microphone</string>
+    <string name="zoom_scale_text">%1$.2fx</string>
+
+    <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
+    <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
