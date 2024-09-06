@@ -30,7 +30,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -82,7 +82,7 @@ interface CameraUseCase {
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
-    fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
+    fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
 

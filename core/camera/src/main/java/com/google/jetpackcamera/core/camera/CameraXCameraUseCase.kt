@@ -59,10 +59,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -94,8 +92,8 @@ constructor(
     private lateinit var systemConstraints: SystemConstraints
     private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
-    private val screenFlashEvents: MutableSharedFlow<CameraUseCase.ScreenFlashEvent> =
-        MutableSharedFlow()
+    private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
+        Channel(capacity = Channel.UNLIMITED)
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
@@ -535,7 +533,7 @@ constructor(
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
 
-    override fun getScreenFlashEvents() = screenFlashEvents.asSharedFlow()
+    override fun getScreenFlashEvents() = screenFlashEvents
     override fun getCurrentSettings() = currentSettings.asStateFlow()
 
     override fun setFlashMode(flashMode: FlashMode) {

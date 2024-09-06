@@ -273,7 +273,7 @@ internal fun createUseCaseGroup(
         setFlashModeInternal(
             imageCapture = imageCaptureUseCase,
             flashMode = initialTransientSettings.flashMode,
-            isFrontFacing = cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+            isFrontFacing = cameraInfo.appLensFacing == LensFacing.FRONT
         )
     }
 
@@ -435,7 +435,7 @@ private fun setFlashModeInternal(
                 listener: ImageCapture.ScreenFlashListener
             ) {
                 Log.d(TAG, "ImageCapture.ScreenFlash: apply")
-                screenFlashEvents.tryEmit(
+                screenFlashEvents.trySend(
                     CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) {
                         listener.onCompleted()
                     }
@@ -444,7 +444,7 @@ private fun setFlashModeInternal(
 
             override fun clear() {
                 Log.d(TAG, "ImageCapture.ScreenFlash: clear")
-                screenFlashEvents.tryEmit(
+                screenFlashEvents.trySend(
                     CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) {}
                 )
             }
