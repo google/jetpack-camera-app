@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
 import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
@@ -165,5 +166,22 @@ enum class CameraLowLightBoost : QuickSettingsEnum {
         override fun getTextResId() = R.string.quick_settings_lowlightboost_disabled
         override fun getDescriptionResId() =
             R.string.quick_settings_lowlightboost_disabled_description
+    }
+}
+
+enum class CameraConcurrentCameraMode : QuickSettingsEnum {
+    OFF {
+        override fun getDrawableResId() = R.drawable.picture_in_picture_off_icon
+        override fun getImageVector() = null
+        override fun getTextResId() = R.string.quick_settings_concurrent_camera_off
+        override fun getDescriptionResId() =
+            R.string.quick_settings_concurrent_camera_off_description
+    },
+    DUAL {
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Filled.PictureInPicture
+        override fun getTextResId() = R.string.quick_settings_concurrent_camera_dual
+        override fun getDescriptionResId() =
+            R.string.quick_settings_concurrent_camera_dual_description
     }
 }

@@ -39,6 +39,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -250,12 +251,17 @@ class PreviewViewModel @AssistedInject constructor(
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
             previewMode is PreviewMode.ExternalVideoCaptureMode ||
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
+            cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
+            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
             previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-            hdrDynamicRangeSupported && hdrImageFormatSupported
+            hdrDynamicRangeSupported &&
+            hdrImageFormatSupported &&
+            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
         return if (isShown) {
-            val currentMode = if (previewMode is PreviewMode.ExternalImageCaptureMode ||
+            val currentMode = if (
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
+                previewMode is PreviewMode.ExternalImageCaptureMode ||
                 cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
             ) {
                 CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
@@ -268,11 +274,13 @@ class PreviewViewModel @AssistedInject constructor(
                 CaptureModeToggleUiState.Disabled(
                     currentMode,
                     getCaptureToggleUiStateDisabledReason(
+                        currentMode,
                         hdrDynamicRangeSupported,
                         hdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.captureMode
+                        cameraAppSettings.captureMode,
+                        cameraAppSettings.concurrentCameraMode
                     )
                 )
             }
@@ -282,72 +290,95 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun getCaptureToggleUiStateDisabledReason(
+        captureModeToggleUiState: CaptureModeToggleUiState.ToggleMode,
         hdrDynamicRangeSupported: Boolean,
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
-        currentCaptureMode: CaptureMode
+        currentCaptureMode: CaptureMode,
+        concurrentCameraMode: ConcurrentCameraMode
     ): CaptureModeToggleUiState.DisabledReason {
-        if (previewMode is PreviewMode.ExternalImageCaptureMode) {
-            return CaptureModeToggleUiState.DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
-        }
-        if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
-            return CaptureModeToggleUiState.DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
-        }
-        if (!hdrImageFormatSupported) {
-            // First assume HDR image is only unsupported on this capture mode
-            var disabledReason = when (currentCaptureMode) {
-                CaptureMode.MULTI_STREAM ->
-                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
-
-                CaptureMode.SINGLE_STREAM ->
-                    CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
-            }
-            // Check if other capture modes supports HDR image on this lens
-            systemConstraints
-                .perLensConstraints[currentLensFacing]
-                ?.supportedImageFormatsMap
-                ?.filterKeys { it != currentCaptureMode }
-                ?.values
-                ?.forEach { supportedFormats ->
-                    if (supportedFormats.size > 1) {
-                        // Found another capture mode that supports HDR image,
-                        // return previously discovered disabledReason
-                        return disabledReason
-                    }
+        when (captureModeToggleUiState) {
+            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO -> {
+                if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
+                    return CaptureModeToggleUiState.DisabledReason
+                        .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
                 }
-            // HDR image is not supported by this lens
-            disabledReason = CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
-            // Check if any other lens supports HDR image
-            systemConstraints
-                .perLensConstraints
-                .filterKeys { it != currentLensFacing }
-                .values
-                .forEach { constraints ->
-                    constraints.supportedImageFormatsMap.values.forEach { supportedFormats ->
-                        if (supportedFormats.size > 1) {
-                            // Found another lens that supports HDR image,
-                            // return previously discovered disabledReason
-                            return disabledReason
+
+                if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                    return CaptureModeToggleUiState.DisabledReason
+                        .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
+                }
+
+                if (!hdrImageFormatSupported) {
+                    // First check if Ultra HDR image is supported on other capture modes
+                    if (systemConstraints
+                            .perLensConstraints[currentLensFacing]
+                            ?.supportedImageFormatsMap
+                            ?.anySupportsUltraHdr { it != currentCaptureMode } == true
+                    ) {
+                        return when (currentCaptureMode) {
+                            CaptureMode.MULTI_STREAM ->
+                                CaptureModeToggleUiState.DisabledReason
+                                    .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
+
+                            CaptureMode.SINGLE_STREAM ->
+                                CaptureModeToggleUiState.DisabledReason
+                                    .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
                         }
                     }
+
+                    // Check if any other lens supports HDR image
+                    if (systemConstraints.anySupportsUltraHdr { it != currentLensFacing }) {
+                        return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                    }
+
+                    // No lenses support HDR image on device
+                    return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
                 }
-            // No lenses support HDR image on device
-            return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
-        } else if (!hdrDynamicRangeSupported) {
-            systemConstraints.perLensConstraints.forEach { entry ->
-                if (entry.key != currentLensFacing) {
-                    val cameraConstraints = systemConstraints.perLensConstraints[entry.key]
-                    if (cameraConstraints?.let { it.supportedDynamicRanges.size > 1 } == true) {
+
+                throw RuntimeException("Unknown DisabledReason for video mode.")
+            }
+
+            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE -> {
+                if (previewMode is PreviewMode.ExternalImageCaptureMode) {
+                    return CaptureModeToggleUiState.DisabledReason
+                        .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+                }
+
+                if (!hdrDynamicRangeSupported) {
+                    if (systemConstraints.anySupportsHdrDynamicRange { it != currentLensFacing }) {
                         return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
                     }
+                    return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
                 }
+
+                throw RuntimeException("Unknown DisabledReason for image mode.")
             }
-            return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
-        } else {
-            throw RuntimeException("Unknown CaptureModeUnsupportedReason.")
         }
     }
+
+    private fun SystemConstraints.anySupportsHdrDynamicRange(
+        lensFilter: (LensFacing) -> Boolean
+    ): Boolean = perLensConstraints.asSequence().firstOrNull {
+        lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
+    } != null
+
+    private fun Map<CaptureMode, Set<ImageOutputFormat>>.anySupportsUltraHdr(
+        captureModeFilter: (CaptureMode) -> Boolean
+    ): Boolean = asSequence().firstOrNull {
+        captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
+    } != null
+
+    private fun SystemConstraints.anySupportsUltraHdr(
+        captureModeFilter: (CaptureMode) -> Boolean = { true },
+        lensFilter: (LensFacing) -> Boolean
+    ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
+        lensFilter(lensConstraints.key) &&
+            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                captureModeFilter(it)
+            }
+    } != null
 
     fun startCamera() {
         Log.d(TAG, "startCamera")
@@ -674,6 +705,12 @@ class PreviewViewModel @AssistedInject constructor(
     fun setDynamicRange(dynamicRange: DynamicRange) {
         viewModelScope.launch {
             cameraUseCase.setDynamicRange(dynamicRange)
+        }
+    }
+
+    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        viewModelScope.launch {
+            cameraUseCase.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 

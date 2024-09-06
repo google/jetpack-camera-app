@@ -17,6 +17,7 @@ package com.google.jetpackcamera.settings.model
 
 data class SystemConstraints(
     val availableLenses: List<LensFacing>,
+    val concurrentCamerasSupported: Boolean,
     val perLensConstraints: Map<LensFacing, CameraConstraints>
 )
 
@@ -34,6 +35,7 @@ data class CameraConstraints(
 val TYPICAL_SYSTEM_CONSTRAINTS =
     SystemConstraints(
         availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK),
+        concurrentCamerasSupported = false,
         perLensConstraints = buildMap {
             for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
                 put(
