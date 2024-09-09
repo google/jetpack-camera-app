@@ -16,10 +16,13 @@
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.Environment
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.core.CameraInfo
 import java.io.File
 import java.io.FileOutputStream
 import org.json.JSONArray
@@ -27,22 +30,24 @@ import org.json.JSONObject
 
 private const val TAG = "DebugCameraInfoUtil"
 object DebugCameraInfoUtil {
+    @OptIn(ExperimentalCamera2Interop::class)
     @RequiresApi(Build.VERSION_CODES.P)
-    fun getAllCamerasPropertiesJSONArray(cameraManager: CameraManager): JSONArray {
+    fun getAllCamerasPropertiesJSONArray(cameraInfos: List<CameraInfo>): JSONArray {
         val result = JSONArray()
-        for (logicalCameraId in cameraManager.cameraIdList) {
+        for (cameraInfo in cameraInfos) {
+            var camera2cameraInfo = Camera2CameraInfo.from(cameraInfo)
+            val logicalCameraId = camera2cameraInfo.cameraId
             val logicalCameraData = JSONObject()
             logicalCameraData.put(
                 "logical-$logicalCameraId",
-                getCameraPropertiesJSONObject(logicalCameraId, cameraManager)
+                getCameraPropertiesJSONObject(camera2cameraInfo)
             )
-            for (
-            physicalCameraId in
-            cameraManager.getCameraCharacteristics(logicalCameraId).physicalCameraIds
-            ) {
+            for (cameraInfo in cameraInfo.physicalCameraInfos) {
+                camera2cameraInfo = Camera2CameraInfo.from(cameraInfo)
+                val physicalCameraId = Camera2CameraInfo.from(cameraInfo).cameraId
                 logicalCameraData.put(
                     "physical-$physicalCameraId",
-                    getCameraPropertiesJSONObject(physicalCameraId, cameraManager)
+                    getCameraPropertiesJSONObject(camera2cameraInfo)
                 )
             }
             result.put(logicalCameraData)
@@ -50,44 +55,40 @@ object DebugCameraInfoUtil {
         return result
     }
 
-    private fun getCameraPropertiesJSONObject(
-        cameraId: String,
-        cameraManager: CameraManager
-    ): JSONObject {
-        val cameraCharacteristics =
-            cameraManager.getCameraCharacteristics(cameraId)
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun getCameraPropertiesJSONObject(cameraInfo: Camera2CameraInfo): JSONObject {
         val jsonObject = JSONObject()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            cameraCharacteristics.get(CameraCharacteristics.LENS_POSE_ROTATION)
+            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_ROTATION)
                 ?.let { jsonObject.put(CameraCharacteristics.LENS_POSE_ROTATION.name, it) }
-            cameraCharacteristics.get(CameraCharacteristics.LENS_POSE_TRANSLATION)
+            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_TRANSLATION)
                 ?.let { jsonObject.put(CameraCharacteristics.LENS_POSE_TRANSLATION.name, it) }
-            cameraCharacteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)
+            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)
                 ?.let { jsonObject.put(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION.name, it) }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            cameraCharacteristics.get(CameraCharacteristics.LENS_DISTORTION)
+            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_DISTORTION)
                 ?.let { jsonObject.put(CameraCharacteristics.LENS_DISTORTION.name, it) }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            cameraCharacteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
+            cameraInfo.getCameraCharacteristic(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
                 ?.let { jsonObject.put(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE.name, it) }
         }
-        cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
+        cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
             ?.let {
                 jsonObject.put(
                     CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS.name,
                     it
                 )
             }
-        cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE)
+        cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE)
             ?.let {
                 jsonObject.put(
                     CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE.name,
                     it
                 )
             }
-        cameraCharacteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+        cameraInfo.getCameraCharacteristic(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
             ?.let { jsonObject.put(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES.name, it) }
 
         return jsonObject

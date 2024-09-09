@@ -19,11 +19,9 @@ import android.Manifest
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
-import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -110,7 +108,6 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
@@ -131,6 +128,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Named
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -147,7 +145,8 @@ class CameraXCameraUseCase
 constructor(
     private val application: Application,
     private val coroutineScope: CoroutineScope,
-    private val defaultDispatcher: CoroutineDispatcher,
+    @Named("defaultDispatcher") private val defaultDispatcher: CoroutineDispatcher,
+    @Named("iODispatcher")private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -295,10 +294,9 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            withContext(Dispatchers.IO) {
-                val cameraManager = application.baseContext.getSystemService(Context.CAMERA_SERVICE)
-                    as CameraManager
-                val cameraProperties = getAllCamerasPropertiesJSONArray(cameraManager).toString()
+            withContext(iODispatcher) {
+                val cameraProperties =
+                    getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val file = File(
                     Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
                     "JCACameraProperties"

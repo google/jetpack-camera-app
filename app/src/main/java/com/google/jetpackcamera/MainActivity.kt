@@ -163,7 +163,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val isDebugMode: Boolean
-        get() = true
+        get() = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false
 
     private fun getStandardMode(): PreviewMode.StandardMode {
         return PreviewMode.StandardMode { event ->

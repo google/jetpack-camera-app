@@ -24,6 +24,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import javax.inject.Named
 
 /**
  * Dagger [Module] for Common dependencies.
@@ -32,7 +33,12 @@ import kotlinx.coroutines.SupervisorJob
 @InstallIn(SingletonComponent::class)
 class CommonModule {
     @Provides
+    @Named("defaultDispatcher")
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    @Named("iODispatcher")
+    fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
 
     @Singleton
     @Provides
