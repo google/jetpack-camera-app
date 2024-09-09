@@ -60,15 +60,35 @@ object DebugCameraInfoUtil {
         val jsonObject = JSONObject()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_ROTATION)
-                ?.let { jsonObject.put(CameraCharacteristics.LENS_POSE_ROTATION.name, it) }
+                ?.let {
+                    jsonObject.put(
+                        CameraCharacteristics.LENS_POSE_ROTATION.name,
+                        it.contentToString()
+                    )
+                }
             cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_TRANSLATION)
-                ?.let { jsonObject.put(CameraCharacteristics.LENS_POSE_TRANSLATION.name, it) }
+                ?.let {
+                    jsonObject.put(
+                        CameraCharacteristics.LENS_POSE_TRANSLATION.name,
+                        it.contentToString()
+                    )
+                }
             cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)
-                ?.let { jsonObject.put(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION.name, it) }
+                ?.let {
+                    jsonObject.put(
+                        CameraCharacteristics.LENS_INTRINSIC_CALIBRATION.name,
+                        it.contentToString()
+                    )
+                }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_DISTORTION)
-                ?.let { jsonObject.put(CameraCharacteristics.LENS_DISTORTION.name, it) }
+                ?.let {
+                    jsonObject.put(
+                        CameraCharacteristics.LENS_DISTORTION.name,
+                        it.contentToString()
+                    )
+                }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             cameraInfo.getCameraCharacteristic(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
@@ -78,7 +98,7 @@ object DebugCameraInfoUtil {
             ?.let {
                 jsonObject.put(
                     CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS.name,
-                    it
+                    it.contentToString()
                 )
             }
         cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE)
@@ -89,7 +109,12 @@ object DebugCameraInfoUtil {
                 )
             }
         cameraInfo.getCameraCharacteristic(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
-            ?.let { jsonObject.put(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES.name, it) }
+            ?.let {
+                jsonObject.put(
+                    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES.name,
+                    it.contentToString()
+                )
+            }
 
         return jsonObject
     }
