@@ -19,9 +19,9 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DOCUMENTS
-import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
@@ -35,18 +35,8 @@ import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.camera.video.VideoRecordEvent
-import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
-import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.core.camera.CameraUseCase.ScreenFlashEvent.Type
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
-import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -81,8 +71,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Named
 
 private const val TAG = "CameraXCameraUseCase"
@@ -99,7 +89,6 @@ class CameraXCameraUseCase
 @Inject
 constructor(
     private val application: Application,
-    private val coroutineScope: CoroutineScope,
     @Named("defaultDispatcher") private val defaultDispatcher: CoroutineDispatcher,
     @Named("iODispatcher")private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
