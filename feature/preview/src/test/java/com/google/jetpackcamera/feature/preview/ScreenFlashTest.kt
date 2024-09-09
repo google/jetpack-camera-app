@@ -44,7 +44,7 @@ class ScreenFlashTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
-    private val cameraUseCase = FakeCameraUseCase(testScope)
+    private val cameraUseCase = FakeCameraUseCase()
     private lateinit var screenFlash: ScreenFlash
 
     @Before

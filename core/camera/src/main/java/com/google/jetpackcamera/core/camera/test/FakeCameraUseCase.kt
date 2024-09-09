@@ -25,6 +25,7 @@ import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -32,21 +33,16 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 class FakeCameraUseCase(
-    private val coroutineScope: CoroutineScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default),
     defaultCameraSettings: CameraAppSettings = CameraAppSettings()
 ) : CameraUseCase {
     private val availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK)
@@ -61,7 +57,7 @@ class FakeCameraUseCase(
     var isLensFacingFront = false
 
     private var isScreenFlash = true
-    private var screenFlashEvents = MutableSharedFlow<CameraUseCase.ScreenFlashEvent>()
+    private var screenFlashEvents = Channel<CameraUseCase.ScreenFlashEvent>(capacity = UNLIMITED)
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
@@ -108,14 +104,12 @@ class FakeCameraUseCase(
             throw IllegalStateException("Usecases not bound")
         }
         if (isScreenFlash) {
-            coroutineScope.launch {
-                screenFlashEvents.emit(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) { }
-                )
-                screenFlashEvents.emit(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
-                )
-            }
+            screenFlashEvents.trySend(
+                CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) { }
+            )
+            screenFlashEvents.trySend(
+                CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
+            )
         }
         numPicturesTaken += 1
     }
@@ -132,9 +126,7 @@ class FakeCameraUseCase(
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
-        coroutineScope.launch {
-            screenFlashEvents.emit(event)
-        }
+        screenFlashEvents.trySend(event)
     }
 
     override suspend fun startVideoRecording(
@@ -207,6 +199,12 @@ class FakeCameraUseCase(
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
+        }
+    }
+
+    override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        currentSettings.update { old ->
+            old.copy(concurrentCameraMode = concurrentCameraMode)
         }
     }
 
