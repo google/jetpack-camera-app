@@ -511,7 +511,8 @@ private suspend fun startVideoRecordingInternal(
                 // apply duration limit if applicable
                 if (maxDurationMillis != -1L) {
                     setDurationLimitMillis(maxDurationMillis)
-                }}
+                }
+            }
                 .setContentValues(contentValues)
                 .build()
         videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
@@ -578,12 +579,12 @@ private suspend fun runVideoRecording(
     startVideoRecordingInternal(
         initialMuted = currentSettings.audioMuted,
         maxDurationMillis = maxDurationMillis,
-       videoCaptureUseCase =  videoCapture,
-       captureTypeSuffix =  captureTypeSuffix,
-       context =  context,
-      videoCaptureUri =   videoCaptureUri,
-       shouldUseUri =  shouldUseUri,
-       onVideoRecord =  onVideoRecord
+        videoCaptureUseCase = videoCapture,
+        captureTypeSuffix = captureTypeSuffix,
+        context = context,
+        videoCaptureUri = videoCaptureUri,
+        shouldUseUri = shouldUseUri,
+        onVideoRecord = onVideoRecord
     ).use { recording ->
 
         fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
