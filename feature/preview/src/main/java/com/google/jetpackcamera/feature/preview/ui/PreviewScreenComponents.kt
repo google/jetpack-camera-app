@@ -15,10 +15,12 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.compose.animation.core.EaseOutExpo
@@ -75,6 +77,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -98,6 +101,10 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
@@ -316,16 +323,67 @@ fun PreviewDisplay(
                     .alpha(imageAlpha)
                     .clip(RoundedCornerShape(16.dp))
             ) {
+                val implementationMode = when {
+                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                    else -> ImplementationMode.EMBEDDED
+                }
+
+                DetectWindowColorModeChanges(
+                    surfaceRequest = surfaceRequest,
+                    implementationMode = implementationMode,
+                    onRequestWindowColorMode = onRequestWindowColorMode
+                )
+
                 CameraXViewfinder(
                     modifier = Modifier.fillMaxSize(),
                     surfaceRequest = it,
-                    implementationMode = when {
-                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                        else -> ImplementationMode.EMBEDDED
-                    },
-                    onRequestWindowColorMode = onRequestWindowColorMode,
+                    implementationMode = implementationMode,
                     onTap = { x, y -> onTapToFocus(x, y) }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun DetectWindowColorModeChanges(
+    surfaceRequest: SurfaceRequest,
+    implementationMode: ImplementationMode,
+    onRequestWindowColorMode: (Int) -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
+        val currentImplementationMode: ImplementationMode by rememberUpdatedState(
+            implementationMode
+        )
+        val currentOnRequestWindowColorMode: (Int) -> Unit by rememberUpdatedState(
+            onRequestWindowColorMode
+        )
+
+        LaunchedEffect(Unit) {
+            val colorModeSnapshotFlow =
+                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
+                    .map { (dynamicRange, implMode) ->
+                        val isSourceHdr = dynamicRange.encoding != DynamicRange.ENCODING_SDR
+                        val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
+                        if (isSourceHdr && destSupportsHdr) {
+                            ActivityInfo.COLOR_MODE_HDR
+                        } else {
+                            ActivityInfo.COLOR_MODE_DEFAULT
+                        }
+                    }.distinctUntilChanged()
+
+            val callbackSnapshotFlow = snapshotFlow { currentOnRequestWindowColorMode }
+
+            // Combine both flows so that we call the callback every time it changes or the
+            // window color mode changes.
+            // We'll also reset to default when this LaunchedEffect is disposed
+            combine(colorModeSnapshotFlow, callbackSnapshotFlow) { colorMode, callback ->
+                Pair(colorMode, callback)
+            }.onCompletion {
+                currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT)
+            }.collect { (colorMode, callback) ->
+                callback(colorMode)
             }
         }
     }
@@ -572,7 +630,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
