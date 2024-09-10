@@ -37,6 +37,8 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.common.DefaultDispatcher
+import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -59,7 +61,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
-import javax.inject.Named
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -89,8 +90,8 @@ class CameraXCameraUseCase
 @Inject
 constructor(
     private val application: Application,
-    @Named("defaultDispatcher") private val defaultDispatcher: CoroutineDispatcher,
-    @Named("iODispatcher")private val iODispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+    @IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
