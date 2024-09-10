@@ -668,6 +668,7 @@ internal suspend fun processVideoControlEvents(
                         videoCapture,
                         captureTypeSuffix,
                         context,
+                        event.maxVideoDuration,
                         transientSettings,
                         event.videoCaptureUri,
                         event.shouldUseUri,
