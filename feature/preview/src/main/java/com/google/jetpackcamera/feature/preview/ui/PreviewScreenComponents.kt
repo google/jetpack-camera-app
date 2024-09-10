@@ -272,24 +272,12 @@ fun PreviewDisplay(
         }
     )
 
-    val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
-
     surfaceRequest?.let {
         BoxWithConstraints(
             Modifier
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
-                .background(Color.Black)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = { offset ->
-                            // double tap to flip camera
-                            Log.d(TAG, "onDoubleTap $offset")
-                            currentOnFlipCamera()
-                        }
-                    )
-                },
-
+                .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
             val maxAspectRatio: Float = maxWidth / maxHeight
@@ -341,6 +329,11 @@ fun PreviewDisplay(
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
+                                onDoubleTap = { offset ->
+                                    // double tap to flip camera
+                                    Log.d(TAG, "onDoubleTap $offset")
+                                    onFlipCamera()
+                                },
                                 onTap = {
                                     with(coordinateTransformer) {
                                         val surfaceCoords = it.transform()
