@@ -35,6 +35,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -50,7 +51,6 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -89,7 +89,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
@@ -432,9 +431,28 @@ fun ZoomScaleText(zoomScale: Float) {
         modifier = Modifier
             .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = "%.1fx".format(zoomScale),
-        fontSize = 20.sp
+        text = stringResource(id = R.string.zoom_scale_text, zoomScale)
     )
+}
+
+@Composable
+fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row {
+            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
+            Text(
+                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
+                text = logicalCameraId ?: "---"
+            )
+        }
+        Row {
+            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
+            Text(
+                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
+                text = physicalCameraId ?: "---"
+            )
+        }
+    }
 }
 
 @Composable

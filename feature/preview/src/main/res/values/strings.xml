@@ -20,6 +20,10 @@
     <string name="flip_camera_content_description">Flip Camera</string>
 
     <string name="audio_visualizer_icon">An icon of a microphone</string>
+    <string name="zoom_scale_text">%1$.2fx</string>
+
+    <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
+    <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
@@ -28,6 +32,7 @@
     <string name="toast_video_capture_failure">Video Capture Failure</string>
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
     <string name="toast_image_capture_external_unsupported">Image capture not supported while app is in video-only capture mode</string>
+    <string name="toast_image_capture_unsupported_concurrent_camera">Image capture not supported in dual camera mode</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
     <string name="toast_hdr_photo_unsupported_on_device">Ultra HDR photos not supported on this device</string>
@@ -75,4 +80,9 @@
     <string name="quick_settings_lowlightboost_disabled">Low light boost off</string>
     <string name="quick_settings_lowlightboost_enabled_description">Low light boost on</string>
     <string name="quick_settings_lowlightboost_disabled_description">Low light boost off</string>
+
+    <string name="quick_settings_concurrent_camera_off">SINGLE</string>
+    <string name="quick_settings_concurrent_camera_dual">DUAL</string>
+    <string name="quick_settings_concurrent_camera_off_description">Concurrent cameras off</string>
+    <string name="quick_settings_concurrent_camera_dual_description">Concurrent dual camera on</string>
 </resources>
