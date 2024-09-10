@@ -189,7 +189,6 @@ fun DarkModeSetting(
     )
 }
 
-// todo uistate for flash
 @Composable
 fun FlashModeSetting(
     flashUiState: FlashUiState,

@@ -397,6 +397,7 @@ constructor(
             VideoCaptureControlEvent.StartRecordingEvent(
                 videoCaptureUri,
                 shouldUseUri,
+                currentSettings.value?.maxVideoDurationMillis ?: -1L,
                 onVideoRecord
             )
         )

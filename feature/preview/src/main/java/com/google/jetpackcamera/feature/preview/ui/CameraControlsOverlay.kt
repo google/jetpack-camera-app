@@ -269,7 +269,6 @@ private fun ControlsBottom(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
-                maxVideoDurationMillis = currentCameraSettings.maxVideoDurationMillis,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
@@ -308,7 +307,6 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
-    maxVideoDurationMillis: Long,
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -326,10 +324,6 @@ private fun CaptureButton(
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
-
-    // TODO: b/361133784 - [JCA] Update VideoRecordingState when recording reaches time limit
-    // recording actually stops a few ms before its reflected in recordingElapsedTimeNanos, so a
-    // launchedEffect cannot depend on it to trigger the UI change
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
