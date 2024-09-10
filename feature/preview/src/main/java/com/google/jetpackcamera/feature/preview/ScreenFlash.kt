@@ -45,7 +45,7 @@ class ScreenFlash(
 
     init {
         scope.launch {
-            cameraUseCase.getScreenFlashEvents().collect { event ->
+            for (event in cameraUseCase.getScreenFlashEvents()) {
                 _screenFlashUiState.emit(
                     when (event.type) {
                         CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->

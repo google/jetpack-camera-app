@@ -22,6 +22,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -29,7 +30,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -81,7 +82,7 @@ interface CameraUseCase {
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
-    fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
+    fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
 
@@ -100,6 +101,8 @@ interface CameraUseCase {
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
     fun setDeviceRotation(deviceRotation: DeviceRotation)
+
+    suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
 
@@ -131,7 +134,7 @@ interface CameraUseCase {
 
         data class OnVideoRecordStatus(
             val audioAmplitude: Double,
-            val timeStamp: Long
+            val timeStampNanos: Long
         ) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
