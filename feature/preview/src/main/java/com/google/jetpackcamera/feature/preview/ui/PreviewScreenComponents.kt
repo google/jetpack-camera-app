@@ -20,8 +20,10 @@ import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.camera.core.DynamicRange
+import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -53,7 +55,6 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -334,11 +335,28 @@ fun PreviewDisplay(
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
 
+                val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 CameraXViewfinder(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    with(coordinateTransformer) {
+                                        val surfaceCoords = it.transform()
+                                        Log.d(
+                                            "TAG",
+                                            "onTapToFocus: " +
+                                                "input{$it} -> surface{$surfaceCoords}"
+                                        )
+                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                                    }
+                                }
+                            )
+                        },
                     surfaceRequest = it,
                     implementationMode = implementationMode,
-                    onTap = { x, y -> onTapToFocus(x, y) }
+                    coordinateTransformer = coordinateTransformer
                 )
             }
         }
@@ -364,7 +382,7 @@ fun DetectWindowColorModeChanges(
             val colorModeSnapshotFlow =
                 snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
                     .map { (dynamicRange, implMode) ->
-                        val isSourceHdr = dynamicRange.encoding != DynamicRange.ENCODING_SDR
+                        val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
                         val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
                         if (isSourceHdr && destSupportsHdr) {
                             ActivityInfo.COLOR_MODE_HDR
@@ -630,7 +648,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
