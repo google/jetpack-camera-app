@@ -202,7 +202,7 @@ constructor(
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val file = File(
                     Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
-                    "JCACameraProperties"
+                    "JCACameraProperties.json"
                 )
                 writeFileExternalStorage(file, cameraProperties)
                 Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraProperties")

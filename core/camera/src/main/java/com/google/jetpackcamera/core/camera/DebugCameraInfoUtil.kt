@@ -35,19 +35,19 @@ object DebugCameraInfoUtil {
     fun getAllCamerasPropertiesJSONArray(cameraInfos: List<CameraInfo>): JSONArray {
         val result = JSONArray()
         for (cameraInfo in cameraInfos) {
-            var camera2cameraInfo = Camera2CameraInfo.from(cameraInfo)
-            val logicalCameraId = camera2cameraInfo.cameraId
+            var camera2CameraInfo = Camera2CameraInfo.from(cameraInfo)
+            val logicalCameraId = camera2CameraInfo.cameraId
             val logicalCameraData = JSONObject()
             logicalCameraData.put(
                 "logical-$logicalCameraId",
-                getCameraPropertiesJSONObject(camera2cameraInfo)
+                getCameraPropertiesJSONObject(camera2CameraInfo)
             )
-            for (cameraInfo in cameraInfo.physicalCameraInfos) {
-                camera2cameraInfo = Camera2CameraInfo.from(cameraInfo)
-                val physicalCameraId = Camera2CameraInfo.from(cameraInfo).cameraId
+            for (physicalCameraInfo in cameraInfo.physicalCameraInfos) {
+                camera2CameraInfo = Camera2CameraInfo.from(physicalCameraInfo)
+                val physicalCameraId = camera2CameraInfo.cameraId
                 logicalCameraData.put(
                     "physical-$physicalCameraId",
-                    getCameraPropertiesJSONObject(camera2cameraInfo)
+                    getCameraPropertiesJSONObject(camera2CameraInfo)
                 )
             }
             result.put(logicalCameraData)
@@ -127,13 +127,9 @@ object DebugCameraInfoUtil {
             return
         }
 
-        var outputStream: FileOutputStream? = null
         file.createNewFile()
-        outputStream = FileOutputStream(file, true)
-
         FileOutputStream(file).use { outputStream ->
             outputStream.write(textToWrite.toByteArray())
         }
-        outputStream.close()
     }
 }
