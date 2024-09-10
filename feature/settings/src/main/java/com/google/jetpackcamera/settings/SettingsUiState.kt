@@ -230,5 +230,5 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     stabilizationUiState =
     StabilizationUiState.Disabled(
         DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-    ),
+    )
 )

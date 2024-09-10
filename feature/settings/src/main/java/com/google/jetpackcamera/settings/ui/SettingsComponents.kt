@@ -353,7 +353,8 @@ fun MaxVideoDurationSetting(
                 SingleChoiceSelector(
                     enabled = true,
                     text = stringResource(R.string.duration_description_none),
-                    selected = maxVideoDurationUiState.currentMaxDurationMillis == UNLIMITED_VIDEO_DURATION,
+                    selected = maxVideoDurationUiState.currentMaxDurationMillis
+                        == UNLIMITED_VIDEO_DURATION,
                     onClick = { setMaxDuration(UNLIMITED_VIDEO_DURATION) }
                 )
                 listOf(
