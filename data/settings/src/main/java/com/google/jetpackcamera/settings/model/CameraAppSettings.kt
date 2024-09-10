@@ -37,6 +37,7 @@ data class CameraAppSettings(
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
 )
 

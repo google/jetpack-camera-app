@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.util.Preconditions
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
@@ -135,6 +137,8 @@ fun CameraControlsOverlay(
                 previewUiState = previewUiState,
                 audioAmplitude = previewUiState.audioAmplitude,
                 zoomLevel = previewUiState.zoomScale,
+                physicalCameraId = previewUiState.currentPhysicalCameraId,
+                logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 currentCameraSettings = previewUiState.currentCameraSettings,
@@ -204,6 +208,8 @@ private fun ControlsBottom(
     modifier: Modifier = Modifier,
     audioAmplitude: Double,
     previewUiState: PreviewUiState.Ready,
+    physicalCameraId: String? = null,
+    logicalCameraId: String? = null,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -230,8 +236,17 @@ private fun ControlsBottom(
     onStopVideoRecording: () -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (showZoomLevel) {
-            ZoomScaleText(zoomLevel)
+        CompositionLocalProvider(
+            LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (showZoomLevel) {
+                    ZoomScaleText(zoomLevel)
+                }
+                if (previewUiState.isDebugMode) {
+                    CurrentCameraIdText(physicalCameraId, logicalCameraId)
+                }
+            }
         }
 
         Row(
@@ -254,7 +269,6 @@ private fun ControlsBottom(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
-                maxVideoDurationMillis = currentCameraSettings.maxVideoDurationMillis,
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
@@ -293,7 +307,6 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
-    maxVideoDurationMillis: Long,
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -311,10 +324,6 @@ private fun CaptureButton(
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
-
-    // TODO: b/361133784 - [JCA] Update VideoRecordingState when recording reaches time limit
-    // recording actually stops a few ms before its reflected in recordingElapsedTimeNanos, so a
-    // launchedEffect cannot depend on it to trigger the UI change
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
