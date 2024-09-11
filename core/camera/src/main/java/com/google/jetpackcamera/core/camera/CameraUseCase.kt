@@ -136,7 +136,7 @@ interface CameraUseCase {
 
         data class OnVideoRecordStatus(
             val audioAmplitude: Double,
-            val timeStampNanos: Long
+            val elapsedTimeNanos: Long
         ) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent

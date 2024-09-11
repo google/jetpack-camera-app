@@ -666,7 +666,7 @@ class PreviewViewModel @AssistedInject constructor(
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
                             audioAmplitude = it.audioAmplitude
-                            timer = it.timeStampNanos
+                            timer = it.elapsedTimeNanos
                         }
                     }
 
