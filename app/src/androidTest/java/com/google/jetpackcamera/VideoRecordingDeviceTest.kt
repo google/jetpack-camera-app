@@ -90,7 +90,7 @@ internal class VideoRecordingDeviceTest {
                 }
                 longClickForVideoRecording()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_OK)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
@@ -112,7 +112,7 @@ internal class VideoRecordingDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
     }
 
@@ -139,7 +139,7 @@ internal class VideoRecordingDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
     }
 
