@@ -60,7 +60,7 @@ const val VIDEO_DURATION_MILLIS = 2_000L
 @OptIn(ExperimentalCoroutinesApi::class)
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
-    filePrefix: String = "JCA",
+    filePrefix: String = "",
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     crossinline block: ActivityScenario<T>.() -> Unit

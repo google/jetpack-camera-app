@@ -64,7 +64,8 @@ internal class ImageCaptureDeviceTest {
 
     @Test
     fun image_capture() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
-        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = "JCA"
     ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
