@@ -32,8 +32,8 @@ import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
-import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runScenarioTest
@@ -45,7 +45,7 @@ import org.junit.runner.RunWith
 class NavigationTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
-        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
+        GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()

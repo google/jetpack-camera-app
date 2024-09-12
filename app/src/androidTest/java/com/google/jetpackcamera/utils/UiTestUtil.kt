@@ -21,23 +21,96 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import java.net.URLConnection
+import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
+
+@OptIn(ExperimentalCoroutinesApi::class)
+inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
+    mediaUri: Uri,
+    filePrefix: String = "JCA",
+    expectedNumFiles: Int = 1,
+    fileWaitTimeoutMs: Duration = 10.seconds,
+    crossinline block: ActivityScenario<T>.() -> Unit
+) = runBlocking {
+    val debugTag = "MediaStoreAutoDelete"
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    val insertedMediaStoreEntries = mutableMapOf<String, Uri>()
+    val fileObserverContext: CoroutineContext = Dispatchers.IO.limitedParallelism(1)
+    val observeFilesJob = launch(fileObserverContext) {
+        mediaStoreInsertedFlow(
+            mediaUri = mediaUri,
+            instrumentation = instrumentation,
+            filePrefix = filePrefix
+        ).take(expectedNumFiles)
+            .collect {
+                Log.d(debugTag, "Discovered new media store file: ${it.first}")
+                insertedMediaStoreEntries[it.first] = it.second
+            }
+    }
+
+    try {
+        runScenarioTest(block = block)
+    } finally {
+        withContext(NonCancellable) {
+            withTimeoutOrNull(fileWaitTimeoutMs) {
+                // Wait for normal completion with timeout
+                observeFilesJob.join()
+            } ?: run {
+                // If timed out, cancel file observer and ensure job is complete
+                observeFilesJob.cancelAndJoin()
+            }
+
+            val detectedNumFiles = insertedMediaStoreEntries.size
+            // Delete all inserted files that we know about at this point
+            insertedMediaStoreEntries.forEach {
+                Log.d(debugTag, "Deleting media store file: $it")
+                val deletedRows = instrumentation.targetContext.contentResolver.delete(
+                    it.value,
+                    null,
+                    null
+                )
+                if (deletedRows > 0) {
+                    Log.d(debugTag, "Deleted $deletedRows files")
+                } else {
+                    Log.e(debugTag, "Failed to delete ${it.key}")
+                }
+            }
+
+            assertWithMessage("Expected number of saved files does not match detected number")
+                .that(detectedNumFiles).isEqualTo(expectedNumFiles)
+        }
+    }
+}
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
@@ -112,13 +185,13 @@ fun deleteFilesInDirAfterTimestamp(
     timeStamp: Long
 ): Boolean {
     var hasDeletedFile = false
-    for (file in File(directoryPath).listFiles()) {
+    for (file in File(directoryPath).listFiles() ?: emptyArray()) {
         if (file.lastModified() >= timeStamp) {
             file.delete()
             if (file.exists()) {
-                file.getCanonicalFile().delete()
+                file.canonicalFile.delete()
                 if (file.exists()) {
-                    instrumentation.targetContext.applicationContext.deleteFile(file.getName())
+                    instrumentation.targetContext.applicationContext.deleteFile(file.name)
                 }
             }
             hasDeletedFile = true
@@ -128,8 +201,8 @@ fun deleteFilesInDirAfterTimestamp(
 }
 
 fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
-    val file = File(uri.path)
-    if (file.exists()) {
+    val file = uri.path?.let { File(it) }
+    if (file?.exists() == true) {
         val mimeType = URLConnection.guessContentTypeFromName(uri.path)
         return mimeType != null && mimeType.startsWith(prefix)
     }
