@@ -26,6 +26,7 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.feature.preview.R
@@ -33,6 +34,12 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import java.net.URLConnection
+import java.util.concurrent.TimeoutException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
@@ -50,11 +57,28 @@ inline fun <reified T : Activity> runScenarioTest(
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
     crossinline block: ActivityScenario<T>.() -> Unit
-): Instrumentation.ActivityResult? {
+): Instrumentation.ActivityResult {
     ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
-        return scenario.result
+        return runBlocking { scenario.pollResult() }
     }
+}
+
+// Workaround for https://github.com/android/android-test/issues/676
+suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
+    // Choose timeout to match
+    // https://github.com/android/android-test/blob/67fa7cb12b9a14dc790b75947f4241c3063e80dc/runner/monitor/java/androidx/test/internal/platform/app/ActivityLifecycleTimeout.java#L22
+    timeout: Duration = 45.seconds
+): Instrumentation.ActivityResult = withTimeoutOrNull(timeout) {
+    // Poll for the state to be destroyed before we return the result
+    while (state != Lifecycle.State.DESTROYED) {
+        delay(100)
+    }
+    checkNotNull(result)
+} ?: run {
+    throw TimeoutException(
+        "Timed out while waiting for activity result. Waited $timeout."
+    )
 }
 
 context(ActivityScenario<MainActivity>)

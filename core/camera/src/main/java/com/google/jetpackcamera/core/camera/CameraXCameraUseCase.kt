@@ -19,7 +19,9 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.os.Environment.DIRECTORY_DOCUMENTS
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
@@ -33,6 +35,10 @@ import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
+import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.common.DefaultDispatcher
+import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -49,6 +55,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -67,6 +74,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -82,7 +90,8 @@ class CameraXCameraUseCase
 @Inject
 constructor(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+    @IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -109,7 +118,8 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode
+        useCaseMode: CameraUseCase.UseCaseMode,
+        isDebugMode: Boolean
     ) {
         this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -186,6 +196,18 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
+        if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            withContext(iODispatcher) {
+                val cameraProperties =
+                    getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
+                val file = File(
+                    Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
+                    "JCACameraProperties.json"
+                )
+                writeFileExternalStorage(file, cameraProperties)
+                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraProperties")
+            }
+        }
     }
 
     override suspend fun runCamera() = coroutineScope {
