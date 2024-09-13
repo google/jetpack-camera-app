@@ -553,7 +553,7 @@ private suspend fun startVideoRecordingInternal(
                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
                         audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                             .audioAmplitude,
-                        timeStampNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                        elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
                     )
                 )
             }

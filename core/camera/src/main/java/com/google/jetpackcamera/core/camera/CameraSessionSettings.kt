@@ -63,5 +63,4 @@ internal data class TransientSessionSettings(
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
     val zoomScale: Float,
-    val maxVideoDurationMillis: Long
 )

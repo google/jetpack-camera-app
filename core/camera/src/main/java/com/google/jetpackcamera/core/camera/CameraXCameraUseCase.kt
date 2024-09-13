@@ -222,7 +222,6 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    maxVideoDurationMillis = currentCameraSettings.maxVideoDurationMillis
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
