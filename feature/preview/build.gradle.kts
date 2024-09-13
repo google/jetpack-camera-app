@@ -134,7 +134,7 @@ dependencies {
 
     // CameraX
     implementation(libs.camera.core)
-    implementation(libs.camera.viewfinder.compose)
+    implementation(libs.camera.compose)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
