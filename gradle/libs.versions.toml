@@ -21,8 +21,7 @@ protobufPlugin = "0.9.4"
 androidxActivityCompose = "1.8.2"
 androidxAppCompat = "1.6.1"
 androidxBenchmark = "1.2.3"
-androidxCamera = "1.4.0-SNAPSHOT"
-androidxCameraViewfinder = "1.0.0-SNAPSHOT"
+androidxCamera = "1.5.0-SNAPSHOT"
 androidxConcurrentFutures = "1.1.0"
 androidxCoreKtx = "1.12.0"
 androidxDatastore = "1.0.0"
@@ -73,7 +72,7 @@ camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "and
 camera-core = { module = "androidx.camera:camera-core", version.ref = "androidxCamera" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidxCamera" }
 camera-video = { module = "androidx.camera:camera-video", version.ref = "androidxCamera" }
-camera-viewfinder-compose = { module = "androidx.camera:camera-viewfinder-compose", version.ref = "androidxCameraViewfinder" }
+camera-compose = { module = "androidx.camera:camera-compose", version.ref = "androidxCamera" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
