@@ -73,7 +73,11 @@ internal class VideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        Truth.assertThat(File(DIR_PATH).lastModified() > timeStamp).isTrue()
+        val dir = File(DIR_PATH)
+        Truth.assertWithMessage(
+            "Parent dir: ${dir.parentFile.absolutePath}, " +
+                "last modified: ${dir.lastModified()}"
+        ).that(dir.parentFile.lastModified()).isGreaterThan(timeStamp)
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
