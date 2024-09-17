@@ -34,7 +34,6 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.video.OutputOptions
 import androidx.camera.video.Recorder
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
@@ -84,7 +83,6 @@ const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
 const val UNLIMITED_VIDEO_DURATION = 0L
-
 
 /**
  * CameraX based implementation for [CameraUseCase]

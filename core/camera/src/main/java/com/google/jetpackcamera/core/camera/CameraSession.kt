@@ -200,8 +200,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                        "${prevTransientSettings.deviceRotation} -> " +
-                        "${newTransientSettings.deviceRotation}"
+                    "${prevTransientSettings.deviceRotation} -> " +
+                    "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -521,9 +521,9 @@ private suspend fun startVideoRecordingInternal(
     }
     val callbackExecutor: Executor =
         (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                        CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+            currentCoroutineContext()[ContinuationInterceptor] as?
+                CoroutineDispatcher
+            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
@@ -625,7 +625,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                        "$width x $height"
+                    "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }
