@@ -56,12 +56,22 @@ import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
+import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
+import com.google.jetpackcamera.settings.FPS_15
+import com.google.jetpackcamera.settings.FPS_30
+import com.google.jetpackcamera.settings.FPS_60
+import com.google.jetpackcamera.settings.FPS_AUTO
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
+import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
+import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
+import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
+import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -69,11 +79,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
-
-const val FPS_AUTO = 0
-const val FPS_15 = 15
-const val FPS_30 = 30
-const val FPS_60 = 60
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -323,6 +328,51 @@ fun CaptureModeSetting(
                     enabled = true,
                     onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
                 )
+            }
+        }
+    )
+}
+
+@Composable
+fun MaxVideoDurationSetting(
+    maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+    setMaxDuration: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier,
+        enabled = true,
+        title = "Set maximum video duration",
+        leadingIcon = null,
+        description = when (val maxDuration = maxVideoDurationUiState.currentMaxDurationMillis) {
+            UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
+            else -> stringResource(R.string.duration_description_seconds, (maxDuration / 1000))
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    enabled = true,
+                    text = stringResource(R.string.duration_description_none),
+                    selected = maxVideoDurationUiState.currentMaxDurationMillis
+                        == UNLIMITED_VIDEO_DURATION,
+                    onClick = { setMaxDuration(UNLIMITED_VIDEO_DURATION) }
+                )
+                listOf(
+                    FIVE_SECONDS_DURATION,
+                    TEN_SECONDS_DURATION,
+                    THIRTY_SECONDS_DURATION,
+                    SIXTY_SECONDS_DURATION
+                ).forEach { maxDuration ->
+                    SingleChoiceSelector(
+                        enabled = true,
+                        text = stringResource(
+                            R.string.duration_description_seconds,
+                            (maxDuration / 1000)
+                        ),
+                        selected = maxVideoDurationUiState.currentMaxDurationMillis == maxDuration,
+                        onClick = { setMaxDuration(maxDuration) }
+                    )
+                }
             }
         }
     )

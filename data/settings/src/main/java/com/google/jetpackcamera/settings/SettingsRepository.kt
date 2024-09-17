@@ -54,4 +54,6 @@ interface SettingsRepository {
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
+
+    suspend fun updateMaxVideoDuration(durationMillis: Long)
 }

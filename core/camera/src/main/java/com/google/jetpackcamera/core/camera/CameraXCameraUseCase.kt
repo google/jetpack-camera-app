@@ -608,7 +608,13 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
-
+    override suspend fun setMaxVideoDuration(durationInMillis: Long) {
+        currentSettings.update { old ->
+            old?.copy(
+                maxVideoDurationMillis = durationInMillis
+            )
+        }
+    }
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(

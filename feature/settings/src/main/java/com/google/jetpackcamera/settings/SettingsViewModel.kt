@@ -30,10 +30,6 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.ui.FPS_15
-import com.google.jetpackcamera.settings.ui.FPS_30
-import com.google.jetpackcamera.settings.ui.FPS_60
-import com.google.jetpackcamera.settings.ui.FPS_AUTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,7 +40,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -63,12 +59,14 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
-                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
+                    updatedSettings.maxVideoDurationMillis
+                ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
+                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
-
             )
         }.stateIn(
             scope = viewModelScope,
@@ -108,7 +106,7 @@ class SettingsViewModel @Inject constructor(
         }
 
         // if fps is too high for any stabilization
-        if (cameraAppSettings.targetFrameRate >= TARGET_FPS_60) {
+        if (cameraAppSettings.targetFrameRate >= FPS_60) {
             return StabilizationUiState.Disabled(
                 FpsUnsupportedRationale(
                     R.string.stabilization_rationale_prefix,
@@ -165,7 +163,7 @@ class SettingsViewModel @Inject constructor(
         }
 
         // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60 || currentFrameRate == TARGET_FPS_15) {
+        if (currentFrameRate == FPS_60 || currentFrameRate == FPS_15) {
             return SingleSelectableState.Disabled(
                 FpsUnsupportedRationale(
                     R.string.stabilization_rationale_prefix,
@@ -201,7 +199,7 @@ class SettingsViewModel @Inject constructor(
             )
         }
         // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60) {
+        if (currentFrameRate == FPS_60) {
             return SingleSelectableState.Disabled(
                 FpsUnsupportedRationale(
                     R.string.stabilization_rationale_prefix,
@@ -440,6 +438,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateVideoStabilization(stabilization)
             Log.d(TAG, "set video stabilization: $stabilization")
+        }
+    }
+
+    fun setMaxVideoDuration(durationMillis: Long) {
+        viewModelScope.launch {
+            settingsRepository.updateMaxVideoDuration(durationMillis)
+            Log.d(TAG, "set video duration: $durationMillis ms")
         }
     }
 }

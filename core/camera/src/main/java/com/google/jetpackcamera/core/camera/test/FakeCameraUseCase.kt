@@ -243,4 +243,10 @@ class FakeCameraUseCase(
             old.copy(targetFrameRate = targetFrameRate)
         }
     }
+
+    override suspend fun setMaxVideoDuration(durationInMillis: Long) {
+        currentSettings.update { old ->
+            old.copy(maxVideoDurationMillis = durationInMillis)
+        }
+    }
 }
