@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.settings.model
 const val TARGET_FPS_AUTO = 0
-const val UNLIMITED_VIDEO_DURATION = -1L
+const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
  * Data layer representation for settings.

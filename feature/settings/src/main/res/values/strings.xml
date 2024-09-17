@@ -22,6 +22,8 @@
     <string name="nav_back_accessibility">Button to navigate back out of settings</string>
 
     <string name="section_title_camera_settings">Default Camera Settings</string>
+    <string name="section_title_recording_settings">Default Recording Settings</string>
+
     <string name="section_title_app_settings">App Settings</string>
     <string name="section_title_software_info">Software Information</string>
 

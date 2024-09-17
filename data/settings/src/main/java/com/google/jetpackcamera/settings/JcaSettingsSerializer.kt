@@ -20,7 +20,11 @@ import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-const val UNLIMITED_VIDEO_DURATION = -1L
+/**
+ * This constant is `0L` because the `DURATION_UNLIMITED`
+ * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
+ */
+const val UNLIMITED_VIDEO_DURATION = 0L
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()

@@ -35,7 +35,7 @@ const val FPS_30 = 30
 const val FPS_60 = 60
 
 // seconds duration in millis
-const val UNLIMITED_VIDEO_DURATION = -1L
+const val UNLIMITED_VIDEO_DURATION = 0L
 const val FIVE_SECONDS_DURATION = 5_000L
 const val TEN_SECONDS_DURATION = 10_000L
 const val THIRTY_SECONDS_DURATION = 30_000L

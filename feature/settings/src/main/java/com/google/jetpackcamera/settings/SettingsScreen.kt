@@ -157,6 +157,8 @@ fun SettingsList(
         setCaptureMode = setCaptureMode
     )
 
+    SectionHeader(title = stringResource(R.string.section_title_recording_settings))
+
     MaxVideoDurationSetting(
         maxVideoDurationUiState = uiState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
