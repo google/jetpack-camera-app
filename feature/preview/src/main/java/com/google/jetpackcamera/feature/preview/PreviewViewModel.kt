@@ -228,6 +228,10 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setTargetFrameRate(entry.value as Int)
                 }
 
+                CameraAppSettings::maxVideoDurationMillis -> {
+                    cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
                 CameraAppSettings::darkMode -> {}
 
                 else -> TODO("Unhandled CameraAppSetting $entry")
@@ -636,6 +640,7 @@ class PreviewViewModel @AssistedInject constructor(
             try {
                 cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
                     var audioAmplitude = 0.0
+                    var timer = 0L
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
@@ -662,6 +667,7 @@ class PreviewViewModel @AssistedInject constructor(
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
                             audioAmplitude = it.audioAmplitude
+                            timer = it.elapsedTimeNanos
                         }
                     }
 
@@ -669,7 +675,8 @@ class PreviewViewModel @AssistedInject constructor(
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
                                 snackBarToShow = snackbarToShow,
-                                audioAmplitude = audioAmplitude
+                                audioAmplitude = audioAmplitude,
+                                recordingElapsedTimeNanos = timer
                             ) ?: old
                         }
                     }

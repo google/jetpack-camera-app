@@ -120,6 +120,8 @@ interface CameraUseCase {
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
+    suspend fun setMaxVideoDuration(durationInMillis: Long)
+
     /**
      * Represents the events required for screen flash.
      */
@@ -136,7 +138,10 @@ interface CameraUseCase {
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
+        data class OnVideoRecordStatus(
+            val audioAmplitude: Double,
+            val elapsedTimeNanos: Long
+        ) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
     }

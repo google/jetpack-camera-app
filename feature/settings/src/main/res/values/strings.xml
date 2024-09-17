@@ -22,6 +22,8 @@
     <string name="nav_back_accessibility">Button to navigate back out of settings</string>
 
     <string name="section_title_camera_settings">Default Camera Settings</string>
+    <string name="section_title_recording_settings">Default Recording Settings</string>
+
     <string name="section_title_app_settings">App Settings</string>
     <string name="section_title_software_info">Software Information</string>
 
@@ -94,14 +96,19 @@
     <string name="fps_description_auto">Auto Frame Rate</string>
     <string name="fps_description">%d fps</string>
 
-
     <string name="fps_selector_auto">Auto</string>
     <string name="fps_selector_value">%d</string>
 
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
 
+    <!-- video limit strings -->
+    <string name="duration_title">Set Maximum Video Duration</string>
+    <string name="duration_description_none">Unlimited duration</string>
+    <string name="duration_description_seconds">%d seconds</string>
+
     <!-- disabled rationale strings-->
+
     <string name="device_unsupported">%1$s is unsupported by the device</string>
     <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
     <string name="stabilization_unsupported">%$1s is unsupported by the current stabilization</string>

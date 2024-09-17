@@ -41,6 +41,7 @@ message JcaSettings {
   VideoStabilization stabilize_video = 7;
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
+  uint64 max_video_duration_millis = 11;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

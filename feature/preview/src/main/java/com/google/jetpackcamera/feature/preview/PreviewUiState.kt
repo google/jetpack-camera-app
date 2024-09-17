@@ -35,6 +35,7 @@ sealed interface PreviewUiState {
         val quickSettingsIsOpen: Boolean = false,
         val audioAmplitude: Double = 0.0,
         val audioMuted: Boolean = false,
+        val recordingElapsedTimeNanos: Long = 0L,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
