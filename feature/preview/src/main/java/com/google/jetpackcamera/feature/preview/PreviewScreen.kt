@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -203,15 +204,11 @@ private fun ContentScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
-        val lensFacing = remember(previewUiState) {
+        val lensFacing by rememberUpdatedState(
             previewUiState.currentCameraSettings.cameraLensFacing
-        }
+        )
 
-        val onFlipCamera = remember(lensFacing) {
-            {
-                onSetLensFacing(lensFacing.flip())
-            }
-        }
+        val onFlipCamera = { onSetLensFacing(lensFacing.flip()) }
 
         val isMuted = remember(previewUiState) {
             previewUiState.currentCameraSettings.audioMuted

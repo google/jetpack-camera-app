@@ -98,7 +98,7 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_OK)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(uri, "image")).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
@@ -123,7 +123,7 @@ internal class ImageCaptureDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
     }
 
@@ -149,7 +149,7 @@ internal class ImageCaptureDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
     }
 
