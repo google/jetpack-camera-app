@@ -23,18 +23,11 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.jetpackcamera.MainActivity
-import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import java.net.URLConnection
 import java.util.concurrent.TimeoutException
@@ -154,46 +147,6 @@ suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
     )
 }
 
-context(ActivityScenario<MainActivity>)
-fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromQuickSettings = true
-        }
-    }
-
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
-        "LensFacing can only be retrieved from PreviewScreen or QuickSettings screen"
-    )
-
-    try {
-        return onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
-            "Flip camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].any { description ->
-                when (description) {
-                    getResString(R.string.quick_settings_front_camera_description) ->
-                        return@let LensFacing.FRONT
-
-                    getResString(R.string.quick_settings_back_camera_description) ->
-                        return@let LensFacing.BACK
-
-                    else -> false
-                }
-            }
-            throw AssertionError("Unable to determine lens facing from quick settings")
-        }
-    } finally {
-        if (needReturnFromQuickSettings) {
-            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
-                .assertExists()
-                .performClick()
-        }
-    }
-}
-
 fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri {
     return Uri.fromFile(
         File(
@@ -243,4 +196,9 @@ fun getIntent(uri: Uri, action: String): Intent {
     )
     intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
     return intent
+}
+
+fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
+    SemanticsProperties.StateDescription in it.config &&
+        (it.config[SemanticsProperties.StateDescription] == expected)
 }
