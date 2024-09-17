@@ -342,7 +342,7 @@ fun MaxVideoDurationSetting(
     BasicPopupSetting(
         modifier = modifier,
         enabled = true,
-        title = "Set maximum video duration",
+        title = stringResource(R.string.duration_title),
         leadingIcon = null,
         description = when (val maxDuration = maxVideoDurationUiState.currentMaxDurationMillis) {
             UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
