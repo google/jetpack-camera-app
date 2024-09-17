@@ -42,7 +42,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -56,19 +55,17 @@ const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
-
-@OptIn(ExperimentalCoroutinesApi::class)
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
+    fileObserverContext: CoroutineContext = Dispatchers.IO,
     crossinline block: ActivityScenario<T>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val insertedMediaStoreEntries = mutableMapOf<String, Uri>()
-    val fileObserverContext: CoroutineContext = Dispatchers.IO.limitedParallelism(1)
     val observeFilesJob = launch(fileObserverContext) {
         mediaStoreInsertedFlow(
             mediaUri = mediaUri,
@@ -81,15 +78,20 @@ inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
             }
     }
 
+    var succeeded = false
     try {
         runScenarioTest(block = block)
+        succeeded = true
     } finally {
         withContext(NonCancellable) {
-            withTimeoutOrNull(fileWaitTimeoutMs) {
-                // Wait for normal completion with timeout
-                observeFilesJob.join()
-            } ?: run {
-                // If timed out, cancel file observer and ensure job is complete
+            if (!succeeded ||
+                withTimeoutOrNull(fileWaitTimeoutMs) {
+                    // Wait for normal completion with timeout
+                    observeFilesJob.join()
+                } == null
+            ) {
+                // If the test didn't succeed, or we've timed out waiting for files,
+                // cancel file observer and ensure job is complete
                 observeFilesJob.cancelAndJoin()
             }
 
@@ -109,8 +111,10 @@ inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
                 }
             }
 
-            assertWithMessage("Expected number of saved files does not match detected number")
-                .that(detectedNumFiles).isEqualTo(expectedNumFiles)
+            if (succeeded) {
+                assertWithMessage("Expected number of saved files does not match detected number")
+                    .that(detectedNumFiles).isEqualTo(expectedNumFiles)
+            }
         }
     }
 }
