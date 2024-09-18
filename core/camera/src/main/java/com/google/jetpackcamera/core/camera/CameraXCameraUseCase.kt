@@ -82,6 +82,8 @@ const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
+const val UNLIMITED_VIDEO_DURATION = 0L
+
 /**
  * CameraX based implementation for [CameraUseCase]
  */
@@ -418,6 +420,8 @@ constructor(
             VideoCaptureControlEvent.StartRecordingEvent(
                 videoCaptureUri,
                 shouldUseUri,
+                currentSettings.value?.maxVideoDurationMillis
+                    ?: UNLIMITED_VIDEO_DURATION,
                 onVideoRecord
             )
         )
@@ -607,7 +611,13 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
-
+    override suspend fun setMaxVideoDuration(durationInMillis: Long) {
+        currentSettings.update { old ->
+            old?.copy(
+                maxVideoDurationMillis = durationInMillis
+            )
+        }
+    }
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(

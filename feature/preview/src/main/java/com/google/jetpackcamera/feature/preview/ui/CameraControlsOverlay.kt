@@ -324,6 +324,7 @@ private fun CaptureButton(
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
+
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onClick = {

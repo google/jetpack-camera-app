@@ -54,6 +54,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
@@ -472,6 +473,7 @@ private fun setFlashModeInternal(
 private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     videoCaptureUseCase: VideoCapture<Recorder>,
+    maxDurationMillis: Long,
     captureTypeSuffix: String,
     context: Context,
     videoCaptureUri: Uri?,
@@ -507,6 +509,7 @@ private suspend fun startVideoRecordingInternal(
                 context.contentResolver,
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             )
+                .setDurationLimitMillis(maxDurationMillis)
                 .setContentValues(contentValues)
                 .build()
         videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
@@ -526,7 +529,7 @@ private suspend fun startVideoRecordingInternal(
         when (onVideoRecordEvent) {
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
-                    ERROR_NONE ->
+                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
@@ -545,8 +548,9 @@ private suspend fun startVideoRecordingInternal(
             is VideoRecordEvent.Status -> {
                 onVideoRecord(
                     CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                        onVideoRecordEvent.recordingStats.audioStats
-                            .audioAmplitude
+                        audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                            .audioAmplitude,
+                        elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
                     )
                 )
             }
@@ -561,6 +565,7 @@ private suspend fun runVideoRecording(
     videoCapture: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
+    maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
     videoCaptureUri: Uri?,
     shouldUseUri: Boolean,
@@ -570,12 +575,13 @@ private suspend fun runVideoRecording(
 
     startVideoRecordingInternal(
         initialMuted = currentSettings.audioMuted,
-        videoCapture,
-        captureTypeSuffix,
-        context,
-        videoCaptureUri,
-        shouldUseUri,
-        onVideoRecord
+        maxDurationMillis = maxDurationMillis,
+        videoCaptureUseCase = videoCapture,
+        captureTypeSuffix = captureTypeSuffix,
+        context = context,
+        videoCaptureUri = videoCaptureUri,
+        shouldUseUri = shouldUseUri,
+        onVideoRecord = onVideoRecord
     ).use { recording ->
 
         fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -660,6 +666,7 @@ internal suspend fun processVideoControlEvents(
                         videoCapture,
                         captureTypeSuffix,
                         context,
+                        event.maxVideoDuration,
                         transientSettings,
                         event.videoCaptureUri,
                         event.shouldUseUri,
