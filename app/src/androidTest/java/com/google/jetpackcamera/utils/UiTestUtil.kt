@@ -47,6 +47,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val VIDEO_RECORDING_START_TIMEOUT_MILLIS = 2_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,

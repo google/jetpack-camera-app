@@ -15,31 +15,31 @@
  */
 package com.google.jetpackcamera
 
+import android.provider.MediaStore
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.RequiresDevice
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.ui.AMPLITUDE_HOT_TAG
+import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.VIDEO_RECORDING_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.onNodeWithStateDescription
+import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@RequiresDevice
 class VideoAudioTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
@@ -48,31 +48,51 @@ class VideoAudioTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
     @Before
     fun setUp() {
-        assertThat(uiDevice.isScreenOn).isTrue()
+        with(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())) {
+            assertThat(isScreenOn).isTrue()
+        }
     }
 
     @Test
-    fun audioIncomingWhenEnabled() {
-        runScenarioTest<MainActivity> {
-            // check audio visualizer composable for muted/unmuted icon.
-            // icon will only be unmuted if audio is nonzero
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+    fun audioIncomingWhenEnabled() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    ) {
+        // check audio visualizer composable for muted/unmuted icon.
+        // icon will only be unmuted if audio is nonzero
+        with(composeTestRule) {
+            waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
             }
 
-            // record video
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                .assertExists().performTouchInput { longClick(durationMillis = 5000) }
+            // start recording video
+            onNodeWithTag(CAPTURE_BUTTON)
+                .assertExists()
+                .performTouchInput {
+                    down(center)
+                }
 
-            // assert hot amplitude tag visible
-            uiDevice.wait(
-                Until.findObject(By.res(AMPLITUDE_HOT_TAG)),
-                5000
-            )
+            try {
+                // assert hot amplitude tag visible
+                waitUntil(timeoutMillis = VIDEO_RECORDING_START_TIMEOUT_MILLIS) {
+                    onNodeWithStateDescription(
+                        R.string.audio_visualizer_recording_state_description
+                    ).isDisplayed()
+                }
+            } finally {
+                // finish recording video
+                onNodeWithTag(CAPTURE_BUTTON)
+                    .assertExists()
+                    .performTouchInput {
+                        up()
+                    }
+
+                // Wait for recording to finish
+                waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                    onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
+                }
+            }
         }
     }
 }

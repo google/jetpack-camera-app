@@ -60,6 +60,19 @@ fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
 )
 
 /**
+ * Allows searching for a node by [SemanticsProperties.StateDescription] using an integer string
+ * resource.
+ */
+fun SemanticsNodeInteractionsProvider.onNodeWithStateDescription(
+    @StringRes strRes: Int
+): SemanticsNodeInteraction = onNode(
+    SemanticsMatcher.expectValue(
+        SemanticsProperties.StateDescription,
+        expectedValue = getResString(strRes)
+    )
+)
+
+/**
  * Fetch a string resources from a [SemanticsNodeInteractionsProvider] context.
  */
 fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String {
