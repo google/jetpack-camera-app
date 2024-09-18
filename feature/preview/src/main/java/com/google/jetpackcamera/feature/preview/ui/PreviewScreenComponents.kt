@@ -75,7 +75,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -91,6 +90,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -106,7 +108,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -583,9 +584,7 @@ enum class ToggleState {
 fun ToggleButton(
     leftIcon: Painter,
     rightIcon: Painter,
-    modifier: Modifier = Modifier
-        .width(64.dp)
-        .height(32.dp),
+    modifier: Modifier = Modifier,
     initialState: ToggleState = ToggleState.Left,
     onToggleStateChanged: (newState: ToggleState) -> Unit = {},
     onToggleWhenDisabled: () -> Unit = {},
@@ -608,26 +607,32 @@ fun ToggleButton(
         },
         label = "togglePosition"
     )
-    val scope = rememberCoroutineScope()
 
     Surface(
         modifier = modifier
             .clip(shape = RoundedCornerShape(50))
             .then(
-                Modifier.clickable {
-                    scope.launch {
-                        if (enabled) {
-                            toggleState = when (toggleState) {
-                                ToggleState.Left -> ToggleState.Right
-                                ToggleState.Right -> ToggleState.Left
-                            }
-                            onToggleStateChanged(toggleState)
-                        } else {
-                            onToggleWhenDisabled()
+                Modifier.clickable(
+                    role = Role.Switch
+                ) {
+                    if (enabled) {
+                        toggleState = when (toggleState) {
+                            ToggleState.Left -> ToggleState.Right
+                            ToggleState.Right -> ToggleState.Left
                         }
+                        onToggleStateChanged(toggleState)
+                    } else {
+                        onToggleWhenDisabled()
                     }
                 }
-            ),
+            ).semantics {
+                stateDescription = when (toggleState) {
+                    ToggleState.Left -> leftIconDescription
+                    ToggleState.Right -> rightIconDescription
+                }
+            }
+            .width(64.dp)
+            .height(32.dp),
         color = backgroundColor
     ) {
         Box {

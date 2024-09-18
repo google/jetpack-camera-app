@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -47,15 +46,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.util.Preconditions
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
+import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
@@ -292,7 +292,8 @@ private fun ControlsBottom(
                         CaptureModeToggleButton(
                             uiState = previewUiState.captureModeToggleUiState,
                             onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onToggleWhenDisabled
+                            onToggleWhenDisabled = onToggleWhenDisabled,
+                            modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                         )
                     }
                 }
@@ -390,12 +391,12 @@ private fun CaptureButton(
     )
 }
 
-@SuppressLint("RestrictedApi")
 @Composable
 private fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Visible,
     onChangeImageFormat: (ImageOutputFormat) -> Unit,
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit
+    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val initialState =
@@ -427,10 +428,15 @@ private fun CaptureModeToggleButton(
             onChangeImageFormat(imageFormat)
         },
         onToggleWhenDisabled = {
-            Preconditions.checkArgument(uiState is CaptureModeToggleUiState.Disabled)
-            onToggleWhenDisabled((uiState as CaptureModeToggleUiState.Disabled).disabledReason)
+            check(uiState is CaptureModeToggleUiState.Disabled)
+            onToggleWhenDisabled(uiState.disabledReason)
         },
-        enabled = uiState is CaptureModeToggleUiState.Enabled
+        enabled = uiState is CaptureModeToggleUiState.Enabled,
+        leftIconDescription =
+        stringResource(id = R.string.capture_mode_image_capture_content_description),
+        rightIconDescription =
+        stringResource(id = R.string.capture_mode_video_recording_content_description),
+        modifier = modifier
     )
 }
 

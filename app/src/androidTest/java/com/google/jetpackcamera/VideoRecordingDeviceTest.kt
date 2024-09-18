@@ -19,12 +19,10 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -38,11 +36,11 @@ import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.VIDEO_DURATION_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
 import com.google.jetpackcamera.utils.getIntent
 import com.google.jetpackcamera.utils.getTestUri
+import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
 import org.junit.Rule
@@ -70,7 +68,7 @@ internal class VideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
-        longClickForVideoRecording()
+        composeTestRule.longClickForVideoRecording()
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
@@ -88,7 +86,7 @@ internal class VideoRecordingDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                longClickForVideoRecording()
+                composeTestRule.longClickForVideoRecording()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
@@ -106,7 +104,7 @@ internal class VideoRecordingDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                longClickForVideoRecording()
+                composeTestRule.longClickForVideoRecording()
                 composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
                 }
@@ -141,30 +139,6 @@ internal class VideoRecordingDeviceTest {
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
-    }
-
-    private fun longClickForVideoRecording() {
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-            .assertExists()
-            .performTouchInput {
-                down(center)
-            }
-        idleForVideoDuration()
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-            .assertExists()
-            .performTouchInput {
-                up()
-            }
-    }
-
-    private fun idleForVideoDuration() {
-        // TODO: replace with a check for the timestamp UI of the video duration
-        try {
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
-                composeTestRule.onNodeWithTag("dummyTagForLongPress").isDisplayed()
-            }
-        } catch (e: ComposeTimeoutException) {
-        }
     }
 
     companion object {

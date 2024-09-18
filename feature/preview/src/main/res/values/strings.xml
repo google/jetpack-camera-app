@@ -16,6 +16,10 @@
   -->
 <resources>
     <string name="camera_not_ready">Camera Loading…</string>
+
+    <string name="capture_mode_image_capture_content_description">Image capture mode</string>
+    <string name="capture_mode_video_recording_content_description">Video recording mode</string>
+
     <string name="settings_content_description">Settings</string>
     <string name="flip_camera_content_description">Flip Camera</string>
 
