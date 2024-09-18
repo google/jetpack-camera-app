@@ -34,17 +34,16 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
 import com.google.jetpackcamera.utils.getIntent
 import com.google.jetpackcamera.utils.getTestUri
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
-import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +54,7 @@ internal class ImageCaptureDeviceTest {
 
     @get:Rule
     val permissionsRule: GrantPermissionRule =
-        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
+        GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -64,8 +63,10 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun image_capture() = runScenarioTest<MainActivity> {
-        val timeStamp = System.currentTimeMillis()
+    fun image_capture() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = "JCA"
+    ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -77,8 +78,6 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        Truth.assertThat(File(DIR_PATH).lastModified() > timeStamp).isTrue()
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test

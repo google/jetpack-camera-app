@@ -34,8 +34,8 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Before
 import org.junit.Rule
@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 class BackgroundDeviceTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
-        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
+        GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
