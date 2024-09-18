@@ -124,13 +124,11 @@ fun ComposeTestRule.longClickForVideoRecording() {
         }
 }
 
-private fun ComposeTestRule.idleForVideoDuration() {
+fun ComposeTestRule.idleForVideoDuration() {
     // TODO: replace with a check for the timestamp UI of the video duration
     try {
-        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
-            onNodeWithTag("dummyTagForLongPress").isDisplayed()
-        }
-    } catch (e: ComposeTimeoutException) {
+        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS, condition = { false })
+    } catch (_: ComposeTimeoutException) {
     }
 }
 

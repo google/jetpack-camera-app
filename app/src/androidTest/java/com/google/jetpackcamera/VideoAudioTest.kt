@@ -32,6 +32,7 @@ import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_RECORDING_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.idleForVideoDuration
 import com.google.jetpackcamera.utils.onNodeWithStateDescription
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import org.junit.Before
@@ -80,6 +81,9 @@ class VideoAudioTest {
                         R.string.audio_visualizer_recording_state_description
                     ).isDisplayed()
                 }
+
+                // Ensure we record long enough to create a successful recording
+                idleForVideoDuration()
             } finally {
                 // finish recording video
                 onNodeWithTag(CAPTURE_BUTTON)
