@@ -627,8 +627,7 @@ fun ToggleButton(
                         onToggleWhenDisabled()
                     }
                 }
-            )
-            .semantics {
+            ).semantics {
                 stateDescription = when (toggleState) {
                     ToggleState.Left -> leftIconDescription
                     ToggleState.Right -> rightIconDescription
