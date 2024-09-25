@@ -1,9 +1,11 @@
 name: Merge To Main
 
-on:
-  push:
-    branches:
-      - main
+#on:
+#  push:
+#    branches:
+#      - main
+
+on: [pull_request]
 
 concurrency:
   group: build-${{ github.ref }}
@@ -51,3 +53,23 @@ jobs:
         with:
           name: build-reports
           path: "*/build/reports"
+
+      - name: Run Unit Tests
+        run: ./gradlew test
+
+      - name: Run Instrumentation Tests
+        run: ./gradlew connectedAndroidTest
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/reports/tests/testDebugUnitTest/
+
+      - name: Upload Instrumentation Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-test-results
+          path: app/build/reports/androidTests/connected/
