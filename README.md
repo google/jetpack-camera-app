@@ -1,3 +1,5 @@
+![Jetpack Camera App CI](https://github.com/google/jetpack-camera-app/actions/workflows/MergeToMainWorkflow.yml/badge.svg)
+
 ![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
 # Jetpack Camera App 📸
 
