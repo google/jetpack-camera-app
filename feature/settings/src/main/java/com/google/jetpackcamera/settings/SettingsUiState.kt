@@ -54,7 +54,8 @@ sealed interface SettingsUiState {
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
-        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+        val muteAudioUiState: MuteAudioUiState
     ) : SettingsUiState
 }
 
@@ -170,6 +171,12 @@ sealed interface StabilizationUiState {
 
 /* Settings that don't currently depend on constraints */
 
+sealed interface MuteAudioUiState{
+    data class Enabled(
+        val isMuted: Boolean,
+        val additionalContext: String = ""
+    ):MuteAudioUiState
+}
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
     data class Enabled(
@@ -214,6 +221,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
+    muteAudioUiState = MuteAudioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.audioMuted),
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
     fpsUiState = FpsUiState.Enabled(

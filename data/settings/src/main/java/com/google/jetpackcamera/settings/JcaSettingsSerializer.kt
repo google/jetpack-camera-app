@@ -38,6 +38,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
+        .setAudioMutedStatus(false)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -64,6 +64,7 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                muteAudioUiState = MuteAudioUiState.Enabled(updatedSettings.audioMuted),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
@@ -372,9 +373,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, disable
         if ((
-                previewStabilization == Stabilization.ON &&
-                    (fpsOption == FPS_15 || fpsOption == FPS_60)
-                ) ||
+                    previewStabilization == Stabilization.ON &&
+                            (fpsOption == FPS_15 || fpsOption == FPS_60)
+                    ) ||
             (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
         ) {
             return SingleSelectableState.Disabled(
@@ -445,6 +446,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateMaxVideoDuration(durationMillis)
             Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoMuted(isMuted: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateMutedMode(isMuted)
+            Log.d(TAG, "recording audio muted: $isMuted")
         }
     }
 }
