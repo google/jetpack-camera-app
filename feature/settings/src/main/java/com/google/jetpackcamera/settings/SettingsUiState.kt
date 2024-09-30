@@ -125,7 +125,11 @@ fun getLensUnsupportedRationale(
     }
 }
 
-/* Settings that currently have constraints **/
+//////////////////////////////////////////////////////////////
+//
+// Settings that currently depend on constraints
+//
+//////////////////////////////////////////////////////////////
 
 sealed interface FpsUiState {
     data class Enabled(
@@ -168,15 +172,19 @@ sealed interface StabilizationUiState {
     // Stabilization selection completely disabled. Cannot open dialog.
     data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
+//////////////////////////////////////////////////////////////
+//
+// Settings that DON'T currently depend on constraints
+//
+//////////////////////////////////////////////////////////////
 
-/* Settings that don't currently depend on constraints */
-
-sealed interface MuteAudioUiState{
+sealed interface MuteAudioUiState {
     data class Enabled(
         val isMuted: Boolean,
         val additionalContext: String = ""
-    ):MuteAudioUiState
+    ) : MuteAudioUiState
 }
+
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
     data class Enabled(

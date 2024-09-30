@@ -90,5 +90,6 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updateMutedMode(boolean: Boolean) {
         currentCameraSettings =
-            currentCameraSettings.copy(audioMuted = boolean)    }
+            currentCameraSettings.copy(audioMuted = boolean)
+    }
 }

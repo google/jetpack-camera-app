@@ -373,9 +373,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, disable
         if ((
-                    previewStabilization == Stabilization.ON &&
-                            (fpsOption == FPS_15 || fpsOption == FPS_60)
-                    ) ||
+                previewStabilization == Stabilization.ON &&
+                    (fpsOption == FPS_15 || fpsOption == FPS_60)
+                ) ||
             (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
         ) {
             return SingleSelectableState.Disabled(

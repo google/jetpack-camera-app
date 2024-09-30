@@ -122,7 +122,7 @@
     <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
     <string name="stabilization_unsupported">%$1s is unsupported by the current stabilization</string>
     <string name="current_lens_unsupported">%$s is unsupported by the current lens</string>
-    <string name="rear_lens_unsupported">%$s is unsupported by the rear lens</string>
+    <string name="rear_lens_unsupported">%$s is unsupported by the rear lens</string>s
     <string name="front_lens_unsupported">%$s is unsupported by the front lens</string>
 
 
