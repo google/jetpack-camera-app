@@ -516,7 +516,7 @@ private suspend fun startVideoRecordingInternal(
     }
     pendingRecord.apply {
         if (audioEnabled) {
-            withAudioEnabled()
+            withAudioEnabled(initialMuted)
         }
     }
     val callbackExecutor: Executor =
@@ -525,7 +525,6 @@ private suspend fun startVideoRecordingInternal(
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord
-        .withAudioEnabled(initialMuted)
         .start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
             when (onVideoRecordEvent) {
