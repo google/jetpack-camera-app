@@ -524,7 +524,9 @@ private suspend fun startVideoRecordingInternal(
             currentCoroutineContext()[ContinuationInterceptor] as?
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+    return pendingRecord
+        .withAudioEnabled(initialMuted)
+        .start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
             is VideoRecordEvent.Finalize -> {
@@ -555,8 +557,6 @@ private suspend fun startVideoRecordingInternal(
                 )
             }
         }
-    }.apply {
-        mute(initialMuted)
     }
 }
 
