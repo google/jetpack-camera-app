@@ -236,7 +236,8 @@ fun FlashModeSetting(
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.OFF) }
                 )
-                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_llb),
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_llb),
                     selected = flashUiState.currentFlashMode == FlashMode.LLB,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.LLB) }

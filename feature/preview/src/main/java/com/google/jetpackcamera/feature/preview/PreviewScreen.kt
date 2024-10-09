@@ -240,7 +240,7 @@ private fun ContentScreen(
                 onCaptureModeClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
-                onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
+                onConcurrentCameraModeClick = onChangeConcurrentCameraMode
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
