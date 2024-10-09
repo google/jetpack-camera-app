@@ -1,0 +1,3 @@
+ancestorEntries = ["feature/preview/src/main/java/com/google/jetpackcamera/feature/preview/ui/PreviewScreenComponents.kt"]
+ourEntries = ["feature/preview/src/main/java/com/google/jetpackcamera/feature/preview/ui/PreviewScreenComponents.kt"]
+theirEntries = ["feature/preview/src/main/java/com/google/jetpackcamera/feature/preview/ui/PreviewScreenComponents.kt"]
