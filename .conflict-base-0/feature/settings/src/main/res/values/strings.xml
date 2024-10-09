@@ -48,10 +48,12 @@
     <string name="flash_mode_selector_auto">Auto</string>
     <string name="flash_mode_selector_on">On</string>
     <string name="flash_mode_selector_off">Off</string>
+    <string name="flash_mode_selector_llb">Low Light Boost</string>
 
     <string name="flash_mode_description_auto">Flash is set to Auto</string>
     <string name="flash_mode_description_on">Flash is On</string>
     <string name="flash_mode_description_off">Flash is Off</string>
+    <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
     <!-- Capture mode setting strings -->
     <string name="capture_mode_title">Set Capture Mode</string>

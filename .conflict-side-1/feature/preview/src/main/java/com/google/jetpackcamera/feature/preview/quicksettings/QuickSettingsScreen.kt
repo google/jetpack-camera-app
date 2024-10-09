@@ -134,7 +134,7 @@ fun QuickSettingsScreenOverlay(
                 onCaptureModeClick = onCaptureModeClick,
                 onDynamicRangeClick = onDynamicRangeClick,
                 onImageOutputFormatClick = onImageOutputFormatClick,
-                onConcurrentCameraModeClick = onConcurrentCameraModeClick,
+                onConcurrentCameraModeClick = onConcurrentCameraModeClick
             )
         }
     } else {
@@ -163,7 +163,7 @@ private fun ExpandedQuickSettingsUi(
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
-    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
+    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit
 ) {
     Column(
         modifier =
@@ -307,7 +307,7 @@ fun ExpandedQuickSettingsUiPreview() {
             onCaptureModeClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { },
+            onConcurrentCameraModeClick = { }
         )
     }
 }
@@ -332,7 +332,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             onCaptureModeClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { },
+            onConcurrentCameraModeClick = { }
         )
     }
 }

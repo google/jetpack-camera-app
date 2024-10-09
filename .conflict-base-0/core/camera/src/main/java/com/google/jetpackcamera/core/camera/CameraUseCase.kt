@@ -28,7 +28,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
@@ -107,8 +106,6 @@ interface CameraUseCase {
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
-
-    suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
