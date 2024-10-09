@@ -66,7 +66,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.forCurrentLens
 
@@ -85,7 +84,6 @@ fun QuickSettingsScreenOverlay(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onLowLightBoostClick: (lowLightBoost: LowLightBoost) -> Unit,
     modifier: Modifier = Modifier,
     isOpen: Boolean = false
 ) {
@@ -138,7 +136,6 @@ fun QuickSettingsScreenOverlay(
                 onDynamicRangeClick = onDynamicRangeClick,
                 onImageOutputFormatClick = onImageOutputFormatClick,
                 onConcurrentCameraModeClick = onConcurrentCameraModeClick,
-                onLowLightBoostClick = onLowLightBoostClick
             )
         }
     } else {
@@ -168,7 +165,6 @@ private fun ExpandedQuickSettingsUi(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onLowLightBoostClick: (lowLightBoost: LowLightBoost) -> Unit
 ) {
     Column(
         modifier =
@@ -314,7 +310,6 @@ fun ExpandedQuickSettingsUiPreview() {
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
             onConcurrentCameraModeClick = { },
-            onLowLightBoostClick = { }
         )
     }
 }
@@ -341,7 +336,6 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
             onConcurrentCameraModeClick = { },
-            onLowLightBoostClick = { }
         )
     }
 }

@@ -216,9 +216,6 @@ private fun ControlsTop(
                     )
                 }
             }
-            LowLightBoostIcon(
-                lowLightBoost = currentCameraSettings.lowLightBoost
-            )
         }
     }
 }

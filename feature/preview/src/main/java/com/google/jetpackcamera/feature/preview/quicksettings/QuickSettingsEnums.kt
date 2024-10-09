@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
-import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
@@ -96,6 +95,12 @@ enum class CameraFlashMode : QuickSettingsEnum {
         override fun getImageVector() = Icons.Filled.FlashOn
         override fun getTextResId() = R.string.quick_settings_flash_on
         override fun getDescriptionResId() = R.string.quick_settings_flash_on_description
+    },
+    LLB {
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Outlined.Nightlight
+        override fun getTextResId() = R.string.quick_settings_flash_llb
+        override fun getDescriptionResId() = R.string.quick_settings_flash_llb_description
     }
 }
 
@@ -147,25 +152,6 @@ enum class CameraDynamicRange : QuickSettingsEnum {
         override fun getImageVector() = Icons.Filled.HdrOn
         override fun getTextResId() = R.string.quick_settings_dynamic_range_hdr
         override fun getDescriptionResId() = R.string.quick_settings_dynamic_range_hdr_description
-    }
-}
-
-enum class CameraLowLightBoost : QuickSettingsEnum {
-
-    ENABLED {
-        override fun getDrawableResId() = null
-        override fun getImageVector() = Icons.Filled.Nightlight
-        override fun getTextResId() = R.string.quick_settings_lowlightboost_enabled
-        override fun getDescriptionResId() =
-            R.string.quick_settings_lowlightboost_enabled_description
-    },
-
-    DISABLED {
-        override fun getDrawableResId() = null
-        override fun getImageVector() = Icons.Outlined.Nightlight
-        override fun getTextResId() = R.string.quick_settings_lowlightboost_disabled
-        override fun getDescriptionResId() =
-            R.string.quick_settings_lowlightboost_disabled_description
     }
 }
 

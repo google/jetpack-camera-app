@@ -46,7 +46,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -713,12 +712,6 @@ class PreviewViewModel @AssistedInject constructor(
     fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         viewModelScope.launch {
             cameraUseCase.setConcurrentCameraMode(concurrentCameraMode)
-        }
-    }
-
-    fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        viewModelScope.launch {
-            cameraUseCase.setLowLightBoost(lowLightBoost)
         }
     }
 
