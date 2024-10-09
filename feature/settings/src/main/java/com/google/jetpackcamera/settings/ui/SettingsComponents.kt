@@ -211,6 +211,7 @@ fun FlashModeSetting(
                 FlashMode.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
+                FlashMode.LLB -> stringResource(id = R.string.flash_mode_description_llb)
             }
         } else {
             TODO("flash mode currently has no disabled criteria")
@@ -234,6 +235,11 @@ fun FlashModeSetting(
                     selected = flashUiState.currentFlashMode == FlashMode.OFF,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.OFF) }
+                )
+                SingleChoiceSelector(text = stringResource(id = R.string.flash_mode_selector_llb),
+                    selected = flashUiState.currentFlashMode == FlashMode.LLB,
+                    enabled = true,
+                    onClick = { setFlashMode(FlashMode.LLB) }
                 )
             }
         }

@@ -18,5 +18,6 @@ package com.google.jetpackcamera.settings.model
 enum class FlashMode {
     OFF,
     ON,
-    AUTO
+    AUTO,
+    LLB
 }
