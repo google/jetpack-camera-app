@@ -53,7 +53,6 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCa
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
-import com.google.jetpackcamera.feature.preview.quicksettings.CameraLowLightBoost
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -62,7 +61,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -153,30 +151,6 @@ fun QuickSetHdr(
 }
 
 @Composable
-fun QuickSetLowLightBoost(
-    modifier: Modifier = Modifier,
-    onClick: (lowLightBoost: LowLightBoost) -> Unit,
-    selectedLowLightBoost: LowLightBoost
-) {
-    val enum = when (selectedLowLightBoost) {
-        LowLightBoost.DISABLED -> CameraLowLightBoost.DISABLED
-        LowLightBoost.ENABLED -> CameraLowLightBoost.ENABLED
-    }
-
-    QuickSettingUiItem(
-        modifier = modifier,
-        enum = enum,
-        onClick = {
-            when (selectedLowLightBoost) {
-                LowLightBoost.DISABLED -> onClick(LowLightBoost.ENABLED)
-                LowLightBoost.ENABLED -> onClick(LowLightBoost.DISABLED)
-            }
-        },
-        isHighLighted = false
-    )
-}
-
-@Composable
 fun QuickSetRatio(
     onClick: () -> Unit,
     ratio: AspectRatio,
@@ -209,6 +183,7 @@ fun QuickSetFlash(
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.AUTO -> CameraFlashMode.AUTO
         FlashMode.ON -> CameraFlashMode.ON
+        FlashMode.LLB -> CameraFlashMode.LLB
     }
     QuickSettingUiItem(
         modifier = modifier
@@ -218,6 +193,7 @@ fun QuickSetFlash(
                         CameraFlashMode.OFF -> "QUICK SETTINGS FLASH IS OFF"
                         CameraFlashMode.AUTO -> "QUICK SETTINGS FLASH IS AUTO"
                         CameraFlashMode.ON -> "QUICK SETTINGS FLASH IS ON"
+                        CameraFlashMode.LLB -> "QUICK SETTINGS FLASH IS SET TO LOW LIGHT BOOST"
                     }
             },
         enum = enum,
@@ -484,6 +460,7 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.AUTO -> CameraFlashMode.AUTO
         FlashMode.ON -> CameraFlashMode.ON
+        FlashMode.LLB -> CameraFlashMode.LLB
     }
     Indicator(
         enum = enum,
@@ -508,6 +485,7 @@ fun FlashMode.getNextFlashMode(): FlashMode {
     return when (this) {
         FlashMode.OFF -> FlashMode.ON
         FlashMode.ON -> FlashMode.AUTO
-        FlashMode.AUTO -> FlashMode.OFF
+        FlashMode.AUTO -> FlashMode.LLB
+        FlashMode.LLB -> FlashMode.OFF
     }
 }
