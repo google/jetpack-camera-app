@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2023 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<resources>
+    <!--
+    settings page text
+    -->
+    <string name="settings_title">Settings</string>
+    <string name="nav_back_accessibility">Button to navigate back out of settings</string>
+
+    <string name="section_title_camera_settings">Default Camera Settings</string>
+    <string name="section_title_recording_settings">Default Recording Settings</string>
+
+    <string name="section_title_app_settings">App Settings</string>
+    <string name="section_title_software_info">Software Information</string>
+
+    <string name="default_facing_camera_title">Default to Front Camera</string>
+    <string name="default_facing_camera_description">Default Front</string>
+    <string name="default_facing_camera_description_off">Default Back</string>
+
+    <!-- Dark mode setting strings -->
+    <string name="dark_mode_title">Set Dark Mode</string>
+
+    <string name="dark_mode_selector_dark">On</string>
+    <string name="dark_mode_selector_light">Off</string>
+    <string name="dark_mode_selector_system">System</string>
+
+    <string name="dark_mode_description_dark">On</string>
+    <string name="dark_mode_description_light">Off</string>
+    <string name="dark_mode_description_system">System</string>
+
+    <!-- Flash mode setting strings -->
+    <string name="flash_mode_title">Set Flash Mode</string>
+
+    <string name="flash_mode_selector_auto">Auto</string>
+    <string name="flash_mode_selector_on">On</string>
+    <string name="flash_mode_selector_off">Off</string>
+    <string name="flash_mode_selector_llb">Low Light Boost</string>
+
+    <string name="flash_mode_description_auto">Flash is set to Auto</string>
+    <string name="flash_mode_description_on">Flash is On</string>
+    <string name="flash_mode_description_off">Flash is Off</string>
+    <string name="flash_mode_description_llb">Using Low Light Boost</string>
+
+    <!-- Capture mode setting strings -->
+    <string name="capture_mode_title">Set Capture Mode</string>
+
+    <string name="capture_mode_selector_multi_stream">Multi Stream Capture</string>
+    <string name="capture_mode_selector_single_stream">Single Stream Capture</string>
+
+    <string name="capture_mode_description_multi_stream">Multi Stream</string>
+    <string name="capture_mode_description_single_stream">Single Stream</string>
+
+    <!-- Aspect Ratio setting strings -->
+    <string name="aspect_ratio_title">Set Aspect Ratio</string>
+
+    <string name="aspect_ratio_selector_9_16">9:16</string>
+    <string name="aspect_ratio_selector_3_4">3:4</string>
+    <string name="aspect_ratio_selector_1_1">1:1</string>
+
+    <string name="aspect_ratio_description_9_16">Aspect Ratio is 9:16</string>
+    <string name="aspect_ratio_description_3_4">Aspect Ratio is 3:4</string>
+    <string name="aspect_ratio_description_1_1">Aspect Ratio is 1:1</string>
+
+    <!-- Stabilization setting strings -->
+    <string name="video_stabilization_title">Set Video Stabilization</string>
+
+    <string name="stabilization_selector_auto">Auto</string>
+    <string name="stabilization_selector_on">On</string>
+    <string name="stabilization_selector_high_quality">High Quality</string>
+    <string name="stabilization_selector_off">Off</string>
+
+    <string name="stabilization_selector_auto_info">Stabilization automatically turned on when device configuration supports it.</string>
+    <string name="stabilization_selector_on_info">Both preview and video streams stabilized.</string>
+    <string name="stabilization_selector_high_quality_info">Video stream stabilized, but preview might not be. Ensures highest-quality recordings.</string>
+
+    <string name="stabilization_description_on">Stabilization On</string>
+    <string name="stabilization_description_high_quality">Stabilization High Quality</string>
+    <string name="stabilization_description_auto">Stabilization Auto</string>
+    <string name="stabilization_description_off">Stabilization Off</string>
+    <string name="stabilization_description_unsupported_device">Stabilization unsupported by device</string>
+    <string name="stabilization_description_unsupported_fps">Stabilization unsupported due to frame rate</string>
+
+    <!-- Target Fps setting strings -->
+    <string name="fps_title">Set Frame Rate</string>
+
+    <string name="fps_description_unavailable">No fixed frame rates supported</string>
+    <string name="fps_description_auto">Auto Frame Rate</string>
+    <string name="fps_description">%d fps</string>
+
+    <string name="fps_selector_auto">Auto</string>
+    <string name="fps_selector_value">%d</string>
+
+    <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
+    <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lenses.</string>
+
+    <!-- video limit strings -->
+    <string name="duration_title">Set Maximum Video Duration</string>
+    <string name="duration_description_none">Unlimited duration</string>
+    <string name="duration_description_seconds">%d seconds</string>
+
+    <!-- disabled rationale strings-->
+
+    <string name="device_unsupported">%1$s is unsupported by the device</string>
+    <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
+    <string name="stabilization_unsupported">%1$s is unsupported by the current stabilization</string>
+    <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
+    <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
+    <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
+
+
+    <!-- Rationale prefixes -->
+    <string name="stabilization_rationale_prefix">Stabilization</string>
+    <string name="lens_rationale_prefix">Lens flip</string>
+    <string name="fps_rationale_prefix">Fps</string>
+
+    <string name="front_lens_rationale_prefix">Front lens</string>
+    <string name="rear_lens_rationale_prefix">Rear lens</string>
+    <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
+
+
+    <!-- Version info strings -->
+    <string name="version_info_title">Version</string>
+</resources>
