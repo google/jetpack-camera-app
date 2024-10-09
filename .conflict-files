@@ -1,0 +1,3 @@
+ancestorEntries = ["feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
+ourEntries = ["feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
+theirEntries = ["feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
