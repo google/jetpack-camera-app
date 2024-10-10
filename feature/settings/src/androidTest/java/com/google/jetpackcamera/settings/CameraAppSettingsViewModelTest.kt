@@ -63,7 +63,11 @@ internal class CameraAppSettingsViewModelTest {
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }
-        settingsViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
+        settingsViewModel = SettingsViewModel(
+            settingsRepository,
+            FakePermissionChecker(),
+            constraintsRepository
+        )
         advanceUntilIdle()
     }
 
@@ -128,9 +132,9 @@ internal class CameraAppSettingsViewModelTest {
 
         val newDarkMode =
             (
-                assertIsEnabled(settingsViewModel.settingsUiState.value)
-                    .darkModeUiState as DarkModeUiState.Enabled
-                )
+                    assertIsEnabled(settingsViewModel.settingsUiState.value)
+                        .darkModeUiState as DarkModeUiState.Enabled
+                    )
                 .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
