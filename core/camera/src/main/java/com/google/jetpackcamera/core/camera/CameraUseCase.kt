@@ -136,8 +136,10 @@ interface CameraUseCase {
      * Represents the events for video recording.
      */
     sealed interface OnVideoRecordEvent {
-        data class OnVideoRecorded(val savedUri: Uri,
-            val finalDurationNanos:Long) : OnVideoRecordEvent
+        data class OnVideoRecorded(
+            val savedUri: Uri,
+            val finalDurationNanos: Long
+        ) : OnVideoRecordEvent
 
         data class OnVideoRecordStatus(
             val audioAmplitude: Double,

@@ -128,7 +128,7 @@ fun ElapsedTimeText(
         if (!isVisible && videoRecordingState == VideoRecordingState.ACTIVE) {
             isVisible = true
         } else if (videoRecordingState == VideoRecordingState.INACTIVE) {
-            delay(1000) // Wait 1 second
+            delay(1000) // wait 1 second before fading out
             isVisible = false
         }
     }
