@@ -77,12 +77,12 @@ sealed interface DisabledRationale {
      * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
      */
 
-    data class PermissionRecordAudioNotGrantedRationale(override val affectedSettingNameResId: Int) :
-        DisabledRationale {
+    data class PermissionRecordAudioNotGrantedRationale(
+        override val affectedSettingNameResId: Int
+    ) : DisabledRationale {
         override val reasonTextResId: Int = R.string.permission_record_audio_unsupported
         override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
     }
-
 
     data class DeviceUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
@@ -201,7 +201,6 @@ sealed interface MuteAudioUiState {
 // Settings that DON'T currently depend on constraints
 //
 // ////////////////////////////////////////////////////////////
-
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {

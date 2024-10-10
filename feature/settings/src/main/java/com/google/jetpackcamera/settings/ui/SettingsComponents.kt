@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.settings.ui
 
-import android.Manifest
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -39,7 +38,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -641,17 +639,16 @@ fun MuteRecordingSetting(
                 stringResource(R.string.mute_selector_off)
             }
 
-            is MuteAudioUiState.Disabled ->  {
-            disabledRationaleString(disabledRationale =  (mutedUiState as MuteAudioUiState.Disabled).disabledRationale) }},
-        leadingIcon = null,
-        onSwitchChanged = { on ->
-            setDefaultMuted(on)
+            is MuteAudioUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = mutedUiState.disabledRationale)
+            }
         },
+        leadingIcon = null,
+        onSwitchChanged = { on -> setDefaultMuted(on) },
         settingValue = mutedUiState.isMuted,
-        enabled =  (mutedUiState is MuteAudioUiState.Enabled)
+        enabled = mutedUiState is MuteAudioUiState.Enabled
     )
 }
-
 
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {

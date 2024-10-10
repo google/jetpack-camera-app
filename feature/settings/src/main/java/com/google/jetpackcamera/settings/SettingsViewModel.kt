@@ -32,13 +32,13 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -80,14 +80,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = SettingsUiState.Disabled
         )
 
-
     private fun getMuteAudioUiState(
         permissionChecker: PermissionChecker,
         isMuted: Boolean
     ): MuteAudioUiState {
-        return if (permissionChecker.isPermissionGranted(Manifest.permission.RECORD_AUDIO))
+        return if (permissionChecker.isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
             MuteAudioUiState.Enabled(isMuted)
-        else
+        } else {
             MuteAudioUiState.Disabled(
                 isMuted,
                 DisabledRationale
@@ -95,6 +94,7 @@ class SettingsViewModel @Inject constructor(
                         R.string.mute_audio_rationale_prefix
                     )
             )
+        }
     }
 
     private fun getStabilizationUiState(
@@ -395,9 +395,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, disable
         if ((
-                    previewStabilization == Stabilization.ON &&
-                            (fpsOption == FPS_15 || fpsOption == FPS_60)
-                    ) ||
+                previewStabilization == Stabilization.ON &&
+                    (fpsOption == FPS_15 || fpsOption == FPS_60)
+                ) ||
             (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
         ) {
             return SingleSelectableState.Disabled(
