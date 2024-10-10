@@ -79,6 +79,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -279,28 +280,12 @@ fun PreviewDisplay(
     modifier: Modifier = Modifier
 ) {
 
-    var scale by remember {
-        mutableFloatStateOf(1.0f)
-    }
 
-    val scaleAnimation by animateFloatAsState(
-        targetValue = scale,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioHighBouncy,
-            stiffness = Spring.StiffnessVeryLow
-        )
-    )
 
 
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
-//            onZoomChange(zoomChange)
-            Log.d(TAG, "zoomChange: $zoomChange")
-            if (zoomChange < 1.0f ) {
-                scale = 0.5f
-            } else {
-                scale = 1.0f
-            }
+            onZoomChange(zoomChange)
         }
     )
 
@@ -309,13 +294,7 @@ fun PreviewDisplay(
         BoxWithConstraints(
             Modifier
                 .testTag(PREVIEW_DISPLAY)
-                .animateContentSize(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow
-                    )
-                )
-                .scale(scaleAnimation)
+//                .scale(scaleAnimation)
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
@@ -349,7 +328,7 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
+//                    .clip(RoundedCornerShape(16.dp))
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -362,10 +341,40 @@ fun PreviewDisplay(
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
 
+                var tapCount by remember {
+                    mutableIntStateOf(0)
+                }
+
+                var scaleX by remember {
+                    mutableFloatStateOf(1.0f)
+                }
+
+                var scaleY by remember {
+                    mutableFloatStateOf(1.0f)
+                }
+
+                val scaleXAnimation by animateFloatAsState(
+                    targetValue = scaleX,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessVeryLow
+                    ),
+                )
+
+                val scaleYAnimation by animateFloatAsState(
+                    targetValue = scaleY,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessVeryLow
+                    )
+                )
+
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 CameraXViewfinder(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .width(width * scaleXAnimation)
+                        .height(height * scaleYAnimation)
+                        .clip(RoundedCornerShape(16.dp))
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
@@ -375,13 +384,24 @@ fun PreviewDisplay(
                                 },
                                 onTap = {
                                     with(coordinateTransformer) {
+                                        tapCount = (tapCount + 1) % 6
+
+                                        when(tapCount) {
+                                            0 -> {scaleX = 1.0f; scaleY = 1.0f}
+                                            1 -> {scaleX = 0.5f; scaleY = 1.0f}
+                                            2 -> {scaleX = 0.5f; scaleY = 0.5f}
+                                            3 -> {scaleX = 1.0f; scaleY = 0.5f}
+                                            4 -> {scaleX = 1.0f; scaleY = 1.0f}
+                                            else -> {scaleX = 0.5f; scaleY = 0.5f}
+                                        }
+
                                         val surfaceCoords = it.transform()
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
                                                     "input{$it} -> surface{$surfaceCoords}"
                                         )
-                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+//                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
                                 }
                             )
