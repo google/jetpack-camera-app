@@ -84,6 +84,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -308,15 +309,13 @@ fun PreviewDisplay(
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
 ) {
+
+
+
+
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
-//            onZoomChange(zoomChange)
-            Log.d(TAG, "zoomChange: $zoomChange")
-            if (zoomChange < 1.0f ) {
-                scale = 0.5f
-            } else {
-                scale = 1.0f
-            }
+            onZoomChange(zoomChange)
         }
     )
 
@@ -326,6 +325,7 @@ fun PreviewDisplay(
         BoxWithConstraints(
             Modifier
                 .testTag(PREVIEW_DISPLAY)
+//                .scale(scaleAnimation)
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
