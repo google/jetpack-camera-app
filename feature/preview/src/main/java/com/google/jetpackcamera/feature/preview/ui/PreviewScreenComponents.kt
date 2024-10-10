@@ -25,10 +25,12 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -93,6 +95,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -111,6 +115,41 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+
+@Composable
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    videoRecordingState: VideoRecordingState,
+    elapsedNs: Long,
+) {
+    var isVisible by remember { mutableStateOf(videoRecordingState == VideoRecordingState.ACTIVE) }
+
+    LaunchedEffect(key1 = videoRecordingState) {
+        if (!isVisible && videoRecordingState == VideoRecordingState.ACTIVE) {
+            isVisible = true
+        } else if (videoRecordingState == VideoRecordingState.INACTIVE) {
+            delay(1000) // Wait 1 second
+            isVisible = false
+        }
+    }
+    val elapsedMs = elapsedNs / 1_000_000
+    val totalSeconds = elapsedMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    val milliseconds = (elapsedMs % 1000) /10
+
+    AnimatedVisibility(
+        visible = isVisible,
+        //enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        Text(
+            modifier = modifier,
+            text = String.format("%02d:%02d:%02d", minutes, seconds, milliseconds),
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun AmplitudeVisualizer(
@@ -341,7 +380,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -439,6 +478,7 @@ fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifie
                 modifier = modifier.alpha(0.5f)
             )
         }
+
         LowLightBoost.DISABLED -> {
         }
     }
@@ -625,7 +665,8 @@ fun ToggleButton(
                         onToggleWhenDisabled()
                     }
                 }
-            ).semantics {
+            )
+            .semantics {
                 stateDescription = when (toggleState) {
                     ToggleState.Left -> leftIconDescription
                     ToggleState.Right -> rightIconDescription
@@ -646,7 +687,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

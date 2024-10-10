@@ -50,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.core.camera.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -136,6 +137,7 @@ fun CameraControlsOverlay(
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
                 audioAmplitude = previewUiState.audioAmplitude,
+                elapsedRecordingNs = previewUiState.recordingElapsedTimeNanos,
                 zoomLevel = previewUiState.zoomScale,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
@@ -210,6 +212,7 @@ private fun ControlsBottom(
     previewUiState: PreviewUiState.Ready,
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
+    elapsedRecordingNs: Long,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -246,6 +249,14 @@ private fun ControlsBottom(
                 if (previewUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
+                // display duration only when duration limit is present
+                if(currentCameraSettings.maxVideoDurationMillis != UNLIMITED_VIDEO_DURATION) {
+                    ElapsedTimeText(
+                        modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                        videoRecordingState = videoRecordingState,
+                        elapsedNs = elapsedRecordingNs
+                    )
+                }
             }
         }
 
@@ -255,6 +266,7 @@ private fun ControlsBottom(
                 .height(IntrinsicSize.Max),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState == VideoRecordingState.INACTIVE) {
                     FlipCameraButton(
@@ -515,7 +527,9 @@ private fun Preview_ControlsBottom() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0
+            audioAmplitude = 0.0,
+            elapsedRecordingNs = 1_000_000
+
         )
     }
 }
@@ -537,7 +551,9 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0
+            audioAmplitude = 0.0,
+            elapsedRecordingNs = 1_000_000
+
         )
     }
 }
@@ -559,7 +575,9 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0
+            audioAmplitude = 0.0,
+            elapsedRecordingNs = 1_000_000
+
         )
     }
 }
@@ -587,7 +605,9 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0
+            audioAmplitude = 0.0,
+            elapsedRecordingNs = 1_000_000
+
         )
     }
 }
@@ -609,7 +629,8 @@ private fun Preview_ControlsBottom_Recording() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
-            audioAmplitude = 0.9
+            audioAmplitude = 0.9,
+            elapsedRecordingNs = 1_000_000
         )
     }
 }
