@@ -26,7 +26,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         maven {
-            setUrl("https://androidx.dev/snapshots/builds/12335046/artifacts/repository")
+            setUrl("https://androidx.dev/snapshots/builds/12478400/artifacts/repository")
         }
         google()
         mavenCentral()
