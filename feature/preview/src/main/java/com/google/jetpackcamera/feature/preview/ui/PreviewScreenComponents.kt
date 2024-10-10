@@ -30,6 +30,7 @@ import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -131,20 +132,18 @@ fun ElapsedTimeText(
             isVisible = false
         }
     }
-    val elapsedMs = elapsedNs / 1_000_000
-    val totalSeconds = elapsedMs / 1000
+    val totalSeconds = elapsedNs / 1_000_000_000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    val milliseconds = (elapsedMs % 1000) / 10
 
     AnimatedVisibility(
         visible = isVisible,
-        // enter = fadeIn(),
+        enter = fadeIn(),
         exit = fadeOut()
     ) {
         Text(
             modifier = modifier,
-            text = String.format("%02d:%02d:%02d", minutes, seconds, milliseconds),
+            text = String.format("%02d:%02d", minutes, seconds),
             textAlign = TextAlign.Center
         )
     }

@@ -529,17 +529,19 @@ private suspend fun startVideoRecordingInternal(
         when (onVideoRecordEvent) {
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
-                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                            audioAmplitude = onVideoRecordEvent.recordingStats
-                                .audioStats
-                                .audioAmplitude,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
-                                .recordedDurationNanos
-                        )
+                    ERROR_NONE -> {
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                onVideoRecordEvent.outputResults.outputUri
+                                onVideoRecordEvent.outputResults.outputUri,
+                                onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            )
+                        )
+                    }
+                    ERROR_DURATION_LIMIT_REACHED -> {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                onVideoRecordEvent.outputResults.outputUri,
+                                (maxDurationMillis * 1_000_000) // cleanly display the max duration
                             )
                         )
                     }

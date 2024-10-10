@@ -645,6 +645,7 @@ class PreviewViewModel @AssistedInject constructor(
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
+                            timer = it.finalDurationNanos
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
