@@ -250,7 +250,7 @@ private fun ControlsBottom(
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
                 // display duration only when duration limit is present
-                if(currentCameraSettings.maxVideoDurationMillis != UNLIMITED_VIDEO_DURATION) {
+                if (currentCameraSettings.maxVideoDurationMillis != UNLIMITED_VIDEO_DURATION) {
                     ElapsedTimeText(
                         modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                         videoRecordingState = videoRecordingState,

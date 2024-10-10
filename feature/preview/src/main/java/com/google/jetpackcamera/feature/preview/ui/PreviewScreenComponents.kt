@@ -95,7 +95,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -120,7 +119,7 @@ private const val BLINK_TIME = 100L
 fun ElapsedTimeText(
     modifier: Modifier = Modifier,
     videoRecordingState: VideoRecordingState,
-    elapsedNs: Long,
+    elapsedNs: Long
 ) {
     var isVisible by remember { mutableStateOf(videoRecordingState == VideoRecordingState.ACTIVE) }
 
@@ -136,11 +135,11 @@ fun ElapsedTimeText(
     val totalSeconds = elapsedMs / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    val milliseconds = (elapsedMs % 1000) /10
+    val milliseconds = (elapsedMs % 1000) / 10
 
     AnimatedVisibility(
         visible = isVisible,
-        //enter = fadeIn(),
+        // enter = fadeIn(),
         exit = fadeOut()
     ) {
         Text(
@@ -380,7 +379,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -687,7 +686,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

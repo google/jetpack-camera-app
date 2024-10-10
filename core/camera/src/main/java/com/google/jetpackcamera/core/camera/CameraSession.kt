@@ -530,11 +530,12 @@ private suspend fun startVideoRecordingInternal(
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
                     ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
-                        println(onVideoRecordEvent.recordingStats.recordedDurationNanos.toString() + "END DURATION")
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                            audioAmplitude = onVideoRecordEvent.recordingStats
+                                .audioStats
                                 .audioAmplitude,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
@@ -542,7 +543,6 @@ private suspend fun startVideoRecordingInternal(
                             )
                         )
                     }
-
                     else ->
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
