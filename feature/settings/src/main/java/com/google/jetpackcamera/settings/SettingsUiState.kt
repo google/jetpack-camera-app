@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
 const val FPS_AUTO = 0
@@ -75,6 +76,14 @@ sealed interface DisabledRationale {
     /**
      * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
      */
+
+    data class PermissionRecordAudioNotGrantedRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId: Int = R.string.permission_record_audio_unsupported
+        override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
+    }
+
+
     data class DeviceUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.device_unsupported
@@ -172,18 +181,27 @@ sealed interface StabilizationUiState {
     // Stabilization selection completely disabled. Cannot open dialog.
     data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
+
+sealed interface MuteAudioUiState {
+    val isMuted: Boolean
+
+    data class Enabled(
+        override val isMuted: Boolean,
+        val additionalContext: String = ""
+    ) : MuteAudioUiState
+
+    data class Disabled(
+        override val isMuted: Boolean,
+        val disabledRationale: DisabledRationale
+    ) : MuteAudioUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
 //
 // ////////////////////////////////////////////////////////////
 
-sealed interface MuteAudioUiState {
-    data class Enabled(
-        val isMuted: Boolean,
-        val additionalContext: String = ""
-    ) : MuteAudioUiState
-}
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {

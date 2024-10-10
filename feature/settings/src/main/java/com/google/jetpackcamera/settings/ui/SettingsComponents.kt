@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+import android.Manifest
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -632,23 +634,24 @@ fun MuteRecordingSetting(
     SwitchSettingUI(
         modifier = modifier,
         title = stringResource(id = R.string.mute_audio_title),
-        description = if (mutedUiState is MuteAudioUiState.Enabled) {
-            if (mutedUiState.isMuted) {
+        description = when (mutedUiState) {
+            is MuteAudioUiState.Enabled -> if (mutedUiState.isMuted) {
                 stringResource(R.string.mute_selector_on)
             } else {
                 stringResource(R.string.mute_selector_off)
             }
-        } else {
-            TODO("mute toggle currently has no disabled criteria")
-        },
+
+            is MuteAudioUiState.Disabled ->  {
+            disabledRationaleString(disabledRationale =  (mutedUiState as MuteAudioUiState.Disabled).disabledRationale) }},
         leadingIcon = null,
         onSwitchChanged = { on ->
             setDefaultMuted(on)
         },
         settingValue = mutedUiState.isMuted,
-        enabled = true
+        enabled =  (mutedUiState is MuteAudioUiState.Enabled)
     )
 }
+
 
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
@@ -847,6 +850,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

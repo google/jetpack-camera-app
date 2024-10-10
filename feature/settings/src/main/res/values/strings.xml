@@ -124,6 +124,7 @@
     <string name="current_lens_unsupported">%$s is unsupported by the current lens</string>
     <string name="rear_lens_unsupported">%$s is unsupported by the rear lens</string>
     <string name="front_lens_unsupported">%$s is unsupported by the front lens</string>
+    <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
 
 
     <!-- Rationale prefixes -->
@@ -134,6 +135,9 @@
     <string name="front_lens_rationale_prefix">Front lens</string>
     <string name="rear_lens_rationale_prefix">Rear lens</string>
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
+
+    <string name="mute_audio_rationale_prefix">Mute</string>
+
 
 
     <!-- Version info strings -->

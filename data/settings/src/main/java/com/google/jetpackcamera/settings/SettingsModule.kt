@@ -39,6 +39,11 @@ interface SettingsModule {
         settableConstraintsRepository: SettableConstraintsRepositoryImpl
     ): SettableConstraintsRepository
 
+    @Binds
+    fun bindsPermissionChecker(
+        localSettingsRepository: LocalPermissionChecker
+    ): PermissionChecker
+
     /**
      * ConstraintsRepository without setter.
      *

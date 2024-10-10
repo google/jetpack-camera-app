@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,13 +32,13 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -48,6 +49,7 @@ private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val permissionChecker: PermissionChecker,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
 
@@ -64,7 +66,10 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
-                muteAudioUiState = MuteAudioUiState.Enabled(updatedSettings.audioMuted),
+                muteAudioUiState = getMuteAudioUiState(
+                    permissionChecker,
+                    updatedSettings.audioMuted
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
@@ -74,6 +79,23 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = SettingsUiState.Disabled
         )
+
+
+    private fun getMuteAudioUiState(
+        permissionChecker: PermissionChecker,
+        isMuted: Boolean
+    ): MuteAudioUiState {
+        return if (permissionChecker.isPermissionGranted(Manifest.permission.RECORD_AUDIO))
+            MuteAudioUiState.Enabled(isMuted)
+        else
+            MuteAudioUiState.Disabled(
+                isMuted,
+                DisabledRationale
+                    .PermissionRecordAudioNotGrantedRationale(
+                        R.string.mute_audio_rationale_prefix
+                    )
+            )
+    }
 
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
@@ -373,9 +395,9 @@ class SettingsViewModel @Inject constructor(
 
         // if stabilization is on and the option is incompatible, disable
         if ((
-                previewStabilization == Stabilization.ON &&
-                    (fpsOption == FPS_15 || fpsOption == FPS_60)
-                ) ||
+                    previewStabilization == Stabilization.ON &&
+                            (fpsOption == FPS_15 || fpsOption == FPS_60)
+                    ) ||
             (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
         ) {
             return SingleSelectableState.Disabled(
