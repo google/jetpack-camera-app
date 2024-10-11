@@ -466,6 +466,8 @@ private fun setFlashModeInternal(
         } else {
             ImageCapture.FLASH_MODE_AUTO // 0
         }
+
+        FlashMode.LOW_LIGHT_BOOST -> ImageCapture.FLASH_MODE_OFF // 2
     }
     Log.d(TAG, "Set flash mode to: ${imageCapture.flashMode}")
 }
