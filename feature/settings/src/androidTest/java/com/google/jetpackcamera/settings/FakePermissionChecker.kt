@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings
 
 const val FAKE_PERMISSION_FALSE = "fakePermissionFalse"
 
 class FakePermissionChecker : PermissionChecker {
     override fun isPermissionGranted(permission: String): Boolean {
-        return if (permission == FAKE_PERMISSION_FALSE)
+        return if (permission == FAKE_PERMISSION_FALSE) {
             false
-        else
+        } else {
             true
+        }
     }
 }

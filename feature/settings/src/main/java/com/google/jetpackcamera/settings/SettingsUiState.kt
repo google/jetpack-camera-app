@@ -73,10 +73,6 @@ sealed interface DisabledRationale {
     val reasonTextResId: Int
     val testTag: String
 
-    /**
-     * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
-     */
-
     data class PermissionRecordAudioNotGrantedRationale(
         override val affectedSettingNameResId: Int
     ) : DisabledRationale {
@@ -84,6 +80,9 @@ sealed interface DisabledRationale {
         override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
     }
 
+    /**
+     * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
+     */
     data class DeviceUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.device_unsupported

@@ -132,9 +132,9 @@ internal class CameraAppSettingsViewModelTest {
 
         val newDarkMode =
             (
-                    assertIsEnabled(settingsViewModel.settingsUiState.value)
-                        .darkModeUiState as DarkModeUiState.Enabled
-                    )
+                assertIsEnabled(settingsViewModel.settingsUiState.value)
+                    .darkModeUiState as DarkModeUiState.Enabled
+                )
                 .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
