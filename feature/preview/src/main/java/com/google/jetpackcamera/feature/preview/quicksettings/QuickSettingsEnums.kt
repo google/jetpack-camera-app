@@ -96,7 +96,7 @@ enum class CameraFlashMode : QuickSettingsEnum {
         override fun getTextResId() = R.string.quick_settings_flash_on
         override fun getDescriptionResId() = R.string.quick_settings_flash_on_description
     },
-    LLB {
+    LOW_LIGHT_BOOST {
         override fun getDrawableResId() = null
         override fun getImageVector() = Icons.Outlined.Nightlight
         override fun getTextResId() = R.string.quick_settings_flash_llb
