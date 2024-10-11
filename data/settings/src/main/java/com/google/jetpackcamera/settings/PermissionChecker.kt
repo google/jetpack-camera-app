@@ -16,19 +16,23 @@
 package com.google.jetpackcamera.settings
 
 import android.app.Application
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 interface PermissionChecker {
     fun isPermissionGranted(permission: String): Boolean
 }
 
-class LocalPermissionChecker @Inject constructor(private val application: Application) :
+class LocalPermissionChecker @Inject constructor(
+    @ApplicationContext private val context: Context
+) :
     PermissionChecker {
     override fun isPermissionGranted(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(
-            application.applicationContext,
+            context,
             permission
         ) == PackageManager.PERMISSION_GRANTED
     }
