@@ -211,7 +211,9 @@ fun FlashModeSetting(
                 FlashMode.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
-                FlashMode.LOW_LIGHT_BOOST -> stringResource(id = R.string.flash_mode_description_llb)
+                FlashMode.LOW_LIGHT_BOOST -> stringResource(
+                    id = R.string.flash_mode_description_llb
+                )
             }
         } else {
             TODO("flash mode currently has no disabled criteria")
