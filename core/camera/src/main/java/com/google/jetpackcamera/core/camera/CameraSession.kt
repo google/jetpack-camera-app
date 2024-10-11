@@ -200,8 +200,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                    "${prevTransientSettings.deviceRotation} -> " +
-                    "${newTransientSettings.deviceRotation}"
+                        "${prevTransientSettings.deviceRotation} -> " +
+                        "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -470,6 +470,7 @@ private fun setFlashModeInternal(
     Log.d(TAG, "Set flash mode to: ${imageCapture.flashMode}")
 }
 
+context(CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     videoCaptureUseCase: VideoCapture<Recorder>,
@@ -521,38 +522,93 @@ private suspend fun startVideoRecordingInternal(
     }
     val callbackExecutor: Executor =
         (
-            currentCoroutineContext()[ContinuationInterceptor] as?
-                CoroutineDispatcher
-            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                        CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
+            is VideoRecordEvent.Start -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Recording(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
+            is VideoRecordEvent.Pause -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Paused(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
+            is VideoRecordEvent.Resume -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Recording(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
+            is VideoRecordEvent.Status -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Recording(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
-                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
+                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
+                        //update recording state to inactive with the final values of the recording.
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    audioAmplitude = 0.0,
+                                    maxDurationMillis = maxDurationMillis,
+                                    elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                                )
+                            )
+                        }
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
+                    }
 
-                    else ->
+                    else -> {
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
                                 onVideoRecordEvent.cause
                             )
                         )
-                }
-            }
 
-            is VideoRecordEvent.Status -> {
-                onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                        audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
-                            .audioAmplitude,
-                        elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
-                    )
-                )
+                    }
+                }
             }
         }
     }.apply {
@@ -560,6 +616,7 @@ private suspend fun startVideoRecordingInternal(
     }
 }
 
+context(CameraSessionContext)
 private suspend fun runVideoRecording(
     camera: Camera,
     videoCapture: VideoCapture<Recorder>,
@@ -625,7 +682,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                    "$width x $height"
+                        "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }

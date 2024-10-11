@@ -135,13 +135,9 @@ interface CameraUseCase {
     /**
      * Represents the events for video recording.
      */
+
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
-
-        data class OnVideoRecordStatus(
-            val audioAmplitude: Double,
-            val elapsedTimeNanos: Long
-        ) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
     }
@@ -153,7 +149,41 @@ interface CameraUseCase {
     }
 }
 
+sealed interface VideoRecordingState {
+    val maxDurationMillis: Long
+    val audioAmplitude: Double
+    val elapsedTimeNanos: Long
+
+    /**
+     * Camera is not currently recording a video
+     */
+    data class Inactive(
+        override val maxDurationMillis: Long = 0,
+        override val audioAmplitude: Double = 0.0,
+        override val elapsedTimeNanos: Long = 0
+    ) : VideoRecordingState
+
+    /**
+     * Camera is currently active; paused, stopping, or recording a video
+     */
+    sealed interface Active : VideoRecordingState {
+
+        data class Recording(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
+
+        data class Paused(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
+    }
+}
+
 data class CameraState(
+    val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,

@@ -21,7 +21,6 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
@@ -96,9 +95,9 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
@@ -108,6 +107,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -564,11 +564,12 @@ fun CaptureButton(
             drawCircle(
                 color =
                 when (videoRecordingState) {
-                    VideoRecordingState.INACTIVE -> {
+                    is VideoRecordingState.Inactive -> {
                         if (isPressedDown) currentColor else Color.Transparent
                     }
 
-                    VideoRecordingState.ACTIVE -> Color.Red
+                    is VideoRecordingState.Active.Recording -> Color.Magenta
+                    is VideoRecordingState.Active.Paused -> Color.Blue
                 }
             )
         })
