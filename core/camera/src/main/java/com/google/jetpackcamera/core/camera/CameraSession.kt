@@ -200,8 +200,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                        "${prevTransientSettings.deviceRotation} -> " +
-                        "${newTransientSettings.deviceRotation}"
+                    "${prevTransientSettings.deviceRotation} -> " +
+                    "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -522,9 +522,9 @@ private suspend fun startVideoRecordingInternal(
     }
     val callbackExecutor: Executor =
         (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                        CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+            currentCoroutineContext()[ContinuationInterceptor] as?
+                CoroutineDispatcher
+            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
@@ -535,7 +535,8 @@ private suspend fun startVideoRecordingInternal(
                             audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                                 .audioAmplitude,
                             maxDurationMillis = maxDurationMillis,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
                     )
                 }
@@ -548,7 +549,8 @@ private suspend fun startVideoRecordingInternal(
                             audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                                 .audioAmplitude,
                             maxDurationMillis = maxDurationMillis,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
                     )
                 }
@@ -561,7 +563,8 @@ private suspend fun startVideoRecordingInternal(
                             audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                                 .audioAmplitude,
                             maxDurationMillis = maxDurationMillis,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
                     )
                 }
@@ -574,7 +577,8 @@ private suspend fun startVideoRecordingInternal(
                             audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                                 .audioAmplitude,
                             maxDurationMillis = maxDurationMillis,
-                            elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
                     )
                 }
@@ -583,13 +587,14 @@ private suspend fun startVideoRecordingInternal(
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
                     ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
-                        //update recording state to inactive with the final values of the recording.
+                        // update recording state to inactive with the final values of the recording.
                         currentCameraState.update { old ->
                             old.copy(
                                 videoRecordingState = VideoRecordingState.Inactive(
                                     audioAmplitude = 0.0,
                                     maxDurationMillis = maxDurationMillis,
-                                    elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                                    elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                        .recordedDurationNanos
                                 )
                             )
                         }
@@ -606,7 +611,6 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.cause
                             )
                         )
-
                     }
                 }
             }
@@ -682,7 +686,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                        "$width x $height"
+                    "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }

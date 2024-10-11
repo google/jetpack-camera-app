@@ -21,6 +21,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
@@ -107,7 +108,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -568,7 +568,7 @@ fun CaptureButton(
                         if (isPressedDown) currentColor else Color.Transparent
                     }
 
-                    is VideoRecordingState.Active.Recording -> Color.Magenta
+                    is VideoRecordingState.Active.Recording -> Color.Red
                     is VideoRecordingState.Active.Paused -> Color.Blue
                 }
             )

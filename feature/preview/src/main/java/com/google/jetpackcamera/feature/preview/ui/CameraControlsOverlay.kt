@@ -506,14 +506,14 @@ private fun Preview_ControlsBottom() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive(),
-                ),
+                videoRecordingState = VideoRecordingState.Inactive()
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.Inactive(),
+            videoRecordingState = VideoRecordingState.Inactive()
         )
     }
 }
@@ -528,14 +528,14 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive(),
-                ),
+                videoRecordingState = VideoRecordingState.Inactive()
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.Inactive(),
+            videoRecordingState = VideoRecordingState.Inactive()
         )
     }
 }
@@ -550,14 +550,14 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive(),
-                ),
+                videoRecordingState = VideoRecordingState.Inactive()
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.Inactive(),
+            videoRecordingState = VideoRecordingState.Inactive()
         )
     }
 }
@@ -572,8 +572,8 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive(),
-                ),
+                videoRecordingState = VideoRecordingState.Inactive()
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
@@ -585,7 +585,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                         TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
-            videoRecordingState = VideoRecordingState.Inactive(),
+            videoRecordingState = VideoRecordingState.Inactive()
         )
     }
 }
@@ -600,16 +600,15 @@ private fun Preview_ControlsBottom_Recording() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
+                videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000)
 
-
-                ),
+            ),
             zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
+            videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000)
         )
     }
 }
