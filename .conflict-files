@@ -1,3 +1,0 @@
-ancestorEntries = ["data/settings/src/main/java/com/google/jetpackcamera/settings/LocalSettingsRepository.kt", "feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
-ourEntries = ["data/settings/src/main/java/com/google/jetpackcamera/settings/LocalSettingsRepository.kt", "feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
-theirEntries = ["data/settings/src/main/java/com/google/jetpackcamera/settings/LocalSettingsRepository.kt", "feature/settings/src/main/java/com/google/jetpackcamera/settings/ui/SettingsComponents.kt"]
