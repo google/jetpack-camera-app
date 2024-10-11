@@ -103,7 +103,7 @@ class LocalSettingsRepository @Inject constructor(
             FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
             FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
             FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
-            FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_OFF
+            FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
