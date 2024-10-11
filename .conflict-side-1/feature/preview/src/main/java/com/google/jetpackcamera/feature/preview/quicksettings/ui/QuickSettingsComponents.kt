@@ -183,7 +183,7 @@ fun QuickSetFlash(
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.AUTO -> CameraFlashMode.AUTO
         FlashMode.ON -> CameraFlashMode.ON
-        FlashMode.LLB -> CameraFlashMode.LLB
+        FlashMode.LOW_LIGHT_BOOST -> CameraFlashMode.LOW_LIGHT_BOOST
     }
     QuickSettingUiItem(
         modifier = modifier
@@ -193,7 +193,7 @@ fun QuickSetFlash(
                         CameraFlashMode.OFF -> "QUICK SETTINGS FLASH IS OFF"
                         CameraFlashMode.AUTO -> "QUICK SETTINGS FLASH IS AUTO"
                         CameraFlashMode.ON -> "QUICK SETTINGS FLASH IS ON"
-                        CameraFlashMode.LLB -> "QUICK SETTINGS FLASH IS SET TO LOW LIGHT BOOST"
+                        CameraFlashMode.LOW_LIGHT_BOOST -> "QUICK SETTINGS FLASH IS SET TO LOW LIGHT BOOST"
                     }
             },
         enum = enum,
@@ -460,7 +460,7 @@ fun FlashModeIndicator(currentFlashMode: FlashMode, onClick: (flashMode: FlashMo
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.AUTO -> CameraFlashMode.AUTO
         FlashMode.ON -> CameraFlashMode.ON
-        FlashMode.LLB -> CameraFlashMode.LLB
+        FlashMode.LOW_LIGHT_BOOST -> CameraFlashMode.LOW_LIGHT_BOOST
     }
     Indicator(
         enum = enum,
@@ -485,7 +485,7 @@ fun FlashMode.getNextFlashMode(): FlashMode {
     return when (this) {
         FlashMode.OFF -> FlashMode.ON
         FlashMode.ON -> FlashMode.AUTO
-        FlashMode.AUTO -> FlashMode.LLB
-        FlashMode.LLB -> FlashMode.OFF
+        FlashMode.AUTO -> FlashMode.LOW_LIGHT_BOOST
+        FlashMode.LOW_LIGHT_BOOST -> FlashMode.OFF
     }
 }

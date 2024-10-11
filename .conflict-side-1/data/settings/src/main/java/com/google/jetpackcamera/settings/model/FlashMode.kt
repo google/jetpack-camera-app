@@ -19,5 +19,5 @@ enum class FlashMode {
     OFF,
     ON,
     AUTO,
-    LLB
+    LOW_LIGHT_BOOST
 }
