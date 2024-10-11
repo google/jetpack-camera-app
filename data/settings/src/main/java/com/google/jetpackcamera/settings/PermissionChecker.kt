@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.settings
 
-import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -23,6 +22,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 interface PermissionChecker {
+    /**
+     * Checks if the specified permission is granted to the application.
+     *
+     * @param permission The name of the permission to check.
+     * @return `true` if the permission is granted, `false` otherwise.
+     */
     fun isPermissionGranted(permission: String): Boolean
 }
 

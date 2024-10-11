@@ -93,6 +93,27 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
+    fun setMute_permission_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialMutedSTate = assertIsEnabled(initialState).muteAudioUiState
+        // assert that muteUiState is Enabled
+        assertThat(initialMutedSTate).isInstanceOf(MuteAudioUiState.Enabled::class.java)
+
+        val nextMuteAudioUiState = !initialMutedSTate.isMuted
+        settingsViewModel.setVideoMuted(nextMuteAudioUiState)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.muteAudioUiState.isMuted).isEqualTo(nextMuteAudioUiState)
+        }
+    }
+
+    @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         // Wait for first Enabled state
         val initialState = settingsViewModel.settingsUiState.first {

@@ -15,14 +15,11 @@
  */
 package com.google.jetpackcamera.settings
 
-const val FAKE_PERMISSION_FALSE = "fakePermissionFalse"
-
 class FakePermissionChecker : PermissionChecker {
+    /**
+     * This implementation simulates permission checks. It always returns `true`
+     */
     override fun isPermissionGranted(permission: String): Boolean {
-        return if (permission == FAKE_PERMISSION_FALSE) {
-            false
-        } else {
-            true
-        }
+        return true
     }
 }
