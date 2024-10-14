@@ -150,23 +150,21 @@ interface CameraUseCase {
 }
 
 sealed interface VideoRecordingState {
-    val maxDurationMillis: Long
-    val audioAmplitude: Double
-    val elapsedTimeNanos: Long
 
     /**
      * Camera is not currently recording a video
      */
     data class Inactive(
-        override val maxDurationMillis: Long = 0,
-        override val audioAmplitude: Double = 0.0,
-        override val elapsedTimeNanos: Long = 0
+        val finalElapsedTimeNanos: Long = 0
     ) : VideoRecordingState
 
     /**
      * Camera is currently active; paused, stopping, or recording a video
      */
     sealed interface Active : VideoRecordingState {
+        val maxDurationMillis: Long
+        val audioAmplitude: Double
+        val elapsedTimeNanos: Long
 
         data class Recording(
             override val maxDurationMillis: Long,
