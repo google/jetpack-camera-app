@@ -21,7 +21,6 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.os.Environment.DIRECTORY_DOCUMENTS
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
@@ -202,8 +201,10 @@ constructor(
             withContext(iODispatcher) {
                 val cameraProperties =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
+                val fileDir = File(application.getExternalFilesDir(null), "Debug")
+                fileDir.mkdirs();
                 val file = File(
-                    Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS),
+                    fileDir,
                     "JCACameraProperties.json"
                 )
                 writeFileExternalStorage(file, cameraProperties)
