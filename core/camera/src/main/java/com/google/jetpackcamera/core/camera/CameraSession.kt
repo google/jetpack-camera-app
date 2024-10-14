@@ -572,28 +572,28 @@ private suspend fun startVideoRecordingInternal(
 
             is VideoRecordEvent.Status -> {
                 currentCameraState.update { old ->
-                    //don't want to change state from paused to recording if status changes while paused
-                        if (old.videoRecordingState is VideoRecordingState.Active.Paused)
-                            old.copy(
-                                videoRecordingState = VideoRecordingState.Active.Paused(
-                                    audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
-                                        .audioAmplitude,
-                                    maxDurationMillis = maxDurationMillis,
-                                    elapsedTimeNanos = onVideoRecordEvent.recordingStats
-                                        .recordedDurationNanos
-                                )
+                    // don't want to change state from paused to recording if status changes while paused
+                    if (old.videoRecordingState is VideoRecordingState.Active.Paused) {
+                        old.copy(
+                            videoRecordingState = VideoRecordingState.Active.Paused(
+                                audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                    .audioAmplitude,
+                                maxDurationMillis = maxDurationMillis,
+                                elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                    .recordedDurationNanos
                             )
-                        else
-                            old.copy(
-                                videoRecordingState = VideoRecordingState.Active.Recording(
-                                    audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
-                                        .audioAmplitude,
-                                    maxDurationMillis = maxDurationMillis,
-                                    elapsedTimeNanos = onVideoRecordEvent.recordingStats
-                                        .recordedDurationNanos
-                                )
+                        )
+                    } else {
+                        old.copy(
+                            videoRecordingState = VideoRecordingState.Active.Recording(
+                                audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                    .audioAmplitude,
+                                maxDurationMillis = maxDurationMillis,
+                                elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                    .recordedDurationNanos
                             )
-
+                        )
+                    }
                 }
             }
 
