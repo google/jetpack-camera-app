@@ -202,7 +202,7 @@ constructor(
                 val cameraProperties =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val fileDir = File(application.getExternalFilesDir(null), "Debug")
-                fileDir.mkdirs();
+                fileDir.mkdirs()
                 val file = File(
                     fileDir,
                     "JCACameraProperties.json"
