@@ -21,17 +21,13 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateSizeAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -48,7 +44,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -89,15 +84,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -105,8 +97,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
@@ -120,6 +110,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -280,9 +271,6 @@ fun PreviewDisplay(
     modifier: Modifier = Modifier
 ) {
 
-
-
-
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
@@ -294,7 +282,6 @@ fun PreviewDisplay(
         BoxWithConstraints(
             Modifier
                 .testTag(PREVIEW_DISPLAY)
-//                .scale(scaleAnimation)
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
@@ -328,7 +315,6 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-//                    .clip(RoundedCornerShape(16.dp))
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -401,7 +387,6 @@ fun PreviewDisplay(
                                             "onTapToFocus: " +
                                                     "input{$it} -> surface{$surfaceCoords}"
                                         )
-//                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
                                 }
                             )
