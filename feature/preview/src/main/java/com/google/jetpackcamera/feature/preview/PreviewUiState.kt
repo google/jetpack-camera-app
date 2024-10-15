@@ -49,7 +49,7 @@ sealed interface PreviewUiState {
         val isDebugMode: Boolean = false
     ) : PreviewUiState
 }
-
+// todo(kc): add ElapsedTimeUiState class
 /**
  * Defines the current state of Video Recording
  */
