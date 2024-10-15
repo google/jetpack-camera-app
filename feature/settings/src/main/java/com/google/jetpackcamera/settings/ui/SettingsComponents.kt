@@ -65,6 +65,7 @@ import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
+import com.google.jetpackcamera.settings.MuteAudioUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
@@ -623,6 +624,33 @@ fun StabilizationSetting(
 }
 
 @Composable
+fun MuteRecordingSetting(
+    modifier: Modifier = Modifier,
+    mutedUiState: MuteAudioUiState,
+    setDefaultMuted: (Boolean) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier,
+        title = stringResource(id = R.string.mute_audio_title),
+        description = when (mutedUiState) {
+            is MuteAudioUiState.Enabled -> if (mutedUiState.isMuted) {
+                stringResource(R.string.mute_selector_on)
+            } else {
+                stringResource(R.string.mute_selector_off)
+            }
+
+            is MuteAudioUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = mutedUiState.disabledRationale)
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on -> setDefaultMuted(on) },
+        settingValue = mutedUiState.isMuted,
+        enabled = mutedUiState is MuteAudioUiState.Enabled
+    )
+}
+
+@Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
     SettingUI(
         modifier = modifier,
@@ -819,6 +847,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

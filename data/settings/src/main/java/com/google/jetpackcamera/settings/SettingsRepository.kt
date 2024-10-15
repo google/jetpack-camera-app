@@ -56,4 +56,6 @@ interface SettingsRepository {
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
 
     suspend fun updateMaxVideoDuration(durationMillis: Long)
+
+    suspend fun updateMutedMode(isMutedByDefault: Boolean)
 }

@@ -63,7 +63,11 @@ internal class CameraAppSettingsViewModelTest {
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }
-        settingsViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
+        settingsViewModel = SettingsViewModel(
+            settingsRepository,
+            FakePermissionChecker(),
+            constraintsRepository
+        )
         advanceUntilIdle()
     }
 
@@ -86,6 +90,27 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(uiState).isEqualTo(
             TYPICAL_SETTINGS_UISTATE
         )
+    }
+
+    @Test
+    fun setMute_permission_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialMutedSTate = assertIsEnabled(initialState).muteAudioUiState
+        // assert that muteUiState is Enabled
+        assertThat(initialMutedSTate).isInstanceOf(MuteAudioUiState.Enabled::class.java)
+
+        val nextMuteAudioUiState = !initialMutedSTate.isMuted
+        settingsViewModel.setVideoMuted(nextMuteAudioUiState)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.muteAudioUiState.isMuted).isEqualTo(nextMuteAudioUiState)
+        }
     }
 
     @Test

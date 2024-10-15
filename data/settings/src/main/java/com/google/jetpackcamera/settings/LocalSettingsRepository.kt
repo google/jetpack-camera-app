@@ -72,7 +72,8 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
-                maxVideoDurationMillis = it.maxVideoDurationMillis
+                maxVideoDurationMillis = it.maxVideoDurationMillis,
+                audioMuted = it.audioMutedStatus
             )
         }
 
@@ -191,6 +192,14 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setMaxVideoDurationMillis(durationMillis)
+                .build()
+        }
+    }
+
+    override suspend fun updateMutedMode(isMutedByDefault: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAudioMutedStatus(isMutedByDefault)
                 .build()
         }
     }

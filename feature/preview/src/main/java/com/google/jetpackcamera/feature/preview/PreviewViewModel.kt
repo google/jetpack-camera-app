@@ -232,6 +232,10 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
                 }
 
+                CameraAppSettings::audioMuted -> {
+                    cameraUseCase.setAudioMuted(entry.value as Boolean)
+                }
+
                 CameraAppSettings::darkMode -> {}
 
                 else -> TODO("Unhandled CameraAppSetting $entry")

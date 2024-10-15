@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -48,6 +49,7 @@ val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val permissionChecker: PermissionChecker,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
 
@@ -64,6 +66,10 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                muteAudioUiState = getMuteAudioUiState(
+                    permissionChecker,
+                    updatedSettings.audioMuted
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
@@ -73,6 +79,23 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = SettingsUiState.Disabled
         )
+
+    private fun getMuteAudioUiState(
+        permissionChecker: PermissionChecker,
+        isMuted: Boolean
+    ): MuteAudioUiState {
+        return if (permissionChecker.isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
+            MuteAudioUiState.Enabled(isMuted)
+        } else {
+            MuteAudioUiState.Disabled(
+                isMuted,
+                DisabledRationale
+                    .PermissionRecordAudioNotGrantedRationale(
+                        R.string.mute_audio_rationale_prefix
+                    )
+            )
+        }
+    }
 
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
@@ -445,6 +468,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateMaxVideoDuration(durationMillis)
             Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoMuted(isMuted: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateMutedMode(isMuted)
+            Log.d(TAG, "recording audio muted: $isMuted")
         }
     }
 }

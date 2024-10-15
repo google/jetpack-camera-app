@@ -516,7 +516,7 @@ private suspend fun startVideoRecordingInternal(
     }
     pendingRecord.apply {
         if (audioEnabled) {
-            withAudioEnabled()
+            withAudioEnabled(initialMuted)
         }
     }
     val callbackExecutor: Executor =
@@ -524,40 +524,40 @@ private suspend fun startVideoRecordingInternal(
             currentCoroutineContext()[ContinuationInterceptor] as?
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
-        Log.d(TAG, onVideoRecordEvent.toString())
-        when (onVideoRecordEvent) {
-            is VideoRecordEvent.Finalize -> {
-                when (onVideoRecordEvent.error) {
-                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
-                        onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                onVideoRecordEvent.outputResults.outputUri
+    return pendingRecord
+        .start(callbackExecutor) { onVideoRecordEvent ->
+            Log.d(TAG, onVideoRecordEvent.toString())
+            when (onVideoRecordEvent) {
+                is VideoRecordEvent.Finalize -> {
+                    when (onVideoRecordEvent.error) {
+                        ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
+                            onVideoRecord(
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                    onVideoRecordEvent.outputResults.outputUri
+                                )
                             )
-                        )
 
-                    else ->
-                        onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                                onVideoRecordEvent.cause
+                        else ->
+                            onVideoRecord(
+                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                    onVideoRecordEvent.cause
+                                )
                             )
+                    }
+                }
+
+                is VideoRecordEvent.Status -> {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
                         )
+                    )
                 }
             }
-
-            is VideoRecordEvent.Status -> {
-                onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
-                        audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
-                            .audioAmplitude,
-                        elapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
-                    )
-                )
-            }
         }
-    }.apply {
-        mute(initialMuted)
-    }
 }
 
 private suspend fun runVideoRecording(

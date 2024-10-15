@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings.ui
+package com.google.jetpackcamera.settings
 
-const val BACK_BUTTON = "BackButton"
-
-// unsupported rationale tags
-const val DEVICE_UNSUPPORTED_TAG = "DeviceUnsupportedTag"
-const val STABILIZATION_UNSUPPORTED_TAG = "StabilizationUnsupportedTag"
-const val LENS_UNSUPPORTED_TAG = "LensUnsupportedTag"
-const val FPS_UNSUPPORTED_TAG = "FpsUnsupportedTag"
-const val PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG = "PermissionRecordAudioNotGrantedTag"
+class FakePermissionChecker : PermissionChecker {
+    /**
+     * This implementation simulates permission checks. It always returns `true`
+     */
+    override fun isPermissionGranted(permission: String): Boolean {
+        return true
+    }
+}
