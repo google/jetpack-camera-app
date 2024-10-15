@@ -30,6 +30,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -48,7 +49,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -69,7 +70,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
@@ -470,6 +470,7 @@ private fun setFlashModeInternal(
     Log.d(TAG, "Set flash mode to: ${imageCapture.flashMode}")
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     videoCaptureUseCase: VideoCapture<Recorder>,
@@ -494,10 +495,15 @@ private suspend fun startVideoRecordingInternal(
     ) == PackageManager.PERMISSION_GRANTED
 
     val pendingRecord = if (shouldUseUri) {
-        val fileOutputOptions = FileOutputOptions.Builder(
-            File(videoCaptureUri!!.path!!)
-        ).build()
-        videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+        videoCaptureUseCase.output.prepareRecording(
+            context,
+            FileDescriptorOutputOptions.Builder(
+                context.applicationContext.contentResolver.openFileDescriptor(
+                    videoCaptureUri!!,
+                    "rw"
+                )!!
+            ).build()
+        )
     } else {
         val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
         val contentValues =
