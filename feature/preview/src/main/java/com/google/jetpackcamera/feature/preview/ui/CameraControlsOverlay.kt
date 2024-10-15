@@ -137,7 +137,6 @@ fun CameraControlsOverlay(
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
                 audioAmplitude = previewUiState.audioAmplitude,
-                elapsedRecordingNs = previewUiState.recordingElapsedTimeNanos,
                 zoomLevel = previewUiState.zoomScale,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
@@ -212,7 +211,6 @@ private fun ControlsBottom(
     previewUiState: PreviewUiState.Ready,
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
-    elapsedRecordingNs: Long,
     zoomLevel: Float,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
@@ -249,14 +247,12 @@ private fun ControlsBottom(
                 if (previewUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                // display duration only when duration limit is present
-                if (currentCameraSettings.maxVideoDurationMillis != UNLIMITED_VIDEO_DURATION) {
                     ElapsedTimeText(
                         modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                         videoRecordingState = videoRecordingState,
-                        elapsedNs = elapsedRecordingNs
+                        elapsedNs = previewUiState.recordingElapsedTimeNanos
                     )
-                }
+
             }
         }
 
@@ -528,7 +524,6 @@ private fun Preview_ControlsBottom() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             audioAmplitude = 0.0,
-            elapsedRecordingNs = 1_000_000
 
         )
     }
@@ -552,7 +547,6 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             audioAmplitude = 0.0,
-            elapsedRecordingNs = 1_000_000
 
         )
     }
@@ -576,8 +570,6 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
             audioAmplitude = 0.0,
-            elapsedRecordingNs = 1_000_000
-
         )
     }
 }
@@ -606,7 +598,6 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,
             audioAmplitude = 0.0,
-            elapsedRecordingNs = 1_000_000
 
         )
     }
@@ -630,7 +621,6 @@ private fun Preview_ControlsBottom_Recording() {
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
             audioAmplitude = 0.9,
-            elapsedRecordingNs = 1_000_000
         )
     }
 }

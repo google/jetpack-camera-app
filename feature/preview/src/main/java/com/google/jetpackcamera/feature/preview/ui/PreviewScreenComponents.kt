@@ -112,6 +112,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -122,28 +123,16 @@ fun ElapsedTimeText(
     videoRecordingState: VideoRecordingState,
     elapsedNs: Long
 ) {
-    var isVisible by remember { mutableStateOf(videoRecordingState == VideoRecordingState.ACTIVE) }
-
-    LaunchedEffect(key1 = videoRecordingState) {
-        if (!isVisible && videoRecordingState == VideoRecordingState.ACTIVE) {
-            isVisible = true
-        } else if (videoRecordingState == VideoRecordingState.INACTIVE) {
-            delay(1000) // wait 1 second before fading out
-            isVisible = false
-        }
-    }
-    val totalSeconds = elapsedNs / 1_000_000_000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-
     AnimatedVisibility(
-        visible = isVisible,
+        visible = (videoRecordingState == VideoRecordingState.ACTIVE),
         enter = fadeIn(),
-        exit = fadeOut()
+        exit = fadeOut(animationSpec = tween(delayMillis = 1000))
     ) {
         Text(
             modifier = modifier,
-            text = String.format("%02d:%02d", minutes, seconds),
+            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
+                "%02d:%02d".format(minutes, seconds)
+            },
             textAlign = TextAlign.Center
         )
     }
@@ -378,7 +367,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -685,7 +674,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
