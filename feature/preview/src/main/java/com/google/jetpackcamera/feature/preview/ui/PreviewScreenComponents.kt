@@ -94,15 +94,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -112,8 +109,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -310,9 +305,6 @@ fun PreviewDisplay(
     modifier: Modifier = Modifier
 ) {
 
-
-
-
     val transformableState = rememberTransformableState(
         onTransformation = { zoomChange, _, _ ->
             onZoomChange(zoomChange)
@@ -325,7 +317,6 @@ fun PreviewDisplay(
         BoxWithConstraints(
             Modifier
                 .testTag(PREVIEW_DISPLAY)
-//                .scale(scaleAnimation)
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
