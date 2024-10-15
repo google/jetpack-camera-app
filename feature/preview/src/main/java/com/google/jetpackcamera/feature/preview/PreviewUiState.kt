@@ -46,10 +46,10 @@ sealed interface PreviewUiState {
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false,
+        val isDebugMode: Boolean = false
     ) : PreviewUiState
 }
-//todo(kc): add
+// todo(kc): add
 /**
  * Defines the current state of Video Recording
  */

@@ -50,7 +50,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.core.camera.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -247,12 +246,11 @@ private fun ControlsBottom(
                 if (previewUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                    ElapsedTimeText(
-                        modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                        videoRecordingState = videoRecordingState,
-                        elapsedNs = previewUiState.recordingElapsedTimeNanos
-                    )
-
+                ElapsedTimeText(
+                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                    videoRecordingState = videoRecordingState,
+                    elapsedNs = previewUiState.recordingElapsedTimeNanos
+                )
             }
         }
 
@@ -523,7 +521,7 @@ private fun Preview_ControlsBottom() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0,
+            audioAmplitude = 0.0
 
         )
     }
@@ -546,7 +544,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0,
+            audioAmplitude = 0.0
 
         )
     }
@@ -569,7 +567,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0,
+            audioAmplitude = 0.0
         )
     }
 }
@@ -597,7 +595,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 )
             ),
             videoRecordingState = VideoRecordingState.INACTIVE,
-            audioAmplitude = 0.0,
+            audioAmplitude = 0.0
 
         )
     }
@@ -620,7 +618,7 @@ private fun Preview_ControlsBottom_Recording() {
             currentCameraSettings = CameraAppSettings(),
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.ACTIVE,
-            audioAmplitude = 0.9,
+            audioAmplitude = 0.9
         )
     }
 }
