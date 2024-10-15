@@ -53,6 +53,7 @@ class FakeCameraUseCase(
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+    var isRecordingPaused = false;
 
     var isLensFacingFront = false
 
@@ -138,6 +139,14 @@ class FakeCameraUseCase(
             throw IllegalStateException("Usecases not bound")
         }
         recordingInProgress = true
+    }
+
+    override suspend fun pauseVideoRecording() {
+        isRecordingPaused = true
+    }
+
+    override suspend fun resumeVideoRecording() {
+        isRecordingPaused = false
     }
 
     override fun stopVideoRecording() {

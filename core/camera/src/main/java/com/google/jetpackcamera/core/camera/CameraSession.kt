@@ -646,7 +646,7 @@ private suspend fun runVideoRecording(
     var currentSettings = transientSettings.filterNotNull().first()
 
     startVideoRecordingInternal(
-        initialMuted = currentSettings.audioMuted,
+        initialMuted = currentSettings.isAudioMuted,
         maxDurationMillis = maxDurationMillis,
         videoCaptureUseCase = videoCapture,
         captureTypeSuffix = captureTypeSuffix,
@@ -675,8 +675,15 @@ private suspend fun runVideoRecording(
                 camera.cameraControl.enableTorch(false)
             }
             .collectLatest { newTransientSettings ->
-                if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
-                    recording.mute(newTransientSettings.audioMuted)
+                if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
+                    recording.mute(newTransientSettings.isAudioMuted)
+                }
+                if (currentSettings.isRecordingPaused != newTransientSettings.isRecordingPaused) {
+                    if (newTransientSettings.isRecordingPaused) {
+                        recording.pause()
+                    }
+                    else
+                        recording.resume()
                 }
                 if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
                     if (!isFrontCameraSelector) {

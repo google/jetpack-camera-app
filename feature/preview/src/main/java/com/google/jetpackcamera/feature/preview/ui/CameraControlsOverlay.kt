@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,6 +92,7 @@ fun CameraControlsOverlay(
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: () -> Unit = {},
+    onTogglePause: () -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -148,6 +150,7 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudioMuted = onMuteAudio,
+                onTogglePause = onTogglePause,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
@@ -224,6 +227,7 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
+    onTogglePause: () -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onStartVideoRecording: (
@@ -261,6 +265,9 @@ private fun ControlsBottom(
                         // enable only when phone has front and rear camera
                         enabledCondition = systemConstraints.availableLenses.size > 1
                     )
+                }
+                else if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Active) {
+                    PauseResumeToggleButton(onTogglePause = onTogglePause , currentRecordingState = videoRecordingState )
                 }
             }
             CaptureButton(

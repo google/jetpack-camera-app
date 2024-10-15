@@ -45,6 +45,6 @@ sealed interface PreviewUiState {
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false
+        val isDebugMode: Boolean = false,
     ) : PreviewUiState
 }

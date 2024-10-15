@@ -220,10 +220,11 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    audioMuted = currentCameraSettings.audioMuted,
+                    isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    isRecordingPaused = currentCameraSettings.recordingPaused
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -652,6 +653,18 @@ constructor(
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
+        }
+    }
+
+    override suspend fun pauseVideoRecording() {
+        currentSettings.update { old ->
+            old?.copy(recordingPaused = true)
+        }
+    }
+
+    override suspend fun resumeVideoRecording() {
+        currentSettings.update { old ->
+            old?.copy(recordingPaused = false)
         }
     }
 
