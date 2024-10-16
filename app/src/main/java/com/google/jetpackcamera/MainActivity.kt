@@ -183,6 +183,15 @@ class MainActivity : ComponentActivity() {
         ) ?: intent?.clipData?.getItemAt(0)?.uri
     }
 
+    private fun getMultipleExternalCaptureUri(): List<Uri?>? {
+        //TODO: DAVIDJIA Fix this
+        return IntentCompat.getParcelableExtra(
+            intent,
+            MediaStore.EXTRA_OUTPUT,
+            List<Uri?>::class.java
+        )
+    }
+
     private fun getPreviewMode(): PreviewMode {
         return intent?.action?.let { action ->
             when (action) {
@@ -209,6 +218,23 @@ class MainActivity : ComponentActivity() {
                             finish()
                         }
                     }
+
+                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
+                    val uriList = getMultipleExternalCaptureUri()
+                    PreviewMode.ExternalMultipleImageCaptureMode(
+                        uriList,
+                        if (uriList != null) 0 else -1
+                    ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
+                        Log.d(TAG, "onMultipleImageCapture, event: $event")
+                        if (uriList != null && uriIndex == uriList.size - 1) {
+                            val resultIntent = Intent()
+                            setResult(RESULT_OK, resultIntent)
+                            Log.d(TAG, "onMultipleImageCapture, finish()")
+                            finish()
+                        }
+                    }
+                }
+
 
                 else -> {
                     Log.w(TAG, "Ignoring external intent with unknown action.")

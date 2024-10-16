@@ -152,6 +152,8 @@ internal class ImageCaptureDeviceTest {
         Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
     }
 
+    //TODO: DAVIDJIA Add multiple image capture tests
+
     companion object {
         val DIR_PATH: String =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).path
