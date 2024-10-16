@@ -79,12 +79,15 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
@@ -640,9 +643,10 @@ private suspend fun runVideoRecording(
     maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
     videoCaptureUri: Uri?,
+    videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
-) {
+) = coroutineScope{
     var currentSettings = transientSettings.filterNotNull().first()
 
     startVideoRecordingInternal(
@@ -656,6 +660,16 @@ private suspend fun runVideoRecording(
         onVideoRecord = onVideoRecord
     ).use { recording ->
 
+        launch{
+            for(event in videoControlEvents) {
+                when (event) {
+                    is VideoCaptureControlEvent.StartRecordingEvent -> {throw IllegalStateException("A recording is already in progress") }
+                    VideoCaptureControlEvent.StopRecordingEvent -> this@coroutineScope.cancel()
+                    VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
+                    VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
+                }
+            }
+        }
         fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
         val isFrontCameraSelector =
             camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
@@ -667,7 +681,6 @@ private suspend fun runVideoRecording(
                 Log.d(TAG, "Unable to enable torch for front camera.")
             }
         }
-
         transientSettings.filterNotNull()
             .onCompletion {
                 // Could do some fancier tracking of whether the torch was enabled before
@@ -677,13 +690,6 @@ private suspend fun runVideoRecording(
             .collectLatest { newTransientSettings ->
                 if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
                     recording.mute(newTransientSettings.isAudioMuted)
-                }
-                if (currentSettings.isRecordingPaused != newTransientSettings.isRecordingPaused) {
-                    if (newTransientSettings.isRecordingPaused) {
-                        recording.pause()
-                    }
-                    else
-                        recording.resume()
                 }
                 if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
                     if (!isFrontCameraSelector) {
@@ -738,8 +744,6 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-
-                recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
                         camera,
                         videoCapture,
@@ -748,16 +752,12 @@ internal suspend fun processVideoControlEvents(
                         event.maxVideoDuration,
                         transientSettings,
                         event.videoCaptureUri,
+                        videoCaptureControlEvents,
                         event.shouldUseUri,
                         event.onVideoRecord
                     )
                 }
-            }
-
-            VideoCaptureControlEvent.StopRecordingEvent -> {
-                recordingJob?.cancel()
-                recordingJob = null
-            }
+            else -> {}
         }
     }
 }

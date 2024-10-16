@@ -224,7 +224,6 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale,
-                    isRecordingPaused = currentCameraSettings.recordingPaused
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -426,6 +425,14 @@ constructor(
                 onVideoRecord
             )
         )
+    }
+
+    override suspend fun pauseVideoRecording() {
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.PauseRecordingEvent)
+    }
+
+    override suspend fun resumeVideoRecording() {
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.ResumeRecordingEvent)
     }
 
     override fun stopVideoRecording() {
@@ -653,18 +660,6 @@ constructor(
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         currentSettings.update { old ->
             old?.copy(audioMuted = isAudioMuted)
-        }
-    }
-
-    override suspend fun pauseVideoRecording() {
-        currentSettings.update { old ->
-            old?.copy(recordingPaused = true)
-        }
-    }
-
-    override suspend fun resumeVideoRecording() {
-        currentSettings.update { old ->
-            old?.copy(recordingPaused = false)
         }
     }
 

@@ -114,10 +114,10 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+
 @Composable
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
-    //size: Int = 100,
     onTogglePause: () -> Unit,
     currentRecordingState: VideoRecordingState.Active
 ) {
@@ -130,6 +130,7 @@ fun PauseResumeToggleButton(
           contentDescription = "pause resume toggle")
   }
 }
+
 @Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
@@ -457,6 +458,7 @@ fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifie
                 modifier = modifier.alpha(0.5f)
             )
         }
+
         LowLightBoost.DISABLED -> {
         }
     }
