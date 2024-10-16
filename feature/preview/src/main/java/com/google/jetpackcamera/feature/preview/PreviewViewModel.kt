@@ -164,6 +164,8 @@ class PreviewViewModel @AssistedInject constructor(
                                 isDebugMode = isDebugMode,
                                 currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                                 currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+                                // TODO(kc): set elapsed time UI state once VideoRecordingState
+                                // refactor is complete.
                             )
                     }
                 }
@@ -645,6 +647,7 @@ class PreviewViewModel @AssistedInject constructor(
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
+                            timer = it.finalDurationNanos
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,

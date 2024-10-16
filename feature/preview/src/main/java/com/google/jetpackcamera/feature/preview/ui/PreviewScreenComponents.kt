@@ -25,10 +25,13 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -93,6 +96,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -103,6 +107,7 @@ import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.Stabilization
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -111,6 +116,27 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+
+@Composable
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    videoRecordingState: VideoRecordingState,
+    elapsedNs: Long
+) {
+    AnimatedVisibility(
+        visible = (videoRecordingState == VideoRecordingState.ACTIVE),
+        enter = fadeIn(),
+        exit = fadeOut(animationSpec = tween(delayMillis = 1000))
+    ) {
+        Text(
+            modifier = modifier,
+            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
+                "%02d:%02d".format(minutes, seconds)
+            },
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun AmplitudeVisualizer(
@@ -439,6 +465,7 @@ fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifie
                 modifier = modifier.alpha(0.5f)
             )
         }
+
         LowLightBoost.DISABLED -> {
         }
     }
@@ -625,7 +652,8 @@ fun ToggleButton(
                         onToggleWhenDisabled()
                     }
                 }
-            ).semantics {
+            )
+            .semantics {
                 stateDescription = when (toggleState) {
                     ToggleState.Left -> leftIconDescription
                     ToggleState.Right -> rightIconDescription
