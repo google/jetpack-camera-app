@@ -538,6 +538,7 @@ private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
+    maxDurationMillis: Long,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     Log.d(TAG, "recordVideo")
@@ -637,6 +638,7 @@ private suspend fun runVideoRecording(
             initialMuted = currentSettings.audioMuted,
             context = context,
             pendingRecord = pendingRecording,
+            maxDurationMillis = maxDurationMillis,
             onVideoRecord = onVideoRecord
         ).use { recording ->
 
