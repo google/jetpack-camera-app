@@ -175,6 +175,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun PreviewMode.toUseCaseMode() = when (this) {
         is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
+        is PreviewMode.ExternalMultipleImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
         is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
         is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
     }
@@ -508,7 +509,7 @@ class PreviewViewModel @AssistedInject constructor(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean = false,
-        onImageCapture: (ImageCaptureEvent) -> Unit
+        onImageCapture: (ImageCaptureEvent, Int) -> Unit
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
@@ -538,6 +539,12 @@ class PreviewViewModel @AssistedInject constructor(
         }
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
+            val uriIndex = if (previewUiState.value is PreviewUiState.Ready &&
+                (previewUiState.value as PreviewUiState.Ready).previewMode is PreviewMode.ExternalMultipleImageCaptureMode) {
+                ((previewUiState.value as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode).currentUriIndex
+            } else {
+                -1
+            }
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
@@ -548,11 +555,33 @@ class PreviewViewModel @AssistedInject constructor(
                         }
                     }, contentResolver, imageCaptureUri, ignoreUri).savedUri
                 },
-                onSuccess = { savedUri -> onImageCapture(ImageCaptureEvent.ImageSaved(savedUri)) },
+                onSuccess = { savedUri ->
+                    onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
+                    incrementExternalMultipleImageCaptureModeUriIndexIfNeeded()
+                },
                 onFailure = { exception ->
-                    onImageCapture(ImageCaptureEvent.ImageCaptureError(exception))
+                    onImageCapture(ImageCaptureEvent.ImageCaptureError(exception), uriIndex)
+                    incrementExternalMultipleImageCaptureModeUriIndexIfNeeded()
                 }
             )
+        }
+    }
+
+    private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
+        if (previewUiState.value is PreviewUiState.Ready &&
+            (previewUiState.value as PreviewUiState.Ready).previewMode is PreviewMode.ExternalMultipleImageCaptureMode && ((previewUiState.value as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode).imageCaptureUris != null
+        ) {
+            _previewUiState.update { old ->
+                val oldPreviewMode =
+                    ((old as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode)
+                (old as? PreviewUiState.Ready)?.copy(
+                    previewMode = PreviewMode.ExternalMultipleImageCaptureMode(
+                        oldPreviewMode.imageCaptureUris,
+                        oldPreviewMode.currentUriIndex + 1,
+                        oldPreviewMode.onImageCapture
+                    )
+                ) ?: old
+            }
         }
     }
 
