@@ -614,10 +614,7 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
-
-
                     }
-
 
                     ERROR_DURATION_LIMIT_REACHED -> {
                         currentCameraState.update { old ->
@@ -625,7 +622,8 @@ private suspend fun startVideoRecordingInternal(
                                 videoRecordingState = VideoRecordingState.Inactive(
                                     // cleanly display the max duration
                                     finalElapsedTimeNanos = maxDurationMillis * 1_000_000
-                            ))
+                                )
+                            )
                         }
 
                         onVideoRecord(
@@ -750,7 +748,6 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-
                 recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
                         camera,
@@ -765,7 +762,6 @@ internal suspend fun processVideoControlEvents(
                     )
                 }
             }
-
             VideoCaptureControlEvent.StopRecordingEvent -> {
                 recordingJob?.cancel()
                 recordingJob = null

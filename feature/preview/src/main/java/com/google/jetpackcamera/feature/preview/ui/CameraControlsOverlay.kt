@@ -247,9 +247,11 @@ private fun ControlsBottom(
                 ElapsedTimeText(
                     modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                     videoRecordingState = videoRecordingState,
-                    elapsedNs = when(previewUiState.videoRecordingState) {
-                        is VideoRecordingState.Active -> previewUiState.videoRecordingState.elapsedTimeNanos
-                        is VideoRecordingState.Inactive -> previewUiState.videoRecordingState.finalElapsedTimeNanos
+                    elapsedNs = when (previewUiState.videoRecordingState) {
+                        is VideoRecordingState.Active ->
+                            previewUiState.videoRecordingState.elapsedTimeNanos
+                        is VideoRecordingState.Inactive ->
+                            previewUiState.videoRecordingState.finalElapsedTimeNanos
                     }
                 )
             }
