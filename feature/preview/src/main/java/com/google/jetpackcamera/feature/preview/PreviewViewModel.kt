@@ -166,6 +166,8 @@ class PreviewViewModel @AssistedInject constructor(
                                 isDebugMode = isDebugMode,
                                 currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                                 currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+                                // TODO(kc): set elapsed time UI state once VideoRecordingState
+                                // refactor is complete.
                             )
                     }
                 }

@@ -244,6 +244,14 @@ private fun ControlsBottom(
                 if (previewUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
+                ElapsedTimeText(
+                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                    videoRecordingState = videoRecordingState,
+                    elapsedNs = when(previewUiState.videoRecordingState) {
+                        is VideoRecordingState.Active -> previewUiState.videoRecordingState.elapsedTimeNanos
+                        is VideoRecordingState.Inactive -> previewUiState.videoRecordingState.finalElapsedTimeNanos
+                    }
+                )
             }
         }
 
@@ -253,6 +261,7 @@ private fun ControlsBottom(
                 .height(IntrinsicSize.Max),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Inactive) {
                     FlipCameraButton(

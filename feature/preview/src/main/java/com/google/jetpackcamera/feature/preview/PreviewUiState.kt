@@ -48,3 +48,4 @@ sealed interface PreviewUiState {
         val isDebugMode: Boolean = false
     ) : PreviewUiState
 }
+// todo(kc): add ElapsedTimeUiState class
