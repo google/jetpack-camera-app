@@ -502,20 +502,18 @@ private fun getPendingRecording(
                 null
             }
         } else {
-            if (videoCaptureUri.toString().startsWith("content")) {
-                onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                        RuntimeException(
-                            "content uri not supported on build version " + Build.VERSION.SDK_INT
-                        )
-                    )
-                )
-                null
-            } else {
+            if (videoCaptureUri.toString().startsWith("file")) {
                 val fileOutputOptions = FileOutputOptions.Builder(
                     File(videoCaptureUri!!.path!!)
                 ).build()
                 videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+            } else {
+                onVideoRecord(
+                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                        RuntimeException("Uri scheme not supported.")
+                    )
+                )
+                null
             }
         }
     } else {
