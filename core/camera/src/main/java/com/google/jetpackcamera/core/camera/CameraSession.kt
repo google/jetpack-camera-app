@@ -203,8 +203,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                    "${prevTransientSettings.deviceRotation} -> " +
-                    "${newTransientSettings.deviceRotation}"
+                        "${prevTransientSettings.deviceRotation} -> " +
+                        "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -525,9 +525,9 @@ private suspend fun startVideoRecordingInternal(
     }
     val callbackExecutor: Executor =
         (
-            currentCoroutineContext()[ContinuationInterceptor] as?
-                CoroutineDispatcher
-            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                        CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
@@ -660,46 +660,59 @@ private suspend fun runVideoRecording(
         onVideoRecord = onVideoRecord
     ).use { recording ->
 
-        launch{
-            for(event in videoControlEvents) {
-                when (event) {
-                    is VideoCaptureControlEvent.StartRecordingEvent -> {throw IllegalStateException("A recording is already in progress") }
-                    VideoCaptureControlEvent.StopRecordingEvent -> this@coroutineScope.cancel()
-                    VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
-                    VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
-                }
-            }
-        }
-        fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-        val isFrontCameraSelector =
-            camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+        val recordingSettingsUpdater = launch {
+            fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
+            val isFrontCameraSelector =
+                camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
 
-        if (currentSettings.isFlashModeOn()) {
-            if (!isFrontCameraSelector) {
-                camera.cameraControl.enableTorch(true).await()
-            } else {
-                Log.d(TAG, "Unable to enable torch for front camera.")
+            if (currentSettings.isFlashModeOn()) {
+                if (!isFrontCameraSelector) {
+                    camera.cameraControl.enableTorch(true).await()
+                } else {
+                    Log.d(TAG, "Unable to enable torch for front camera.")
+                }
+            }
+            transientSettings.filterNotNull()
+                .onCompletion {
+                    // Could do some fancier tracking of whether the torch was enabled before
+                    // calling this.
+                    camera.cameraControl.enableTorch(false)
+                }
+                .collectLatest { newTransientSettings ->
+                    if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
+                        recording.mute(newTransientSettings.isAudioMuted)
+                    }
+                    if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
+                        if (!isFrontCameraSelector) {
+                            camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
+                        } else {
+                            Log.d(TAG, "Unable to update torch for front camera.")
+                        }
+                    }
+                    currentSettings = newTransientSettings
+                }
+        }
+        for(event in videoControlEvents) {
+            when (event) {
+                is VideoCaptureControlEvent.StartRecordingEvent -> {throw IllegalStateException("A recording is already in progress") }
+                VideoCaptureControlEvent.StopRecordingEvent -> return@use
+                VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
+                VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
             }
         }
-        transientSettings.filterNotNull()
-            .onCompletion {
-                // Could do some fancier tracking of whether the torch was enabled before
-                // calling this.
-                camera.cameraControl.enableTorch(false)
-            }
-            .collectLatest { newTransientSettings ->
-                if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
-                    recording.mute(newTransientSettings.isAudioMuted)
+        for (event in videoControlEvents) {
+            when (event) {
+                is VideoCaptureControlEvent.StartRecordingEvent ->
+                    throw IllegalStateException("A recording is already in progress")
+
+                VideoCaptureControlEvent.StopRecordingEvent -> {
+                    recordingSettingsUpdater.cancel()
+                    return@use
                 }
-                if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                    if (!isFrontCameraSelector) {
-                        camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
-                    } else {
-                        Log.d(TAG, "Unable to update torch for front camera.")
-                    }
-                }
-                currentSettings = newTransientSettings
+                VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
+                VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
             }
+        }
     }
 }
 
@@ -710,7 +723,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                    "$width x $height"
+                        "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }
@@ -744,19 +757,20 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-                    runVideoRecording(
-                        camera,
-                        videoCapture,
-                        captureTypeSuffix,
-                        context,
-                        event.maxVideoDuration,
-                        transientSettings,
-                        event.videoCaptureUri,
-                        videoCaptureControlEvents,
-                        event.shouldUseUri,
-                        event.onVideoRecord
-                    )
-                }
+                runVideoRecording(
+                    camera,
+                    videoCapture,
+                    captureTypeSuffix,
+                    context,
+                    event.maxVideoDuration,
+                    transientSettings,
+                    event.videoCaptureUri,
+                    videoCaptureControlEvents,
+                    event.shouldUseUri,
+                    event.onVideoRecord
+                )
+            }
+
             else -> {}
         }
     }

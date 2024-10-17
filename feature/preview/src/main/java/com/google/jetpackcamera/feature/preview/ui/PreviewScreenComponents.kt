@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -64,6 +65,7 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -124,9 +126,9 @@ fun PauseResumeToggleButton(
   FloatingActionButton(modifier = modifier, onClick = { onTogglePause() }, containerColor = Color.White) {
       Icon(imageVector = when (currentRecordingState) {
            is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-          is VideoRecordingState.Active.Paused -> Icons.Filled.Adjust
+          is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
       },
-          tint = Color.Magenta,
+          tint = Color.Red,
           contentDescription = "pause resume toggle")
   }
 }
