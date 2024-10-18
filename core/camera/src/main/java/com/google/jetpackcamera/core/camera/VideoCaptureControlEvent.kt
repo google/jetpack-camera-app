@@ -37,12 +37,13 @@ sealed interface VideoCaptureControlEvent {
     /**
      * Pauses a video recording.
      */
-    data object PauseRecordingEvent: VideoCaptureControlEvent
+    data object PauseRecordingEvent : VideoCaptureControlEvent
 
     /**
      * Resumes a paused video recording.
      */
-    data object ResumeRecordingEvent: VideoCaptureControlEvent
+    data object ResumeRecordingEvent : VideoCaptureControlEvent
+
     /**
      * Stops video recording.
      */

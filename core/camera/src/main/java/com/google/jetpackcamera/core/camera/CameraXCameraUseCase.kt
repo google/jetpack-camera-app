@@ -224,7 +224,7 @@ constructor(
                     isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale,
+                    zoomScale = currentCameraSettings.zoomScale
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {

@@ -53,7 +53,7 @@ class FakeCameraUseCase(
     var numPicturesTaken = 0
 
     var recordingInProgress = false
-    var isRecordingPaused = false;
+    var isRecordingPaused = false
 
     var isLensFacingFront = false
 

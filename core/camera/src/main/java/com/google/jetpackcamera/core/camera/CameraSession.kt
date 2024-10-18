@@ -76,7 +76,6 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
@@ -87,7 +86,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
@@ -203,8 +201,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                        "${prevTransientSettings.deviceRotation} -> " +
-                        "${newTransientSettings.deviceRotation}"
+                    "${prevTransientSettings.deviceRotation} -> " +
+                    "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -525,9 +523,9 @@ private suspend fun startVideoRecordingInternal(
     }
     val callbackExecutor: Executor =
         (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                        CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+            currentCoroutineContext()[ContinuationInterceptor] as?
+                CoroutineDispatcher
+            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
@@ -661,7 +659,7 @@ private suspend fun runVideoRecording(
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
-) = coroutineScope{
+) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
     startVideoRecordingInternal(
@@ -707,9 +705,11 @@ private suspend fun runVideoRecording(
                     currentSettings = newTransientSettings
                 }
         }
-        for(event in videoControlEvents) {
+        for (event in videoControlEvents) {
             when (event) {
-                is VideoCaptureControlEvent.StartRecordingEvent -> {throw IllegalStateException("A recording is already in progress") }
+                is VideoCaptureControlEvent.StartRecordingEvent -> {
+                    throw IllegalStateException("A recording is already in progress")
+                }
                 VideoCaptureControlEvent.StopRecordingEvent -> return@use
                 VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
                 VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
@@ -738,7 +738,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                        "$width x $height"
+                    "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }
