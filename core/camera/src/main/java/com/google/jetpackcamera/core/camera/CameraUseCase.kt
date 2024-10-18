@@ -77,6 +77,9 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+    suspend fun pauseVideoRecording()
+
+    suspend fun resumeVideoRecording()
 
     fun stopVideoRecording()
 

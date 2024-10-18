@@ -25,6 +25,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -258,15 +259,15 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            previewMode is PreviewMode.ExternalVideoCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+                previewMode is PreviewMode.ExternalVideoCaptureMode ||
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-            hdrDynamicRangeSupported &&
-            hdrImageFormatSupported &&
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
+                previewMode !is PreviewMode.ExternalVideoCaptureMode &&
+                hdrDynamicRangeSupported &&
+                hdrImageFormatSupported &&
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
         return if (isShown) {
             val currentMode = if (
                 cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
@@ -384,9 +385,9 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
-            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                captureModeFilter(it)
-            }
+                lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                    captureModeFilter(it)
+                }
     } != null
 
     fun startCamera() {
@@ -467,6 +468,20 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
+    fun togglePauseResume() {
+        viewModelScope.launch {
+            //if camera is currently paused, resume recording
+            //todo use recordingstate paused
+            if (previewUiState.value is PreviewUiState.Ready &&
+                (previewUiState.value as PreviewUiState.Ready).videoRecordingState
+                        is VideoRecordingState.Active.Paused
+            )
+                cameraUseCase.resumeVideoRecording()
+            else
+                cameraUseCase.pauseVideoRecording()
+        }
+    }
+
     private fun showExternalVideoCaptureUnsupportedToast() {
         viewModelScope.launch {
             _previewUiState.update { old ->
@@ -485,7 +500,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun captureImage() {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+                    PreviewMode.ExternalVideoCaptureMode
         ) {
             showExternalVideoCaptureUnsupportedToast()
             return
@@ -514,7 +529,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+                    PreviewMode.ExternalVideoCaptureMode
         ) {
             showExternalVideoCaptureUnsupportedToast()
             return
@@ -522,7 +537,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+                    PreviewMode.ExternalVideoCaptureMode
         ) {
             viewModelScope.launch {
                 _previewUiState.update { old ->
@@ -621,7 +636,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {

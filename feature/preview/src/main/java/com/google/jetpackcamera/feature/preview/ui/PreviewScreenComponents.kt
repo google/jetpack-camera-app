@@ -54,16 +54,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -136,6 +141,22 @@ fun ElapsedTimeText(
             textAlign = TextAlign.Center
         )
     }
+}
+
+@Composable
+fun PauseResumeToggleButton(
+    modifier: Modifier = Modifier,
+    onTogglePause: () -> Unit,
+    currentRecordingState: VideoRecordingState.Active
+) {
+  FloatingActionButton(modifier = modifier, onClick = { onTogglePause() }, containerColor = Color.White) {
+      Icon(imageVector = when (currentRecordingState) {
+           is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+          is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+      },
+          tint = Color.Red,
+          contentDescription = "pause resume toggle")
+  }
 }
 
 @Composable
@@ -367,7 +388,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -675,7 +696,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
