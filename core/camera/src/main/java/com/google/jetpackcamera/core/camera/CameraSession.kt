@@ -602,7 +602,7 @@ private suspend fun startVideoRecordingInternal(
 
             is VideoRecordEvent.Finalize -> {
                 when (onVideoRecordEvent.error) {
-                    ERROR_NONE, ERROR_DURATION_LIMIT_REACHED -> {
+                    ERROR_NONE -> {
                         // update recording state to inactive with the final values of the recording.
                         currentCameraState.update { old ->
                             old.copy(
@@ -612,6 +612,21 @@ private suspend fun startVideoRecordingInternal(
                                 )
                             )
                         }
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                onVideoRecordEvent.outputResults.outputUri
+                            )
+                        )
+                    }
+                    ERROR_DURATION_LIMIT_REACHED -> {
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    finalElapsedTimeNanos = maxDurationMillis * 1_000_000_000
+                                )
+                            )
+                        }
+
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
