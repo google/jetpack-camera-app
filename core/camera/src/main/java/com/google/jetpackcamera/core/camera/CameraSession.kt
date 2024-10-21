@@ -773,7 +773,7 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-                recordingJob = launch (start = CoroutineStart.UNDISPATCHED) {
+                recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
                         camera,
                         videoCapture,

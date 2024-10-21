@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -277,7 +276,9 @@ private fun ControlsBottom(
                         // enable only when phone has front and rear camera
                         enabledCondition = systemConstraints.availableLenses.size > 1
                     )
-                } else if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Active) {
+                } else if (!isQuickSettingsOpen &&
+                    videoRecordingState is VideoRecordingState.Active
+                ) {
                     PauseResumeToggleButton(
                         onTogglePause = onTogglePause,
                         size = 75,
@@ -604,7 +605,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()
