@@ -76,8 +76,6 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -706,16 +704,7 @@ private suspend fun runVideoRecording(
                     currentSettings = newTransientSettings
                 }
         }
-        for (event in videoControlEvents) {
-            when (event) {
-                is VideoCaptureControlEvent.StartRecordingEvent -> {
-                    throw IllegalStateException("A recording is already in progress")
-                }
-                VideoCaptureControlEvent.StopRecordingEvent -> return@use
-                VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
-                VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
-            }
-        }
+
         for (event in videoControlEvents) {
             when (event) {
                 is VideoCaptureControlEvent.StartRecordingEvent ->
@@ -723,7 +712,7 @@ private suspend fun runVideoRecording(
 
                 VideoCaptureControlEvent.StopRecordingEvent -> {
                     recordingSettingsUpdater.cancel()
-                    return@use
+                    break
                 }
                 VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
                 VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
@@ -763,8 +752,6 @@ internal suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ) = coroutineScope {
-    var recordingJob: Job? = null
-
     for (event in videoCaptureControlEvents) {
         when (event) {
             is VideoCaptureControlEvent.StartRecordingEvent -> {
@@ -773,24 +760,18 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-                recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
-                    runVideoRecording(
-                        camera,
-                        videoCapture,
-                        captureTypeSuffix,
-                        context,
-                        event.maxVideoDuration,
-                        transientSettings,
-                        event.videoCaptureUri,
-                        videoCaptureControlEvents,
-                        event.shouldUseUri,
-                        event.onVideoRecord
-                    )
-                }
-            }
-            is VideoCaptureControlEvent.StopRecordingEvent -> {
-                recordingJob?.cancel()
-                recordingJob = null
+                runVideoRecording(
+                    camera,
+                    videoCapture,
+                    captureTypeSuffix,
+                    context,
+                    event.maxVideoDuration,
+                    transientSettings,
+                    event.videoCaptureUri,
+                    videoCaptureControlEvents,
+                    event.shouldUseUri,
+                    event.onVideoRecord
+                )
             }
             else -> {}
         }
