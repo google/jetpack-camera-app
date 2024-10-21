@@ -254,6 +254,7 @@ private fun ControlsBottom(
                     elapsedNs = when (previewUiState.videoRecordingState) {
                         is VideoRecordingState.Active ->
                             previewUiState.videoRecordingState.elapsedTimeNanos
+
                         is VideoRecordingState.Inactive ->
                             previewUiState.videoRecordingState.finalElapsedTimeNanos
                     }
@@ -276,9 +277,12 @@ private fun ControlsBottom(
                         // enable only when phone has front and rear camera
                         enabledCondition = systemConstraints.availableLenses.size > 1
                     )
-                }
-                else if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Active) {
-                    PauseResumeToggleButton(onTogglePause = onTogglePause , currentRecordingState = videoRecordingState )
+                } else if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Active) {
+                    PauseResumeToggleButton(
+                        onTogglePause = onTogglePause,
+                        size = 75,
+                        currentRecordingState = videoRecordingState
+                    )
                 }
             }
             CaptureButton(
@@ -600,7 +604,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()

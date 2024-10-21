@@ -147,16 +147,35 @@ fun ElapsedTimeText(
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onTogglePause: () -> Unit,
+    size: Int = 100,
     currentRecordingState: VideoRecordingState.Active
 ) {
-  FloatingActionButton(modifier = modifier, onClick = { onTogglePause() }, containerColor = Color.White) {
-      Icon(imageVector = when (currentRecordingState) {
-           is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-          is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
-      },
-          tint = Color.Red,
-          contentDescription = "pause resume toggle")
-  }
+    Box(modifier = modifier.clickable { onTogglePause() }) {
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size.toFloat()),
+                    color = Color.White
+                )
+            }
+        )
+
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Red,
+
+            imageVector = when (currentRecordingState) {
+                is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+            },
+            contentDescription = "pause resume toggle"
+        )
+    }
 }
 
 @Composable

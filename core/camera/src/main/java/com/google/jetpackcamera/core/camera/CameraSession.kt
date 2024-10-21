@@ -76,6 +76,7 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
@@ -772,20 +773,25 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-                runVideoRecording(
-                    camera,
-                    videoCapture,
-                    captureTypeSuffix,
-                    context,
-                    event.maxVideoDuration,
-                    transientSettings,
-                    event.videoCaptureUri,
-                    videoCaptureControlEvents,
-                    event.shouldUseUri,
-                    event.onVideoRecord
-                )
+                recordingJob = launch (start = CoroutineStart.UNDISPATCHED) {
+                    runVideoRecording(
+                        camera,
+                        videoCapture,
+                        captureTypeSuffix,
+                        context,
+                        event.maxVideoDuration,
+                        transientSettings,
+                        event.videoCaptureUri,
+                        videoCaptureControlEvents,
+                        event.shouldUseUri,
+                        event.onVideoRecord
+                    )
+                }
             }
-
+            is VideoCaptureControlEvent.StopRecordingEvent -> {
+                recordingJob?.cancel()
+                recordingJob = null
+            }
             else -> {}
         }
     }
