@@ -545,8 +545,10 @@ class PreviewViewModel @AssistedInject constructor(
                 (previewUiState.value as PreviewUiState.Ready).previewMode
                     is PreviewMode.ExternalMultipleImageCaptureMode
             ) {
-                ((previewUiState.value as PreviewUiState.Ready).previewMode
-                    as PreviewMode.ExternalMultipleImageCaptureMode).currentUriIndex
+                (
+                    (previewUiState.value as PreviewUiState.Ready).previewMode
+                        as PreviewMode.ExternalMultipleImageCaptureMode
+                    ).currentUriIndex
             } else {
                 -1
             }
@@ -576,11 +578,15 @@ class PreviewViewModel @AssistedInject constructor(
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode
                 is PreviewMode.ExternalMultipleImageCaptureMode &&
-            !((previewUiState.value as PreviewUiState.Ready).previewMode
-                as PreviewMode.ExternalMultipleImageCaptureMode).imageCaptureUris.isNullOrEmpty()
+            !(
+                (previewUiState.value as PreviewUiState.Ready).previewMode
+                    as PreviewMode.ExternalMultipleImageCaptureMode
+                ).imageCaptureUris.isNullOrEmpty()
         ) {
-            ((previewUiState.value as PreviewUiState.Ready).previewMode
-                as PreviewMode.ExternalMultipleImageCaptureMode).currentUriIndex++
+            (
+                (previewUiState.value as PreviewUiState.Ready).previewMode
+                    as PreviewMode.ExternalMultipleImageCaptureMode
+                ).currentUriIndex++
         }
     }
 

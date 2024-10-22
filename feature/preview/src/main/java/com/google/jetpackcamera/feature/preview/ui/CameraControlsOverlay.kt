@@ -344,7 +344,7 @@ private fun CaptureButton(
                         onCaptureImageWithUri(
                             context.contentResolver,
                             null,
-                            true,
+                            true
                         ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
                             previewUiState.previewMode.onImageCapture(event)
                         }
@@ -354,7 +354,7 @@ private fun CaptureButton(
                         onCaptureImageWithUri(
                             context.contentResolver,
                             previewUiState.previewMode.imageCaptureUri,
-                            false,
+                            false
                         ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
                             previewUiState.previewMode.onImageCapture(event)
                         }
