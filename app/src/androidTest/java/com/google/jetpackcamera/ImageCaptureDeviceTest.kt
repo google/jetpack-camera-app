@@ -197,7 +197,6 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
                     .performClick()
-
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         for (string in uriStrings) {
@@ -267,7 +266,10 @@ internal class ImageCaptureDeviceTest {
         uriStrings.add(getTestUri(DIR_PATH, timeStamp, "jpg").toString())
         val result =
             runScenarioTestForResult<MainActivity>(
-                getMultipleImageCaptureIntent(uriStrings, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                getMultipleImageCaptureIntent(
+                    uriStrings,
+                    MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
+                )
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -287,7 +289,6 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
                     .performClick()
-
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(Uri.parse(uriStrings[1]), "image")).isTrue()
