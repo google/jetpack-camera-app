@@ -91,7 +91,7 @@ fun CameraControlsOverlay(
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: () -> Unit = {},
-    onTogglePause: () -> Unit = {},
+    onSetPause: (Boolean) -> Unit = {},
     onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -149,7 +149,7 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudioMuted = onMuteAudio,
-                onTogglePause = onTogglePause,
+                onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
@@ -226,7 +226,7 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
-    onTogglePause: () -> Unit = {},
+    onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onStartVideoRecording: (
@@ -280,8 +280,7 @@ private fun ControlsBottom(
                     videoRecordingState is VideoRecordingState.Active
                 ) {
                     PauseResumeToggleButton(
-                        onTogglePause = onTogglePause,
-                        size = 75,
+                        onSetPause = onSetPause,
                         currentRecordingState = videoRecordingState
                     )
                 }
@@ -303,7 +302,6 @@ private fun ControlsBottom(
                             .weight(1f)
                             .fillMaxSize(),
                         onToggleMute = onToggleAudioMuted,
-                        size = 75,
                         audioAmplitude = videoRecordingState.audioAmplitude
                     )
                 } else {

@@ -25,7 +25,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -468,17 +467,12 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    fun togglePauseResume() {
+    fun setPaused(shouldBePaused: Boolean) {
         viewModelScope.launch {
-            // if camera is currently paused, resume recording
-            // todo use recordingstate paused
-            if (previewUiState.value is PreviewUiState.Ready &&
-                (previewUiState.value as PreviewUiState.Ready).videoRecordingState
-                    is VideoRecordingState.Active.Paused
-            ) {
-                cameraUseCase.resumeVideoRecording()
-            } else {
+            if (shouldBePaused) {
                 cameraUseCase.pauseVideoRecording()
+            } else {
+                cameraUseCase.resumeVideoRecording()
             }
         }
     }

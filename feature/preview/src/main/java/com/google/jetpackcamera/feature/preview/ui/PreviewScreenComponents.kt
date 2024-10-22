@@ -143,11 +143,15 @@ fun ElapsedTimeText(
 @Composable
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
-    onTogglePause: () -> Unit,
-    size: Int = 100,
+    onSetPause: (Boolean) -> Unit,
+    size: Int = 75,
     currentRecordingState: VideoRecordingState.Active
 ) {
-    Box(modifier = modifier.clickable { onTogglePause() }) {
+    Box(
+        modifier = modifier.clickable {
+            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
+        }
+    ) {
         // static circle
         Canvas(
             modifier = Modifier
@@ -160,6 +164,7 @@ fun PauseResumeToggleButton(
             }
         )
 
+        // icon
         Icon(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -178,7 +183,7 @@ fun PauseResumeToggleButton(
 @Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
-    size: Int = 100,
+    size: Int = 75,
     audioAmplitude: Double,
     onToggleMute: () -> Unit
 ) {
