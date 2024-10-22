@@ -502,9 +502,9 @@ private fun getPendingRecording(
                 null
             }
         } else {
-            if (videoCaptureUri.toString().startsWith("file")) {
+            if (videoCaptureUri?.scheme == "file") {
                 val fileOutputOptions = FileOutputOptions.Builder(
-                    File(videoCaptureUri!!.path!!)
+                    File(videoCaptureUri.path!!)
                 ).build()
                 videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
             } else {
@@ -623,7 +623,7 @@ private suspend fun runVideoRecording(
 ) {
     var currentSettings = transientSettings.filterNotNull().first()
 
-    val pendingRecording = getPendingRecording(
+    getPendingRecording(
         context,
         videoCapture,
         maxDurationMillis,
@@ -631,13 +631,11 @@ private suspend fun runVideoRecording(
         videoCaptureUri,
         shouldUseUri,
         onVideoRecord
-    )
-
-    if (pendingRecording != null) {
+    )?.let {
         startVideoRecordingInternal(
             initialMuted = currentSettings.audioMuted,
             context = context,
-            pendingRecord = pendingRecording,
+            pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
             onVideoRecord = onVideoRecord
         ).use { recording ->
