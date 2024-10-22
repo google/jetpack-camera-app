@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -31,11 +32,9 @@ sealed interface PreviewUiState {
         val currentCameraSettings: CameraAppSettings,
         val systemConstraints: SystemConstraints,
         val zoomScale: Float = 1f,
-        val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
+        val videoRecordingState: VideoRecordingState,
         val quickSettingsIsOpen: Boolean = false,
-        val audioAmplitude: Double = 0.0,
         val audioMuted: Boolean = false,
-        val recordingElapsedTimeNanos: Long = 0L,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
@@ -49,18 +48,4 @@ sealed interface PreviewUiState {
         val isDebugMode: Boolean = false
     ) : PreviewUiState
 }
-
-/**
- * Defines the current state of Video Recording
- */
-enum class VideoRecordingState {
-    /**
-     * Camera is not currently recording a video
-     */
-    INACTIVE,
-
-    /**
-     * Camera is currently recording a video
-     */
-    ACTIVE
-}
+// todo(kc): add ElapsedTimeUiState class

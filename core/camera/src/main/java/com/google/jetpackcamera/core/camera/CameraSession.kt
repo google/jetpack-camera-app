@@ -470,6 +470,7 @@ private fun setFlashModeInternal(
     Log.d(TAG, "Set flash mode to: ${imageCapture.flashMode}")
 }
 
+context(CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
     initialMuted: Boolean,
     videoCaptureUseCase: VideoCapture<Recorder>,
@@ -524,42 +525,130 @@ private suspend fun startVideoRecordingInternal(
             currentCoroutineContext()[ContinuationInterceptor] as?
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return pendingRecord
-        .start(callbackExecutor) { onVideoRecordEvent ->
-            Log.d(TAG, onVideoRecordEvent.toString())
-            when (onVideoRecordEvent) {
-                is VideoRecordEvent.Finalize -> {
-                    when (onVideoRecordEvent.error) {
-                        ERROR_NONE, ERROR_DURATION_LIMIT_REACHED ->
-                            onVideoRecord(
-                                CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
-                                    onVideoRecordEvent.outputResults.outputUri
-                                )
-                            )
-
-                        else ->
-                            onVideoRecord(
-                                CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                                    onVideoRecordEvent.cause
-                                )
-                            )
-                    }
-                }
-
-                is VideoRecordEvent.Status -> {
-                    onVideoRecord(
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus(
+    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+        Log.d(TAG, onVideoRecordEvent.toString())
+        when (onVideoRecordEvent) {
+            is VideoRecordEvent.Start -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Recording(
                             audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
                                 .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
                             elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                 .recordedDurationNanos
                         )
                     )
                 }
             }
+
+            is VideoRecordEvent.Pause -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Paused(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
+            is VideoRecordEvent.Resume -> {
+                currentCameraState.update { old ->
+                    old.copy(
+                        videoRecordingState = VideoRecordingState.Active.Recording(
+                            audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                .audioAmplitude,
+                            maxDurationMillis = maxDurationMillis,
+                            elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                .recordedDurationNanos
+                        )
+                    )
+                }
+            }
+
+            is VideoRecordEvent.Status -> {
+                currentCameraState.update { old ->
+                    // don't want to change state from paused to recording if status changes while paused
+                    if (old.videoRecordingState is VideoRecordingState.Active.Paused) {
+                        old.copy(
+                            videoRecordingState = VideoRecordingState.Active.Paused(
+                                audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                    .audioAmplitude,
+                                maxDurationMillis = maxDurationMillis,
+                                elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                    .recordedDurationNanos
+                            )
+                        )
+                    } else {
+                        old.copy(
+                            videoRecordingState = VideoRecordingState.Active.Recording(
+                                audioAmplitude = onVideoRecordEvent.recordingStats.audioStats
+                                    .audioAmplitude,
+                                maxDurationMillis = maxDurationMillis,
+                                elapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                    .recordedDurationNanos
+                            )
+                        )
+                    }
+                }
+            }
+
+            is VideoRecordEvent.Finalize -> {
+                when (onVideoRecordEvent.error) {
+                    ERROR_NONE -> {
+                        // update recording state to inactive with the final values of the recording.
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                        .recordedDurationNanos
+                                )
+                            )
+                        }
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                onVideoRecordEvent.outputResults.outputUri
+                            )
+                        )
+                    }
+
+                    ERROR_DURATION_LIMIT_REACHED -> {
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    // cleanly display the max duration
+                                    finalElapsedTimeNanos = maxDurationMillis * 1_000_000
+                                )
+                            )
+                        }
+
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                                onVideoRecordEvent.outputResults.outputUri
+                            )
+                        )
+                    }
+
+                    else -> {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                onVideoRecordEvent.cause
+                            )
+                        )
+                    }
+                }
+            }
         }
+    }.apply {
+        mute(initialMuted)
+    }
 }
 
+context(CameraSessionContext)
 private suspend fun runVideoRecording(
     camera: Camera,
     videoCapture: VideoCapture<Recorder>,
@@ -659,7 +748,6 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-
                 recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
                         camera,
@@ -674,7 +762,6 @@ internal suspend fun processVideoControlEvents(
                     )
                 }
             }
-
             VideoCaptureControlEvent.StopRecordingEvent -> {
                 recordingJob?.cancel()
                 recordingJob = null
