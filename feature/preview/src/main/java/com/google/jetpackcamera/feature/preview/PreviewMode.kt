@@ -49,8 +49,8 @@ sealed interface PreviewMode {
      * Under this mode, the app is launched by an external intent to capture multiple images.
      */
     data class ExternalMultipleImageCaptureMode(
-        val imageCaptureUris: List<Uri?>?,
-        val currentUriIndex: Int,
+        val imageCaptureUris: List<Uri>?,
+        var currentUriIndex: Int,
         val onImageCapture: (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) : PreviewMode
 }

@@ -358,10 +358,12 @@ private fun CaptureButton(
                     }
 
                     is PreviewMode.ExternalMultipleImageCaptureMode -> {
-                        val ignoreUri = previewUiState.previewMode.imageCaptureUris == null
+                        val ignoreUri = previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()
                         onCaptureImageWithUri(
                             context.contentResolver,
-                            previewUiState.previewMode.imageCaptureUris?.get(previewUiState.previewMode.currentUriIndex),
+                            if (ignoreUri) null else previewUiState.previewMode.imageCaptureUris?.get(
+                                previewUiState.previewMode.currentUriIndex
+                            ),
                             ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )

@@ -569,19 +569,9 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is PreviewMode.ExternalMultipleImageCaptureMode && ((previewUiState.value as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode).imageCaptureUris != null
+            (previewUiState.value as PreviewUiState.Ready).previewMode is PreviewMode.ExternalMultipleImageCaptureMode && !((previewUiState.value as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode).imageCaptureUris.isNullOrEmpty()
         ) {
-            _previewUiState.update { old ->
-                val oldPreviewMode =
-                    ((old as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode)
-                (old as? PreviewUiState.Ready)?.copy(
-                    previewMode = PreviewMode.ExternalMultipleImageCaptureMode(
-                        oldPreviewMode.imageCaptureUris,
-                        oldPreviewMode.currentUriIndex + 1,
-                        oldPreviewMode.onImageCapture
-                    )
-                ) ?: old
-            }
+            ((previewUiState.value as PreviewUiState.Ready).previewMode as PreviewMode.ExternalMultipleImageCaptureMode).currentUriIndex++
         }
     }
 

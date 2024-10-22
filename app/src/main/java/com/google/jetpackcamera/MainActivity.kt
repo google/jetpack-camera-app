@@ -183,13 +183,17 @@ class MainActivity : ComponentActivity() {
         ) ?: intent?.clipData?.getItemAt(0)?.uri
     }
 
-    private fun getMultipleExternalCaptureUri(): List<Uri?>? {
-        //TODO: DAVIDJIA Fix this
-        return IntentCompat.getParcelableExtra(
-            intent,
-            MediaStore.EXTRA_OUTPUT,
-            List<Uri?>::class.java
-        )
+    private fun getMultipleExternalCaptureUri(): List<Uri>? {
+        val stringUris = intent.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)
+        if (stringUris.isNullOrEmpty()) {
+            return null
+        } else {
+            val result = mutableListOf<Uri>()
+            for (string in stringUris) {
+                result.add(Uri.parse(string))
+            }
+            return result
+        }
     }
 
     private fun getPreviewMode(): PreviewMode {
@@ -220,13 +224,16 @@ class MainActivity : ComponentActivity() {
                     }
 
                 MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
-                    val uriList = getMultipleExternalCaptureUri()
-                    PreviewMode.ExternalMultipleImageCaptureMode(
+                    val uriList: List<Uri>? = getMultipleExternalCaptureUri()
+                    return PreviewMode.ExternalMultipleImageCaptureMode(
                         uriList,
                         if (uriList != null) 0 else -1
                     ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
-                        if (uriList != null && uriIndex == uriList.size - 1) {
+                        if (uriList == null) {
+                            val resultIntent = Intent()
+                            setResult(RESULT_OK, resultIntent)
+                        } else if (uriList != null && uriIndex == uriList.size - 1) {
                             val resultIntent = Intent()
                             setResult(RESULT_OK, resultIntent)
                             Log.d(TAG, "onMultipleImageCapture, finish()")
