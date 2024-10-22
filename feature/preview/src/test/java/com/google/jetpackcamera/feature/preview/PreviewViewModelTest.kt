@@ -82,7 +82,7 @@ class PreviewViewModelTest {
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.captureImageWithUri(contentResolver, null) {}
+        previewViewModel.captureImageWithUri(contentResolver, null) { _, _ -> }
         advanceUntilIdle()
         assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
     }
