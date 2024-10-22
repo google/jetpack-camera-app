@@ -35,13 +35,13 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -70,11 +70,12 @@ class SettingsViewModel @Inject constructor(
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 muteAudioUiState = getMuteAudioUiState(
-                    updatedSettings.audioMuted, grantedPermissions.contains(Manifest.permission.RECORD_AUDIO)
+                    updatedSettings.audioMuted,
+                    grantedPermissions.contains(Manifest.permission.RECORD_AUDIO)
                 ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
@@ -108,9 +109,10 @@ class SettingsViewModel @Inject constructor(
     @OptIn(ExperimentalPermissionsApi::class)
     fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
         val permissions = mutableSetOf<String>()
-        for (permissionState in multiplePermissionsState.permissions){
-            if (permissionState.status.isGranted)
+        for (permissionState in multiplePermissionsState.permissions) {
+            if (permissionState.status.isGranted) {
                 permissions.add(permissionState.permission)
+            }
         }
         grantedPermissions = permissions.toMutableSet()
     }

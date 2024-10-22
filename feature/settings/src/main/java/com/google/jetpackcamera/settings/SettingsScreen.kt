@@ -30,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -51,7 +50,6 @@ import com.google.jetpackcamera.settings.ui.StabilizationSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
-import com.google.accompanist.permissions.rememberPermissionState
 
 /**
  * Screen used for the Settings feature.
@@ -83,9 +81,11 @@ fun SettingsScreen(
     )
     val permissionStates = rememberMultiplePermissionsState(
         permissions =
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO))
+        listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        )
+    )
 
     viewModel.setGrantedPermissions(permissionStates)
 }

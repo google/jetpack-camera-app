@@ -38,7 +38,7 @@ interface SettingsModule {
     fun bindsSettableConstraintsRepository(
         settableConstraintsRepository: SettableConstraintsRepositoryImpl
     ): SettableConstraintsRepository
-    
+
     /**
      * ConstraintsRepository without setter.
      *
