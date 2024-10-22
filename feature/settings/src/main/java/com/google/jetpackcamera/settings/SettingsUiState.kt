@@ -56,7 +56,7 @@ sealed interface SettingsUiState {
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
-        val muteAudioUiState: MuteAudioUiState
+        val muteAudioUiState: MuteAudioUiState,
     ) : SettingsUiState
 }
 
@@ -262,5 +262,4 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     stabilizationUiState =
     StabilizationUiState.Disabled(
         DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-    )
-)
+    ))

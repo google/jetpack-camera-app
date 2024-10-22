@@ -109,6 +109,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
 
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
+
     // Futures
     implementation(libs.futures.ktx)
 

@@ -65,7 +65,6 @@ internal class CameraAppSettingsViewModelTest {
         }
         settingsViewModel = SettingsViewModel(
             settingsRepository,
-            FakePermissionChecker(),
             constraintsRepository
         )
         advanceUntilIdle()

@@ -19,6 +19,9 @@ import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
@@ -32,13 +35,13 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -49,9 +52,9 @@ private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val permissionChecker: PermissionChecker,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
+    private var grantedPermissions = mutableSetOf<String>()
 
     val settingsUiState: StateFlow<SettingsUiState> =
         combine(
@@ -67,12 +70,11 @@ class SettingsViewModel @Inject constructor(
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 muteAudioUiState = getMuteAudioUiState(
-                    permissionChecker,
-                    updatedSettings.audioMuted
+                    updatedSettings.audioMuted, grantedPermissions.contains(Manifest.permission.RECORD_AUDIO)
                 ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
             )
         }.stateIn(
             scope = viewModelScope,
@@ -80,11 +82,17 @@ class SettingsViewModel @Inject constructor(
             initialValue = SettingsUiState.Disabled
         )
 
+// ////////////////////////////////////////////////////////////
+//
+// Get UiStates for components
+//
+// ////////////////////////////////////////////////////////////
+
     private fun getMuteAudioUiState(
-        permissionChecker: PermissionChecker,
-        isMuted: Boolean
+        isMuted: Boolean,
+        permissionGranted: Boolean
     ): MuteAudioUiState {
-        return if (permissionChecker.isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
+        return if (permissionGranted) {
             MuteAudioUiState.Enabled(isMuted)
         } else {
             MuteAudioUiState.Disabled(
@@ -95,6 +103,16 @@ class SettingsViewModel @Inject constructor(
                     )
             )
         }
+    }
+
+    @OptIn(ExperimentalPermissionsApi::class)
+    fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
+        val permissions = mutableSetOf<String>()
+        for (permissionState in multiplePermissionsState.permissions){
+            if (permissionState.status.isGranted)
+                permissions.add(permissionState.permission)
+        }
+        grantedPermissions = permissions.toMutableSet()
     }
 
     private fun getStabilizationUiState(
@@ -407,6 +425,12 @@ class SettingsViewModel @Inject constructor(
 
         return SingleSelectableState.Selectable
     }
+
+// ////////////////////////////////////////////////////////////
+//
+// Settings Repository functions
+//
+// ////////////////////////////////////////////////////////////
 
     fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
