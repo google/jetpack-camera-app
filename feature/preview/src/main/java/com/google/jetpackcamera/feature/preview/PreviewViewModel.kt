@@ -145,6 +145,7 @@ class PreviewViewModel @AssistedInject constructor(
                                     systemConstraints,
                                     cameraAppSettings
                                 ),
+                                videoRecordingState = cameraState.videoRecordingState,
                                 isDebugMode = isDebugMode,
                                 currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                                 currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
@@ -154,6 +155,7 @@ class PreviewViewModel @AssistedInject constructor(
                             PreviewUiState.Ready(
                                 currentCameraSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
+                                videoRecordingState = cameraState.videoRecordingState,
                                 zoomScale = cameraState.zoomScale,
                                 sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                                 previewMode = previewMode,
@@ -667,13 +669,10 @@ class PreviewViewModel @AssistedInject constructor(
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
-                    var audioAmplitude = 0.0
-                    var timer = 0L
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
-                            timer = it.finalDurationNanos
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
@@ -693,27 +692,15 @@ class PreviewViewModel @AssistedInject constructor(
                                 testTag = VIDEO_CAPTURE_FAILURE_TAG
                             )
                         }
-
-                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
-                            audioAmplitude = it.audioAmplitude
-                            timer = it.elapsedTimeNanos
-                        }
                     }
 
                     viewModelScope.launch {
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                snackBarToShow = snackbarToShow,
-                                audioAmplitude = audioAmplitude,
-                                recordingElapsedTimeNanos = timer
+                                snackBarToShow = snackbarToShow
                             ) ?: old
                         }
                     }
-                }
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        videoRecordingState = VideoRecordingState.ACTIVE
-                    ) ?: old
                 }
                 Log.d(TAG, "cameraUseCase.startRecording success")
             } catch (exception: IllegalStateException) {
@@ -724,13 +711,6 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    videoRecordingState = VideoRecordingState.INACTIVE
-                ) ?: old
-            }
-        }
         cameraUseCase.stopVideoRecording()
         recordingJob?.cancel()
     }
