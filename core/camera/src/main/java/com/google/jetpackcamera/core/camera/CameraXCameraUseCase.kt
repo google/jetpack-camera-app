@@ -221,7 +221,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    audioMuted = currentCameraSettings.audioMuted,
+                    isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale
@@ -426,6 +426,14 @@ constructor(
                 onVideoRecord
             )
         )
+    }
+
+    override suspend fun pauseVideoRecording() {
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.PauseRecordingEvent)
+    }
+
+    override suspend fun resumeVideoRecording() {
+        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.ResumeRecordingEvent)
     }
 
     override fun stopVideoRecording() {

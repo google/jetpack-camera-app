@@ -467,6 +467,16 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
+    fun setPaused(shouldBePaused: Boolean) {
+        viewModelScope.launch {
+            if (shouldBePaused) {
+                cameraUseCase.pauseVideoRecording()
+            } else {
+                cameraUseCase.resumeVideoRecording()
+            }
+        }
+    }
+
     private fun showExternalVideoCaptureUnsupportedToast() {
         viewModelScope.launch {
             _previewUiState.update { old ->
