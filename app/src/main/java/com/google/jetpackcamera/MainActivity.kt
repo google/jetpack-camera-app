@@ -183,6 +183,19 @@ class MainActivity : ComponentActivity() {
         ) ?: intent?.clipData?.getItemAt(0)?.uri
     }
 
+    private fun getMultipleExternalCaptureUri(): List<Uri>? {
+        val stringUris = intent.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)
+        if (stringUris.isNullOrEmpty()) {
+            return null
+        } else {
+            val result = mutableListOf<Uri>()
+            for (string in stringUris) {
+                result.add(Uri.parse(string))
+            }
+            return result
+        }
+    }
+
     private fun getPreviewMode(): PreviewMode {
         return intent?.action?.let { action ->
             when (action) {
@@ -209,6 +222,25 @@ class MainActivity : ComponentActivity() {
                             finish()
                         }
                     }
+
+                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
+                    val uriList: List<Uri>? = getMultipleExternalCaptureUri()
+                    PreviewMode.ExternalMultipleImageCaptureMode(
+                        uriList,
+                        if (uriList != null) 0 else -1
+                    ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
+                        Log.d(TAG, "onMultipleImageCapture, event: $event")
+                        if (uriList == null) {
+                            val resultIntent = Intent()
+                            setResult(RESULT_OK, resultIntent)
+                        } else if (uriList != null && uriIndex == uriList.size - 1) {
+                            val resultIntent = Intent()
+                            setResult(RESULT_OK, resultIntent)
+                            Log.d(TAG, "onMultipleImageCapture, finish()")
+                            finish()
+                        }
+                    }
+                }
 
                 else -> {
                     Log.w(TAG, "Ignoring external intent with unknown action.")

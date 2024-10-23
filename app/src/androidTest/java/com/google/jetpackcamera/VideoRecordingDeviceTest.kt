@@ -38,7 +38,7 @@ import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
-import com.google.jetpackcamera.utils.getIntent
+import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
@@ -80,7 +80,7 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -98,7 +98,7 @@ internal class VideoRecordingDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -120,7 +120,7 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(ImageCaptureDeviceTest.DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
