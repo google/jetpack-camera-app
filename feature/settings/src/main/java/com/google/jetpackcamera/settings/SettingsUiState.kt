@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
 const val FPS_AUTO = 0
@@ -54,7 +55,8 @@ sealed interface SettingsUiState {
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
-        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+        val muteAudioUiState: MuteAudioUiState
     ) : SettingsUiState
 }
 
@@ -70,6 +72,13 @@ sealed interface DisabledRationale {
     val affectedSettingNameResId: Int
     val reasonTextResId: Int
     val testTag: String
+
+    data class PermissionRecordAudioNotGrantedRationale(
+        override val affectedSettingNameResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.permission_record_audio_unsupported
+        override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
+    }
 
     /**
      * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
@@ -124,7 +133,11 @@ fun getLensUnsupportedRationale(
     }
 }
 
-/* Settings that currently have constraints **/
+// ////////////////////////////////////////////////////////////
+//
+// Settings that currently depend on constraints
+//
+// ////////////////////////////////////////////////////////////
 
 sealed interface FpsUiState {
     data class Enabled(
@@ -168,7 +181,25 @@ sealed interface StabilizationUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
 
-/* Settings that don't currently depend on constraints */
+sealed interface MuteAudioUiState {
+    val isMuted: Boolean
+
+    data class Enabled(
+        override val isMuted: Boolean,
+        val additionalContext: String = ""
+    ) : MuteAudioUiState
+
+    data class Disabled(
+        override val isMuted: Boolean,
+        val disabledRationale: DisabledRationale
+    ) : MuteAudioUiState
+}
+
+// ////////////////////////////////////////////////////////////
+//
+// Settings that DON'T currently depend on constraints
+//
+// ////////////////////////////////////////////////////////////
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
@@ -214,6 +245,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
+    muteAudioUiState = MuteAudioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.audioMuted),
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
     fpsUiState = FpsUiState.Enabled(

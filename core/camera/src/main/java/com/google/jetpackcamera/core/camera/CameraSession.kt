@@ -557,7 +557,7 @@ private suspend fun startVideoRecordingInternal(
 
     pendingRecord.apply {
         if (audioEnabled) {
-            withAudioEnabled()
+            withAudioEnabled(initialMuted)
         }
     }
 

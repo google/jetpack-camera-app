@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
@@ -40,6 +43,7 @@ import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
+import com.google.jetpackcamera.settings.ui.MuteRecordingSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
@@ -50,6 +54,8 @@ import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 /**
  * Screen used for the Settings feature.
  */
+
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
@@ -67,11 +73,21 @@ fun SettingsScreen(
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
         setCaptureMode = viewModel::setCaptureMode,
+        setMuted = viewModel::setVideoMuted,
         setVideoStabilization = viewModel::setVideoStabilization,
         setPreviewStabilization = viewModel::setPreviewStabilization,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode
     )
+    val permissionStates = rememberMultiplePermissionsState(
+        permissions =
+        listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        )
+    )
+
+    viewModel.setGrantedPermissions(permissionStates)
 }
 
 @Composable
@@ -84,6 +100,7 @@ private fun SettingsScreen(
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
+    setMuted: (Boolean) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
     setPreviewStabilization: (Stabilization) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
@@ -107,6 +124,7 @@ private fun SettingsScreen(
                 setTargetFrameRate = setTargetFrameRate,
                 setAspectRatio = setAspectRatio,
                 setCaptureMode = setCaptureMode,
+                setMuted = setMuted,
                 setVideoStabilization = setVideoStabilization,
                 setPreviewStabilization = setPreviewStabilization,
                 setMaxVideoDuration = setMaxVideoDuration,
@@ -125,6 +143,7 @@ fun SettingsList(
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
+    setMuted: (Boolean) -> Unit = {},
     setVideoStabilization: (Stabilization) -> Unit = {},
     setPreviewStabilization: (Stabilization) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
@@ -163,10 +182,16 @@ fun SettingsList(
         maxVideoDurationUiState = uiState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
     )
+
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
         setVideoStabilization = setVideoStabilization,
         setPreviewStabilization = setPreviewStabilization
+    )
+
+    MuteRecordingSetting(
+        mutedUiState = uiState.muteAudioUiState,
+        setDefaultMuted = setMuted
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
