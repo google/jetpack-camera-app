@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -95,6 +96,8 @@ interface CameraUseCase {
     fun isScreenFlashEnabled(): Boolean
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
+
+    suspend fun setVideoSize(size: Size)
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 

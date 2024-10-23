@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
@@ -29,6 +30,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -48,6 +50,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
@@ -71,11 +74,6 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
-import java.io.File
-import java.util.Date
-import java.util.concurrent.Executor
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
@@ -91,6 +89,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.util.Date
+import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
 
 private const val TAG = "CameraSession"
 
@@ -116,6 +119,7 @@ internal suspend fun runSingleCameraSession(
         aspectRatio = sessionSettings.aspectRatio,
         targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
+        videoSize = sessionSettings.videoSize,
         imageFormat = sessionSettings.imageFormat,
         useCaseMode = useCaseMode,
         effect = when (sessionSettings.captureMode) {
@@ -244,6 +248,7 @@ internal fun createUseCaseGroup(
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     dynamicRange: DynamicRange,
+    videoSize: Size? = null,
     imageFormat: ImageOutputFormat,
     useCaseMode: CameraUseCase.UseCaseMode,
     effect: CameraEffect? = null
@@ -266,6 +271,7 @@ internal fun createUseCaseGroup(
             targetFrameRate,
             stabilizeVideoMode,
             dynamicRange,
+            videoSize,
             backgroundDispatcher
         )
     } else {
@@ -330,12 +336,14 @@ private fun createImageUseCase(
     return builder.build()
 }
 
+@SuppressLint("RestrictedApi")
 private fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     stabilizeVideoMode: Stabilization,
     dynamicRange: DynamicRange,
+    videoSize: Size?,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -355,6 +363,12 @@ private fun createVideoUseCase(
         }
 
         setDynamicRange(dynamicRange.toCXDynamicRange())
+
+        if (videoSize != null) {
+            setResolutionSelector(
+                getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
+            )
+        }
     }.build()
 }
 
@@ -401,7 +415,8 @@ private fun createPreviewUseCase(
 
 private fun getResolutionSelector(
     sensorLandscapeRatio: Float,
-    aspectRatio: AspectRatio
+    aspectRatio: AspectRatio,
+    videoSize: Size? = null
 ): ResolutionSelector {
     val aspectRatioStrategy = when (aspectRatio) {
         AspectRatio.THREE_FOUR -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
@@ -419,7 +434,13 @@ private fun getResolutionSelector(
             }
         }
     }
-    return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
+    val builder = ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy)
+    if (videoSize != null) {
+        builder.setResolutionStrategy(
+            ResolutionStrategy(videoSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+        )
+    }
+    return builder.build()
 }
 
 context(CameraSessionContext)
