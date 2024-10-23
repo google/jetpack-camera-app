@@ -48,8 +48,10 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -470,35 +472,50 @@ private fun setFlashModeInternal(
     Log.d(TAG, "Set flash mode to: ${imageCapture.flashMode}")
 }
 
-context(CameraSessionContext)
-private suspend fun startVideoRecordingInternal(
-    initialMuted: Boolean,
+private fun getPendingRecording(
+    context: Context,
     videoCaptureUseCase: VideoCapture<Recorder>,
     maxDurationMillis: Long,
     captureTypeSuffix: String,
-    context: Context,
     videoCaptureUri: Uri?,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
-): Recording {
-    Log.d(TAG, "recordVideo")
-    // todo(b/336886716): default setting to enable or disable audio when permission is granted
+): PendingRecording? {
+    Log.d(TAG, "getPendingRecording")
 
-    // ok. there is a difference between MUTING and ENABLING audio
-    // audio must be enabled in order to be muted
-    // if the video recording isnt started with audio enabled, you will not be able to unmute it
-    // the toggle should only affect whether or not the audio is muted.
-    // the permission will determine whether or not the audio is enabled.
-    val audioEnabled = checkSelfPermission(
-        context,
-        Manifest.permission.RECORD_AUDIO
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val pendingRecord = if (shouldUseUri) {
-        val fileOutputOptions = FileOutputOptions.Builder(
-            File(videoCaptureUri!!.path!!)
-        ).build()
-        videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+    return if (shouldUseUri) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                videoCaptureUseCase.output.prepareRecording(
+                    context,
+                    FileDescriptorOutputOptions.Builder(
+                        context.applicationContext.contentResolver.openFileDescriptor(
+                            videoCaptureUri!!,
+                            "rw"
+                        )!!
+                    ).build()
+                )
+            } catch (e: Exception) {
+                onVideoRecord(
+                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
+                )
+                null
+            }
+        } else {
+            if (videoCaptureUri?.scheme == "file") {
+                val fileOutputOptions = FileOutputOptions.Builder(
+                    File(videoCaptureUri.path!!)
+                ).build()
+                videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+            } else {
+                onVideoRecord(
+                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                        RuntimeException("Uri scheme not supported.")
+                    )
+                )
+                null
+            }
+        }
     } else {
         val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
         val contentValues =
@@ -515,11 +532,35 @@ private suspend fun startVideoRecordingInternal(
                 .build()
         videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
     }
+}
+
+context(CameraSessionContext)
+private suspend fun startVideoRecordingInternal(
+    initialMuted: Boolean,
+    context: Context,
+    pendingRecord: PendingRecording,
+    maxDurationMillis: Long,
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+): Recording {
+    Log.d(TAG, "recordVideo")
+    // todo(b/336886716): default setting to enable or disable audio when permission is granted
+
+    // ok. there is a difference between MUTING and ENABLING audio
+    // audio must be enabled in order to be muted
+    // if the video recording isnt started with audio enabled, you will not be able to unmute it
+    // the toggle should only affect whether or not the audio is muted.
+    // the permission will determine whether or not the audio is enabled.
+    val audioEnabled = checkSelfPermission(
+        context,
+        Manifest.permission.RECORD_AUDIO
+    ) == PackageManager.PERMISSION_GRANTED
+
     pendingRecord.apply {
         if (audioEnabled) {
             withAudioEnabled()
         }
     }
+
     val callbackExecutor: Executor =
         (
             currentCoroutineContext()[ContinuationInterceptor] as?
@@ -662,48 +703,55 @@ private suspend fun runVideoRecording(
 ) {
     var currentSettings = transientSettings.filterNotNull().first()
 
-    startVideoRecordingInternal(
-        initialMuted = currentSettings.audioMuted,
-        maxDurationMillis = maxDurationMillis,
-        videoCaptureUseCase = videoCapture,
-        captureTypeSuffix = captureTypeSuffix,
-        context = context,
-        videoCaptureUri = videoCaptureUri,
-        shouldUseUri = shouldUseUri,
-        onVideoRecord = onVideoRecord
-    ).use { recording ->
+    getPendingRecording(
+        context,
+        videoCapture,
+        maxDurationMillis,
+        captureTypeSuffix,
+        videoCaptureUri,
+        shouldUseUri,
+        onVideoRecord
+    )?.let {
+        startVideoRecordingInternal(
+            initialMuted = currentSettings.audioMuted,
+            context = context,
+            pendingRecord = it,
+            maxDurationMillis = maxDurationMillis,
+            onVideoRecord = onVideoRecord
+        ).use { recording ->
 
-        fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-        val isFrontCameraSelector =
-            camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+            fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
+            val isFrontCameraSelector =
+                camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
 
-        if (currentSettings.isFlashModeOn()) {
-            if (!isFrontCameraSelector) {
-                camera.cameraControl.enableTorch(true).await()
-            } else {
-                Log.d(TAG, "Unable to enable torch for front camera.")
-            }
-        }
-
-        transientSettings.filterNotNull()
-            .onCompletion {
-                // Could do some fancier tracking of whether the torch was enabled before
-                // calling this.
-                camera.cameraControl.enableTorch(false)
-            }
-            .collectLatest { newTransientSettings ->
-                if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
-                    recording.mute(newTransientSettings.audioMuted)
+            if (currentSettings.isFlashModeOn()) {
+                if (!isFrontCameraSelector) {
+                    camera.cameraControl.enableTorch(true).await()
+                } else {
+                    Log.d(TAG, "Unable to enable torch for front camera.")
                 }
-                if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                    if (!isFrontCameraSelector) {
-                        camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
-                    } else {
-                        Log.d(TAG, "Unable to update torch for front camera.")
+            }
+
+            transientSettings.filterNotNull()
+                .onCompletion {
+                    // Could do some fancier tracking of whether the torch was enabled before
+                    // calling this.
+                    camera.cameraControl.enableTorch(false)
+                }
+                .collectLatest { newTransientSettings ->
+                    if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
+                        recording.mute(newTransientSettings.audioMuted)
                     }
+                    if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
+                        if (!isFrontCameraSelector) {
+                            camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
+                        } else {
+                            Log.d(TAG, "Unable to update torch for front camera.")
+                        }
+                    }
+                    currentSettings = newTransientSettings
                 }
-                currentSettings = newTransientSettings
-            }
+        }
     }
 }
 
