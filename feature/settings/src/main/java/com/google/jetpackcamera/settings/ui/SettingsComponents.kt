@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.ui
 
 import android.content.res.Configuration
+import android.util.Size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,11 +74,16 @@ import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -620,6 +626,14 @@ fun StabilizationSetting(
             }
         }
     )
+}
+
+@Composable
+fun VideoSizeSetting(currentCameraSettings: CameraAppSettings, systemConstraints: SystemConstraints) {
+    val cameraConstraints = systemConstraints.forCurrentLens(currentCameraSettings)
+    val supportedSizes: List<Size>? = cameraConstraints?.supportedVideoSizesMap?.get(currentCameraSettings.dynamicRange)
+    //TODO: Use BasicPopupSetting with contents being supportedSizes
+
 }
 
 @Composable

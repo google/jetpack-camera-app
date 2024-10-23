@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import android.util.Size
 import androidx.camera.core.CameraInfo
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -41,6 +42,7 @@ internal sealed interface PerpetualSessionSettings {
         val stabilizePreviewMode: Stabilization,
         val stabilizeVideoMode: Stabilization,
         val dynamicRange: DynamicRange,
+        val videoSize: Size?,
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
 

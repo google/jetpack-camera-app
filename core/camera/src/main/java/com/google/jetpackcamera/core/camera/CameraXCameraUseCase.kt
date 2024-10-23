@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -146,10 +147,21 @@ constructor(
                 for (lensFacing in availableCameraLenses) {
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
+                        val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
                         val supportedDynamicRanges =
-                            Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
+                            videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        val supportedVideoSizesMap = mutableMapOf<DynamicRange, List<Size>>()
+                        for (dynamicRange in supportedDynamicRanges) {
+                            val supportedSizes = mutableListOf<Size>()
+                            for (quality in videoCapabilities.getSupportedQualities(
+                                dynamicRange.toCXDynamicRange()
+                            )) {
+                                supportedSizes.addAll(quality.toSupportedSizes())
+                            }
+                            supportedVideoSizesMap[dynamicRange] = supportedSizes
+                        }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -179,6 +191,7 @@ constructor(
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
                                 ),
+                                supportedVideoSizesMap = supportedVideoSizesMap,
                                 hasFlashUnit = hasFlashUnit
                             )
                         )
@@ -197,6 +210,7 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
+                .tryApplyVideoSizeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraProperties =
@@ -242,6 +256,7 @@ constructor(
                             stabilizePreviewMode = currentCameraSettings.previewStabilization,
                             stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
                             dynamicRange = currentCameraSettings.dynamicRange,
+                            videoSize = currentCameraSettings.videoSize,
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
@@ -556,6 +571,28 @@ constructor(
                 }
         }
 
+    private fun CameraAppSettings.tryApplyVideoSizeConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedVideoSizesMap) {
+                val newVideoSize = if (contains(dynamicRange) &&
+                    !get(dynamicRange).isNullOrEmpty()
+                ) {
+                    if (get(dynamicRange)!!.contains(videoSize)) {
+                        videoSize
+                    } else {
+                        get(dynamicRange)!![0]
+                    }
+                } else {
+                    null
+                }
+
+                this@tryApplyVideoSizeConstraints.copy(
+                    videoSize = newVideoSize
+                )
+            }
+        } ?: this
+    }
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
@@ -579,6 +616,14 @@ constructor(
         }
     }
 
+    override suspend fun setVideoSize(size: Size) {
+        currentSettings.update { old ->
+            old?.copy(videoSize = size)
+                ?.tryApplyVideoSizeConstraints()
+        }
+        // TODO: Update UseCases
+    }
+
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
@@ -591,6 +636,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyVideoSizeConstraints()
         }
     }
 

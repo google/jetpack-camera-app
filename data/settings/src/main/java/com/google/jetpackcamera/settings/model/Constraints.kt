@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import android.util.Size
+
 data class SystemConstraints(
     val availableLenses: List<LensFacing>,
     val concurrentCamerasSupported: Boolean,
@@ -26,6 +28,7 @@ data class CameraConstraints(
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,
+    val supportedVideoSizesMap: Map<DynamicRange, List<Size>>,
     val hasFlashUnit: Boolean
 )
 
@@ -48,6 +51,7 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                             Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                             Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
                         ),
+                        supportedVideoSizesMap = emptyMap(),
                         hasFlashUnit = lensFacing == LensFacing.BACK
                     )
                 )

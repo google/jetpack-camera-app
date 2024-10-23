@@ -17,22 +17,26 @@ package com.google.jetpackcamera.core.camera
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
+import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
+import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import java.util.Arrays
+import java.util.Collections
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
@@ -57,6 +61,16 @@ fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
     return when (this) {
         com.google.jetpackcamera.settings.model.DynamicRange.SDR -> CXDynamicRange.SDR
         com.google.jetpackcamera.settings.model.DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
+    }
+}
+
+fun Quality.toSupportedSizes(): List<Size> {
+    return when (this) {
+        Quality.SD -> listOf(Size(720, 480), Size(640, 480))
+        Quality.HD -> listOf(Size(1280, 720))
+        Quality.FHD -> listOf(Size(1920, 1080))
+        Quality.UHD -> listOf(Size(3840, 2160))
+        else -> listOf()
     }
 }
 

@@ -66,7 +66,9 @@ class SettingsViewModel @Inject constructor(
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                cameraAppSettings = updatedSettings,
+                systemConstraints = constraints
             )
         }.stateIn(
             scope = viewModelScope,
