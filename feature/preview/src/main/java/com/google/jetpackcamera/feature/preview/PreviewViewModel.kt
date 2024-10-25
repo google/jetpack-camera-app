@@ -131,8 +131,9 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getCurrentCameraState()
-            ) { cameraAppSettings, systemConstraints, cameraState ->
+                cameraUseCase.getCurrentCameraState(),
+                cameraUseCase.getFaces(),
+            ) { cameraAppSettings, systemConstraints, cameraState, faces ->
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.Ready ->
@@ -147,7 +148,8 @@ class PreviewViewModel @AssistedInject constructor(
                                 ),
                                 isDebugMode = isDebugMode,
                                 currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                                faces = faces
                             )
 
                         is PreviewUiState.NotReady ->

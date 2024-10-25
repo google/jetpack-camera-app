@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
+import android.graphics.Rect
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
@@ -151,6 +152,8 @@ interface CameraUseCase {
         IMAGE_ONLY,
         VIDEO_ONLY
     }
+
+    fun getFaces(): StateFlow<List<Rect>>
 }
 
 data class CameraState(

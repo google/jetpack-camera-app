@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.graphics.Rect
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -46,7 +47,8 @@ sealed interface PreviewUiState {
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false
+        val isDebugMode: Boolean = false,
+        val faces: List<Rect> = listOf()
     ) : PreviewUiState
 }
 

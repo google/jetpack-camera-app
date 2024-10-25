@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.Context
+import android.graphics.Rect
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,5 +40,6 @@ internal data class CameraSessionContext(
     val videoCaptureControlEvents: Channel<VideoCaptureControlEvent>,
     val currentCameraState: MutableStateFlow<CameraState>,
     val surfaceRequests: MutableStateFlow<SurfaceRequest?>,
-    val transientSettings: StateFlow<TransientSessionSettings?>
+    val transientSettings: StateFlow<TransientSessionSettings?>,
+    val faces: MutableStateFlow<List<Rect>>
 )
