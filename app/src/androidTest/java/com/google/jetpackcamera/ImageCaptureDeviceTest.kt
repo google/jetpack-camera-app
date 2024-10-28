@@ -37,6 +37,7 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
@@ -155,7 +156,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun multiple_image_capture_external() {
+    fun multipleImageCaptureExternal_returnsResultOk() {
         val timeStamp = System.currentTimeMillis()
         val uriStrings = arrayListOf<String>()
         for (i in 1..3) {
@@ -173,30 +174,15 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-                }
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isNotDisplayed()
-                }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-                }
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isNotDisplayed()
-                }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_SUCCESS_TAG
+                )
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_SUCCESS_TAG
+                )
+                clickCapture()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         for (string in uriStrings) {
@@ -206,7 +192,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun multiple_image_capture_external_null_uri_list() {
+    fun multipleImageCaptureExternal_withNullUriList_returnsResultOk() {
         val timeStamp = System.currentTimeMillis()
         val result =
             runScenarioTestForResult<MainActivity>(
@@ -216,26 +202,14 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-                }
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isNotDisplayed()
-                }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-                }
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isNotDisplayed()
-                }
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_SUCCESS_TAG
+                )
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_SUCCESS_TAG
+                )
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
@@ -243,8 +217,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun multiple_image_capture_external_null_uri_list_cancel() {
-        val timeStamp = System.currentTimeMillis()
+    fun multipleImageCaptureExternal_withNullUriList_returnsResultCancel() {
         val result =
             runScenarioTestForResult<MainActivity>(
                 getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
@@ -259,7 +232,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun multiple_image_capture_external_illegal_uri() {
+    fun multipleImageCaptureExternal_withIllegalUri_returnsResultOk() {
         val timeStamp = System.currentTimeMillis()
         val uriStrings = arrayListOf<String>()
         uriStrings.add("asdfasdf")
@@ -275,24 +248,33 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
-                }
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isNotDisplayed()
-                }
-
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performClick()
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_FAILURE_TAG
+                )
+                clickCapture()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(Uri.parse(uriStrings[1]), "image")).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    private fun clickCaptureAndWaitUntilMessageDisappears(msgTimeOut: Long, msgTag: String) {
+        clickCapture()
+        composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
+            composeTestRule.onNodeWithTag(msgTag).isDisplayed()
+        }
+        composeTestRule.waitUntil(
+            timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
+        ) {
+            composeTestRule.onNodeWithTag(msgTag).isNotDisplayed()
+        }
+    }
+
+    private fun clickCapture() {
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performClick()
     }
 
     companion object {

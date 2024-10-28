@@ -48,6 +48,7 @@ const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
+const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
 const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(

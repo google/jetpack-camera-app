@@ -227,7 +227,6 @@ class MainActivity : ComponentActivity() {
                     val uriList: List<Uri>? = getMultipleExternalCaptureUri()
                     PreviewMode.ExternalMultipleImageCaptureMode(
                         uriList,
-                        if (uriList != null) 0 else -1
                     ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
                         if (uriList == null) {

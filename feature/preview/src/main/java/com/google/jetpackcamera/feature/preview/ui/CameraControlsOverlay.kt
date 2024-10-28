@@ -364,14 +364,12 @@ private fun CaptureButton(
                         val ignoreUri = previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()
                         onCaptureImageWithUri(
                             context.contentResolver,
-                            if (ignoreUri) {
-                                null
+                            null,
+                            if (previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()) {
+                                true
                             } else {
-                                previewUiState.previewMode.imageCaptureUris?.get(
-                                    previewUiState.previewMode.currentUriIndex
-                                )
+                                ignoreUri
                             },
-                            ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }

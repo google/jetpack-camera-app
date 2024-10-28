@@ -99,6 +99,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var recordingJob: Job? = null
 
+    private var externalUriIndex: Int = 0
+
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
@@ -541,16 +543,24 @@ class PreviewViewModel @AssistedInject constructor(
         }
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
-            val uriIndex = if (previewUiState.value is PreviewUiState.Ready &&
+            val (uriIndex: Int, finalImageUri: Uri?) = if (previewUiState.value is PreviewUiState.Ready &&
                 (previewUiState.value as PreviewUiState.Ready).previewMode
                     is PreviewMode.ExternalMultipleImageCaptureMode
             ) {
-                (
-                    (previewUiState.value as PreviewUiState.Ready).previewMode
+                val uri =
+                    if (ignoreUri || ((previewUiState.value as PreviewUiState.Ready).previewMode
                         as PreviewMode.ExternalMultipleImageCaptureMode
-                    ).currentUriIndex
+                        ).imageCaptureUris.isNullOrEmpty()
+                    ) {
+                        null
+                    } else {
+                        ((previewUiState.value as PreviewUiState.Ready).previewMode
+                            as PreviewMode.ExternalMultipleImageCaptureMode
+                        ).imageCaptureUris!![externalUriIndex]
+                    }
+                Pair(externalUriIndex, uri)
             } else {
-                -1
+                Pair(-1, imageCaptureUri)
             }
             captureImageInternal(
                 doTakePicture = {
@@ -560,17 +570,16 @@ class PreviewViewModel @AssistedInject constructor(
                                 lastBlinkTimeStamp = System.currentTimeMillis()
                             ) ?: old
                         }
-                    }, contentResolver, imageCaptureUri, ignoreUri).savedUri
+                    }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
-                    incrementExternalMultipleImageCaptureModeUriIndexIfNeeded()
                 },
                 onFailure = { exception ->
                     onImageCapture(ImageCaptureEvent.ImageCaptureError(exception), uriIndex)
-                    incrementExternalMultipleImageCaptureModeUriIndexIfNeeded()
                 }
             )
+            incrementExternalMultipleImageCaptureModeUriIndexIfNeeded()
         }
     }
 
@@ -583,10 +592,7 @@ class PreviewViewModel @AssistedInject constructor(
                     as PreviewMode.ExternalMultipleImageCaptureMode
                 ).imageCaptureUris.isNullOrEmpty()
         ) {
-            (
-                (previewUiState.value as PreviewUiState.Ready).previewMode
-                    as PreviewMode.ExternalMultipleImageCaptureMode
-                ).currentUriIndex++
+            externalUriIndex++
         }
     }
 

@@ -50,7 +50,6 @@ sealed interface PreviewMode {
      */
     data class ExternalMultipleImageCaptureMode(
         val imageCaptureUris: List<Uri>?,
-        var currentUriIndex: Int,
         val onImageCapture: (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) : PreviewMode
 }
