@@ -106,7 +106,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -428,13 +428,9 @@ fun DetectWindowColorModeChanges(
 }
 
 @Composable
-fun StabilizationIcon(
-    videoStabilization: Stabilization,
-    previewStabilization: Stabilization,
-    modifier: Modifier = Modifier
-) {
-    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
-        val descriptionText = if (videoStabilization == Stabilization.ON) {
+fun StabilizationIcon(stabilizationMode: StabilizationMode, modifier: Modifier = Modifier) {
+    if (stabilizationMode != StabilizationMode.OFF) {
+        val descriptionText = if (stabilizationMode == StabilizationMode.ON) {
             stringResource(id = R.string.stabilization_icon_description_preview_and_video)
         } else {
             // previewStabilization will not be on for high quality

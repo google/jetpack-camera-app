@@ -23,7 +23,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -156,8 +156,7 @@ sealed interface FlipLensUiState {
 
 sealed interface StabilizationUiState {
     data class Enabled(
-        val currentPreviewStabilization: Stabilization,
-        val currentVideoStabilization: Stabilization,
+        val currentStabilizationMode: StabilizationMode,
         val stabilizationOnState: SingleSelectableState,
         val stabilizationHighQualityState: SingleSelectableState,
         // Contains text like "Selected stabilization mode only supported by rear lens"

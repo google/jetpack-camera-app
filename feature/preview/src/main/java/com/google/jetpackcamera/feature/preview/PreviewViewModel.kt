@@ -46,7 +46,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
@@ -218,14 +218,8 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setAspectRatio(entry.value as AspectRatio)
                 }
 
-                CameraAppSettings::previewStabilization -> {
-                    cameraUseCase.setPreviewStabilization(entry.value as Stabilization)
-                }
-
-                CameraAppSettings::videoCaptureStabilization -> {
-                    cameraUseCase.setVideoCaptureStabilization(
-                        entry.value as Stabilization
-                    )
+                CameraAppSettings::stabilizationMode -> {
+                    cameraUseCase.setStabilizationMode(entry.value as StabilizationMode)
                 }
 
                 CameraAppSettings::targetFrameRate -> {

@@ -22,7 +22,7 @@ data class SystemConstraints(
 )
 
 data class CameraConstraints(
-    val supportedStabilizationModes: Set<SupportedStabilizationMode>,
+    val supportedStabilizationModes: Set<StabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,

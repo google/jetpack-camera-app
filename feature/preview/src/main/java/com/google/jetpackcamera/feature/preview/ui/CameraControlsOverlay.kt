@@ -63,7 +63,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
@@ -192,8 +192,7 @@ private fun ControlsTop(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StabilizationIcon(
-                videoStabilization = currentCameraSettings.videoCaptureStabilization,
-                previewStabilization = currentCameraSettings.previewStabilization
+                stabilizationMode = currentCameraSettings.stabilizationMode
             )
             LowLightBoostIcon(
                 lowLightBoost = currentCameraSettings.lowLightBoost
@@ -500,8 +499,7 @@ private fun Preview_ControlsTop_WithStabilization() {
         ControlsTop(
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(
-                videoCaptureStabilization = Stabilization.ON,
-                previewStabilization = Stabilization.ON
+                stabilizationMode = StabilizationMode.ON
             )
         )
     }

@@ -29,7 +29,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -114,9 +114,7 @@ interface CameraUseCase {
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
-    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
-
-    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+    suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
