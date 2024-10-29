@@ -100,7 +100,6 @@ context(CameraSessionContext)
 @kotlin.OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun runSingleCameraSession(
     videoCapture: VideoCapture<Recorder>?,
-    onFlipCamera: () -> Unit,
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -169,7 +168,6 @@ internal suspend fun runSingleCameraSession(
             useCaseGroup,
             initialTransientSettings,
             transientSettings,
-            onFlipCamera,
             onRebind.getCompleted()
         )
     }
@@ -181,7 +179,6 @@ internal suspend fun processTransientSettingEvents(
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
-    onFlipCamera: () -> Unit,
     onRebind : (CameraSelector, UseCaseGroup) -> Unit,
 
     ) {
@@ -201,12 +198,12 @@ internal suspend fun processTransientSettingEvents(
                 }
             }
         }
-
+        //todo(kc) unable to zoom on flipped camera... continues to zooms on the initial camera
         if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
-            //unbind and rebind with the new camerainfo
-            Log.d(TAG, "I WANNA REBIND!!!")
+            //when we want to flip, unbind and rebind with the new camerainfo
             cameraProvider.unbindAll()
             onRebind(transientSettings.value!!.cameraInfo.cameraSelector, useCaseGroup)
+            // its like magic
         }
 
         useCaseGroup.getImageCapture()?.let { imageCapture ->

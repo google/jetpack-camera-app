@@ -26,7 +26,6 @@ import android.util.Log
 import android.util.Range
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -56,16 +55,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
-import kotlinx.coroutines.CompletableDeferred
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
-import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
@@ -79,7 +69,15 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
 import kotlin.math.abs
+import kotlin.properties.Delegates
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -235,12 +233,12 @@ constructor(
 
                 transientSettings.value =
                     TransientSessionSettings(
-                    audioMuted = currentCameraSettings.audioMuted,
-                    deviceRotation = currentCameraSettings.deviceRotation,
-                    flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale,
-                    cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
-                )
+                        audioMuted = currentCameraSettings.audioMuted,
+                        deviceRotation = currentCameraSettings.deviceRotation,
+                        flashMode = currentCameraSettings.flashMode,
+                        zoomScale = currentCameraSettings.zoomScale,
+                        cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+                    )
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
@@ -256,6 +254,7 @@ constructor(
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
+
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
@@ -283,7 +282,7 @@ constructor(
                     }
                 }
             }.distinctUntilChanged()
-            //collectlatest causes the camera to stop
+            // collectLatest causes the camera to stop if flip camera is included in persistent settings
             .collectLatest { sessionSettings ->
                 coroutineScope {
                     with(
@@ -300,51 +299,38 @@ constructor(
                         )
                     ) {
                         try {
-                            var cameraSession = false
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> {
-                                     videoUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-                                             createVideoUseCase(
-                                                 transientSettings.value!!.cameraInfo,
-                                                 sessionSettings.aspectRatio,
-                                                 sessionSettings.targetFrameRate,
-                                                 sessionSettings.stabilizeVideoMode,
-                                                 sessionSettings.dynamicRange,
-                                                 backgroundDispatcher
-                                             )
+                                    videoUseCase =
+                                        if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+                                            createVideoUseCase(
+                                                transientSettings.value!!.cameraInfo,
+                                                sessionSettings.aspectRatio,
+                                                sessionSettings.targetFrameRate,
+                                                sessionSettings.stabilizeVideoMode,
+                                                sessionSettings.dynamicRange,
+                                                backgroundDispatcher
+                                            )
 
-                                    } else {
-                                        null
-                                    }
-                                    while (true) {
-                                        if(!cameraSession) {
-                                            cameraSession = true
-                                            runSingleCameraSession(
-                                                videoUseCase,
-                                                onFlipCamera = { cameraProvider.unbindAll()
-                                                               cameraSession = false},
-                                                sessionSettings,
-                                                useCaseMode = useCaseMode
-                                            ) { imageCapture ->
-                                                imageCaptureUseCase = imageCapture
-                                            }
+                                        } else {
+                                            null
                                         }
+                                    runSingleCameraSession(
+                                        videoUseCase,
+                                        sessionSettings,
+                                        useCaseMode = useCaseMode
+                                    ) { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
                                     }
                                 }
+
                                 is PerpetualSessionSettings.ConcurrentCamera ->
-                                    while (true) {
-                                        if (!cameraSession) {
-                                            runConcurrentCameraSession(
-                                                sessionSettings = sessionSettings,
-                                                useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
-                                                videoCapture = null,
-                                                onFlipCamera = {
-                                                    cameraProvider.unbindAll()
-                                                    cameraSession = false
-                                                }
-                                            )
-                                        }
-                                    }
+                                    //todo(kc): re-enable recording and concurrent camera flip while recording
+                                    runConcurrentCameraSession(
+                                        sessionSettings = sessionSettings,
+                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
+                                        videoCapture = null,
+                                    )
                             }
                         } finally {
                             // TODO(tm): This shouldn't be necessary. Cancellation of the
@@ -386,7 +372,10 @@ constructor(
         }.build()
     }
 
-    private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
+    private fun getAspectRatioForUseCase(
+        sensorLandscapeRatio: Float,
+        aspectRatio: AspectRatio
+    ): Int {
         return when (aspectRatio) {
             AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
             AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
@@ -403,6 +392,7 @@ constructor(
             }
         }
     }
+
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (imageCaptureUseCase == null) {
             throw RuntimeException("Attempted take picture with null imageCapture use case")
@@ -661,7 +651,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase?.screenFlash != null
+                imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -702,6 +692,7 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
+
     override suspend fun setMaxVideoDuration(durationInMillis: Long) {
         currentSettings.update { old ->
             old?.copy(
@@ -709,6 +700,7 @@ constructor(
             )
         }
     }
+
     override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
         currentSettings.update { old ->
             old?.copy(

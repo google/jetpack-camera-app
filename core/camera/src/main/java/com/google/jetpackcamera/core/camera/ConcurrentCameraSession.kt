@@ -43,7 +43,6 @@ context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
     videoCapture: VideoCapture<Recorder>?,
-    onFlipCamera: () -> Unit,
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
@@ -124,7 +123,6 @@ internal suspend fun runConcurrentCameraSession(
             useCaseGroup,
             initialTransientSettings,
             transientSettings,
-            onFlipCamera,
             onRebind.getCompleted()
         )
     }
