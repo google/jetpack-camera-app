@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
                 MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
                     val uriList: List<Uri>? = getMultipleExternalCaptureUri()
                     PreviewMode.ExternalMultipleImageCaptureMode(
-                        uriList,
+                        uriList
                     ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
                         if (uriList == null) {
