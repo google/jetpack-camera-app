@@ -56,6 +56,7 @@ import com.google.jetpackcamera.settings.model.Stabilization
 import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import dagger.hilt.android.scopes.ViewModelScoped
+import kotlinx.coroutines.CompletableDeferred
 import java.io.File
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
@@ -64,6 +65,7 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
@@ -221,27 +223,30 @@ constructor(
 
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")
-
+        // todo turn into deferred?
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
-                transientSettings.value = TransientSessionSettings(
+                val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
+                    LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                }
+
+                transientSettings.value =
+                    TransientSessionSettings(
                     audioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomScale = currentCameraSettings.zoomScale,
+                    cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-                        }
 
                         PerpetualSessionSettings.SingleCamera(
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
+                            //cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
@@ -295,34 +300,51 @@ constructor(
                         )
                     ) {
                         try {
+                            var cameraSession = false
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> {
                                      videoUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-                                        createVideoUseCase(
-                                            sessionSettings.cameraInfo,
-                                            sessionSettings.aspectRatio,
-                                            sessionSettings.targetFrameRate,
-                                            sessionSettings.stabilizeVideoMode,
-                                            sessionSettings.dynamicRange,
-                                            backgroundDispatcher
-                                        )
+                                             createVideoUseCase(
+                                                 transientSettings.value!!.cameraInfo,
+                                                 sessionSettings.aspectRatio,
+                                                 sessionSettings.targetFrameRate,
+                                                 sessionSettings.stabilizeVideoMode,
+                                                 sessionSettings.dynamicRange,
+                                                 backgroundDispatcher
+                                             )
+
                                     } else {
                                         null
                                     }
-                                    runSingleCameraSession(
-                                        videoUseCase,
-                                        sessionSettings,
-                                        useCaseMode = useCaseMode
-                                    ) { imageCapture ->
-                                        imageCaptureUseCase = imageCapture
+                                    while (true) {
+                                        if(!cameraSession) {
+                                            cameraSession = true
+                                            runSingleCameraSession(
+                                                videoUseCase,
+                                                onFlipCamera = { cameraProvider.unbindAll()
+                                                               cameraSession = false},
+                                                sessionSettings,
+                                                useCaseMode = useCaseMode
+                                            ) { imageCapture ->
+                                                imageCaptureUseCase = imageCapture
+                                            }
+                                        }
                                     }
                                 }
                                 is PerpetualSessionSettings.ConcurrentCamera ->
-                                    runConcurrentCameraSession(
-                                        sessionSettings = sessionSettings,
-                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
-                                        videoCapture = null
-                                    )
+                                    while (true) {
+                                        if (!cameraSession) {
+                                            runConcurrentCameraSession(
+                                                sessionSettings = sessionSettings,
+                                                useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
+                                                videoCapture = null,
+                                                onFlipCamera = {
+                                                    cameraProvider.unbindAll()
+                                                    cameraSession = false
+                                                }
+                                            )
+                                        }
+                                    }
                             }
                         } finally {
                             // TODO(tm): This shouldn't be necessary. Cancellation of the

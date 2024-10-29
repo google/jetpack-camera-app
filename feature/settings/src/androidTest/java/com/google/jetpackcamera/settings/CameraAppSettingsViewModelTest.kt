@@ -64,6 +64,7 @@ internal class CameraAppSettingsViewModelTest {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }
         settingsViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
+
         advanceUntilIdle()
     }
 

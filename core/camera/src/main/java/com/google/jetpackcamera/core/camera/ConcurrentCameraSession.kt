@@ -17,14 +17,18 @@ package com.google.jetpackcamera.core.camera
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
+import androidx.camera.core.UseCaseGroup
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.Stabilization
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -35,9 +39,11 @@ import kotlinx.coroutines.launch
 private const val TAG = "ConcurrentCameraSession"
 
 context(CameraSessionContext)
+@OptIn(ExperimentalCoroutinesApi::class)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
     videoCapture: VideoCapture<Recorder>?,
+    onFlipCamera: () -> Unit,
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
@@ -84,7 +90,8 @@ internal suspend fun runConcurrentCameraSession(
                 .build()
         )
     )
-
+    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Unit>()
+    onRebind.complete { _, _ -> }//todo
     cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
         Log.d(TAG, "Concurrent camera session started")
         val primaryCamera = concurrentCamera.cameras.first {
@@ -116,7 +123,9 @@ internal suspend fun runConcurrentCameraSession(
             primaryCamera,
             useCaseGroup,
             initialTransientSettings,
-            transientSettings
+            transientSettings,
+            onFlipCamera,
+            onRebind.getCompleted()
         )
     }
 }
