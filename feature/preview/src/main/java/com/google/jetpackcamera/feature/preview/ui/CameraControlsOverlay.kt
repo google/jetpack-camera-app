@@ -265,7 +265,7 @@ private fun ControlsBottom(
         ) {
             // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Inactive) {
+                if (!isQuickSettingsOpen) {
                     FlipCameraButton(
                         modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,

@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -34,6 +35,7 @@ import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.common.DefaultDispatcher
@@ -62,6 +64,7 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
@@ -74,6 +77,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -107,6 +111,8 @@ constructor(
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
+
+    private var videoUseCase: VideoCapture<Recorder>? = null
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -272,6 +278,7 @@ constructor(
                     }
                 }
             }.distinctUntilChanged()
+            //collectlatest causes the camera to stop
             .collectLatest { sessionSettings ->
                 coroutineScope {
                     with(
@@ -289,17 +296,32 @@ constructor(
                     ) {
                         try {
                             when (sessionSettings) {
-                                is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    useCaseMode = useCaseMode
-                                ) { imageCapture ->
-                                    imageCaptureUseCase = imageCapture
+                                is PerpetualSessionSettings.SingleCamera -> {
+                                     videoUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+                                        createVideoUseCase(
+                                            sessionSettings.cameraInfo,
+                                            sessionSettings.aspectRatio,
+                                            sessionSettings.targetFrameRate,
+                                            sessionSettings.stabilizeVideoMode,
+                                            sessionSettings.dynamicRange,
+                                            backgroundDispatcher
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                    runSingleCameraSession(
+                                        videoUseCase,
+                                        sessionSettings,
+                                        useCaseMode = useCaseMode
+                                    ) { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
+                                    }
                                 }
-
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
-                                        sessionSettings,
-                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
+                                        sessionSettings = sessionSettings,
+                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
+                                        videoCapture = null
                                     )
                             }
                         } finally {
@@ -313,6 +335,52 @@ constructor(
             }
     }
 
+
+    private fun createVideoUseCase(
+        cameraInfo: CameraInfo,
+        aspectRatio: AspectRatio,
+        targetFrameRate: Int,
+        stabilizeVideoMode: Stabilization,
+        dynamicRange: DynamicRange,
+        backgroundDispatcher: CoroutineDispatcher
+    ): VideoCapture<Recorder> {
+        val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
+        val recorder = Recorder.Builder()
+            .setAspectRatio(
+                getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
+            )
+            .setExecutor(backgroundDispatcher.asExecutor()).build()
+        return VideoCapture.Builder(recorder).apply {
+            // set video stabilization
+            if (stabilizeVideoMode == Stabilization.ON) {
+                setVideoStabilizationEnabled(true)
+            }
+            // set target fps
+            if (targetFrameRate != TARGET_FPS_AUTO) {
+                setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
+            }
+
+            setDynamicRange(dynamicRange.toCXDynamicRange())
+        }.build()
+    }
+
+    private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
+        return when (aspectRatio) {
+            AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
+            AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
+            else -> {
+                // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
+                if (
+                    abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
+                    abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+                ) {
+                    androidx.camera.core.AspectRatio.RATIO_16_9
+                } else {
+                    androidx.camera.core.AspectRatio.RATIO_4_3
+                }
+            }
+        }
+    }
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (imageCaptureUseCase == null) {
             throw RuntimeException("Attempted take picture with null imageCapture use case")

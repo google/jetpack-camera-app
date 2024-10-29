@@ -19,6 +19,8 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -35,6 +37,7 @@ private const val TAG = "ConcurrentCameraSession"
 context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
+    videoCapture: VideoCapture<Recorder>?,
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
@@ -59,8 +62,9 @@ internal suspend fun runConcurrentCameraSession(
         targetFrameRate = TARGET_FPS_AUTO,
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
-        useCaseMode = useCaseMode
-    )
+        useCaseMode = useCaseMode,
+        videoCapture = videoCapture,
+        )
 
     val cameraConfigs = listOf(
         Pair(

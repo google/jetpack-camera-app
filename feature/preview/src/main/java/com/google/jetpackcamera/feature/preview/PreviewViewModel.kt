@@ -450,6 +450,7 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setLensFacing(newLensFacing)
+            Log.d(TAG, "set lens to $newLensFacing")
         }
     }
 

@@ -96,6 +96,7 @@ private const val TAG = "CameraSession"
 
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
+    videoCapture: VideoCapture<Recorder>?,
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -117,6 +118,7 @@ internal suspend fun runSingleCameraSession(
         targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
         imageFormat = sessionSettings.imageFormat,
+        videoCapture = videoCapture,
         useCaseMode = useCaseMode,
         effect = when (sessionSettings.captureMode) {
             CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
@@ -245,6 +247,7 @@ internal fun createUseCaseGroup(
     targetFrameRate: Int,
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
+    videoCapture: VideoCapture<Recorder>?,
     useCaseMode: CameraUseCase.UseCaseMode,
     effect: CameraEffect? = null
 ): UseCaseGroup {
@@ -256,18 +259,6 @@ internal fun createUseCaseGroup(
         )
     val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
-    } else {
-        null
-    }
-    val videoCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-        createVideoUseCase(
-            cameraInfo,
-            aspectRatio,
-            targetFrameRate,
-            stabilizeVideoMode,
-            dynamicRange,
-            backgroundDispatcher
-        )
     } else {
         null
     }
@@ -302,9 +293,9 @@ internal fun createUseCaseGroup(
         }
 
         // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
-        videoCaptureUseCase?.let {
+        videoCapture?.let {
             if (imageFormat == ImageOutputFormat.JPEG) {
-                addUseCase(videoCaptureUseCase)
+                addUseCase(videoCapture)
             }
         }
 
@@ -328,52 +319,6 @@ private fun createImageUseCase(
         builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
     }
     return builder.build()
-}
-
-private fun createVideoUseCase(
-    cameraInfo: CameraInfo,
-    aspectRatio: AspectRatio,
-    targetFrameRate: Int,
-    stabilizeVideoMode: Stabilization,
-    dynamicRange: DynamicRange,
-    backgroundDispatcher: CoroutineDispatcher
-): VideoCapture<Recorder> {
-    val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
-    val recorder = Recorder.Builder()
-        .setAspectRatio(
-            getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
-        )
-        .setExecutor(backgroundDispatcher.asExecutor()).build()
-    return VideoCapture.Builder(recorder).apply {
-        // set video stabilization
-        if (stabilizeVideoMode == Stabilization.ON) {
-            setVideoStabilizationEnabled(true)
-        }
-        // set target fps
-        if (targetFrameRate != TARGET_FPS_AUTO) {
-            setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
-        }
-
-        setDynamicRange(dynamicRange.toCXDynamicRange())
-    }.build()
-}
-
-private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
-    return when (aspectRatio) {
-        AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
-        AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
-        else -> {
-            // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
-            if (
-                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
-                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
-            ) {
-                androidx.camera.core.AspectRatio.RATIO_16_9
-            } else {
-                androidx.camera.core.AspectRatio.RATIO_4_3
-            }
-        }
-    }
 }
 
 context(CameraSessionContext)
@@ -559,6 +504,7 @@ private suspend fun startVideoRecordingInternal(
         if (audioEnabled) {
             withAudioEnabled()
         }
+        asPersistentRecording()
     }
 
     val callbackExecutor: Executor =
@@ -566,7 +512,8 @@ private suspend fun startVideoRecordingInternal(
             currentCoroutineContext()[ContinuationInterceptor] as?
                 CoroutineDispatcher
             )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+    return pendingRecord
+        .start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
             is VideoRecordEvent.Start -> {
