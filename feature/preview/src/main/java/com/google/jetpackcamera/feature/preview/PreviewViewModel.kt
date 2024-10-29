@@ -546,18 +546,20 @@ class PreviewViewModel @AssistedInject constructor(
             val (uriIndex: Int, finalImageUri: Uri?) =
                 if (previewUiState.value is PreviewUiState.Ready &&
                     (previewUiState.value as PreviewUiState.Ready).previewMode
-                            is PreviewMode.ExternalMultipleImageCaptureMode
+                        is PreviewMode.ExternalMultipleImageCaptureMode
                 ) {
                     val uri =
-                        if (ignoreUri || ((previewUiState.value as PreviewUiState.Ready).previewMode
+                        if (ignoreUri || (
+                                (previewUiState.value as PreviewUiState.Ready).previewMode
                                     as PreviewMode.ExternalMultipleImageCaptureMode
-                                    ).imageCaptureUris.isNullOrEmpty()
+                                ).imageCaptureUris.isNullOrEmpty()
                         ) {
                             null
                         } else {
-                            ((previewUiState.value as PreviewUiState.Ready).previewMode
+                            (
+                                (previewUiState.value as PreviewUiState.Ready).previewMode
                                     as PreviewMode.ExternalMultipleImageCaptureMode
-                                    ).imageCaptureUris!![externalUriIndex]
+                                ).imageCaptureUris!![externalUriIndex]
                         }
                     Pair(externalUriIndex, uri)
                 } else {
