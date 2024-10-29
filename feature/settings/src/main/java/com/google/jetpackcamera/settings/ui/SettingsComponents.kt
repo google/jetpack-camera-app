@@ -518,6 +518,30 @@ fun StabilizationSetting(
                     is StabilizationUiState.Enabled -> {
                         SingleChoiceSelector(
                             modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationAutoState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationAutoState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(id = R.string.stabilization_selector_auto),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_auto_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationAutoState is
+                                SingleSelectableState.Selectable,
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.AUTO,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.AUTO)
+                            }
+                        )
+
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
                                 if (stabilizationUiState.stabilizationOnState
                                         is SingleSelectableState.Disabled
                                 ) {

@@ -157,6 +157,7 @@ sealed interface FlipLensUiState {
 sealed interface StabilizationUiState {
     data class Enabled(
         val currentStabilizationMode: StabilizationMode,
+        val stabilizationAutoState: SingleSelectableState,
         val stabilizationOnState: SingleSelectableState,
         val stabilizationHighQualityState: SingleSelectableState,
         // Contains text like "Selected stabilization mode only supported by rear lens"

@@ -76,10 +76,12 @@
     <!-- Stabilization setting strings -->
     <string name="video_stabilization_title">Set Video Stabilization</string>
 
+    <string name="stabilization_selector_auto">Auto</string>
     <string name="stabilization_selector_on">On</string>
     <string name="stabilization_selector_high_quality">High Quality</string>
     <string name="stabilization_selector_off">Off</string>
 
+    <string name="stabilization_selector_auto_info">Preview or video stream will be stabilized if the device and current settings support it.</string>
     <string name="stabilization_selector_on_info">Both preview and video streams will be stabilized</string>
     <string name="stabilization_selector_high_quality_info">Video stream will be stabilized, but preview might not be. This mode ensures highest-quality video stream.</string>
 
