@@ -543,25 +543,26 @@ class PreviewViewModel @AssistedInject constructor(
         }
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
-            val (uriIndex: Int, finalImageUri: Uri?) = if (previewUiState.value is PreviewUiState.Ready &&
-                (previewUiState.value as PreviewUiState.Ready).previewMode
-                    is PreviewMode.ExternalMultipleImageCaptureMode
-            ) {
-                val uri =
-                    if (ignoreUri || ((previewUiState.value as PreviewUiState.Ready).previewMode
-                        as PreviewMode.ExternalMultipleImageCaptureMode
-                        ).imageCaptureUris.isNullOrEmpty()
-                    ) {
-                        null
-                    } else {
-                        ((previewUiState.value as PreviewUiState.Ready).previewMode
-                            as PreviewMode.ExternalMultipleImageCaptureMode
-                        ).imageCaptureUris!![externalUriIndex]
-                    }
-                Pair(externalUriIndex, uri)
-            } else {
-                Pair(-1, imageCaptureUri)
-            }
+            val (uriIndex: Int, finalImageUri: Uri?) =
+                if (previewUiState.value is PreviewUiState.Ready &&
+                    (previewUiState.value as PreviewUiState.Ready).previewMode
+                            is PreviewMode.ExternalMultipleImageCaptureMode
+                ) {
+                    val uri =
+                        if (ignoreUri || ((previewUiState.value as PreviewUiState.Ready).previewMode
+                                    as PreviewMode.ExternalMultipleImageCaptureMode
+                                    ).imageCaptureUris.isNullOrEmpty()
+                        ) {
+                            null
+                        } else {
+                            ((previewUiState.value as PreviewUiState.Ready).previewMode
+                                    as PreviewMode.ExternalMultipleImageCaptureMode
+                                    ).imageCaptureUris!![externalUriIndex]
+                        }
+                    Pair(externalUriIndex, uri)
+                } else {
+                    Pair(-1, imageCaptureUri)
+                }
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({

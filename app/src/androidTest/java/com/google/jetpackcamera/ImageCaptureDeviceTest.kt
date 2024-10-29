@@ -174,14 +174,12 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                clickCaptureAndWaitUntilMessageDisappears(
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                    IMAGE_CAPTURE_SUCCESS_TAG
-                )
-                clickCaptureAndWaitUntilMessageDisappears(
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                    IMAGE_CAPTURE_SUCCESS_TAG
-                )
+                repeat(2) {
+                    clickCaptureAndWaitUntilMessageDisappears(
+                        IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                        IMAGE_CAPTURE_SUCCESS_TAG
+                    )
+                }
                 clickCapture()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
@@ -202,14 +200,12 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                clickCaptureAndWaitUntilMessageDisappears(
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                    IMAGE_CAPTURE_SUCCESS_TAG
-                )
-                clickCaptureAndWaitUntilMessageDisappears(
-                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                    IMAGE_CAPTURE_SUCCESS_TAG
-                )
+                repeat(2) {
+                    clickCaptureAndWaitUntilMessageDisappears(
+                        IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                        IMAGE_CAPTURE_SUCCESS_TAG
+                    )
+                }
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
@@ -235,7 +231,7 @@ internal class ImageCaptureDeviceTest {
     fun multipleImageCaptureExternal_withIllegalUri_returnsResultOk() {
         val timeStamp = System.currentTimeMillis()
         val uriStrings = arrayListOf<String>()
-        uriStrings.add("asdfasdf")
+        uriStrings.add("illegal_uri")
         uriStrings.add(getTestUri(DIR_PATH, timeStamp, "jpg").toString())
         val result =
             runScenarioTestForResult<MainActivity>(
