@@ -92,6 +92,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -429,17 +430,24 @@ fun DetectWindowColorModeChanges(
 
 @Composable
 fun StabilizationIcon(stabilizationMode: StabilizationMode, modifier: Modifier = Modifier) {
-    val descriptionText = if (stabilizationMode == StabilizationMode.ON) {
-        stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+    if (stabilizationMode == StabilizationMode.ON) {
+        Icon(
+            imageVector = Icons.Filled.VideoStable,
+            contentDescription = stringResource(
+                id = R.string.stabilization_icon_description_preview_and_video
+            ),
+            modifier = modifier
+        )
     } else {
-        // previewStabilization will not be on for high quality
-        stringResource(id = R.string.stabilization_icon_description_video_only)
+        Icon(
+            painter = painterResource(R.drawable.video_stable_hq_filled_icon),
+            // previewStabilization will not be on for high quality
+            contentDescription = stringResource(
+                id = R.string.stabilization_icon_description_video_only
+            ),
+            modifier = modifier
+        )
     }
-    Icon(
-        imageVector = Icons.Filled.VideoStable,
-        contentDescription = descriptionText,
-        modifier = modifier
-    )
 }
 
 /**
