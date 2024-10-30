@@ -133,43 +133,35 @@ class PreviewViewModel @AssistedInject constructor(
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState()
             ) { cameraAppSettings, systemConstraints, cameraState ->
+                val stabilizationUiState = when (cameraState.stabilizationMode) {
+                    StabilizationMode.OFF -> StabilizationUiState.Disabled
+                    else -> StabilizationUiState.Enabled(cameraState.stabilizationMode)
+                }
+
                 _previewUiState.update { old ->
                     when (old) {
-                        is PreviewUiState.Ready ->
-                            old.copy(
-                                currentCameraSettings = cameraAppSettings,
-                                systemConstraints = systemConstraints,
-                                zoomScale = cameraState.zoomScale,
-                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                                captureModeToggleUiState = getCaptureToggleUiState(
-                                    systemConstraints,
-                                    cameraAppSettings
-                                ),
-                                videoRecordingState = cameraState.videoRecordingState,
-                                isDebugMode = isDebugMode,
-                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
-                            )
-
+                        is PreviewUiState.Ready -> old
                         is PreviewUiState.NotReady ->
                             PreviewUiState.Ready(
-                                currentCameraSettings = cameraAppSettings,
-                                systemConstraints = systemConstraints,
-                                videoRecordingState = cameraState.videoRecordingState,
-                                zoomScale = cameraState.zoomScale,
-                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                                previewMode = previewMode,
-                                captureModeToggleUiState = getCaptureToggleUiState(
-                                    systemConstraints,
-                                    cameraAppSettings
-                                ),
                                 isDebugMode = isDebugMode,
-                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
-                                // TODO(kc): set elapsed time UI state once VideoRecordingState
-                                // refactor is complete.
+                                previewMode = previewMode
                             )
-                    }
+                    }.copy(
+                        currentCameraSettings = cameraAppSettings,
+                        systemConstraints = systemConstraints,
+                        zoomScale = cameraState.zoomScale,
+                        videoRecordingState = cameraState.videoRecordingState,
+                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
+                        captureModeToggleUiState = getCaptureToggleUiState(
+                            systemConstraints,
+                            cameraAppSettings
+                        ),
+                        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+                        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                        stabilizationUiState = stabilizationUiState
+                        // TODO(kc): set elapsed time UI state once VideoRecordingState
+                        // refactor is complete.
+                    )
                 }
             }.collect {}
         }

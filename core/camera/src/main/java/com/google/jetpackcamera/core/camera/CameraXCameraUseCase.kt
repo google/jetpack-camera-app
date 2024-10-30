@@ -249,6 +249,10 @@ constructor(
                     concurrentCameraMode = currentCameraSettings.concurrentCameraMode
                 )
 
+                _currentCameraState.update { old ->
+                    old.copy(stabilizationMode = resolvedStabilizationMode)
+                }
+
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
                         val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -339,25 +343,27 @@ constructor(
         targetFrameRate: Int,
         supportedStabilizationModes: Set<StabilizationMode>,
         concurrentCameraMode: ConcurrentCameraMode
-    ): StabilizationMode = when (stabilizationMode) {
-        StabilizationMode.AUTO -> {
-            if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                StabilizationMode.OFF
-            } else if (
-                supportedStabilizationModes.contains(StabilizationMode.ON) &&
-                targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
-            ) {
-                StabilizationMode.ON
-            } else if (
-                supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
-                targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-            ) {
-                StabilizationMode.HIGH_QUALITY
-            } else {
-                StabilizationMode.OFF
+    ): StabilizationMode = if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+        StabilizationMode.OFF
+    } else {
+        when (stabilizationMode) {
+            StabilizationMode.AUTO -> {
+                if (
+                    supportedStabilizationModes.contains(StabilizationMode.ON) &&
+                    targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
+                ) {
+                    StabilizationMode.ON
+                } else if (
+                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
+                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
+                ) {
+                    StabilizationMode.HIGH_QUALITY
+                } else {
+                    StabilizationMode.OFF
+                }
             }
+            else -> stabilizationMode
         }
-        else -> stabilizationMode
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
@@ -588,7 +594,6 @@ constructor(
                 if (systemConstraints.concurrentCamerasSupported) {
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO,
-                        stabilizationMode = StabilizationMode.OFF,
                         dynamicRange = DynamicRange.SDR,
                         captureMode = CaptureMode.MULTI_STREAM
                     )

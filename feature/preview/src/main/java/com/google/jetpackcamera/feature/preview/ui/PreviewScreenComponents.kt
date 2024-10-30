@@ -429,19 +429,17 @@ fun DetectWindowColorModeChanges(
 
 @Composable
 fun StabilizationIcon(stabilizationMode: StabilizationMode, modifier: Modifier = Modifier) {
-    if (stabilizationMode != StabilizationMode.OFF) {
-        val descriptionText = if (stabilizationMode == StabilizationMode.ON) {
-            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
-        } else {
-            // previewStabilization will not be on for high quality
-            stringResource(id = R.string.stabilization_icon_description_video_only)
-        }
-        Icon(
-            imageVector = Icons.Filled.VideoStable,
-            contentDescription = descriptionText,
-            modifier = modifier
-        )
+    val descriptionText = if (stabilizationMode == StabilizationMode.ON) {
+        stringResource(id = R.string.stabilization_icon_description_preview_and_video)
+    } else {
+        // previewStabilization will not be on for high quality
+        stringResource(id = R.string.stabilization_icon_description_video_only)
     }
+    Icon(
+        imageVector = Icons.Filled.VideoStable,
+        contentDescription = descriptionText,
+        modifier = modifier
+    )
 }
 
 /**

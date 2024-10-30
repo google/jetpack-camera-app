@@ -57,6 +57,7 @@ import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -126,7 +127,8 @@ fun CameraControlsOverlay(
                     currentCameraSettings = previewUiState.currentCameraSettings,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
-                    onToggleQuickSettings = onToggleQuickSettings
+                    onToggleQuickSettings = onToggleQuickSettings,
+                    stabilizationUiState = previewUiState.stabilizationUiState
                 )
             }
 
@@ -164,7 +166,8 @@ private fun ControlsTop(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
-    onToggleQuickSettings: () -> Unit = {}
+    onToggleQuickSettings: () -> Unit = {},
+    stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -191,9 +194,11 @@ private fun ControlsTop(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StabilizationIcon(
-                stabilizationMode = currentCameraSettings.stabilizationMode
-            )
+            if (stabilizationUiState is StabilizationUiState.Enabled) {
+                StabilizationIcon(
+                    stabilizationMode = stabilizationUiState.stabilizationMode
+                )
+            }
             LowLightBoostIcon(
                 lowLightBoost = currentCameraSettings.lowLightBoost
             )
@@ -498,7 +503,8 @@ private fun Preview_ControlsTop_WithStabilization() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(
+            currentCameraSettings = CameraAppSettings(),
+            stabilizationUiState = StabilizationUiState.Enabled(
                 stabilizationMode = StabilizationMode.ON
             )
         )
