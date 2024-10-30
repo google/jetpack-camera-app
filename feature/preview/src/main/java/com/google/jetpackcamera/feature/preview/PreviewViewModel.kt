@@ -695,8 +695,10 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
-        cameraUseCase.stopVideoRecording()
-        recordingJob?.cancel()
+        viewModelScope.launch {
+            cameraUseCase.stopVideoRecording()
+            recordingJob?.cancel()
+        }
     }
 
     fun setZoomScale(scale: Float) {

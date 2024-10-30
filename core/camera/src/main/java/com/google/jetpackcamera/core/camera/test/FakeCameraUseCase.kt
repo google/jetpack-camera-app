@@ -149,7 +149,7 @@ class FakeCameraUseCase(
         isRecordingPaused = false
     }
 
-    override fun stopVideoRecording() {
+    override suspend fun stopVideoRecording() {
         recordingInProgress = false
     }
 

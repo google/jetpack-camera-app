@@ -81,7 +81,7 @@ interface CameraUseCase {
 
     suspend fun resumeVideoRecording()
 
-    fun stopVideoRecording()
+    suspend fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
 

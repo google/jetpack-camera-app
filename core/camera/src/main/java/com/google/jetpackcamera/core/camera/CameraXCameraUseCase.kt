@@ -429,15 +429,15 @@ constructor(
     }
 
     override suspend fun pauseVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.PauseRecordingEvent)
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.PauseRecordingEvent)
     }
 
     override suspend fun resumeVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.ResumeRecordingEvent)
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.ResumeRecordingEvent)
     }
 
-    override fun stopVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
+    override suspend fun stopVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
     override fun setZoomScale(scale: Float) {
