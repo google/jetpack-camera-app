@@ -410,7 +410,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -630,25 +630,27 @@ fun CaptureButton(
             .padding(18.dp)
             .border(4.dp, currentColor, CircleShape)
     ) {
-        Canvas(modifier = Modifier.size(110.dp).apply {
+        Canvas(
+            modifier = Modifier.size(110.dp).apply {
+            },
+            onDraw = {
+                drawCircle(
+                    alpha = when (videoRecordingState) {
+                        is VideoRecordingState.Active.Paused -> .37f
+                        else -> 1f
+                    },
+                    color =
+                    when (videoRecordingState) {
+                        is VideoRecordingState.Inactive -> {
+                            if (isPressedDown) currentColor else Color.Transparent
+                        }
 
-        }, onDraw = {
-            drawCircle(
-                alpha = when (videoRecordingState) {
-                    is VideoRecordingState.Active.Paused -> .37f
-                    else -> 1f
-                },
-                color =
-                when (videoRecordingState) {
-                    is VideoRecordingState.Inactive -> {
-                        if (isPressedDown) currentColor else Color.Transparent
+                        is VideoRecordingState.Active.Recording,
+                        is VideoRecordingState.Active.Paused -> Color.Red
                     }
-
-                    is VideoRecordingState.Active.Recording,
-                    is VideoRecordingState.Active.Paused -> Color.Red
-                }
-            )
-        })
+                )
+            }
+        )
     }
 }
 
@@ -724,7 +726,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
