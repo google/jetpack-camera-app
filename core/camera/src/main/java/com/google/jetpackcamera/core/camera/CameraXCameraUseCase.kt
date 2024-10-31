@@ -156,14 +156,11 @@ constructor(
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
                                 add(StabilizationMode.ON)
+                                add(StabilizationMode.AUTO)
                             }
 
                             if (camInfo.isVideoStabilizationSupported) {
                                 add(StabilizationMode.HIGH_QUALITY)
-                            }
-
-                            if (isNotEmpty()) {
-                                add(StabilizationMode.AUTO)
                             }
 
                             add(StabilizationMode.OFF)
