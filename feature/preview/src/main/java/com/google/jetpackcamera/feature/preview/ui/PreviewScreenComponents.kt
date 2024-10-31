@@ -74,6 +74,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -429,24 +430,33 @@ fun DetectWindowColorModeChanges(
 }
 
 @Composable
-fun StabilizationIcon(stabilizationMode: StabilizationMode, modifier: Modifier = Modifier) {
-    if (stabilizationMode == StabilizationMode.ON) {
-        Icon(
-            imageVector = Icons.Filled.VideoStable,
-            contentDescription = stringResource(
-                id = R.string.stabilization_icon_description_preview_and_video
-            ),
-            modifier = modifier
-        )
-    } else {
-        Icon(
-            painter = painterResource(R.drawable.video_stable_hq_filled_icon),
-            // previewStabilization will not be on for high quality
-            contentDescription = stringResource(
-                id = R.string.stabilization_icon_description_video_only
-            ),
-            modifier = modifier
-        )
+fun StabilizationIcon(
+    stabilizationMode: StabilizationMode,
+    modifier: Modifier = Modifier,
+    active: Boolean = true
+) {
+    val contentColor = Color.White.let {
+        if (!active) it.copy(alpha = 0.38f) else it
+    }
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
+        if (stabilizationMode == StabilizationMode.ON) {
+            Icon(
+                imageVector = Icons.Filled.VideoStable,
+                contentDescription = stringResource(
+                    id = R.string.stabilization_icon_description_preview_and_video
+                ),
+                modifier = modifier
+            )
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.video_stable_hq_filled_icon),
+                // previewStabilization will not be on for high quality
+                contentDescription = stringResource(
+                    id = R.string.stabilization_icon_description_video_only
+                ),
+                modifier = modifier
+            )
+        }
     }
 }
 

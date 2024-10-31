@@ -84,6 +84,7 @@ const val TARGET_FPS_60 = 60
 const val UNLIMITED_VIDEO_DURATION = 0L
 
 val STABILIZATION_ON_UNSUPPORTED_FPS = setOf(TARGET_FPS_15, TARGET_FPS_60)
+val STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS = setOf(TARGET_FPS_60)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -339,7 +340,8 @@ constructor(
         StabilizationMode.OFF
     } else {
         when (stabilizationMode) {
-            StabilizationMode.AUTO -> {
+            StabilizationMode.AUTO,
+            StabilizationMode.ON -> {
                 if (
                     supportedStabilizationModes.contains(StabilizationMode.ON) &&
                     targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
@@ -349,7 +351,17 @@ constructor(
                     StabilizationMode.OFF
                 }
             }
-            else -> stabilizationMode
+            StabilizationMode.HIGH_QUALITY -> {
+                if (
+                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
+                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
+                ) {
+                    StabilizationMode.HIGH_QUALITY
+                } else {
+                    StabilizationMode.OFF
+                }
+            }
+            StabilizationMode.OFF -> StabilizationMode.OFF
         }
     }
 
@@ -554,23 +566,27 @@ constructor(
 
     private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedStabilizationModes) {
-                val invalidFps = when (stabilizationMode) {
-                    StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_60)
-                    StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_60)
-                    else -> emptySet()
-                }
-
-                val newStabilizationMode = if (targetFrameRate in invalidFps) {
-                    StabilizationMode.AUTO
-                } else {
-                    stabilizationMode
-                }
-
-                this@tryApplyStabilizationConstraints.copy(
-                    stabilizationMode = newStabilizationMode
-                )
+            val invalidFps = when (stabilizationMode) {
+                StabilizationMode.ON -> STABILIZATION_ON_UNSUPPORTED_FPS
+                StabilizationMode.HIGH_QUALITY -> STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
+                else -> emptySet()
             }
+
+            val newStabilizationMode = if (targetFrameRate in invalidFps) {
+                StabilizationMode.AUTO
+            } else {
+                stabilizationMode
+            }.let {
+                if (it !in constraints.supportedStabilizationModes) {
+                    StabilizationMode.OFF
+                } else {
+                    it
+                }
+            }
+
+            this@tryApplyStabilizationConstraints.copy(
+                stabilizationMode = newStabilizationMode
+            )
         } ?: this
     }
 
@@ -654,10 +670,7 @@ constructor(
     }
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old?.copy(
-                stabilizationMode = stabilizationMode
-            )?.tryApplyStabilizationConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
+            old?.copy(stabilizationMode = stabilizationMode)
         }
     }
 

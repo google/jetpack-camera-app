@@ -55,5 +55,8 @@ sealed interface PreviewUiState {
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState
 
-    data class Enabled(val stabilizationMode: StabilizationMode) : StabilizationUiState
+    data class Set(
+        val stabilizationMode: StabilizationMode,
+        val active: Boolean = true
+    ) : StabilizationUiState
 }

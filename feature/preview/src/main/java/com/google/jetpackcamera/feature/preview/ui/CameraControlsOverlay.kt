@@ -194,9 +194,10 @@ private fun ControlsTop(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            if (stabilizationUiState is StabilizationUiState.Enabled) {
+            if (stabilizationUiState is StabilizationUiState.Set) {
                 StabilizationIcon(
-                    stabilizationMode = stabilizationUiState.stabilizationMode
+                    stabilizationMode = stabilizationUiState.stabilizationMode,
+                    active = stabilizationUiState.active
                 )
             }
             LowLightBoostIcon(
@@ -504,7 +505,7 @@ private fun Preview_ControlsTop_WithStabilization() {
         ControlsTop(
             isQuickSettingsOpen = false,
             currentCameraSettings = CameraAppSettings(),
-            stabilizationUiState = StabilizationUiState.Enabled(
+            stabilizationUiState = StabilizationUiState.Set(
                 stabilizationMode = StabilizationMode.ON
             )
         )

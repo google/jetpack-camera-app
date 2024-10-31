@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -133,10 +134,7 @@ class PreviewViewModel @AssistedInject constructor(
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState()
             ) { cameraAppSettings, systemConstraints, cameraState ->
-                val stabilizationUiState = when (cameraState.stabilizationMode) {
-                    StabilizationMode.OFF -> StabilizationUiState.Disabled
-                    else -> StabilizationUiState.Enabled(cameraState.stabilizationMode)
-                }
+                val stabilizationUiState = stabilizationUiStateFrom(cameraAppSettings, cameraState)
 
                 _previewUiState.update { old ->
                     when (old) {
@@ -164,6 +162,33 @@ class PreviewViewModel @AssistedInject constructor(
                     )
                 }
             }.collect {}
+        }
+    }
+
+    private fun stabilizationUiStateFrom(
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState
+    ): StabilizationUiState {
+        val expectedMode = cameraAppSettings.stabilizationMode
+        val actualMode = cameraState.stabilizationMode
+        check(actualMode != StabilizationMode.AUTO) {
+            "CameraState should never resolve to AUTO stabilization mode"
+        }
+        return when (expectedMode) {
+            StabilizationMode.OFF -> StabilizationUiState.Disabled
+            StabilizationMode.AUTO -> {
+                if (actualMode == StabilizationMode.OFF) {
+                    StabilizationUiState.Disabled
+                } else {
+                    StabilizationUiState.Set(actualMode)
+                }
+            }
+            StabilizationMode.ON,
+            StabilizationMode.HIGH_QUALITY ->
+                StabilizationUiState.Set(
+                    stabilizationMode = expectedMode,
+                    active = expectedMode == actualMode
+                )
         }
     }
 
