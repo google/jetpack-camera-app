@@ -84,7 +84,6 @@ const val TARGET_FPS_60 = 60
 const val UNLIMITED_VIDEO_DURATION = 0L
 
 val STABILIZATION_ON_UNSUPPORTED_FPS = setOf(TARGET_FPS_15, TARGET_FPS_60)
-val STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS = setOf(TARGET_FPS_60)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -349,11 +348,6 @@ constructor(
                     targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
                 ) {
                     StabilizationMode.ON
-                } else if (
-                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
-                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-                ) {
-                    StabilizationMode.HIGH_QUALITY
                 } else {
                     StabilizationMode.OFF
                 }

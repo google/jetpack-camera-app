@@ -22,7 +22,11 @@ enum class StabilizationMode {
     /** Stabilization off */
     OFF,
 
-    /** Device-chosen stabilization mode */
+    /**
+     * Device-chosen stabilization mode
+     *
+     * This will choose [ON] if the device and settings support it, otherwise it will be [OFF].
+     */
     AUTO,
 
     /** Preview stabilization. */
