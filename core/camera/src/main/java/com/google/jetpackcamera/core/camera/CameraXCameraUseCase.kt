@@ -249,10 +249,6 @@ constructor(
                     concurrentCameraMode = currentCameraSettings.concurrentCameraMode
                 )
 
-                _currentCameraState.update { old ->
-                    old.copy(stabilizationMode = resolvedStabilizationMode)
-                }
-
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
                         val cameraSelector = when (currentCameraSettings.cameraLensFacing) {

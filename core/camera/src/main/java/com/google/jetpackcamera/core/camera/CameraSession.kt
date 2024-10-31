@@ -859,10 +859,31 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                         isFirstFrameTimestampUpdated.value = true
                     }
+                    // Publish stabilization state
+                    publishStabilizationMode(result)
                 } catch (_: Exception) {
                 }
             }
         }
     )
     return this
+}
+
+context(CameraSessionContext)
+private fun publishStabilizationMode(result: TotalCaptureResult) {
+    val nativeStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
+    val stabilizationMode = when (nativeStabilizationMode) {
+        CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION ->
+            StabilizationMode.ON
+        CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_ON -> StabilizationMode.HIGH_QUALITY
+        else -> StabilizationMode.OFF
+    }
+
+    currentCameraState.update { old ->
+        if (old.stabilizationMode != stabilizationMode) {
+            old.copy(stabilizationMode = stabilizationMode)
+        } else {
+            old
+        }
+    }
 }
