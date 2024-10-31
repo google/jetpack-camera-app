@@ -81,6 +81,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.rules)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

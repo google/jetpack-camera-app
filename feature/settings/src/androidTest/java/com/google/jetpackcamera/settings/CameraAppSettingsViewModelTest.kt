@@ -21,11 +21,11 @@ import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import java.io.File
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,14 +39,21 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class CameraAppSettingsViewModelTest {
+    @get:Rule
+    val permissionsRule: GrantPermissionRule =
+        GrantPermissionRule.grant(android.Manifest.permission.RECORD_AUDIO)
+
     private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var testDataStore: DataStore<JcaSettings>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
+
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
@@ -93,6 +100,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun setMute_permission_granted() = runTest(StandardTestDispatcher()) {
+        //permission must be granted or the setting will be disabled
         // Wait for first Enabled state
         val initialState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
@@ -152,9 +160,9 @@ internal class CameraAppSettingsViewModelTest {
 
         val newDarkMode =
             (
-                assertIsEnabled(settingsViewModel.settingsUiState.value)
-                    .darkModeUiState as DarkModeUiState.Enabled
-                )
+                    assertIsEnabled(settingsViewModel.settingsUiState.value)
+                        .darkModeUiState as DarkModeUiState.Enabled
+                    )
                 .currentDarkMode
 
         assertEquals(initialDarkMode, DarkMode.SYSTEM)
