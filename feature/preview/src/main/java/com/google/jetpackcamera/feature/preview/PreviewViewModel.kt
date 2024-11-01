@@ -180,7 +180,7 @@ class PreviewViewModel @AssistedInject constructor(
                 if (actualMode == StabilizationMode.OFF) {
                     StabilizationUiState.Disabled
                 } else {
-                    StabilizationUiState.Set(actualMode)
+                    StabilizationUiState.Set(StabilizationMode.AUTO)
                 }
             }
             StabilizationMode.ON,
