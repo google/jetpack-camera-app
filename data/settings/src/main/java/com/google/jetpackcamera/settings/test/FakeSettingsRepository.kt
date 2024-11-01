@@ -25,7 +25,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -55,14 +55,9 @@ object FakeSettingsRepository : SettingsRepository {
             currentCameraSettings.copy(captureMode = captureMode)
     }
 
-    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
+    override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
         currentCameraSettings =
-            currentCameraSettings.copy(previewStabilization = stabilization)
-    }
-
-    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
-        currentCameraSettings =
-            currentCameraSettings.copy(videoCaptureStabilization = stabilization)
+            currentCameraSettings.copy(stabilizationMode = stabilizationMode)
     }
 
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {

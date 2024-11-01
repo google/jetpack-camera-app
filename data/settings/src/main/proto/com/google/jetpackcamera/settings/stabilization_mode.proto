@@ -19,8 +19,10 @@ syntax = "proto3";
 option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
-enum VideoStabilization {
-  VIDEO_STABILIZATION_UNDEFINED = 0;
-  VIDEO_STABILIZATION_OFF = 1;
-  VIDEO_STABILIZATION_ON = 2;
+enum StabilizationMode {
+  STABILIZATION_MODE_UNDEFINED = 0;
+  STABILIZATION_MODE_AUTO = 1;
+  STABILIZATION_MODE_OFF = 2;
+  STABILIZATION_MODE_ON = 3;
+  STABILIZATION_MODE_HIGH_QUALITY = 4;
 }

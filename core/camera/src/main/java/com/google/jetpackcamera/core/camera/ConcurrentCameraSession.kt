@@ -22,7 +22,7 @@ import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -53,8 +53,7 @@ internal suspend fun runConcurrentCameraSession(
     val useCaseGroup = createUseCaseGroup(
         cameraInfo = sessionSettings.primaryCameraInfo,
         initialTransientSettings = initialTransientSettings,
-        stabilizePreviewMode = Stabilization.OFF,
-        stabilizeVideoMode = Stabilization.OFF,
+        stabilizationMode = StabilizationMode.OFF,
         aspectRatio = sessionSettings.aspectRatio,
         targetFrameRate = TARGET_FPS_AUTO,
         dynamicRange = DynamicRange.SDR,
