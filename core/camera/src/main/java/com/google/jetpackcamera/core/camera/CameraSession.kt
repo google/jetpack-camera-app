@@ -99,7 +99,6 @@ private const val TAG = "CameraSession"
 context(CameraSessionContext)
 @kotlin.OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun runSingleCameraSession(
-    videoCapture: VideoCapture<Recorder>?,
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -112,6 +111,20 @@ internal suspend fun runSingleCameraSession(
         .filterNotNull()
         .first()
 
+    val videoCapture =
+        if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+            createVideoUseCase(
+                transientSettings.value!!.cameraInfo,
+                sessionSettings.aspectRatio,
+                sessionSettings.targetFrameRate,
+                sessionSettings.stabilizeVideoMode,
+                sessionSettings.dynamicRange,
+                backgroundDispatcher
+            )
+
+        } else {
+            null
+        }
     val useCaseGroup = createUseCaseGroup(
         cameraInfo = transientSettings.value!!.cameraInfo,
         initialTransientSettings = initialTransientSettings,
@@ -139,6 +152,7 @@ internal suspend fun runSingleCameraSession(
     ) { camera ->
         Log.d(TAG, "Camera session started")
 
+        // how can i get updated camera in these process functions properly..?
         launch {
             processFocusMeteringEvents(camera.cameraControl)
         }
@@ -180,7 +194,6 @@ internal suspend fun processTransientSettingEvents(
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
     onRebind : (CameraSelector, UseCaseGroup) -> Unit,
-
     ) {
     var prevTransientSettings = initialTransientSettings
     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
@@ -361,6 +374,55 @@ private fun createPreviewUseCase(
             surfaceRequests.update { surfaceRequest }
         }
     }
+
+internal fun createVideoUseCase(
+    cameraInfo: CameraInfo,
+    aspectRatio: AspectRatio,
+    targetFrameRate: Int,
+    stabilizeVideoMode: Stabilization,
+    dynamicRange: DynamicRange,
+    backgroundDispatcher: CoroutineDispatcher
+): VideoCapture<Recorder> {
+    val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
+    val recorder = Recorder.Builder()
+        .setAspectRatio(
+            getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
+        )
+        .setExecutor(backgroundDispatcher.asExecutor()).build()
+    return VideoCapture.Builder(recorder).apply {
+        // set video stabilization
+        if (stabilizeVideoMode == Stabilization.ON) {
+            setVideoStabilizationEnabled(true)
+        }
+        // set target fps
+        if (targetFrameRate != TARGET_FPS_AUTO) {
+            setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
+        }
+
+        setDynamicRange(dynamicRange.toCXDynamicRange())
+    }.build()
+}
+
+private fun getAspectRatioForUseCase(
+    sensorLandscapeRatio: Float,
+    aspectRatio: AspectRatio
+): Int {
+    return when (aspectRatio) {
+        AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
+        AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
+        else -> {
+            // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
+            if (
+                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
+                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+            ) {
+                androidx.camera.core.AspectRatio.RATIO_16_9
+            } else {
+                androidx.camera.core.AspectRatio.RATIO_4_3
+            }
+        }
+    }
+}
 
 private fun getResolutionSelector(
     sensorLandscapeRatio: Float,

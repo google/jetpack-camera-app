@@ -112,8 +112,6 @@ constructor(
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
-    private var videoUseCase: VideoCapture<Recorder>? = null
-
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
@@ -301,22 +299,8 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> {
-                                    videoUseCase =
-                                        if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-                                            createVideoUseCase(
-                                                transientSettings.value!!.cameraInfo,
-                                                sessionSettings.aspectRatio,
-                                                sessionSettings.targetFrameRate,
-                                                sessionSettings.stabilizeVideoMode,
-                                                sessionSettings.dynamicRange,
-                                                backgroundDispatcher
-                                            )
 
-                                        } else {
-                                            null
-                                        }
                                     runSingleCameraSession(
-                                        videoUseCase,
                                         sessionSettings,
                                         useCaseMode = useCaseMode
                                     ) { imageCapture ->
@@ -329,7 +313,6 @@ constructor(
                                     runConcurrentCameraSession(
                                         sessionSettings = sessionSettings,
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY,
-                                        videoCapture = null,
                                     )
                             }
                         } finally {
@@ -341,56 +324,6 @@ constructor(
                     }
                 }
             }
-    }
-
-
-    private fun createVideoUseCase(
-        cameraInfo: CameraInfo,
-        aspectRatio: AspectRatio,
-        targetFrameRate: Int,
-        stabilizeVideoMode: Stabilization,
-        dynamicRange: DynamicRange,
-        backgroundDispatcher: CoroutineDispatcher
-    ): VideoCapture<Recorder> {
-        val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
-        val recorder = Recorder.Builder()
-            .setAspectRatio(
-                getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
-            )
-            .setExecutor(backgroundDispatcher.asExecutor()).build()
-        return VideoCapture.Builder(recorder).apply {
-            // set video stabilization
-            if (stabilizeVideoMode == Stabilization.ON) {
-                setVideoStabilizationEnabled(true)
-            }
-            // set target fps
-            if (targetFrameRate != TARGET_FPS_AUTO) {
-                setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
-            }
-
-            setDynamicRange(dynamicRange.toCXDynamicRange())
-        }.build()
-    }
-
-    private fun getAspectRatioForUseCase(
-        sensorLandscapeRatio: Float,
-        aspectRatio: AspectRatio
-    ): Int {
-        return when (aspectRatio) {
-            AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
-            AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
-            else -> {
-                // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
-                if (
-                    abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
-                    abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
-                ) {
-                    androidx.camera.core.AspectRatio.RATIO_16_9
-                } else {
-                    androidx.camera.core.AspectRatio.RATIO_4_3
-                }
-            }
-        }
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {

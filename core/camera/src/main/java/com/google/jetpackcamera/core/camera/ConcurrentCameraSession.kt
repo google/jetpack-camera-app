@@ -42,7 +42,6 @@ context(CameraSessionContext)
 @OptIn(ExperimentalCoroutinesApi::class)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
-    videoCapture: VideoCapture<Recorder>?,
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
@@ -58,6 +57,15 @@ internal suspend fun runConcurrentCameraSession(
         .filterNotNull()
         .first()
 
+    // create videocapture independently of usecasegroup
+    val videoCapture =  createVideoUseCase(
+        transientSettings.value!!.cameraInfo,
+        sessionSettings.aspectRatio,
+        TARGET_FPS_AUTO,
+        Stabilization.OFF,
+        DynamicRange.SDR,
+        backgroundDispatcher
+    )
     val useCaseGroup = createUseCaseGroup(
         cameraInfo = sessionSettings.primaryCameraInfo,
         initialTransientSettings = initialTransientSettings,
