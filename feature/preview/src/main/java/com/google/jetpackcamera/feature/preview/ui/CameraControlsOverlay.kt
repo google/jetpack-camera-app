@@ -17,6 +17,9 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -194,11 +197,24 @@ private fun ControlsTop(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            var visibleStabilizationUiState: StabilizationUiState by remember {
+                mutableStateOf(StabilizationUiState.Disabled)
+            }
             if (stabilizationUiState is StabilizationUiState.Set) {
-                StabilizationIcon(
-                    stabilizationMode = stabilizationUiState.stabilizationMode,
-                    active = stabilizationUiState.active
-                )
+                // Only save StabilizationUiState.Set so exit transition can happen properly
+                visibleStabilizationUiState = stabilizationUiState
+            }
+            AnimatedVisibility(
+                visible = stabilizationUiState is StabilizationUiState.Set,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
+                    StabilizationIcon(
+                        stabilizationMode = it.stabilizationMode,
+                        active = it.active
+                    )
+                }
             }
             LowLightBoostIcon(
                 lowLightBoost = currentCameraSettings.lowLightBoost
