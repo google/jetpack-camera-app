@@ -74,6 +74,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -94,6 +95,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -108,7 +110,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -472,22 +474,37 @@ fun DetectWindowColorModeChanges(
 
 @Composable
 fun StabilizationIcon(
-    videoStabilization: Stabilization,
-    previewStabilization: Stabilization,
-    modifier: Modifier = Modifier
+    stabilizationMode: StabilizationMode,
+    modifier: Modifier = Modifier,
+    active: Boolean = true
 ) {
-    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
-        val descriptionText = if (videoStabilization == Stabilization.ON) {
-            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
-        } else {
-            // previewStabilization will not be on for high quality
-            stringResource(id = R.string.stabilization_icon_description_video_only)
+    val contentColor = Color.White.let {
+        if (!active) it.copy(alpha = 0.38f) else it
+    }
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
+        if (stabilizationMode != StabilizationMode.OFF) {
+            Icon(
+                painter = when (stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        painterResource(R.drawable.video_stable_auto_filled_icon)
+                    StabilizationMode.HIGH_QUALITY ->
+                        painterResource(R.drawable.video_stable_hq_filled_icon)
+                    else -> rememberVectorPainter(Icons.Filled.VideoStable)
+                },
+                // previewStabilization will not be on for high quality
+                contentDescription = stringResource(
+                    when (stabilizationMode) {
+                        StabilizationMode.AUTO -> R.string.stabilization_icon_description_auto
+                        StabilizationMode.ON ->
+                            R.string.stabilization_icon_description_preview_and_video
+                        StabilizationMode.HIGH_QUALITY ->
+                            R.string.stabilization_icon_description_video_only
+                        else -> 0
+                    }
+                ),
+                modifier = modifier
+            )
         }
-        Icon(
-            imageVector = Icons.Filled.VideoStable,
-            contentDescription = descriptionText,
-            modifier = modifier
-        )
     }
 }
 
