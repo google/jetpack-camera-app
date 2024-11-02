@@ -444,8 +444,10 @@ fun StabilizationIcon(
                 painter = when (stabilizationMode) {
                     StabilizationMode.AUTO ->
                         painterResource(R.drawable.video_stable_auto_filled_icon)
+
                     StabilizationMode.HIGH_QUALITY ->
                         painterResource(R.drawable.video_stable_hq_filled_icon)
+
                     else -> rememberVectorPainter(Icons.Filled.VideoStable)
                 },
                 // previewStabilization will not be on for high quality
