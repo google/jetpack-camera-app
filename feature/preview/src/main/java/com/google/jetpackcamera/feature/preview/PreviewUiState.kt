@@ -15,9 +15,11 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 
 /**
@@ -28,39 +30,33 @@ sealed interface PreviewUiState {
 
     data class Ready(
         // "quick" settings
-        val currentCameraSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints,
+        val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
+        val systemConstraints: SystemConstraints = SystemConstraints(),
         val zoomScale: Float = 1f,
-        val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
+        val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        val audioAmplitude: Double = 0.0,
         val audioMuted: Boolean = false,
-        val recordingElapsedTimeNanos: Long = 0L,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode,
-        val captureModeToggleUiState: CaptureModeToggleUiState,
+        val previewMode: PreviewMode = PreviewMode.StandardMode {},
+        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false
+        val isDebugMode: Boolean = false,
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
     ) : PreviewUiState
 }
+// todo(kc): add ElapsedTimeUiState class
 
-/**
- * Defines the current state of Video Recording
- */
-enum class VideoRecordingState {
-    /**
-     * Camera is not currently recording a video
-     */
-    INACTIVE,
+sealed interface StabilizationUiState {
+    data object Disabled : StabilizationUiState
 
-    /**
-     * Camera is currently recording a video
-     */
-    ACTIVE
+    data class Set(
+        val stabilizationMode: StabilizationMode,
+        val active: Boolean = true
+    ) : StabilizationUiState
 }

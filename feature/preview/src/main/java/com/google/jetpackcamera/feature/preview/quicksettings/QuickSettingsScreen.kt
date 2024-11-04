@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -296,6 +297,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
+                videoRecordingState = VideoRecordingState.Inactive(),
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible
             ),
             currentCameraSettings = CameraAppSettings(),
@@ -321,7 +323,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible
+                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                videoRecordingState = VideoRecordingState.Inactive()
             ),
             currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
             onLensFaceClick = { },

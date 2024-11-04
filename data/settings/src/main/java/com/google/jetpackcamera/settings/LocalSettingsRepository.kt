@@ -20,8 +20,7 @@ import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
 import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
-import com.google.jetpackcamera.settings.PreviewStabilization as PreviewStabilizationProto
-import com.google.jetpackcamera.settings.VideoStabilization as VideoStabilizationProto
+import com.google.jetpackcamera.settings.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -33,7 +32,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -62,8 +61,7 @@ class LocalSettingsRepository @Inject constructor(
                     else -> FlashMode.OFF
                 },
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
-                previewStabilization = Stabilization.fromProto(it.stabilizePreview),
-                videoCaptureStabilization = Stabilization.fromProto(it.stabilizeVideo),
+                stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
                 targetFrameRate = it.targetFrameRate,
                 captureMode = when (it.captureModeStatus) {
                     CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
@@ -147,28 +145,16 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updatePreviewStabilization(stabilization: Stabilization) {
-        val newStatus = when (stabilization) {
-            Stabilization.ON -> PreviewStabilizationProto.PREVIEW_STABILIZATION_ON
-            Stabilization.OFF -> PreviewStabilizationProto.PREVIEW_STABILIZATION_OFF
-            else -> PreviewStabilizationProto.PREVIEW_STABILIZATION_UNDEFINED
+    override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
+        val newStatus = when (stabilizationMode) {
+            StabilizationMode.OFF -> StabilizationModeProto.STABILIZATION_MODE_OFF
+            StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
+            StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
+            StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStabilizePreview(newStatus)
-                .build()
-        }
-    }
-
-    override suspend fun updateVideoStabilization(stabilization: Stabilization) {
-        val newStatus = when (stabilization) {
-            Stabilization.ON -> VideoStabilizationProto.VIDEO_STABILIZATION_ON
-            Stabilization.OFF -> VideoStabilizationProto.VIDEO_STABILIZATION_OFF
-            else -> VideoStabilizationProto.VIDEO_STABILIZATION_UNDEFINED
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizeVideo(newStatus)
+                .setStabilizationMode(newStatus)
                 .build()
         }
     }

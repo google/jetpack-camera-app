@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -45,7 +46,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
@@ -132,41 +133,61 @@ class PreviewViewModel @AssistedInject constructor(
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState()
             ) { cameraAppSettings, systemConstraints, cameraState ->
+                val stabilizationUiState = stabilizationUiStateFrom(cameraAppSettings, cameraState)
+
                 _previewUiState.update { old ->
                     when (old) {
-                        is PreviewUiState.Ready ->
-                            old.copy(
-                                currentCameraSettings = cameraAppSettings,
-                                systemConstraints = systemConstraints,
-                                zoomScale = cameraState.zoomScale,
-                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                                captureModeToggleUiState = getCaptureToggleUiState(
-                                    systemConstraints,
-                                    cameraAppSettings
-                                ),
-                                isDebugMode = isDebugMode,
-                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
-                            )
-
+                        is PreviewUiState.Ready -> old
                         is PreviewUiState.NotReady ->
                             PreviewUiState.Ready(
-                                currentCameraSettings = cameraAppSettings,
-                                systemConstraints = systemConstraints,
-                                zoomScale = cameraState.zoomScale,
-                                sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                                previewMode = previewMode,
-                                captureModeToggleUiState = getCaptureToggleUiState(
-                                    systemConstraints,
-                                    cameraAppSettings
-                                ),
                                 isDebugMode = isDebugMode,
-                                currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                                currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+                                previewMode = previewMode
                             )
-                    }
+                    }.copy(
+                        currentCameraSettings = cameraAppSettings,
+                        systemConstraints = systemConstraints,
+                        zoomScale = cameraState.zoomScale,
+                        videoRecordingState = cameraState.videoRecordingState,
+                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
+                        captureModeToggleUiState = getCaptureToggleUiState(
+                            systemConstraints,
+                            cameraAppSettings
+                        ),
+                        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+                        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                        stabilizationUiState = stabilizationUiState
+                        // TODO(kc): set elapsed time UI state once VideoRecordingState
+                        // refactor is complete.
+                    )
                 }
             }.collect {}
+        }
+    }
+
+    private fun stabilizationUiStateFrom(
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState
+    ): StabilizationUiState {
+        val expectedMode = cameraAppSettings.stabilizationMode
+        val actualMode = cameraState.stabilizationMode
+        check(actualMode != StabilizationMode.AUTO) {
+            "CameraState should never resolve to AUTO stabilization mode"
+        }
+        return when (expectedMode) {
+            StabilizationMode.OFF -> StabilizationUiState.Disabled
+            StabilizationMode.AUTO -> {
+                if (actualMode == StabilizationMode.OFF) {
+                    StabilizationUiState.Disabled
+                } else {
+                    StabilizationUiState.Set(StabilizationMode.AUTO)
+                }
+            }
+            StabilizationMode.ON,
+            StabilizationMode.HIGH_QUALITY ->
+                StabilizationUiState.Set(
+                    stabilizationMode = expectedMode,
+                    active = expectedMode == actualMode
+                )
         }
     }
 
@@ -213,14 +234,8 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setAspectRatio(entry.value as AspectRatio)
                 }
 
-                CameraAppSettings::previewStabilization -> {
-                    cameraUseCase.setPreviewStabilization(entry.value as Stabilization)
-                }
-
-                CameraAppSettings::videoCaptureStabilization -> {
-                    cameraUseCase.setVideoCaptureStabilization(
-                        entry.value as Stabilization
-                    )
+                CameraAppSettings::stabilizationMode -> {
+                    cameraUseCase.setStabilizationMode(entry.value as StabilizationMode)
                 }
 
                 CameraAppSettings::targetFrameRate -> {
@@ -638,8 +653,6 @@ class PreviewViewModel @AssistedInject constructor(
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
-                    var audioAmplitude = 0.0
-                    var timer = 0L
                     var snackbarToShow: SnackbarData? = null
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
@@ -663,27 +676,15 @@ class PreviewViewModel @AssistedInject constructor(
                                 testTag = VIDEO_CAPTURE_FAILURE_TAG
                             )
                         }
-
-                        is CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus -> {
-                            audioAmplitude = it.audioAmplitude
-                            timer = it.elapsedTimeNanos
-                        }
                     }
 
                     viewModelScope.launch {
                         _previewUiState.update { old ->
                             (old as? PreviewUiState.Ready)?.copy(
-                                snackBarToShow = snackbarToShow,
-                                audioAmplitude = audioAmplitude,
-                                recordingElapsedTimeNanos = timer
+                                snackBarToShow = snackbarToShow
                             ) ?: old
                         }
                     }
-                }
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        videoRecordingState = VideoRecordingState.ACTIVE
-                    ) ?: old
                 }
                 Log.d(TAG, "cameraUseCase.startRecording success")
             } catch (exception: IllegalStateException) {
@@ -694,13 +695,6 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    videoRecordingState = VideoRecordingState.INACTIVE
-                ) ?: old
-            }
-        }
         cameraUseCase.stopVideoRecording()
         recordingJob?.cancel()
     }

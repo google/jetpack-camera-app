@@ -28,7 +28,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -111,9 +111,7 @@ interface CameraUseCase {
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
-    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
-
-    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+    suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
@@ -132,13 +130,9 @@ interface CameraUseCase {
     /**
      * Represents the events for video recording.
      */
+
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
-
-        data class OnVideoRecordStatus(
-            val audioAmplitude: Double,
-            val elapsedTimeNanos: Long
-        ) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
     }
@@ -150,10 +144,43 @@ interface CameraUseCase {
     }
 }
 
+sealed interface VideoRecordingState {
+
+    /**
+     * Camera is not currently recording a video
+     */
+    data class Inactive(
+        val finalElapsedTimeNanos: Long = 0
+    ) : VideoRecordingState
+
+    /**
+     * Camera is currently active; paused, stopping, or recording a video
+     */
+    sealed interface Active : VideoRecordingState {
+        val maxDurationMillis: Long
+        val audioAmplitude: Double
+        val elapsedTimeNanos: Long
+
+        data class Recording(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
+
+        data class Paused(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
+    }
+}
+
 data class CameraState(
+    val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
+    val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 

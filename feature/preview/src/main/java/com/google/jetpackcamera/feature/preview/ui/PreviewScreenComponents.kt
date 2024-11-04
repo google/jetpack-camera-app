@@ -25,10 +25,13 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,6 +73,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,19 +92,22 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -109,6 +116,27 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+
+@Composable
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    videoRecordingState: VideoRecordingState,
+    elapsedNs: Long
+) {
+    AnimatedVisibility(
+        visible = (videoRecordingState is VideoRecordingState.Active),
+        enter = fadeIn(),
+        exit = fadeOut(animationSpec = tween(delayMillis = 1000))
+    ) {
+        Text(
+            modifier = modifier,
+            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
+                "%02d:%02d".format(minutes, seconds)
+            },
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun AmplitudeVisualizer(
@@ -401,22 +429,37 @@ fun DetectWindowColorModeChanges(
 
 @Composable
 fun StabilizationIcon(
-    videoStabilization: Stabilization,
-    previewStabilization: Stabilization,
-    modifier: Modifier = Modifier
+    stabilizationMode: StabilizationMode,
+    modifier: Modifier = Modifier,
+    active: Boolean = true
 ) {
-    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
-        val descriptionText = if (videoStabilization == Stabilization.ON) {
-            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
-        } else {
-            // previewStabilization will not be on for high quality
-            stringResource(id = R.string.stabilization_icon_description_video_only)
+    val contentColor = Color.White.let {
+        if (!active) it.copy(alpha = 0.38f) else it
+    }
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
+        if (stabilizationMode != StabilizationMode.OFF) {
+            Icon(
+                painter = when (stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        painterResource(R.drawable.video_stable_auto_filled_icon)
+                    StabilizationMode.HIGH_QUALITY ->
+                        painterResource(R.drawable.video_stable_hq_filled_icon)
+                    else -> rememberVectorPainter(Icons.Filled.VideoStable)
+                },
+                // previewStabilization will not be on for high quality
+                contentDescription = stringResource(
+                    when (stabilizationMode) {
+                        StabilizationMode.AUTO -> R.string.stabilization_icon_description_auto
+                        StabilizationMode.ON ->
+                            R.string.stabilization_icon_description_preview_and_video
+                        StabilizationMode.HIGH_QUALITY ->
+                            R.string.stabilization_icon_description_video_only
+                        else -> 0
+                    }
+                ),
+                modifier = modifier
+            )
         }
-        Icon(
-            imageVector = Icons.Filled.VideoStable,
-            contentDescription = descriptionText,
-            modifier = modifier
-        )
     }
 }
 
@@ -540,11 +583,12 @@ fun CaptureButton(
             drawCircle(
                 color =
                 when (videoRecordingState) {
-                    VideoRecordingState.INACTIVE -> {
+                    is VideoRecordingState.Inactive -> {
                         if (isPressedDown) currentColor else Color.Transparent
                     }
 
-                    VideoRecordingState.ACTIVE -> Color.Red
+                    is VideoRecordingState.Active.Recording -> Color.Red
+                    is VideoRecordingState.Active.Paused -> Color.Blue
                 }
             )
         })
@@ -601,7 +645,8 @@ fun ToggleButton(
                         onToggleWhenDisabled()
                     }
                 }
-            ).semantics {
+            )
+            .semantics {
                 stateDescription = when (toggleState) {
                     ToggleState.Left -> leftIconDescription
                     ToggleState.Right -> rightIconDescription

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -318,9 +319,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_WhileRecording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                videoRecordingState = VideoRecordingState.ACTIVE
-            ),
+            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -329,6 +328,7 @@ private fun ContentScreen_WhileRecording() {
 
 private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
+    videoRecordingState = VideoRecordingState.Inactive(),
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
     previewMode = PreviewMode.StandardMode {},
     captureModeToggleUiState = CaptureModeToggleUiState.Invisible
