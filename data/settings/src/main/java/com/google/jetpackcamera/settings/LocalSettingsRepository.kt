@@ -58,6 +58,7 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
                     FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
                     FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
+                    FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
                     else -> FlashMode.OFF
                 },
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
