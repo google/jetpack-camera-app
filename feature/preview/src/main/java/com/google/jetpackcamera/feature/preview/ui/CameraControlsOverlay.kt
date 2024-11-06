@@ -386,11 +386,8 @@ private fun CaptureButton(
                         onCaptureImageWithUri(
                             context.contentResolver,
                             null,
-                            if (previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()) {
-                                true
-                            } else {
-                                ignoreUri
-                            },
+                            previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
+                                ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
