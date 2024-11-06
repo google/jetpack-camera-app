@@ -555,8 +555,10 @@ class PreviewViewModel @AssistedInject constructor(
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
-                ((previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                        PreviewMode.ExternalMultipleImageCaptureMode)?.let {
+                (
+                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
+                        PreviewMode.ExternalMultipleImageCaptureMode
+                    )?.let {
                     val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
                         null
                     } else {
@@ -586,8 +588,10 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
-        ((previewUiState.value as? PreviewUiState.Ready)
-            ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode)?.let {
+        (
+            (previewUiState.value as? PreviewUiState.Ready)
+                    ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+            )?.let {
             if (!it.imageCaptureUris.isNullOrEmpty()) {
                 externalUriIndex++
                 Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
