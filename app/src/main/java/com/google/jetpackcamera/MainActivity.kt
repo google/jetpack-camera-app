@@ -230,11 +230,9 @@ class MainActivity : ComponentActivity() {
                     ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
                         if (uriList == null) {
-                            val resultIntent = Intent()
-                            setResult(RESULT_OK, resultIntent)
+                            setResult(RESULT_OK, Intent())
                         } else if (uriList != null && uriIndex == uriList.size - 1) {
-                            val resultIntent = Intent()
-                            setResult(RESULT_OK, resultIntent)
+                            setResult(RESULT_OK, Intent())
                             Log.d(TAG, "onMultipleImageCapture, finish()")
                             finish()
                         }

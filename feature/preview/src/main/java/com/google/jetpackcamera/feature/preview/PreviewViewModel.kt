@@ -544,27 +544,15 @@ class PreviewViewModel @AssistedInject constructor(
         Log.d(TAG, "captureImageWithUri")
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
-                if (previewUiState.value is PreviewUiState.Ready &&
-                    (previewUiState.value as PreviewUiState.Ready).previewMode
-                        is PreviewMode.ExternalMultipleImageCaptureMode
-                ) {
-                    val uri =
-                        if (ignoreUri || (
-                                (previewUiState.value as PreviewUiState.Ready).previewMode
-                                    as PreviewMode.ExternalMultipleImageCaptureMode
-                                ).imageCaptureUris.isNullOrEmpty()
-                        ) {
-                            null
-                        } else {
-                            (
-                                (previewUiState.value as PreviewUiState.Ready).previewMode
-                                    as PreviewMode.ExternalMultipleImageCaptureMode
-                                ).imageCaptureUris!![externalUriIndex]
-                        }
+                ((previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
+                        PreviewMode.ExternalMultipleImageCaptureMode)?.let {
+                    val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
+                        null
+                    } else {
+                        it.imageCaptureUris[externalUriIndex]
+                    }
                     Pair(externalUriIndex, uri)
-                } else {
-                    Pair(-1, imageCaptureUri)
-                }
+                } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
@@ -587,15 +575,12 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode
-                is PreviewMode.ExternalMultipleImageCaptureMode &&
-            !(
-                (previewUiState.value as PreviewUiState.Ready).previewMode
-                    as PreviewMode.ExternalMultipleImageCaptureMode
-                ).imageCaptureUris.isNullOrEmpty()
-        ) {
-            externalUriIndex++
+        ((previewUiState.value as? PreviewUiState.Ready)
+            ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode)?.let {
+            if (!it.imageCaptureUris.isNullOrEmpty()) {
+                externalUriIndex++
+                Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
+            }
         }
     }
 
