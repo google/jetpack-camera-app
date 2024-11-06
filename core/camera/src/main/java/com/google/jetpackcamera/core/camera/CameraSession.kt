@@ -70,7 +70,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -111,8 +111,7 @@ internal suspend fun runSingleCameraSession(
     val useCaseGroup = createUseCaseGroup(
         cameraInfo = sessionSettings.cameraInfo,
         initialTransientSettings = initialTransientSettings,
-        stabilizePreviewMode = sessionSettings.stabilizePreviewMode,
-        stabilizeVideoMode = sessionSettings.stabilizeVideoMode,
+        stabilizationMode = sessionSettings.stabilizationMode,
         aspectRatio = sessionSettings.aspectRatio,
         targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
@@ -239,8 +238,7 @@ context(CameraSessionContext)
 internal fun createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
-    stabilizePreviewMode: Stabilization,
-    stabilizeVideoMode: Stabilization,
+    stabilizationMode: StabilizationMode,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     dynamicRange: DynamicRange,
@@ -252,7 +250,7 @@ internal fun createUseCaseGroup(
         createPreviewUseCase(
             cameraInfo,
             aspectRatio,
-            stabilizePreviewMode
+            stabilizationMode
         )
     val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
@@ -264,7 +262,7 @@ internal fun createUseCaseGroup(
             cameraInfo,
             aspectRatio,
             targetFrameRate,
-            stabilizeVideoMode,
+            stabilizationMode,
             dynamicRange,
             backgroundDispatcher
         )
@@ -334,7 +332,7 @@ private fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
-    stabilizeVideoMode: Stabilization,
+    stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
@@ -346,7 +344,7 @@ private fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor()).build()
     return VideoCapture.Builder(recorder).apply {
         // set video stabilization
-        if (stabilizeVideoMode == Stabilization.ON) {
+        if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
             setVideoStabilizationEnabled(true)
         }
         // set target fps
@@ -380,12 +378,12 @@ context(CameraSessionContext)
 private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
-    stabilizePreviewMode: Stabilization
+    stabilizationMode: StabilizationMode
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(targetCameraInfo = cameraInfo)
 
     // set preview stabilization
-    if (stabilizePreviewMode == Stabilization.ON) {
+    if (stabilizationMode == StabilizationMode.ON) {
         setPreviewStabilizationEnabled(true)
     }
 
@@ -861,10 +859,31 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                         isFirstFrameTimestampUpdated.value = true
                     }
+                    // Publish stabilization state
+                    publishStabilizationMode(result)
                 } catch (_: Exception) {
                 }
             }
         }
     )
     return this
+}
+
+context(CameraSessionContext)
+private fun publishStabilizationMode(result: TotalCaptureResult) {
+    val nativeStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
+    val stabilizationMode = when (nativeStabilizationMode) {
+        CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION ->
+            StabilizationMode.ON
+        CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_ON -> StabilizationMode.HIGH_QUALITY
+        else -> StabilizationMode.OFF
+    }
+
+    currentCameraState.update { old ->
+        if (old.stabilizationMode != stabilizationMode) {
+            old.copy(stabilizationMode = stabilizationMode)
+        } else {
+            old
+        }
+    }
 }

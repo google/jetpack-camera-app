@@ -23,8 +23,7 @@ import "com/google/jetpackcamera/settings/dynamic_range.proto";
 import "com/google/jetpackcamera/settings/flash_mode.proto";
 import "com/google/jetpackcamera/settings/image_output_format.proto";
 import "com/google/jetpackcamera/settings/lens_facing.proto";
-import "com/google/jetpackcamera/settings/preview_stabilization.proto";
-import "com/google/jetpackcamera/settings/video_stabilization.proto";
+import "com/google/jetpackcamera/settings/stabilization_mode.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -37,8 +36,7 @@ message JcaSettings {
   int32 target_frame_rate = 3;
   AspectRatio aspect_ratio_status = 4;
   CaptureMode capture_mode_status = 5;
-  PreviewStabilization stabilize_preview = 6;
-  VideoStabilization stabilize_video = 7;
+  StabilizationMode stabilization_mode = 6;
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
   uint64 max_video_duration_millis = 11;
