@@ -590,7 +590,7 @@ class PreviewViewModel @AssistedInject constructor(
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
             (previewUiState.value as? PreviewUiState.Ready)
-                    ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
             )?.let {
             if (!it.imageCaptureUris.isNullOrEmpty()) {
                 externalUriIndex++
