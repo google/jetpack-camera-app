@@ -69,9 +69,11 @@
     <string name="quick_settings_flash_off">OFF</string>
     <string name="quick_settings_flash_auto">AUTO</string>
     <string name="quick_settings_flash_on">ON</string>
+    <string name="quick_settings_flash_llb">LLB</string>
     <string name="quick_settings_flash_off_description">Flash off</string>
     <string name="quick_settings_flash_auto_description">Auto flash</string>
     <string name="quick_settings_flash_on_description">Flash on</string>
+    <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
     <string name="quick_settings_capture_mode_single">Single Stream</string>
     <string name="quick_settings_capture_mode_multi">Multi Stream</string>

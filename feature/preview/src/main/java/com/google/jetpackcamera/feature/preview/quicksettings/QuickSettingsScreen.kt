@@ -66,7 +66,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.forCurrentLens
 
@@ -85,7 +84,6 @@ fun QuickSettingsScreenOverlay(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onLowLightBoostClick: (lowLightBoost: LowLightBoost) -> Unit,
     modifier: Modifier = Modifier,
     isOpen: Boolean = false
 ) {
@@ -137,8 +135,7 @@ fun QuickSettingsScreenOverlay(
                 onCaptureModeClick = onCaptureModeClick,
                 onDynamicRangeClick = onDynamicRangeClick,
                 onImageOutputFormatClick = onImageOutputFormatClick,
-                onConcurrentCameraModeClick = onConcurrentCameraModeClick,
-                onLowLightBoostClick = onLowLightBoostClick
+                onConcurrentCameraModeClick = onConcurrentCameraModeClick
             )
         }
     } else {
@@ -167,8 +164,7 @@ private fun ExpandedQuickSettingsUi(
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
-    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onLowLightBoostClick: (lowLightBoost: LowLightBoost) -> Unit
+    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit
 ) {
     Column(
         modifier =
@@ -313,8 +309,7 @@ fun ExpandedQuickSettingsUiPreview() {
             onCaptureModeClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { },
-            onLowLightBoostClick = { }
+            onConcurrentCameraModeClick = { }
         )
     }
 }
@@ -340,8 +335,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             onCaptureModeClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { },
-            onLowLightBoostClick = { }
+            onConcurrentCameraModeClick = { }
         )
     }
 }
