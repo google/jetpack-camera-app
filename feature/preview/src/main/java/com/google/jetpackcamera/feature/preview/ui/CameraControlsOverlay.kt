@@ -72,14 +72,16 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
 
-class ZoomLevelDisplayState(showInitially: Boolean = false) {
-    private var _showZoomLevel = mutableStateOf(showInitially)
+class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
+    private var _showZoomLevel = mutableStateOf(alwaysDisplay)
     val showZoomLevel: Boolean get() = _showZoomLevel.value
 
     suspend fun showZoomLevel() {
-        _showZoomLevel.value = true
-        delay(3000)
-        _showZoomLevel.value = false
+        if (!alwaysDisplay) {
+            _showZoomLevel.value = true
+            delay(3000)
+            _showZoomLevel.value = false
+        }
     }
 }
 
