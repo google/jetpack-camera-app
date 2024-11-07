@@ -186,7 +186,7 @@ private fun ContentScreen(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,

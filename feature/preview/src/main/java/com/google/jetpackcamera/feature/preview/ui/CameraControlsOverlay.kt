@@ -100,7 +100,7 @@ fun CameraControlsOverlay(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
@@ -238,7 +238,7 @@ private fun ControlsBottom(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
@@ -340,7 +340,7 @@ private fun CaptureButton(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: (
@@ -362,16 +362,29 @@ private fun CaptureButton(
                         onCaptureImageWithUri(
                             context.contentResolver,
                             null,
-                            true,
-                            previewUiState.previewMode.onImageCapture
-                        )
+                            true
+                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            previewUiState.previewMode.onImageCapture(event)
+                        }
                     }
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
                             context.contentResolver,
                             previewUiState.previewMode.imageCaptureUri,
-                            false,
+                            false
+                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            previewUiState.previewMode.onImageCapture(event)
+                        }
+                    }
+
+                    is PreviewMode.ExternalMultipleImageCaptureMode -> {
+                        val ignoreUri = previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()
+                        onCaptureImageWithUri(
+                            context.contentResolver,
+                            null,
+                            previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
+                                ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
@@ -381,7 +394,7 @@ private fun CaptureButton(
                             context.contentResolver,
                             null,
                             false
-                        ) {}
+                        ) { _: PreviewViewModel.ImageCaptureEvent, _: Int -> }
                     }
                 }
             }
