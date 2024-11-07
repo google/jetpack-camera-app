@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.test
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.graphics.Rect
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
@@ -242,5 +243,9 @@ class FakeCameraUseCase(
         currentSettings.update { old ->
             old.copy(maxVideoDurationMillis = durationInMillis)
         }
+    }
+
+    override fun getFaces(): StateFlow<List<Rect>> {
+        TODO("Not yet implemented")
     }
 }

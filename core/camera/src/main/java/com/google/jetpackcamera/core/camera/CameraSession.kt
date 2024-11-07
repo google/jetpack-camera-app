@@ -95,6 +95,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "CameraSession"
 
 context(CameraSessionContext)
+@ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
@@ -235,6 +236,7 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
 }
 
 context(CameraSessionContext)
+@ExperimentalCamera2Interop
 internal fun createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
@@ -375,12 +377,19 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
 }
 
 context(CameraSessionContext)
+@ExperimentalCamera2Interop
 private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(targetCameraInfo = cameraInfo)
+
+    Camera2Interop.Extender(this)
+        .setCaptureRequestOption(
+            CaptureRequest.STATISTICS_FACE_DETECT_MODE,
+            CaptureResult.STATISTICS_FACE_DETECT_MODE_FULL
+        )
 
     // set preview stabilization
     if (stabilizationMode == StabilizationMode.ON) {
@@ -834,6 +843,19 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+
+                Log.d(TAG, "onCaptureCompleted")
+
+                val capturedFaces = result.get(CaptureResult.STATISTICS_FACES)
+                capturedFaces?.forEach { face ->
+                    Log.d(TAG, "face: ${face.id} ${face.bounds}")
+                }
+                if (capturedFaces != null && capturedFaces.size >= 0) {
+                    faces.update {
+                        capturedFaces.map { face -> face.bounds }.toList()
+                    }
+                }
+
                 val logicalCameraId = session.device.id
                 if (logicalCameraId != targetCameraLogicalId) return
                 try {

@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -112,6 +113,9 @@ constructor(
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+
+    private val _faces = MutableStateFlow(listOf<Rect>())
+    override fun getFaces(): StateFlow<List<Rect>> = _faces.asStateFlow()
 
     // Could be improved by setting initial value only when camera is initialized
     private val _currentCameraState = MutableStateFlow(CameraState())
@@ -302,7 +306,8 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings
+                            transientSettings = transientSettings,
+                            faces = _faces,
                         )
                     ) {
                         try {

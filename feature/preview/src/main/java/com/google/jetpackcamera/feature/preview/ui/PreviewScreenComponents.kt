@@ -23,12 +23,14 @@ import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.surface.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateRectAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -86,8 +88,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.setFrom
+import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -111,6 +119,9 @@ import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -301,6 +312,18 @@ fun PreviewDisplay(
         }
     )
 
+    val transformationInfoFlow: StateFlow<SurfaceRequest.TransformationInfo?> =
+        MutableStateFlow<SurfaceRequest.TransformationInfo?>(null)
+            .also { stateFlow ->
+                // Set a callback to update this state flow
+                surfaceRequest?.setTransformationInfoListener(Runnable::run) { transformInfo
+                    ->
+                    // Set the next value of the flow
+                    stateFlow.value = transformInfo
+                }
+            }
+            .asStateFlow()
+
     surfaceRequest?.let {
         BoxWithConstraints(
             Modifier
@@ -333,6 +356,8 @@ fun PreviewDisplay(
                 }
             }
 
+            Log.d(TAG, "Compose size: $width x $height")
+
             Box(
                 modifier = Modifier
                     .width(width)
@@ -352,7 +377,10 @@ fun PreviewDisplay(
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
 
+                Log.d(TAG, "surfaceRequest: ${surfaceRequest.resolution}")
+
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
+
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
@@ -367,9 +395,9 @@ fun PreviewDisplay(
                                     with(coordinateTransformer) {
                                         val surfaceCoords = it.transform()
                                         Log.d(
-                                            "TAG",
+                                            TAG,
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -380,6 +408,49 @@ fun PreviewDisplay(
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
+
+                var faceRect by remember {
+                    mutableStateOf(Rect.Zero)
+                }
+
+                val animatedRect by animateRectAsState(
+                    targetValue = faceRect,
+                    animationSpec = tween(
+                        durationMillis = 50,
+                    ),
+                )
+
+                previewUiState.faces.forEach {
+
+                    val bufferToCompose = Matrix().apply {
+                        setFrom(coordinateTransformer.transformMatrix)
+                        invert()
+                    }
+
+                    val transformationInfo = transformationInfoFlow.value!!
+                    val sensorToBuffer = Matrix().apply {
+                        setFrom(transformationInfo.sensorToBufferTransform)
+                    }
+
+                    val faceRectOnBuffer = sensorToBuffer.map(it.toComposeRect())
+                    faceRect = bufferToCompose.map(faceRectOnBuffer)
+                }
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    Log.d(TAG, "Canvas Size: ${this.size}")
+                    drawRect(
+                        color = Color.Yellow,
+                        size = animatedRect.size,
+                        topLeft = animatedRect.topLeft,
+                        style = Stroke(
+                            width = 5.0f
+                        )
+                    )
+                }
+
             }
         }
     }
@@ -692,7 +763,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
