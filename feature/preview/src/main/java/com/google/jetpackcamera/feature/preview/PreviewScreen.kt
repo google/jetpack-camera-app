@@ -199,7 +199,7 @@ private fun ContentScreen(
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false,
+    isDebugMode: Boolean = false
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
