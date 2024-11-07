@@ -89,6 +89,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "CameraSession"
 
@@ -619,7 +620,7 @@ private suspend fun startVideoRecordingInternal(
                         currentCameraState.update { old ->
                             old.copy(
                                 videoRecordingState = VideoRecordingState.Inactive(
-                                    finalElapsedTimeNanos = maxDurationMillis * 1_000_000_000
+                                    finalElapsedTimeNanos = maxDurationMillis.milliseconds.inWholeNanoseconds
                                 )
                             )
                         }
