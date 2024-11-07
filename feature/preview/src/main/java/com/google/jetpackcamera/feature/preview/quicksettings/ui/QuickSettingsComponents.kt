@@ -193,7 +193,9 @@ fun QuickSetFlash(
                         CameraFlashMode.OFF -> "QUICK SETTINGS FLASH IS OFF"
                         CameraFlashMode.AUTO -> "QUICK SETTINGS FLASH IS AUTO"
                         CameraFlashMode.ON -> "QUICK SETTINGS FLASH IS ON"
-                        CameraFlashMode.LOW_LIGHT_BOOST -> "QUICK SETTINGS FLASH IS SET TO LOW LIGHT BOOST"
+                        CameraFlashMode.LOW_LIGHT_BOOST -> {
+                            "QUICK SETTINGS FLASH IS SET TO LOW LIGHT BOOST"
+                        }
                     }
             },
         enum = enum,
