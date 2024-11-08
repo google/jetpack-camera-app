@@ -157,6 +157,7 @@ class PreviewViewModel @AssistedInject constructor(
                         ),
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                        cameraPropertiesJSON = cameraState.debugInfo.cameraPropertiesJSON,
                         stabilizationUiState = stabilizationUiState
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
@@ -757,6 +758,16 @@ class PreviewViewModel @AssistedInject constructor(
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
                     quickSettingsIsOpen = !old.quickSettingsIsOpen
+                ) ?: old
+            }
+        }
+    }
+
+    fun toggleDebugOverlay() {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    isDebugOverlayOpen = !old.isDebugOverlayOpen
                 ) ?: old
             }
         }

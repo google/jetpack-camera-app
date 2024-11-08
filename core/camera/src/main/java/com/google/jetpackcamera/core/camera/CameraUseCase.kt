@@ -181,7 +181,11 @@ data class CameraState(
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val debugInfo: DebugInfo = DebugInfo(null, null, "")
 )
 
-data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+data class DebugInfo(
+    val logicalCameraId: String?,
+    val physicalCameraId: String?,
+    val cameraPropertiesJSON: String
+)

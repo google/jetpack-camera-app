@@ -113,10 +113,12 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
-    private val _currentCameraState = MutableStateFlow(CameraState())
+    private var _currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+
+    private var cameraPropertiesJSON: String = ""
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
@@ -204,7 +206,7 @@ constructor(
                 .tryApplyConcurrentCameraModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
-                val cameraProperties =
+                cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val fileDir = File(application.getExternalFilesDir(null), "Debug")
                 fileDir.mkdirs()
@@ -212,8 +214,8 @@ constructor(
                     fileDir,
                     "JCACameraProperties.json"
                 )
-                writeFileExternalStorage(file, cameraProperties)
-                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraProperties")
+                writeFileExternalStorage(file, cameraPropertiesJSON)
+                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraPropertiesJSON")
             }
         }
     }
@@ -301,7 +303,8 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings
+                            transientSettings = transientSettings,
+                            cameraPropertiesJSON = cameraPropertiesJSON
                         )
                     ) {
                         try {
