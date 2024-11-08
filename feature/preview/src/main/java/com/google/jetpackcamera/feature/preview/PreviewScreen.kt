@@ -58,6 +58,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -154,7 +155,8 @@ fun PreviewScreen(
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                onSnackBarResult = viewModel::onSnackBarResult
+                onSnackBarResult = viewModel::onSnackBarResult,
+                isDebugMode = isDebugMode
             )
         }
     }
@@ -196,7 +198,8 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
-    onSnackBarResult: (String) -> Unit = {}
+    onSnackBarResult: (String) -> Unit = {},
+    isDebugMode: Boolean = false
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -256,7 +259,8 @@ private fun ContentScreen(
                 onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
             )
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {
