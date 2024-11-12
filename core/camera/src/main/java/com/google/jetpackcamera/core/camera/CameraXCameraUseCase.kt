@@ -304,7 +304,7 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings,
+                            transientSettings = transientSettings
                         )
                     ) {
                         try {

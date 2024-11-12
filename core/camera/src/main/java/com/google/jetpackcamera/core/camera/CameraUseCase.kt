@@ -187,5 +187,5 @@ data class CameraState(
 
 data class DebugInfo(
     val logicalCameraId: String?,
-    val physicalCameraId: String?,
+    val physicalCameraId: String?
 )
