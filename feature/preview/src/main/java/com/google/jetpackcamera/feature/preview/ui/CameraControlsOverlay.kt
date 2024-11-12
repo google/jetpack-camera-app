@@ -72,14 +72,16 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.delay
 
-class ZoomLevelDisplayState(showInitially: Boolean = false) {
-    private var _showZoomLevel = mutableStateOf(showInitially)
+class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
+    private var _showZoomLevel = mutableStateOf(alwaysDisplay)
     val showZoomLevel: Boolean get() = _showZoomLevel.value
 
     suspend fun showZoomLevel() {
-        _showZoomLevel.value = true
-        delay(3000)
-        _showZoomLevel.value = false
+        if (!alwaysDisplay) {
+            _showZoomLevel.value = true
+            delay(3000)
+            _showZoomLevel.value = false
+        }
     }
 }
 
@@ -100,7 +102,7 @@ fun CameraControlsOverlay(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
@@ -216,9 +218,6 @@ private fun ControlsTop(
                     )
                 }
             }
-            LowLightBoostIcon(
-                lowLightBoost = currentCameraSettings.lowLightBoost
-            )
         }
     }
 }
@@ -241,7 +240,7 @@ private fun ControlsBottom(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
@@ -343,7 +342,7 @@ private fun CaptureButton(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: (
@@ -365,16 +364,29 @@ private fun CaptureButton(
                         onCaptureImageWithUri(
                             context.contentResolver,
                             null,
-                            true,
-                            previewUiState.previewMode.onImageCapture
-                        )
+                            true
+                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            previewUiState.previewMode.onImageCapture(event)
+                        }
                     }
 
                     is PreviewMode.ExternalImageCaptureMode -> {
                         onCaptureImageWithUri(
                             context.contentResolver,
                             previewUiState.previewMode.imageCaptureUri,
-                            false,
+                            false
+                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            previewUiState.previewMode.onImageCapture(event)
+                        }
+                    }
+
+                    is PreviewMode.ExternalMultipleImageCaptureMode -> {
+                        val ignoreUri = previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()
+                        onCaptureImageWithUri(
+                            context.contentResolver,
+                            null,
+                            previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
+                                ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
@@ -384,7 +396,7 @@ private fun CaptureButton(
                             context.contentResolver,
                             null,
                             false
-                        ) {}
+                        ) { _: PreviewViewModel.ImageCaptureEvent, _: Int -> }
                     }
                 }
             }
