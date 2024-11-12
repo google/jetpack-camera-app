@@ -19,6 +19,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 
 /**
@@ -29,10 +30,10 @@ sealed interface PreviewUiState {
 
     data class Ready(
         // "quick" settings
-        val currentCameraSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints,
+        val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
+        val systemConstraints: SystemConstraints = SystemConstraints(),
         val zoomScale: Float = 1f,
-        val videoRecordingState: VideoRecordingState,
+        val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
         val audioMuted: Boolean = false,
 
@@ -40,13 +41,23 @@ sealed interface PreviewUiState {
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode,
-        val captureModeToggleUiState: CaptureModeToggleUiState,
+        val previewMode: PreviewMode = PreviewMode.StandardMode {},
+        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false
+        val isDebugMode: Boolean = false,
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
     ) : PreviewUiState
 }
 
 // todo(kc): add ElapsedTimeUiState class
+
+sealed interface StabilizationUiState {
+    data object Disabled : StabilizationUiState
+
+    data class Set(
+        val stabilizationMode: StabilizationMode,
+        val active: Boolean = true
+    ) : StabilizationUiState
+}

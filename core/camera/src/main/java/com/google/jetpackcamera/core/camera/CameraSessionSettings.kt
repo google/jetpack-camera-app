@@ -22,7 +22,7 @@ import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 
 /**
  * Camera settings that persist as long as a camera is running.
@@ -38,8 +38,7 @@ internal sealed interface PerpetualSessionSettings {
         override val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
         val targetFrameRate: Int,
-        val stabilizePreviewMode: Stabilization,
-        val stabilizeVideoMode: Stabilization,
+        val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
