@@ -118,13 +118,13 @@ constructor(
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
-    private var cameraPropertiesJSON: String = ""
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         useCaseMode: CameraUseCase.UseCaseMode,
-        isDebugMode: Boolean
+        isDebugMode: Boolean,
+        cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -206,7 +206,7 @@ constructor(
                 .tryApplyConcurrentCameraModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
-                cameraPropertiesJSON =
+                val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val fileDir = File(application.getExternalFilesDir(null), "Debug")
                 fileDir.mkdirs()
@@ -215,6 +215,7 @@ constructor(
                     "JCACameraProperties.json"
                 )
                 writeFileExternalStorage(file, cameraPropertiesJSON)
+                cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
                 Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraPropertiesJSON")
             }
         }
@@ -304,7 +305,6 @@ constructor(
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings,
-                            cameraPropertiesJSON = cameraPropertiesJSON
                         )
                     ) {
                         try {

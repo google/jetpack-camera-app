@@ -129,7 +129,7 @@ fun CameraControlsOverlay(
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                    isDebugMode = previewUiState.isDebugMode,
+                    isDebugMode = previewUiState.debugUiState.isDebugMode,
                     currentCameraSettings = previewUiState.currentCameraSettings,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
@@ -274,7 +274,7 @@ private fun ControlsBottom(
                 if (showZoomLevel) {
                     ZoomScaleText(zoomLevel)
                 }
-                if (previewUiState.isDebugMode) {
+                if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
                 ElapsedTimeText(

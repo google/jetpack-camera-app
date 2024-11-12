@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.preview.ui.debug
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -53,6 +54,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 
+private const val TAG = "DebugOverlayComponents"
 
 @Composable
 fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> Unit) {
@@ -68,7 +70,8 @@ fun DebugOverlayComponent(
     toggleIsOpen: () -> Unit,
     previewUiState: PreviewUiState.Ready,
 ) {
-    val isOpen = previewUiState.isDebugMode && previewUiState.isDebugOverlayOpen
+    val isOpen = previewUiState.debugUiState.isDebugMode &&
+            previewUiState.debugUiState.isDebugOverlayOpen
     val backgroundColor =
         animateColorAsState(
             targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
@@ -120,6 +123,7 @@ fun DebugOverlayComponent(
             // Set zoom ratio
             if (zoomRatioDialog.value) {
                 var zoomRatioText by remember { mutableStateOf("") }
+                zoomRatioText = ""
                 AlertDialog(
                     title = { Text(text = "Enter and confirm zoom ratio (Absolute not relative)") },
                     text = {
@@ -134,13 +138,23 @@ fun DebugOverlayComponent(
                     confirmButton = {
                         Text(
                             text = "Set",
-                            modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON).clickable {
-                                val relativeRatio = zoomRatioText.toFloat()
-                                val currentRatio = previewUiState.zoomScale
-                                val absoluteRatio = relativeRatio / currentRatio
-                                onChangeZoomScale(absoluteRatio)
-                                zoomRatioDialog.value = false
-                            }
+                            modifier = Modifier
+                                .testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON)
+                                .clickable {
+                                    try {
+                                        val relativeRatio = if (zoomRatioText.isEmpty()) {
+                                            1f
+                                        } else {
+                                            zoomRatioText.toFloat()
+                                        }
+                                        val currentRatio = previewUiState.zoomScale
+                                        val absoluteRatio = relativeRatio / currentRatio
+                                        onChangeZoomScale(absoluteRatio)
+                                    } catch (e: NumberFormatException) {
+                                        Log.d(TAG, "Zoom ratio should be a float")
+                                    }
+                                    zoomRatioDialog.value = false
+                                }
                         )
                     })
             }
@@ -158,7 +172,11 @@ private fun CameraPropertiesJSONComponent(previewUiState: PreviewUiState.Ready, 
             .verticalScroll(state = scrollState)
             .background(color = Color.Black)
     ) {
-        Text(modifier = Modifier.testTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG), text = previewUiState.cameraPropertiesJSON, fontSize = 10.sp)
+        Text(
+            modifier = Modifier.testTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG),
+            text = previewUiState.debugUiState.cameraPropertiesJSON,
+            fontSize = 10.sp
+        )
     }
 }
 

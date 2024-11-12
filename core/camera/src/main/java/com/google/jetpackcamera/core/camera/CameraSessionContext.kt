@@ -40,5 +40,4 @@ internal data class CameraSessionContext(
     val currentCameraState: MutableStateFlow<CameraState>,
     val surfaceRequests: MutableStateFlow<SurfaceRequest?>,
     val transientSettings: StateFlow<TransientSessionSettings?>,
-    val cameraPropertiesJSON: String
 )

@@ -849,11 +849,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                             old.debugInfo.physicalCameraId != physicalCameraId
                         ) {
                             old.copy(
-                                debugInfo = DebugInfo(
-                                    logicalCameraId,
-                                    physicalCameraId,
-                                    cameraPropertiesJSON
-                                )
+                                debugInfo = DebugInfo(logicalCameraId, physicalCameraId)
                             )
                         } else {
                             old

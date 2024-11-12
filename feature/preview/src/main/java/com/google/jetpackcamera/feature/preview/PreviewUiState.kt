@@ -46,13 +46,17 @@ sealed interface PreviewUiState {
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val cameraPropertiesJSON: String = "",
-        val isDebugMode: Boolean = false,
-        val isDebugOverlayOpen: Boolean = false,
+        val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
     ) : PreviewUiState
 }
 // todo(kc): add ElapsedTimeUiState class
+
+data class DebugUiState(
+    val cameraPropertiesJSON: String = "",
+    val isDebugMode: Boolean = false,
+    val isDebugOverlayOpen: Boolean = false,
+)
 
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState

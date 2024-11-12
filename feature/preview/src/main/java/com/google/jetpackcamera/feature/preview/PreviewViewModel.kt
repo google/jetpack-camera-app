@@ -101,6 +101,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var externalUriIndex: Int = 0
 
+    private var cameraPropertiesJSON = ""
+
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
@@ -113,7 +115,7 @@ class PreviewViewModel @AssistedInject constructor(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
             previewMode.toUseCaseMode(),
             isDebugMode
-        )
+        ) { cameraPropertiesJSON = it }
     }
 
     init {
@@ -141,10 +143,7 @@ class PreviewViewModel @AssistedInject constructor(
                     when (old) {
                         is PreviewUiState.Ready -> old
                         is PreviewUiState.NotReady ->
-                            PreviewUiState.Ready(
-                                isDebugMode = isDebugMode,
-                                previewMode = previewMode
-                            )
+                            PreviewUiState.Ready(previewMode = previewMode)
                     }.copy(
                         currentCameraSettings = cameraAppSettings,
                         systemConstraints = systemConstraints,
@@ -157,7 +156,10 @@ class PreviewViewModel @AssistedInject constructor(
                         ),
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-                        cameraPropertiesJSON = cameraState.debugInfo.cameraPropertiesJSON,
+                        debugUiState = DebugUiState(
+                            cameraPropertiesJSON,
+                            isDebugMode,
+                        ),
                         stabilizationUiState = stabilizationUiState
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
@@ -767,7 +769,11 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
-                    isDebugOverlayOpen = !old.isDebugOverlayOpen
+                    debugUiState = DebugUiState(
+                        old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.isDebugMode,
+                        !old.debugUiState.isDebugOverlayOpen
+                    ),
                 ) ?: old
             }
         }
