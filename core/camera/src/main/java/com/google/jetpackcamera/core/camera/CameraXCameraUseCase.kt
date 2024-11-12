@@ -48,7 +48,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -690,12 +689,6 @@ constructor(
         currentSettings.update { old ->
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
-        }
-    }
-
-    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        currentSettings.update { old ->
-            old?.copy(lowLightBoost = lowLightBoost)
         }
     }
 
