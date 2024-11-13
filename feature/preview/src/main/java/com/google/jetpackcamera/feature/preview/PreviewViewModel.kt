@@ -158,7 +158,7 @@ class PreviewViewModel @AssistedInject constructor(
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
                             cameraPropertiesJSON,
-                            isDebugMode,
+                            isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiState
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
@@ -773,7 +773,7 @@ class PreviewViewModel @AssistedInject constructor(
                         old.debugUiState.cameraPropertiesJSON,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
-                    ),
+                    )
                 ) ?: old
             }
         }

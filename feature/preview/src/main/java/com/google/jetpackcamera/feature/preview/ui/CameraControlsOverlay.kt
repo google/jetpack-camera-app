@@ -204,7 +204,6 @@ private fun ControlsTop(
                 isOpen = isQuickSettingsOpen
             )
 
-
             Row(
                 Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,

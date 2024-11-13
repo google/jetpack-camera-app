@@ -55,7 +55,7 @@ sealed interface PreviewUiState {
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
     val isDebugMode: Boolean = false,
-    val isDebugOverlayOpen: Boolean = false,
+    val isDebugOverlayOpen: Boolean = false
 )
 
 sealed interface StabilizationUiState {
