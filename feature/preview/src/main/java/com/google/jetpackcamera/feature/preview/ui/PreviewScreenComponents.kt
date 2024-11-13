@@ -442,21 +442,25 @@ fun StabilizationIcon(
                 painter = when (stabilizationMode) {
                     StabilizationMode.AUTO ->
                         painterResource(R.drawable.video_stable_auto_filled_icon)
+
                     StabilizationMode.HIGH_QUALITY ->
                         painterResource(R.drawable.video_stable_hq_filled_icon)
+
                     else -> rememberVectorPainter(Icons.Filled.VideoStable)
                 },
                 // previewStabilization will not be on for high quality
-                contentDescription = stringResource(
-                    when (stabilizationMode) {
-                        StabilizationMode.AUTO -> R.string.stabilization_icon_description_auto
-                        StabilizationMode.ON ->
-                            R.string.stabilization_icon_description_preview_and_video
-                        StabilizationMode.HIGH_QUALITY ->
-                            R.string.stabilization_icon_description_video_only
-                        else -> 0
-                    }
-                ),
+                contentDescription = when (stabilizationMode) {
+                    StabilizationMode.AUTO -> stringResource(
+                        R.string.stabilization_icon_description_auto
+                    )
+                    StabilizationMode.ON ->
+                        stringResource(R.string.stabilization_icon_description_preview_and_video)
+
+                    StabilizationMode.HIGH_QUALITY ->
+                        stringResource(R.string.stabilization_icon_description_video_only)
+
+                    else -> null
+                },
                 modifier = modifier
             )
         }
