@@ -170,8 +170,7 @@ private fun SetZoomRatioComponent(
     onChangeZoomScale: (Float) -> Unit,
     onClose: () -> Unit
 ) {
-    var zoomRatioText by remember { mutableStateOf("") }
-    zoomRatioText = ""
+    var zoomRatioText = remember { mutableStateOf("") }
     BackHandler(onBack = { onClose() })
     val scrollState = rememberScrollState()
     Column(
@@ -183,20 +182,20 @@ private fun SetZoomRatioComponent(
         Text(text = "Enter and confirm zoom ratio (Absolute not relative)")
         TextField(
             modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD),
-            value = zoomRatioText,
-            onValueChange = { zoomRatioText = it },
+            value = zoomRatioText.value,
+            onValueChange = { zoomRatioText.value = it },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
         TextButton(
             modifier = Modifier.testTag(
-                DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+                DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
             ),
             onClick = {
                 try {
-                    val relativeRatio = if (zoomRatioText.isEmpty()) {
+                    val relativeRatio = if (zoomRatioText.value.isEmpty()) {
                         1f
                     } else {
-                        zoomRatioText.toFloat()
+                        zoomRatioText.value.toFloat()
                     }
                     val currentRatio = previewUiState.zoomScale
                     val absoluteRatio = relativeRatio / currentRatio
