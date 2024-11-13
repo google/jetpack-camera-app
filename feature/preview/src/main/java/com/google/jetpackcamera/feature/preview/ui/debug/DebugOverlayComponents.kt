@@ -68,10 +68,10 @@ fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
     onChangeZoomScale: (Float) -> Unit,
     toggleIsOpen: () -> Unit,
-    previewUiState: PreviewUiState.Ready,
+    previewUiState: PreviewUiState.Ready
 ) {
     val isOpen = previewUiState.debugUiState.isDebugMode &&
-            previewUiState.debugUiState.isDebugOverlayOpen
+        previewUiState.debugUiState.isDebugOverlayOpen
     val backgroundColor =
         animateColorAsState(
             targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
@@ -104,10 +104,24 @@ fun DebugOverlayComponent(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TextButton(modifier = Modifier.testTag(DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON), onClick = { cameraPropertiesJSONDialog.value = true }) {
+                TextButton(
+                    modifier = Modifier.testTag(
+                        DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
+                    ),
+                    onClick = {
+                        cameraPropertiesJSONDialog.value = true
+                    }
+                ) {
                     Text(text = "Show Camera Properties JSON")
                 }
-                TextButton(modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON), onClick = { zoomRatioDialog.value = true }) {
+                TextButton(
+                    modifier = Modifier.testTag(
+                        DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+                    ),
+                    onClick = {
+                        zoomRatioDialog.value = true
+                    }
+                ) {
                     Text(text = "Set Zoom Ratio")
                 }
             }
