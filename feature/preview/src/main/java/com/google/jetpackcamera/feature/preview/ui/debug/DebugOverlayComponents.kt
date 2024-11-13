@@ -135,42 +135,9 @@ fun DebugOverlayComponent(
 
             // Set zoom ratio
             if (zoomRatioDialog.value) {
-                var zoomRatioText by remember { mutableStateOf("") }
-                zoomRatioText = ""
-                AlertDialog(
-                    title = { Text(text = "Enter and confirm zoom ratio (Absolute not relative)") },
-                    text = {
-                        TextField(
-                            modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD),
-                            value = zoomRatioText,
-                            onValueChange = { zoomRatioText = it },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                    },
-                    onDismissRequest = { zoomRatioDialog.value = false },
-                    confirmButton = {
-                        Text(
-                            text = "Set",
-                            modifier = Modifier
-                                .testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON)
-                                .clickable {
-                                    try {
-                                        val relativeRatio = if (zoomRatioText.isEmpty()) {
-                                            1f
-                                        } else {
-                                            zoomRatioText.toFloat()
-                                        }
-                                        val currentRatio = previewUiState.zoomScale
-                                        val absoluteRatio = relativeRatio / currentRatio
-                                        onChangeZoomScale(absoluteRatio)
-                                    } catch (e: NumberFormatException) {
-                                        Log.d(TAG, "Zoom ratio should be a float")
-                                    }
-                                    zoomRatioDialog.value = false
-                                }
-                        )
-                    }
-                )
+                SetZoomRatioComponent(previewUiState, onChangeZoomScale) {
+                    zoomRatioDialog.value = false
+                }
             }
         }
     }
@@ -194,5 +161,53 @@ private fun CameraPropertiesJSONComponent(
             text = previewUiState.debugUiState.cameraPropertiesJSON,
             fontSize = 10.sp
         )
+    }
+}
+
+@Composable
+private fun SetZoomRatioComponent(
+    previewUiState: PreviewUiState.Ready,
+    onChangeZoomScale: (Float) -> Unit,
+    onClose: () -> Unit
+) {
+    var zoomRatioText by remember { mutableStateOf("") }
+    zoomRatioText = ""
+    BackHandler(onBack = { onClose() })
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(state = scrollState)
+            .background(color = Color.Black)
+    ) {
+        Text(text = "Enter and confirm zoom ratio (Absolute not relative)")
+        TextField(
+            modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD),
+            value = zoomRatioText,
+            onValueChange = { zoomRatioText = it },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        TextButton(
+            modifier = Modifier.testTag(
+                DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+            ),
+            onClick = {
+                try {
+                    val relativeRatio = if (zoomRatioText.isEmpty()) {
+                        1f
+                    } else {
+                        zoomRatioText.toFloat()
+                    }
+                    val currentRatio = previewUiState.zoomScale
+                    val absoluteRatio = relativeRatio / currentRatio
+                    onChangeZoomScale(absoluteRatio)
+                } catch (e: NumberFormatException) {
+                    Log.d(TAG, "Zoom ratio should be a float")
+                }
+                onClose()
+            }
+        ) {
+            Text(text = "Set")
+        }
     }
 }
