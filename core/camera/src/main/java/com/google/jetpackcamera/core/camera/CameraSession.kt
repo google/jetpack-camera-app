@@ -71,6 +71,12 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import java.io.File
+import java.util.Date
+import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -85,12 +91,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.util.Date
-import java.util.concurrent.Executor
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "CameraSession"
 
@@ -201,8 +201,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                        "${prevTransientSettings.deviceRotation} -> " +
-                        "${newTransientSettings.deviceRotation}"
+                    "${prevTransientSettings.deviceRotation} -> " +
+                    "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -563,9 +563,9 @@ private suspend fun startVideoRecordingInternal(
 
     val callbackExecutor: Executor =
         (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                        CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+            currentCoroutineContext()[ContinuationInterceptor] as?
+                CoroutineDispatcher
+            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
@@ -661,7 +661,8 @@ private suspend fun startVideoRecordingInternal(
                         currentCameraState.update { old ->
                             old.copy(
                                 videoRecordingState = VideoRecordingState.Inactive(
-                                    finalElapsedTimeNanos = maxDurationMillis.milliseconds.inWholeNanoseconds
+                                    finalElapsedTimeNanos = maxDurationMillis.milliseconds
+                                        .inWholeNanoseconds
                                 )
                             )
                         }
@@ -742,9 +743,12 @@ private suspend fun runVideoRecording(
                         if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
                             recording.mute(newTransientSettings.isAudioMuted)
                         }
-                        if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
+                        if (currentSettings.isFlashModeOn() !=
+                            newTransientSettings.isFlashModeOn()
+                        ) {
                             if (!isFrontCameraSelector) {
-                                camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
+                                camera.cameraControl
+                                    .enableTorch(newTransientSettings.isFlashModeOn())
                             } else {
                                 Log.d(TAG, "Unable to update torch for front camera.")
                             }
@@ -777,7 +781,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                        "$width x $height"
+                    "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }
