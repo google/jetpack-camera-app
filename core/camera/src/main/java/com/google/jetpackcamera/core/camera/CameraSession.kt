@@ -37,7 +37,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -721,11 +720,10 @@ private suspend fun runVideoRecording(
         ).use { recording ->
 
             fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-            val isFrontCameraSelector =
-                camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+            val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
 
             if (currentSettings.isFlashModeOn()) {
-                if (!isFrontCameraSelector) {
+                if (!isFrontFacing) {
                     camera.cameraControl.enableTorch(true).await()
                 } else {
                     Log.d(TAG, "Unable to enable torch for front camera.")
@@ -743,7 +741,7 @@ private suspend fun runVideoRecording(
                         recording.mute(newTransientSettings.audioMuted)
                     }
                     if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                        if (!isFrontCameraSelector) {
+                        if (!isFrontFacing) {
                             camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
                         } else {
                             Log.d(TAG, "Unable to update torch for front camera.")
