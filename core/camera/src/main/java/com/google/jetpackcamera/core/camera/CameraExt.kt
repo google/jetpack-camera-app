@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -63,15 +62,6 @@ fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
 fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
     LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
     LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-}
-
-@SuppressLint("RestrictedApi")
-fun CameraSelector.toAppLensFacing(): LensFacing = when (this.lensFacing) {
-    CameraSelector.LENS_FACING_FRONT -> LensFacing.FRONT
-    CameraSelector.LENS_FACING_BACK -> LensFacing.BACK
-    else -> throw IllegalArgumentException(
-        "Unknown CameraSelector -> LensFacing mapping. [CameraSelector: $this]"
-    )
 }
 
 val CameraInfo.sensorLandscapeRatio: Float

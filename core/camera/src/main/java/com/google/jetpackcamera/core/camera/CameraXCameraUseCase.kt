@@ -138,7 +138,7 @@ constructor(
         systemConstraints = SystemConstraints(
             availableLenses = availableCameraLenses,
             concurrentCamerasSupported = cameraProvider.availableConcurrentCameraInfos.any {
-                it.map { cameraInfo -> cameraInfo.cameraSelector.toAppLensFacing() }
+                it.map { cameraInfo -> cameraInfo.appLensFacing }
                     .toSet() == setOf(LensFacing.FRONT, LensFacing.BACK)
             },
             perLensConstraints = buildMap {
