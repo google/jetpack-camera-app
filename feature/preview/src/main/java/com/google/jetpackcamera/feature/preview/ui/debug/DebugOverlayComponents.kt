@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui.debug
 
 import android.util.Log
@@ -170,14 +169,18 @@ fun DebugOverlayComponent(
                                     zoomRatioDialog.value = false
                                 }
                         )
-                    })
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CameraPropertiesJSONComponent(previewUiState: PreviewUiState.Ready, onClose: () -> Unit) {
+private fun CameraPropertiesJSONComponent(
+    previewUiState: PreviewUiState.Ready,
+    onClose: () -> Unit
+) {
     BackHandler(onBack = { onClose() })
     val scrollState = rememberScrollState()
     Column(
@@ -193,4 +196,3 @@ private fun CameraPropertiesJSONComponent(previewUiState: PreviewUiState.Ready, 
         )
     }
 }
-
