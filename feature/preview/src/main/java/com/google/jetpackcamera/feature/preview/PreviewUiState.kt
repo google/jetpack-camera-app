@@ -19,6 +19,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 
@@ -47,7 +48,8 @@ sealed interface PreviewUiState {
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
         val isDebugMode: Boolean = false,
-        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
     ) : PreviewUiState
 }
 // todo(kc): add ElapsedTimeUiState class
@@ -59,4 +61,13 @@ sealed interface StabilizationUiState {
         val stabilizationMode: StabilizationMode,
         val active: Boolean = true
     ) : StabilizationUiState
+}
+
+sealed interface FlashModeUiState {
+    data object Unavailable : FlashModeUiState
+
+    data class Available(
+        val currentFlashMode: FlashMode,
+        val availableFlashModes: List<FlashMode>
+    ) : FlashModeUiState
 }
