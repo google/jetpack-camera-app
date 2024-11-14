@@ -47,6 +47,7 @@ import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -169,7 +170,19 @@ constructor(
                         val supportedFixedFrameRates =
                             camInfo.filterSupportedFixedFrameRates(FIXED_FRAME_RATES)
                         val supportedImageFormats = camInfo.supportedImageFormats
-                        val hasFlashUnit = camInfo.hasFlashUnit()
+                        val supportedIlluminants = buildSet {
+                            if (camInfo.hasFlashUnit()) {
+                                add(Illuminant.FLASH_UNIT)
+                            }
+
+                            if (lensFacing == LensFacing.FRONT) {
+                                add(Illuminant.SCREEN)
+                            }
+
+                            if (camInfo.isLowLightBoostSupported) {
+                                add(Illuminant.LOW_LIGHT_BOOST)
+                            }
+                        }
 
                         put(
                             lensFacing,
@@ -184,7 +197,7 @@ constructor(
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                hasFlashUnit = hasFlashUnit
+                                supportedIlluminants = supportedIlluminants
                             )
                         )
                     }

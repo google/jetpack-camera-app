@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -99,6 +100,14 @@ val CameraInfo.isPreviewStabilizationSupported: Boolean
  */
 val CameraInfo.isVideoStabilizationSupported: Boolean
     get() = Recorder.getVideoCapabilities(this).isStabilizationSupported
+
+val CameraInfo.isLowLightBoostSupported: Boolean
+    @OptIn(ExperimentalCamera2Interop::class)
+    get() = Camera2CameraInfo.from(this)
+        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+        ?.contains(
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        ) ?: false
 
 fun CameraInfo.filterSupportedFixedFrameRates(desired: Set<Int>): Set<Int> {
     return buildSet {
