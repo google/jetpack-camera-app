@@ -144,7 +144,7 @@ fun ElapsedTimeText(
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
-    size: Int = 75,
+    size: Float = 75f,
     currentRecordingState: VideoRecordingState.Active
 ) {
     Box(
@@ -158,7 +158,7 @@ fun PauseResumeToggleButton(
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
-                    radius = (size.toFloat()),
+                    radius = (size),
                     color = Color.White
                 )
             }
@@ -491,18 +491,19 @@ fun StabilizationIcon(
                     else -> rememberVectorPainter(Icons.Filled.VideoStable)
                 },
                 // previewStabilization will not be on for high quality
-                contentDescription = stringResource(
-                    when (stabilizationMode) {
-                        StabilizationMode.AUTO -> R.string.stabilization_icon_description_auto
-                        StabilizationMode.ON ->
-                            R.string.stabilization_icon_description_preview_and_video
+                contentDescription = when (stabilizationMode) {
+                    StabilizationMode.AUTO -> stringResource(
+                        R.string.stabilization_icon_description_auto
+                    )
 
-                        StabilizationMode.HIGH_QUALITY ->
-                            R.string.stabilization_icon_description_video_only
+                    StabilizationMode.ON ->
+                        stringResource(R.string.stabilization_icon_description_preview_and_video)
 
-                        else -> 0
-                    }
-                ),
+                    StabilizationMode.HIGH_QUALITY ->
+                        stringResource(R.string.stabilization_icon_description_video_only)
+
+                    else -> null
+                },
                 modifier = modifier
             )
         }
