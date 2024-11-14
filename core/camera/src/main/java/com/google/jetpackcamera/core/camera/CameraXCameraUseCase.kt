@@ -234,6 +234,7 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
+                .tryApplyFlashModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraProperties =
@@ -528,6 +529,7 @@ constructor(
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
+                    ?.tryApplyFlashModeConstraints()
             } else {
                 old
             }
@@ -635,6 +637,22 @@ constructor(
                     copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
                 }
         }
+
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedFlashModes) {
+                val newFlashMode = if (contains(flashMode)) {
+                    flashMode
+                } else {
+                    FlashMode.OFF
+                }
+
+                this@tryApplyFlashModeConstraints.copy(
+                    flashMode = newFlashMode
+                )
+            }
+        } ?: this
+    }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
