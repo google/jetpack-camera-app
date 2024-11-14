@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -129,11 +130,11 @@ fun CameraControlsOverlay(
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                    currentCameraSettings = previewUiState.currentCameraSettings,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings,
-                    stabilizationUiState = previewUiState.stabilizationUiState
+                    stabilizationUiState = previewUiState.stabilizationUiState,
+                    flashModeUiState = previewUiState.flashModeUiState
                 )
             }
 
@@ -167,12 +168,12 @@ fun CameraControlsOverlay(
 @Composable
 private fun ControlsTop(
     isQuickSettingsOpen: Boolean,
-    currentCameraSettings: CameraAppSettings,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
-    stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
+    stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+    flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -185,7 +186,7 @@ private fun ControlsTop(
             )
             if (!isQuickSettingsOpen) {
                 QuickSettingsIndicators(
-                    currentFlashMode = currentCameraSettings.flashMode,
+                    flashModeUiState = flashModeUiState,
                     onFlashModeClick = onChangeFlash
                 )
             }
@@ -487,8 +488,7 @@ private fun CaptureModeToggleButton(
 private fun Preview_ControlsTop_QuickSettingsOpen() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
-            isQuickSettingsOpen = true,
-            currentCameraSettings = CameraAppSettings()
+            isQuickSettingsOpen = true
         )
     }
 }
@@ -498,8 +498,7 @@ private fun Preview_ControlsTop_QuickSettingsOpen() {
 private fun Preview_ControlsTop_QuickSettingsClosed() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
-            isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings()
+            isQuickSettingsOpen = false
         )
     }
 }
@@ -510,7 +509,10 @@ private fun Preview_ControlsTop_FlashModeOn() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(flashMode = FlashMode.ON)
+            flashModeUiState = FlashModeUiState.Available(
+                currentFlashMode = FlashMode.ON,
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+            )
         )
     }
 }
@@ -521,7 +523,10 @@ private fun Preview_ControlsTop_FlashModeAuto() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(flashMode = FlashMode.AUTO)
+            flashModeUiState = FlashModeUiState.Available(
+                currentFlashMode = FlashMode.AUTO,
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+            )
         )
     }
 }
@@ -532,7 +537,6 @@ private fun Preview_ControlsTop_WithStabilization() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            currentCameraSettings = CameraAppSettings(),
             stabilizationUiState = StabilizationUiState.Set(
                 stabilizationMode = StabilizationMode.ON
             )
