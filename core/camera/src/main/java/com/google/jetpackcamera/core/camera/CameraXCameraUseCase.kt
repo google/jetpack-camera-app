@@ -184,6 +184,24 @@ constructor(
                             }
                         }
 
+                        val supportedFlashModes = buildSet {
+                            add(FlashMode.OFF)
+                            if ((
+                                    setOf(
+                                        Illuminant.FLASH_UNIT,
+                                        Illuminant.SCREEN
+                                    ) intersect supportedIlluminants
+                                    ).isNotEmpty()
+                            ) {
+                                add(FlashMode.ON)
+                                add(FlashMode.AUTO)
+                            }
+
+                            if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
+                                add(FlashMode.LOW_LIGHT_BOOST)
+                            }
+                        }
+
                         put(
                             lensFacing,
                             CameraConstraints(
@@ -197,7 +215,8 @@ constructor(
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                supportedIlluminants = supportedIlluminants
+                                supportedIlluminants = supportedIlluminants,
+                                supportedFlashModes = supportedFlashModes
                             )
                         )
                     }
