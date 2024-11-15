@@ -1,10 +1,8 @@
 [versions]
 # Used directly in build.gradle.kts files
-compileSdk = "34"
-compileSdkPreview = "VanillaIceCream"
+compileSdk = "35"
 minSdk = "21"
-targetSdk = "34"
-targetSdkPreview = "VanillaIceCream"
+targetSdk = "35"
 composeCompiler = "1.5.14"
 
 # Used below in dependency definitions
