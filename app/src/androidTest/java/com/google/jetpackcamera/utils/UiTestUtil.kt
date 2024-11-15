@@ -49,6 +49,9 @@ const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
+const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
+const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
+const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
@@ -187,15 +190,27 @@ fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
     return false
 }
 
-fun getIntent(uri: Uri, action: String): Intent {
+fun getSingleImageCaptureIntent(uri: Uri, action: String): Intent {
     val intent = Intent(action)
     intent.setComponent(
         ComponentName(
-            "com.google.jetpackcamera",
-            "com.google.jetpackcamera.MainActivity"
+            COMPONENT_PACKAGE_NAME,
+            COMPONENT_CLASS
         )
     )
     intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
+    return intent
+}
+
+fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String): Intent {
+    val intent = Intent(action)
+    intent.setComponent(
+        ComponentName(
+            COMPONENT_PACKAGE_NAME,
+            COMPONENT_CLASS
+        )
+    )
+    intent.putStringArrayListExtra(MediaStore.EXTRA_OUTPUT, uriStrings)
     return intent
 }
 

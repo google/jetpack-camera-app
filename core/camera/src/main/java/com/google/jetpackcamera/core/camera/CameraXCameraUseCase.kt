@@ -49,10 +49,9 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
@@ -82,6 +81,9 @@ const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
 const val UNLIMITED_VIDEO_DURATION = 0L
+
+val STABILIZATION_ON_UNSUPPORTED_FPS = setOf(TARGET_FPS_15, TARGET_FPS_60)
+val STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS = setOf(TARGET_FPS_60)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -153,12 +155,15 @@ constructor(
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
-                                add(SupportedStabilizationMode.ON)
+                                add(StabilizationMode.ON)
+                                add(StabilizationMode.AUTO)
                             }
 
                             if (camInfo.isVideoStabilizationSupported) {
-                                add(SupportedStabilizationMode.HIGH_QUALITY)
+                                add(StabilizationMode.HIGH_QUALITY)
                             }
+
+                            add(StabilizationMode.OFF)
                         }
 
                         val supportedFixedFrameRates =
@@ -227,6 +232,19 @@ constructor(
                     zoomScale = currentCameraSettings.zoomScale
                 )
 
+                val cameraConstraints = checkNotNull(
+                    systemConstraints.forCurrentLens(currentCameraSettings)
+                ) {
+                    "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
+                }
+
+                val resolvedStabilizationMode = resolveStabilizationMode(
+                    stabilizationMode = currentCameraSettings.stabilizationMode,
+                    targetFrameRate = currentCameraSettings.targetFrameRate,
+                    supportedStabilizationModes = cameraConstraints.supportedStabilizationModes,
+                    concurrentCameraMode = currentCameraSettings.concurrentCameraMode
+                )
+
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
                         val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
@@ -239,8 +257,7 @@ constructor(
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
-                            stabilizePreviewMode = currentCameraSettings.previewStabilization,
-                            stabilizeVideoMode = currentCameraSettings.videoCaptureStabilization,
+                            stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
                             imageFormat = currentCameraSettings.imageFormat
                         )
@@ -311,6 +328,40 @@ constructor(
                     }
                 }
             }
+    }
+
+    private fun resolveStabilizationMode(
+        stabilizationMode: StabilizationMode,
+        targetFrameRate: Int,
+        supportedStabilizationModes: Set<StabilizationMode>,
+        concurrentCameraMode: ConcurrentCameraMode
+    ): StabilizationMode = if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+        StabilizationMode.OFF
+    } else {
+        when (stabilizationMode) {
+            StabilizationMode.AUTO,
+            StabilizationMode.ON -> {
+                if (
+                    supportedStabilizationModes.contains(StabilizationMode.ON) &&
+                    targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
+                ) {
+                    StabilizationMode.ON
+                } else {
+                    StabilizationMode.OFF
+                }
+            }
+            StabilizationMode.HIGH_QUALITY -> {
+                if (
+                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
+                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
+                ) {
+                    StabilizationMode.HIGH_QUALITY
+                } else {
+                    StabilizationMode.OFF
+                }
+            }
+            StabilizationMode.OFF -> StabilizationMode.OFF
+        }
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
@@ -514,28 +565,27 @@ constructor(
 
     private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedStabilizationModes) {
-                val newVideoStabilization = if (contains(SupportedStabilizationMode.HIGH_QUALITY) &&
-                    (targetFrameRate != TARGET_FPS_60)
-                ) {
-                    // unlike shouldVideoBeStabilized, doesn't check value of previewStabilization
-                    videoCaptureStabilization
-                } else {
-                    Stabilization.UNDEFINED
-                }
-                val newPreviewStabilization = if (contains(SupportedStabilizationMode.ON) &&
-                    (targetFrameRate in setOf(TARGET_FPS_AUTO, TARGET_FPS_30))
-                ) {
-                    previewStabilization
-                } else {
-                    Stabilization.UNDEFINED
-                }
-
-                this@tryApplyStabilizationConstraints.copy(
-                    previewStabilization = newPreviewStabilization,
-                    videoCaptureStabilization = newVideoStabilization
-                )
+            val invalidFps = when (stabilizationMode) {
+                StabilizationMode.ON -> STABILIZATION_ON_UNSUPPORTED_FPS
+                StabilizationMode.HIGH_QUALITY -> STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
+                else -> emptySet()
             }
+
+            val newStabilizationMode = if (targetFrameRate in invalidFps) {
+                StabilizationMode.AUTO
+            } else {
+                stabilizationMode
+            }.let {
+                if (it !in constraints.supportedStabilizationModes) {
+                    StabilizationMode.OFF
+                } else {
+                    it
+                }
+            }
+
+            this@tryApplyStabilizationConstraints.copy(
+                stabilizationMode = newStabilizationMode
+            )
         } ?: this
     }
 
@@ -546,8 +596,6 @@ constructor(
                 if (systemConstraints.concurrentCamerasSupported) {
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO,
-                        previewStabilization = Stabilization.OFF,
-                        videoCaptureStabilization = Stabilization.OFF,
                         dynamicRange = DynamicRange.SDR,
                         captureMode = CaptureMode.MULTI_STREAM
                     )
@@ -619,21 +667,9 @@ constructor(
             )
         }
     }
-    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
+    override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old?.copy(
-                previewStabilization = previewStabilization
-            )?.tryApplyStabilizationConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
-        }
-    }
-
-    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
-        currentSettings.update { old ->
-            old?.copy(
-                videoCaptureStabilization = videoCaptureStabilization
-            )?.tryApplyStabilizationConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
+            old?.copy(stabilizationMode = stabilizationMode)
         }
     }
 
@@ -641,12 +677,6 @@ constructor(
         currentSettings.update { old ->
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
-        }
-    }
-
-    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        currentSettings.update { old ->
-            old?.copy(lowLightBoost = lowLightBoost)
         }
     }
 
