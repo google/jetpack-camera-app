@@ -38,6 +38,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -655,9 +656,9 @@ fun BasicPopupSetting(
     leadingIcon: @Composable (() -> Unit)?,
     popupContents: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean
+    enabled: Boolean,
+    popupStatus: MutableState<Boolean> = remember { mutableStateOf(false) }
 ) {
-    val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
@@ -831,5 +832,36 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
 private fun Preview_VersionInfo() {
     SettingsPreviewTheme {
         VersionInfo(versionName = "0.1.0", buildType = "debug")
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_Popup() {
+    SettingsPreviewTheme {
+        BasicPopupSetting(
+            title = "Test Popup",
+            description = null,
+            leadingIcon = null,
+            popupContents = {
+                Column(Modifier.selectableGroup()) {
+                    SingleChoiceSelector(
+                        text = "Option 1",
+                        selected = true,
+                        enabled = true,
+                        onClick = { }
+                    )
+                    SingleChoiceSelector(
+                        text = "Option 2",
+                        selected = false,
+                        enabled = true,
+                        onClick = { }
+                    )
+                }
+            },
+            enabled = true,
+            popupStatus = remember { mutableStateOf(true) }
+        )
     }
 }
