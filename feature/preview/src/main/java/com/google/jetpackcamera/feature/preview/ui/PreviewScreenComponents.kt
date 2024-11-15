@@ -301,7 +301,7 @@ fun PreviewDisplay(
 
     surfaceRequest?.let {
         BoxWithConstraints(
-            Modifier
+            modifier
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
