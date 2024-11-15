@@ -42,7 +42,7 @@ junit = "4.13.2"
 material = "1.11.0"
 mockitoCore = "5.6.0"
 protobuf = "3.25.2"
-robolectric = "4.11.1"
+robolectric = "4.14"
 truth = "1.4.2"
 
 [libraries]
