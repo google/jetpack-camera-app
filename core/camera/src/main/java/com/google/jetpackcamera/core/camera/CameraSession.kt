@@ -57,7 +57,6 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
@@ -722,30 +721,28 @@ private suspend fun runVideoRecording(
             fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
             val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
 
-            if (currentSettings.isFlashModeOn()) {
-                if (!isFrontFacing) {
-                    camera.cameraControl.enableTorch(true).await()
-                } else {
-                    Log.d(TAG, "Unable to enable torch for front camera.")
+            var torchOn = false
+            fun setTorchOn(newTorchOn: Boolean) {
+                if (newTorchOn != torchOn) {
+                    camera.cameraControl.enableTorch(newTorchOn)
+                    torchOn = newTorchOn
                 }
+            }
+
+            if (currentSettings.isFlashModeOn() && !isFrontFacing) {
+                setTorchOn(true)
             }
 
             transientSettings.filterNotNull()
                 .onCompletion {
-                    // Could do some fancier tracking of whether the torch was enabled before
-                    // calling this.
-                    camera.cameraControl.enableTorch(false)
+                    setTorchOn(false)
                 }
                 .collectLatest { newTransientSettings ->
                     if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
                         recording.mute(newTransientSettings.audioMuted)
                     }
                     if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                        if (!isFrontFacing) {
-                            camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
-                        } else {
-                            Log.d(TAG, "Unable to update torch for front camera.")
-                        }
+                        setTorchOn(newTransientSettings.isFlashModeOn())
                     }
                     currentSettings = newTransientSettings
                 }
