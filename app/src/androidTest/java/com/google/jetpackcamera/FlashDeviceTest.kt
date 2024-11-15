@@ -28,14 +28,12 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
@@ -45,9 +43,9 @@ import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.longClickForVideoRecording
-import com.google.jetpackcamera.utils.onNodeWithContentDescription
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.setFlashMode
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -77,21 +75,7 @@ internal class FlashDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        // Click the flash button to switch to ON
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-            .performClick()
-
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-        composeTestRule.onNodeWithContentDescription(
-            R.string.quick_settings_flash_on_description
-        )
+        composeTestRule.setFlashMode(FlashMode.ON)
     }
 
     @Test
@@ -101,20 +85,7 @@ internal class FlashDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        // Click the flash button twice to switch to AUTO
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-            .performClick()
-            .performClick()
-
-        composeTestRule.onNodeWithContentDescription(
-            R.string.quick_settings_flash_auto_description
-        )
+        composeTestRule.setFlashMode(FlashMode.AUTO)
     }
 
     @Test
@@ -124,25 +95,17 @@ internal class FlashDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
-        composeTestRule.onNodeWithContentDescription(
-            R.string.quick_settings_flash_off_description
-        )
+        composeTestRule.setFlashMode(FlashMode.OFF)
+    }
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
+    @Test
+    fun set_flash_low_light_boost() = runScenarioTest<MainActivity> {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
 
-        // Click the flash button three times to switch to OFF
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-            .performClick()
-            .performClick()
-            .performClick()
-
-        composeTestRule.onNodeWithContentDescription(
-            R.string.quick_settings_flash_off_description
-        )
+        composeTestRule.setFlashMode(FlashMode.LOW_LIGHT_BOOST)
     }
 
     private fun assumeHalStableOnImageCapture() {
@@ -172,20 +135,7 @@ internal class FlashDeviceTest {
             }.performClick()
         }
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        // Click the flash button to switch to ON
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Exit quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
+        composeTestRule.setFlashMode(FlashMode.ON)
 
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
@@ -215,20 +165,7 @@ internal class FlashDeviceTest {
                 }.performClick()
             }
 
-            // Navigate to quick settings
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Click the flash button to switch to ON
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Exit quick settings
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
+            composeTestRule.setFlashMode(FlashMode.ON)
 
             // Perform a capture to enable screen flash
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
@@ -269,20 +206,7 @@ internal class FlashDeviceTest {
                 }.performClick()
             }
 
-            // Navigate to quick settings
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Click the flash button to switch to ON
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Exit quick settings
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
+            composeTestRule.setFlashMode(FlashMode.ON)
 
             composeTestRule.longClickForVideoRecording()
             composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
