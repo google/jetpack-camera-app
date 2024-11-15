@@ -5,7 +5,7 @@ compileSdkPreview = "VanillaIceCream"
 minSdk = "21"
 targetSdk = "34"
 targetSdkPreview = "VanillaIceCream"
-composeCompiler = "1.5.10"
+composeCompiler = "1.5.14"
 
 # Used below in dependency definitions
 # Compose and Accompanist versions are linked
@@ -14,8 +14,8 @@ composeBom = "2024.04.00"
 accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.4.2"
+kotlinPlugin = "1.9.24"
+androidGradlePlugin = "8.7.2"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
