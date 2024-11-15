@@ -98,8 +98,8 @@ dependencies {
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.rules)
     androidTestImplementation(libs.truth)
 
     // Futures
