@@ -39,7 +39,6 @@ kotlinxAtomicfu = "0.23.2"
 kotlinxCoroutines = "1.9.0"
 hilt = "2.52"
 junit = "4.13.2"
-material = "1.12.0"
 mockitoCore = "5.6.0"
 protobuf = "3.25.2"
 robolectric = "4.14"
@@ -47,7 +46,6 @@ truth = "1.4.2"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
-android-material = { module = "com.google.android.material:material", version.ref = "material" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "androidxBenchmark" }
