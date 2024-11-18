@@ -505,30 +505,6 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun captureImage() {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
-        ) {
-            showExternalVideoCaptureUnsupportedToast()
-            return
-        }
-        Log.d(TAG, "captureImage")
-        viewModelScope.launch {
-            captureImageInternal(
-                doTakePicture = {
-                    cameraUseCase.takePicture {
-                        _previewUiState.update { old ->
-                            (old as? PreviewUiState.Ready)?.copy(
-                                lastBlinkTimeStamp = System.currentTimeMillis()
-                            ) ?: old
-                        }
-                    }
-                }
-            )
-        }
-    }
-
     fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,

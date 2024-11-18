@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -168,7 +167,8 @@ class MainActivity : ComponentActivity() {
     private fun getStandardMode(): PreviewMode.StandardMode {
         return PreviewMode.StandardMode { event ->
             if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
-                val intent = Intent(Camera.ACTION_NEW_PICTURE)
+                @Suppress("DEPRECATION")
+                val intent = Intent(android.hardware.Camera.ACTION_NEW_PICTURE)
                 intent.setData(event.savedUri)
                 sendBroadcast(intent)
             }
@@ -231,7 +231,7 @@ class MainActivity : ComponentActivity() {
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
                         if (uriList == null) {
                             setResult(RESULT_OK, Intent())
-                        } else if (uriList != null && uriIndex == uriList.size - 1) {
+                        } else if (uriIndex == uriList.size - 1) {
                             setResult(RESULT_OK, Intent())
                             Log.d(TAG, "onMultipleImageCapture, finish()")
                             finish()

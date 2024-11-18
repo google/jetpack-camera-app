@@ -1,11 +1,9 @@
 [versions]
 # Used directly in build.gradle.kts files
-compileSdk = "34"
-compileSdkPreview = "VanillaIceCream"
+compileSdk = "35"
 minSdk = "21"
-targetSdk = "34"
-targetSdkPreview = "VanillaIceCream"
-composeCompiler = "1.5.10"
+targetSdk = "35"
+composeCompiler = "1.5.14"
 
 # Used below in dependency definitions
 # Compose and Accompanist versions are linked
@@ -14,8 +12,8 @@ composeBom = "2024.04.00"
 accompanist = "0.34.0"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-kotlinPlugin = "1.9.22"
-androidGradlePlugin = "8.4.2"
+kotlinPlugin = "1.9.24"
+androidGradlePlugin = "8.7.2"
 protobufPlugin = "0.9.4"
 
 androidxActivityCompose = "1.8.2"
@@ -44,9 +42,8 @@ junit = "4.13.2"
 material = "1.11.0"
 mockitoCore = "5.6.0"
 protobuf = "3.25.2"
-robolectric = "4.11.1"
+robolectric = "4.14"
 truth = "1.4.2"
-rules = "1.6.1"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
@@ -94,7 +91,6 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
-rules = { group = "androidx.test", name = "rules", version.ref = "rules" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
