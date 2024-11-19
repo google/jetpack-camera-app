@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
@@ -24,9 +25,9 @@ import androidx.camera.core.UseCaseGroup
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -56,7 +57,7 @@ internal suspend fun runConcurrentCameraSession(
         .first()
 
     // create videocapture independently of usecasegroup
-    val videoCapture =  createVideoUseCase(
+    val videoCapture = createVideoUseCase(
         transientSettings.value!!.cameraInfo,
         sessionSettings.aspectRatio,
         TARGET_FPS_AUTO,
@@ -72,8 +73,8 @@ internal suspend fun runConcurrentCameraSession(
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
         useCaseMode = useCaseMode,
-        videoCapture = videoCapture,
-        )
+        videoCapture = videoCapture
+    )
 
     val cameraConfigs = listOf(
         Pair(
@@ -93,8 +94,8 @@ internal suspend fun runConcurrentCameraSession(
                 .build()
         )
     )
-    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Unit>()
-    onRebind.complete { _, _ -> }//todo
+    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Camera>()
+    // onRebind.complete { _, _ -> } // todo
     cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
         Log.d(TAG, "Concurrent camera session started")
         val primaryCamera = concurrentCamera.cameras.first {

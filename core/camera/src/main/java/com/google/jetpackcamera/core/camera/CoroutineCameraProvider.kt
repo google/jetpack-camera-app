@@ -41,13 +41,12 @@ import kotlinx.coroutines.coroutineScope
 suspend fun <R> ProcessCameraProvider.runWith(
     cameraSelector: CameraSelector,
     useCases: UseCaseGroup,
-    onRebindLifeCycle: ((CameraSelector, UseCaseGroup) -> Unit) -> Unit,
-    block: suspend CoroutineScope.(Camera) -> R,
+    onRebindLifeCycle: ((CameraSelector, UseCaseGroup) -> Camera) -> Unit,
+    block: suspend CoroutineScope.(Camera) -> R
 ): R = coroutineScope {
     val scopedLifecycle = CoroutineLifecycleOwner(coroutineContext)
-    val rebind = fun(newCameraSelector:CameraSelector, newUseCaseGroup:UseCaseGroup){
+    val rebind = fun(newCameraSelector: CameraSelector, newUseCaseGroup: UseCaseGroup): Camera =
         bindToLifecycle(scopedLifecycle, newCameraSelector, newUseCaseGroup)
-    }
     onRebindLifeCycle(rebind)
     block((this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases)))
 }
@@ -72,8 +71,7 @@ suspend fun <R> ProcessCameraProvider.runWithConcurrent(
  * [Lifecycle.State.RESUMED] state. When the coroutine completes, the owned lifecycle will
  * transition to a [Lifecycle.State.DESTROYED] state.
  */
-private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) :
-    LifecycleOwner {
+private class CoroutineLifecycleOwner(coroutineContext: CoroutineContext) : LifecycleOwner {
     private val lifecycleRegistry: LifecycleRegistry =
         LifecycleRegistry(this).apply {
             currentState = Lifecycle.State.INITIALIZED

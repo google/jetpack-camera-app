@@ -85,6 +85,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -95,6 +96,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraSession"
+private val currentCameraFlow = MutableStateFlow<Camera?>(null)
 
 context(CameraSessionContext)
 @kotlin.OptIn(ExperimentalCoroutinesApi::class)
@@ -139,28 +141,37 @@ internal suspend fun runSingleCameraSession(
         getImageCapture()?.let(onImageCaptureCreated)
     }
 
-    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Unit>()
+    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Camera>()
     cameraProvider.runWith(
         transientSettings.value!!.cameraInfo.cameraSelector,
         useCaseGroup,
-        onRebindLifeCycle = { onRebind.complete(it)}
+        onRebindLifeCycle = { onRebind.complete(it) }
     ) { camera ->
         Log.d(TAG, "Camera session started")
 
+        // initialize cameraflow
+        currentCameraFlow.update { camera }
+
         // todo(kc): how can i get updated camera in these process functions properly..?
         launch {
-            processFocusMeteringEvents(camera.cameraControl)
+            currentCameraFlow.collectLatest { currentCamera ->
+                currentCamera?.let {
+                    processFocusMeteringEvents(it.cameraControl)
+                }
+            }
         }
 
         launch {
-            processVideoControlEvents(
-                camera,
-                useCaseGroup.getVideoCapture(),
-                captureTypeSuffix = when (sessionSettings.captureMode) {
-                    CaptureMode.MULTI_STREAM -> "MultiStream"
-                    CaptureMode.SINGLE_STREAM -> "SingleStream"
-                }
-            )
+            currentCameraFlow.value?.let {
+                processVideoControlEvents(
+                    it,
+                    useCaseGroup.getVideoCapture(),
+                    captureTypeSuffix = when (sessionSettings.captureMode) {
+                        CaptureMode.MULTI_STREAM -> "MultiStream"
+                        CaptureMode.SINGLE_STREAM -> "SingleStream"
+                    }
+                )
+            }
         }
 
         launch {
@@ -172,13 +183,18 @@ internal suspend fun runSingleCameraSession(
         }
 
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
-        processTransientSettingEvents(
-            camera,
-            useCaseGroup,
-            initialTransientSettings,
-            transientSettings,
-            onRebind.getCompleted()
-        )
+        currentCameraFlow.collectLatest { currentCamera ->
+
+            currentCamera?.let {
+                processTransientSettingEvents(
+                    it,
+                    useCaseGroup,
+                    initialTransientSettings,
+                    transientSettings,
+                    onRebind.getCompleted()
+                )
+            }
+        }
     }
 }
 
@@ -188,8 +204,8 @@ internal suspend fun processTransientSettingEvents(
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
-    onRebind : (CameraSelector, UseCaseGroup) -> Unit,
-    ) {
+    onRebind: (CameraSelector, UseCaseGroup) -> Camera
+) {
     var prevTransientSettings = initialTransientSettings
     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
         // Apply camera control settings
@@ -206,22 +222,32 @@ internal suspend fun processTransientSettingEvents(
                 }
             }
         }
-        //todo(kc) unable to zoom on flipped camera... continues to zooms on the initial camera
-        if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
-            //when we want to flip, unbind and rebind with the new camerainfo
-            cameraProvider.unbindAll()
-            onRebind(transientSettings.value!!.cameraInfo.cameraSelector, useCaseGroup)
-            // its like magic
-        }
-
-        useCaseGroup.getImageCapture()?.let { imageCapture ->
-            if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+        camera.cameraInfo.appLensFacing
+        fun updateImageCapture(newLensFacing: LensFacing) =
+            useCaseGroup.getImageCapture()?.let { imageCapture ->
                 setFlashModeInternal(
                     imageCapture = imageCapture,
                     flashMode = newTransientSettings.flashMode,
-                    isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
+                    isFrontFacing = newLensFacing == LensFacing.FRONT
                 )
             }
+        if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+            updateImageCapture(camera.cameraInfo.appLensFacing)
+        }
+
+        // todo(kc) unable to zoom on flipped camera... continues to zooms on the initial camera
+        if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
+            // when we want to flip, unbind and rebind with the new camerainfo
+            cameraProvider.unbindAll()
+            // todo: there must be a better way of checking camera torch when switching cameras
+            currentCameraFlow.value?.cameraControl?.enableTorch(false)
+            updateImageCapture(
+                transientSettings.value!!.cameraInfo.cameraSelector.toAppLensFacing()
+            )
+            currentCameraFlow.update {
+                onRebind(transientSettings.value!!.cameraInfo.cameraSelector, useCaseGroup)
+            }
+            // its like magic
         }
 
         if (prevTransientSettings.deviceRotation
@@ -230,8 +256,8 @@ internal suspend fun processTransientSettingEvents(
             Log.d(
                 TAG,
                 "Updating device rotation from " +
-                        "${prevTransientSettings.deviceRotation} -> " +
-                        "${newTransientSettings.deviceRotation}"
+                    "${prevTransientSettings.deviceRotation} -> " +
+                    "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
@@ -286,7 +312,6 @@ internal fun createUseCaseGroup(
     } else {
         null
     }
-
 
     imageCaptureUseCase?.let {
         setFlashModeInternal(
@@ -346,7 +371,7 @@ private fun createImageUseCase(
     return builder.build()
 }
 
- fun createVideoUseCase(
+fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
@@ -374,11 +399,8 @@ private fun createImageUseCase(
     }.build()
 }
 
-private fun getAspectRatioForUseCase(
-    sensorLandscapeRatio: Float,
-    aspectRatio: AspectRatio
-): Int {
-    return when (aspectRatio) {
+private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
+    when (aspectRatio) {
         AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
         AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
         else -> {
@@ -393,7 +415,6 @@ private fun getAspectRatioForUseCase(
             }
         }
     }
-}
 
 context(CameraSessionContext)
 private fun createPreviewUseCase(
@@ -451,6 +472,9 @@ private fun setFlashModeInternal(
         isFrontFacing && (flashMode == FlashMode.ON || flashMode == FlashMode.AUTO)
 
     if (isScreenFlashRequired) {
+        println("SCREEN FLASH NOW REQUIRED")
+    }
+    if (isScreenFlashRequired) {
         imageCapture.screenFlash = object : ImageCapture.ScreenFlash {
             override fun apply(
                 expirationTimeMillis: Long,
@@ -471,6 +495,8 @@ private fun setFlashModeInternal(
                 )
             }
         }
+    } else {
+        imageCapture.screenFlash = null
     }
 
     imageCapture.flashMode = when (flashMode) {
@@ -585,9 +611,9 @@ private suspend fun startVideoRecordingInternal(
 
     val callbackExecutor: Executor =
         (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                        CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+            currentCoroutineContext()[ContinuationInterceptor] as?
+                CoroutineDispatcher
+            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
     return pendingRecord
         .start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
@@ -714,7 +740,7 @@ private suspend fun startVideoRecordingInternal(
 
 context(CameraSessionContext)
 private suspend fun runVideoRecording(
-    camera: Camera,
+    // camera: Camera,
     videoCapture: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
@@ -744,14 +770,22 @@ private suspend fun runVideoRecording(
         ).use { recording ->
 
             fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-            val isFrontCameraSelector =
-                camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+            // whenever we switch cameras, apply flash if applicable
+            currentCameraFlow.onCompletion {
+                currentCameraFlow.value?.cameraControl?.enableTorch(false)
+            }.collectLatest { currentCamera ->
+                currentCamera?.let {
+                    val isFrontCameraSelector =
+                        currentCamera.cameraInfo.cameraSelector ==
+                            CameraSelector.DEFAULT_FRONT_CAMERA
 
-            if (currentSettings.isFlashModeOn()) {
-                if (!isFrontCameraSelector) {
-                    camera.cameraControl.enableTorch(true).await()
-                } else {
-                    Log.d(TAG, "Unable to enable torch for front camera.")
+                    if (currentSettings.isFlashModeOn()) {
+                        if (!isFrontCameraSelector) {
+                            currentCamera.cameraControl.enableTorch(true).await()
+                        } else {
+                            Log.d(TAG, "Unable to enable torch for front camera.")
+                        }
+                    }
                 }
             }
 
@@ -759,15 +793,20 @@ private suspend fun runVideoRecording(
                 .onCompletion {
                     // Could do some fancier tracking of whether the torch was enabled before
                     // calling this.
-                    camera.cameraControl.enableTorch(false)
+                    currentCameraFlow.value?.cameraControl?.enableTorch(false)
                 }
                 .collectLatest { newTransientSettings ->
                     if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
                         recording.mute(newTransientSettings.audioMuted)
                     }
+                    // if we try to turn on flash while video is recording
                     if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                        if (!isFrontCameraSelector) {
-                            camera.cameraControl.enableTorch(newTransientSettings.isFlashModeOn())
+                        if (newTransientSettings.cameraInfo.cameraSelector ==
+                            CameraSelector.DEFAULT_FRONT_CAMERA
+                        ) {
+                            currentCameraFlow.value?.cameraControl?.enableTorch(
+                                newTransientSettings.isFlashModeOn()
+                            )
                         } else {
                             Log.d(TAG, "Unable to update torch for front camera.")
                         }
@@ -785,7 +824,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                        "$width x $height"
+                    "$width x $height"
             )
             SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
         }
@@ -821,7 +860,7 @@ internal suspend fun processVideoControlEvents(
                 }
                 recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
-                        camera,
+                        // camera,
                         videoCapture,
                         captureTypeSuffix,
                         context,

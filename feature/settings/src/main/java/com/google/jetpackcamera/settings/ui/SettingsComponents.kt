@@ -799,8 +799,8 @@ fun SingleChoiceSelector(
 
 @Composable
 @ReadOnlyComposable
-fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    return when (disabledRationale) {
+fun disabledRationaleString(disabledRationale: DisabledRationale): String =
+    when (disabledRationale) {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
@@ -823,7 +823,6 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
             stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
-}
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
