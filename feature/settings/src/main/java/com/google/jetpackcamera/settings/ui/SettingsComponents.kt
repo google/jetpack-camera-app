@@ -842,10 +842,15 @@ private fun Preview_Popup() {
     SettingsPreviewTheme {
         BasicPopupSetting(
             title = "Test Popup",
-            description = null,
+            description = "Test Description",
             leadingIcon = null,
             popupContents = {
                 Column(Modifier.selectableGroup()) {
+                    Text(
+                        text = "Test sub-text",
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                     SingleChoiceSelector(
                         text = "Option 1",
                         selected = true,
