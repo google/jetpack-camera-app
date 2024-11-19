@@ -32,9 +32,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class PreviewViewModelTest {
 
     private val cameraUseCase = FakeCameraUseCase()
@@ -71,18 +74,10 @@ class PreviewViewModelTest {
     }
 
     @Test
-    fun captureImage() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
-        previewViewModel.captureImage()
-        advanceUntilIdle()
-        assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
-    }
-
-    @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.captureImageWithUri(contentResolver, null) {}
+        previewViewModel.captureImageWithUri(contentResolver, null) { _, _ -> }
         advanceUntilIdle()
         assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
     }

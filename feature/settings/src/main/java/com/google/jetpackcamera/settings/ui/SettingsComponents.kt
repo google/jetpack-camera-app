@@ -77,7 +77,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -211,6 +211,9 @@ fun FlashModeSetting(
                 FlashMode.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
+                FlashMode.LOW_LIGHT_BOOST -> stringResource(
+                    id = R.string.flash_mode_description_llb
+                )
             }
         } else {
             TODO("flash mode currently has no disabled criteria")
@@ -234,6 +237,13 @@ fun FlashModeSetting(
                     selected = flashUiState.currentFlashMode == FlashMode.OFF,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.OFF) }
+                )
+                // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_llb),
+                    selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
+                    enabled = true,
+                    onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
                 )
             }
         }
@@ -454,22 +464,13 @@ fun TargetFpsSetting(
  * High Quality - preview is unspecified and video is ON.
  * Off - Every other configuration.
  */
-private fun getStabilizationStringRes(
-    previewStabilization: Stabilization,
-    videoStabilization: Stabilization
-): Int {
-    return if (previewStabilization == Stabilization.ON &&
-        videoStabilization != Stabilization.OFF
-    ) {
-        R.string.stabilization_description_on
-    } else if (previewStabilization == Stabilization.UNDEFINED &&
-        videoStabilization == Stabilization.ON
-    ) {
-        R.string.stabilization_description_high_quality
-    } else {
-        R.string.stabilization_description_off
+private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int =
+    when (stabilizationMode) {
+        StabilizationMode.OFF -> R.string.stabilization_description_off
+        StabilizationMode.AUTO -> R.string.stabilization_description_auto
+        StabilizationMode.ON -> R.string.stabilization_description_on
+        StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
     }
-}
 
 /**
  * A Setting to set preview and video stabilization.
@@ -483,8 +484,7 @@ private fun getStabilizationStringRes(
 @Composable
 fun StabilizationSetting(
     stabilizationUiState: StabilizationUiState,
-    setVideoStabilization: (Stabilization) -> Unit,
-    setPreviewStabilization: (Stabilization) -> Unit,
+    setStabilizationMode: (StabilizationMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // entire setting disabled when no available fps or target fps = 60
@@ -504,10 +504,7 @@ fun StabilizationSetting(
         description = when (stabilizationUiState) {
             is StabilizationUiState.Enabled ->
                 stringResource(
-                    id = getStabilizationStringRes(
-                        previewStabilization = stabilizationUiState.currentPreviewStabilization,
-                        videoStabilization = stabilizationUiState.currentVideoStabilization
-                    )
+                    id = getStabilizationStringRes(stabilizationUiState.currentStabilizationMode)
                 )
 
             is StabilizationUiState.Disabled -> {
@@ -531,6 +528,30 @@ fun StabilizationSetting(
                     is StabilizationUiState.Enabled -> {
                         SingleChoiceSelector(
                             modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationAutoState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationAutoState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(id = R.string.stabilization_selector_auto),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_auto_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationAutoState is
+                                SingleSelectableState.Selectable,
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.AUTO,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.AUTO)
+                            }
+                        )
+
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
                                 if (stabilizationUiState.stabilizationOnState
                                         is SingleSelectableState.Disabled
                                 ) {
@@ -546,17 +567,10 @@ fun StabilizationSetting(
                             ),
                             enabled = stabilizationUiState.stabilizationOnState is
                                 SingleSelectableState.Selectable,
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    == Stabilization.ON
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        != Stabilization.OFF
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.ON,
                             onClick = {
-                                setVideoStabilization(Stabilization.UNDEFINED)
-                                setPreviewStabilization(Stabilization.ON)
+                                setStabilizationMode(StabilizationMode.ON)
                             }
                         )
 
@@ -582,34 +596,20 @@ fun StabilizationSetting(
                             enabled = stabilizationUiState.stabilizationHighQualityState
                                 == SingleSelectableState.Selectable,
 
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    == Stabilization.UNDEFINED
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        == Stabilization.ON
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.HIGH_QUALITY,
                             onClick = {
-                                setVideoStabilization(Stabilization.ON)
-                                setPreviewStabilization(Stabilization.UNDEFINED)
+                                setStabilizationMode(StabilizationMode.HIGH_QUALITY)
                             }
                         )
 
                         // off selector
                         SingleChoiceSelector(
                             text = stringResource(id = R.string.stabilization_selector_off),
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    != Stabilization.ON
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        != Stabilization.ON
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OFF,
                             onClick = {
-                                setVideoStabilization(Stabilization.OFF)
-                                setPreviewStabilization(Stabilization.OFF)
+                                setStabilizationMode(StabilizationMode.OFF)
                             },
                             enabled = true
                         )

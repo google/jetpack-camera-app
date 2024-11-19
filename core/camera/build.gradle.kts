@@ -24,7 +24,6 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.core.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
-    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -70,11 +69,6 @@ android {
             dimension = "flavor"
             isDefault = true
         }
-
-        create("preview") {
-            dimension = "flavor"
-            targetSdkPreview = libs.versions.targetSdkPreview.get()
-        }
     }
 
     compileOptions {
@@ -98,8 +92,8 @@ dependencies {
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.rules)
     androidTestImplementation(libs.truth)
 
     // Futures

@@ -58,6 +58,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
+import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -67,7 +68,6 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.flow.transformWhile
 
@@ -145,18 +145,17 @@ fun PreviewScreen(
                 onChangeCaptureMode = viewModel::setCaptureMode,
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
-                onLowLightBoost = viewModel::setLowLightBoost,
                 onChangeImageFormat = viewModel::setImageFormat,
                 onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onMuteAudio = viewModel::setAudioMuted,
-                onCaptureImage = viewModel::captureImage,
                 onCaptureImageWithUri = viewModel::captureImageWithUri,
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                onSnackBarResult = viewModel::onSnackBarResult
+                onSnackBarResult = viewModel::onSnackBarResult,
+                isDebugMode = isDebugMode
             )
         }
     }
@@ -179,17 +178,15 @@ private fun ContentScreen(
     onChangeCaptureMode: (CaptureMode) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
-    onLowLightBoost: (LowLightBoost) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
-    onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent) -> Unit
+        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
@@ -199,7 +196,8 @@ private fun ContentScreen(
     onStopVideoRecording: () -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
-    onSnackBarResult: (String) -> Unit = {}
+    onSnackBarResult: (String) -> Unit = {},
+    isDebugMode: Boolean = false
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -244,8 +242,7 @@ private fun ContentScreen(
                 onCaptureModeClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
-                onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
-                onLowLightBoostClick = onLowLightBoost
+                onConcurrentCameraModeClick = onChangeConcurrentCameraMode
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
@@ -257,10 +254,10 @@ private fun ContentScreen(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
-                onCaptureImage = onCaptureImage,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
             )
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {

@@ -31,8 +31,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -214,27 +213,15 @@ class FakeCameraUseCase(
         }
     }
 
-    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
-        currentSettings.update { old ->
-            old.copy(lowLightBoost = lowLightBoost)
-        }
-    }
-
     override suspend fun setAudioMuted(isAudioMuted: Boolean) {
         currentSettings.update { old ->
             old.copy(audioMuted = isAudioMuted)
         }
     }
 
-    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
+    override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old.copy(videoCaptureStabilization = videoCaptureStabilization)
-        }
-    }
-
-    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
-        currentSettings.update { old ->
-            old.copy(previewStabilization = previewStabilization)
+            old.copy(stabilizationMode = stabilizationMode)
         }
     }
 
