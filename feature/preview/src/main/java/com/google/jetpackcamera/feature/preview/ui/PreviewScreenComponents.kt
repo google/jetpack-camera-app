@@ -628,9 +628,7 @@ fun CaptureButton(
     ) {
         Canvas(
             modifier = Modifier
-                .size(110.dp)
-                .apply {
-                },
+                .size(110.dp),
             onDraw = {
                 drawCircle(
                     alpha = when (videoRecordingState) {

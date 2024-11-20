@@ -96,6 +96,7 @@ class PreviewViewModelTest {
         previewViewModel.startVideoRecording(null, false) {}
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
+        advanceUntilIdle()
         assertThat(cameraUseCase.recordingInProgress).isFalse()
     }
 
@@ -134,11 +135,10 @@ class PreviewViewModelTest {
     }
 }
 
-private fun assertIsReady(previewUiState: PreviewUiState): PreviewUiState.Ready {
-    return when (previewUiState) {
+private fun assertIsReady(previewUiState: PreviewUiState): PreviewUiState.Ready =
+    when (previewUiState) {
         is PreviewUiState.Ready -> previewUiState
         else -> throw AssertionError(
             "PreviewUiState expected to be Ready, but was ${previewUiState::class}"
         )
     }
-}
