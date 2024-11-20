@@ -77,16 +77,15 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -96,16 +95,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraSession"
-private val currentCameraFlow = MutableStateFlow<Camera?>(null)
 
 context(CameraSessionContext)
-@kotlin.OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
+    val _singleSessionCameraFlow = MutableStateFlow<Camera?>(null)
+    val singleSessionCameraFlow = _singleSessionCameraFlow.asStateFlow()
+    val updateSessionFlow = { newCamera: Camera -> _singleSessionCameraFlow.update { newCamera } }
+
     val lensFacing = transientSettings.value!!.cameraInfo
     Log.d(TAG, "Starting new single camera session for $lensFacing")
 
@@ -113,6 +114,7 @@ internal suspend fun runSingleCameraSession(
         .filterNotNull()
         .first()
 
+    // create video use case
     val videoCapture = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
         createVideoUseCase(
             initialTransientSettings.cameraInfo,
@@ -126,7 +128,6 @@ internal suspend fun runSingleCameraSession(
         null
     }
     val useCaseGroup = createUseCaseGroup(
-        // cameraInfo = transientSettings.value!!.cameraInfo,
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = sessionSettings.stabilizationMode,
         aspectRatio = sessionSettings.aspectRatio,
@@ -142,28 +143,25 @@ internal suspend fun runSingleCameraSession(
         getImageCapture()?.let(onImageCaptureCreated)
     }
 
-    // rebind function to use for this coroutine's camera session
-    val onRebind = CompletableDeferred<(CameraSelector, UseCaseGroup) -> Camera>()
     cameraProvider.runWith(
         initialTransientSettings.cameraInfo.cameraSelector,
-        useCaseGroup,
-        onRebindLifeCycle = { onRebind.complete(it) }
-    ) { initialCamera ->
+        useCaseGroup
+    ) { initialCamera, onRebind ->
         Log.d(TAG, "Camera session started")
 
-        // initialize cameraflow
-        currentCameraFlow.update { initialCamera }
+        // initialize cameraflow with the starting camera
+        updateSessionFlow(initialCamera)
 
         // update camera whenever changed used in focus metering
         launch {
-            currentCameraFlow.filterNotNull().collectLatest {
+            singleSessionCameraFlow.filterNotNull().collectLatest {
                 processFocusMeteringEvents(it.cameraControl)
             }
         }
 
         launch {
             processVideoControlEvents(
-                // it,
+                singleSessionCameraFlow,
                 useCaseGroup.getVideoCapture(),
                 captureTypeSuffix = when (sessionSettings.captureMode) {
                     CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -172,10 +170,10 @@ internal suspend fun runSingleCameraSession(
             )
         }
 
-        // update camera checked for torch state when camera is flipped
-        // torch state is 1 when the torch is ON. and 0 when it isnt active
+        // update the camera being checked for torch state whenever camera is flipped
+        // torch state of 1 means the torch is ON and 0 when it is OFF
         launch {
-            currentCameraFlow.collectLatest { currentCamera ->
+            singleSessionCameraFlow.collectLatest { currentCamera ->
                 currentCamera?.let {
                     it.cameraInfo.torchState.asFlow().collectLatest { torchState ->
                         currentCameraState.update { old ->
@@ -185,102 +183,105 @@ internal suspend fun runSingleCameraSession(
                 }
             }
         }
+
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
 
-        currentCameraFlow.filterNotNull().collectLatest { currentCamera ->
-            // todo(kc): initialTransientSettings resets to the true initial whenever camera is flipped
-            processTransientSettingEvents(
-                currentCamera,
-                useCaseGroup,
-                initialTransientSettings,
-                transientSettings,
-                onRebind.getCompleted(),
-                onImageCaptureCreated
-            )
-        }
+        processTransientSettingEvents(
+            singleSessionCameraFlow,
+            useCaseGroup,
+            initialTransientSettings,
+            transientSettings,
+            onRebind,
+            updateSessionFlow,
+            onImageCaptureCreated
+        )
     }
 }
 
 context(CameraSessionContext)
 internal suspend fun processTransientSettingEvents(
-    camera: Camera,
+    cameraFlow: StateFlow<Camera?>,
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
     onRebind: (CameraSelector, UseCaseGroup) -> Camera,
+    onUpdateCameraFlow: (Camera) -> Unit,
     onImageCaptureCreated: (ImageCapture) -> Unit
 ) {
+    // outside of the camera updates
     var prevTransientSettings = initialTransientSettings
-    transientSettings.filterNotNull().collectLatest { newTransientSettings ->
-        // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
+
+    cameraFlow.filterNotNull().collectLatest { camera ->
+        transientSettings.filterNotNull().collectLatest { newTransientSettings ->
+            // Apply camera zoom
+            if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
+                camera.cameraInfo.zoomState.value?.let { zoomState ->
+                    val finalScale =
+                        (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
+                            zoomState.minZoomRatio,
+                            zoomState.maxZoomRatio
+                        )
+                    camera.cameraControl.setZoomRatio(finalScale)
+                    currentCameraState.update { old ->
+                        old.copy(zoomScale = finalScale)
+                    }
                 }
             }
-        }
-        // helper to update Image capture use case screen flash mode
-        fun updateImageCaptureFlash(
-            newLensFacing: LensFacing,
-            onImageCaptureCreated: (ImageCapture) -> Unit
-        ) {
-            useCaseGroup.getImageCapture()?.let { imageCapture ->
-                setFlashModeInternal(
-                    imageCapture = imageCapture,
-                    flashMode = newTransientSettings.flashMode,
-                    isFrontFacing = newLensFacing == LensFacing.FRONT
+            // helper to update Image capture use case screen flash mode
+            fun updateImageCaptureFlash(
+                newLensFacing: LensFacing,
+                onImageCaptureCreated: (ImageCapture) -> Unit
+            ) {
+                useCaseGroup.getImageCapture()?.let { imageCapture ->
+                    setFlashModeInternal(
+                        imageCapture = imageCapture,
+                        flashMode = newTransientSettings.flashMode,
+                        isFrontFacing = newLensFacing == LensFacing.FRONT
+                    )
+                }
+                useCaseGroup.getImageCapture()?.let { onImageCaptureCreated(it) }
+            }
+            // update the flash mode when flash setting changes
+            if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+                updateImageCaptureFlash(camera.cameraInfo.appLensFacing, onImageCaptureCreated)
+            }
+
+            // if the camerainfo changed.. we are flipping the camera
+            if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
+                // unbind all use cases
+                cameraProvider.unbindAll()
+
+                // disables the torch if it was already on BEFORE swapping lenses
+                if (currentCameraState.value.torchEnabled) {
+                    camera.cameraControl.enableTorch(false)
+                }
+
+                // updates flash on ImageCaptureUsecCase to use screen flash if necessary
+                updateImageCaptureFlash(
+                    transientSettings.value!!.cameraInfo.cameraSelector.toAppLensFacing(),
+                    onImageCaptureCreated
                 )
-            }
-            useCaseGroup.getImageCapture()?.let { onImageCaptureCreated(it) }
-        }
-        // update the flash mode when flash setting changes
-        if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
-            updateImageCaptureFlash(camera.cameraInfo.appLensFacing, onImageCaptureCreated)
-        }
-
-        // if the camerainfo changed.. we are flipping the camera
-        if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
-            // unbind all use cases
-            cameraProvider.unbindAll()
-
-            // disables the torch if it was already on BEFORE swapping lenses
-            if (currentCameraState.value.torchEnabled) {
-                currentCameraFlow.value?.cameraControl?.enableTorch(false)
+                // rebind the use cases
+                onUpdateCameraFlow(
+                    onRebind(newTransientSettings.cameraInfo.cameraSelector, useCaseGroup)
+                )
+                // its like magic
             }
 
-            // updates flash on ImageCaptureUsecCase to use screen flash if necessary
-            updateImageCaptureFlash(
-                transientSettings.value!!.cameraInfo.cameraSelector.toAppLensFacing(),
-                onImageCaptureCreated
-            )
-            // rebind the use cases
-            currentCameraFlow.update {
-                // wait until camera is active
-                onRebind(newTransientSettings.cameraInfo.cameraSelector, useCaseGroup)
+            if (prevTransientSettings.deviceRotation
+                != newTransientSettings.deviceRotation
+            ) {
+                Log.d(
+                    TAG,
+                    "Updating device rotation from " +
+                        "${prevTransientSettings.deviceRotation} -> " +
+                        "${newTransientSettings.deviceRotation}"
+                )
+                applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
             }
-            // its like magic
-        }
 
-        if (prevTransientSettings.deviceRotation
-            != newTransientSettings.deviceRotation
-        ) {
-            Log.d(
-                TAG,
-                "Updating device rotation from " +
-                    "${prevTransientSettings.deviceRotation} -> " +
-                    "${newTransientSettings.deviceRotation}"
-            )
-            applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
+            prevTransientSettings = newTransientSettings
         }
-
-        prevTransientSettings = newTransientSettings
     }
 }
 
@@ -762,7 +763,7 @@ private fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
 
 context(CameraSessionContext)
 private suspend fun runVideoRecording(
-    // camera: Camera,
+    sessionCameraFlow: StateFlow<Camera?>,
     videoCapture: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
@@ -792,47 +793,39 @@ private suspend fun runVideoRecording(
         ).use { recording ->
 
             // whenever we switch cameras while recording, apply flash if applicable
+            // todo(kc): wip... handle this coroutine properly. currently standing alone
             coroutineScope {
-                val flashJob = launch {
-                    currentCameraFlow.filterNotNull().collectLatest { currentCamera ->
+                launch {
+                    sessionCameraFlow.filterNotNull().onCompletion {
+                        // ensure camera torch is off when closing camera
+                        if (currentCameraState.value.torchEnabled) {
+                            Log.d(TAG, "disabling torch")
+                            sessionCameraFlow.value?.cameraControl?.enableTorch(false)
+                        }
+                    }.collectLatest { currentCamera ->
                         val isFrontCameraSelector =
                             currentCamera.cameraInfo.cameraSelector ==
                                 CameraSelector.DEFAULT_FRONT_CAMERA
 
-                        // todo(kc): apply flash pr #283
+                        // todo(kc): apply flash PR #283
                         // todo(kc): for some reason flash doesnt work when switching in progress recording to rear IFF the session was initialized on the FFC...
                         // not that there is no flash unit, but that unable to
                         if (currentSettings.isFlashModeOn()) {
                             if (!isFrontCameraSelector) {
                                 try {
                                     Log.d(TAG, "Attempting to enable torch")
-                                    Log.d(TAG, currentCamera.cameraInfo.appLensFacing.toString())
                                     currentCamera.cameraControl.enableTorch(true).await()
                                 } catch (e: Exception) {
-                                    Log.e(TAG, e.toString())
-                                    Log.d(TAG, "Unable to enable torch for front camera.")
+                                    Log.e(TAG, e.stackTraceToString())
+                                    Log.d(TAG, "Unable to enable torch.")
                                 }
                             }
                         }
                     }
                 }
-                flashJob
-                    .invokeOnCompletion {
-                        // ensure camera torch is off when closing camera
-                        if (currentCameraState.value.torchEnabled) {
-                            Log.d(TAG, "disabling torch")
-                            currentCameraFlow.value?.cameraControl?.enableTorch(false)
-                        }
-                    }
-                flashJob.start()
             }
 
             transientSettings.filterNotNull()
-                .onCompletion {
-                    // Could do some fancier tracking of whether the torch was enabled before
-                    // calling this.
-                    currentCameraFlow.value?.cameraControl?.enableTorch(false)
-                }
                 .collectLatest { newTransientSettings ->
                     if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
                         recording.mute(newTransientSettings.audioMuted)
@@ -843,7 +836,7 @@ private suspend fun runVideoRecording(
                         if (newTransientSettings.cameraInfo.cameraSelector ==
                             CameraSelector.DEFAULT_FRONT_CAMERA
                         ) {
-                            currentCameraFlow.value?.cameraControl?.enableTorch(
+                            sessionCameraFlow.value?.cameraControl?.enableTorch(
                                 newTransientSettings.isFlashModeOn()
                             )
                         } else {
@@ -883,7 +876,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
 
 context(CameraSessionContext)
 internal suspend fun processVideoControlEvents(
-    // camera: Camera,
+    sessionCameraFlow: StateFlow<Camera?>,
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ) = coroutineScope {
@@ -899,7 +892,7 @@ internal suspend fun processVideoControlEvents(
                 }
                 recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
                     runVideoRecording(
-                        // camera,
+                        sessionCameraFlow,
                         videoCapture,
                         captureTypeSuffix,
                         context,

@@ -41,16 +41,18 @@ import kotlinx.coroutines.coroutineScope
 suspend fun <R> ProcessCameraProvider.runWith(
     cameraSelector: CameraSelector,
     useCases: UseCaseGroup,
-    onRebindLifeCycle: ((CameraSelector, UseCaseGroup) -> Camera) -> Unit,
-    block: suspend CoroutineScope.(Camera) -> R
+    block: suspend CoroutineScope.(
+        initialCamera: Camera,
+        onRebindLifeCycle: ((CameraSelector, UseCaseGroup) -> Camera)
+    ) -> R
 ): R = coroutineScope {
     val scopedLifecycle = CoroutineLifecycleOwner(coroutineContext)
 
-    val rebind = fun(newCameraSelector: CameraSelector, newUseCaseGroup: UseCaseGroup): Camera =
-        bindToLifecycle(scopedLifecycle, newCameraSelector, newUseCaseGroup)
-    // provide the rebind function for this camera sessions coroutine
-    onRebindLifeCycle(rebind)
-    block((this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases)))
+    // rebind function to use for this coroutine's camera session
+    val rebind = fun(newCameraSelector: CameraSelector, useCaseGroup: UseCaseGroup): Camera =
+        bindToLifecycle(scopedLifecycle, newCameraSelector, useCaseGroup)
+
+    block((this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases)), rebind)
 }
 
 @SuppressLint("RestrictedApi")
