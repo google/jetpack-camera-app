@@ -66,7 +66,7 @@ internal suspend fun runConcurrentCameraSession(
         backgroundDispatcher
     )
     val useCaseGroup = createUseCaseGroup(
-        cameraInfo = sessionSettings.primaryCameraInfo,
+        // cameraInfo = sessionSettings.primaryCameraInfo,
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = StabilizationMode.OFF,
         aspectRatio = sessionSettings.aspectRatio,
@@ -108,7 +108,7 @@ internal suspend fun runConcurrentCameraSession(
 
         launch {
             processVideoControlEvents(
-                primaryCamera,
+                // primaryCamera,
                 useCaseGroup.getVideoCapture(),
                 captureTypeSuffix = "DualCam"
             )
@@ -128,7 +128,8 @@ internal suspend fun runConcurrentCameraSession(
             useCaseGroup,
             initialTransientSettings,
             transientSettings,
-            onRebind.getCompleted()
+            onRebind.await(),
+            onImageCaptureCreated = { /*todo: when image capture is supported on concurrent*/ }
         )
     }
 }

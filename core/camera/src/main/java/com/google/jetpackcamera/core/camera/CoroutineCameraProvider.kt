@@ -45,8 +45,10 @@ suspend fun <R> ProcessCameraProvider.runWith(
     block: suspend CoroutineScope.(Camera) -> R
 ): R = coroutineScope {
     val scopedLifecycle = CoroutineLifecycleOwner(coroutineContext)
+
     val rebind = fun(newCameraSelector: CameraSelector, newUseCaseGroup: UseCaseGroup): Camera =
         bindToLifecycle(scopedLifecycle, newCameraSelector, newUseCaseGroup)
+    // provide the rebind function for this camera sessions coroutine
     onRebindLifeCycle(rebind)
     block((this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases)))
 }
