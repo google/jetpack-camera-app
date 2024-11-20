@@ -85,7 +85,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -103,9 +102,8 @@ internal suspend fun runSingleCameraSession(
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
-    val _singleSessionCameraFlow = MutableStateFlow<Camera?>(null)
-    val singleSessionCameraFlow = _singleSessionCameraFlow.asStateFlow()
-    val updateSessionFlow = { newCamera: Camera -> _singleSessionCameraFlow.update { newCamera } }
+    val singleCameraFlow = MutableStateFlow<Camera?>(null)
+    val updateSessionFlow = { newCamera: Camera -> singleCameraFlow.update { newCamera } }
 
     val lensFacing = transientSettings.value!!.cameraInfo
     Log.d(TAG, "Starting new single camera session for $lensFacing")
@@ -154,14 +152,14 @@ internal suspend fun runSingleCameraSession(
 
         // update camera whenever changed used in focus metering
         launch {
-            singleSessionCameraFlow.filterNotNull().collectLatest {
+            singleCameraFlow.filterNotNull().collectLatest {
                 processFocusMeteringEvents(it.cameraControl)
             }
         }
 
         launch {
             processVideoControlEvents(
-                singleSessionCameraFlow,
+                singleCameraFlow,
                 useCaseGroup.getVideoCapture(),
                 captureTypeSuffix = when (sessionSettings.captureMode) {
                     CaptureMode.MULTI_STREAM -> "MultiStream"
@@ -173,7 +171,7 @@ internal suspend fun runSingleCameraSession(
         // update the camera being checked for torch state whenever camera is flipped
         // torch state of 1 means the torch is ON and 0 when it is OFF
         launch {
-            singleSessionCameraFlow.collectLatest { currentCamera ->
+            singleCameraFlow.collectLatest { currentCamera ->
                 currentCamera?.let {
                     it.cameraInfo.torchState.asFlow().collectLatest { torchState ->
                         currentCameraState.update { old ->
@@ -187,7 +185,7 @@ internal suspend fun runSingleCameraSession(
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
 
         processTransientSettingEvents(
-            singleSessionCameraFlow,
+            singleCameraFlow,
             useCaseGroup,
             initialTransientSettings,
             transientSettings,
@@ -200,7 +198,7 @@ internal suspend fun runSingleCameraSession(
 
 context(CameraSessionContext)
 internal suspend fun processTransientSettingEvents(
-    cameraFlow: StateFlow<Camera?>,
+    sessionCameraFlow: StateFlow<Camera?>,
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
@@ -211,7 +209,7 @@ internal suspend fun processTransientSettingEvents(
     // outside of the camera updates
     var prevTransientSettings = initialTransientSettings
 
-    cameraFlow.filterNotNull().collectLatest { camera ->
+    sessionCameraFlow.filterNotNull().collectLatest { camera ->
         transientSettings.filterNotNull().collectLatest { newTransientSettings ->
             // Apply camera zoom
             if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {

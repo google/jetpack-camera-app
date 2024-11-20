@@ -26,7 +26,6 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -41,9 +40,8 @@ internal suspend fun runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
-    val _dualCameraFlow = MutableStateFlow<Camera?>(null)
-    val dualCameraFlow = _dualCameraFlow.asStateFlow()
-    val updateDualCameraFlow = { newCamera: Camera -> _dualCameraFlow.update { newCamera } }
+    val dualCameraFlow = MutableStateFlow<Camera?>(null)
+    val updateDualCameraFlow = { newCamera: Camera -> dualCameraFlow.update { newCamera } }
 
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
     val secondaryLensFacing = sessionSettings.secondaryCameraInfo.appLensFacing
