@@ -76,8 +76,11 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+    suspend fun pauseVideoRecording()
 
-    fun stopVideoRecording()
+    suspend fun resumeVideoRecording()
+
+    suspend fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
 

@@ -62,7 +62,6 @@ import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -226,7 +225,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    audioMuted = currentCameraSettings.audioMuted,
+                    isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale
@@ -262,6 +261,7 @@ constructor(
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
+
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
@@ -350,6 +350,7 @@ constructor(
                     StabilizationMode.OFF
                 }
             }
+
             StabilizationMode.HIGH_QUALITY -> {
                 if (
                     supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
@@ -360,6 +361,7 @@ constructor(
                     StabilizationMode.OFF
                 }
             }
+
             StabilizationMode.OFF -> StabilizationMode.OFF
         }
     }
@@ -479,8 +481,16 @@ constructor(
         )
     }
 
-    override fun stopVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
+    override suspend fun pauseVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.PauseRecordingEvent)
+    }
+
+    override suspend fun resumeVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.ResumeRecordingEvent)
+    }
+
+    override suspend fun stopVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
     override fun setZoomScale(scale: Float) {
@@ -660,6 +670,7 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
+
     override suspend fun setMaxVideoDuration(durationInMillis: Long) {
         currentSettings.update { old ->
             old?.copy(
@@ -667,6 +678,7 @@ constructor(
             )
         }
     }
+
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
             old?.copy(stabilizationMode = stabilizationMode)
