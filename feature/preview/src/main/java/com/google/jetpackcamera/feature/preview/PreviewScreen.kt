@@ -150,6 +150,7 @@ fun PreviewScreen(
                 onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
+                onSetPause = viewModel::setPaused,
                 onMuteAudio = viewModel::setAudioMuted,
                 onCaptureImageWithUri = viewModel::captureImageWithUri,
                 onStartVideoRecording = viewModel::startVideoRecording,
@@ -184,6 +185,7 @@ private fun ContentScreen(
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
+    onSetPause: (Boolean) -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -258,6 +260,7 @@ private fun ContentScreen(
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
+                onSetPause = onSetPause,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,

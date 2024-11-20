@@ -99,6 +99,8 @@ fun CameraControlsOverlay(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onMuteAudio: () -> Unit = {},
+    onSetPause: (Boolean) -> Unit = {},
+    onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -156,6 +158,7 @@ fun CameraControlsOverlay(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudioMuted = onMuteAudio,
+                onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
@@ -253,6 +256,7 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudioMuted: () -> Unit = {},
+    onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onStartVideoRecording: (
@@ -279,6 +283,7 @@ private fun ControlsBottom(
                     elapsedNs = when (previewUiState.videoRecordingState) {
                         is VideoRecordingState.Active ->
                             previewUiState.videoRecordingState.elapsedTimeNanos
+
                         is VideoRecordingState.Inactive ->
                             previewUiState.videoRecordingState.finalElapsedTimeNanos
                     }
@@ -301,6 +306,13 @@ private fun ControlsBottom(
                         // enable only when phone has front and rear camera
                         enabledCondition = systemConstraints.availableLenses.size > 1
                     )
+                } else if (!isQuickSettingsOpen &&
+                    videoRecordingState is VideoRecordingState.Active
+                ) {
+                    PauseResumeToggleButton(
+                        onSetPause = onSetPause,
+                        currentRecordingState = videoRecordingState
+                    )
                 }
             }
             CaptureButton(
@@ -319,7 +331,6 @@ private fun ControlsBottom(
                             .weight(1f)
                             .fillMaxSize(),
                         onToggleMute = onToggleAudioMuted,
-                        size = 75,
                         audioAmplitude = videoRecordingState.audioAmplitude
                     )
                 } else {

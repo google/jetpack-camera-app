@@ -187,6 +187,7 @@ class PreviewViewModel @AssistedInject constructor(
                     StabilizationUiState.Set(StabilizationMode.AUTO)
                 }
             }
+
             StabilizationMode.ON,
             StabilizationMode.HIGH_QUALITY ->
                 StabilizationUiState.Set(
@@ -483,6 +484,16 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
+    fun setPaused(shouldBePaused: Boolean) {
+        viewModelScope.launch {
+            if (shouldBePaused) {
+                cameraUseCase.pauseVideoRecording()
+            } else {
+                cameraUseCase.resumeVideoRecording()
+            }
+        }
+    }
+
     private fun showExternalVideoCaptureUnsupportedToast() {
         viewModelScope.launch {
             _previewUiState.update { old ->
@@ -704,8 +715,10 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
-        cameraUseCase.stopVideoRecording()
-        recordingJob?.cancel()
+        viewModelScope.launch {
+            cameraUseCase.stopVideoRecording()
+            recordingJob?.cancel()
+        }
     }
 
     fun setZoomScale(scale: Float) {
@@ -804,22 +817,14 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     sealed interface ImageCaptureEvent {
-        data class ImageSaved(
-            val savedUri: Uri? = null
-        ) : ImageCaptureEvent
+        data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
 
-        data class ImageCaptureError(
-            val exception: Exception
-        ) : ImageCaptureEvent
+        data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
     }
 
     sealed interface VideoCaptureEvent {
-        data class VideoSaved(
-            val savedUri: Uri
-        ) : VideoCaptureEvent
+        data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
 
-        data class VideoCaptureError(
-            val error: Throwable?
-        ) : VideoCaptureEvent
+        data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
     }
 }

@@ -52,6 +52,7 @@ class FakeCameraUseCase(
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+    var isRecordingPaused = false
 
     var isLensFacingFront = false
 
@@ -140,7 +141,15 @@ class FakeCameraUseCase(
         recordingInProgress = true
     }
 
-    override fun stopVideoRecording() {
+    override suspend fun pauseVideoRecording() {
+        isRecordingPaused = true
+    }
+
+    override suspend fun resumeVideoRecording() {
+        isRecordingPaused = false
+    }
+
+    override suspend fun stopVideoRecording() {
         recordingInProgress = false
     }
 

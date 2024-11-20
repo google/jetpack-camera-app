@@ -50,6 +50,7 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
     ) : PreviewUiState
 }
+
 // todo(kc): add ElapsedTimeUiState class
 
 data class DebugUiState(
