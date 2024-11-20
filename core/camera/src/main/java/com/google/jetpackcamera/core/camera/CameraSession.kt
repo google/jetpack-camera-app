@@ -76,11 +76,11 @@ import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -731,7 +731,8 @@ private suspend fun startVideoRecordingInternal(
                                 old.copy(
                                     videoRecordingState = VideoRecordingState.Inactive(
                                         // cleanly display the max duration
-                                        finalElapsedTimeNanos = maxDurationMillis * 1_000_000
+                                        finalElapsedTimeNanos = maxDurationMillis.milliseconds
+                                            .inWholeNanoseconds
                                     )
                                 )
                             }
@@ -769,9 +770,10 @@ private suspend fun runVideoRecording(
     maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
     videoCaptureUri: Uri?,
+    videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
-) {
+) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
     getPendingRecording(
@@ -784,16 +786,15 @@ private suspend fun runVideoRecording(
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
-            initialMuted = currentSettings.audioMuted,
+            initialMuted = currentSettings.isAudioMuted,
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
             onVideoRecord = onVideoRecord
         ).use { recording ->
-
-            // whenever we switch cameras while recording, apply flash if applicable
-            // todo(kc): wip... handle this coroutine properly. currently standing alone
-            coroutineScope {
+            // recordingSettingUpdater launches coroutines to handle changes to the active video recording
+            val recordingSettingsUpdater = launch {
+                // this coroutine handles enabling and disables torch when recording and swapping lenses
                 launch {
                     sessionCameraFlow.filterNotNull().onCompletion {
                         // ensure camera torch is off when closing camera
@@ -802,13 +803,13 @@ private suspend fun runVideoRecording(
                             sessionCameraFlow.value?.cameraControl?.enableTorch(false)
                         }
                     }.collectLatest { currentCamera ->
+                        // whenever we switch cameras while recording, apply flash if applicable
+
                         val isFrontCameraSelector =
                             currentCamera.cameraInfo.cameraSelector ==
                                 CameraSelector.DEFAULT_FRONT_CAMERA
 
                         // todo(kc): apply flash PR #283
-                        // todo(kc): for some reason flash doesnt work when switching in progress recording to rear IFF the session was initialized on the FFC...
-                        // not that there is no flash unit, but that unable to
                         if (currentSettings.isFlashModeOn()) {
                             if (!isFrontCameraSelector) {
                                 try {
@@ -822,28 +823,47 @@ private suspend fun runVideoRecording(
                         }
                     }
                 }
-            }
+                // this coroutine handles changes to transient settings
+                launch {
+                    transientSettings.filterNotNull()
+                        .collectLatest { newTransientSettings ->
+                            if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
+                                recording.mute(newTransientSettings.isAudioMuted)
+                            }
 
-            transientSettings.filterNotNull()
-                .collectLatest { newTransientSettings ->
-                    if (currentSettings.audioMuted != newTransientSettings.audioMuted) {
-                        recording.mute(newTransientSettings.audioMuted)
-                    }
-
-                    // try to turn on flash while video is recording
-                    if (currentSettings.isFlashModeOn() != newTransientSettings.isFlashModeOn()) {
-                        if (newTransientSettings.cameraInfo.cameraSelector ==
-                            CameraSelector.DEFAULT_FRONT_CAMERA
-                        ) {
-                            sessionCameraFlow.value?.cameraControl?.enableTorch(
+                            // try to turn on flash while video is recording
+                            if (currentSettings.isFlashModeOn() !=
                                 newTransientSettings.isFlashModeOn()
-                            )
-                        } else {
-                            Log.d(TAG, "Unable to update torch for front camera.")
+                            ) {
+                                if (newTransientSettings.cameraInfo.cameraSelector ==
+                                    CameraSelector.DEFAULT_FRONT_CAMERA
+                                ) {
+                                    sessionCameraFlow.value?.cameraControl?.enableTorch(
+                                        newTransientSettings.isFlashModeOn()
+                                    )
+                                } else {
+                                    Log.d(TAG, "Unable to update torch for front camera.")
+                                }
+                            }
+                            currentSettings = newTransientSettings
                         }
-                    }
-                    currentSettings = newTransientSettings
                 }
+            }
+            // monitor incoming videoControlEvents
+            for (event in videoControlEvents) {
+                when (event) {
+                    is VideoCaptureControlEvent.StartRecordingEvent ->
+                        throw IllegalStateException("A recording is already in progress")
+
+                    VideoCaptureControlEvent.StopRecordingEvent -> {
+                        recordingSettingsUpdater.cancel()
+                        break
+                    }
+
+                    VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
+                    VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
+                }
+            }
         }
     }
 }
@@ -879,8 +899,6 @@ internal suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ) = coroutineScope {
-    var recordingJob: Job? = null
-
     for (event in videoCaptureControlEvents) {
         when (event) {
             is VideoCaptureControlEvent.StartRecordingEvent -> {
@@ -889,25 +907,21 @@ internal suspend fun processVideoControlEvents(
                         "Attempted video recording with null videoCapture"
                     )
                 }
-                recordingJob = launch(start = CoroutineStart.UNDISPATCHED) {
-                    runVideoRecording(
-                        sessionCameraFlow,
-                        videoCapture,
-                        captureTypeSuffix,
-                        context,
-                        event.maxVideoDuration,
-                        transientSettings,
-                        event.videoCaptureUri,
-                        event.shouldUseUri,
-                        event.onVideoRecord
-                    )
-                }
-            }
 
-            VideoCaptureControlEvent.StopRecordingEvent -> {
-                recordingJob?.cancel()
-                recordingJob = null
+                runVideoRecording(
+                    sessionCameraFlow,
+                    videoCapture,
+                    captureTypeSuffix,
+                    context,
+                    event.maxVideoDuration,
+                    transientSettings,
+                    event.videoCaptureUri,
+                    videoCaptureControlEvents,
+                    event.shouldUseUri,
+                    event.onVideoRecord
+                )
             }
+            else -> {}
         }
     }
 }

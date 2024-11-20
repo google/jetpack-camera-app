@@ -62,7 +62,6 @@ import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -220,7 +219,7 @@ constructor(
 
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")
-        // todo turn into deferred?
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
@@ -232,7 +231,7 @@ constructor(
 
                 transientSettings.value =
                     TransientSessionSettings(
-                        audioMuted = currentCameraSettings.audioMuted,
+                        isAudioMuted = currentCameraSettings.audioMuted,
                         deviceRotation = currentCameraSettings.deviceRotation,
                         flashMode = currentCameraSettings.flashMode,
                         zoomScale = currentCameraSettings.zoomScale,
@@ -292,7 +291,8 @@ constructor(
                     }
                 }
             }.distinctUntilChanged()
-            // collectLatest causes the camera to stop if flip camera is included in persistent settings
+            // updates to Perpetual settings triggers collectLatest, which will terminate the previous camera session entirely
+            // to avoid that, cameraInfo was moved into Transient Settings
             .collectLatest { sessionSettings ->
                 coroutineScope {
                     with(
@@ -320,7 +320,6 @@ constructor(
                                 }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
-                                    // todo(kc): re-enable recording and concurrent camera flip while recording
                                     runConcurrentCameraSession(
                                         sessionSettings = sessionSettings,
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
@@ -488,8 +487,16 @@ constructor(
         )
     }
 
-    override fun stopVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
+    override suspend fun pauseVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.PauseRecordingEvent)
+    }
+
+    override suspend fun resumeVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.ResumeRecordingEvent)
+    }
+
+    override suspend fun stopVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
     override fun setZoomScale(scale: Float) {
