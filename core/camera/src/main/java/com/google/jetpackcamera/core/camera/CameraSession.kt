@@ -211,6 +211,7 @@ internal suspend fun processTransientSettingEvents(
 
     sessionCameraFlow.filterNotNull().collectLatest { camera ->
         transientSettings.filterNotNull().collectLatest { newTransientSettings ->
+            // todo(kc): persist zoom scale between switching lens
             // Apply camera zoom
             if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
                 camera.cameraInfo.zoomState.value?.let { zoomState ->
