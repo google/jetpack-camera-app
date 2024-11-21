@@ -285,7 +285,10 @@ private fun ControlsBottom(
         ) {
             // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen) {
+                if (!isQuickSettingsOpen &&
+                    // todo(kc): cannot flip camera while feed is paused
+                    videoRecordingState !is VideoRecordingState.Active.Paused
+                ) {
                     FlipCameraButton(
                         modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                         onClick = onFlipCamera,
