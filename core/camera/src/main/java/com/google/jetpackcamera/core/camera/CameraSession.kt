@@ -103,7 +103,7 @@ internal suspend fun runSingleCameraSession(
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
     val singleCameraFlow = MutableStateFlow<Camera?>(null)
-    val updateSessionFlow = { newCamera: Camera -> singleCameraFlow.update { newCamera } }
+    val updateSessionCameraFlow = { newCamera: Camera -> singleCameraFlow.update { newCamera } }
 
     val lensFacing = transientSettings.value!!.cameraInfo
     Log.d(TAG, "Starting new single camera session for $lensFacing")
@@ -147,8 +147,8 @@ internal suspend fun runSingleCameraSession(
     ) { initialCamera, onRebind ->
         Log.d(TAG, "Camera session started")
 
-        // initialize cameraflow with the starting camera
-        updateSessionFlow(initialCamera)
+        // initialize camera flow with the starting camera
+        updateSessionCameraFlow(initialCamera)
 
         // update camera whenever changed used in focus metering
         launch {
@@ -190,7 +190,7 @@ internal suspend fun runSingleCameraSession(
             initialTransientSettings,
             transientSettings,
             onRebind,
-            updateSessionFlow,
+            updateSessionCameraFlow,
             onImageCaptureCreated
         )
     }
