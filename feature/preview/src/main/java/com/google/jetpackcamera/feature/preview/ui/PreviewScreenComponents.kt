@@ -320,6 +320,50 @@ fun TestableSnackbar(
     }
 }
 
+@Composable
+fun DetectWindowColorModeChanges(
+    surfaceRequest: SurfaceRequest,
+    implementationMode: ImplementationMode,
+    onRequestWindowColorMode: (Int) -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
+        val currentImplementationMode: ImplementationMode by rememberUpdatedState(
+            implementationMode
+        )
+        val currentOnRequestWindowColorMode: (Int) -> Unit by rememberUpdatedState(
+            onRequestWindowColorMode
+        )
+
+        LaunchedEffect(Unit) {
+            val colorModeSnapshotFlow =
+                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
+                    .map { (dynamicRange, implMode) ->
+                        val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
+                        val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
+                        if (isSourceHdr && destSupportsHdr) {
+                            ActivityInfo.COLOR_MODE_HDR
+                        } else {
+                            ActivityInfo.COLOR_MODE_DEFAULT
+                        }
+                    }.distinctUntilChanged()
+
+            val callbackSnapshotFlow = snapshotFlow { currentOnRequestWindowColorMode }
+
+            // Combine both flows so that we call the callback every time it changes or the
+            // window color mode changes.
+            // We'll also reset to default when this LaunchedEffect is disposed
+            combine(colorModeSnapshotFlow, callbackSnapshotFlow) { colorMode, callback ->
+                Pair(colorMode, callback)
+            }.onCompletion {
+                currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT)
+            }.collect { (colorMode, callback) ->
+                callback(colorMode)
+            }
+        }
+    }
+}
+
 /**
  * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
  * and double-tap to flip camera
@@ -420,50 +464,6 @@ fun PreviewDisplay(
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun DetectWindowColorModeChanges(
-    surfaceRequest: SurfaceRequest,
-    implementationMode: ImplementationMode,
-    onRequestWindowColorMode: (Int) -> Unit
-) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
-        val currentImplementationMode: ImplementationMode by rememberUpdatedState(
-            implementationMode
-        )
-        val currentOnRequestWindowColorMode: (Int) -> Unit by rememberUpdatedState(
-            onRequestWindowColorMode
-        )
-
-        LaunchedEffect(Unit) {
-            val colorModeSnapshotFlow =
-                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
-                    .map { (dynamicRange, implMode) ->
-                        val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
-                        val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
-                        if (isSourceHdr && destSupportsHdr) {
-                            ActivityInfo.COLOR_MODE_HDR
-                        } else {
-                            ActivityInfo.COLOR_MODE_DEFAULT
-                        }
-                    }.distinctUntilChanged()
-
-            val callbackSnapshotFlow = snapshotFlow { currentOnRequestWindowColorMode }
-
-            // Combine both flows so that we call the callback every time it changes or the
-            // window color mode changes.
-            // We'll also reset to default when this LaunchedEffect is disposed
-            combine(colorModeSnapshotFlow, callbackSnapshotFlow) { colorMode, callback ->
-                Pair(colorMode, callback)
-            }.onCompletion {
-                currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT)
-            }.collect { (colorMode, callback) ->
-                callback(colorMode)
             }
         }
     }

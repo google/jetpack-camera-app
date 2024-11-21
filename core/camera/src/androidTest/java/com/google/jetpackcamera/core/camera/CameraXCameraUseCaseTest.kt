@@ -153,7 +153,7 @@ class CameraXCameraUseCaseTest {
         Dispatchers.Default,
         constraintsRepository
     ).apply {
-        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD)
+        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD) {}
         providePreviewSurface()
     }
 

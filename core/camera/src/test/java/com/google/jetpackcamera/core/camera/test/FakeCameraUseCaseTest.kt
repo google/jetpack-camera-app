@@ -58,7 +58,7 @@ class FakeCameraUseCaseTest {
         cameraUseCase.initialize(
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
             useCaseMode = CameraUseCase.UseCaseMode.STANDARD
-        )
+        ) {}
     }
 
     @Test
@@ -152,7 +152,7 @@ class FakeCameraUseCaseTest {
             cameraUseCase.initialize(
                 cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
                 useCaseMode = CameraUseCase.UseCaseMode.STANDARD
-            )
+            ) {}
             cameraUseCase.runCamera()
         }
     }
