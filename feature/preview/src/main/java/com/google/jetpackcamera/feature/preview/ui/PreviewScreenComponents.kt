@@ -58,6 +58,8 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -139,9 +141,49 @@ fun ElapsedTimeText(
 }
 
 @Composable
+fun PauseResumeToggleButton(
+    modifier: Modifier = Modifier,
+    onSetPause: (Boolean) -> Unit,
+    size: Float = 75f,
+    currentRecordingState: VideoRecordingState.Active
+) {
+    Box(
+        modifier = modifier.clickable {
+            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
+        }
+    ) {
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size),
+                    color = Color.White
+                )
+            }
+        )
+
+        // icon
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Red,
+
+            imageVector = when (currentRecordingState) {
+                is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+            },
+            contentDescription = "pause resume toggle"
+        )
+    }
+}
+
+@Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
-    size: Int = 100,
+    size: Float = 75f,
     audioAmplitude: Double,
     onToggleMute: () -> Unit
 ) {
@@ -158,7 +200,7 @@ fun AmplitudeVisualizer(
             onDraw = {
                 drawCircle(
                     // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
+                    radius = (size * animatedScaling).coerceIn(size, size * 1.65f),
                     alpha = .5f,
                     color = Color.White
                 )
@@ -453,6 +495,7 @@ fun StabilizationIcon(
                     StabilizationMode.AUTO -> stringResource(
                         R.string.stabilization_icon_description_auto
                     )
+
                     StabilizationMode.ON ->
                         stringResource(R.string.stabilization_icon_description_preview_and_video)
 
@@ -583,19 +626,27 @@ fun CaptureButton(
             .padding(18.dp)
             .border(4.dp, currentColor, CircleShape)
     ) {
-        Canvas(modifier = Modifier.size(110.dp), onDraw = {
-            drawCircle(
-                color =
-                when (videoRecordingState) {
-                    is VideoRecordingState.Inactive -> {
-                        if (isPressedDown) currentColor else Color.Transparent
-                    }
+        Canvas(
+            modifier = Modifier
+                .size(110.dp),
+            onDraw = {
+                drawCircle(
+                    alpha = when (videoRecordingState) {
+                        is VideoRecordingState.Active.Paused -> .37f
+                        else -> 1f
+                    },
+                    color =
+                    when (videoRecordingState) {
+                        is VideoRecordingState.Inactive -> {
+                            if (isPressedDown) currentColor else Color.Transparent
+                        }
 
-                    is VideoRecordingState.Active.Recording -> Color.Red
-                    is VideoRecordingState.Active.Paused -> Color.Blue
-                }
-            )
-        })
+                        is VideoRecordingState.Active.Recording,
+                        is VideoRecordingState.Active.Paused -> Color.Red
+                    }
+                )
+            }
+        )
     }
 }
 

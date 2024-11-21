@@ -52,6 +52,7 @@ sealed interface PreviewUiState {
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
     ) : PreviewUiState
 }
+
 // todo(kc): add ElapsedTimeUiState class
 
 sealed interface StabilizationUiState {
