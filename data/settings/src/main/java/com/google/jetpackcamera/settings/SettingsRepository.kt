@@ -23,7 +23,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -45,9 +45,7 @@ interface SettingsRepository {
 
     suspend fun updateCaptureMode(captureMode: CaptureMode)
 
-    suspend fun updatePreviewStabilization(stabilization: Stabilization)
-
-    suspend fun updateVideoStabilization(stabilization: Stabilization)
+    suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 

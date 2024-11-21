@@ -28,8 +28,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -77,8 +76,11 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+    suspend fun pauseVideoRecording()
 
-    fun stopVideoRecording()
+    suspend fun resumeVideoRecording()
+
+    suspend fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
 
@@ -108,15 +110,11 @@ interface CameraUseCase {
 
     suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
-    suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
-
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
     suspend fun setAudioMuted(isAudioMuted: Boolean)
 
-    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
-
-    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+    suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
@@ -185,6 +183,7 @@ data class CameraState(
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
+    val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 

@@ -58,11 +58,12 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,6 +75,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +94,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -105,8 +108,7 @@ import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -139,9 +141,49 @@ fun ElapsedTimeText(
 }
 
 @Composable
+fun PauseResumeToggleButton(
+    modifier: Modifier = Modifier,
+    onSetPause: (Boolean) -> Unit,
+    size: Float = 75f,
+    currentRecordingState: VideoRecordingState.Active
+) {
+    Box(
+        modifier = modifier.clickable {
+            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
+        }
+    ) {
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size),
+                    color = Color.White
+                )
+            }
+        )
+
+        // icon
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Red,
+
+            imageVector = when (currentRecordingState) {
+                is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+            },
+            contentDescription = "pause resume toggle"
+        )
+    }
+}
+
+@Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
-    size: Int = 100,
+    size: Float = 75f,
     audioAmplitude: Double,
     onToggleMute: () -> Unit
 ) {
@@ -158,7 +200,7 @@ fun AmplitudeVisualizer(
             onDraw = {
                 drawCircle(
                     // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
+                    radius = (size * animatedScaling).coerceIn(size, size * 1.65f),
                     alpha = .5f,
                     color = Color.White
                 )
@@ -301,7 +343,7 @@ fun PreviewDisplay(
 
     surfaceRequest?.let {
         BoxWithConstraints(
-            Modifier
+            modifier
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
@@ -429,44 +471,41 @@ fun DetectWindowColorModeChanges(
 
 @Composable
 fun StabilizationIcon(
-    videoStabilization: Stabilization,
-    previewStabilization: Stabilization,
-    modifier: Modifier = Modifier
+    stabilizationMode: StabilizationMode,
+    modifier: Modifier = Modifier,
+    active: Boolean = true
 ) {
-    if (videoStabilization == Stabilization.ON || previewStabilization == Stabilization.ON) {
-        val descriptionText = if (videoStabilization == Stabilization.ON) {
-            stringResource(id = R.string.stabilization_icon_description_preview_and_video)
-        } else {
-            // previewStabilization will not be on for high quality
-            stringResource(id = R.string.stabilization_icon_description_video_only)
-        }
-        Icon(
-            imageVector = Icons.Filled.VideoStable,
-            contentDescription = descriptionText,
-            modifier = modifier
-        )
+    val contentColor = Color.White.let {
+        if (!active) it.copy(alpha = 0.38f) else it
     }
-}
-
-/**
- * LowLightBoostIcon has 3 states
- * - disabled: hidden
- * - enabled and inactive: outline
- * - enabled and active: filled
- */
-@Composable
-fun LowLightBoostIcon(lowLightBoost: LowLightBoost, modifier: Modifier = Modifier) {
-    when (lowLightBoost) {
-        LowLightBoost.ENABLED -> {
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
+        if (stabilizationMode != StabilizationMode.OFF) {
             Icon(
-                imageVector = Icons.Outlined.Nightlight,
-                contentDescription =
-                stringResource(id = R.string.quick_settings_lowlightboost_enabled),
-                modifier = modifier.alpha(0.5f)
-            )
-        }
+                painter = when (stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        painterResource(R.drawable.video_stable_auto_filled_icon)
 
-        LowLightBoost.DISABLED -> {
+                    StabilizationMode.HIGH_QUALITY ->
+                        painterResource(R.drawable.video_stable_hq_filled_icon)
+
+                    else -> rememberVectorPainter(Icons.Filled.VideoStable)
+                },
+                // previewStabilization will not be on for high quality
+                contentDescription = when (stabilizationMode) {
+                    StabilizationMode.AUTO -> stringResource(
+                        R.string.stabilization_icon_description_auto
+                    )
+
+                    StabilizationMode.ON ->
+                        stringResource(R.string.stabilization_icon_description_preview_and_video)
+
+                    StabilizationMode.HIGH_QUALITY ->
+                        stringResource(R.string.stabilization_icon_description_video_only)
+
+                    else -> null
+                },
+                modifier = modifier
+            )
         }
     }
 }
@@ -587,19 +626,27 @@ fun CaptureButton(
             .padding(18.dp)
             .border(4.dp, currentColor, CircleShape)
     ) {
-        Canvas(modifier = Modifier.size(110.dp), onDraw = {
-            drawCircle(
-                color =
-                when (videoRecordingState) {
-                    is VideoRecordingState.Inactive -> {
-                        if (isPressedDown) currentColor else Color.Transparent
-                    }
+        Canvas(
+            modifier = Modifier
+                .size(110.dp),
+            onDraw = {
+                drawCircle(
+                    alpha = when (videoRecordingState) {
+                        is VideoRecordingState.Active.Paused -> .37f
+                        else -> 1f
+                    },
+                    color =
+                    when (videoRecordingState) {
+                        is VideoRecordingState.Inactive -> {
+                            if (isPressedDown) currentColor else Color.Transparent
+                        }
 
-                    is VideoRecordingState.Active.Recording -> Color.Red
-                    is VideoRecordingState.Active.Paused -> Color.Blue
-                }
-            )
-        })
+                        is VideoRecordingState.Active.Recording,
+                        is VideoRecordingState.Active.Paused -> Color.Red
+                    }
+                )
+            }
+        )
     }
 }
 

@@ -36,7 +36,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -74,8 +74,7 @@ fun SettingsScreen(
         setAspectRatio = viewModel::setAspectRatio,
         setCaptureMode = viewModel::setCaptureMode,
         setMuted = viewModel::setVideoMuted,
-        setVideoStabilization = viewModel::setVideoStabilization,
-        setPreviewStabilization = viewModel::setPreviewStabilization,
+        setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode
     )
@@ -100,9 +99,8 @@ private fun SettingsScreen(
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
+    setStabilizationMode: (StabilizationMode) -> Unit = {},
     setMuted: (Boolean) -> Unit = {},
-    setVideoStabilization: (Stabilization) -> Unit = {},
-    setPreviewStabilization: (Stabilization) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
@@ -124,9 +122,8 @@ private fun SettingsScreen(
                 setTargetFrameRate = setTargetFrameRate,
                 setAspectRatio = setAspectRatio,
                 setCaptureMode = setCaptureMode,
+                setStabilizationMode = setStabilizationMode,
                 setMuted = setMuted,
-                setVideoStabilization = setVideoStabilization,
-                setPreviewStabilization = setPreviewStabilization,
                 setMaxVideoDuration = setMaxVideoDuration,
                 setDarkMode = setDarkMode
             )
@@ -144,8 +141,7 @@ fun SettingsList(
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
     setMuted: (Boolean) -> Unit = {},
-    setVideoStabilization: (Stabilization) -> Unit = {},
-    setPreviewStabilization: (Stabilization) -> Unit = {},
+    setStabilizationMode: (StabilizationMode) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
@@ -185,8 +181,7 @@ fun SettingsList(
 
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
-        setVideoStabilization = setVideoStabilization,
-        setPreviewStabilization = setPreviewStabilization
+        setStabilizationMode = setStabilizationMode
     )
 
     MuteRecordingSetting(

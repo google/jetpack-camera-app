@@ -20,6 +20,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -36,11 +37,13 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
-import com.google.jetpackcamera.utils.getIntent
+import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
+import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
@@ -86,7 +89,7 @@ internal class ImageCaptureDeviceTest {
         val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -107,7 +110,7 @@ internal class ImageCaptureDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -132,7 +135,7 @@ internal class ImageCaptureDeviceTest {
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -150,6 +153,124 @@ internal class ImageCaptureDeviceTest {
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
+    }
+
+    @Test
+    fun multipleImageCaptureExternal_returnsResultOk() {
+        val timeStamp = System.currentTimeMillis()
+        val uriStrings = arrayListOf<String>()
+        for (i in 1..3) {
+            val uri = getTestUri(DIR_PATH, timeStamp + i.toLong(), "jpg")
+            uriStrings.add(uri.toString())
+        }
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getMultipleImageCaptureIntent(
+                    uriStrings,
+                    MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
+                )
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+                repeat(2) {
+                    clickCaptureAndWaitUntilMessageDisappears(
+                        IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                        IMAGE_CAPTURE_SUCCESS_TAG
+                    )
+                }
+                clickCapture()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
+        for (string in uriStrings) {
+            Truth.assertThat(doesImageFileExist(Uri.parse(string), "image")).isTrue()
+        }
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    @Test
+    fun multipleImageCaptureExternal_withNullUriList_returnsResultOk() {
+        val timeStamp = System.currentTimeMillis()
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+                repeat(2) {
+                    clickCaptureAndWaitUntilMessageDisappears(
+                        IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                        IMAGE_CAPTURE_SUCCESS_TAG
+                    )
+                }
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    @Test
+    fun multipleImageCaptureExternal_withNullUriList_returnsResultCancel() {
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+    }
+
+    @Test
+    fun multipleImageCaptureExternal_withIllegalUri_returnsResultOk() {
+        val timeStamp = System.currentTimeMillis()
+        val uriStrings = arrayListOf<String>()
+        uriStrings.add("illegal_uri")
+        uriStrings.add(getTestUri(DIR_PATH, timeStamp, "jpg").toString())
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getMultipleImageCaptureIntent(
+                    uriStrings,
+                    MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
+                )
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+                }
+                clickCaptureAndWaitUntilMessageDisappears(
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS,
+                    IMAGE_CAPTURE_FAILURE_TAG
+                )
+                clickCapture()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
+        Truth.assertThat(doesImageFileExist(Uri.parse(uriStrings[1]), "image")).isTrue()
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    private fun clickCaptureAndWaitUntilMessageDisappears(msgTimeOut: Long, msgTag: String) {
+        clickCapture()
+        composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
+            composeTestRule.onNodeWithTag(msgTag).isDisplayed()
+        }
+        composeTestRule.waitUntil(
+            timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
+        ) {
+            composeTestRule.onNodeWithTag(msgTag).isNotDisplayed()
+        }
+    }
+
+    private fun clickCapture() {
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assertExists()
+            .performClick()
     }
 
     companion object {

@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -168,7 +167,8 @@ class MainActivity : ComponentActivity() {
     private fun getStandardMode(): PreviewMode.StandardMode {
         return PreviewMode.StandardMode { event ->
             if (event is PreviewViewModel.ImageCaptureEvent.ImageSaved) {
-                val intent = Intent(Camera.ACTION_NEW_PICTURE)
+                @Suppress("DEPRECATION")
+                val intent = Intent(android.hardware.Camera.ACTION_NEW_PICTURE)
                 intent.setData(event.savedUri)
                 sendBroadcast(intent)
             }
@@ -181,6 +181,19 @@ class MainActivity : ComponentActivity() {
             MediaStore.EXTRA_OUTPUT,
             Uri::class.java
         ) ?: intent?.clipData?.getItemAt(0)?.uri
+    }
+
+    private fun getMultipleExternalCaptureUri(): List<Uri>? {
+        val stringUris = intent.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)
+        if (stringUris.isNullOrEmpty()) {
+            return null
+        } else {
+            val result = mutableListOf<Uri>()
+            for (string in stringUris) {
+                result.add(Uri.parse(string))
+            }
+            return result
+        }
     }
 
     private fun getPreviewMode(): PreviewMode {
@@ -209,6 +222,22 @@ class MainActivity : ComponentActivity() {
                             finish()
                         }
                     }
+
+                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
+                    val uriList: List<Uri>? = getMultipleExternalCaptureUri()
+                    PreviewMode.ExternalMultipleImageCaptureMode(
+                        uriList
+                    ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
+                        Log.d(TAG, "onMultipleImageCapture, event: $event")
+                        if (uriList == null) {
+                            setResult(RESULT_OK, Intent())
+                        } else if (uriIndex == uriList.size - 1) {
+                            setResult(RESULT_OK, Intent())
+                            Log.d(TAG, "onMultipleImageCapture, finish()")
+                            finish()
+                        }
+                    }
+                }
 
                 else -> {
                     Log.w(TAG, "Ignoring external intent with unknown action.")

@@ -16,13 +16,13 @@
 package com.google.jetpackcamera.settings.model
 
 data class SystemConstraints(
-    val availableLenses: List<LensFacing>,
-    val concurrentCamerasSupported: Boolean,
-    val perLensConstraints: Map<LensFacing, CameraConstraints>
+    val availableLenses: List<LensFacing> = emptyList(),
+    val concurrentCamerasSupported: Boolean = false,
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 )
 
 data class CameraConstraints(
-    val supportedStabilizationModes: Set<SupportedStabilizationMode>,
+    val supportedStabilizationModes: Set<StabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,
