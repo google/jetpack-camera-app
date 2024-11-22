@@ -101,19 +101,30 @@ internal suspend fun runSingleCameraSession(
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
-    val lensFacing = sessionSettings.cameraInfo.appLensFacing
-    Log.d(TAG, "Starting new single camera session for $lensFacing")
-
     val initialTransientSettings = transientSettings
         .filterNotNull()
         .first()
+    val lensFacing = initialTransientSettings.cameraInfo.appLensFacing
+    Log.d(TAG, "Starting new single camera session for $lensFacing")
 
+    val videoCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+        createVideoUseCase(
+            initialTransientSettings.cameraInfo,
+            sessionSettings.aspectRatio,
+            sessionSettings.targetFrameRate,
+            sessionSettings.stabilizationMode,
+            sessionSettings.dynamicRange,
+            backgroundDispatcher
+        )
+    } else {
+        null
+    }
     val useCaseGroup = createUseCaseGroup(
-        cameraInfo = sessionSettings.cameraInfo,
+        cameraInfo = initialTransientSettings.cameraInfo,
+        videoCaptureUseCase = videoCaptureUseCase,
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = sessionSettings.stabilizationMode,
         aspectRatio = sessionSettings.aspectRatio,
-        targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
         imageFormat = sessionSettings.imageFormat,
         useCaseMode = useCaseMode,
@@ -125,7 +136,10 @@ internal suspend fun runSingleCameraSession(
         getImageCapture()?.let(onImageCaptureCreated)
     }
 
-    cameraProvider.runWith(sessionSettings.cameraInfo.cameraSelector, useCaseGroup) { camera ->
+    cameraProvider.runWith(
+        initialTransientSettings.cameraInfo.cameraSelector,
+        useCaseGroup
+    ) { camera ->
         Log.d(TAG, "Camera session started")
 
         launch {
@@ -240,7 +254,7 @@ internal fun createUseCaseGroup(
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
     aspectRatio: AspectRatio,
-    targetFrameRate: Int,
+    videoCaptureUseCase: VideoCapture<Recorder>?,
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
     useCaseMode: CameraUseCase.UseCaseMode,
@@ -254,18 +268,6 @@ internal fun createUseCaseGroup(
         )
     val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
-    } else {
-        null
-    }
-    val videoCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-        createVideoUseCase(
-            cameraInfo,
-            aspectRatio,
-            targetFrameRate,
-            stabilizationMode,
-            dynamicRange,
-            backgroundDispatcher
-        )
     } else {
         null
     }
@@ -356,8 +358,8 @@ private fun createVideoUseCase(
     }.build()
 }
 
-private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
-    return when (aspectRatio) {
+private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
+    when (aspectRatio) {
         AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
         AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
         else -> {
@@ -372,7 +374,6 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
             }
         }
     }
-}
 
 context(CameraSessionContext)
 private fun createPreviewUseCase(

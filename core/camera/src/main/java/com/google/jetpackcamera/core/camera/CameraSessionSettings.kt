@@ -34,7 +34,7 @@ internal sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
 
     data class SingleCamera(
-        val cameraInfo: CameraInfo,
+        // val cameraInfo: CameraInfo,
         override val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
         val targetFrameRate: Int,
@@ -58,6 +58,7 @@ internal sealed interface PerpetualSessionSettings {
  * The use cases typically will not need to be re-bound.
  */
 internal data class TransientSessionSettings(
+    val cameraInfo: CameraInfo,
     val isAudioMuted: Boolean,
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,

@@ -50,15 +50,29 @@ internal suspend fun runConcurrentCameraSession(
         .filterNotNull()
         .first()
 
+    val videoCapture = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+        createVideoUseCase(
+            initialTransientSettings.cameraInfo,
+            sessionSettings.aspectRatio,
+            TARGET_FPS_AUTO,
+            StabilizationMode.OFF,
+            DynamicRange.SDR,
+            backgroundDispatcher
+        )
+    } else {
+        null
+    }
+
     val useCaseGroup = createUseCaseGroup(
         cameraInfo = sessionSettings.primaryCameraInfo,
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = StabilizationMode.OFF,
         aspectRatio = sessionSettings.aspectRatio,
-        targetFrameRate = TARGET_FPS_AUTO,
+        // targetFrameRate = TARGET_FPS_AUTO,
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
-        useCaseMode = useCaseMode
+        useCaseMode = useCaseMode,
+        videoCaptureUseCase = videoCapture
     )
 
     val cameraConfigs = listOf(
