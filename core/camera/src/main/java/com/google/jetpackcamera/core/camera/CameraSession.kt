@@ -85,6 +85,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -119,59 +120,65 @@ internal suspend fun runSingleCameraSession(
     } else {
         null
     }
-    val useCaseGroup = createUseCaseGroup(
-        cameraInfo = initialTransientSettings.cameraInfo,
-        videoCaptureUseCase = videoCaptureUseCase,
-        initialTransientSettings = initialTransientSettings,
-        stabilizationMode = sessionSettings.stabilizationMode,
-        aspectRatio = sessionSettings.aspectRatio,
-        dynamicRange = sessionSettings.dynamicRange,
-        imageFormat = sessionSettings.imageFormat,
-        useCaseMode = useCaseMode,
-        effect = when (sessionSettings.captureMode) {
-            CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
-            CaptureMode.MULTI_STREAM -> null
-        }
-    ).apply {
-        getImageCapture()?.let(onImageCaptureCreated)
-    }
 
-    cameraProvider.runWith(
-        initialTransientSettings.cameraInfo.cameraSelector,
-        useCaseGroup
-    ) { camera ->
-        Log.d(TAG, "Camera session started")
-
-        launch {
-            processFocusMeteringEvents(camera.cameraControl)
+    transientSettings.filterNotNull().distinctUntilChanged { old, new ->
+        old.cameraInfo != new.cameraInfo
+    }.collectLatest {
+        cameraProvider.unbindAll()
+        val useCaseGroup = createUseCaseGroup(
+            cameraInfo = initialTransientSettings.cameraInfo,
+            videoCaptureUseCase = videoCaptureUseCase,
+            initialTransientSettings = initialTransientSettings,
+            stabilizationMode = sessionSettings.stabilizationMode,
+            aspectRatio = sessionSettings.aspectRatio,
+            dynamicRange = sessionSettings.dynamicRange,
+            imageFormat = sessionSettings.imageFormat,
+            useCaseMode = useCaseMode,
+            effect = when (sessionSettings.captureMode) {
+                CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
+                CaptureMode.MULTI_STREAM -> null
+            }
+        ).apply {
+            getImageCapture()?.let(onImageCaptureCreated)
         }
 
-        launch {
-            processVideoControlEvents(
-                camera,
-                useCaseGroup.getVideoCapture(),
-                captureTypeSuffix = when (sessionSettings.captureMode) {
-                    CaptureMode.MULTI_STREAM -> "MultiStream"
-                    CaptureMode.SINGLE_STREAM -> "SingleStream"
-                }
-            )
-        }
+        cameraProvider.runWith(
+            initialTransientSettings.cameraInfo.cameraSelector,
+            useCaseGroup
+        ) { camera ->
+            Log.d(TAG, "Camera session started")
 
-        launch {
-            camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
-                currentCameraState.update { old ->
-                    old.copy(torchEnabled = torchState == TorchState.ON)
+            launch {
+                processFocusMeteringEvents(camera.cameraControl)
+            }
+
+            launch {
+                processVideoControlEvents(
+                    camera,
+                    useCaseGroup.getVideoCapture(),
+                    captureTypeSuffix = when (sessionSettings.captureMode) {
+                        CaptureMode.MULTI_STREAM -> "MultiStream"
+                        CaptureMode.SINGLE_STREAM -> "SingleStream"
+                    }
+                )
+            }
+
+            launch {
+                camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
+                    currentCameraState.update { old ->
+                        old.copy(torchEnabled = torchState == TorchState.ON)
+                    }
                 }
             }
-        }
 
-        applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
-        processTransientSettingEvents(
-            camera,
-            useCaseGroup,
-            initialTransientSettings,
-            transientSettings
-        )
+            applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+            processTransientSettingEvents(
+                camera,
+                useCaseGroup,
+                initialTransientSettings,
+                transientSettings
+            )
+        }
     }
 }
 
@@ -330,7 +337,7 @@ private fun createImageUseCase(
     return builder.build()
 }
 
-private fun createVideoUseCase(
+internal fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
@@ -548,7 +555,7 @@ private suspend fun startVideoRecordingInternal(
 
     // ok. there is a difference between MUTING and ENABLING audio
     // audio must be enabled in order to be muted
-    // if the video recording isnt started with audio enabled, you will not be able to unmute it
+    // if the video recording isn't started with audio enabled, you will not be able to un-mute it
     // the toggle should only affect whether or not the audio is muted.
     // the permission will determine whether or not the audio is enabled.
     val audioEnabled = checkSelfPermission(
