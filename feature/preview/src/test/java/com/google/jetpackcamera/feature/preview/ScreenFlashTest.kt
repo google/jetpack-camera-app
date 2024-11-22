@@ -116,7 +116,7 @@ class ScreenFlashTest {
             cameraUseCase.initialize(
                 DEFAULT_CAMERA_APP_SETTINGS,
                 CameraUseCase.UseCaseMode.STANDARD
-            )
+            ) {}
             cameraUseCase.runCamera()
         }
 

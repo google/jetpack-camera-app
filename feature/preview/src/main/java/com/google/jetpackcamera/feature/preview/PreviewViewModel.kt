@@ -101,6 +101,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var externalUriIndex: Int = 0
 
+    private var cameraPropertiesJSON = ""
+
     val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
@@ -113,7 +115,7 @@ class PreviewViewModel @AssistedInject constructor(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
             previewMode.toUseCaseMode(),
             isDebugMode
-        )
+        ) { cameraPropertiesJSON = it }
     }
 
     init {
@@ -139,10 +141,7 @@ class PreviewViewModel @AssistedInject constructor(
                     when (old) {
                         is PreviewUiState.Ready -> old
                         is PreviewUiState.NotReady ->
-                            PreviewUiState.Ready(
-                                isDebugMode = isDebugMode,
-                                previewMode = previewMode
-                            )
+                            PreviewUiState.Ready(previewMode = previewMode)
                     }.let { oldReady ->
                         oldReady.copy(
                             currentCameraSettings = cameraAppSettings,
@@ -156,6 +155,10 @@ class PreviewViewModel @AssistedInject constructor(
                             ),
                             currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                             currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                            debugUiState = DebugUiState(
+                                cameraPropertiesJSON,
+                                isDebugMode
+                            ),
                             stabilizationUiState = stabilizationUiStateFrom(
                                 cameraAppSettings,
                                 cameraState
@@ -808,6 +811,20 @@ class PreviewViewModel @AssistedInject constructor(
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
                     quickSettingsIsOpen = !old.quickSettingsIsOpen
+                ) ?: old
+            }
+        }
+    }
+
+    fun toggleDebugOverlay() {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as? PreviewUiState.Ready)?.copy(
+                    debugUiState = DebugUiState(
+                        old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.isDebugMode,
+                        !old.debugUiState.isDebugOverlayOpen
+                    )
                 ) ?: old
             }
         }

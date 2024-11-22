@@ -60,6 +60,7 @@ import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
 import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
+import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -148,6 +149,7 @@ fun PreviewScreen(
                 onChangeImageFormat = viewModel::setImageFormat,
                 onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
                 onMuteAudio = viewModel::setAudioMuted,
                 onCaptureImageWithUri = viewModel::captureImageWithUri,
@@ -182,6 +184,7 @@ private fun ContentScreen(
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onMuteAudio: (Boolean) -> Unit = {},
     onCaptureImageWithUri: (
@@ -254,6 +257,7 @@ private fun ContentScreen(
                 onChangeFlash = onChangeFlash,
                 onMuteAudio = onToggleMuteAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
+                onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onSetPause = onSetPause,
@@ -262,6 +266,13 @@ private fun ContentScreen(
                 onStopVideoRecording = onStopVideoRecording,
                 zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
             )
+
+            DebugOverlayComponent(
+                toggleIsOpen = onToggleDebugOverlay,
+                previewUiState = previewUiState,
+                onChangeZoomScale = onChangeZoomScale
+            )
+
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {
                 TestableToast(

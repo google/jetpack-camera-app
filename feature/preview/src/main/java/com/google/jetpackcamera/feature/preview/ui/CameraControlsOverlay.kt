@@ -64,6 +64,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -97,9 +98,9 @@ fun CameraControlsOverlay(
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onToggleDebugOverlay: () -> Unit = {},
     onMuteAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
-    onCaptureImage: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -131,9 +132,11 @@ fun CameraControlsOverlay(
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
+                    isDebugMode = previewUiState.debugUiState.isDebugMode,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings,
+                    onToggleDebugOverlay = onToggleDebugOverlay,
                     stabilizationUiState = previewUiState.stabilizationUiState,
                     flashModeUiState = previewUiState.flashModeUiState
                 )
@@ -169,56 +172,66 @@ fun CameraControlsOverlay(
 private fun ControlsTop(
     isQuickSettingsOpen: Boolean,
     modifier: Modifier = Modifier,
+    isDebugMode: Boolean = false,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
     flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            // button to open default settings page
-            SettingsNavButton(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .testTag(SETTINGS_BUTTON),
-                onNavigateToSettings = onNavigateToSettings
-            )
-            if (!isQuickSettingsOpen) {
-                QuickSettingsIndicators(
-                    flashModeUiState = flashModeUiState,
-                    onFlashModeClick = onChangeFlash
+    Column(modifier) {
+        Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                // button to open default settings page
+                SettingsNavButton(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .testTag(SETTINGS_BUTTON),
+                    onNavigateToSettings = onNavigateToSettings
                 )
-            }
-        }
-
-        // quick settings button
-        ToggleQuickSettingsButton(onToggleQuickSettings, isQuickSettingsOpen)
-
-        Row(
-            Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            var visibleStabilizationUiState: StabilizationUiState by remember {
-                mutableStateOf(StabilizationUiState.Disabled)
-            }
-            if (stabilizationUiState is StabilizationUiState.Set) {
-                // Only save StabilizationUiState.Set so exit transition can happen properly
-                visibleStabilizationUiState = stabilizationUiState
-            }
-            AnimatedVisibility(
-                visible = stabilizationUiState is StabilizationUiState.Set,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
-                    StabilizationIcon(
-                        stabilizationMode = it.stabilizationMode,
-                        active = it.active
+                if (!isQuickSettingsOpen) {
+                    QuickSettingsIndicators(
+                        flashModeUiState = flashModeUiState,
+                        onFlashModeClick = onChangeFlash
                     )
                 }
             }
+
+            // quick settings button
+            ToggleQuickSettingsButton(
+                toggleDropDown = onToggleQuickSettings,
+                isOpen = isQuickSettingsOpen
+            )
+
+            Row(
+                Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                var visibleStabilizationUiState: StabilizationUiState by remember {
+                    mutableStateOf(StabilizationUiState.Disabled)
+                }
+                if (stabilizationUiState is StabilizationUiState.Set) {
+                    // Only save StabilizationUiState.Set so exit transition can happen properly
+                    visibleStabilizationUiState = stabilizationUiState
+                }
+                AnimatedVisibility(
+                    visible = stabilizationUiState is StabilizationUiState.Set,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
+                        StabilizationIcon(
+                            stabilizationMode = it.stabilizationMode,
+                            active = it.active
+                        )
+                    }
+                }
+            }
+        }
+        if (isDebugMode) {
+            DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
         }
     }
 }
@@ -261,7 +274,7 @@ private fun ControlsBottom(
                 if (showZoomLevel) {
                     ZoomScaleText(zoomLevel)
                 }
-                if (previewUiState.isDebugMode) {
+                if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
                 ElapsedTimeText(
