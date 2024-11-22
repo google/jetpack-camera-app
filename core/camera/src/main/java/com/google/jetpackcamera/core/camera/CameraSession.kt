@@ -208,8 +208,16 @@ internal suspend fun processTransientSettingEvents(
 ) {
     // outside of the camera updates
     var prevTransientSettings = initialTransientSettings
+    // map of camera zoom ratio per lensfacing
+    val cameraZoomMap = HashMap<Int, Float>()
 
     sessionCameraFlow.filterNotNull().collectLatest { camera ->
+        // change camera? restore previous zoom ratio
+        // switching cameras will set the zoom back to its default.
+        camera.cameraControl.setZoomRatio(
+            cameraZoomMap[camera.cameraInfo.lensFacing] ?: 1f
+            // todo(kc): should set to default from cameraappsettings
+        )
         transientSettings.filterNotNull().collectLatest { newTransientSettings ->
             // todo(kc): persist zoom scale between switching lens
             // Apply camera zoom
@@ -221,7 +229,10 @@ internal suspend fun processTransientSettingEvents(
                             zoomState.maxZoomRatio
                         )
                     camera.cameraControl.setZoomRatio(finalScale)
+                    // todo(kc): update per lens. may want to just set this for the camera session
                     currentCameraState.update { old ->
+                        // we porbably shouldnt be changing the zoom ratio directly like this.
+                        // should change a local version
                         old.copy(zoomScale = finalScale)
                     }
                 }
@@ -247,6 +258,10 @@ internal suspend fun processTransientSettingEvents(
 
             // if the camerainfo changed.. we are flipping the camera
             if (prevTransientSettings.cameraInfo != newTransientSettings.cameraInfo) {
+                // save our current zoom state
+                cameraZoomMap[camera.cameraInfo.lensFacing] =
+                    camera.cameraInfo.zoomState.value?.zoomRatio ?: 1f
+
                 // unbind all use cases
                 cameraProvider.unbindAll()
 
