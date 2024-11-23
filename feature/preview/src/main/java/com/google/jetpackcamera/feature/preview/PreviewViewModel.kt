@@ -137,43 +137,107 @@ class PreviewViewModel @AssistedInject constructor(
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState()
             ) { cameraAppSettings, systemConstraints, cameraState ->
+
+                var flashModeUiState: FlashModeUiState
                 _previewUiState.update { old ->
                     when (old) {
-                        is PreviewUiState.Ready -> old
-                        is PreviewUiState.NotReady ->
-                            PreviewUiState.Ready(previewMode = previewMode)
-                    }.let { oldReady ->
-                        oldReady.copy(
-                            currentCameraSettings = cameraAppSettings,
-                            systemConstraints = systemConstraints,
-                            zoomScale = cameraState.zoomScale,
-                            videoRecordingState = cameraState.videoRecordingState,
-                            sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                            captureModeToggleUiState = getCaptureToggleUiState(
-                                systemConstraints,
-                                cameraAppSettings
-                            ),
-                            currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                            currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-                            debugUiState = DebugUiState(
-                                cameraPropertiesJSON,
-                                isDebugMode
-                            ),
-                            stabilizationUiState = stabilizationUiStateFrom(
-                                cameraAppSettings,
-                                cameraState
-                            ),
-                            flashModeUiState = oldReady.flashModeUiState.update(
-                                prevCameraAppSettings = oldReady.currentCameraSettings,
-                                newCameraAppSettings = cameraAppSettings,
-                                constraints = systemConstraints
+                        is PreviewUiState.NotReady -> {
+                            // Generate initial FlashModeUiState
+                            val supportedFlashModes =
+                                systemConstraints.forCurrentLens(cameraAppSettings)
+                                    ?.supportedFlashModes
+                                    ?: setOf(FlashMode.OFF)
+                            flashModeUiState = FlashModeUiState.createFrom(
+                                selectedFlashMode = cameraAppSettings.flashMode,
+                                supportedFlashModes = supportedFlashModes
                             )
-                            // TODO(kc): set elapsed time UI state once VideoRecordingState
-                            // refactor is complete.
-                        )
-                    }
+                            // This is the first PreviewUiState.Ready. Create the initial
+                            // PreviewUiState.Ready from defaults and initialize it below.
+                            PreviewUiState.Ready()
+                        }
+                        is PreviewUiState.Ready -> {
+                            val previousCameraSettings = old.currentCameraSettings
+                            val previousConstraints = old.systemConstraints
+
+                            flashModeUiState = old.flashModeUiState.updateFrom(
+                                currentCameraSettings = cameraAppSettings,
+                                previousCameraSettings = previousCameraSettings,
+                                currentConstraints = systemConstraints,
+                                previousConstraints = previousConstraints
+                            )
+                            // We have a previous `PreviewUiState.Ready`, return it here and
+                            // update it below.
+                            old
+                        }
+                    }.copy(
+                        // Update or initialize PreviewUiState.Ready
+                        previewMode = previewMode,
+                        currentCameraSettings = cameraAppSettings,
+                        systemConstraints = systemConstraints,
+                        zoomScale = cameraState.zoomScale,
+                        videoRecordingState = cameraState.videoRecordingState,
+                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
+                        captureModeToggleUiState = getCaptureToggleUiState(
+                            systemConstraints,
+                            cameraAppSettings
+                        ),
+                        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+                        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+                        debugUiState = DebugUiState(
+                            cameraPropertiesJSON,
+                            isDebugMode
+                        ),
+                        stabilizationUiState = stabilizationUiStateFrom(
+                            cameraAppSettings,
+                            cameraState
+                        ),
+                        flashModeUiState = flashModeUiState
+                        // TODO(kc): set elapsed time UI state once VideoRecordingState
+                        // refactor is complete.
+                    )
                 }
             }.collect {}
+        }
+    }
+
+    /**
+     * Updates the FlashModeUiState based on the changes in flash mode or constraints
+     */
+    private fun FlashModeUiState.updateFrom(
+        currentCameraSettings: CameraAppSettings,
+        previousCameraSettings: CameraAppSettings,
+        currentConstraints: SystemConstraints,
+        previousConstraints: SystemConstraints
+    ): FlashModeUiState {
+        val currentFlashMode = currentCameraSettings.flashMode
+        val currentSupportedFlashModes =
+            currentConstraints.forCurrentLens(currentCameraSettings)?.supportedFlashModes
+        return when (this) {
+            is FlashModeUiState.Unavailable -> {
+                // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
+                FlashModeUiState.createFrom(
+                    selectedFlashMode = currentFlashMode,
+                    supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
+                )
+            }
+            is FlashModeUiState.Available -> {
+                val previousFlashMode = previousCameraSettings.flashMode
+                val previousSupportedFlashModes =
+                    previousConstraints.forCurrentLens(previousCameraSettings)?.supportedFlashModes
+                if (previousSupportedFlashModes != currentSupportedFlashModes) {
+                    // Supported flash modes have changed, generate a new FlashModeUiState
+                    FlashModeUiState.createFrom(
+                        selectedFlashMode = currentFlashMode,
+                        supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
+                    )
+                } else if (previousFlashMode != currentFlashMode) {
+                    // Only the selected flash mode has changed, just update the flash mode
+                    copy(selectedFlashMode = currentFlashMode)
+                } else {
+                    // Nothing has changed
+                    this
+                }
+            }
         }
     }
 
@@ -202,60 +266,6 @@ class PreviewViewModel @AssistedInject constructor(
                     stabilizationMode = expectedMode,
                     active = expectedMode == actualMode
                 )
-        }
-    }
-
-    private fun FlashModeUiState.update(
-        prevCameraAppSettings: CameraAppSettings,
-        newCameraAppSettings: CameraAppSettings,
-        constraints: SystemConstraints
-    ): FlashModeUiState {
-        return when (this) {
-            is FlashModeUiState.Unavailable -> {
-                flashModeUiStateFrom(newCameraAppSettings, constraints)
-            }
-            is FlashModeUiState.Available -> {
-                if (prevCameraAppSettings.cameraLensFacing
-                    != newCameraAppSettings.cameraLensFacing
-                ) {
-                    // Need to recreate available modes and possibly return "Unavailable"
-                    flashModeUiStateFrom(newCameraAppSettings, constraints)
-                } else {
-                    copy(currentFlashMode = newCameraAppSettings.flashMode)
-                }
-            }
-        }.apply {
-            if (this is FlashModeUiState.Available) {
-                check(currentFlashMode in availableFlashModes) {
-                    "Current flash mode of $currentFlashMode not in available modes: " +
-                        "$availableFlashModes"
-                }
-            }
-        }
-    }
-
-    private fun flashModeUiStateFrom(
-        cameraAppSettings: CameraAppSettings,
-        constraints: SystemConstraints
-    ): FlashModeUiState {
-        val newFlashMode = cameraAppSettings.flashMode
-        val availableModes = constraints.forCurrentLens(cameraAppSettings)?.run {
-            check(supportedFlashModes.isNotEmpty()) {
-                "No flash modes supported. Should at least support OFF."
-            }
-            // Convert available flash modes to list we support in the UI in our desired order
-            listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO, FlashMode.LOW_LIGHT_BOOST).filter {
-                it in supportedFlashModes
-            }
-        } ?: emptyList()
-
-        return if (availableModes == listOf(FlashMode.OFF)) {
-            FlashModeUiState.Unavailable
-        } else {
-            FlashModeUiState.Available(
-                currentFlashMode = newFlashMode,
-                availableFlashModes = availableModes
-            )
         }
     }
 

@@ -301,7 +301,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
-                    currentFlashMode = FlashMode.OFF,
+                    selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
                 )
             ),

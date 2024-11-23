@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
@@ -190,8 +189,8 @@ fun QuickSetFlash(
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
-                enum = flashModeUiState.currentFlashMode.toCameraFlashMode(),
-                isHighLighted = flashModeUiState.currentFlashMode == FlashMode.ON,
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
+                isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -471,7 +470,7 @@ fun FlashModeIndicator(
             )
         is FlashModeUiState.Available ->
             Indicator(
-                enum = flashModeUiState.currentFlashMode.toCameraFlashMode(),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -491,7 +490,7 @@ fun QuickSettingsIndicators(
 }
 
 private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = availableFlashModes.run {
-    get((indexOf(currentFlashMode) + 1) % size)
+    get((indexOf(selectedFlashMode) + 1) % size)
 }
 
 private fun FlashMode.toCameraFlashMode() = when (this) {
