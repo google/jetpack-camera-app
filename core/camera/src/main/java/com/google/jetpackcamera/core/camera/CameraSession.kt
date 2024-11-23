@@ -37,7 +37,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -58,7 +57,6 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
@@ -722,22 +720,23 @@ private suspend fun runVideoRecording(
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-                val isFrontCameraSelector =
-                    camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+                val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
 
-                if (currentSettings.isFlashModeOn()) {
-                    if (!isFrontCameraSelector) {
-                        camera.cameraControl.enableTorch(true).await()
-                    } else {
-                        Log.d(TAG, "Unable to enable torch for front camera.")
+                var torchOn = false
+                fun setTorchOn(newTorchOn: Boolean) {
+                    if (newTorchOn != torchOn) {
+                        camera.cameraControl.enableTorch(newTorchOn)
+                        torchOn = newTorchOn
                     }
+                }
+
+                if (currentSettings.isFlashModeOn() && !isFrontFacing) {
+                    setTorchOn(true)
                 }
 
                 transientSettings.filterNotNull()
                     .onCompletion {
-                        // Could do some fancier tracking of whether the torch was enabled before
-                        // calling this.
-                        camera.cameraControl.enableTorch(false)
+                        setTorchOn(false)
                     }
                     .collectLatest { newTransientSettings ->
                         if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
@@ -746,16 +745,12 @@ private suspend fun runVideoRecording(
                         if (currentSettings.isFlashModeOn() !=
                             newTransientSettings.isFlashModeOn()
                         ) {
-                            if (!isFrontCameraSelector) {
-                                camera.cameraControl
-                                    .enableTorch(newTransientSettings.isFlashModeOn())
-                            } else {
-                                Log.d(TAG, "Unable to update torch for front camera.")
-                            }
+                            setTorchOn(newTransientSettings.isFlashModeOn())
                         }
                         currentSettings = newTransientSettings
                     }
             }
+
             for (event in videoControlEvents) {
                 when (event) {
                     is VideoCaptureControlEvent.StartRecordingEvent ->
