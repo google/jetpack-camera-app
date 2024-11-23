@@ -437,7 +437,7 @@ fun QuickSettingsGrid(
  * The top bar indicators for quick settings items.
  */
 @Composable
-fun Indicator(
+fun TopBarSettingIndicator(
     enum: QuickSettingsEnum,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -464,12 +464,12 @@ fun FlashModeIndicator(
 ) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
-            Indicator(
+            TopBarSettingIndicator(
                 enum = CameraFlashMode.OFF,
                 enabled = false
             )
         is FlashModeUiState.Available ->
-            Indicator(
+            TopBarSettingIndicator(
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
