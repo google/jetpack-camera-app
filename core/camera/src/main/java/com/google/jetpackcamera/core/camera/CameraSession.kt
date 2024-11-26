@@ -675,7 +675,10 @@ private suspend fun startVideoRecordingInternal(
                     else -> {
                         onVideoRecord(
                             CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                                onVideoRecordEvent.cause
+                                RuntimeException(
+                                    "Recording finished with error: ${onVideoRecordEvent.error}",
+                                    onVideoRecordEvent.cause
+                                )
                             )
                         )
                     }
