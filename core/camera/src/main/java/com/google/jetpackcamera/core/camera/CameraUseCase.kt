@@ -44,7 +44,8 @@ interface CameraUseCase {
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         useCaseMode: UseCaseMode,
-        isDebugMode: Boolean = false
+        isDebugMode: Boolean = false,
+        cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
     /**
@@ -76,8 +77,11 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+    suspend fun pauseVideoRecording()
 
-    fun stopVideoRecording()
+    suspend fun resumeVideoRecording()
+
+    suspend fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
 
@@ -184,4 +188,7 @@ data class CameraState(
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 
-data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+data class DebugInfo(
+    val logicalCameraId: String?,
+    val physicalCameraId: String?
+)

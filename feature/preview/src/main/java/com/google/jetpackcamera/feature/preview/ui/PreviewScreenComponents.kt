@@ -58,6 +58,8 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
@@ -139,9 +141,49 @@ fun ElapsedTimeText(
 }
 
 @Composable
+fun PauseResumeToggleButton(
+    modifier: Modifier = Modifier,
+    onSetPause: (Boolean) -> Unit,
+    size: Float = 75f,
+    currentRecordingState: VideoRecordingState.Active
+) {
+    Box(
+        modifier = modifier.clickable {
+            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
+        }
+    ) {
+        // static circle
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.Center),
+            onDraw = {
+                drawCircle(
+                    radius = (size),
+                    color = Color.White
+                )
+            }
+        )
+
+        // icon
+        Icon(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size((0.5 * size).dp),
+            tint = Color.Red,
+
+            imageVector = when (currentRecordingState) {
+                is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+            },
+            contentDescription = "pause resume toggle"
+        )
+    }
+}
+
+@Composable
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
-    size: Int = 100,
+    size: Float = 75f,
     audioAmplitude: Double,
     onToggleMute: () -> Unit
 ) {
@@ -158,7 +200,7 @@ fun AmplitudeVisualizer(
             onDraw = {
                 drawCircle(
                     // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedScaling).coerceIn(size.toFloat(), size * 1.65f),
+                    radius = (size * animatedScaling).coerceIn(size, size * 1.65f),
                     alpha = .5f,
                     color = Color.White
                 )
@@ -278,6 +320,50 @@ fun TestableSnackbar(
     }
 }
 
+@Composable
+fun DetectWindowColorModeChanges(
+    surfaceRequest: SurfaceRequest,
+    implementationMode: ImplementationMode,
+    onRequestWindowColorMode: (Int) -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
+        val currentImplementationMode: ImplementationMode by rememberUpdatedState(
+            implementationMode
+        )
+        val currentOnRequestWindowColorMode: (Int) -> Unit by rememberUpdatedState(
+            onRequestWindowColorMode
+        )
+
+        LaunchedEffect(Unit) {
+            val colorModeSnapshotFlow =
+                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
+                    .map { (dynamicRange, implMode) ->
+                        val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
+                        val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
+                        if (isSourceHdr && destSupportsHdr) {
+                            ActivityInfo.COLOR_MODE_HDR
+                        } else {
+                            ActivityInfo.COLOR_MODE_DEFAULT
+                        }
+                    }.distinctUntilChanged()
+
+            val callbackSnapshotFlow = snapshotFlow { currentOnRequestWindowColorMode }
+
+            // Combine both flows so that we call the callback every time it changes or the
+            // window color mode changes.
+            // We'll also reset to default when this LaunchedEffect is disposed
+            combine(colorModeSnapshotFlow, callbackSnapshotFlow) { colorMode, callback ->
+                Pair(colorMode, callback)
+            }.onCompletion {
+                currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT)
+            }.collect { (colorMode, callback) ->
+                callback(colorMode)
+            }
+        }
+    }
+}
+
 /**
  * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
  * and double-tap to flip camera
@@ -384,50 +470,6 @@ fun PreviewDisplay(
 }
 
 @Composable
-fun DetectWindowColorModeChanges(
-    surfaceRequest: SurfaceRequest,
-    implementationMode: ImplementationMode,
-    onRequestWindowColorMode: (Int) -> Unit
-) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
-        val currentImplementationMode: ImplementationMode by rememberUpdatedState(
-            implementationMode
-        )
-        val currentOnRequestWindowColorMode: (Int) -> Unit by rememberUpdatedState(
-            onRequestWindowColorMode
-        )
-
-        LaunchedEffect(Unit) {
-            val colorModeSnapshotFlow =
-                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
-                    .map { (dynamicRange, implMode) ->
-                        val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
-                        val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
-                        if (isSourceHdr && destSupportsHdr) {
-                            ActivityInfo.COLOR_MODE_HDR
-                        } else {
-                            ActivityInfo.COLOR_MODE_DEFAULT
-                        }
-                    }.distinctUntilChanged()
-
-            val callbackSnapshotFlow = snapshotFlow { currentOnRequestWindowColorMode }
-
-            // Combine both flows so that we call the callback every time it changes or the
-            // window color mode changes.
-            // We'll also reset to default when this LaunchedEffect is disposed
-            combine(colorModeSnapshotFlow, callbackSnapshotFlow) { colorMode, callback ->
-                Pair(colorMode, callback)
-            }.onCompletion {
-                currentOnRequestWindowColorMode(ActivityInfo.COLOR_MODE_DEFAULT)
-            }.collect { (colorMode, callback) ->
-                callback(colorMode)
-            }
-        }
-    }
-}
-
-@Composable
 fun StabilizationIcon(
     stabilizationMode: StabilizationMode,
     modifier: Modifier = Modifier,
@@ -453,6 +495,7 @@ fun StabilizationIcon(
                     StabilizationMode.AUTO -> stringResource(
                         R.string.stabilization_icon_description_auto
                     )
+
                     StabilizationMode.ON ->
                         stringResource(R.string.stabilization_icon_description_preview_and_video)
 
@@ -583,19 +626,27 @@ fun CaptureButton(
             .padding(18.dp)
             .border(4.dp, currentColor, CircleShape)
     ) {
-        Canvas(modifier = Modifier.size(110.dp), onDraw = {
-            drawCircle(
-                color =
-                when (videoRecordingState) {
-                    is VideoRecordingState.Inactive -> {
-                        if (isPressedDown) currentColor else Color.Transparent
-                    }
+        Canvas(
+            modifier = Modifier
+                .size(110.dp),
+            onDraw = {
+                drawCircle(
+                    alpha = when (videoRecordingState) {
+                        is VideoRecordingState.Active.Paused -> .37f
+                        else -> 1f
+                    },
+                    color =
+                    when (videoRecordingState) {
+                        is VideoRecordingState.Inactive -> {
+                            if (isPressedDown) currentColor else Color.Transparent
+                        }
 
-                    is VideoRecordingState.Active.Recording -> Color.Red
-                    is VideoRecordingState.Active.Paused -> Color.Blue
-                }
-            )
-        })
+                        is VideoRecordingState.Active.Recording,
+                        is VideoRecordingState.Active.Paused -> Color.Red
+                    }
+                )
+            }
+        )
     }
 }
 

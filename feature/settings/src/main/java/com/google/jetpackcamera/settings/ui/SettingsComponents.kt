@@ -121,37 +121,6 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DefaultCameraFacing(
-    modifier: Modifier = Modifier,
-    lensUiState: FlipLensUiState,
-    setDefaultLensFacing: (LensFacing) -> Unit
-) {
-    SwitchSettingUI(
-        modifier = modifier.apply {
-            if (lensUiState is FlipLensUiState.Disabled) {
-                testTag(lensUiState.disabledRationale.testTag)
-            }
-        },
-        title = stringResource(id = R.string.default_facing_camera_title),
-        description = when (lensUiState) {
-            is FlipLensUiState.Disabled -> {
-                disabledRationaleString(disabledRationale = lensUiState.disabledRationale)
-            }
-
-            is FlipLensUiState.Enabled -> {
-                null
-            }
-        },
-        leadingIcon = null,
-        onSwitchChanged = { on ->
-            setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
-        },
-        settingValue = lensUiState.currentLensFacing == LensFacing.FRONT,
-        enabled = lensUiState is FlipLensUiState.Enabled
-    )
-}
-
-@Composable
 fun DarkModeSetting(
     darkModeUiState: DarkModeUiState,
     setDarkMode: (DarkMode) -> Unit,
@@ -193,6 +162,37 @@ fun DarkModeSetting(
                 )
             }
         }
+    )
+}
+
+@Composable
+fun DefaultCameraFacing(
+    modifier: Modifier = Modifier,
+    lensUiState: FlipLensUiState,
+    setDefaultLensFacing: (LensFacing) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.apply {
+            if (lensUiState is FlipLensUiState.Disabled) {
+                testTag(lensUiState.disabledRationale.testTag)
+            }
+        },
+        title = stringResource(id = R.string.default_facing_camera_title),
+        description = when (lensUiState) {
+            is FlipLensUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = lensUiState.disabledRationale)
+            }
+
+            is FlipLensUiState.Enabled -> {
+                null
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
+        },
+        settingValue = lensUiState.currentLensFacing == LensFacing.FRONT,
+        enabled = lensUiState is FlipLensUiState.Enabled
     )
 }
 

@@ -47,6 +47,7 @@ import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -62,7 +63,6 @@ import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -113,16 +113,18 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
-    private val _currentCameraState = MutableStateFlow(CameraState())
+    private var _currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         useCaseMode: CameraUseCase.UseCaseMode,
-        isDebugMode: Boolean
+        isDebugMode: Boolean,
+        cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
@@ -140,7 +142,7 @@ constructor(
         systemConstraints = SystemConstraints(
             availableLenses = availableCameraLenses,
             concurrentCamerasSupported = cameraProvider.availableConcurrentCameraInfos.any {
-                it.map { cameraInfo -> cameraInfo.cameraSelector.toAppLensFacing() }
+                it.map { cameraInfo -> cameraInfo.appLensFacing }
                     .toSet() == setOf(LensFacing.FRONT, LensFacing.BACK)
             },
             perLensConstraints = buildMap {
@@ -169,7 +171,37 @@ constructor(
                         val supportedFixedFrameRates =
                             camInfo.filterSupportedFixedFrameRates(FIXED_FRAME_RATES)
                         val supportedImageFormats = camInfo.supportedImageFormats
-                        val hasFlashUnit = camInfo.hasFlashUnit()
+                        val supportedIlluminants = buildSet {
+                            if (camInfo.hasFlashUnit()) {
+                                add(Illuminant.FLASH_UNIT)
+                            }
+
+                            if (lensFacing == LensFacing.FRONT) {
+                                add(Illuminant.SCREEN)
+                            }
+
+                            if (camInfo.isLowLightBoostSupported) {
+                                add(Illuminant.LOW_LIGHT_BOOST)
+                            }
+                        }
+
+                        val supportedFlashModes = buildSet {
+                            add(FlashMode.OFF)
+                            if ((
+                                    setOf(
+                                        Illuminant.FLASH_UNIT,
+                                        Illuminant.SCREEN
+                                    ) intersect supportedIlluminants
+                                    ).isNotEmpty()
+                            ) {
+                                add(FlashMode.ON)
+                                add(FlashMode.AUTO)
+                            }
+
+                            if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
+                                add(FlashMode.LOW_LIGHT_BOOST)
+                            }
+                        }
 
                         put(
                             lensFacing,
@@ -184,7 +216,8 @@ constructor(
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                hasFlashUnit = hasFlashUnit
+                                supportedIlluminants = supportedIlluminants,
+                                supportedFlashModes = supportedFlashModes
                             )
                         )
                     }
@@ -202,9 +235,10 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
+                .tryApplyFlashModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
-                val cameraProperties =
+                val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val fileDir = File(application.getExternalFilesDir(null), "Debug")
                 fileDir.mkdirs()
@@ -212,8 +246,9 @@ constructor(
                     fileDir,
                     "JCACameraProperties.json"
                 )
-                writeFileExternalStorage(file, cameraProperties)
-                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraProperties")
+                writeFileExternalStorage(file, cameraPropertiesJSON)
+                cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
+                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraPropertiesJSON")
             }
         }
     }
@@ -226,7 +261,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    audioMuted = currentCameraSettings.audioMuted,
+                    isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     zoomScale = currentCameraSettings.zoomScale
@@ -262,6 +297,7 @@ constructor(
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
+
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
@@ -350,6 +386,7 @@ constructor(
                     StabilizationMode.OFF
                 }
             }
+
             StabilizationMode.HIGH_QUALITY -> {
                 if (
                     supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
@@ -360,6 +397,7 @@ constructor(
                     StabilizationMode.OFF
                 }
             }
+
             StabilizationMode.OFF -> StabilizationMode.OFF
         }
     }
@@ -479,8 +517,16 @@ constructor(
         )
     }
 
-    override fun stopVideoRecording() {
-        videoCaptureControlEvents.trySendBlocking(VideoCaptureControlEvent.StopRecordingEvent)
+    override suspend fun pauseVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.PauseRecordingEvent)
+    }
+
+    override suspend fun resumeVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.ResumeRecordingEvent)
+    }
+
+    override suspend fun stopVideoRecording() {
+        videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
     override fun setZoomScale(scale: Float) {
@@ -496,6 +542,7 @@ constructor(
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
+                    ?.tryApplyFlashModeConstraints()
             } else {
                 old
             }
@@ -604,6 +651,22 @@ constructor(
                 }
         }
 
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedFlashModes) {
+                val newFlashMode = if (contains(flashMode)) {
+                    flashMode
+                } else {
+                    FlashMode.OFF
+                }
+
+                this@tryApplyFlashModeConstraints.copy(
+                    flashMode = newFlashMode
+                )
+            }
+        } ?: this
+    }
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
@@ -660,6 +723,7 @@ constructor(
             old?.copy(imageFormat = imageFormat)
         }
     }
+
     override suspend fun setMaxVideoDuration(durationInMillis: Long) {
         currentSettings.update { old ->
             old?.copy(
@@ -667,6 +731,7 @@ constructor(
             )
         }
     }
+
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
             old?.copy(stabilizationMode = stabilizationMode)
