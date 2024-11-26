@@ -46,7 +46,7 @@ class DataStoreModuleTest {
     fun dataStoreModule_read_can_handle_corrupted_file() = runTest {
         // should handle exception and replace file information
         val dataStore: DataStore<JcaSettings> = FakeDataStoreModule.provideDataStore(
-            scope = this,
+            scope = this.backgroundScope,
             serializer = FakeJcaSettingsSerializer(failReadWithCorruptionException = true),
             file = testFile
         )

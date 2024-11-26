@@ -67,7 +67,6 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.android.material)
     implementation(libs.kotlinx.atomicfu)
     implementation(libs.androidx.tracing)
 
