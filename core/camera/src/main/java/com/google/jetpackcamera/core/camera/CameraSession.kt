@@ -37,7 +37,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -308,7 +307,6 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-@OptIn(ExperimentalImageCaptureOutputFormat::class)
 private fun createImageUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
