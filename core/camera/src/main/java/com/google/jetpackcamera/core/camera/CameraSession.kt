@@ -89,7 +89,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -108,27 +107,40 @@ internal suspend fun runSingleCameraSession(
     val lensFacing = initialTransientSettings.cameraInfo.appLensFacing
     Log.d(TAG, "Starting new single camera session for $lensFacing")
 
-    val videoCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
-        createVideoUseCase(
-            initialTransientSettings.cameraInfo,
-            sessionSettings.aspectRatio,
-            sessionSettings.targetFrameRate,
-            sessionSettings.stabilizationMode,
-            sessionSettings.dynamicRange,
-            backgroundDispatcher
+    val videoCaptureUseCase = when (useCaseMode) {
+        CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+            createVideoUseCase(
+                initialTransientSettings.cameraInfo,
+                sessionSettings.aspectRatio,
+                sessionSettings.targetFrameRate,
+                sessionSettings.stabilizationMode,
+                sessionSettings.dynamicRange,
+                backgroundDispatcher
+            )
+
+        else -> {
+            null
+        }
+    }
+
+    launch {
+        processVideoControlEvents(
+            videoCaptureUseCase,
+            captureTypeSuffix = when (sessionSettings.captureMode) {
+                CaptureMode.MULTI_STREAM -> "MultiStream"
+                CaptureMode.SINGLE_STREAM -> "SingleStream"
+            }
         )
-    } else {
-        null
     }
 
     transientSettings.filterNotNull().distinctUntilChanged { old, new ->
-        old.cameraInfo != new.cameraInfo
-    }.collectLatest {
+        old.cameraInfo.lensFacing == new.cameraInfo.lensFacing
+    }.collectLatest { currentTransientSettings ->
         cameraProvider.unbindAll()
         val useCaseGroup = createUseCaseGroup(
-            cameraInfo = initialTransientSettings.cameraInfo,
+            cameraInfo = currentTransientSettings.cameraInfo,
             videoCaptureUseCase = videoCaptureUseCase,
-            initialTransientSettings = initialTransientSettings,
+            initialTransientSettings = currentTransientSettings,
             stabilizationMode = sessionSettings.stabilizationMode,
             aspectRatio = sessionSettings.aspectRatio,
             dynamicRange = sessionSettings.dynamicRange,
@@ -143,24 +155,34 @@ internal suspend fun runSingleCameraSession(
         }
 
         cameraProvider.runWith(
-            initialTransientSettings.cameraInfo.cameraSelector,
+            currentTransientSettings.cameraInfo.cameraSelector,
             useCaseGroup
         ) { camera ->
             Log.d(TAG, "Camera session started")
-
+            // process torch while video is recording
             launch {
-                processFocusMeteringEvents(camera.cameraControl)
+                // only collect when starting or stopping recording
+                currentCameraState
+                    .distinctUntilChanged { old, new ->
+                        (old.videoRecordingState is VideoRecordingState.Active) ==
+                            (new.videoRecordingState is VideoRecordingState.Active) ||
+                            (old.videoRecordingState is VideoRecordingState.Inactive) ==
+                            (new.videoRecordingState is VideoRecordingState.Inactive)
+                    }
+                    .collectLatest {
+                        // todo(): How should we handle torch on Auto FlashMode?
+                        if (it.videoRecordingState is VideoRecordingState.Active &&
+                            currentTransientSettings.flashMode == FlashMode.ON
+                        ) {
+                            toggleTorch(camera, true)
+                        } else {
+                            toggleTorch(camera, false)
+                        }
+                    }
             }
 
             launch {
-                processVideoControlEvents(
-                    camera,
-                    useCaseGroup.getVideoCapture(),
-                    captureTypeSuffix = when (sessionSettings.captureMode) {
-                        CaptureMode.MULTI_STREAM -> "MultiStream"
-                        CaptureMode.SINGLE_STREAM -> "SingleStream"
-                    }
-                )
+                processFocusMeteringEvents(camera.cameraControl)
             }
 
             launch {
@@ -171,14 +193,35 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
-            applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+            applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
                 camera,
                 useCaseGroup,
-                initialTransientSettings,
+                currentTransientSettings,
                 transientSettings
             )
         }
+    }
+}
+
+context(CameraSessionContext)
+/**
+ * enables torch for the provided camera based on the current flash settings
+ */
+suspend fun toggleTorch(camera: Camera, isActive: Boolean) {
+    val isFrontCameraSelector =
+        camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+
+    try {
+        if (!isFrontCameraSelector) {
+            if (isActive) {
+                camera.cameraControl.enableTorch(true).await()
+            } else {
+                camera.cameraControl.enableTorch(false).await()
+            }
+        }
+    } catch (e: Exception) {
+        Log.d(TAG, e.stackTraceToString())
     }
 }
 
@@ -191,7 +234,7 @@ internal suspend fun processTransientSettingEvents(
 ) {
     var prevTransientSettings = initialTransientSettings
     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
-        // Apply camera control settings
+        // Apply camera zoom
         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
             camera.cameraInfo.zoomState.value?.let { zoomState ->
                 val finalScale =
@@ -205,7 +248,14 @@ internal suspend fun processTransientSettingEvents(
                 }
             }
         }
+        // todo(kc): Enable torch toggle while recording in progress
+        if (currentCameraState.value.videoRecordingState is VideoRecordingState.Active &&
+            newTransientSettings.flashMode == FlashMode.ON
+        ) {
+            toggleTorch(camera, true)
+        }
 
+        // apply camera torch mode to image capture
         useCaseGroup.getImageCapture()?.let { imageCapture ->
             if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
                 setFlashModeInternal(
@@ -568,6 +618,7 @@ private suspend fun startVideoRecordingInternal(
             withAudioEnabled()
         }
     }
+        .asPersistentRecording()
 
     val callbackExecutor: Executor =
         (
@@ -699,7 +750,7 @@ private suspend fun startVideoRecordingInternal(
 
 context(CameraSessionContext)
 private suspend fun runVideoRecording(
-    camera: Camera,
+    // camera: Camera,
     videoCapture: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
@@ -730,23 +781,8 @@ private suspend fun runVideoRecording(
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
-                val isFrontCameraSelector =
-                    camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
-
-                if (currentSettings.isFlashModeOn()) {
-                    if (!isFrontCameraSelector) {
-                        camera.cameraControl.enableTorch(true).await()
-                    } else {
-                        Log.d(TAG, "Unable to enable torch for front camera.")
-                    }
-                }
 
                 transientSettings.filterNotNull()
-                    .onCompletion {
-                        // Could do some fancier tracking of whether the torch was enabled before
-                        // calling this.
-                        camera.cameraControl.enableTorch(false)
-                    }
                     .collectLatest { newTransientSettings ->
                         if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
                             recording.mute(newTransientSettings.isAudioMuted)
@@ -754,14 +790,8 @@ private suspend fun runVideoRecording(
                         if (currentSettings.isFlashModeOn() !=
                             newTransientSettings.isFlashModeOn()
                         ) {
-                            if (!isFrontCameraSelector) {
-                                camera.cameraControl
-                                    .enableTorch(newTransientSettings.isFlashModeOn())
-                            } else {
-                                Log.d(TAG, "Unable to update torch for front camera.")
-                            }
+                            currentSettings = newTransientSettings
                         }
-                        currentSettings = newTransientSettings
                     }
             }
             for (event in videoControlEvents) {
@@ -809,7 +839,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
 
 context(CameraSessionContext)
 internal suspend fun processVideoControlEvents(
-    camera: Camera,
+    // camera: Camera,
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ) = coroutineScope {
@@ -822,7 +852,7 @@ internal suspend fun processVideoControlEvents(
                     )
                 }
                 runVideoRecording(
-                    camera,
+                    // camera,
                     videoCapture,
                     captureTypeSuffix,
                     context,
