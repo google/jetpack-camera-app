@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -83,7 +84,7 @@ interface CameraUseCase {
 
     suspend fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float)
+    fun changeZoom(newZoomState: CameraZoomState)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 
@@ -153,9 +154,7 @@ sealed interface VideoRecordingState {
     /**
      * Camera is not currently recording a video
      */
-    data class Inactive(
-        val finalElapsedTimeNanos: Long = 0
-    ) : VideoRecordingState
+    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
 
     /**
      * Camera is currently active; paused, stopping, or recording a video
@@ -181,14 +180,12 @@ sealed interface VideoRecordingState {
 
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-    val zoomScale: Float = 1f,
+    val zoomRatio: Float = 1f,
+    val linearZoomScale: Float? = null,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 
-data class DebugInfo(
-    val logicalCameraId: String?,
-    val physicalCameraId: String?
-)
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
