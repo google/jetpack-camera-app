@@ -37,7 +37,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -58,7 +57,6 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
@@ -794,6 +792,7 @@ private suspend fun runVideoRecording(
                         }
                     }
             }
+
             for (event in videoControlEvents) {
                 when (event) {
                     is VideoCaptureControlEvent.StartRecordingEvent ->

@@ -19,6 +19,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 
@@ -47,7 +48,8 @@ sealed interface PreviewUiState {
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
         val debugUiState: DebugUiState = DebugUiState(),
-        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -66,4 +68,58 @@ sealed interface StabilizationUiState {
         val stabilizationMode: StabilizationMode,
         val active: Boolean = true
     ) : StabilizationUiState
+}
+
+sealed class FlashModeUiState {
+    data object Unavailable : FlashModeUiState()
+
+    data class Available(
+        val selectedFlashMode: FlashMode,
+        val availableFlashModes: List<FlashMode>
+    ) : FlashModeUiState() {
+        init {
+            check(selectedFlashMode in availableFlashModes) {
+                "Selected flash mode of $selectedFlashMode not in available modes: " +
+                    "$availableFlashModes"
+            }
+        }
+    }
+
+    companion object {
+        private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
+            FlashMode.OFF,
+            FlashMode.ON,
+            FlashMode.AUTO,
+            FlashMode.LOW_LIGHT_BOOST
+        )
+
+        /**
+         * Creates a FlashModeUiState from a selected flash mode and a set of supported flash modes
+         * that may not include flash modes supported by the UI.
+         */
+        fun createFrom(
+            selectedFlashMode: FlashMode,
+            supportedFlashModes: Set<FlashMode>
+        ): FlashModeUiState {
+            // Ensure we at least support one flash mode
+            check(supportedFlashModes.isNotEmpty()) {
+                "No flash modes supported. Should at least support OFF."
+            }
+
+            // Convert available flash modes to list we support in the UI in our desired order
+            val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
+                it in supportedFlashModes
+            }
+
+            return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
+                // If we only support OFF, then return "Unavailable".
+                Unavailable
+            } else {
+                Available(
+                    selectedFlashMode = selectedFlashMode,
+                    availableFlashModes = availableModes
+                )
+            }
+        }
+    }
 }

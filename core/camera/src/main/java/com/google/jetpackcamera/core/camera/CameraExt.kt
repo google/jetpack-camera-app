@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -65,15 +65,6 @@ fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
     LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
 }
 
-@SuppressLint("RestrictedApi")
-fun CameraSelector.toAppLensFacing(): LensFacing = when (this.lensFacing) {
-    CameraSelector.LENS_FACING_FRONT -> LensFacing.FRONT
-    CameraSelector.LENS_FACING_BACK -> LensFacing.BACK
-    else -> throw IllegalArgumentException(
-        "Unknown CameraSelector -> LensFacing mapping. [CameraSelector: $this]"
-    )
-}
-
 val CameraInfo.sensorLandscapeRatio: Float
     @OptIn(ExperimentalCamera2Interop::class)
     get() = Camera2CameraInfo.from(this)
@@ -109,6 +100,14 @@ val CameraInfo.isPreviewStabilizationSupported: Boolean
  */
 val CameraInfo.isVideoStabilizationSupported: Boolean
     get() = Recorder.getVideoCapabilities(this).isStabilizationSupported
+
+val CameraInfo.isLowLightBoostSupported: Boolean
+    @OptIn(ExperimentalCamera2Interop::class)
+    get() = Camera2CameraInfo.from(this)
+        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+        ?.contains(
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        ) ?: false
 
 fun CameraInfo.filterSupportedFixedFrameRates(desired: Set<Int>): Set<Int> {
     return buildSet {

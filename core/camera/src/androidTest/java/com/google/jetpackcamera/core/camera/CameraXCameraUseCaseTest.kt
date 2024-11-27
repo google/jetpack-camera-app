@@ -35,6 +35,7 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import kotlinx.coroutines.CompletableDeferred
@@ -224,7 +225,8 @@ class CameraXCameraUseCaseTest {
     }
 
     private suspend fun ConstraintsRepository.hasFlashUnit(lensFacing: LensFacing): Boolean =
-        systemConstraints.first()!!.perLensConstraints[lensFacing]!!.hasFlashUnit
+        Illuminant.FLASH_UNIT in
+            systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
     private fun deleteVideos() {
         for (uri in videosToDelete) {

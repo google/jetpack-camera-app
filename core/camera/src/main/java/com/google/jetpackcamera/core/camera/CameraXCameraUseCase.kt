@@ -47,6 +47,7 @@ import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -141,7 +142,7 @@ constructor(
         systemConstraints = SystemConstraints(
             availableLenses = availableCameraLenses,
             concurrentCamerasSupported = cameraProvider.availableConcurrentCameraInfos.any {
-                it.map { cameraInfo -> cameraInfo.cameraSelector.toAppLensFacing() }
+                it.map { cameraInfo -> cameraInfo.appLensFacing }
                     .toSet() == setOf(LensFacing.FRONT, LensFacing.BACK)
             },
             perLensConstraints = buildMap {
@@ -170,7 +171,37 @@ constructor(
                         val supportedFixedFrameRates =
                             camInfo.filterSupportedFixedFrameRates(FIXED_FRAME_RATES)
                         val supportedImageFormats = camInfo.supportedImageFormats
-                        val hasFlashUnit = camInfo.hasFlashUnit()
+                        val supportedIlluminants = buildSet {
+                            if (camInfo.hasFlashUnit()) {
+                                add(Illuminant.FLASH_UNIT)
+                            }
+
+                            if (lensFacing == LensFacing.FRONT) {
+                                add(Illuminant.SCREEN)
+                            }
+
+                            if (camInfo.isLowLightBoostSupported) {
+                                add(Illuminant.LOW_LIGHT_BOOST)
+                            }
+                        }
+
+                        val supportedFlashModes = buildSet {
+                            add(FlashMode.OFF)
+                            if ((
+                                    setOf(
+                                        Illuminant.FLASH_UNIT,
+                                        Illuminant.SCREEN
+                                    ) intersect supportedIlluminants
+                                    ).isNotEmpty()
+                            ) {
+                                add(FlashMode.ON)
+                                add(FlashMode.AUTO)
+                            }
+
+                            if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
+                                add(FlashMode.LOW_LIGHT_BOOST)
+                            }
+                        }
 
                         put(
                             lensFacing,
@@ -185,7 +216,8 @@ constructor(
                                     Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                hasFlashUnit = hasFlashUnit
+                                supportedIlluminants = supportedIlluminants,
+                                supportedFlashModes = supportedFlashModes
                             )
                         )
                     }
@@ -203,6 +235,7 @@ constructor(
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
+                .tryApplyFlashModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -512,6 +545,7 @@ constructor(
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
+                    ?.tryApplyFlashModeConstraints()
             } else {
                 old
             }
@@ -613,6 +647,22 @@ constructor(
                     copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
                 }
         }
+
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedFlashModes) {
+                val newFlashMode = if (contains(flashMode)) {
+                    flashMode
+                } else {
+                    FlashMode.OFF
+                }
+
+                this@tryApplyFlashModeConstraints.copy(
+                    flashMode = newFlashMode
+                )
+            }
+        } ?: this
+    }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
