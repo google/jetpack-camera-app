@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -83,7 +84,7 @@ interface CameraUseCase {
 
     suspend fun stopVideoRecording()
 
-    fun setZoomScale(scale: Float)
+    fun changeZoom(newZoomState: CameraZoomState)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 

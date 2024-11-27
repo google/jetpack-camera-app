@@ -33,7 +33,7 @@ sealed interface PreviewUiState {
         // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
-        val zoomScale: Float = 1f,
+        val primaryZoomRatio: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
         val audioMuted: Boolean = false,
@@ -64,10 +64,8 @@ data class DebugUiState(
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState
 
-    data class Set(
-        val stabilizationMode: StabilizationMode,
-        val active: Boolean = true
-    ) : StabilizationUiState
+    data class Set(val stabilizationMode: StabilizationMode, val active: Boolean = true) :
+        StabilizationUiState
 }
 
 sealed class FlashModeUiState {

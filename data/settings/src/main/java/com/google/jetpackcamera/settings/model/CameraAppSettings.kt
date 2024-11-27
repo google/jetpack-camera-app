@@ -30,7 +30,8 @@ data class CameraAppSettings(
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val defaultHdrImageOutputFormat: ImageOutputFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
-    val zoomScale: Float = 1f,
+    val rearZoomRatio: CameraZoomState.Ratio = CameraZoomState.Ratio(1f),
+    val frontZoomRatio: CameraZoomState.Ratio = CameraZoomState.Ratio(1f),
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,
@@ -39,8 +40,7 @@ data class CameraAppSettings(
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
 )
 
-fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
-    return perLensConstraints[cameraAppSettings.cameraLensFacing]
-}
+fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =
+    perLensConstraints[cameraAppSettings.cameraLensFacing]
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

@@ -63,6 +63,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -204,6 +205,47 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
+            launch {
+                // Apply camera zoom
+                zoomChanges.filterNotNull().collectLatest { zoomChange ->
+                    camera.cameraInfo.zoomState.value?.let { currentZoomState ->
+                        when (zoomChange) {
+                            is CameraZoomState.Ratio -> {
+                                camera.cameraControl.setZoomRatio(
+                                    zoomChange.value.coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
+                                )
+
+                                currentCameraState.update { old ->
+                                    old.copy(zoomRatio = zoomChange.value)
+                                }
+                            }
+
+                            is CameraZoomState.Linear -> {
+                                camera.cameraControl.setLinearZoom(zoomChange.value)
+                                currentCameraState.update { old ->
+                                    old.copy(zoomRatio = zoomChange.value)
+                                }
+                            }
+
+                            is CameraZoomState.Scale -> {
+                                val newRatio =
+                                    (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
+                                camera.cameraControl.setZoomRatio(newRatio)
+                                currentCameraState.update { old ->
+                                    old.copy(zoomRatio = newRatio)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
                 camera,
@@ -242,20 +284,6 @@ internal suspend fun processTransientSettingEvents(
 ) {
     var prevTransientSettings = initialTransientSettings
     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
-        // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomRatio = finalScale)
-                }
-            }
-        }
         // todo(kc): Enable torch toggle while recording in progress
         if (currentCameraState.value.videoRecordingState is VideoRecordingState.Active &&
             newTransientSettings.flashMode == FlashMode.ON

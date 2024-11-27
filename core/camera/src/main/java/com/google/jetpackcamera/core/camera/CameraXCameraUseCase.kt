@@ -42,6 +42,7 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -111,6 +112,9 @@ constructor(
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+
+    // todo: zoomchanges init with cameraappsettings zoomratio
+    private val _zoomChanges = MutableStateFlow<CameraZoomState?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
     private var _currentCameraState = MutableStateFlow(CameraState())
@@ -271,9 +275,7 @@ constructor(
                             isAudioMuted = currentCameraSettings.audioMuted,
                             deviceRotation = currentCameraSettings.deviceRotation,
                             flashMode = currentCameraSettings.flashMode,
-                            zoomScale = currentCameraSettings.zoomScale,
                             cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
-
                         )
 
                         val cameraConstraints = checkNotNull(
@@ -338,6 +340,7 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
+                            zoomChanges = _zoomChanges.asStateFlow(),
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
@@ -532,9 +535,9 @@ constructor(
         videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
-    override fun setZoomScale(scale: Float) {
-        currentSettings.update { old ->
-            old?.copy(zoomScale = scale)
+    override fun changeZoom(newZoomState: CameraZoomState) {
+        _zoomChanges.update {
+            newZoomState
         }
     }
 
@@ -648,8 +651,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFlashModes) {
                 val newFlashMode = if (contains(flashMode)) {
                     flashMode
@@ -662,7 +665,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
