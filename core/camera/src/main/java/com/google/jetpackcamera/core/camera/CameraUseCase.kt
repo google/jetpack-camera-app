@@ -153,9 +153,7 @@ sealed interface VideoRecordingState {
     /**
      * Camera is not currently recording a video
      */
-    data class Inactive(
-        val finalElapsedTimeNanos: Long = 0
-    ) : VideoRecordingState
+    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
 
     /**
      * Camera is currently active; paused, stopping, or recording a video
@@ -181,14 +179,12 @@ sealed interface VideoRecordingState {
 
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-    val zoomScale: Float = 1f,
+    val zoomRatio: Float = 1f,
+    val linearZoomScale: Float? = null,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 
-data class DebugInfo(
-    val logicalCameraId: String?,
-    val physicalCameraId: String?
-)
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)

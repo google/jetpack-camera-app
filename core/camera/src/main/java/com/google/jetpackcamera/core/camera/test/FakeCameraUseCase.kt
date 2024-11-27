@@ -41,9 +41,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 
-class FakeCameraUseCase(
-    defaultCameraSettings: CameraAppSettings = CameraAppSettings()
-) : CameraUseCase {
+class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSettings()) :
+    CameraUseCase {
     private val availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK)
     private var initialized = false
     private var useCasesBinded = false
@@ -95,7 +94,7 @@ class FakeCameraUseCase(
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
 
                 _currentCameraState.update { old ->
-                    old.copy(zoomScale = it.zoomScale)
+                    old.copy(zoomRatio = it.zoomScale)
                 }
             }
     }

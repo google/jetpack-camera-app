@@ -192,6 +192,18 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
+            // update camerastate to mirror current zoomstate
+            launch {
+                camera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
+                    currentCameraState.update { old ->
+                        old.copy(
+                            zoomRatio = zoomState.zoomRatio,
+                            linearZoomScale = zoomState.linearZoom
+                        )
+                    }
+                }
+            }
+
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
                 camera,
@@ -240,7 +252,7 @@ internal suspend fun processTransientSettingEvents(
                     )
                 camera.cameraControl.setZoomRatio(finalScale)
                 currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
+                    old.copy(zoomRatio = finalScale)
                 }
             }
         }
