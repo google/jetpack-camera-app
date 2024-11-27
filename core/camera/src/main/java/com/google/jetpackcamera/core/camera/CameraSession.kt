@@ -57,6 +57,7 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
+import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
@@ -206,17 +207,14 @@ context(CameraSessionContext)
 /**
  * enables torch for the provided camera based on the current flash settings
  */
-suspend fun toggleTorch(camera: Camera, isActive: Boolean) {
-    val isFrontCameraSelector =
-        camera.cameraInfo.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA
+suspend fun toggleTorch(camera: Camera, newTorchOn: Boolean) {
+    val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
 
     try {
-        if (!isFrontCameraSelector) {
-            if (isActive) {
-                camera.cameraControl.enableTorch(true).await()
-            } else {
-                camera.cameraControl.enableTorch(false).await()
-            }
+        if (!isFrontFacing && newTorchOn) {
+            camera.cameraControl.enableTorch(true).await()
+        } else {
+            camera.cameraControl.enableTorch(false).await()
         }
     } catch (e: Exception) {
         Log.d(TAG, e.stackTraceToString())
