@@ -470,6 +470,7 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.AUTO -> R.string.stabilization_description_auto
         StabilizationMode.ON -> R.string.stabilization_description_on
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
+        StabilizationMode.OPTICAL -> R.string.stabilization_description_optical
     }
 
 /**
@@ -600,6 +601,34 @@ fun StabilizationSetting(
                                 == StabilizationMode.HIGH_QUALITY,
                             onClick = {
                                 setStabilizationMode(StabilizationMode.HIGH_QUALITY)
+                            }
+                        )
+
+                        // optical selector
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationOpticalState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationOpticalState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(
+                                id = R.string.stabilization_selector_optical
+                            ),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_optical_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationOpticalState
+                                == SingleSelectableState.Selectable,
+
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OPTICAL,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.OPTICAL)
                             }
                         )
 

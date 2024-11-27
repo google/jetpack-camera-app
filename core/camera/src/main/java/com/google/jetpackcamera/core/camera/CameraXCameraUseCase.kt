@@ -165,6 +165,10 @@ constructor(
                                 add(StabilizationMode.HIGH_QUALITY)
                             }
 
+                            if (camInfo.isOpticalStabilizationSupported) {
+                                add(StabilizationMode.OPTICAL)
+                            }
+
                             add(StabilizationMode.OFF)
                         }
 
@@ -393,6 +397,14 @@ constructor(
                     targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
                 ) {
                     StabilizationMode.HIGH_QUALITY
+                } else {
+                    StabilizationMode.OFF
+                }
+            }
+
+            StabilizationMode.OPTICAL -> {
+                if (supportedStabilizationModes.contains(StabilizationMode.OPTICAL)) {
+                    StabilizationMode.OPTICAL
                 } else {
                     StabilizationMode.OFF
                 }

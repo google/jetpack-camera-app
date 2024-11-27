@@ -488,6 +488,9 @@ fun StabilizationIcon(
                     StabilizationMode.HIGH_QUALITY ->
                         painterResource(R.drawable.video_stable_hq_filled_icon)
 
+                    StabilizationMode.OPTICAL ->
+                        painterResource(R.drawable.video_stable_ois_filled_icon)
+
                     else -> rememberVectorPainter(Icons.Filled.VideoStable)
                 },
                 // previewStabilization will not be on for high quality
@@ -501,6 +504,9 @@ fun StabilizationIcon(
 
                     StabilizationMode.HIGH_QUALITY ->
                         stringResource(R.string.stabilization_icon_description_video_only)
+
+                    StabilizationMode.OPTICAL ->
+                        stringResource(R.string.stabilization_icon_description_optical)
 
                     else -> null
                 },

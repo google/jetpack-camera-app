@@ -261,7 +261,8 @@ class PreviewViewModel @AssistedInject constructor(
             }
 
             StabilizationMode.ON,
-            StabilizationMode.HIGH_QUALITY ->
+            StabilizationMode.HIGH_QUALITY,
+            StabilizationMode.OPTICAL ->
                 StabilizationUiState.Set(
                     stabilizationMode = expectedMode,
                     active = expectedMode == actualMode

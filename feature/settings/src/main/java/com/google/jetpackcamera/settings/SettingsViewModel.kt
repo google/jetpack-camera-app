@@ -150,6 +150,14 @@ class SettingsViewModel @Inject constructor(
                 deviceStabilizations = deviceStabilizations,
                 currentLensStabilizations = lensSupportedStabilizations,
                 unsupportedFrameRates = videoStabilizationUnsupportedFps
+            ),
+            stabilizationOpticalState = getSingleStabilizationState(
+                stabilizationMode = StabilizationMode.OPTICAL,
+                currentFrameRate = cameraAppSettings.targetFrameRate,
+                defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                deviceStabilizations = deviceStabilizations,
+                currentLensStabilizations = lensSupportedStabilizations,
+                unsupportedFrameRates = emptySet()
             )
         )
     }

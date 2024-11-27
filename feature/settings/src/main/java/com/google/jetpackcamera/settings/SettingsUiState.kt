@@ -160,6 +160,7 @@ sealed interface StabilizationUiState {
         val stabilizationAutoState: SingleSelectableState,
         val stabilizationOnState: SingleSelectableState,
         val stabilizationHighQualityState: SingleSelectableState,
+        val stabilizationOpticalState: SingleSelectableState,
         // Contains text like "Selected stabilization mode only supported by rear lens"
         val additionalContext: String = ""
     ) : StabilizationUiState
