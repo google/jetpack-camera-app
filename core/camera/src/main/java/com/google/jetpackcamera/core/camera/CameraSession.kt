@@ -89,6 +89,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -99,7 +100,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onSetZoomRatio: (Float, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     val initialTransientSettings = transientSettings
         .filterNotNull()
@@ -195,19 +197,38 @@ internal suspend fun runSingleCameraSession(
 
             // update camerastate to mirror current zoomstate
             launch {
-                camera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
-                    currentCameraState.update { old ->
-                        old.copy(
-                            zoomRatio = zoomState.zoomRatio,
-                            linearZoomScale = zoomState.linearZoom
+                camera.cameraInfo.zoomState.asFlow().filterNotNull()
+                    .onCompletion {
+                        // save current zoom state to current camera settings when flipping
+                        onSetZoomRatio(
+                            currentCameraState.value.zoomRatio,
+                            currentTransientSettings.cameraInfo.appLensFacing
                         )
                     }
-                }
+                    .collectLatest { zoomState ->
+                        currentCameraState.update { old ->
+                            old.copy(
+                                zoomRatio = zoomState.zoomRatio,
+                                linearZoomScale = zoomState.linearZoom
+                            )
+                        }
+                    }
             }
 
             launch {
-                // Apply camera zoom
+                // Apply camera zoom setting when starting new camera
+                Log.d(
+                    TAG,
+                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                )
+                if (camera.cameraInfo.appLensFacing == LensFacing.FRONT) {
+                    camera.cameraControl.setZoomRatio(currentTransientSettings.frontZoomRatio)
+                } else {
+                    camera.cameraControl.setZoomRatio(currentTransientSettings.rearZoomRatio)
+                }
+
                 zoomChanges.filterNotNull().collectLatest { zoomChange ->
+                    Log.d(TAG, "Change in Zoom $zoomChange")
                     camera.cameraInfo.zoomState.value?.let { currentZoomState ->
                         when (zoomChange) {
                             is CameraZoomState.Ratio -> {

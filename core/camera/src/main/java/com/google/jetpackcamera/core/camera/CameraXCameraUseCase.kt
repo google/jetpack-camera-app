@@ -113,7 +113,7 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    // todo: zoomchanges init with cameraappsettings zoomratio
+    // todo: zoomchanges init with cameraappsettings zoomratio whenever camera starts
     private val _zoomChanges = MutableStateFlow<CameraZoomState?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
@@ -275,7 +275,9 @@ constructor(
                             isAudioMuted = currentCameraSettings.audioMuted,
                             deviceRotation = currentCameraSettings.deviceRotation,
                             flashMode = currentCameraSettings.flashMode,
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
+                            frontZoomRatio = currentCameraSettings.frontZoomRatio,
+                            rearZoomRatio = currentCameraSettings.rearZoomRatio
                         )
 
                         val cameraConstraints = checkNotNull(
@@ -349,11 +351,24 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    useCaseMode = useCaseMode
-                                ) { imageCapture ->
-                                    imageCaptureUseCase = imageCapture
-                                }
+                                    sessionSettings = sessionSettings,
+                                    useCaseMode = useCaseMode,
+                                    onImageCaptureCreated = { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
+                                    },
+                                    onSetZoomRatio = { ratio, lensfacing ->
+                                        currentSettings.apply {
+                                            when (lensfacing) {
+                                                LensFacing.BACK -> update { old ->
+                                                    old?.copy(rearZoomRatio = ratio)
+                                                }
+                                                LensFacing.FRONT -> update { old ->
+                                                    old?.copy(frontZoomRatio = ratio)
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
