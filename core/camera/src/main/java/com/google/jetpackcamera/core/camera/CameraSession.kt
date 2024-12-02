@@ -63,6 +63,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -85,9 +86,11 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -98,7 +101,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onSetZoomRatio: (Float, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     val initialTransientSettings = transientSettings
         .filterNotNull()
@@ -192,6 +196,74 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
+            // update camerastate to mirror current camera's zoomstate
+            launch {
+                camera.cameraInfo.zoomState.asFlow().filterNotNull()
+                    .onCompletion {
+                        // save current zoom state to current camera settings when flipping lenses
+                        onSetZoomRatio(
+                            currentCameraState.value.zoomRatio,
+                            currentTransientSettings.cameraInfo.appLensFacing
+                        )
+                    }
+                    .collectLatest { zoomState ->
+                        currentCameraState.update { old ->
+                            old.copy(
+                                zoomRatio = zoomState.zoomRatio,
+                                linearZoomScale = zoomState.linearZoom
+                            )
+                        }
+                    }
+            }
+
+            launch {
+                // Apply camera zoom setting when starting new camera
+                Log.d(
+                    TAG,
+                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                )
+                // apply the zoom ratio from our current settings
+                if (camera.cameraInfo.appLensFacing == LensFacing.FRONT) {
+                    camera.cameraControl.setZoomRatio(currentTransientSettings.frontZoomRatio)
+                } else {
+                    camera.cameraControl.setZoomRatio(currentTransientSettings.rearZoomRatio)
+                }
+
+                // observe modifications to our current zoom
+                // drop to ensure the last modification made prior to flipping lenses are ignored
+                zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
+                    camera.cameraInfo.zoomState.value?.let { currentZoomState ->
+                        when (zoomChange) {
+                            is CameraZoomState.Ratio -> {
+                                camera.cameraControl.setZoomRatio(
+                                    zoomChange.ratioValue.coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
+                                )
+
+                                currentCameraState.update { old ->
+                                    old.copy(zoomRatio = zoomChange.ratioValue)
+                                }
+                            }
+
+                            is CameraZoomState.Linear -> {
+                                camera.cameraControl.setLinearZoom(zoomChange.linearValue)
+                            }
+
+                            is CameraZoomState.ScaleRatio -> {
+                                val newRatio =
+                                    (currentZoomState.zoomRatio * zoomChange.scalingFactor).coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
+                                camera.cameraControl.setZoomRatio(newRatio)
+                            }
+                        }
+                    }
+                }
+            }
+
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
                 camera,
@@ -217,7 +289,7 @@ suspend fun toggleTorch(camera: Camera, newTorchOn: Boolean) {
             camera.cameraControl.enableTorch(false).await()
         }
     } catch (e: Exception) {
-        Log.d(TAG, e.stackTraceToString())
+        Log.e(TAG, e.stackTraceToString())
     }
 }
 
@@ -230,20 +302,6 @@ internal suspend fun processTransientSettingEvents(
 ) {
     var prevTransientSettings = initialTransientSettings
     transientSettings.filterNotNull().collectLatest { newTransientSettings ->
-        // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
-                }
-            }
-        }
         // todo(kc): Enable torch toggle while recording in progress
         if (currentCameraState.value.videoRecordingState is VideoRecordingState.Active &&
             newTransientSettings.flashMode == FlashMode.ON
