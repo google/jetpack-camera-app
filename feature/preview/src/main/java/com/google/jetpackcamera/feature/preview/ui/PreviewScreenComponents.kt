@@ -382,7 +382,7 @@ fun PreviewDisplay(
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomChange(CameraZoomState.Scale(pinchZoomChange))
+            onZoomChange(CameraZoomState.ScaleRatio(pinchZoomChange))
         }
     )
 

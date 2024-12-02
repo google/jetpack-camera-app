@@ -113,7 +113,7 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    // todo: zoomchanges init with cameraappsettings zoomratio whenever camera starts
+    // observe changes to modify the current camera's zoom state beyond the current camera settings
     private val _zoomChanges = MutableStateFlow<CameraZoomState?>(null)
 
     // Could be improved by setting initial value only when camera is initialized

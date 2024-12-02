@@ -30,9 +30,28 @@ package com.google.jetpackcamera.settings.model/*
  * limitations under the License.
  */
 
+/**
+ * Data classes representing modifications to the camera zoom state.
+ */
 interface CameraZoomState {
-    val value: Float
-    data class Scale(override val value: Float) : CameraZoomState
-    data class Linear(override val value: Float) : CameraZoomState
-    data class Ratio(override val value: Float) : CameraZoomState
+    /**
+     * Scale the current camera's active zoom ratio by the [scalingFactor]
+     */
+    data class ScaleRatio(val scalingFactor: Float) : CameraZoomState
+
+    /**
+     * Set the current camera's active zoom based on a linear value between 0.0 and 1.0
+     */
+    data class Linear(val linearValue: Float) : CameraZoomState {
+        init {
+            require(linearValue in 0f..1f) { "Linear zoom value must be between 0 and 1" }
+        }
+    }
+
+    /**
+     * Set the current camera's active zoom based on the provided [ratioValue]
+     *
+     * The range of the supported ratios varies by device and lens. If the ratio value falls outside of these bounds, it must be clamped appropriately within CameraSession
+     */
+    data class Ratio(val ratioValue: Float) : CameraZoomState
 }

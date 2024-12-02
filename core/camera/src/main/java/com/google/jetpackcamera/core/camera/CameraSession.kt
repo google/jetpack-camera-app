@@ -86,6 +86,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -195,11 +196,11 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
-            // update camerastate to mirror current zoomstate
+            // update camerastate to mirror current camera's zoomstate
             launch {
                 camera.cameraInfo.zoomState.asFlow().filterNotNull()
                     .onCompletion {
-                        // save current zoom state to current camera settings when flipping
+                        // save current zoom state to current camera settings when flipping lenses
                         onSetZoomRatio(
                             currentCameraState.value.zoomRatio,
                             currentTransientSettings.cameraInfo.appLensFacing
@@ -221,46 +222,42 @@ internal suspend fun runSingleCameraSession(
                     TAG,
                     "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ${camera.cameraInfo.zoomState.value?.zoomRatio}"
                 )
+                // apply the zoom ratio from our current settings
                 if (camera.cameraInfo.appLensFacing == LensFacing.FRONT) {
                     camera.cameraControl.setZoomRatio(currentTransientSettings.frontZoomRatio)
                 } else {
                     camera.cameraControl.setZoomRatio(currentTransientSettings.rearZoomRatio)
                 }
 
-                zoomChanges.filterNotNull().collectLatest { zoomChange ->
-                    Log.d(TAG, "Change in Zoom $zoomChange")
+                // observe modifications to our current zoom
+                // drop to ensure the last modification made prior to flipping lenses are ignored
+                zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
                     camera.cameraInfo.zoomState.value?.let { currentZoomState ->
                         when (zoomChange) {
                             is CameraZoomState.Ratio -> {
                                 camera.cameraControl.setZoomRatio(
-                                    zoomChange.value.coerceIn(
+                                    zoomChange.ratioValue.coerceIn(
                                         currentZoomState.minZoomRatio,
                                         currentZoomState.maxZoomRatio
                                     )
                                 )
 
                                 currentCameraState.update { old ->
-                                    old.copy(zoomRatio = zoomChange.value)
+                                    old.copy(zoomRatio = zoomChange.ratioValue)
                                 }
                             }
 
                             is CameraZoomState.Linear -> {
-                                camera.cameraControl.setLinearZoom(zoomChange.value)
-                                currentCameraState.update { old ->
-                                    old.copy(zoomRatio = zoomChange.value)
-                                }
+                                camera.cameraControl.setLinearZoom(zoomChange.linearValue)
                             }
 
-                            is CameraZoomState.Scale -> {
+                            is CameraZoomState.ScaleRatio -> {
                                 val newRatio =
-                                    (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                    (currentZoomState.zoomRatio * zoomChange.scalingFactor).coerceIn(
                                         currentZoomState.minZoomRatio,
                                         currentZoomState.maxZoomRatio
                                     )
                                 camera.cameraControl.setZoomRatio(newRatio)
-                                currentCameraState.update { old ->
-                                    old.copy(zoomRatio = newRatio)
-                                }
                             }
                         }
                     }
@@ -292,7 +289,7 @@ suspend fun toggleTorch(camera: Camera, newTorchOn: Boolean) {
             camera.cameraControl.enableTorch(false).await()
         }
     } catch (e: Exception) {
-        Log.d(TAG, e.stackTraceToString())
+        Log.e(TAG, e.stackTraceToString())
     }
 }
 
