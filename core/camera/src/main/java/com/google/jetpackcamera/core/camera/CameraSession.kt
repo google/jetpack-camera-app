@@ -57,7 +57,6 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
@@ -157,29 +156,6 @@ internal suspend fun runSingleCameraSession(
             useCaseGroup
         ) { camera ->
             Log.d(TAG, "Camera session started")
-            // process torch while video is recording
-            launch {
-                // only collect when starting or stopping recording
-                currentCameraState
-                    .distinctUntilChanged { old, new ->
-                        (old.videoRecordingState is VideoRecordingState.Active) ==
-                            (new.videoRecordingState is VideoRecordingState.Active) ||
-                            (old.videoRecordingState is VideoRecordingState.Inactive) ==
-                            (new.videoRecordingState is VideoRecordingState.Inactive)
-                    }
-                    .collectLatest {
-                        // todo(): How should we handle torch on Auto FlashMode?
-                        when (it.videoRecordingState) {
-                            is VideoRecordingState.Starting, is VideoRecordingState.Active -> {
-                                setTorch(camera, true)
-                            }
-
-                            is VideoRecordingState.Inactive -> {
-                                setTorch(camera, false)
-                            }
-                        }
-                    }
-            }
 
             launch {
                 processFocusMeteringEvents(camera.cameraControl)
@@ -205,24 +181,6 @@ internal suspend fun runSingleCameraSession(
 }
 
 context(CameraSessionContext)
-/**
- * Sets torch for the provided camera based on the current flash settings
- */
-suspend fun setTorch(camera: Camera, newTorchOn: Boolean) {
-    val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
-
-    try {
-        if (!isFrontFacing && newTorchOn) {
-            camera.cameraControl.enableTorch(true).await()
-        } else {
-            camera.cameraControl.enableTorch(false).await()
-        }
-    } catch (e: Exception) {
-        Log.d(TAG, e.stackTraceToString())
-    }
-}
-
-context(CameraSessionContext)
 internal suspend fun processTransientSettingEvents(
     camera: Camera,
     useCaseGroup: UseCaseGroup,
@@ -230,7 +188,14 @@ internal suspend fun processTransientSettingEvents(
     transientSettings: StateFlow<TransientSessionSettings?>
 ) {
     var prevTransientSettings = initialTransientSettings
-
+    val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
+    var torchOn = false
+    fun setTorch(newTorchOn: Boolean) {
+        if (newTorchOn != torchOn) {
+            camera.cameraControl.enableTorch(newTorchOn)
+            torchOn = newTorchOn
+        }
+    }
     combine(
         transientSettings.filterNotNull(),
         currentCameraState.asStateFlow()
@@ -255,11 +220,15 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        // todo(kc): Enable torch toggle while recording in progress
-        if (cameraState.videoRecordingState is VideoRecordingState.Active &&
-            newTransientSettings.flashMode == FlashMode.ON
+        // todo(): How should we handle torch on Auto FlashMode?
+        // enable torch only while recording is in progress
+        if ((cameraState.videoRecordingState !is VideoRecordingState.Inactive) &&
+            newTransientSettings.flashMode == FlashMode.ON &&
+            !isFrontFacing
         ) {
-            setTorch(camera, true)
+            setTorch(true)
+        } else {
+            setTorch(false)
         }
 
         // apply camera torch mode to image capture
