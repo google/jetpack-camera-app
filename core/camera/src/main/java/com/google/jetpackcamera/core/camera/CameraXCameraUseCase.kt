@@ -118,6 +118,8 @@ constructor(
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
+    private val _cameraSelector = MutableStateFlow<CameraSelector?>(null)
+
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
@@ -262,18 +264,18 @@ constructor(
             .map { currentCameraSettings ->
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                        _cameraSelector.update {
+                            when (currentCameraSettings.cameraLensFacing) {
+                                LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                                LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                            }
                         }
 
                         transientSettings.value = TransientSessionSettings(
                             isAudioMuted = currentCameraSettings.audioMuted,
                             deviceRotation = currentCameraSettings.deviceRotation,
                             flashMode = currentCameraSettings.flashMode,
-                            zoomScale = currentCameraSettings.zoomScale,
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
-
+                            zoomScale = currentCameraSettings.zoomScale
                         )
 
                         val cameraConstraints = checkNotNull(
@@ -291,7 +293,6 @@ constructor(
                         )
 
                         PerpetualSessionSettings.SingleCamera(
-                            // cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
@@ -334,12 +335,14 @@ constructor(
                         CameraSessionContext(
                             context = application,
                             cameraProvider = cameraProvider,
+
                             backgroundDispatcher = defaultDispatcher,
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
+                            cameraSelector = _cameraSelector.asStateFlow(),
                             transientSettings = transientSettings
                         )
                     ) {
@@ -648,8 +651,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFlashModes) {
                 val newFlashMode = if (contains(flashMode)) {
                     flashMode
@@ -662,7 +665,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))

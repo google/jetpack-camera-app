@@ -58,7 +58,6 @@ internal sealed interface PerpetualSessionSettings {
  * The use cases typically will not need to be re-bound.
  */
 internal data class TransientSessionSettings(
-    val cameraInfo: CameraInfo,
     val isAudioMuted: Boolean,
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,

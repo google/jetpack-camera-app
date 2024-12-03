@@ -52,7 +52,7 @@ internal suspend fun runConcurrentCameraSession(
 
     val videoCapture = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
         createVideoUseCase(
-            initialTransientSettings.cameraInfo,
+            cameraProvider.getCameraInfo(cameraSelector.filterNotNull().first()),
             sessionSettings.aspectRatio,
             TARGET_FPS_AUTO,
             StabilizationMode.OFF,
@@ -68,7 +68,6 @@ internal suspend fun runConcurrentCameraSession(
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = StabilizationMode.OFF,
         aspectRatio = sessionSettings.aspectRatio,
-        // targetFrameRate = TARGET_FPS_AUTO,
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
         useCaseMode = useCaseMode,
@@ -106,7 +105,6 @@ internal suspend fun runConcurrentCameraSession(
 
         launch {
             processVideoControlEvents(
-                // primaryCamera,
                 useCaseGroup.getVideoCapture(),
                 captureTypeSuffix = "DualCam"
             )

@@ -83,7 +83,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -100,16 +102,14 @@ internal suspend fun runSingleCameraSession(
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
-    val initialTransientSettings = transientSettings
-        .filterNotNull()
-        .first()
-    val lensFacing = initialTransientSettings.cameraInfo.appLensFacing
-    Log.d(TAG, "Starting new single camera session for $lensFacing")
+    Log.d(TAG, "Starting new single camera session")
+
+    val initialCameraSelector = cameraSelector.filterNotNull().first()
 
     val videoCaptureUseCase = when (useCaseMode) {
         CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
             createVideoUseCase(
-                initialTransientSettings.cameraInfo,
+                cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
                 sessionSettings.targetFrameRate,
                 sessionSettings.stabilizationMode,
@@ -132,12 +132,11 @@ internal suspend fun runSingleCameraSession(
         )
     }
 
-    transientSettings.filterNotNull().distinctUntilChanged { old, new ->
-        old.cameraInfo.lensFacing == new.cameraInfo.lensFacing
-    }.collectLatest { currentTransientSettings ->
+    cameraSelector.filterNotNull().distinctUntilChanged().collectLatest { currentCameraSelector ->
         cameraProvider.unbindAll()
+        val currentTransientSettings = transientSettings.filterNotNull().first()
         val useCaseGroup = createUseCaseGroup(
-            cameraInfo = currentTransientSettings.cameraInfo,
+            cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
             videoCaptureUseCase = videoCaptureUseCase,
             initialTransientSettings = currentTransientSettings,
             stabilizationMode = sessionSettings.stabilizationMode,
@@ -154,7 +153,7 @@ internal suspend fun runSingleCameraSession(
         }
 
         cameraProvider.runWith(
-            currentTransientSettings.cameraInfo.cameraSelector,
+            currentCameraSelector,
             useCaseGroup
         ) { camera ->
             Log.d(TAG, "Camera session started")
@@ -170,12 +169,14 @@ internal suspend fun runSingleCameraSession(
                     }
                     .collectLatest {
                         // todo(): How should we handle torch on Auto FlashMode?
-                        if (it.videoRecordingState is VideoRecordingState.Active &&
-                            currentTransientSettings.flashMode == FlashMode.ON
-                        ) {
-                            toggleTorch(camera, true)
-                        } else {
-                            toggleTorch(camera, false)
+                        when (it.videoRecordingState) {
+                            is VideoRecordingState.Starting, is VideoRecordingState.Active -> {
+                                setTorch(camera, true)
+                            }
+
+                            is VideoRecordingState.Inactive -> {
+                                setTorch(camera, false)
+                            }
                         }
                     }
             }
@@ -205,9 +206,9 @@ internal suspend fun runSingleCameraSession(
 
 context(CameraSessionContext)
 /**
- * enables torch for the provided camera based on the current flash settings
+ * Sets torch for the provided camera based on the current flash settings
  */
-suspend fun toggleTorch(camera: Camera, newTorchOn: Boolean) {
+suspend fun setTorch(camera: Camera, newTorchOn: Boolean) {
     val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
 
     try {
@@ -229,7 +230,16 @@ internal suspend fun processTransientSettingEvents(
     transientSettings: StateFlow<TransientSessionSettings?>
 ) {
     var prevTransientSettings = initialTransientSettings
-    transientSettings.filterNotNull().collectLatest { newTransientSettings ->
+
+    combine(
+        transientSettings.filterNotNull(),
+        currentCameraState.asStateFlow()
+    ) { newTransientSettings, cameraState ->
+        return@combine Pair(newTransientSettings, cameraState)
+    }.collectLatest {
+        val newTransientSettings = it.first
+        val cameraState = it.second
+
         // Apply camera zoom
         if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
             camera.cameraInfo.zoomState.value?.let { zoomState ->
@@ -244,11 +254,12 @@ internal suspend fun processTransientSettingEvents(
                 }
             }
         }
+
         // todo(kc): Enable torch toggle while recording in progress
-        if (currentCameraState.value.videoRecordingState is VideoRecordingState.Active &&
+        if (cameraState.videoRecordingState is VideoRecordingState.Active &&
             newTransientSettings.flashMode == FlashMode.ON
         ) {
-            toggleTorch(camera, true)
+            setTorch(camera, true)
         }
 
         // apply camera torch mode to image capture
@@ -598,6 +609,10 @@ private suspend fun startVideoRecordingInternal(
 ): Recording {
     Log.d(TAG, "recordVideo")
     // todo(b/336886716): default setting to enable or disable audio when permission is granted
+    // set the camerastate to starting
+    currentCameraState.update { old ->
+        old.copy(videoRecordingState = VideoRecordingState.Starting)
+    }
 
     // ok. there is a difference between MUTING and ENABLING audio
     // audio must be enabled in order to be muted
@@ -735,6 +750,13 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.cause
                             )
                         )
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                                )
+                            )
+                        }
                     }
                 }
             }
