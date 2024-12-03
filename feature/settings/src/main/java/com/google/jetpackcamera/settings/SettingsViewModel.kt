@@ -255,35 +255,18 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
-        // if preview stabilization is currently on and the other lens won't support it
-        if (currentSettings.stabilizationMode == StabilizationMode.ON) {
-            if (!newLensConstraints.supportedStabilizationModes.contains(StabilizationMode.ON)) {
-                return FlipLensUiState.Disabled(
-                    currentLensFacing = currentSettings.cameraLensFacing,
-                    disabledRationale = StabilizationUnsupportedRationale(
-                        when (currentSettings.cameraLensFacing) {
-                            LensFacing.BACK -> R.string.front_lens_rationale_prefix
-                            LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
-                        }
-                    )
+        // If a non-AUTO stabilization is currently on and the other lens won't support it
+        if (currentSettings.stabilizationMode != StabilizationMode.AUTO &&
+            currentSettings.stabilizationMode !in newLensConstraints.supportedStabilizationModes) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = StabilizationUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    }
                 )
-            }
-        }
-        // if video stabilization is currently on and the other lens won't support it
-        if (currentSettings.stabilizationMode == StabilizationMode.HIGH_QUALITY) {
-            if (!newLensConstraints.supportedStabilizationModes
-                    .contains(StabilizationMode.HIGH_QUALITY)
-            ) {
-                return FlipLensUiState.Disabled(
-                    currentLensFacing = currentSettings.cameraLensFacing,
-                    disabledRationale = StabilizationUnsupportedRationale(
-                        when (currentSettings.cameraLensFacing) {
-                            LensFacing.BACK -> R.string.front_lens_rationale_prefix
-                            LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
-                        }
-                    )
-                )
-            }
+            )
         }
 
         return FlipLensUiState.Enabled(currentLensFacing = currentSettings.cameraLensFacing)
