@@ -55,5 +55,5 @@ interface SettingsRepository {
 
     suspend fun updateMaxVideoDuration(durationMillis: Long)
 
-    suspend fun updateMutedMode(isMutedByDefault: Boolean)
+    suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 }

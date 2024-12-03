@@ -354,8 +354,8 @@ private fun createVideoUseCase(
     }.build()
 }
 
-private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
-    return when (aspectRatio) {
+private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
+    when (aspectRatio) {
         AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
         AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
         else -> {
@@ -370,7 +370,6 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
             }
         }
     }
-}
 
 context(CameraSessionContext)
 private fun createPreviewUseCase(
@@ -534,7 +533,7 @@ private fun getPendingRecording(
 
 context(CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
-    initialMuted: Boolean,
+    isInitialAudioEnabled: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -548,14 +547,15 @@ private suspend fun startVideoRecordingInternal(
     // if the video recording isnt started with audio enabled, you will not be able to unmute it
     // the toggle should only affect whether or not the audio is muted.
     // the permission will determine whether or not the audio is enabled.
-    val audioEnabled = checkSelfPermission(
+    val isAudioGranted = checkSelfPermission(
         context,
         Manifest.permission.RECORD_AUDIO
     ) == PackageManager.PERMISSION_GRANTED
 
     pendingRecord.apply {
-        if (audioEnabled) {
-            withAudioEnabled(initialMuted)
+        if (isAudioGranted) {
+            Log.d(TAG, "INITIAL AUDIO $isInitialAudioEnabled")
+            withAudioEnabled(isInitialAudioEnabled)
         }
     }
 
@@ -683,7 +683,7 @@ private suspend fun startVideoRecordingInternal(
             }
         }
     }.apply {
-        mute(initialMuted)
+        mute(!isInitialAudioEnabled)
     }
 }
 
@@ -712,7 +712,7 @@ private suspend fun runVideoRecording(
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
-            initialMuted = currentSettings.isAudioMuted,
+            isInitialAudioEnabled = currentSettings.isAudioEnabled,
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
@@ -739,8 +739,8 @@ private suspend fun runVideoRecording(
                         setTorchOn(false)
                     }
                     .collectLatest { newTransientSettings ->
-                        if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
-                            recording.mute(newTransientSettings.isAudioMuted)
+                        if (currentSettings.isAudioEnabled != newTransientSettings.isAudioEnabled) {
+                            recording.mute(newTransientSettings.isAudioEnabled)
                         }
                         if (currentSettings.isFlashModeOn() !=
                             newTransientSettings.isFlashModeOn()

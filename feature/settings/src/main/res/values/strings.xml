@@ -55,14 +55,14 @@
     <string name="flash_mode_description_off">Flash is Off</string>
     <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
-    <!-- Mute setting strings -->
-    <string name="mute_audio_title">Mute Audio</string>
+    <!-- Audio setting strings -->
+    <string name="audio_title">Enable Audio</string>
 
-    <string name="mute_selector_on">Recordings will start muted</string>
-    <string name="mute_selector_off">Recordings will start with audio enabled</string>
+    <string name="audio_selector_on">Recordings will start with audio enabled</string>
+    <string name="audio_selector_off">Recordings will start muted</string>
 
-    <string name="mute_description_on">Audio is enabled</string>
-    <string name="mute_description_off">Audio is muted</string>
+    <string name="audio_description_on">Recordings will start with audio enabled</string>
+    <string name="audio_description_off">Recordings will start muted</string>
 
     <!-- Capture mode setting strings -->
     <string name="capture_mode_title">Set Capture Mode</string>

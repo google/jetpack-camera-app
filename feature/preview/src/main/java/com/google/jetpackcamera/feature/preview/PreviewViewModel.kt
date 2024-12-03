@@ -325,8 +325,8 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
                 }
 
-                CameraAppSettings::audioMuted -> {
-                    cameraUseCase.setAudioMuted(entry.value as Boolean)
+                CameraAppSettings::audioEnabled -> {
+                    cameraUseCase.setAudioEnabled(entry.value as Boolean)
                 }
 
                 CameraAppSettings::darkMode -> {}
@@ -546,16 +546,16 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setAudioMuted(shouldMuteAudio: Boolean) {
+    fun setAudioEnabled(shouldEnableAudio: Boolean) {
         viewModelScope.launch {
-            cameraUseCase.setAudioMuted(shouldMuteAudio)
+            cameraUseCase.setAudioEnabled(shouldEnableAudio)
         }
 
         Log.d(
             TAG,
             "Toggle Audio ${
                 (previewUiState.value as PreviewUiState.Ready)
-                    .currentCameraSettings.audioMuted
+                    .currentCameraSettings.audioEnabled
             }"
         )
     }

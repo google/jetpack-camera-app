@@ -83,8 +83,8 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(maxVideoDurationMillis = durationMillis)
     }
 
-    override suspend fun updateMutedMode(isMutedByDefault: Boolean) {
+    override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         currentCameraSettings =
-            currentCameraSettings.copy(audioMuted = isMutedByDefault)
+            currentCameraSettings.copy(audioEnabled = isAudioEnabled)
     }
 }

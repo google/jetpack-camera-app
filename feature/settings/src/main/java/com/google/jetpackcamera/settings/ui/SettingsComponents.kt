@@ -53,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
+import com.google.jetpackcamera.settings.AudioUiState
 import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
@@ -65,7 +66,6 @@ import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
-import com.google.jetpackcamera.settings.MuteAudioUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
@@ -624,29 +624,32 @@ fun StabilizationSetting(
 }
 
 @Composable
-fun MuteRecordingSetting(
+fun RecordingAudioSetting(
     modifier: Modifier = Modifier,
-    mutedUiState: MuteAudioUiState,
-    setDefaultMuted: (Boolean) -> Unit
+    audioUiState: AudioUiState,
+    setDefaultAudio: (Boolean) -> Unit
 ) {
     SwitchSettingUI(
         modifier = modifier,
-        title = stringResource(id = R.string.mute_audio_title),
-        description = when (mutedUiState) {
-            is MuteAudioUiState.Enabled -> if (mutedUiState.isMuted) {
-                stringResource(R.string.mute_selector_on)
+        title = stringResource(id = R.string.audio_title),
+        description = when (audioUiState) {
+            is AudioUiState.Enabled -> if (audioUiState.isEnabled) {
+                stringResource(R.string.audio_selector_on)
             } else {
-                stringResource(R.string.mute_selector_off)
+                stringResource(R.string.audio_selector_off)
             }
 
-            is MuteAudioUiState.Disabled -> {
-                disabledRationaleString(disabledRationale = mutedUiState.disabledRationale)
+            is AudioUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
             }
         },
         leadingIcon = null,
-        onSwitchChanged = { on -> setDefaultMuted(on) },
-        settingValue = mutedUiState.isMuted,
-        enabled = mutedUiState is MuteAudioUiState.Enabled
+        onSwitchChanged = { on -> setDefaultAudio(on) },
+        settingValue = when (audioUiState) {
+            is AudioUiState.Enabled -> audioUiState.isEnabled
+            is AudioUiState.Disabled -> false
+        },
+        enabled = audioUiState is AudioUiState.Enabled
     )
 }
 
@@ -827,8 +830,8 @@ fun SingleChoiceSelector(
 
 @Composable
 @ReadOnlyComposable
-fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    return when (disabledRationale) {
+fun disabledRationaleString(disabledRationale: DisabledRationale): String =
+    when (disabledRationale) {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
@@ -856,7 +859,6 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
             stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
-}
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)

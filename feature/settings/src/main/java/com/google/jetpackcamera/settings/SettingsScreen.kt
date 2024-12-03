@@ -43,7 +43,7 @@ import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
-import com.google.jetpackcamera.settings.ui.MuteRecordingSetting
+import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
@@ -73,7 +73,7 @@ fun SettingsScreen(
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
         setCaptureMode = viewModel::setCaptureMode,
-        setMuted = viewModel::setVideoMuted,
+        setAudio = viewModel::setVideoAudio,
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode
@@ -100,7 +100,7 @@ private fun SettingsScreen(
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
-    setMuted: (Boolean) -> Unit = {},
+    setAudio: (Boolean) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
@@ -123,7 +123,7 @@ private fun SettingsScreen(
                 setAspectRatio = setAspectRatio,
                 setCaptureMode = setCaptureMode,
                 setStabilizationMode = setStabilizationMode,
-                setMuted = setMuted,
+                setAudio = setAudio,
                 setMaxVideoDuration = setMaxVideoDuration,
                 setDarkMode = setDarkMode
             )
@@ -140,7 +140,7 @@ fun SettingsList(
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (CaptureMode) -> Unit = {},
-    setMuted: (Boolean) -> Unit = {},
+    setAudio: (Boolean) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
@@ -184,9 +184,9 @@ fun SettingsList(
         setStabilizationMode = setStabilizationMode
     )
 
-    MuteRecordingSetting(
-        mutedUiState = uiState.muteAudioUiState,
-        setDefaultMuted = setMuted
+    RecordingAudioSetting(
+        audioUiState = uiState.audioUiState,
+        setDefaultAudio = setAudio
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
@@ -206,10 +206,7 @@ fun SettingsList(
 
 // will allow you to open stabilization popup or give disabled rationale
 
-data class VersionInfoHolder(
-    val versionName: String,
-    val buildType: String
-)
+data class VersionInfoHolder(val versionName: String, val buildType: String)
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)

@@ -56,7 +56,7 @@ sealed interface SettingsUiState {
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
-        val muteAudioUiState: MuteAudioUiState
+        val audioUiState: AudioUiState
     ) : SettingsUiState
 }
 
@@ -121,16 +121,14 @@ sealed interface DisabledRationale {
 fun getLensUnsupportedRationale(
     lensFacing: LensFacing,
     affectedSettingNameResId: Int
-): LensUnsupportedRationale {
-    return when (lensFacing) {
-        LensFacing.BACK -> LensUnsupportedRationale.RearLensUnsupportedRationale(
-            affectedSettingNameResId
-        )
+): LensUnsupportedRationale = when (lensFacing) {
+    LensFacing.BACK -> LensUnsupportedRationale.RearLensUnsupportedRationale(
+        affectedSettingNameResId
+    )
 
-        LensFacing.FRONT -> LensUnsupportedRationale.FrontLensUnsupportedRationale(
-            affectedSettingNameResId
-        )
-    }
+    LensFacing.FRONT -> LensUnsupportedRationale.FrontLensUnsupportedRationale(
+        affectedSettingNameResId
+    )
 }
 
 // ////////////////////////////////////////////////////////////
@@ -157,9 +155,7 @@ sealed interface FpsUiState {
 sealed interface FlipLensUiState {
     val currentLensFacing: LensFacing
 
-    data class Enabled(
-        override val currentLensFacing: LensFacing
-    ) : FlipLensUiState
+    data class Enabled(override val currentLensFacing: LensFacing) : FlipLensUiState
 
     data class Disabled(
         override val currentLensFacing: LensFacing,
@@ -181,18 +177,11 @@ sealed interface StabilizationUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
 
-sealed interface MuteAudioUiState {
-    val isMuted: Boolean
+sealed interface AudioUiState {
 
-    data class Enabled(
-        override val isMuted: Boolean,
-        val additionalContext: String = ""
-    ) : MuteAudioUiState
+    data class Enabled(val isEnabled: Boolean, val additionalContext: String = "") : AudioUiState
 
-    data class Disabled(
-        override val isMuted: Boolean,
-        val disabledRationale: DisabledRationale
-    ) : MuteAudioUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
 }
 
 // ////////////////////////////////////////////////////////////
@@ -203,38 +192,28 @@ sealed interface MuteAudioUiState {
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
-    data class Enabled(
-        val currentFlashMode: FlashMode,
-        val additionalContext: String = ""
-    ) : FlashUiState
+    data class Enabled(val currentFlashMode: FlashMode, val additionalContext: String = "") :
+        FlashUiState
 }
 
 sealed interface AspectRatioUiState {
-    data class Enabled(
-        val currentAspectRatio: AspectRatio,
-        val additionalContext: String = ""
-    ) : AspectRatioUiState
+    data class Enabled(val currentAspectRatio: AspectRatio, val additionalContext: String = "") :
+        AspectRatioUiState
 }
 
 sealed interface CaptureModeUiState {
-    data class Enabled(
-        val currentCaptureMode: CaptureMode,
-        val additionalContext: String = ""
-    ) : CaptureModeUiState
+    data class Enabled(val currentCaptureMode: CaptureMode, val additionalContext: String = "") :
+        CaptureModeUiState
 }
 
 sealed interface DarkModeUiState {
-    data class Enabled(
-        val currentDarkMode: DarkMode,
-        val additionalContext: String = ""
-    ) : DarkModeUiState
+    data class Enabled(val currentDarkMode: DarkMode, val additionalContext: String = "") :
+        DarkModeUiState
 }
 
 sealed interface MaxVideoDurationUiState {
-    data class Enabled(
-        val currentMaxDurationMillis: Long,
-        val additionalContext: String = ""
-    ) : MaxVideoDurationUiState
+    data class Enabled(val currentMaxDurationMillis: Long, val additionalContext: String = "") :
+        MaxVideoDurationUiState
 }
 
 /**
@@ -245,7 +224,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
-    muteAudioUiState = MuteAudioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.audioMuted),
+    audioUiState = AudioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
     fpsUiState = FpsUiState.Enabled(
