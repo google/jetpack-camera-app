@@ -257,7 +257,8 @@ class SettingsViewModel @Inject constructor(
 
         // If a non-AUTO stabilization is currently on and the other lens won't support it
         if (currentSettings.stabilizationMode != StabilizationMode.AUTO &&
-            currentSettings.stabilizationMode !in newLensConstraints.supportedStabilizationModes) {
+            currentSettings.stabilizationMode !in newLensConstraints.supportedStabilizationModes
+        ) {
             return FlipLensUiState.Disabled(
                 currentLensFacing = currentSettings.cameraLensFacing,
                 disabledRationale = StabilizationUnsupportedRationale(
