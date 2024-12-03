@@ -722,7 +722,8 @@ private suspend fun startVideoRecordingInternal(
                         currentCameraState.update { old ->
                             old.copy(
                                 videoRecordingState = VideoRecordingState.Inactive(
-                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats.recordedDurationNanos
+                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                        .recordedDurationNanos
                                 )
                             )
                         }

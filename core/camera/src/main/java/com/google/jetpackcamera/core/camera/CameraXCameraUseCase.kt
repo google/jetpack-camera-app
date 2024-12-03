@@ -118,7 +118,7 @@ constructor(
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
-    private val _cameraSelector = MutableStateFlow<CameraSelector?>(null)
+    private val cameraSelector = MutableStateFlow<CameraSelector?>(null)
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
@@ -264,7 +264,7 @@ constructor(
             .map { currentCameraSettings ->
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        _cameraSelector.update {
+                        cameraSelector.update {
                             when (currentCameraSettings.cameraLensFacing) {
                                 LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
                                 LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
@@ -342,7 +342,7 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            cameraSelector = _cameraSelector.asStateFlow(),
+                            cameraSelector = cameraSelector.asStateFlow(),
                             transientSettings = transientSettings
                         )
                     ) {
