@@ -82,8 +82,16 @@ const val TARGET_FPS_60 = 60
 
 const val UNLIMITED_VIDEO_DURATION = 0L
 
-val STABILIZATION_ON_UNSUPPORTED_FPS = setOf(TARGET_FPS_15, TARGET_FPS_60)
-val STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS = setOf(TARGET_FPS_60)
+private val StabilizationMode.unsupportedFpsSet
+    get() = when (this) {
+        StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_60)
+        StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_60)
+        StabilizationMode.AUTO -> throw UnsupportedOperationException(
+            "AUTO stabilization mode cannot be queried for unsupported FPS"
+        )
+        StabilizationMode.OFF,
+        StabilizationMode.OPTICAL -> emptySet()
+    }
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -167,6 +175,7 @@ constructor(
 
                             if (camInfo.isOpticalStabilizationSupported) {
                                 add(StabilizationMode.OPTICAL)
+                                add(StabilizationMode.AUTO)
                             }
 
                             add(StabilizationMode.OFF)
@@ -278,7 +287,7 @@ constructor(
                 }
 
                 val resolvedStabilizationMode = resolveStabilizationMode(
-                    stabilizationMode = currentCameraSettings.stabilizationMode,
+                    requestedStabilizationMode = currentCameraSettings.stabilizationMode,
                     targetFrameRate = currentCameraSettings.targetFrameRate,
                     supportedStabilizationModes = cameraConstraints.supportedStabilizationModes,
                     concurrentCameraMode = currentCameraSettings.concurrentCameraMode
@@ -371,46 +380,32 @@ constructor(
     }
 
     private fun resolveStabilizationMode(
-        stabilizationMode: StabilizationMode,
+        requestedStabilizationMode: StabilizationMode,
         targetFrameRate: Int,
         supportedStabilizationModes: Set<StabilizationMode>,
         concurrentCameraMode: ConcurrentCameraMode
     ): StabilizationMode = if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
         StabilizationMode.OFF
     } else {
-        when (stabilizationMode) {
-            StabilizationMode.AUTO,
-            StabilizationMode.ON -> {
-                if (
-                    supportedStabilizationModes.contains(StabilizationMode.ON) &&
-                    targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
-                ) {
-                    StabilizationMode.ON
-                } else {
-                    StabilizationMode.OFF
+        // Convert AUTO stabilization mode to the first supported stabilization mode
+        val stabilizationMode = if (requestedStabilizationMode == StabilizationMode.AUTO) {
+            // Choose between ON, OPTICAL, or OFF, depending on support, in that order
+            sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
+                .first {
+                    it in supportedStabilizationModes &&
+                        targetFrameRate !in it.unsupportedFpsSet
                 }
-            }
+        } else {
+            requestedStabilizationMode
+        }
 
-            StabilizationMode.HIGH_QUALITY -> {
-                if (
-                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
-                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-                ) {
-                    StabilizationMode.HIGH_QUALITY
-                } else {
-                    StabilizationMode.OFF
-                }
-            }
-
-            StabilizationMode.OPTICAL -> {
-                if (supportedStabilizationModes.contains(StabilizationMode.OPTICAL)) {
-                    StabilizationMode.OPTICAL
-                } else {
-                    StabilizationMode.OFF
-                }
-            }
-
-            StabilizationMode.OFF -> StabilizationMode.OFF
+        // Check that the stabilization mode can be supported, otherwise return OFF
+        if (stabilizationMode in supportedStabilizationModes &&
+            targetFrameRate !in stabilizationMode.unsupportedFpsSet
+        ) {
+            stabilizationMode
+        } else {
+            StabilizationMode.OFF
         }
     }
 
@@ -624,22 +619,13 @@ constructor(
 
     private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            val invalidFps = when (stabilizationMode) {
-                StabilizationMode.ON -> STABILIZATION_ON_UNSUPPORTED_FPS
-                StabilizationMode.HIGH_QUALITY -> STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-                else -> emptySet()
-            }
-
-            val newStabilizationMode = if (targetFrameRate in invalidFps) {
-                StabilizationMode.AUTO
-            } else {
+            val newStabilizationMode = if (stabilizationMode != StabilizationMode.AUTO &&
+                stabilizationMode in constraints.supportedStabilizationModes &&
+                targetFrameRate !in stabilizationMode.unsupportedFpsSet
+            ) {
                 stabilizationMode
-            }.let {
-                if (it !in constraints.supportedStabilizationModes) {
-                    StabilizationMode.OFF
-                } else {
-                    it
-                }
+            } else {
+                StabilizationMode.AUTO
             }
 
             this@tryApplyStabilizationConstraints.copy(
