@@ -71,7 +71,7 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
-                audioUiState = getMuteAudioUiState(
+                audioUiState = getAudioUiState(
                     updatedSettings.audioEnabled,
                     grantedPermissions.contains(Manifest.permission.RECORD_AUDIO)
                 ),
@@ -91,9 +91,13 @@ class SettingsViewModel @Inject constructor(
 //
 // ////////////////////////////////////////////////////////////
 
-    private fun getMuteAudioUiState(isMuted: Boolean, permissionGranted: Boolean): AudioUiState =
+    private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
         if (permissionGranted) {
-            AudioUiState.Enabled(isMuted)
+            if (isAudioEnabled) {
+                AudioUiState.Enabled.On()
+            } else {
+                AudioUiState.Enabled.Mute()
+            }
         } else {
             AudioUiState.Disabled(
                 DisabledRationale

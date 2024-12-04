@@ -179,7 +179,11 @@ sealed interface StabilizationUiState {
 
 sealed interface AudioUiState {
 
-    data class Enabled(val isEnabled: Boolean, val additionalContext: String = "") : AudioUiState
+    sealed interface Enabled : AudioUiState {
+        val additionalContext: String
+        data class On(override val additionalContext: String = "") : Enabled
+        data class Mute(override val additionalContext: String = "") : Enabled
+    }
 
     data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
 }
@@ -224,7 +228,11 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
-    audioUiState = AudioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
+    audioUiState = if (DEFAULT_CAMERA_APP_SETTINGS.audioEnabled) {
+        AudioUiState.Enabled.On()
+    } else {
+        AudioUiState.Enabled.Mute()
+    },
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
     fpsUiState = FpsUiState.Enabled(

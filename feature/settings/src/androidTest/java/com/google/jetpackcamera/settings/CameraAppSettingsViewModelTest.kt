@@ -67,9 +67,6 @@ internal class CameraAppSettingsViewModelTest {
             settingsRepository,
             constraintsRepository
         )
-        settingsViewModel.setGrantedPermissions(
-            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
-        )
         advanceUntilIdle()
     }
 
@@ -98,21 +95,45 @@ internal class CameraAppSettingsViewModelTest {
     fun setMute_permission_granted() = runTest(StandardTestDispatcher()) {
         // permission must be granted or the setting will be disabled
         // Wait for first Enabled state
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+        )
         val initialState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
         }
 
         val initialAudioState = assertIsEnabled(initialState).audioUiState
         // assert that muteUiState is Enabled
-        assertThat(initialAudioState).isInstanceOf(AudioUiState.Enabled::class.java)
+        assertThat(initialAudioState).isInstanceOf(AudioUiState.Enabled.On::class.java)
 
-        val nextAudioUiState = AudioUiState.Enabled(isEnabled = false)
-        settingsViewModel.setVideoAudio(nextAudioUiState.isEnabled)
+        val nextAudioUiState = AudioUiState.Enabled.Mute()
+        settingsViewModel.setVideoAudio(false)
 
         advanceUntilIdle()
 
         assertIsEnabled(settingsViewModel.settingsUiState.value).also {
             assertThat(it.audioUiState).isEqualTo(nextAudioUiState)
+        }
+    }
+
+    @Test
+    fun setMute_permission_not_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialAudioState = assertIsEnabled(initialState).audioUiState
+        // assert that muteUiState is disabled
+        assertThat(initialAudioState).isNotInstanceOf(AudioUiState.Enabled::class.java)
+
+        settingsViewModel.setVideoAudio(false)
+
+        advanceUntilIdle()
+
+        // ensure still disabled
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.audioUiState).isNotInstanceOf(AudioUiState.Enabled::class.java)
         }
     }
 

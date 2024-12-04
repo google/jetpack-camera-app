@@ -633,12 +633,12 @@ fun RecordingAudioSetting(
         modifier = modifier,
         title = stringResource(id = R.string.audio_title),
         description = when (audioUiState) {
-            is AudioUiState.Enabled -> if (audioUiState.isEnabled) {
+            is AudioUiState.Enabled.On -> {
                 stringResource(R.string.audio_selector_on)
-            } else {
+            }
+            is AudioUiState.Enabled.Mute -> {
                 stringResource(R.string.audio_selector_off)
             }
-
             is AudioUiState.Disabled -> {
                 disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
             }
@@ -646,8 +646,8 @@ fun RecordingAudioSetting(
         leadingIcon = null,
         onSwitchChanged = { on -> setDefaultAudio(on) },
         settingValue = when (audioUiState) {
-            is AudioUiState.Enabled -> audioUiState.isEnabled
-            is AudioUiState.Disabled -> false
+            is AudioUiState.Enabled.On -> true
+            is AudioUiState.Disabled, is AudioUiState.Enabled.Mute -> false
         },
         enabled = audioUiState is AudioUiState.Enabled
     )
