@@ -114,6 +114,10 @@ class SettingsViewModel @Inject constructor(
         grantedPermissions = permissions.toMutableSet()
     }
 
+    fun setGrantedPermissions(permissions: MutableSet<String>) {
+        grantedPermissions = permissions
+    }
+
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
