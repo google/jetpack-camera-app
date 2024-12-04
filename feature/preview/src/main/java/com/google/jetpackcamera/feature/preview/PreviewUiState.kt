@@ -64,10 +64,21 @@ data class DebugUiState(
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState
 
-    data class Set(
-        val stabilizationMode: StabilizationMode,
-        val active: Boolean = true
-    ) : StabilizationUiState
+    sealed interface Set : StabilizationUiState {
+        val stabilizationMode: StabilizationMode
+        val active: Boolean
+    }
+
+    data class Specific(
+        override val stabilizationMode: StabilizationMode,
+        override val active: Boolean = true
+    ) : Set
+
+    data class Auto(
+        override val stabilizationMode: StabilizationMode
+    ) : Set {
+        override val active = true
+    }
 }
 
 sealed class FlashModeUiState {

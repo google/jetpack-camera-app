@@ -222,10 +222,7 @@ private fun ControlsTop(
                     exit = fadeOut()
                 ) {
                     (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
-                        StabilizationIcon(
-                            stabilizationMode = it.stabilizationMode,
-                            active = it.active
-                        )
+                        StabilizationIcon(stabilizationUiState = it)
                     }
                 }
             }
@@ -554,8 +551,21 @@ private fun Preview_ControlsTop_WithStabilization() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            stabilizationUiState = StabilizationUiState.Set(
+            stabilizationUiState = StabilizationUiState.Specific(
                 stabilizationMode = StabilizationMode.ON
+            )
+        )
+    }
+}
+
+@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Composable
+private fun Preview_ControlsTop_WithStabilizationAuto() {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        ControlsTop(
+            isQuickSettingsOpen = false,
+            stabilizationUiState = StabilizationUiState.Auto(
+                stabilizationMode = StabilizationMode.OPTICAL
             )
         )
     }
