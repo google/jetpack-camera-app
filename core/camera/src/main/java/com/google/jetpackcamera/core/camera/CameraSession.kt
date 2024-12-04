@@ -381,12 +381,15 @@ private fun createPreviewUseCase(
     updateCameraStateWithCaptureResults(targetCameraInfo = cameraInfo)
 
     // set preview stabilization
-    if (stabilizationMode == StabilizationMode.ON) {
-        setPreviewStabilizationEnabled(true)
-    } else if (stabilizationMode == StabilizationMode.OPTICAL) {
-        setOpticalStabilizationModeEnabled(true)
-    } else if (stabilizationMode == StabilizationMode.OFF) {
-        setOpticalStabilizationModeEnabled(false)
+    when (stabilizationMode) {
+        StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
+        StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
+        StabilizationMode.OFF -> setOpticalStabilizationModeEnabled(false)
+        StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
+        else -> throw UnsupportedOperationException(
+            "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
+                "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
+        )
     }
 
     setResolutionSelector(
