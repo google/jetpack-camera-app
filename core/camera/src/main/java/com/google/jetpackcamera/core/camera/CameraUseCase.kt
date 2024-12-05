@@ -113,7 +113,7 @@ interface CameraUseCase {
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
-    suspend fun setAudioMuted(isAudioMuted: Boolean)
+    suspend fun setAudioEnabled(isAudioEnabled: Boolean)
 
     suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
@@ -153,9 +153,7 @@ sealed interface VideoRecordingState {
     /**
      * Camera is not currently recording a video
      */
-    data class Inactive(
-        val finalElapsedTimeNanos: Long = 0
-    ) : VideoRecordingState
+    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
 
     /**
      * Camera is currently active; paused, stopping, or recording a video
@@ -188,7 +186,4 @@ data class CameraState(
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 
-data class DebugInfo(
-    val logicalCameraId: String?,
-    val physicalCameraId: String?
-)
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)

@@ -185,14 +185,14 @@ fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
     size: Float = 75f,
     audioAmplitude: Double,
-    onToggleMute: () -> Unit
+    onToggleAudio: () -> Unit
 ) {
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
         targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier.clickable { onToggleMute() }) {
+    Box(modifier = modifier.clickable { onToggleAudio() }) {
         // animated circle
         Canvas(
             modifier = Modifier

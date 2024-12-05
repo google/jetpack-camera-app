@@ -40,9 +40,8 @@ import kotlinx.coroutines.flow.map
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
-class LocalSettingsRepository @Inject constructor(
-    private val jcaSettings: DataStore<JcaSettings>
-) : SettingsRepository {
+class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataStore<JcaSettings>) :
+    SettingsRepository {
 
     override val defaultCameraAppSettings = jcaSettings.data
         .map {
@@ -71,7 +70,8 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
-                maxVideoDurationMillis = it.maxVideoDurationMillis
+                maxVideoDurationMillis = it.maxVideoDurationMillis,
+                audioEnabled = it.audioEnabledStatus
             )
         }
 
@@ -179,6 +179,14 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setMaxVideoDurationMillis(durationMillis)
+                .build()
+        }
+    }
+
+    override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAudioEnabledStatus(isAudioEnabled)
                 .build()
         }
     }

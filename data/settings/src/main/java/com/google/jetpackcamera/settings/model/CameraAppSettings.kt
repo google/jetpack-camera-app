@@ -33,14 +33,13 @@ data class CameraAppSettings(
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
-    val audioMuted: Boolean = false,
+    val audioEnabled: Boolean = true,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
 )
 
-fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
-    return perLensConstraints[cameraAppSettings.cameraLensFacing]
-}
+fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =
+    perLensConstraints[cameraAppSettings.cameraLensFacing]
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()
