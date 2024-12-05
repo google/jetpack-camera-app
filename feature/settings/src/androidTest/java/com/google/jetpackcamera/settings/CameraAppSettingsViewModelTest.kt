@@ -82,6 +82,9 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+        )
         val uiState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
         }
