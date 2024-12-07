@@ -472,7 +472,7 @@ fun PreviewDisplay(
 
 @Composable
 fun StabilizationIcon(
-    stabilizationUiState: StabilizationUiState.Set,
+    stabilizationUiState: StabilizationUiState.Enabled,
     modifier: Modifier = Modifier
 ) {
     val contentColor = Color.White.let {

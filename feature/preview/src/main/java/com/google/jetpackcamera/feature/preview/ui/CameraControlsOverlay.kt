@@ -212,16 +212,16 @@ private fun ControlsTop(
                 var visibleStabilizationUiState: StabilizationUiState by remember {
                     mutableStateOf(StabilizationUiState.Disabled)
                 }
-                if (stabilizationUiState is StabilizationUiState.Set) {
+                if (stabilizationUiState is StabilizationUiState.Enabled) {
                     // Only save StabilizationUiState.Set so exit transition can happen properly
                     visibleStabilizationUiState = stabilizationUiState
                 }
                 AnimatedVisibility(
-                    visible = stabilizationUiState is StabilizationUiState.Set,
+                    visible = stabilizationUiState is StabilizationUiState.Enabled,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
+                    (visibleStabilizationUiState as? StabilizationUiState.Enabled)?.let {
                         StabilizationIcon(stabilizationUiState = it)
                     }
                 }
