@@ -253,16 +253,17 @@ class PreviewViewModel @AssistedInject constructor(
         return when (expectedMode) {
             StabilizationMode.OFF -> StabilizationUiState.Disabled
             StabilizationMode.AUTO -> {
-                if (actualMode == StabilizationMode.OFF) {
+                if (actualMode !in setOf(StabilizationMode.ON, StabilizationMode.OPTICAL)) {
                     StabilizationUiState.Disabled
                 } else {
-                    StabilizationUiState.Set(StabilizationMode.AUTO)
+                    StabilizationUiState.Auto(actualMode)
                 }
             }
 
             StabilizationMode.ON,
-            StabilizationMode.HIGH_QUALITY ->
-                StabilizationUiState.Set(
+            StabilizationMode.HIGH_QUALITY,
+            StabilizationMode.OPTICAL ->
+                StabilizationUiState.Specific(
                     stabilizationMode = expectedMode,
                     active = expectedMode == actualMode
                 )

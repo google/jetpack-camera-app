@@ -29,11 +29,6 @@ import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 
-const val FPS_AUTO = 0
-const val FPS_15 = 15
-const val FPS_30 = 30
-const val FPS_60 = 60
-
 // seconds duration in millis
 const val UNLIMITED_VIDEO_DURATION = 0L
 const val FIVE_SECONDS_DURATION = 5_000L
@@ -160,6 +155,7 @@ sealed interface StabilizationUiState {
         val stabilizationAutoState: SingleSelectableState,
         val stabilizationOnState: SingleSelectableState,
         val stabilizationHighQualityState: SingleSelectableState,
+        val stabilizationOpticalState: SingleSelectableState,
         // Contains text like "Selected stabilization mode only supported by rear lens"
         val additionalContext: String = ""
     ) : StabilizationUiState
