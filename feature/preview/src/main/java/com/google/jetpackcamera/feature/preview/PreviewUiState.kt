@@ -72,7 +72,13 @@ sealed interface StabilizationUiState {
     data class Specific(
         override val stabilizationMode: StabilizationMode,
         override val active: Boolean = true
-    ) : Enabled
+    ) : Enabled {
+        init {
+            require(stabilizationMode != StabilizationMode.AUTO) {
+                "Specific StabilizationUiState cannot have AUTO stabilization mode."
+            }
+        }
+    }
 
     data class Auto(
         override val stabilizationMode: StabilizationMode
