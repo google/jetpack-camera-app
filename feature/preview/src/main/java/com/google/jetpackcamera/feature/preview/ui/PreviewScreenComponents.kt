@@ -485,14 +485,23 @@ fun StabilizationIcon(
                     is StabilizationUiState.Specific ->
                         when (stabilizationUiState.stabilizationMode) {
                             StabilizationMode.AUTO ->
-                                painterResource(R.drawable.video_stable_auto_filled_icon)
+                                throw IllegalStateException(
+                                    "AUTO is not a specific StabilizationUiState."
+                                )
                             StabilizationMode.HIGH_QUALITY ->
                                 painterResource(R.drawable.video_stable_hq_filled_icon)
 
                             StabilizationMode.OPTICAL ->
                                 painterResource(R.drawable.video_stable_ois_filled_icon)
 
-                            else -> rememberVectorPainter(Icons.Filled.VideoStable)
+                            StabilizationMode.ON ->
+                                rememberVectorPainter(Icons.Filled.VideoStable)
+
+                            else ->
+                                TODO(
+                                    "Cannot retrieve icon for unimplemented stabilization mode:" +
+                                        "${stabilizationUiState.stabilizationMode}"
+                                )
                         }
                     is StabilizationUiState.Auto -> {
                         when (stabilizationUiState.stabilizationMode) {
@@ -501,11 +510,12 @@ fun StabilizationIcon(
 
                             StabilizationMode.OPTICAL ->
                                 painterResource(R.drawable.video_stable_ois_auto_filled_icon)
-                            else -> throw UnsupportedOperationException(
-                                "Auto stabilization does not support " +
-                                    "${stabilizationUiState.stabilizationMode}, " +
-                                    "unable to retrieve icon."
-                            )
+                            else ->
+                                TODO(
+                                    "Auto stabilization not yet implemented for " +
+                                        "${stabilizationUiState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
+                                )
                         }
                     }
                 },
