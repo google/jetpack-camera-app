@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.graphics.Rect
+import android.hardware.camera2.params.Face
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
@@ -47,7 +49,8 @@ sealed interface PreviewUiState {
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
         val isDebugMode: Boolean = false,
-        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+        val faces: List<Rect> = emptyList(),
     ) : PreviewUiState
 }
 // todo(kc): add ElapsedTimeUiState class

@@ -132,8 +132,9 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getCurrentCameraState()
-            ) { cameraAppSettings, systemConstraints, cameraState ->
+                cameraUseCase.getCurrentCameraState(),
+                cameraUseCase.getFaces(),
+            ) { cameraAppSettings, systemConstraints, cameraState, faces ->
                 val stabilizationUiState = stabilizationUiStateFrom(cameraAppSettings, cameraState)
 
                 _previewUiState.update { old ->
@@ -156,7 +157,8 @@ class PreviewViewModel @AssistedInject constructor(
                         ),
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-                        stabilizationUiState = stabilizationUiState
+                        stabilizationUiState = stabilizationUiState,
+                        faces = faces
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
