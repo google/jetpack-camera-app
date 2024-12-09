@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -102,6 +103,59 @@ internal suspend fun runConcurrentCameraSession(
             sessionSettings.primaryCameraInfo.torchState.asFlow().collectLatest { torchState ->
                 currentCameraState.update { old ->
                     old.copy(torchEnabled = torchState == TorchState.ON)
+                }
+            }
+        }
+
+        // update camerastate to mirror current zoomstate
+        launch {
+            primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
+                currentCameraState.update { old ->
+                    old.copy(
+                        zoomRatio = zoomState.zoomRatio,
+                        linearZoomScale = zoomState.linearZoom
+                    )
+                }
+            }
+        }
+
+        launch {
+            // Apply camera zoom
+            zoomChanges.filterNotNull().collectLatest { zoomChange ->
+                primaryCamera.cameraInfo.zoomState.value?.let { currentZoomState ->
+                    when (zoomChange) {
+                        is CameraZoomState.Ratio -> {
+                            primaryCamera.cameraControl.setZoomRatio(
+                                zoomChange.value.coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            )
+
+                            currentCameraState.update { old ->
+                                old.copy(zoomRatio = zoomChange.value)
+                            }
+                        }
+
+                        is CameraZoomState.Linear -> {
+                            primaryCamera.cameraControl.setLinearZoom(zoomChange.value)
+                            currentCameraState.update { old ->
+                                old.copy(zoomRatio = zoomChange.value)
+                            }
+                        }
+
+                        is CameraZoomState.Scale -> {
+                            val newRatio =
+                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            primaryCamera.cameraControl.setZoomRatio(newRatio)
+                            currentCameraState.update { old ->
+                                old.copy(zoomRatio = newRatio)
+                            }
+                        }
+                    }
                 }
             }
         }
