@@ -105,7 +105,8 @@ internal suspend fun runSingleCameraSession(
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
-    val initialCameraSelector = transientSettings.filterNotNull().first().primaryLensFacing.toCameraSelector()
+    val initialCameraSelector = transientSettings.filterNotNull().first()
+        .primaryLensFacing.toCameraSelector()
 
     val videoCaptureUseCase = when (useCaseMode) {
         CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
