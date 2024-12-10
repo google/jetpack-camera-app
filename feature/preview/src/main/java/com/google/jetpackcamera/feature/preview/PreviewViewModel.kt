@@ -48,6 +48,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -323,6 +324,10 @@ class PreviewViewModel @AssistedInject constructor(
 
                 CameraAppSettings::maxVideoDurationMillis -> {
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
+                CameraAppSettings::videoQuality -> {
+                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
                 }
 
                 CameraAppSettings::darkMode -> {}

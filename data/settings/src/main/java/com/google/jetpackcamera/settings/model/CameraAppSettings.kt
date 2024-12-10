@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.settings.model
+
+import androidx.camera.video.Quality
+
 const val TARGET_FPS_AUTO = 0
 const val UNLIMITED_VIDEO_DURATION = 0L
 
@@ -28,6 +31,7 @@ data class CameraAppSettings(
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
+    val videoQuality: VideoQuality = VideoQuality.DEFAULT,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val defaultHdrImageOutputFormat: ImageOutputFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
     val zoomScale: Float = 1f,

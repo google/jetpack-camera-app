@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import androidx.camera.video.Quality
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
@@ -33,6 +34,8 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toPro
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.VideoQuality.Companion.toProto
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -71,7 +74,8 @@ class LocalSettingsRepository @Inject constructor(
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
-                maxVideoDurationMillis = it.maxVideoDurationMillis
+                maxVideoDurationMillis = it.maxVideoDurationMillis,
+                videoQuality = VideoQuality.fromProto(it.videoQuality)
             )
         }
 
@@ -179,6 +183,14 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setMaxVideoDurationMillis(durationMillis)
+                .build()
+        }
+    }
+
+    override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setVideoQuality(videoQuality.toProto())
                 .build()
         }
     }

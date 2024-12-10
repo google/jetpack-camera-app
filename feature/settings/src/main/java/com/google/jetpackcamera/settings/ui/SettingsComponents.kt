@@ -72,12 +72,14 @@ import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQualityUiState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -472,6 +474,17 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
     }
 
+private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int =
+    when (videoQuality) {
+        VideoQuality.DEFAULT -> R.string.video_quality_value_default
+        VideoQuality.LOWEST -> R.string.video_quality_value_lowest
+        VideoQuality.HIGHEST -> R.string.video_quality_value_highest
+        VideoQuality.SD -> R.string.video_quality_value_sd
+        VideoQuality.HD -> R.string.video_quality_value_hd
+        VideoQuality.FHD -> R.string.video_quality_value_fhd
+        VideoQuality.UHD -> R.string.video_quality_value_uhd
+    }
+
 /**
  * A Setting to set preview and video stabilization.
  *
@@ -616,6 +629,49 @@ fun StabilizationSetting(
                     }
 
                     else -> {}
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun VideoQualitySetting(
+    videQualityUiState: VideoQualityUiState,
+    setVideoQuality: (VideoQuality) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier.testTag(VIDEO_QUALITY_SELECTOR_TAG),
+        title = stringResource(R.string.video_quality_title),
+        leadingIcon = null,
+        enabled = videQualityUiState is VideoQualityUiState.Enabled,
+        description = when (videQualityUiState) {
+            is VideoQualityUiState.Enabled ->
+                stringResource(
+                    R.string.video_quality_description_current,
+                    stringResource(getVideoQualityStringRes(videQualityUiState.currentVideoQuality))
+                )
+
+            is VideoQualityUiState.Disabled -> {
+                stringResource(R.string.video_quality_description_unsupported)
+            }
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.DEFAULT)),
+                    selected = (videQualityUiState as VideoQualityUiState.Enabled).currentVideoQuality == VideoQuality.DEFAULT,
+                    enabled = true,
+                    onClick = { setVideoQuality(VideoQuality.DEFAULT) }
+                )
+                for (quality in videQualityUiState .availableVideoQualities) {
+                    SingleChoiceSelector(
+                        text = stringResource(getVideoQualityStringRes(quality)),
+                        selected = videQualityUiState.currentVideoQuality == quality,
+                        enabled = true,
+                        onClick = { setVideoQuality(quality) }
+                    )
                 }
             }
         }

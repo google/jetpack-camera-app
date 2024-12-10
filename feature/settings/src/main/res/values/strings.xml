@@ -112,6 +112,19 @@
     <string name="duration_description_none">Unlimited duration</string>
     <string name="duration_description_seconds">%d seconds</string>
 
+    <!-- video quality strings -->
+    <string name="video_quality_title">Set Video Quality</string>
+    <string name="video_quality_description_unsupported">Setting Video Quality is not supported for the current camera</string>
+    <string name="video_quality_description_current">Current quality: %1$s</string>
+    <string name="video_quality_value_default">default</string>
+    <string name="video_quality_value_lowest">lowest</string>
+    <string name="video_quality_value_highest">highest</string>
+    <string name="video_quality_value_sd">SD</string>
+    <string name="video_quality_value_hd">HD</string>
+    <string name="video_quality_value_fhd">FHD</string>
+    <string name="video_quality_value_uhd">UHD</string>
+
+
     <!-- disabled rationale strings-->
 
     <string name="device_unsupported">%1$s is unsupported by the device</string>

@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings.ui
 
-const val BACK_BUTTON = "BackButton"
+syntax = "proto3";
 
-// unsupported rationale tags
-const val DEVICE_UNSUPPORTED_TAG = "DeviceUnsupportedTag"
-const val STABILIZATION_UNSUPPORTED_TAG = "StabilizationUnsupportedTag"
-const val LENS_UNSUPPORTED_TAG = "LensUnsupportedTag"
-const val FPS_UNSUPPORTED_TAG = "FpsUnsupportedTag"
-const val VIDEO_QUALITY_SELECTOR_TAG = "VideoQualitySelectorTag"
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
+
+enum VideoQuality {
+  VIDEO_QUALITY_DEFAULT = 0;
+  VIDEO_QUALITY_LOWEST = 1;
+  VIDEO_QUALITY_HIGHEST = 2;
+  VIDEO_QUALITY_SD = 3;
+  VIDEO_QUALITY_HD = 4;
+  VIDEO_QUALITY_FHD = 5;
+  VIDEO_QUALITY_UHD = 6;
+}

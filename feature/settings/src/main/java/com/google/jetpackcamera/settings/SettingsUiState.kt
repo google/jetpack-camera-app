@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import androidx.core.location.LocationRequestCompat.Quality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -24,6 +25,7 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -54,7 +56,8 @@ sealed interface SettingsUiState {
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
-        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+        val videoQualityUiState: VideoQualityUiState
     ) : SettingsUiState
 }
 
@@ -206,6 +209,15 @@ sealed interface MaxVideoDurationUiState {
     ) : MaxVideoDurationUiState
 }
 
+sealed interface VideoQualityUiState {
+    data class Enabled(
+        val currentVideoQuality: VideoQuality,
+        val availableVideoQualities: List<VideoQuality>
+    ): VideoQualityUiState
+
+    data object Disabled : VideoQualityUiState
+}
+
 /**
  * Settings Ui State for testing, based on Typical System Constraints.
  * @see[com.google.jetpackcamera.settings.model.SystemConstraints]
@@ -230,5 +242,6 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     stabilizationUiState =
     StabilizationUiState.Disabled(
         DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-    )
+    ),
+    videoQualityUiState = VideoQualityUiState.Disabled
 )

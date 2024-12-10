@@ -74,6 +74,7 @@ dependencies {
 
     // Hilt
     implementation(libs.dagger.hilt.android)
+    implementation(libs.androidx.camera.video)
     kapt(libs.dagger.hilt.compiler)
 
     // proto datastore

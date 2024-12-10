@@ -47,10 +47,13 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -69,6 +72,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -113,6 +117,7 @@ internal suspend fun runSingleCameraSession(
         aspectRatio = sessionSettings.aspectRatio,
         targetFrameRate = sessionSettings.targetFrameRate,
         dynamicRange = sessionSettings.dynamicRange,
+        videoQuality = sessionSettings.videoQuality,
         imageFormat = sessionSettings.imageFormat,
         useCaseMode = useCaseMode,
         effect = when (sessionSettings.captureMode) {
@@ -240,6 +245,7 @@ internal fun createUseCaseGroup(
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     dynamicRange: DynamicRange,
+    videoQuality: VideoQuality = VideoQuality.DEFAULT,
     imageFormat: ImageOutputFormat,
     useCaseMode: CameraUseCase.UseCaseMode,
     effect: CameraEffect? = null
@@ -262,6 +268,7 @@ internal fun createUseCaseGroup(
             targetFrameRate,
             stabilizationMode,
             dynamicRange,
+            videoQuality,
             backgroundDispatcher
         )
     } else {
@@ -332,15 +339,24 @@ private fun createVideoUseCase(
     targetFrameRate: Int,
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
+    videoQuality: VideoQuality,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
-    val recorder = Recorder.Builder()
+    val recorderBuilder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor()).build()
-    return VideoCapture.Builder(recorder).apply {
+        .setExecutor(backgroundDispatcher.asExecutor())
+    if (videoQuality.quality != null) {
+        recorderBuilder.setQualitySelector(
+            QualitySelector.from(
+                videoQuality.quality!!,
+                FallbackStrategy.higherQualityOrLowerThan(videoQuality.quality!!)
+            )
+        )
+    }
+    return VideoCapture.Builder(recorderBuilder.build()).apply {
         // set video stabilization
         if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
             setVideoStabilizationEnabled(true)
