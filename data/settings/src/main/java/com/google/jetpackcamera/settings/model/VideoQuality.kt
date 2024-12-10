@@ -17,8 +17,6 @@
 package com.google.jetpackcamera.settings.model
 
 import androidx.camera.video.Quality
-import com.google.jetpackcamera.settings.model.DynamicRange.HLG10
-import com.google.jetpackcamera.settings.model.DynamicRange.SDR
 
 
 enum class VideoQuality(quality: Quality?) {
