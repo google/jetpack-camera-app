@@ -116,7 +116,7 @@ fun CameraControlsOverlay(
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
-    LaunchedEffect(previewUiState.zoomScale) {
+    LaunchedEffect(previewUiState.primaryZoomRatio) {
         if (firstRun) {
             firstRun = false
         } else {
@@ -147,7 +147,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
-                zoomLevel = previewUiState.zoomScale,
+                zoomLevel = previewUiState.primaryZoomRatio,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
