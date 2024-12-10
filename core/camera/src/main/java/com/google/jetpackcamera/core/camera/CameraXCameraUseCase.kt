@@ -114,11 +114,11 @@ constructor(
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
     // todo: zoomchanges init with cameraappsettings zoomratio
-    private val _zoomChanges = MutableStateFlow<CameraZoomState?>(null)
+    private val zoomChanges = MutableStateFlow<CameraZoomState?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
-    private var _currentCameraState = MutableStateFlow(CameraState())
-    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
+    private var currentCameraState = MutableStateFlow(CameraState())
+    override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -345,8 +345,8 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            zoomChanges = _zoomChanges.asStateFlow(),
-                            currentCameraState = _currentCameraState,
+                            zoomChanges = zoomChanges.asStateFlow(),
+                            currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
                         )
@@ -541,7 +541,7 @@ constructor(
     }
 
     override fun changeZoom(newZoomState: CameraZoomState) {
-        _zoomChanges.update {
+        zoomChanges.update {
             newZoomState
         }
     }
