@@ -83,6 +83,7 @@ internal suspend fun runConcurrentCameraSession(
 
     cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
         Log.d(TAG, "Concurrent camera session started")
+        // a bug? concurrent camera only ever lists one camera
         val primaryCamera = concurrentCamera.cameras.first {
             it.cameraInfo.appLensFacing == sessionSettings.primaryCameraInfo.appLensFacing
         }
@@ -131,17 +132,10 @@ internal suspend fun runConcurrentCameraSession(
                                     currentZoomState.maxZoomRatio
                                 )
                             )
-
-                            currentCameraState.update { old ->
-                                old.copy(zoomRatio = zoomChange.value)
-                            }
                         }
 
                         is CameraZoomState.Linear -> {
                             primaryCamera.cameraControl.setLinearZoom(zoomChange.value)
-                            currentCameraState.update { old ->
-                                old.copy(zoomRatio = zoomChange.value)
-                            }
                         }
 
                         is CameraZoomState.Scale -> {
@@ -151,9 +145,6 @@ internal suspend fun runConcurrentCameraSession(
                                     currentZoomState.maxZoomRatio
                                 )
                             primaryCamera.cameraControl.setZoomRatio(newRatio)
-                            currentCameraState.update { old ->
-                                old.copy(zoomRatio = newRatio)
-                            }
                         }
                     }
                 }

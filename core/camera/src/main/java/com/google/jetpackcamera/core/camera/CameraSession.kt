@@ -150,57 +150,47 @@ internal suspend fun runSingleCameraSession(
             }
         }
 // update camerastate to mirror current zoomstate
-            launch {
-                camera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
-                    currentCameraState.update { old ->
-                        old.copy(
-                            zoomRatio = zoomState.zoomRatio,
-                            linearZoomScale = zoomState.linearZoom
-                        )
-                    }
+        launch {
+            camera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
+                currentCameraState.update { old ->
+                    old.copy(
+                        zoomRatio = zoomState.zoomRatio,
+                        linearZoomScale = zoomState.linearZoom
+                    )
                 }
             }
+        }
 
-            launch {
-                // Apply camera zoom
-                zoomChanges.filterNotNull().collectLatest { zoomChange ->
-                    camera.cameraInfo.zoomState.value?.let { currentZoomState ->
-                        when (zoomChange) {
-                            is CameraZoomState.Ratio -> {
-                                camera.cameraControl.setZoomRatio(
-                                    zoomChange.value.coerceIn(
-                                        currentZoomState.minZoomRatio,
-                                        currentZoomState.maxZoomRatio
-                                    )
+        launch {
+            // Apply camera zoom
+            zoomChanges.filterNotNull().collectLatest { zoomChange ->
+                camera.cameraInfo.zoomState.value?.let { currentZoomState ->
+                    when (zoomChange) {
+                        is CameraZoomState.Ratio -> {
+                            camera.cameraControl.setZoomRatio(
+                                zoomChange.value.coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
                                 )
+                            )
+                        }
 
-                                currentCameraState.update { old ->
-                                    old.copy(zoomRatio = zoomChange.value)
-                                }
-                            }
+                        is CameraZoomState.Linear -> {
+                            camera.cameraControl.setLinearZoom(zoomChange.value)
+                        }
 
-                            is CameraZoomState.Linear -> {
-                                camera.cameraControl.setLinearZoom(zoomChange.value)
-                                currentCameraState.update { old ->
-                                    old.copy(zoomRatio = zoomChange.value)
-                                }
-                            }
-
-                            is CameraZoomState.Scale -> {
-                                val newRatio =
-                                    (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
-                                        currentZoomState.minZoomRatio,
-                                        currentZoomState.maxZoomRatio
-                                    )
-                                camera.cameraControl.setZoomRatio(newRatio)
-                                currentCameraState.update { old ->
-                                    old.copy(zoomRatio = newRatio)
-                                }
-                            }
+                        is CameraZoomState.Scale -> {
+                            val newRatio =
+                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            camera.cameraControl.setZoomRatio(newRatio)
                         }
                     }
                 }
             }
+        }
 
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
         processTransientSettingEvents(
@@ -393,8 +383,8 @@ private fun createVideoUseCase(
     }.build()
 }
 
-private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int {
-    return when (aspectRatio) {
+private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
+    when (aspectRatio) {
         AspectRatio.THREE_FOUR -> androidx.camera.core.AspectRatio.RATIO_4_3
         AspectRatio.NINE_SIXTEEN -> androidx.camera.core.AspectRatio.RATIO_16_9
         else -> {
@@ -409,7 +399,6 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
             }
         }
     }
-}
 
 context(CameraSessionContext)
 private fun createPreviewUseCase(
