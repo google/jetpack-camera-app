@@ -37,7 +37,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
@@ -82,7 +81,6 @@ import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -105,7 +103,8 @@ internal suspend fun runSingleCameraSession(
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
-    val initialCameraSelector = transientSettings.filterNotNull().first().primaryLensFacing.toCameraSelector()
+    val initialCameraSelector = transientSettings.filterNotNull().first()
+        .primaryLensFacing.toCameraSelector()
 
     val videoCaptureUseCase = when (useCaseMode) {
         CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
@@ -752,8 +751,6 @@ private suspend fun runVideoRecording(
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
-    val cameraSelector = MutableStateFlow<CameraSelector?>(null)
-
     var currentSettings = transientSettings.filterNotNull().first()
 
     getPendingRecording(
