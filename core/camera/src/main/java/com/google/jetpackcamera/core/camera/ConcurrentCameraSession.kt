@@ -52,7 +52,9 @@ internal suspend fun runConcurrentCameraSession(
 
     val videoCapture = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
         createVideoUseCase(
-            cameraProvider.getCameraInfo(cameraSelector.filterNotNull().first()),
+            cameraProvider.getCameraInfo(
+                initialTransientSettings.primaryLensFacing.toCameraSelector()
+            ),
             sessionSettings.aspectRatio,
             TARGET_FPS_AUTO,
             StabilizationMode.OFF,

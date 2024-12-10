@@ -262,22 +262,15 @@ constructor(
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
+                transientSettings.value = TransientSessionSettings(
+                    isAudioMuted = currentCameraSettings.audioMuted,
+                    deviceRotation = currentCameraSettings.deviceRotation,
+                    flashMode = currentCameraSettings.flashMode,
+                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
+                    zoomScale = currentCameraSettings.zoomScale
+                )
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        cameraSelector.update {
-                            when (currentCameraSettings.cameraLensFacing) {
-                                LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                                LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-                            }
-                        }
-
-                        transientSettings.value = TransientSessionSettings(
-                            isAudioMuted = currentCameraSettings.audioMuted,
-                            deviceRotation = currentCameraSettings.deviceRotation,
-                            flashMode = currentCameraSettings.flashMode,
-                            zoomScale = currentCameraSettings.zoomScale
-                        )
-
                         val cameraConstraints = checkNotNull(
                             systemConstraints.forCurrentLens(currentCameraSettings)
                         ) {
@@ -335,14 +328,12 @@ constructor(
                         CameraSessionContext(
                             context = application,
                             cameraProvider = cameraProvider,
-
                             backgroundDispatcher = defaultDispatcher,
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            cameraSelector = cameraSelector.asStateFlow(),
                             transientSettings = transientSettings
                         )
                     ) {

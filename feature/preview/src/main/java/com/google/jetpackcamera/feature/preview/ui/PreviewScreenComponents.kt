@@ -632,8 +632,6 @@ fun CaptureButton(
             onDraw = {
                 drawCircle(
                     alpha = when (videoRecordingState) {
-                        VideoRecordingState.Starting,
-                        is VideoRecordingState.Inactive,
                         is VideoRecordingState.Active.Paused -> .37f
                         else -> 1f
                     },
@@ -645,8 +643,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
-
-                        VideoRecordingState.Starting -> Color.White
+                        VideoRecordingState.Starting -> currentColor
                     }
                 )
             }
