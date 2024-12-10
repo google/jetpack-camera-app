@@ -24,7 +24,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -117,8 +116,6 @@ constructor(
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
-
-    private val cameraSelector = MutableStateFlow<CameraSelector?>(null)
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
