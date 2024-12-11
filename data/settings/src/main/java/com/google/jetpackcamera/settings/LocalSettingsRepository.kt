@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.settings
 
-import androidx.camera.video.Quality
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto

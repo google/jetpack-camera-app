@@ -348,11 +348,11 @@ private fun createVideoUseCase(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
         .setExecutor(backgroundDispatcher.asExecutor())
-    if (videoQuality.quality != null) {
+    if (videoQuality != VideoQuality.DEFAULT) {
         recorderBuilder.setQualitySelector(
             QualitySelector.from(
-                videoQuality.quality!!,
-                FallbackStrategy.higherQualityOrLowerThan(videoQuality.quality!!)
+                VideoQuality.toQuality(videoQuality)!!,
+                FallbackStrategy.higherQualityOrLowerThan(VideoQuality.toQuality(videoQuality)!!)
             )
         )
     }

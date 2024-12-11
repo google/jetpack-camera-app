@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import androidx.camera.video.Quality
-
 data class SystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
     val concurrentCamerasSupported: Boolean = false,
@@ -52,7 +50,7 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                             Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                             Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
                         ),
-                        supportedVideoQualitiesMap =  emptyMap(),
+                        supportedVideoQualitiesMap = emptyMap(),
                         supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
                         supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
                     )

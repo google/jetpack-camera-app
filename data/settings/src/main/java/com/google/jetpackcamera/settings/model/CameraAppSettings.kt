@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import androidx.camera.video.Quality
-
 const val TARGET_FPS_AUTO = 0
 const val UNLIMITED_VIDEO_DURATION = 0L
 

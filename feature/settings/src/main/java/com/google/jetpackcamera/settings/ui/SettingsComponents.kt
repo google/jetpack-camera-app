@@ -661,11 +661,12 @@ fun VideoQualitySetting(
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
                     text = stringResource(getVideoQualityStringRes(VideoQuality.DEFAULT)),
-                    selected = (videQualityUiState as VideoQualityUiState.Enabled).currentVideoQuality == VideoQuality.DEFAULT,
+                    selected = (videQualityUiState as VideoQualityUiState.Enabled)
+                        .currentVideoQuality == VideoQuality.DEFAULT,
                     enabled = true,
                     onClick = { setVideoQuality(VideoQuality.DEFAULT) }
                 )
-                for (quality in videQualityUiState .availableVideoQualities) {
+                for (quality in videQualityUiState.availableVideoQualities) {
                     SingleChoiceSelector(
                         text = stringResource(getVideoQualityStringRes(quality)),
                         selected = videQualityUiState.currentVideoQuality == quality,

@@ -19,19 +19,28 @@ package com.google.jetpackcamera.settings.model
 import androidx.camera.video.Quality
 
 
-enum class VideoQuality(quality: Quality?) {
-    DEFAULT(null),
-    LOWEST(Quality.LOWEST),
-    HIGHEST(Quality.HIGHEST),
-    SD(Quality.SD),
-    HD(Quality.HD),
-    FHD(Quality.FHD),
-    UHD(Quality.UHD);
-
-    val quality: Quality? by lazy { quality }
-
+enum class VideoQuality {
+    DEFAULT,
+    LOWEST,
+    HIGHEST,
+    SD,
+    HD,
+    FHD,
+    UHD;
 
     companion object {
+        fun toQuality(videoQuality: VideoQuality): Quality? {
+            return when (videoQuality) {
+                LOWEST -> Quality.LOWEST
+                HIGHEST -> Quality.HIGHEST
+                SD -> Quality.SD
+                HD -> Quality.HD
+                FHD -> Quality.FHD
+                UHD -> Quality.UHD
+                else -> null
+            }
+        }
+
         fun fromQuality(quality: Quality): VideoQuality {
             return when (quality) {
                 Quality.LOWEST -> LOWEST
@@ -54,7 +63,8 @@ enum class VideoQuality(quality: Quality?) {
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_FHD -> FHD
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_UHD -> UHD
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_DEFAULT,
-                com.google.jetpackcamera.settings.VideoQuality.UNRECOGNIZED, -> DEFAULT
+                com.google.jetpackcamera.settings.VideoQuality.UNRECOGNIZED,
+                    -> DEFAULT
             }
         }
 
