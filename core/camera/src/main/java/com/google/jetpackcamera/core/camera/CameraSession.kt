@@ -178,11 +178,17 @@ internal suspend fun runSingleCameraSession(
 
             // update camerastate to mirror current zoomstate
             launch {
+                /*
+                TODO bug?? Flaky behavior here.  does not always update zoomstate properly when:
+                switching HDR on or off on front lens
+                Setting aspect ratio on either lens...
+                basically anything that restarts the session
+                 */
                 camera.cameraInfo.zoomState.asFlow()
                     .filterNotNull()
                     .distinctUntilChanged()
                     .onCompletion {
-                        // save current zoom state to current camera settings when flipping
+                        // save current zoom state to current camera settings when changing cameras
                         onSetZoomRatioMap(
                             currentCameraState.value.zoomRatios
                         )
