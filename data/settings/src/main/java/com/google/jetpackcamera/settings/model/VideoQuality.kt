@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
 
 import androidx.camera.video.Quality
-
 
 enum class VideoQuality {
     DEFAULT,
@@ -54,7 +52,9 @@ enum class VideoQuality {
         }
 
         /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
-        fun fromProto(aspectRatioProto: com.google.jetpackcamera.settings.VideoQuality): VideoQuality {
+        fun fromProto(
+            aspectRatioProto: com.google.jetpackcamera.settings.VideoQuality
+        ): VideoQuality {
             return when (aspectRatioProto) {
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_LOWEST -> LOWEST
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_HIGHEST -> HIGHEST
@@ -64,7 +64,7 @@ enum class VideoQuality {
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_UHD -> UHD
                 com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_DEFAULT,
                 com.google.jetpackcamera.settings.VideoQuality.UNRECOGNIZED,
-                    -> DEFAULT
+                -> DEFAULT
             }
         }
 
