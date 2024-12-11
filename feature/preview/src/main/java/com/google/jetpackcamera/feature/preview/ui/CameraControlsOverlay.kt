@@ -286,6 +286,8 @@ private fun ControlsBottom(
 
                         is VideoRecordingState.Inactive ->
                             previewUiState.videoRecordingState.finalElapsedTimeNanos
+
+                        VideoRecordingState.Starting -> 0L
                     }
                 )
             }
