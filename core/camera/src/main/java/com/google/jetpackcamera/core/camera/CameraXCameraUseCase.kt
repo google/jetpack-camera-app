@@ -273,8 +273,7 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
-                    frontZoomRatio = currentCameraSettings.frontZoomRatio,
-                    rearZoomRatio = currentCameraSettings.rearZoomRatio
+                    zoomRatios = currentCameraSettings.defaultZoomRatios
                 )
 
                 val cameraConstraints = checkNotNull(

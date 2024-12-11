@@ -113,8 +113,12 @@ internal suspend fun runConcurrentCameraSession(
             primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
                 currentCameraState.update { old ->
                     old.copy(
-                        zoomRatio = zoomState.zoomRatio,
-                        linearZoomScale = zoomState.linearZoom
+                        zoomRatios = old.zoomRatios.toMutableMap().apply {
+                            put(primaryCamera.cameraInfo.appLensFacing, zoomState.zoomRatio)
+                        }.toMap(),
+                        linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                            put(primaryCamera.cameraInfo.appLensFacing, zoomState.linearZoom)
+                        }.toMap()
                     )
                 }
             }

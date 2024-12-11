@@ -559,7 +559,7 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomScaleText(zoomScale: Float) {
+fun ZoomRatioText(zoomRatio: Float) {
     val contentAlpha = animateFloatAsState(
         targetValue = 10f,
         label = "zoomScaleAlphaAnimation",
@@ -569,7 +569,7 @@ fun ZoomScaleText(zoomScale: Float) {
         modifier = Modifier
             .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_scale_text, zoomScale)
+        text = stringResource(id = R.string.zoom_scale_text, zoomRatio)
     )
 }
 

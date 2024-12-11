@@ -180,8 +180,8 @@ sealed interface VideoRecordingState {
 
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-    val zoomRatio: Float = 1f,
-    val linearZoomScale: Float? = null,
+    val zoomRatios: Map<LensFacing, Float> = mapOf(),
+    val linearZoomScales: Map<LensFacing, Float> = mapOf(),
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,

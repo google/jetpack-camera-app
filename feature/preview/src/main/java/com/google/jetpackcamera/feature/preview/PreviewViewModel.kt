@@ -175,7 +175,7 @@ class PreviewViewModel @AssistedInject constructor(
                         previewMode = previewMode,
                         currentCameraSettings = cameraAppSettings,
                         systemConstraints = systemConstraints,
-                        primaryZoomRatio = cameraState.zoomRatio,
+                        zoomRatios = cameraState.zoomRatios,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         captureModeToggleUiState = getCaptureToggleUiState(

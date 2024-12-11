@@ -20,6 +20,7 @@ import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 
@@ -33,7 +34,7 @@ sealed interface PreviewUiState {
         // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
-        val primaryZoomRatio: Float = 1f,
+        val zoomRatios: Map<LensFacing, Float> = mapOf(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
         val audioMuted: Boolean = false,

@@ -62,6 +62,5 @@ internal data class TransientSessionSettings(
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
     val cameraInfo: CameraInfo,
-    val frontZoomRatio: Float,
-    val rearZoomRatio: Float
+    val zoomRatios: Map<Int, Float>
 )
