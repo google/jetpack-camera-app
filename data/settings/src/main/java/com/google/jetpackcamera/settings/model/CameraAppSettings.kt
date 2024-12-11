@@ -30,7 +30,7 @@ data class CameraAppSettings(
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val defaultHdrImageOutputFormat: ImageOutputFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
-    val defaultZoomRatios: Map<Int, Float> = mapOf(),
+    val defaultZoomRatios: Map<LensFacing, Float> = mapOf(),
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioMuted: Boolean = false,

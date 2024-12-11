@@ -90,6 +90,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -100,7 +101,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onSetZoomRatio: (Map<LensFacing, Float>) -> Unit = { _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -173,52 +175,68 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
-        // update camerastate to mirror current zoomstate
-        launch {
-            camera.cameraInfo.zoomState.asFlow().filterNotNull().collectLatest { zoomState ->
-                currentCameraState.update { old ->
-                    old.copy(
-                        zoomRatios = old.zoomRatios.toMutableMap().apply {
-                            put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
-                        },
-                        linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                            put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
-                        }
-                    )
-                }
-            }
-        }
-
-        launch {
-            // Apply camera zoom
-            zoomChanges.filterNotNull().collectLatest { zoomChange ->
-                camera.cameraInfo.zoomState.value?.let { currentZoomState ->
-                    when (zoomChange) {
-                        is CameraZoomState.Ratio -> {
-                            camera.cameraControl.setZoomRatio(
-                                zoomChange.value.coerceIn(
-                                    currentZoomState.minZoomRatio,
-                                    currentZoomState.maxZoomRatio
-                                )
+            // update camerastate to mirror current zoomstate
+            launch {
+                camera.cameraInfo.zoomState.asFlow()
+                    .filterNotNull()
+                    .onCompletion {
+                        // save current zoom state to current camera settings when flipping
+                        onSetZoomRatio(
+                            currentCameraState.value.zoomRatios
+                        )
+                    }.collectLatest { zoomState ->
+                        currentCameraState.update { old ->
+                            old.copy(
+                                zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                    put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
+                                },
+                                linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                    put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
+                                }
                             )
                         }
+                    }
+            }
 
-                        is CameraZoomState.Linear -> {
-                            camera.cameraControl.setLinearZoom(zoomChange.value)
-                        }
+            launch {
+                // Immediately Apply camera zoom from current settings when opening a new camera
+                camera.cameraControl.setZoomRatio(
+                    currentTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
+                )
+                Log.d(
+                    TAG,
+                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio ${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                )
 
-                        is CameraZoomState.Scale -> {
-                            val newRatio =
-                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
-                                    currentZoomState.minZoomRatio,
-                                    currentZoomState.maxZoomRatio
+                // Apply camera zoom changes
+                zoomChanges.filterNotNull().collectLatest { zoomChange ->
+                    camera.cameraInfo.zoomState.value?.let { currentZoomState ->
+                        when (zoomChange) {
+                            is CameraZoomState.Ratio -> {
+                                camera.cameraControl.setZoomRatio(
+                                    zoomChange.value.coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
                                 )
-                            camera.cameraControl.setZoomRatio(newRatio)
+                            }
+
+                            is CameraZoomState.Linear -> {
+                                camera.cameraControl.setLinearZoom(zoomChange.value)
+                            }
+
+                            is CameraZoomState.Scale -> {
+                                val newRatio =
+                                    (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                        currentZoomState.minZoomRatio,
+                                        currentZoomState.maxZoomRatio
+                                    )
+                                camera.cameraControl.setZoomRatio(newRatio)
+                            }
                         }
                     }
                 }
             }
-        }
 
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
@@ -255,7 +273,6 @@ internal suspend fun processTransientSettingEvents(
     }.collectLatest {
         val newTransientSettings = it.first
         val cameraState = it.second
-
 
         // todo(): How should we handle torch on Auto FlashMode?
         // enable torch only while recording is in progress

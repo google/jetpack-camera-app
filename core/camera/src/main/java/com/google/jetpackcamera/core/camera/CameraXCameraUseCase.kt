@@ -343,10 +343,16 @@ constructor(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    useCaseMode = useCaseMode
-                                ) { imageCapture ->
-                                    imageCaptureUseCase = imageCapture
-                                }
+                                    useCaseMode = useCaseMode,
+                                    onSetZoomRatio = { newZoomRatios ->
+                                        currentSettings.update { old ->
+                                            old?.copy(defaultZoomRatios = newZoomRatios)
+                                        }
+                                    },
+                                    onImageCaptureCreated = { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
+                                    }
+                                )
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
