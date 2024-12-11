@@ -344,7 +344,7 @@ constructor(
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
                                     useCaseMode = useCaseMode,
-                                    onSetZoomRatio = { newZoomRatios ->
+                                    onSetZoomRatioMap = { newZoomRatios ->
                                         currentSettings.update { old ->
                                             old?.copy(defaultZoomRatios = newZoomRatios)
                                         }
@@ -357,6 +357,11 @@ constructor(
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
                                         sessionSettings,
+                                        onSetZoomRatioMap = { newZoomRatios ->
+                                            currentSettings.update { old ->
+                                                old?.copy(defaultZoomRatios = newZoomRatios)
+                                            }
+                                        },
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
                                     )
                             }

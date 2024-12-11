@@ -87,6 +87,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -102,7 +103,7 @@ internal suspend fun runSingleCameraSession(
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {},
-    onSetZoomRatio: (Map<LensFacing, Float>) -> Unit = { _ -> }
+    onSetZoomRatioMap: (Map<LensFacing, Float>) -> Unit = { _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -179,9 +180,10 @@ internal suspend fun runSingleCameraSession(
             launch {
                 camera.cameraInfo.zoomState.asFlow()
                     .filterNotNull()
+                    .distinctUntilChanged()
                     .onCompletion {
                         // save current zoom state to current camera settings when flipping
-                        onSetZoomRatio(
+                        onSetZoomRatioMap(
                             currentCameraState.value.zoomRatios
                         )
                     }.collectLatest { zoomState ->
@@ -209,30 +211,29 @@ internal suspend fun runSingleCameraSession(
                 )
 
                 // Apply camera zoom changes
-                zoomChanges.filterNotNull().collectLatest { zoomChange ->
-                    camera.cameraInfo.zoomState.value?.let { currentZoomState ->
-                        when (zoomChange) {
-                            is CameraZoomState.Ratio -> {
-                                camera.cameraControl.setZoomRatio(
-                                    zoomChange.value.coerceIn(
-                                        currentZoomState.minZoomRatio,
-                                        currentZoomState.maxZoomRatio
-                                    )
+                zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
+                    val currentZoomState = camera.cameraInfo.zoomState.asFlow().first()
+                    when (zoomChange) {
+                        is CameraZoomState.Ratio -> {
+                            camera.cameraControl.setZoomRatio(
+                                zoomChange.value.coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
                                 )
-                            }
+                            )
+                        }
 
-                            is CameraZoomState.Linear -> {
-                                camera.cameraControl.setLinearZoom(zoomChange.value)
-                            }
+                        is CameraZoomState.Linear -> {
+                            camera.cameraControl.setLinearZoom(zoomChange.value)
+                        }
 
-                            is CameraZoomState.Scale -> {
-                                val newRatio =
-                                    (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
-                                        currentZoomState.minZoomRatio,
-                                        currentZoomState.maxZoomRatio
-                                    )
-                                camera.cameraControl.setZoomRatio(newRatio)
-                            }
+                        is CameraZoomState.Scale -> {
+                            val newRatio =
+                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            camera.cameraControl.setZoomRatio(newRatio)
                         }
                     }
                 }
