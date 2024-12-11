@@ -29,6 +29,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -58,6 +59,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull()
         ) { updatedSettings, constraints ->
+            updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
@@ -68,7 +70,8 @@ class SettingsViewModel @Inject constructor(
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
@@ -322,6 +325,23 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
+    private fun getVideoQualityUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): VideoQualityUiState {
+        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
+        val supportedVideQualities: List<VideoQuality>? =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
+        return if (!supportedVideQualities.isNullOrEmpty()) {
+             VideoQualityUiState.Enabled(
+                cameraAppSettings.videoQuality,
+                supportedVideQualities
+            )
+        } else {
+            VideoQualityUiState.Disabled
+        }
+    }
+
     /**
      * Auxiliary function to determine if an FPS option should be disabled or not
      */
@@ -416,6 +436,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateMaxVideoDuration(durationMillis)
             Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoQuality(videoQuality: VideoQuality) {
+        viewModelScope.launch {
+            settingsRepository.updateVideoQuality(videoQuality)
+            Log.d(TAG, "set video quality: $videoQuality ms")
         }
     }
 }

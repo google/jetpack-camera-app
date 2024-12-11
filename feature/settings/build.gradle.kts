@@ -75,6 +75,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.camera.video)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

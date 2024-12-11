@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -81,5 +82,9 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         currentCameraSettings = currentCameraSettings.copy(maxVideoDurationMillis = durationMillis)
+    }
+
+    override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
+        currentCameraSettings = currentCameraSettings.copy(videoQuality = videoQuality)
     }
 }

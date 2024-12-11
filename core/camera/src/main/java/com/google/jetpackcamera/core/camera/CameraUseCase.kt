@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.video.Quality
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -29,6 +30,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -98,6 +100,8 @@ interface CameraUseCase {
     fun isScreenFlashEnabled(): Boolean
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
+
+    suspend fun setVideoQuality(videoQuality: VideoQuality)
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 

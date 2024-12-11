@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import androidx.camera.core.CameraInfo
+import androidx.camera.video.Quality
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -23,6 +24,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Camera settings that persist as long as a camera is running.
@@ -40,6 +42,7 @@ internal sealed interface PerpetualSessionSettings {
         val targetFrameRate: Int,
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
+        val videoQuality: VideoQuality,
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
 
