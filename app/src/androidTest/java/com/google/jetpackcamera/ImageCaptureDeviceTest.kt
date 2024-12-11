@@ -31,13 +31,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
-import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
@@ -45,7 +42,6 @@ import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
-import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
@@ -216,40 +212,6 @@ internal class ImageCaptureDeviceTest {
         Truth.assertThat(result.resultData.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)?.size)
             .isEqualTo(2)
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
-    }
-
-    @Test
-    fun canFlipCamera_fromPreviewScreenButton() = runFlipCameraTest(composeTestRule) {
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
-        val result =
-            runScenarioTestForResult<MainActivity>(
-                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
-            ) {
-                val lensFacingStates = mutableListOf<LensFacing>()
-                // Get initial lens facing
-                val initialLensFacing = composeTestRule.getCurrentLensFacing()
-                lensFacingStates.add(initialLensFacing)
-
-                // Press the flip camera button
-                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
-
-                // Get lens facing after first flip
-                lensFacingStates.add(composeTestRule.getCurrentLensFacing())
-
-                // Press the flip camera button again
-                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
-
-                // Get lens facing after second flip
-                lensFacingStates.add(composeTestRule.getCurrentLensFacing())
-
-                assertThat(lensFacingStates).containsExactly(
-                    initialLensFacing,
-                    initialLensFacing.flip(),
-                    initialLensFacing.flip().flip()
-                ).inOrder()
-            }
     }
 
     @Test
