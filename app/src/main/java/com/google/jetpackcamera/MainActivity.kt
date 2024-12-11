@@ -225,12 +225,24 @@ class MainActivity : ComponentActivity() {
 
                 MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
                     val uriList: List<Uri>? = getMultipleExternalCaptureUri()
+                    val pictureTakenUriList: ArrayList<String?> = arrayListOf()
                     PreviewMode.ExternalMultipleImageCaptureMode(
                         uriList
                     ) { event: PreviewViewModel.ImageCaptureEvent, uriIndex: Int ->
                         Log.d(TAG, "onMultipleImageCapture, event: $event")
                         if (uriList == null) {
-                            setResult(RESULT_OK, Intent())
+                            when (event) {
+                                is PreviewViewModel.ImageCaptureEvent.ImageSaved ->
+                                    pictureTakenUriList.add(event.savedUri.toString())
+                                is PreviewViewModel.ImageCaptureEvent.ImageCaptureError ->
+                                    pictureTakenUriList.add(event.exception.toString())
+                            }
+                            val resultIntent = Intent()
+                            resultIntent.putStringArrayListExtra(
+                                MediaStore.EXTRA_OUTPUT,
+                                pictureTakenUriList
+                            )
+                            setResult(RESULT_OK, resultIntent)
                         } else if (uriIndex == uriList.size - 1) {
                             setResult(RESULT_OK, Intent())
                             Log.d(TAG, "onMultipleImageCapture, finish()")
