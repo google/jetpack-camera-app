@@ -24,7 +24,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -264,40 +263,30 @@ constructor(
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
-                val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                    LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                    LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
-                }
                 transientSettings.value = TransientSessionSettings(
                     isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
-                    cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
+                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
                     zoomRatios = currentCameraSettings.defaultZoomRatios
                 )
-
-                val cameraConstraints = checkNotNull(
-                    systemConstraints.forCurrentLens(currentCameraSettings)
-                ) {
-                    "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
-                }
-
-                val resolvedStabilizationMode = resolveStabilizationMode(
-                    stabilizationMode = currentCameraSettings.stabilizationMode,
-                    targetFrameRate = currentCameraSettings.targetFrameRate,
-                    supportedStabilizationModes = cameraConstraints.supportedStabilizationModes,
-                    concurrentCameraMode = currentCameraSettings.concurrentCameraMode
-                )
-
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                        val cameraConstraints = checkNotNull(
+                            systemConstraints.forCurrentLens(currentCameraSettings)
+                        ) {
+                            "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
                         }
 
+                        val resolvedStabilizationMode = resolveStabilizationMode(
+                            stabilizationMode = currentCameraSettings.stabilizationMode,
+                            targetFrameRate = currentCameraSettings.targetFrameRate,
+                            supportedStabilizationModes = cameraConstraints
+                                .supportedStabilizationModes,
+                            concurrentCameraMode = currentCameraSettings.concurrentCameraMode
+                        )
+
                         PerpetualSessionSettings.SingleCamera(
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
                             targetFrameRate = currentCameraSettings.targetFrameRate,

@@ -644,6 +644,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
+                        VideoRecordingState.Starting -> currentColor
                     }
                 )
             }

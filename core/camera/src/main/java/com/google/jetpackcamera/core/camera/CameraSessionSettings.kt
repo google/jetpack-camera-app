@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 
 /**
@@ -34,7 +35,6 @@ internal sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
 
     data class SingleCamera(
-        val cameraInfo: CameraInfo,
         override val aspectRatio: AspectRatio,
         val captureMode: CaptureMode,
         val targetFrameRate: Int,
@@ -61,6 +61,6 @@ internal data class TransientSessionSettings(
     val isAudioMuted: Boolean,
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
-    val cameraInfo: CameraInfo,
+    val primaryLensFacing: LensFacing,
     val zoomRatios: Map<Int, Float>
 )
