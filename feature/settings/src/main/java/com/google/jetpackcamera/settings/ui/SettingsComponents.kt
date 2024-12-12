@@ -71,7 +71,6 @@ import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
-import com.google.jetpackcamera.settings.SettingsViewModel
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
@@ -685,7 +684,9 @@ fun VideoQualitySetting(
             }
         },
         popupContents = {
-            Column(Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
+            Column(Modifier
+                .selectableGroup()
+                .verticalScroll(rememberScrollState())) {
                 SingleChoiceSelector(
                     modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.AUTO)),
                     text = stringResource(getVideoQualityStringRes(VideoQuality.AUTO)),

@@ -233,7 +233,7 @@ class SettingsViewModel @Inject constructor(
                 videoQualityLowestState = getSingleVideoQualityState(
                     VideoQuality.LOWEST,
                     supportedVideQualities
-                ),
+                )
             )
         } else {
             VideoQualityUiState.Disabled(
@@ -246,10 +246,12 @@ class SettingsViewModel @Inject constructor(
 
     private fun getSingleVideoQualityState(
         videoQuality: VideoQuality,
-        supportedVideQualities: List<VideoQuality>?): SingleSelectableState {
+        supportedVideQualities: List<VideoQuality>?
+    ): SingleSelectableState {
         return if (videoQuality == VideoQuality.AUTO ||
             (!supportedVideQualities.isNullOrEmpty() &&
-                    supportedVideQualities.contains(videoQuality))) {
+                    supportedVideQualities.contains(videoQuality))
+        ) {
             SingleSelectableState.Selectable
         } else {
             SingleSelectableState.Disabled(
