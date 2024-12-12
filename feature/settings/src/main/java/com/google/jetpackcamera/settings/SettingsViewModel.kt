@@ -208,14 +208,32 @@ class SettingsViewModel @Inject constructor(
                 currentVideoQuality = cameraAppSettings.videoQuality,
                 videoQualityAutoState = getSingleVideoQualityState(
                     VideoQuality.AUTO,
-                    supportedVideQualities),
-                videoQualitySDState = getSingleVideoQualityState(VideoQuality.SD,
-                    supportedVideQualities),
-                videoQualityHDState = getSingleVideoQualityState(VideoQuality.HD, supportedVideQualities),
-                videoQualityFHDState = getSingleVideoQualityState(VideoQuality.FHD, supportedVideQualities),
-                videoQualityUHDState = getSingleVideoQualityState(VideoQuality.UHD, supportedVideQualities),
-                videoQualityHighestState = getSingleVideoQualityState(VideoQuality.HIGHEST, supportedVideQualities),
-                videoQualityLowestState = getSingleVideoQualityState(VideoQuality.LOWEST, supportedVideQualities),
+                    supportedVideQualities
+                ),
+                videoQualitySDState = getSingleVideoQualityState(
+                    VideoQuality.SD,
+                    supportedVideQualities
+                ),
+                videoQualityHDState = getSingleVideoQualityState(
+                    VideoQuality.HD,
+                    supportedVideQualities
+                ),
+                videoQualityFHDState = getSingleVideoQualityState(
+                    VideoQuality.FHD,
+                    supportedVideQualities
+                ),
+                videoQualityUHDState = getSingleVideoQualityState(
+                    VideoQuality.UHD,
+                    supportedVideQualities
+                ),
+                videoQualityHighestState = getSingleVideoQualityState(
+                    VideoQuality.HIGHEST,
+                    supportedVideQualities
+                ),
+                videoQualityLowestState = getSingleVideoQualityState(
+                    VideoQuality.LOWEST,
+                    supportedVideQualities
+                ),
             )
         } else {
             VideoQualityUiState.Disabled(

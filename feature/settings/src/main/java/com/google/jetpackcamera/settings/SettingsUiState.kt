@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.settings
 
-import androidx.core.location.LocationRequestCompat.Quality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -226,7 +225,7 @@ sealed interface VideoQualityUiState {
         val videoQualityUHDState: SingleSelectableState,
         val videoQualityHighestState: SingleSelectableState,
         val videoQualityLowestState: SingleSelectableState
-    ): VideoQualityUiState
+    ) : VideoQualityUiState
 
     data class Disabled(val disabledRationale: DisabledRationale) : VideoQualityUiState
 }
