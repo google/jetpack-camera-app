@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -69,6 +71,7 @@ import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
+import com.google.jetpackcamera.settings.SettingsViewModel
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
@@ -478,13 +481,35 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
 
 private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int =
     when (videoQuality) {
-        VideoQuality.DEFAULT -> R.string.video_quality_value_default
+        VideoQuality.AUTO -> R.string.video_quality_value_auto
         VideoQuality.LOWEST -> R.string.video_quality_value_lowest
         VideoQuality.HIGHEST -> R.string.video_quality_value_highest
         VideoQuality.SD -> R.string.video_quality_value_sd
         VideoQuality.HD -> R.string.video_quality_value_hd
         VideoQuality.FHD -> R.string.video_quality_value_fhd
         VideoQuality.UHD -> R.string.video_quality_value_uhd
+    }
+
+private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
+    when (videoQuality) {
+        VideoQuality.AUTO -> R.string.video_quality_value_auto_info
+        VideoQuality.LOWEST -> R.string.video_quality_value_lowest_info
+        VideoQuality.HIGHEST -> R.string.video_quality_value_highest_info
+        VideoQuality.SD -> R.string.video_quality_value_sd_info
+        VideoQuality.HD -> R.string.video_quality_value_hd_info
+        VideoQuality.FHD -> R.string.video_quality_value_fhd_info
+        VideoQuality.UHD -> R.string.video_quality_value_uhd_info
+    }
+
+private fun getVideoQualityOptionTestTag(quality: VideoQuality): String =
+    when (quality) {
+        VideoQuality.AUTO -> VIDEO_QUALITY_OPTION_AUTO_TAG
+        VideoQuality.LOWEST -> VIDEO_QUALITY_OPTION_LOWEST_TAG
+        VideoQuality.HIGHEST -> VIDEO_QUALITY_OPTION_HIGHEST_TAG
+        VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
+        VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
+        VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
+        VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
     }
 
 /**
@@ -656,26 +681,103 @@ fun VideoQualitySetting(
                 )
 
             is VideoQualityUiState.Disabled -> {
-                stringResource(R.string.video_quality_description_unsupported)
+                    disabledRationaleString(disabledRationale = videQualityUiState.disabledRationale)
             }
         },
         popupContents = {
-            Column(Modifier.selectableGroup()) {
+            Column(Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
                 SingleChoiceSelector(
-                    text = stringResource(getVideoQualityStringRes(VideoQuality.DEFAULT)),
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.AUTO)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.AUTO)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.AUTO
+                        )
+                    ),
                     selected = (videQualityUiState as VideoQualityUiState.Enabled)
-                        .currentVideoQuality == VideoQuality.DEFAULT,
-                    enabled = true,
-                    onClick = { setVideoQuality(VideoQuality.DEFAULT) }
+                        .currentVideoQuality == VideoQuality.AUTO,
+                    enabled = videQualityUiState.videoQualityAutoState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.AUTO) }
                 )
-                for (quality in videQualityUiState.availableVideoQualities) {
-                    SingleChoiceSelector(
-                        text = stringResource(getVideoQualityStringRes(quality)),
-                        selected = videQualityUiState.currentVideoQuality == quality,
-                        enabled = true,
-                        onClick = { setVideoQuality(quality) }
-                    )
-                }
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.SD)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.SD)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.SD
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.SD,
+                    enabled = videQualityUiState.videoQualitySDState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.SD) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.HD)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.HD)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.HD
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.HD,
+                    enabled = videQualityUiState.videoQualityHDState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.HD) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.FHD)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.FHD)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.FHD
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.FHD,
+                    enabled = videQualityUiState.videoQualityFHDState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.FHD) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.UHD)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.UHD)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.UHD
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.UHD,
+                    enabled = videQualityUiState.videoQualityUHDState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.UHD) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.HIGHEST)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.HIGHEST)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.HIGHEST
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.HIGHEST,
+                    enabled = videQualityUiState.videoQualityHighestState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.HIGHEST) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.LOWEST)),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.LOWEST)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.LOWEST
+                        )
+                    ),
+                    selected = videQualityUiState.currentVideoQuality == VideoQuality.LOWEST,
+                    enabled = videQualityUiState.videoQualityLowestState is
+                            SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.LOWEST) }
+                )
             }
         }
     )
@@ -883,6 +985,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.VideoQualityUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

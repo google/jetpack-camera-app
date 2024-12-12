@@ -51,7 +51,6 @@ import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
-import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -379,20 +378,23 @@ internal fun createVideoUseCase(
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
-    val recorderBuilder = Recorder.Builder()
+    val recorder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
         .setExecutor(backgroundDispatcher.asExecutor())
-    if (videoQuality != VideoQuality.DEFAULT) {
-        recorderBuilder.setQualitySelector(
-            QualitySelector.from(
-                VideoQuality.toQuality(videoQuality)!!,
-                FallbackStrategy.higherQualityOrLowerThan(VideoQuality.toQuality(videoQuality)!!)
-            )
-        )
-    }
-    return VideoCapture.Builder(recorderBuilder.build()).apply {
+        .apply {
+            videoQuality.toQuality()?.let { quality ->
+                setQualitySelector(
+                    QualitySelector.from(
+                        quality,
+                        FallbackStrategy.higherQualityOrLowerThan(quality)
+                    )
+                )
+            }
+        }.build()
+
+    return VideoCapture.Builder(recorder).apply {
         // set video stabilization
         if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
             setVideoStabilizationEnabled(true)

@@ -43,7 +43,6 @@ mockitoCore = "5.6.0"
 protobuf = "3.25.2"
 robolectric = "4.14"
 truth = "1.4.2"
-cameraVideo = "1.4.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
@@ -90,7 +89,6 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
-androidx-camera-video = { group = "androidx.camera", name = "camera-video", version.ref = "cameraVideo" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

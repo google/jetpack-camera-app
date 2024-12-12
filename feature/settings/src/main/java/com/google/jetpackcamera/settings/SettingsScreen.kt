@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import android.content.res.Configuration
-import androidx.camera.video.Quality
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState

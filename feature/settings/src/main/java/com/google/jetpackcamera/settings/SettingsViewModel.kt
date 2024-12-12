@@ -196,6 +196,53 @@ class SettingsViewModel @Inject constructor(
         return SingleSelectableState.Selectable
     }
 
+    private fun getVideoQualityUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): VideoQualityUiState {
+        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
+        val supportedVideQualities: List<VideoQuality>? =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
+        return if (!supportedVideQualities.isNullOrEmpty()) {
+            VideoQualityUiState.Enabled(
+                currentVideoQuality = cameraAppSettings.videoQuality,
+                videoQualityAutoState = getSingleVideoQualityState(
+                    VideoQuality.AUTO,
+                    supportedVideQualities),
+                videoQualitySDState = getSingleVideoQualityState(VideoQuality.SD,
+                    supportedVideQualities),
+                videoQualityHDState = getSingleVideoQualityState(VideoQuality.HD, supportedVideQualities),
+                videoQualityFHDState = getSingleVideoQualityState(VideoQuality.FHD, supportedVideQualities),
+                videoQualityUHDState = getSingleVideoQualityState(VideoQuality.UHD, supportedVideQualities),
+                videoQualityHighestState = getSingleVideoQualityState(VideoQuality.HIGHEST, supportedVideQualities),
+                videoQualityLowestState = getSingleVideoQualityState(VideoQuality.LOWEST, supportedVideQualities),
+            )
+        } else {
+            VideoQualityUiState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+    }
+
+    private fun getSingleVideoQualityState(
+        videoQuality: VideoQuality,
+        supportedVideQualities: List<VideoQuality>?): SingleSelectableState {
+        return if (videoQuality == VideoQuality.AUTO ||
+            (!supportedVideQualities.isNullOrEmpty() &&
+                    supportedVideQualities.contains(videoQuality))) {
+            SingleSelectableState.Selectable
+        } else {
+            SingleSelectableState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+
+    }
+
     /**
      * Enables or disables default camera switch based on:
      * - number of cameras available
@@ -323,23 +370,6 @@ class SettingsViewModel @Inject constructor(
             fpsThirtyState = optionConstraintRationale[FPS_30]!!,
             fpsSixtyState = optionConstraintRationale[FPS_60]!!
         )
-    }
-
-    private fun getVideoQualityUiState(
-        systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings
-    ): VideoQualityUiState {
-        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
-        val supportedVideQualities: List<VideoQuality>? =
-            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
-        return if (!supportedVideQualities.isNullOrEmpty()) {
-             VideoQualityUiState.Enabled(
-                cameraAppSettings.videoQuality,
-                supportedVideQualities
-            )
-        } else {
-            VideoQualityUiState.Disabled
-        }
     }
 
     /**

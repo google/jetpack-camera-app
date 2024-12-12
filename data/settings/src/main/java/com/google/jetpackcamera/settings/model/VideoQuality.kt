@@ -15,10 +15,10 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import androidx.camera.video.Quality
+import com.google.jetpackcamera.settings.VideoQuality as VideoQualityProto
 
 enum class VideoQuality {
-    DEFAULT,
+    AUTO,
     LOWEST,
     HIGHEST,
     SD,
@@ -27,56 +27,32 @@ enum class VideoQuality {
     UHD;
 
     companion object {
-        fun toQuality(videoQuality: VideoQuality): Quality? {
-            return when (videoQuality) {
-                LOWEST -> Quality.LOWEST
-                HIGHEST -> Quality.HIGHEST
-                SD -> Quality.SD
-                HD -> Quality.HD
-                FHD -> Quality.FHD
-                UHD -> Quality.UHD
-                else -> null
-            }
-        }
-
-        fun fromQuality(quality: Quality): VideoQuality {
-            return when (quality) {
-                Quality.LOWEST -> LOWEST
-                Quality.HIGHEST -> HIGHEST
-                Quality.SD -> SD
-                Quality.HD -> HD
-                Quality.FHD -> FHD
-                Quality.UHD -> UHD
-                else -> DEFAULT
-            }
-        }
-
         /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
         fun fromProto(
-            aspectRatioProto: com.google.jetpackcamera.settings.VideoQuality
+            videoQualityProto: VideoQualityProto
         ): VideoQuality {
-            return when (aspectRatioProto) {
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_LOWEST -> LOWEST
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_HIGHEST -> HIGHEST
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_SD -> SD
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_HD -> HD
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_FHD -> FHD
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_UHD -> UHD
-                com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_DEFAULT,
-                com.google.jetpackcamera.settings.VideoQuality.UNRECOGNIZED,
-                -> DEFAULT
+            return when (videoQualityProto) {
+                VideoQualityProto.VIDEO_QUALITY_LOWEST -> LOWEST
+                VideoQualityProto.VIDEO_QUALITY_HIGHEST -> HIGHEST
+                VideoQualityProto.VIDEO_QUALITY_SD -> SD
+                VideoQualityProto.VIDEO_QUALITY_HD -> HD
+                VideoQualityProto.VIDEO_QUALITY_FHD -> FHD
+                VideoQualityProto.VIDEO_QUALITY_UHD -> UHD
+                VideoQualityProto.VIDEO_QUALITY_AUTO,
+                VideoQualityProto.UNRECOGNIZED
+                -> AUTO
             }
         }
 
         fun VideoQuality.toProto(): com.google.jetpackcamera.settings.VideoQuality {
             return when (this) {
-                DEFAULT -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_DEFAULT
-                LOWEST -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_LOWEST
-                HIGHEST -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_HIGHEST
-                SD -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_SD
-                HD -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_HD
-                FHD -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_FHD
-                UHD -> com.google.jetpackcamera.settings.VideoQuality.VIDEO_QUALITY_UHD
+                AUTO -> VideoQualityProto.VIDEO_QUALITY_AUTO
+                LOWEST -> VideoQualityProto.VIDEO_QUALITY_LOWEST
+                HIGHEST -> VideoQualityProto.VIDEO_QUALITY_HIGHEST
+                SD -> VideoQualityProto.VIDEO_QUALITY_SD
+                HD -> VideoQualityProto.VIDEO_QUALITY_HD
+                FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
+                UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
             }
         }
     }

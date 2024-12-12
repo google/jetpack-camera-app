@@ -30,6 +30,7 @@ import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.VIDEO_QUALITY_UNSUPPORTED_TAG
 
 const val FPS_AUTO = 0
 const val FPS_15 = 15
@@ -95,6 +96,12 @@ sealed interface DisabledRationale {
         DisabledRationale {
         override val reasonTextResId = R.string.stabilization_unsupported
         override val testTag = STABILIZATION_UNSUPPORTED_TAG
+    }
+
+    data class VideoQualityUnsupportedRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId = R.string.video_quality_unsupported
+        override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
     sealed interface LensUnsupportedRationale : DisabledRationale {
@@ -212,10 +219,16 @@ sealed interface MaxVideoDurationUiState {
 sealed interface VideoQualityUiState {
     data class Enabled(
         val currentVideoQuality: VideoQuality,
-        val availableVideoQualities: List<VideoQuality>
+        val videoQualityAutoState: SingleSelectableState,
+        val videoQualitySDState: SingleSelectableState,
+        val videoQualityHDState: SingleSelectableState,
+        val videoQualityFHDState: SingleSelectableState,
+        val videoQualityUHDState: SingleSelectableState,
+        val videoQualityHighestState: SingleSelectableState,
+        val videoQualityLowestState: SingleSelectableState
     ): VideoQualityUiState
 
-    data object Disabled : VideoQualityUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : VideoQualityUiState
 }
 
 /**
@@ -243,5 +256,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     StabilizationUiState.Disabled(
         DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
     ),
-    videoQualityUiState = VideoQualityUiState.Disabled
+    videoQualityUiState = VideoQualityUiState.Disabled(
+        DisabledRationale.VideoQualityUnsupportedRationale(R.string.video_quality_rationale_prefix)
+    )
 )

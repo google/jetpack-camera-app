@@ -32,7 +32,6 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
@@ -162,7 +161,7 @@ constructor(
                             supportedVideoQualities.addAll(
                                 videoCapabilities.getSupportedQualities(
                                     dynamicRange.toCXDynamicRange()
-                                ).map { VideoQuality.fromQuality(it) }
+                                ).map { it.toVideoQuality() }
                             )
                             supportedVideoQualitiesMap[dynamicRange] = supportedVideoQualities
                         }
@@ -664,10 +663,10 @@ constructor(
                     if (get(dynamicRange)!!.contains(videoQuality)) {
                         videoQuality
                     } else {
-                        VideoQuality.DEFAULT
+                        VideoQuality.AUTO
                     }
                 } else {
-                    VideoQuality.DEFAULT
+                    VideoQuality.AUTO
                 }
 
                 this@tryApplyVideoQualityConstraints.copy(
