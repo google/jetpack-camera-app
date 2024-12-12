@@ -138,7 +138,7 @@ interface CameraUseCase {
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
     }
 
     enum class UseCaseMode {
@@ -151,11 +151,15 @@ interface CameraUseCase {
 sealed interface VideoRecordingState {
 
     /**
+     * [PendingRecording][androidx.camera.video.PendingRecording] has not yet started but is about to.
+     * This state may be used as a signal to start processes just before the recording actually starts.
+     */
+    data object Starting : VideoRecordingState
+
+    /**
      * Camera is not currently recording a video
      */
-    data class Inactive(
-        val finalElapsedTimeNanos: Long = 0
-    ) : VideoRecordingState
+    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
 
     /**
      * Camera is currently active; paused, stopping, or recording a video
@@ -188,7 +192,4 @@ data class CameraState(
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 
-data class DebugInfo(
-    val logicalCameraId: String?,
-    val physicalCameraId: String?
-)
+data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
