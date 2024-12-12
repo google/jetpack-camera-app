@@ -24,7 +24,7 @@ import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
-import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -643,6 +643,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
+                        VideoRecordingState.Starting -> currentColor
                     }
                 )
             }

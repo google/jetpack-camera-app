@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -36,7 +37,7 @@ private const val TAG = "PermissionsScreen"
 @Composable
 fun PermissionsScreen(
     shouldRequestAudioPermission: Boolean,
-    onNavigateToPreview: () -> Unit,
+    onAllPermissionsGranted: () -> Unit,
     openAppSettings: () -> Unit
 ) {
     val permissionStates = rememberMultiplePermissionsState(
@@ -53,7 +54,7 @@ fun PermissionsScreen(
     )
     PermissionsScreen(
         permissionStates = permissionStates,
-        onNavigateToPreview = onNavigateToPreview,
+        onAllPermissionsGranted = onAllPermissionsGranted,
         openAppSettings = openAppSettings
     )
 }
@@ -67,7 +68,7 @@ fun PermissionsScreen(
 @Composable
 fun PermissionsScreen(
     modifier: Modifier = Modifier,
-    onNavigateToPreview: () -> Unit,
+    onAllPermissionsGranted: () -> Unit,
     openAppSettings: () -> Unit,
     permissionStates: MultiplePermissionsState,
     viewModel: PermissionsViewModel = hiltViewModel<
@@ -77,6 +78,12 @@ fun PermissionsScreen(
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
+    LaunchedEffect(permissionsUiState) {
+        if (permissionsUiState is PermissionsUiState.AllPermissionsGranted) {
+            onAllPermissionsGranted()
+        }
+    }
+
     if (permissionsUiState is PermissionsUiState.PermissionsNeeded) {
         val permissionEnum =
             (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
@@ -111,7 +118,5 @@ fun PermissionsScreen(
             onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
             onOpenAppSettings = openAppSettings
         )
-    } else {
-        onNavigateToPreview()
     }
 }

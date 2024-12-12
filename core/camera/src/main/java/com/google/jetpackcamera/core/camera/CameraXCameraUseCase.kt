@@ -24,7 +24,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -279,31 +278,26 @@ constructor(
                     isAudioMuted = currentCameraSettings.audioMuted,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
+                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
                     zoomScale = currentCameraSettings.zoomScale
                 )
-
-                val cameraConstraints = checkNotNull(
-                    systemConstraints.forCurrentLens(currentCameraSettings)
-                ) {
-                    "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
-                }
-
-                val resolvedStabilizationMode = resolveStabilizationMode(
-                    stabilizationMode = currentCameraSettings.stabilizationMode,
-                    targetFrameRate = currentCameraSettings.targetFrameRate,
-                    supportedStabilizationModes = cameraConstraints.supportedStabilizationModes,
-                    concurrentCameraMode = currentCameraSettings.concurrentCameraMode
-                )
-
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                        val cameraConstraints = checkNotNull(
+                            systemConstraints.forCurrentLens(currentCameraSettings)
+                        ) {
+                            "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
                         }
 
+                        val resolvedStabilizationMode = resolveStabilizationMode(
+                            stabilizationMode = currentCameraSettings.stabilizationMode,
+                            targetFrameRate = currentCameraSettings.targetFrameRate,
+                            supportedStabilizationModes = cameraConstraints
+                                .supportedStabilizationModes,
+                            concurrentCameraMode = currentCameraSettings.concurrentCameraMode
+                        )
+
                         PerpetualSessionSettings.SingleCamera(
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
@@ -565,8 +559,8 @@ constructor(
         }
     }
 
-    private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
                 val newDynamicRange = if (contains(dynamicRange)) {
                     dynamicRange
@@ -579,23 +573,20 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
         useCaseMode: CameraUseCase.UseCaseMode
-    ): CameraAppSettings {
-        return when (useCaseMode) {
-            CameraUseCase.UseCaseMode.STANDARD -> this
-            CameraUseCase.UseCaseMode.IMAGE_ONLY ->
-                this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+    ): CameraAppSettings = when (useCaseMode) {
+        CameraUseCase.UseCaseMode.STANDARD -> this
+        CameraUseCase.UseCaseMode.IMAGE_ONLY ->
+            this.copy(aspectRatio = AspectRatio.THREE_FOUR)
 
-            CameraUseCase.UseCaseMode.VIDEO_ONLY ->
-                this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
-        }
+        CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+            this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
 
-    private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedImageFormatsMap[captureMode]) {
                 val newImageFormat = if (this != null && contains(imageFormat)) {
                     imageFormat
@@ -608,10 +599,9 @@ constructor(
                 )
             }
         } ?: this
-    }
 
-    private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFixedFrameRates) {
                 val newTargetFrameRate = if (contains(targetFrameRate)) {
                     targetFrameRate
@@ -624,10 +614,9 @@ constructor(
                 )
             }
         } ?: this
-    }
 
-    private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             val invalidFps = when (stabilizationMode) {
                 StabilizationMode.ON -> STABILIZATION_ON_UNSUPPORTED_FPS
                 StabilizationMode.HIGH_QUALITY -> STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
@@ -650,7 +639,6 @@ constructor(
                 stabilizationMode = newStabilizationMode
             )
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyConcurrentCameraModeConstraints(): CameraAppSettings =
         when (concurrentCameraMode) {
@@ -689,8 +677,8 @@ constructor(
         } ?: this
     }
 
-    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFlashModes) {
                 val newFlashMode = if (contains(flashMode)) {
                     flashMode
@@ -703,7 +691,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
