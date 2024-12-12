@@ -116,7 +116,7 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.targetFrameRate,
                 sessionSettings.stabilizationMode,
                 sessionSettings.dynamicRange,
-                videoQuality = sessionSettings.videoQuality,
+                sessionSettings.videoQuality,
                 backgroundDispatcher
             )
 
@@ -385,12 +385,8 @@ internal fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
             videoQuality.toQuality()?.let { quality ->
-                setQualitySelector(
-                    QualitySelector.from(
-                        quality,
-                        FallbackStrategy.higherQualityOrLowerThan(quality)
-                    )
-                )
+                // No fallback strategy is used. The app will crash if the quality is unsupported
+                setQualitySelector(QualitySelector.from(quality))
             }
         }.build()
 

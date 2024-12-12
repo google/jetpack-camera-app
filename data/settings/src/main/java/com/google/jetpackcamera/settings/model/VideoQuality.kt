@@ -28,9 +28,7 @@ enum class VideoQuality {
 
     companion object {
         /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
-        fun fromProto(
-            videoQualityProto: VideoQualityProto
-        ): VideoQuality {
+        fun fromProto(videoQualityProto: VideoQualityProto): VideoQuality {
             return when (videoQualityProto) {
                 VideoQualityProto.VIDEO_QUALITY_LOWEST -> LOWEST
                 VideoQualityProto.VIDEO_QUALITY_HIGHEST -> HIGHEST
