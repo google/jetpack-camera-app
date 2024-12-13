@@ -155,7 +155,8 @@ constructor(
                             videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
-                        val supportedVideoQualitiesMap = mutableMapOf<DynamicRange, List<VideoQuality>>()
+                        val supportedVideoQualitiesMap =
+                            mutableMapOf<DynamicRange, List<VideoQuality>>()
                         for (dynamicRange in supportedDynamicRanges) {
                             val supportedVideoQualities = mutableListOf<VideoQuality>()
                             supportedVideoQualities.addAll(
