@@ -678,13 +678,17 @@ fun VideoQualitySetting(
                 )
 
             is VideoQualityUiState.Disabled -> {
-                    disabledRationaleString(disabledRationale = videQualityUiState.disabledRationale)
+                disabledRationaleString(
+                    disabledRationale = videQualityUiState.disabledRationale
+                )
             }
         },
         popupContents = {
-            Column(Modifier
-                .selectableGroup()
-                .verticalScroll(rememberScrollState())) {
+            Column(
+                Modifier
+                    .selectableGroup()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 SingleChoiceSelector(
                     modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.AUTO)),
                     text = stringResource(getVideoQualityStringRes(VideoQuality.AUTO)),
@@ -696,7 +700,7 @@ fun VideoQualitySetting(
                     selected = (videQualityUiState as VideoQualityUiState.Enabled)
                         .currentVideoQuality == VideoQuality.AUTO,
                     enabled = videQualityUiState.videoQualityAutoState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.AUTO) }
                 )
                 SingleChoiceSelector(
@@ -709,7 +713,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.SD,
                     enabled = videQualityUiState.videoQualitySDState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.SD) }
                 )
                 SingleChoiceSelector(
@@ -722,7 +726,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.HD,
                     enabled = videQualityUiState.videoQualityHDState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.HD) }
                 )
                 SingleChoiceSelector(
@@ -735,7 +739,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.FHD,
                     enabled = videQualityUiState.videoQualityFHDState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.FHD) }
                 )
                 SingleChoiceSelector(
@@ -748,7 +752,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.UHD,
                     enabled = videQualityUiState.videoQualityUHDState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.UHD) }
                 )
                 SingleChoiceSelector(
@@ -761,7 +765,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.HIGHEST,
                     enabled = videQualityUiState.videoQualityHighestState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.HIGHEST) }
                 )
                 SingleChoiceSelector(
@@ -774,7 +778,7 @@ fun VideoQualitySetting(
                     ),
                     selected = videQualityUiState.currentVideoQuality == VideoQuality.LOWEST,
                     enabled = videQualityUiState.videoQualityLowestState is
-                            SingleSelectableState.Selectable,
+                        SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.LOWEST) }
                 )
             }
