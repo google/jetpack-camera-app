@@ -478,16 +478,15 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
     }
 
-private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int =
-    when (videoQuality) {
-        VideoQuality.AUTO -> R.string.video_quality_value_auto
-        VideoQuality.LOWEST -> R.string.video_quality_value_lowest
-        VideoQuality.HIGHEST -> R.string.video_quality_value_highest
-        VideoQuality.SD -> R.string.video_quality_value_sd
-        VideoQuality.HD -> R.string.video_quality_value_hd
-        VideoQuality.FHD -> R.string.video_quality_value_fhd
-        VideoQuality.UHD -> R.string.video_quality_value_uhd
-    }
+private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (videoQuality) {
+    VideoQuality.AUTO -> R.string.video_quality_value_auto
+    VideoQuality.LOWEST -> R.string.video_quality_value_lowest
+    VideoQuality.HIGHEST -> R.string.video_quality_value_highest
+    VideoQuality.SD -> R.string.video_quality_value_sd
+    VideoQuality.HD -> R.string.video_quality_value_hd
+    VideoQuality.FHD -> R.string.video_quality_value_fhd
+    VideoQuality.UHD -> R.string.video_quality_value_uhd
+}
 
 private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
     when (videoQuality) {
@@ -500,16 +499,15 @@ private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
         VideoQuality.UHD -> R.string.video_quality_value_uhd_info
     }
 
-private fun getVideoQualityOptionTestTag(quality: VideoQuality): String =
-    when (quality) {
-        VideoQuality.AUTO -> VIDEO_QUALITY_OPTION_AUTO_TAG
-        VideoQuality.LOWEST -> VIDEO_QUALITY_OPTION_LOWEST_TAG
-        VideoQuality.HIGHEST -> VIDEO_QUALITY_OPTION_HIGHEST_TAG
-        VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
-        VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
-        VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
-        VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
-    }
+private fun getVideoQualityOptionTestTag(quality: VideoQuality): String = when (quality) {
+    VideoQuality.AUTO -> VIDEO_QUALITY_OPTION_AUTO_TAG
+    VideoQuality.LOWEST -> VIDEO_QUALITY_OPTION_LOWEST_TAG
+    VideoQuality.HIGHEST -> VIDEO_QUALITY_OPTION_HIGHEST_TAG
+    VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
+    VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
+    VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
+    VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
+}
 
 /**
  * A Setting to set preview and video stabilization.

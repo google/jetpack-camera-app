@@ -249,8 +249,10 @@ class SettingsViewModel @Inject constructor(
         supportedVideQualities: List<VideoQuality>?
     ): SingleSelectableState {
         return if (videoQuality == VideoQuality.AUTO ||
-            (!supportedVideQualities.isNullOrEmpty() &&
-                    supportedVideQualities.contains(videoQuality))
+            (
+                !supportedVideQualities.isNullOrEmpty() &&
+                    supportedVideQualities.contains(videoQuality)
+                )
         ) {
             SingleSelectableState.Selectable
         } else {
@@ -260,7 +262,6 @@ class SettingsViewModel @Inject constructor(
                 )
             )
         }
-
     }
 
     /**
