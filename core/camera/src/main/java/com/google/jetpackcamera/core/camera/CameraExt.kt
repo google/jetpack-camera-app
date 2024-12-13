@@ -23,7 +23,6 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
-import androidx.camera.core.ExperimentalImageCaptureOutputFormat
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
@@ -77,7 +76,6 @@ val CameraInfo.sensorLandscapeRatio: Float
             }
         } ?: Float.NaN
 
-@OptIn(ExperimentalImageCaptureOutputFormat::class)
 fun Int.toAppImageFormat(): ImageOutputFormat? {
     return when (this) {
         ImageCapture.OUTPUT_FORMAT_JPEG -> ImageOutputFormat.JPEG
@@ -129,7 +127,6 @@ fun CameraInfo.filterSupportedFixedFrameRates(desired: Set<Int>): Set<Int> {
 }
 
 val CameraInfo.supportedImageFormats: Set<ImageOutputFormat>
-    @OptIn(ExperimentalImageCaptureOutputFormat::class)
     get() = ImageCapture.getImageCaptureCapabilities(this).supportedOutputFormats
         .mapNotNull(Int::toAppImageFormat)
         .toSet()

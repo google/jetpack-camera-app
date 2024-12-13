@@ -75,10 +75,12 @@ private fun JetpackCameraNavHost(
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
                 shouldRequestAudioPermission = previewMode is PreviewMode.StandardMode,
-                onNavigateToPreview = {
+                onAllPermissionsGranted = {
+                    // Pop off the permissions screen
                     navController.navigate(PREVIEW_ROUTE) {
-                        // cannot navigate back to permissions after leaving
-                        popUpTo(0)
+                        popUpTo(PERMISSIONS_ROUTE) {
+                            inclusive = true
+                        }
                     }
                 },
                 openAppSettings = onOpenAppSettings
@@ -95,9 +97,11 @@ private fun JetpackCameraNavHost(
             // Automatically navigate to permissions screen when camera permission revoked
             LaunchedEffect(key1 = permissionStates.permissions[0].status) {
                 if (!permissionStates.permissions[0].status.isGranted) {
+                    // Pop off the preview screen
                     navController.navigate(PERMISSIONS_ROUTE) {
-                        // cannot navigate back to preview
-                        popUpTo(0)
+                        popUpTo(PREVIEW_ROUTE) {
+                            inclusive = true
+                        }
                     }
                 }
             }
