@@ -307,7 +307,7 @@ class PreviewViewModel @AssistedInject constructor(
                 }
 
                 CameraAppSettings::streamConfig -> {
-                    cameraUseCase.setCaptureMode(entry.value as StreamConfig)
+                    cameraUseCase.setStreamConfig(entry.value as StreamConfig)
                 }
 
                 CameraAppSettings::aspectRatio -> {
@@ -531,7 +531,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun setCaptureMode(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            cameraUseCase.setCaptureMode(streamConfig)
+            cameraUseCase.setStreamConfig(streamConfig)
         }
     }
 

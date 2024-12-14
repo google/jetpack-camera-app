@@ -103,7 +103,7 @@ interface CameraUseCase {
 
     suspend fun tapToFocus(x: Float, y: Float)
 
-    suspend fun setCaptureMode(streamConfig: StreamConfig)
+    suspend fun setStreamConfig(streamConfig: StreamConfig)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 

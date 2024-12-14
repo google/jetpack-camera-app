@@ -133,7 +133,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         }
     }
 
-    override suspend fun updateCaptureMode(streamConfig: StreamConfig) {
+    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
         val newStatus = when (streamConfig) {
             StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
             StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM

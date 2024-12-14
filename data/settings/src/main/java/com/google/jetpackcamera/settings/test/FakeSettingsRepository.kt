@@ -50,7 +50,7 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(flashMode = flashMode)
     }
 
-    override suspend fun updateCaptureMode(streamConfig: StreamConfig) {
+    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
         currentCameraSettings =
             currentCameraSettings.copy(streamConfig = streamConfig)
     }

@@ -36,13 +36,13 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -416,7 +416,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setCaptureMode(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            settingsRepository.updateCaptureMode(streamConfig)
+            settingsRepository.updateStreamConfig(streamConfig)
             Log.d(TAG, "set default capture mode: $streamConfig")
         }
     }

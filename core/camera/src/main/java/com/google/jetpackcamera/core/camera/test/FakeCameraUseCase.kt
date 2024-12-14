@@ -192,7 +192,7 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
         TODO("Not yet implemented")
     }
 
-    override suspend fun setCaptureMode(streamConfig: StreamConfig) {
+    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
             old.copy(streamConfig = streamConfig)
         }

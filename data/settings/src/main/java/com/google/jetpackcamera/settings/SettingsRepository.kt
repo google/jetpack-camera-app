@@ -43,7 +43,7 @@ interface SettingsRepository {
 
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun updateCaptureMode(streamConfig: StreamConfig)
+    suspend fun updateStreamConfig(streamConfig: StreamConfig)
 
     suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 
