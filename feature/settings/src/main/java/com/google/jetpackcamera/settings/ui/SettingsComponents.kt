@@ -55,7 +55,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
-import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -67,6 +66,7 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
+import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
@@ -302,25 +302,25 @@ fun AspectRatioSetting(
 }
 
 @Composable
-fun CaptureModeSetting(
-    captureModeUiState: CaptureModeUiState,
+fun StreamConfigSetting(
+    streamConfigUiState: StreamConfigUiState,
     setCaptureMode: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
-        title = stringResource(R.string.capture_mode_title),
+        title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
         description =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
-            when (captureModeUiState.currentStreamConfig) {
+        if (streamConfigUiState is StreamConfigUiState.Enabled) {
+            when (streamConfigUiState.currentStreamConfig) {
                 StreamConfig.MULTI_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_multi_stream
+                    id = R.string.stream_config_description_multi_stream
                 )
 
                 StreamConfig.SINGLE_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_single_stream
+                    id = R.string.stream_config_description_single_stream
                 )
             }
         } else {
@@ -329,14 +329,14 @@ fun CaptureModeSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_selector_multi_stream),
-                    selected = captureModeUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
+                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
                     onClick = { setCaptureMode(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_description_single_stream),
-                    selected = captureModeUiState.currentStreamConfig == StreamConfig.SINGLE_STREAM,
+                    text = stringResource(id = R.string.stream_config_description_single_stream),
+                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.SINGLE_STREAM,
                     enabled = true,
                     onClick = { setCaptureMode(StreamConfig.SINGLE_STREAM) }
                 )

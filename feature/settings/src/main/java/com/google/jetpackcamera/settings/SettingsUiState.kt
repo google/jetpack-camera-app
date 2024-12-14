@@ -43,7 +43,7 @@ sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
-        val captureModeUiState: CaptureModeUiState,
+        val streamConfigUiState: StreamConfigUiState,
         val darkModeUiState: DarkModeUiState,
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
@@ -173,9 +173,9 @@ sealed interface AspectRatioUiState {
         AspectRatioUiState
 }
 
-sealed interface CaptureModeUiState {
+sealed interface StreamConfigUiState {
     data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
-        CaptureModeUiState
+        StreamConfigUiState
 }
 
 sealed interface DarkModeUiState {
@@ -194,7 +194,7 @@ sealed interface MaxVideoDurationUiState {
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
+    streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),

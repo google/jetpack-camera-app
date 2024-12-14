@@ -63,7 +63,7 @@ class SettingsViewModel @Inject constructor(
         ) { updatedSettings, constraints ->
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.streamConfig),
+                streamConfigUiState = StreamConfigUiState.Enabled(updatedSettings.streamConfig),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
