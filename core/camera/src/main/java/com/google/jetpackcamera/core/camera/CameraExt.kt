@@ -99,6 +99,15 @@ val CameraInfo.isPreviewStabilizationSupported: Boolean
 val CameraInfo.isVideoStabilizationSupported: Boolean
     get() = Recorder.getVideoCapabilities(this).isStabilizationSupported
 
+/** Checks if optical image stabilization (OIS) is supported by the device. */
+val CameraInfo.isOpticalStabilizationSupported: Boolean
+    @OptIn(ExperimentalCamera2Interop::class)
+    get() = Camera2CameraInfo.from(this)
+        .getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION)
+        ?.contains(
+            CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
+        ) ?: false
+
 val CameraInfo.isLowLightBoostSupported: Boolean
     @OptIn(ExperimentalCamera2Interop::class)
     get() = Camera2CameraInfo.from(this)
