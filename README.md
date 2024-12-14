@@ -30,8 +30,8 @@ These tests can be run on a connected device via Android Studio, or can be teste
 Emulator using built-in Gradle Managed Device tasks. Currently, we include Pixel 2 (API 28) and
 Pixel 8 (API 34) emulators which can be used to run instrumentation tests with:
 
-`$ ./gradlew pixel2Api28DebugAndroidTest` and
-`$ ./gradlew pixel8Api34DebugAndroidTest`
+`$ ./gradlew pixel2Api28StableDebugAndroidTest` and
+`$ ./gradlew pixel8Api34StableDebugAndroidTest`
 
 
 ## Source Code Headers

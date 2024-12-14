@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Videocam
@@ -125,7 +126,11 @@ fun CameraControlsOverlay(
     }
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
-        Box(modifier.fillMaxSize()) {
+        Box(
+            modifier
+                .safeDrawingPadding()
+                .fillMaxSize()
+        ) {
             if (previewUiState.videoRecordingState is VideoRecordingState.Inactive) {
                 ControlsTop(
                     modifier = Modifier
@@ -212,20 +217,17 @@ private fun ControlsTop(
                 var visibleStabilizationUiState: StabilizationUiState by remember {
                     mutableStateOf(StabilizationUiState.Disabled)
                 }
-                if (stabilizationUiState is StabilizationUiState.Set) {
+                if (stabilizationUiState is StabilizationUiState.Enabled) {
                     // Only save StabilizationUiState.Set so exit transition can happen properly
                     visibleStabilizationUiState = stabilizationUiState
                 }
                 AnimatedVisibility(
-                    visible = stabilizationUiState is StabilizationUiState.Set,
+                    visible = stabilizationUiState is StabilizationUiState.Enabled,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    (visibleStabilizationUiState as? StabilizationUiState.Set)?.let {
-                        StabilizationIcon(
-                            stabilizationMode = it.stabilizationMode,
-                            active = it.active
-                        )
+                    (visibleStabilizationUiState as? StabilizationUiState.Enabled)?.let {
+                        StabilizationIcon(stabilizationUiState = it)
                     }
                 }
             }
@@ -560,8 +562,21 @@ private fun Preview_ControlsTop_WithStabilization() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsTop(
             isQuickSettingsOpen = false,
-            stabilizationUiState = StabilizationUiState.Set(
+            stabilizationUiState = StabilizationUiState.Specific(
                 stabilizationMode = StabilizationMode.ON
+            )
+        )
+    }
+}
+
+@Preview(backgroundColor = 0xFF000000, showBackground = true)
+@Composable
+private fun Preview_ControlsTop_WithStabilizationAuto() {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        ControlsTop(
+            isQuickSettingsOpen = false,
+            stabilizationUiState = StabilizationUiState.Auto(
+                stabilizationMode = StabilizationMode.OPTICAL
             )
         )
     }

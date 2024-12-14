@@ -139,7 +139,7 @@ interface CameraUseCase {
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
     }
 
     enum class UseCaseMode {

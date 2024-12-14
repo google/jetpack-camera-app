@@ -27,8 +27,19 @@ data class CameraConstraints(
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,
     val supportedIlluminants: Set<Illuminant>,
-    val supportedFlashModes: Set<FlashMode>
-)
+    val supportedFlashModes: Set<FlashMode>,
+    val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>
+) {
+    val StabilizationMode.unsupportedFpsSet
+        get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
+
+    companion object {
+        const val FPS_AUTO = 0
+        const val FPS_15 = 15
+        const val FPS_30 = 30
+        const val FPS_60 = 60
+    }
+}
 
 /**
  * Useful set of constraints for testing
@@ -43,14 +54,15 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                     lensFacing,
                     CameraConstraints(
                         supportedFixedFrameRates = setOf(15, 30),
-                        supportedStabilizationModes = emptySet(),
+                        supportedStabilizationModes = setOf(StabilizationMode.OFF),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
                         supportedImageFormatsMap = mapOf(
                             Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                             Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
                         ),
                         supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
-                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                        unsupportedStabilizationFpsMap = emptyMap()
                     )
                 )
             }
