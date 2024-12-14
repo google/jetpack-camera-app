@@ -20,6 +20,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -429,6 +431,8 @@ private fun createPreviewUseCase(
         )
     }
 
+    setSceneModeIfNeeded(cameraInfo)
+
     setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
@@ -450,6 +454,24 @@ private fun Preview.Builder.setOpticalStabilizationModeEnabled(enabled: Boolean)
                 CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF
             }
         )
+    return this
+}
+
+@OptIn(ExperimentalCamera2Interop::class)
+private fun Preview.Builder.setSceneModeIfNeeded(cameraInfo: CameraInfo): Preview.Builder {
+    with(Camera2CameraInfo.from(cameraInfo)) {
+        if (cameraInfo.appLensFacing == LensFacing.FRONT &&
+            getCameraCharacteristic(CameraCharacteristics.CONTROL_AVAILABLE_SCENE_MODES)?.contains(
+                CameraMetadata.CONTROL_SCENE_MODE_FACE_PRIORITY
+            ) == true
+        ) {
+            Camera2Interop.Extender(this@setSceneModeIfNeeded)
+                .setCaptureRequestOption(
+                    CaptureRequest.CONTROL_SCENE_MODE,
+                    CaptureRequest.CONTROL_SCENE_MODE_FACE_PRIORITY
+                )
+        }
+    }
     return this
 }
 
