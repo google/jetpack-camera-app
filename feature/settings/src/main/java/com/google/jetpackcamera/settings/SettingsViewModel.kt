@@ -28,21 +28,21 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_1
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
@@ -63,7 +63,7 @@ class SettingsViewModel @Inject constructor(
         ) { updatedSettings, constraints ->
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
+                captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.streamConfig),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
@@ -414,10 +414,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCaptureMode(captureMode: CaptureMode) {
+    fun setCaptureMode(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            settingsRepository.updateCaptureMode(captureMode)
-            Log.d(TAG, "set default capture mode: $captureMode")
+            settingsRepository.updateCaptureMode(streamConfig)
+            Log.d(TAG, "set default capture mode: $streamConfig")
         }
     }
 

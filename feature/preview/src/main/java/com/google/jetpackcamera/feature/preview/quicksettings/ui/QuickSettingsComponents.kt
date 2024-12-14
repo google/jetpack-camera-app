@@ -54,12 +54,12 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.StreamConfig
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -218,23 +218,23 @@ fun QuickFlipCamera(
 
 @Composable
 fun QuickSetCaptureMode(
-    setCaptureMode: (CaptureMode) -> Unit,
-    currentCaptureMode: CaptureMode,
+    setCaptureMode: (StreamConfig) -> Unit,
+    currentStreamConfig: StreamConfig,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
     val enum: CameraCaptureMode =
-        when (currentCaptureMode) {
-            CaptureMode.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
-            CaptureMode.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
+        when (currentStreamConfig) {
+            StreamConfig.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
+            StreamConfig.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
         }
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
         onClick = {
-            when (currentCaptureMode) {
-                CaptureMode.MULTI_STREAM -> setCaptureMode(CaptureMode.SINGLE_STREAM)
-                CaptureMode.SINGLE_STREAM -> setCaptureMode(CaptureMode.MULTI_STREAM)
+            when (currentStreamConfig) {
+                StreamConfig.MULTI_STREAM -> setCaptureMode(StreamConfig.SINGLE_STREAM)
+                StreamConfig.SINGLE_STREAM -> setCaptureMode(StreamConfig.MULTI_STREAM)
             }
         },
         enabled = enabled

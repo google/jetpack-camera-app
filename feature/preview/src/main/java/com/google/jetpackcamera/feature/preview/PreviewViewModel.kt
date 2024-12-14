@@ -39,7 +39,6 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -47,6 +46,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
@@ -306,8 +306,8 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setFlashMode(entry.value as FlashMode)
                 }
 
-                CameraAppSettings::captureMode -> {
-                    cameraUseCase.setCaptureMode(entry.value as CaptureMode)
+                CameraAppSettings::streamConfig -> {
+                    cameraUseCase.setCaptureMode(entry.value as StreamConfig)
                 }
 
                 CameraAppSettings::aspectRatio -> {
@@ -344,7 +344,7 @@ class PreviewViewModel @AssistedInject constructor(
             it.supportedDynamicRanges.size > 1
         } ?: false
         val hdrImageFormatSupported =
-            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.captureMode)?.let {
+            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)?.let {
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
@@ -378,7 +378,7 @@ class PreviewViewModel @AssistedInject constructor(
                         hdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.captureMode,
+                        cameraAppSettings.streamConfig,
                         cameraAppSettings.concurrentCameraMode
                     )
                 )
@@ -394,7 +394,7 @@ class PreviewViewModel @AssistedInject constructor(
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
-        currentCaptureMode: CaptureMode,
+        currentStreamConfig: StreamConfig,
         concurrentCameraMode: ConcurrentCameraMode
     ): CaptureModeToggleUiState.DisabledReason {
         when (captureModeToggleUiState) {
@@ -414,14 +414,14 @@ class PreviewViewModel @AssistedInject constructor(
                     if (systemConstraints
                             .perLensConstraints[currentLensFacing]
                             ?.supportedImageFormatsMap
-                            ?.anySupportsUltraHdr { it != currentCaptureMode } == true
+                            ?.anySupportsUltraHdr { it != currentStreamConfig } == true
                     ) {
-                        return when (currentCaptureMode) {
-                            CaptureMode.MULTI_STREAM ->
+                        return when (currentStreamConfig) {
+                            StreamConfig.MULTI_STREAM ->
                                 CaptureModeToggleUiState.DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
 
-                            CaptureMode.SINGLE_STREAM ->
+                            StreamConfig.SINGLE_STREAM ->
                                 CaptureModeToggleUiState.DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
                         }
@@ -463,14 +463,14 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
     } != null
 
-    private fun Map<CaptureMode, Set<ImageOutputFormat>>.anySupportsUltraHdr(
-        captureModeFilter: (CaptureMode) -> Boolean
+    private fun Map<StreamConfig, Set<ImageOutputFormat>>.anySupportsUltraHdr(
+        captureModeFilter: (StreamConfig) -> Boolean
     ): Boolean = asSequence().firstOrNull {
         captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
     } != null
 
     private fun SystemConstraints.anySupportsUltraHdr(
-        captureModeFilter: (CaptureMode) -> Boolean = { true },
+        captureModeFilter: (StreamConfig) -> Boolean = { true },
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
@@ -529,9 +529,9 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(captureMode: CaptureMode) {
+    fun setCaptureMode(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            cameraUseCase.setCaptureMode(captureMode)
+            cameraUseCase.setCaptureMode(streamConfig)
         }
     }
 

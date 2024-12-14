@@ -43,7 +43,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -52,6 +51,7 @@ import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
@@ -227,8 +227,8 @@ constructor(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
                                     // Ultra HDR now.
-                                    Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                                    Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
+                                    Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
@@ -300,7 +300,7 @@ constructor(
 
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
+                            streamConfig = currentCameraSettings.streamConfig,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
@@ -583,7 +583,7 @@ constructor(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[captureMode]) {
+            with(constraints.supportedImageFormatsMap[streamConfig]) {
                 val newImageFormat = if (this != null && contains(imageFormat)) {
                     imageFormat
                 } else {
@@ -637,7 +637,7 @@ constructor(
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO,
                         dynamicRange = DynamicRange.SDR,
-                        captureMode = CaptureMode.MULTI_STREAM
+                        streamConfig = StreamConfig.MULTI_STREAM
                     )
                 } else {
                     copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
@@ -682,9 +682,9 @@ constructor(
         }
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+    override suspend fun setCaptureMode(streamConfig: StreamConfig) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
