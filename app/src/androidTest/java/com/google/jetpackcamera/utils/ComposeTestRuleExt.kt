@@ -61,6 +61,19 @@ fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
 )
 
 /**
+ * Allows searching for a node by [SemanticsProperties.StateDescription] using an integer string
+ * resource.
+ */
+fun SemanticsNodeInteractionsProvider.onNodeWithStateDescription(
+    @StringRes strRes: Int
+): SemanticsNodeInteraction = onNode(
+    SemanticsMatcher.expectValue(
+        SemanticsProperties.StateDescription,
+        expectedValue = getResString(strRes)
+    )
+)
+
+/**
  * Fetch a string resources from a [SemanticsNodeInteractionsProvider] context.
  */
 fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String {
@@ -112,13 +125,11 @@ fun ComposeTestRule.longClickForVideoRecording() {
         }
 }
 
-private fun ComposeTestRule.idleForVideoDuration() {
+fun ComposeTestRule.idleForVideoDuration() {
     // TODO: replace with a check for the timestamp UI of the video duration
     try {
-        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
-            onNodeWithTag("dummyTagForLongPress").isDisplayed()
-        }
-    } catch (e: ComposeTimeoutException) {
+        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS, condition = { false })
+    } catch (_: ComposeTimeoutException) {
     }
 }
 

@@ -23,7 +23,9 @@
     <string name="settings_content_description">Settings</string>
     <string name="flip_camera_content_description">Flip Camera</string>
 
-    <string name="audio_visualizer_icon">An icon of a microphone</string>
+    <string name="audio_visualizer_content_description">An icon of a microphone</string>
+    <string name="audio_visualizer_recording_state_description">Audio recording in progress</string>
+    <string name="audio_visualizer_not_recording_state_description">Audio recording not in progress</string>
     <string name="zoom_scale_text">%1$.2fx</string>
 
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
