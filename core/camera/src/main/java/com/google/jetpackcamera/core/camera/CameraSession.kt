@@ -429,8 +429,15 @@ private fun createPreviewUseCase(
     updateCameraStateWithCaptureResults(targetCameraInfo = cameraInfo)
 
     // set preview stabilization
-    if (stabilizationMode == StabilizationMode.ON) {
-        setPreviewStabilizationEnabled(true)
+    when (stabilizationMode) {
+        StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
+        StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
+        StabilizationMode.OFF -> setOpticalStabilizationModeEnabled(false)
+        StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
+        else -> throw UnsupportedOperationException(
+            "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
+                "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
+        )
     }
 
     setResolutionSelector(
@@ -442,6 +449,20 @@ private fun createPreviewUseCase(
             surfaceRequests.update { surfaceRequest }
         }
     }
+
+@OptIn(ExperimentalCamera2Interop::class)
+private fun Preview.Builder.setOpticalStabilizationModeEnabled(enabled: Boolean): Preview.Builder {
+    Camera2Interop.Extender(this)
+        .setCaptureRequestOption(
+            CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+            if (enabled) {
+                CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON
+            } else {
+                CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF
+            }
+        )
+    return this
+}
 
 private fun getResolutionSelector(
     sensorLandscapeRatio: Float,
@@ -928,13 +949,21 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 
 context(CameraSessionContext)
 private fun publishStabilizationMode(result: TotalCaptureResult) {
-    val nativeStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
-    val stabilizationMode = when (nativeStabilizationMode) {
+    val nativeVideoStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
+    val stabilizationMode = when (nativeVideoStabilizationMode) {
         CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION ->
             StabilizationMode.ON
 
         CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_ON -> StabilizationMode.HIGH_QUALITY
-        else -> StabilizationMode.OFF
+        else -> {
+            result.get(CaptureResult.LENS_OPTICAL_STABILIZATION_MODE)?.let {
+                if (it == CaptureResult.LENS_OPTICAL_STABILIZATION_MODE_ON) {
+                    StabilizationMode.OPTICAL
+                } else {
+                    StabilizationMode.OFF
+                }
+            } ?: StabilizationMode.OFF
+        }
     }
 
     currentCameraState.update { old ->

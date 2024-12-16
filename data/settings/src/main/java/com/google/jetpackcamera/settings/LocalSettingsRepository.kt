@@ -155,6 +155,7 @@ class LocalSettingsRepository @Inject constructor(
             StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
             StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
             StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
+            StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()

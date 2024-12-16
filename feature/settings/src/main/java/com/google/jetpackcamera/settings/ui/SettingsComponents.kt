@@ -61,10 +61,6 @@ import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
-import com.google.jetpackcamera.settings.FPS_15
-import com.google.jetpackcamera.settings.FPS_30
-import com.google.jetpackcamera.settings.FPS_60
-import com.google.jetpackcamera.settings.FPS_AUTO
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
@@ -78,6 +74,10 @@ import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.VideoQualityUiState
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -476,6 +476,7 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.AUTO -> R.string.stabilization_description_auto
         StabilizationMode.ON -> R.string.stabilization_description_on
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
+        StabilizationMode.OPTICAL -> R.string.stabilization_description_optical
     }
 
 private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (videoQuality) {
@@ -637,6 +638,34 @@ fun StabilizationSetting(
                                 == StabilizationMode.HIGH_QUALITY,
                             onClick = {
                                 setStabilizationMode(StabilizationMode.HIGH_QUALITY)
+                            }
+                        )
+
+                        // optical selector
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationOpticalState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationOpticalState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(
+                                id = R.string.stabilization_selector_optical
+                            ),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_optical_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationOpticalState
+                                == SingleSelectableState.Selectable,
+
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OPTICAL,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.OPTICAL)
                             }
                         )
 
