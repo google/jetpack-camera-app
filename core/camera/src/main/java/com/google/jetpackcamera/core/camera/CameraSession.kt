@@ -249,7 +249,8 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+            prevTransientSettings.flashMode != newTransientSettings.flashMode) {
             when (newTransientSettings.flashMode) {
                 FlashMode.LOW_LIGHT_BOOST -> {
                     val captureRequestOptions = CaptureRequestOptions.Builder()
@@ -263,7 +264,8 @@ internal suspend fun processTransientSettingEvents(
                         .addCaptureRequestOptions(captureRequestOptions)
                 }
                 else -> {
-                    Camera2CameraControl.from(camera.cameraControl).clearCaptureRequestOptions()
+                    Camera2CameraControl.from(camera.cameraControl)
+                        .setCaptureRequestOptions(CaptureRequestOptions.Builder().build())
                 }
             }
         }
@@ -903,7 +905,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
             ) {
                 super.onCaptureCompleted(session, request, result)
 
-                if (BuildCompat.isAtLeastV()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                     when (boostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE -> {
