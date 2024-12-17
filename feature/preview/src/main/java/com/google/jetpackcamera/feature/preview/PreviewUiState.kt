@@ -65,10 +65,27 @@ data class DebugUiState(
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState
 
-    data class Set(
-        val stabilizationMode: StabilizationMode,
-        val active: Boolean = true
-    ) : StabilizationUiState
+    sealed interface Enabled : StabilizationUiState {
+        val stabilizationMode: StabilizationMode
+        val active: Boolean
+    }
+
+    data class Specific(
+        override val stabilizationMode: StabilizationMode,
+        override val active: Boolean = true
+    ) : Enabled {
+        init {
+            require(stabilizationMode != StabilizationMode.AUTO) {
+                "Specific StabilizationUiState cannot have AUTO stabilization mode."
+            }
+        }
+    }
+
+    data class Auto(
+        override val stabilizationMode: StabilizationMode
+    ) : Enabled {
+        override val active = true
+    }
 }
 
 sealed interface LowLightBoostUiState {
