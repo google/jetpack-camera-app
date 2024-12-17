@@ -324,7 +324,7 @@ fun StreamConfigSetting(
                 )
             }
         } else {
-            TODO("capture mode currently has no disabled criteria")
+            TODO("stream config currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -336,7 +336,8 @@ fun StreamConfigSetting(
                 )
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stream_config_description_single_stream),
-                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.SINGLE_STREAM,
+                    selected = streamConfigUiState.currentStreamConfig ==
+                        StreamConfig.SINGLE_STREAM,
                     enabled = true,
                     onClick = { setCaptureMode(StreamConfig.SINGLE_STREAM) }
                 )
