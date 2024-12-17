@@ -30,8 +30,10 @@ import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -109,6 +111,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
@@ -618,6 +621,63 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
                 modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
                 text = physicalCameraId ?: "---"
             )
+        }
+    }
+}
+
+@Composable
+fun CaptureModeDropDown(
+    modifier: Modifier = Modifier,
+    onSelectCaptureMode: (CaptureMode) -> Unit
+    //
+// captureModeUiState: CaptureModeUiState
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf("Default") }
+
+    Column(modifier = modifier) {
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter =
+            fadeIn() + expandVertically(expandFrom = Alignment.Top),
+            exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
+        ) {
+            Column {
+                Text(
+                    text = "Default",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Default"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+                Text(
+                    text = "Image Only",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Image Only"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+                Text(
+                    text = "Video Only",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Video Only"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .clickable { isExpanded = !isExpanded }
+                .padding(8.dp)
+        ) {
+            Text(text = selectedOption, modifier = Modifier.padding(16.dp))
         }
     }
 }

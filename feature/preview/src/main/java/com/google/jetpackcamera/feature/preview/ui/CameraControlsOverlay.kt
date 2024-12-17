@@ -268,6 +268,19 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
+    if (videoRecordingState is VideoRecordingState.Inactive) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // todo(kc): WIP UI properly style this
+            CaptureModeDropDown(
+                modifier = Modifier.align(
+                    Alignment.BottomEnd
+                ),
+                onSelectCaptureMode = {
+                    TODO()
+                }
+            )
+        }
+    }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
