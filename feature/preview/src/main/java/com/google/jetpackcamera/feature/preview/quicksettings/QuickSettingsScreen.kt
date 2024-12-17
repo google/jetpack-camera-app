@@ -230,7 +230,7 @@ private fun ExpandedQuickSettingsUi(
 
                             fun CameraConstraints.hdrImageFormatSupported(): Boolean =
                                 supportedImageFormatsMap[currentCameraSettings.captureMode]
-                                    ?.let { it.size > 1 } ?: false
+                                    ?.let { it.size > 1 } == true
 
                             // TODO(tm): Move this to PreviewUiState
                             fun shouldEnable(): Boolean = when {
@@ -251,8 +251,6 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
-                                hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported =
                                 cameraConstraints?.hdrDynamicRangeSupported() ?: false,
                                 previewMode = previewUiState.previewMode,
@@ -348,7 +346,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
 private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
     TYPICAL_SYSTEM_CONSTRAINTS.copy(
         perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate {
-                (lensFacing, constraints) ->
+                (lensFacing, constraints)
+            ->
             lensFacing to constraints.copy(
                 supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
             )
