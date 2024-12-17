@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
+import com.google.jetpackcamera.feature.preview.LowLightBoostUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -138,7 +139,8 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings,
                     onToggleDebugOverlay = onToggleDebugOverlay,
                     stabilizationUiState = previewUiState.stabilizationUiState,
-                    flashModeUiState = previewUiState.flashModeUiState
+                    flashModeUiState = previewUiState.flashModeUiState,
+                    lowLightBoostUiState = previewUiState.lowLightBoostUiState
                 )
             }
 
@@ -178,7 +180,8 @@ private fun ControlsTop(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-    flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
+    flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+    lowLightBoostUiState: LowLightBoostUiState = LowLightBoostUiState.Inactive,
 ) {
     Column(modifier) {
         Row(modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -193,6 +196,7 @@ private fun ControlsTop(
                 if (!isQuickSettingsOpen) {
                     QuickSettingsIndicators(
                         flashModeUiState = flashModeUiState,
+                        lowLightBoostUiState = lowLightBoostUiState,
                         onFlashModeClick = onChangeFlash
                     )
                 }

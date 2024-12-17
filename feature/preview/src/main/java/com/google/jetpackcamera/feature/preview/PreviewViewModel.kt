@@ -46,6 +46,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -165,6 +166,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentConstraints = systemConstraints,
                                 previousConstraints = previousConstraints
                             )
+
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
                             old
@@ -191,7 +193,8 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        lowLightBoostUiState = lowLightBoostUiStateFrom(cameraState)
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -240,6 +243,13 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
+
+    private fun lowLightBoostUiStateFrom(
+        cameraState: CameraState
+    ) = when(cameraState.lowLightBoostState) {
+            LowLightBoostState.ACTIVE -> LowLightBoostUiState.Active
+            LowLightBoostState.INACTIVE -> LowLightBoostUiState.Inactive
+        }
 
     private fun stabilizationUiStateFrom(
         cameraAppSettings: CameraAppSettings,

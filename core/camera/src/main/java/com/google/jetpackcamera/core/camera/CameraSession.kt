@@ -71,6 +71,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
@@ -909,11 +910,19 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                     when (boostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE -> {
-                            Log.d(TAG, "Low-light boost is ACTIVE")
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    lowLightBoostState = LowLightBoostState.ACTIVE
+                                )
+                            }
                         }
 
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_INACTIVE -> {
-                            Log.d(TAG, "Low-light boost is NOT active")
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    lowLightBoostState = LowLightBoostState.INACTIVE
+                                )
+                            }
                         }
                     }
                 }

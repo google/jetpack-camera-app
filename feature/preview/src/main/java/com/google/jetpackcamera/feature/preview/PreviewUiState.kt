@@ -49,7 +49,8 @@ sealed interface PreviewUiState {
         val currentLogicalCameraId: String? = null,
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val lowLightBoostUiState: LowLightBoostUiState = LowLightBoostUiState.Inactive
     ) : PreviewUiState
 }
 
@@ -68,6 +69,11 @@ sealed interface StabilizationUiState {
         val stabilizationMode: StabilizationMode,
         val active: Boolean = true
     ) : StabilizationUiState
+}
+
+sealed interface LowLightBoostUiState {
+    data object Active : LowLightBoostUiState
+    data object Inactive : LowLightBoostUiState
 }
 
 sealed class FlashModeUiState {

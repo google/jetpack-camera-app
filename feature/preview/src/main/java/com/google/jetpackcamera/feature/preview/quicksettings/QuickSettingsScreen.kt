@@ -186,7 +186,8 @@ private fun ExpandedQuickSettingsUi(
                             QuickSetFlash(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
-                                flashModeUiState = previewUiState.flashModeUiState
+                                flashModeUiState = previewUiState.flashModeUiState,
+                                lowLightBoostUiState = previewUiState.lowLightBoostUiState,
                             )
                         }
 
