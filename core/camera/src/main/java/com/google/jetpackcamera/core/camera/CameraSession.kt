@@ -116,7 +116,6 @@ private val QUALITY_RANGE_MAP = mapOf(
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    // useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {

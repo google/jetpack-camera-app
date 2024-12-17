@@ -101,7 +101,6 @@ constructor(
     private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var systemConstraints: SystemConstraints
-    // private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
     private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
@@ -121,11 +120,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        // useCaseMode: CameraUseCase.UseCaseMode,
         isDebugMode: Boolean,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
-        // this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -376,12 +373,10 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    // useCaseMode = useCaseMode,
-                                    onImageCaptureCreated = { imageCapture ->
-                                        imageCaptureUseCase = imageCapture
-                                    }
-                                )
+                                    sessionSettings
+                                ) { imageCapture ->
+                                    imageCaptureUseCase = imageCapture
+                                }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
