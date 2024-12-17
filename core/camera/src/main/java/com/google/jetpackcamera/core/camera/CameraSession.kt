@@ -61,7 +61,6 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REAC
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.core.os.BuildCompat
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -73,6 +72,12 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import java.io.File
+import java.util.Date
+import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -89,12 +94,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.util.Date
-import java.util.concurrent.Executor
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "CameraSession"
 
@@ -251,7 +250,8 @@ internal suspend fun processTransientSettingEvents(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-            prevTransientSettings.flashMode != newTransientSettings.flashMode) {
+            prevTransientSettings.flashMode != newTransientSettings.flashMode
+        ) {
             when (newTransientSettings.flashMode) {
                 FlashMode.LOW_LIGHT_BOOST -> {
                     val captureRequestOptions = CaptureRequestOptions.Builder()

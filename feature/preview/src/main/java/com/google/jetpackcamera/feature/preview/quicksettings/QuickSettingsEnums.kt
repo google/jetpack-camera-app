@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.settings.model.LowLightBoostState
 
 interface QuickSettingsEnum {
     @Composable

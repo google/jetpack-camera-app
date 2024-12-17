@@ -244,9 +244,8 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun lowLightBoostUiStateFrom(
-        cameraState: CameraState
-    ) = when(cameraState.lowLightBoostState) {
+    private fun lowLightBoostUiStateFrom(cameraState: CameraState) =
+        when (cameraState.lowLightBoostState) {
             LowLightBoostState.ACTIVE -> LowLightBoostUiState.Active
             LowLightBoostState.INACTIVE -> LowLightBoostUiState.Inactive
         }

@@ -43,7 +43,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.LowLightBoostUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -507,7 +506,7 @@ private fun FlashMode.toCameraFlashMode(lowLightBoostUiState: LowLightBoostUiSta
     FlashMode.AUTO -> CameraFlashMode.AUTO
     FlashMode.ON -> CameraFlashMode.ON
     FlashMode.LOW_LIGHT_BOOST -> {
-        when(lowLightBoostUiState) {
+        when (lowLightBoostUiState) {
             LowLightBoostUiState.Active -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
             LowLightBoostUiState.Inactive -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
         }

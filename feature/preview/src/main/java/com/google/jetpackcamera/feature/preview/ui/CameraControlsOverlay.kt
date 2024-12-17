@@ -186,7 +186,7 @@ private fun ControlsTop(
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
     flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
-    lowLightBoostUiState: LowLightBoostUiState = LowLightBoostUiState.Inactive,
+    lowLightBoostUiState: LowLightBoostUiState = LowLightBoostUiState.Inactive
 ) {
     Column(modifier) {
         Row(modifier, verticalAlignment = Alignment.CenterVertically) {
