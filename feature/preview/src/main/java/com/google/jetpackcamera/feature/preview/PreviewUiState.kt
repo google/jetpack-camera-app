@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.graphics.Rect
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -59,7 +60,7 @@ sealed interface PreviewUiState {
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
-    val videoResolution: Size? = null,
+    val videoResolution: Rect? = null,
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )

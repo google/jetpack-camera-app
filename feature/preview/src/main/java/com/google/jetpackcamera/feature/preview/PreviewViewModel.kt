@@ -73,6 +73,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -186,14 +187,14 @@ class PreviewViewModel @AssistedInject constructor(
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
                             cameraPropertiesJSON = cameraPropertiesJSON,
-                            videoResolution = cameraUseCase.getVideoResolutionInfo()?.resolution,
-                            isDebugMode = isDebugMode,
+                            videoResolution = cameraUseCase.getVideoResolutionInfo()?.cropRect,
+                            isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState,
+                        flashModeUiState = flashModeUiState
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )

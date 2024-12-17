@@ -53,6 +53,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
 
@@ -117,14 +118,20 @@ fun DebugOverlayComponent(
 
                 Row {
                     Text("Video resolution: ")
+                    val videoResText = if (previewUiState.debugUiState.videoResolution == null) {
+                        "null"
+                    } else {
+                        val rect = previewUiState.debugUiState.videoResolution
+                        abs(rect.left - rect.right).toString() + "x" +
+                                abs(rect.top - rect.bottom).toString()
+                    }
                     Text(
                         modifier = Modifier.testTag(
                             DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
                         ),
-                        text = previewUiState.debugUiState.videoResolution.toString(),
+                        text = videoResText
                     )
                 }
-
 
                 TextButton(
                     modifier = Modifier.testTag(
