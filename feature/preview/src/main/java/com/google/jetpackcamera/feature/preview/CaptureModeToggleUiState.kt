@@ -24,6 +24,23 @@ import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_LENS
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.model.CaptureMode
+
+sealed interface CaptureModeUiState {
+    data class Enabled(
+        val currentSelection: CaptureMode,
+        val defaultCaptureState: SingleSelectableState = SingleSelectableState.Selectable,
+        val videoOnlyCaptureState: SingleSelectableState = SingleSelectableState.Selectable,
+        val imageOnlyCaptureState: SingleSelectableState = SingleSelectableState.Selectable
+    ) : CaptureModeUiState
+}
+
+/** State for the individual options on Popup dialog settings */
+sealed interface SingleSelectableState {
+    data object Selectable : SingleSelectableState
+    data class Disabled(val disabledReason: CaptureModeToggleUiState.DisabledReason) :
+        SingleSelectableState
+}
 
 sealed interface CaptureModeToggleUiState {
 
@@ -35,10 +52,8 @@ sealed interface CaptureModeToggleUiState {
 
     data class Enabled(override val currentMode: ToggleMode) : Visible
 
-    data class Disabled(
-        override val currentMode: ToggleMode,
-        val disabledReason: DisabledReason
-    ) : Visible
+    data class Disabled(override val currentMode: ToggleMode, val disabledReason: DisabledReason) :
+        Visible
 
     enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
