@@ -44,7 +44,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
-import com.google.jetpackcamera.feature.preview.LowLightBoostUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
@@ -177,7 +176,6 @@ fun QuickSetRatio(
 fun QuickSetFlash(
     onClick: (FlashMode) -> Unit,
     flashModeUiState: FlashModeUiState,
-    lowLightBoostUiState: LowLightBoostUiState,
     modifier: Modifier = Modifier
 ) {
     when (flashModeUiState) {
@@ -191,7 +189,9 @@ fun QuickSetFlash(
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(lowLightBoostUiState),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
@@ -462,7 +462,6 @@ fun TopBarSettingIndicator(
 @Composable
 fun FlashModeIndicator(
     flashModeUiState: FlashModeUiState,
-    lowLightBoostUiState: LowLightBoostUiState,
     onClick: (flashMode: FlashMode) -> Unit
 ) {
     when (flashModeUiState) {
@@ -473,7 +472,9 @@ fun FlashModeIndicator(
             )
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(lowLightBoostUiState),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -484,14 +485,12 @@ fun FlashModeIndicator(
 @Composable
 fun QuickSettingsIndicators(
     flashModeUiState: FlashModeUiState,
-    lowLightBoostUiState: LowLightBoostUiState,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier) {
         FlashModeIndicator(
             flashModeUiState,
-            lowLightBoostUiState,
             onFlashModeClick
         )
     }
@@ -501,14 +500,14 @@ private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = available
     get((indexOf(selectedFlashMode) + 1) % size)
 }
 
-private fun FlashMode.toCameraFlashMode(lowLightBoostUiState: LowLightBoostUiState) = when (this) {
+private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
     FlashMode.OFF -> CameraFlashMode.OFF
     FlashMode.AUTO -> CameraFlashMode.AUTO
     FlashMode.ON -> CameraFlashMode.ON
     FlashMode.LOW_LIGHT_BOOST -> {
-        when (lowLightBoostUiState) {
-            LowLightBoostUiState.Active -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-            LowLightBoostUiState.Inactive -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+        when (isActive) {
+            true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+            false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
         }
     }
 }

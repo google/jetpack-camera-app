@@ -186,8 +186,7 @@ private fun ExpandedQuickSettingsUi(
                             QuickSetFlash(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
                                 onClick = { f: FlashMode -> onFlashModeClick(f) },
-                                flashModeUiState = previewUiState.flashModeUiState,
-                                lowLightBoostUiState = previewUiState.lowLightBoostUiState
+                                flashModeUiState = previewUiState.flashModeUiState
                             )
                         }
 
@@ -303,7 +302,8 @@ fun ExpandedQuickSettingsUiPreview() {
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                    isActive = false
                 )
             ),
             currentCameraSettings = CameraAppSettings(),

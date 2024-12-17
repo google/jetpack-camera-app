@@ -928,22 +928,17 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 super.onCaptureCompleted(session, request, result)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                    val boostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
-                    when (boostState) {
-                        CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE -> {
-                            currentCameraState.update { old ->
-                                old.copy(
-                                    lowLightBoostState = LowLightBoostState.ACTIVE
-                                )
-                            }
-                        }
-
-                        CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_INACTIVE -> {
-                            currentCameraState.update { old ->
-                                old.copy(
-                                    lowLightBoostState = LowLightBoostState.INACTIVE
-                                )
-                            }
+                    val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
+                    val boostState = when (nativeBoostState) {
+                        CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
+                            LowLightBoostState.ACTIVE
+                        else -> LowLightBoostState.INACTIVE
+                    }
+                    currentCameraState.update { old ->
+                        if (old.lowLightBoostState != boostState) {
+                            old.copy(lowLightBoostState = boostState)
+                        } else {
+                            old
                         }
                     }
                 }

@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
-import com.google.jetpackcamera.feature.preview.LowLightBoostUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -144,8 +143,7 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings,
                     onToggleDebugOverlay = onToggleDebugOverlay,
                     stabilizationUiState = previewUiState.stabilizationUiState,
-                    flashModeUiState = previewUiState.flashModeUiState,
-                    lowLightBoostUiState = previewUiState.lowLightBoostUiState
+                    flashModeUiState = previewUiState.flashModeUiState
                 )
             }
 
@@ -185,8 +183,7 @@ private fun ControlsTop(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-    flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
-    lowLightBoostUiState: LowLightBoostUiState = LowLightBoostUiState.Inactive
+    flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
     Column(modifier) {
         Row(modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -201,7 +198,6 @@ private fun ControlsTop(
                 if (!isQuickSettingsOpen) {
                     QuickSettingsIndicators(
                         flashModeUiState = flashModeUiState,
-                        lowLightBoostUiState = lowLightBoostUiState,
                         onFlashModeClick = onChangeFlash
                     )
                 }
@@ -536,7 +532,8 @@ private fun Preview_ControlsTop_FlashModeOn() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.ON,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                isActive = false
             )
         )
     }
@@ -550,7 +547,8 @@ private fun Preview_ControlsTop_FlashModeAuto() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.AUTO,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                isActive = false
             )
         )
     }
