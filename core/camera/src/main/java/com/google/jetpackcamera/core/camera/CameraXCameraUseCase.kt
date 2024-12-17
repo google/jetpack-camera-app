@@ -43,6 +43,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -61,7 +62,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -100,7 +100,7 @@ constructor(
     private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var systemConstraints: SystemConstraints
-    private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
+    // private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
     private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
@@ -120,11 +120,11 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode,
+        // useCaseMode: CameraUseCase.UseCaseMode,
         isDebugMode: Boolean,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
-        this.useCaseMode = useCaseMode
+        // this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -245,7 +245,7 @@ constructor(
         currentSettings.value =
             cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(this.useCaseMode)
+                .tryApplyAspectRatioForExternalCapture(cameraAppSettings.captureMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
@@ -300,6 +300,7 @@ constructor(
 
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
+                            captureMode = currentCameraSettings.captureMode,
                             streamConfig = currentCameraSettings.streamConfig,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
@@ -353,16 +354,15 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    useCaseMode = useCaseMode
+                                    sessionSettings
+                                    // useCaseMode = useCaseMode
                                 ) { imageCapture ->
                                     imageCaptureUseCase = imageCapture
                                 }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
-                                        sessionSettings,
-                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
+                                        sessionSettings
                                     )
                             }
                         } finally {
@@ -571,13 +571,12 @@ constructor(
         } ?: this
 
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
-        useCaseMode: CameraUseCase.UseCaseMode
-    ): CameraAppSettings = when (useCaseMode) {
-        CameraUseCase.UseCaseMode.STANDARD -> this
-        CameraUseCase.UseCaseMode.IMAGE_ONLY ->
+        captureMode: CaptureMode
+    ): CameraAppSettings = when (captureMode) {
+        CaptureMode.DEFAULT -> this
+        CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
-
-        CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+        CaptureMode.VIDEO_ONLY ->
             this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
 

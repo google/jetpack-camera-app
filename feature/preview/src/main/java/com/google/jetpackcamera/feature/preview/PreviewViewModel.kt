@@ -39,6 +39,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -112,10 +113,22 @@ class PreviewViewModel @AssistedInject constructor(
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
-            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            previewMode.toUseCaseMode(),
-            isDebugMode
+            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
+                .applyPreviewMode(previewMode),
+            isDebugMode = isDebugMode
         ) { cameraPropertiesJSON = it }
+    }
+
+    /**
+     * updates the capture mode based on the preview mode
+     */
+    private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
+        val captureMode = previewMode.toCaptureMode()
+        return if (captureMode == CaptureMode.DEFAULT) {
+            this
+        } else {
+            this.copy(captureMode = captureMode)
+        }
     }
 
     init {
@@ -270,11 +283,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun PreviewMode.toUseCaseMode() = when (this) {
-        is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
-        is PreviewMode.ExternalMultipleImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
-        is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
+    private fun PreviewMode.toCaptureMode() = when (this) {
+        is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
+        is PreviewMode.StandardMode -> CaptureMode.DEFAULT
     }
 
     /**

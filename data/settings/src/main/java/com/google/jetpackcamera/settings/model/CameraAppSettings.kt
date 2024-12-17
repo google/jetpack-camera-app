@@ -21,6 +21,7 @@ const val UNLIMITED_VIDEO_DURATION = 0L
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
+    val captureMode: CaptureMode = CaptureMode.DEFAULT,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,

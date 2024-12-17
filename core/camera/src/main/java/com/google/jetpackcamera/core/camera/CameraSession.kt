@@ -61,6 +61,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -96,7 +97,7 @@ private const val TAG = "CameraSession"
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    useCaseMode: CameraUseCase.UseCaseMode,
+    // useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
@@ -105,8 +106,8 @@ internal suspend fun runSingleCameraSession(
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
 
-    val videoCaptureUseCase = when (useCaseMode) {
-        CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+    val videoCaptureUseCase = when (sessionSettings.captureMode) {
+        CaptureMode.DEFAULT, CaptureMode.VIDEO_ONLY ->
             createVideoUseCase(
                 cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
@@ -115,7 +116,6 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.dynamicRange,
                 backgroundDispatcher
             )
-
         else -> {
             null
         }
@@ -144,7 +144,7 @@ internal suspend fun runSingleCameraSession(
             aspectRatio = sessionSettings.aspectRatio,
             dynamicRange = sessionSettings.dynamicRange,
             imageFormat = sessionSettings.imageFormat,
-            useCaseMode = useCaseMode,
+            captureMode = sessionSettings.captureMode,
             effect = when (sessionSettings.streamConfig) {
                 StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
                 StreamConfig.MULTI_STREAM -> null
@@ -292,7 +292,7 @@ internal fun createUseCaseGroup(
     videoCaptureUseCase: VideoCapture<Recorder>?,
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
-    useCaseMode: CameraUseCase.UseCaseMode,
+    captureMode: CaptureMode,
     effect: CameraEffect? = null
 ): UseCaseGroup {
     val previewUseCase =
@@ -301,7 +301,7 @@ internal fun createUseCaseGroup(
             aspectRatio,
             stabilizationMode
         )
-    val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
+    val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
     } else {
         null

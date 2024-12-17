@@ -623,6 +623,53 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 }
 
 @Composable
+private fun CaptureModeDropDown() {
+    var isExpanded by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf("Default") }
+
+    Column {
+        Box(
+            modifier = Modifier
+                .clickable { isExpanded = !isExpanded }
+                .padding(8.dp)
+        ) {
+            Text(text = selectedOption, modifier = Modifier.padding(16.dp))
+        }
+        AnimatedVisibility(visible = isExpanded) {
+            Column {
+                Text(
+                    text = "Default",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Default"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+                Text(
+                    text = "Image Only",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Image Only"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+                Text(
+                    text = "Video Only",
+                    modifier = Modifier
+                        .clickable {
+                            selectedOption = "Video Only"
+                            isExpanded = false
+                        }
+                        .padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CaptureButton(
     onClick: () -> Unit,
     onLongPress: () -> Unit,
