@@ -100,7 +100,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onVideoCaptureCreated: (VideoCapture<Recorder>) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -154,6 +155,7 @@ internal suspend fun runSingleCameraSession(
             }
         ).apply {
             getImageCapture()?.let(onImageCaptureCreated)
+            getVideoCapture()?.let(onVideoCaptureCreated)
         }
 
         cameraProvider.runWith(

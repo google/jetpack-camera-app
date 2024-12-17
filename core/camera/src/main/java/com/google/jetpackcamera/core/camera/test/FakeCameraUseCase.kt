@@ -19,6 +19,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ResolutionInfo
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
@@ -167,6 +168,7 @@ class FakeCameraUseCase(
 
     override fun getScreenFlashEvents() = screenFlashEvents
     override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
+    override fun getVideoResolutionInfo(): ResolutionInfo? = null
 
     override fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->

@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ResolutionInfo
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -93,6 +94,8 @@ interface CameraUseCase {
     fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
+
+    fun getVideoResolutionInfo(): ResolutionInfo?
 
     fun setFlashMode(flashMode: FlashMode)
 

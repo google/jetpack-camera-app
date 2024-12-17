@@ -143,7 +143,7 @@
     <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
     <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
     <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
-    <string name="video_quality_unsupported">%1$s is unsupported by the current dynamic range</string>
+    <string name="video_quality_unsupported">%1$s is unsupported by %2$s</string>
 
 
     <!-- Rationale prefixes -->
@@ -151,6 +151,8 @@
     <string name="lens_rationale_prefix">Lens flip</string>
     <string name="fps_rationale_prefix">Fps</string>
     <string name="video_quality_rationale_prefix">Video quality</string>
+    <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
+    <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
     <string name="front_lens_rationale_prefix">Front lens</string>
     <string name="rear_lens_rationale_prefix">Rear lens</string>

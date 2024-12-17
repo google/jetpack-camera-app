@@ -370,11 +370,12 @@ class SettingsViewModel @Inject constructor(
         ) {
             return FlipLensUiState.Disabled(
                 currentLensFacing = currentSettings.cameraLensFacing,
-                disabledRationale = StabilizationUnsupportedRationale(
+                disabledRationale = DisabledRationale.VideoQualityUnsupportedRationale(
                     when (currentSettings.cameraLensFacing) {
                         LensFacing.BACK -> R.string.front_lens_rationale_prefix
                         LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
-                    }
+                    },
+                    R.string.video_quality_rationale_suffix_sdr
                 )
             )
         }

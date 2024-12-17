@@ -185,14 +185,15 @@ class PreviewViewModel @AssistedInject constructor(
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
-                            cameraPropertiesJSON,
-                            isDebugMode
+                            cameraPropertiesJSON = cameraPropertiesJSON,
+                            videoResolution = cameraUseCase.getVideoResolutionInfo()?.resolution,
+                            isDebugMode = isDebugMode,
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -838,6 +839,7 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     debugUiState = DebugUiState(
                         old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.videoResolution,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
                     )

@@ -25,6 +25,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,6 +52,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
 
 private const val TAG = "DebugOverlayComponents"
 
@@ -112,6 +114,18 @@ fun DebugOverlayComponent(
                 ) {
                     Text(text = "Show Camera Properties JSON")
                 }
+
+                Row {
+                    Text("Video resolution: ")
+                    Text(
+                        modifier = Modifier.testTag(
+                            DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+                        ),
+                        text = previewUiState.debugUiState.videoResolution.toString(),
+                    )
+                }
+
+
                 TextButton(
                     modifier = Modifier.testTag(
                         DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
@@ -122,6 +136,7 @@ fun DebugOverlayComponent(
                 ) {
                     Text(text = "Set Zoom Ratio")
                 }
+
             }
 
             // Openable contents
