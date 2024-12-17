@@ -97,7 +97,6 @@ private const val TAG = "CameraSession"
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    // useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
