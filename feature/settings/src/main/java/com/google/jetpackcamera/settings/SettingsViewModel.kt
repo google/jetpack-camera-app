@@ -30,6 +30,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -350,6 +351,22 @@ class SettingsViewModel @Inject constructor(
         // If a non-AUTO stabilization is currently on and the other lens won't support it
         if (currentSettings.stabilizationMode != StabilizationMode.AUTO &&
             currentSettings.stabilizationMode !in newLensConstraints.supportedStabilizationModes
+        ) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = StabilizationUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    }
+                )
+            )
+        }
+
+        if (currentSettings.videoQuality != VideoQuality.AUTO &&
+            newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
+                currentSettings.videoQuality
+            ) != true
         ) {
             return FlipLensUiState.Disabled(
                 currentLensFacing = currentSettings.cameraLensFacing,
