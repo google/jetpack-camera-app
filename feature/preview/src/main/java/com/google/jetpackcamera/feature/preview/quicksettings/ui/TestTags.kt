@@ -25,7 +25,7 @@ package com.google.jetpackcamera.feature.preview.quicksettings.ui
 //
 // ////////////////////////////////
 
-const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsCaptureModeButton"
+const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
 const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val QUICK_SETTINGS_HDR_BUTTON = "QuickSettingsHdrButton"
