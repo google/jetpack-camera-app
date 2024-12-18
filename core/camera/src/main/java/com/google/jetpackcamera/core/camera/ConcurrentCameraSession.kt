@@ -19,14 +19,20 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
+import androidx.concurrent.futures.await
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -36,6 +42,7 @@ context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
+    onSetZoomRatioMap: (Map<LensFacing, Float>) -> Unit = { _ -> },
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
@@ -97,6 +104,7 @@ internal suspend fun runConcurrentCameraSession(
 
     cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
         Log.d(TAG, "Concurrent camera session started")
+        // todo: bug?? concurrent camera only ever lists one camera
         val primaryCamera = concurrentCamera.cameras.first {
             it.cameraInfo.appLensFacing == sessionSettings.primaryCameraInfo.appLensFacing
         }
@@ -116,6 +124,72 @@ internal suspend fun runConcurrentCameraSession(
             sessionSettings.primaryCameraInfo.torchState.asFlow().collectLatest { torchState ->
                 currentCameraState.update { old ->
                     old.copy(torchEnabled = torchState == TorchState.ON)
+                }
+            }
+        }
+
+        // update cameraState to mirror the current zoomState
+        launch {
+            // todo bug? why isn't this catching the initial setZoomRatio? the camerastate zoom is not updating properly
+            primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().distinctUntilChanged()
+                .onCompletion {
+                    // save current zoom state to current camera settings when flipping
+                    onSetZoomRatioMap(
+                        currentCameraState.value.zoomRatios
+                    )
+                }.collectLatest { zoomState ->
+                    currentCameraState.update { old ->
+                        old.copy(
+                            zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                put(primaryCamera.cameraInfo.appLensFacing, zoomState.zoomRatio)
+                            }.toMap(),
+                            linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                put(primaryCamera.cameraInfo.appLensFacing, zoomState.linearZoom)
+                            }.toMap()
+                        )
+                    }
+                }
+        }
+
+        launch {
+            // Apply camera zoom
+            // Immediately Apply camera zoom from current settings when opening a new camera
+            primaryCamera.cameraControl.setZoomRatio(
+                initialTransientSettings.zoomRatios[primaryLensFacing] ?: 1f
+            ).await()
+
+            // todo: what is happening after the first setZoomRatio? The zoom applies but is not reflected in cameraInfo.ZoomState?
+            // the only ways this works is to call it twice for some reason... somethings going wrong somewhere
+            primaryCamera.cameraControl.setZoomRatio(
+                initialTransientSettings.zoomRatios[primaryLensFacing] ?: 1f
+            ).await()
+            zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
+                val currentZoomState = primaryCamera.cameraInfo.zoomState
+                    .asFlow()
+                    .filterNotNull()
+                    .first()
+                when (zoomChange) {
+                    is CameraZoomState.Ratio -> {
+                        primaryCamera.cameraControl.setZoomRatio(
+                            zoomChange.value.coerceIn(
+                                currentZoomState.minZoomRatio,
+                                currentZoomState.maxZoomRatio
+                            )
+                        ).await()
+                    }
+
+                    is CameraZoomState.Linear -> {
+                        primaryCamera.cameraControl.setLinearZoom(zoomChange.value).await()
+                    }
+
+                    is CameraZoomState.Scale -> {
+                        val newRatio =
+                            (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                currentZoomState.minZoomRatio,
+                                currentZoomState.maxZoomRatio
+                            )
+                        primaryCamera.cameraControl.setZoomRatio(newRatio).await()
+                    }
                 }
             }
         }
