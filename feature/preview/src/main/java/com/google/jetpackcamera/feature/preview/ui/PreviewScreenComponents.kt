@@ -455,7 +455,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -542,10 +542,7 @@ fun StabilizationIcon(
 }
 
 @Composable
-fun VideoQualityIcon(
-    videoQuality: VideoQuality,
-    modifier: Modifier = Modifier
-) {
+fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.AUTO) {
             Icon(
@@ -801,7 +798,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
