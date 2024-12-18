@@ -53,6 +53,7 @@ import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
+import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -72,6 +73,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -102,7 +104,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onVideoCaptureCreated: (VideoCapture<Recorder>) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -117,6 +120,7 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.targetFrameRate,
                 sessionSettings.stabilizationMode,
                 sessionSettings.dynamicRange,
+                sessionSettings.videoQuality,
                 backgroundDispatcher
             )
 
@@ -155,6 +159,7 @@ internal suspend fun runSingleCameraSession(
             }
         ).apply {
             getImageCapture()?.let(onImageCaptureCreated)
+            getVideoCapture()?.let(onVideoCaptureCreated)
         }
 
         cameraProvider.runWith(
@@ -397,6 +402,7 @@ internal fun createVideoUseCase(
     targetFrameRate: Int,
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
+    videoQuality: VideoQuality,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -404,7 +410,14 @@ internal fun createVideoUseCase(
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor()).build()
+        .setExecutor(backgroundDispatcher.asExecutor())
+        .apply {
+            videoQuality.toQuality()?.let { quality ->
+                // No fallback strategy is used. The app will crash if the quality is unsupported
+                setQualitySelector(QualitySelector.from(quality))
+            }
+        }.build()
+
     return VideoCapture.Builder(recorder).apply {
         // set video stabilization
         if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {

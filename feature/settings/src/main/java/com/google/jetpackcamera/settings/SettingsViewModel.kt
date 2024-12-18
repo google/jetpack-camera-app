@@ -30,10 +30,12 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -61,6 +63,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull()
         ) { updatedSettings, constraints ->
+            updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
@@ -71,7 +74,8 @@ class SettingsViewModel @Inject constructor(
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
@@ -222,6 +226,74 @@ class SettingsViewModel @Inject constructor(
         return SingleSelectableState.Selectable
     }
 
+    private fun getVideoQualityUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): VideoQualityUiState {
+        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
+        val supportedVideQualities: List<VideoQuality>? =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
+        return if (!supportedVideQualities.isNullOrEmpty()) {
+            VideoQualityUiState.Enabled(
+                currentVideoQuality = cameraAppSettings.videoQuality,
+                videoQualityAutoState = getSingleVideoQualityState(
+                    VideoQuality.AUTO,
+                    supportedVideQualities
+                ),
+                videoQualitySDState = getSingleVideoQualityState(
+                    VideoQuality.SD,
+                    supportedVideQualities
+                ),
+                videoQualityHDState = getSingleVideoQualityState(
+                    VideoQuality.HD,
+                    supportedVideQualities
+                ),
+                videoQualityFHDState = getSingleVideoQualityState(
+                    VideoQuality.FHD,
+                    supportedVideQualities
+                ),
+                videoQualityUHDState = getSingleVideoQualityState(
+                    VideoQuality.UHD,
+                    supportedVideQualities
+                ),
+                videoQualityHighestState = getSingleVideoQualityState(
+                    VideoQuality.HIGHEST,
+                    supportedVideQualities
+                ),
+                videoQualityLowestState = getSingleVideoQualityState(
+                    VideoQuality.LOWEST,
+                    supportedVideQualities
+                )
+            )
+        } else {
+            VideoQualityUiState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+    }
+
+    private fun getSingleVideoQualityState(
+        videoQuality: VideoQuality,
+        supportedVideQualities: List<VideoQuality>?
+    ): SingleSelectableState {
+        return if (videoQuality == VideoQuality.AUTO ||
+            (
+                !supportedVideQualities.isNullOrEmpty() &&
+                    supportedVideQualities.contains(videoQuality)
+                )
+        ) {
+            SingleSelectableState.Selectable
+        } else {
+            SingleSelectableState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+    }
+
     /**
      * Enables or disables default camera switch based on:
      * - number of cameras available
@@ -287,6 +359,23 @@ class SettingsViewModel @Inject constructor(
                         LensFacing.BACK -> R.string.front_lens_rationale_prefix
                         LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
                     }
+                )
+            )
+        }
+
+        if (currentSettings.videoQuality != VideoQuality.AUTO &&
+            newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
+                currentSettings.videoQuality
+            ) != true
+        ) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = DisabledRationale.VideoQualityUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    },
+                    R.string.video_quality_rationale_suffix_sdr
                 )
             )
         }
@@ -432,6 +521,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateMaxVideoDuration(durationMillis)
             Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoQuality(videoQuality: VideoQuality) {
+        viewModelScope.launch {
+            settingsRepository.updateVideoQuality(videoQuality)
+            Log.d(TAG, "set video quality: $videoQuality ms")
         }
     }
 }

@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import android.graphics.Rect
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
@@ -49,11 +50,13 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlin.math.abs
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
@@ -187,19 +190,39 @@ class PreviewViewModel @AssistedInject constructor(
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
-                            cameraPropertiesJSON,
-                            isDebugMode
+                            cameraPropertiesJSON = cameraPropertiesJSON,
+                            videoResolution = cameraUseCase.getVideoResolutionInfo()?.cropRect,
+                            isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        videoQuality = getVideoQualityFromCropRect(
+                            cameraUseCase.getVideoResolutionInfo()?.cropRect
+                        )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
                 }
             }.collect {}
+        }
+    }
+
+    private fun getVideoQualityFromCropRect(cropRect: Rect?): VideoQuality {
+        if (cropRect == null) {
+            return VideoQuality.AUTO
+        }
+        val width = abs(cropRect.top - cropRect.bottom)
+        return if (width < 720) {
+            VideoQuality.SD
+        } else if (width < 1080) {
+            VideoQuality.HD
+        } else if (width == 1080) {
+            VideoQuality.FHD
+        } else {
+            VideoQuality.UHD
         }
     }
 
@@ -334,6 +357,10 @@ class PreviewViewModel @AssistedInject constructor(
 
                 CameraAppSettings::maxVideoDurationMillis -> {
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
+                CameraAppSettings::videoQuality -> {
+                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
                 }
 
                 CameraAppSettings::darkMode -> {}
@@ -843,6 +870,7 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     debugUiState = DebugUiState(
                         old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.videoResolution,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
                     )
