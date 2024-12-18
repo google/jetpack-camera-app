@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -67,6 +68,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIn
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -94,6 +96,7 @@ fun CameraControlsOverlay(
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
@@ -159,6 +162,7 @@ fun CameraControlsOverlay(
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
+                onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
@@ -260,6 +264,7 @@ private fun ControlsBottom(
     onToggleAudioMuted: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
@@ -268,16 +273,16 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
-    if (videoRecordingState is VideoRecordingState.Inactive) {
+    if (videoRecordingState is VideoRecordingState.Inactive &&
+        previewUiState.captureModeUiState is CaptureModeUiState.Enabled
+    ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // todo(kc): WIP UI properly style this
+            // todo(kc): WIP UI... still need to properly style this
             CaptureModeDropDown(
-                modifier = Modifier.align(
-                    Alignment.BottomEnd
-                ),
-                onSelectCaptureMode = {
-                    TODO()
-                }
+                modifier = Modifier.align(Alignment.BottomEnd),
+                onSetCaptureMode = onSetCaptureMode,
+                captureModeUiState = previewUiState.captureModeUiState,
+                onDisabledCaptureMode = onToggleWhenDisabled
             )
         }
     }

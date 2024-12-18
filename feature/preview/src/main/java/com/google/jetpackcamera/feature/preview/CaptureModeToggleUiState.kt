@@ -27,6 +27,7 @@ import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPP
 import com.google.jetpackcamera.settings.model.CaptureMode
 
 sealed interface CaptureModeUiState {
+    data object Unavailable : CaptureModeUiState
     data class Enabled(
         val currentSelection: CaptureMode,
         val defaultCaptureState: SingleSelectableState = SingleSelectableState.Selectable,

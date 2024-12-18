@@ -248,6 +248,7 @@ constructor(
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
+                .tryApplyCaptureModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -545,10 +546,47 @@ constructor(
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
+                    ?.tryApplyCaptureModeConstraints()
             } else {
                 old
             }
         }
+    }
+
+    private fun CameraAppSettings.tryApplyCaptureModeConstraints(): CameraAppSettings {
+        Log.d(TAG, "applying capture mode constraints")
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            val newCaptureMode =
+                if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                    Log.d(TAG, "CONCURRENT CAMERA CAPTURE MODE")
+                    CaptureMode.VIDEO_ONLY
+                } else if (dynamicRange == DynamicRange.HLG10 ||
+                    imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                ) {
+                    if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)) {
+                        if (constraints.supportedImageFormatsMap[streamConfig]
+                                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                        ) {
+                            // if  both image/video are supported, we don't need to change our current capture mode
+                            this.captureMode
+                        } else {
+                            // if only video is supported, change to video only
+                            CaptureMode.VIDEO_ONLY
+                        }
+                    } else {
+                        // if only image is supported, change to image only
+                        CaptureMode.IMAGE_ONLY
+                    }
+                } else {
+                    // if no dynamic range value is set, its OK to return the current value
+                    return this
+                }
+            Log.d(TAG, "new capture mode $newCaptureMode")
+            return this@tryApplyCaptureModeConstraints.copy(
+                captureMode = newCaptureMode
+            )
+        }
+            ?: return this
     }
 
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
@@ -682,6 +720,7 @@ constructor(
             old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -689,6 +728,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -702,12 +742,14 @@ constructor(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -717,6 +759,10 @@ constructor(
                 maxVideoDurationMillis = durationInMillis
             )
         }
+    }
+
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        currentSettings.update { old -> old?.copy(captureMode = captureMode) }
     }
 
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {

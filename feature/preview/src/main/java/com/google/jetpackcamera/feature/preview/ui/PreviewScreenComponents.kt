@@ -106,8 +106,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -491,6 +494,7 @@ fun StabilizationIcon(
                                 throw IllegalStateException(
                                     "AUTO is not a specific StabilizationUiState."
                                 )
+
                             StabilizationMode.HIGH_QUALITY ->
                                 painterResource(R.drawable.video_stable_hq_filled_icon)
 
@@ -506,6 +510,7 @@ fun StabilizationIcon(
                                         "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
+
                     is StabilizationUiState.Auto -> {
                         when (stabilizationUiState.stabilizationMode) {
                             StabilizationMode.ON ->
@@ -513,6 +518,7 @@ fun StabilizationIcon(
 
                             StabilizationMode.OPTICAL ->
                                 painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
@@ -628,12 +634,11 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 @Composable
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
-    onSelectCaptureMode: (CaptureMode) -> Unit
-    //
-// captureModeUiState: CaptureModeUiState
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    onDisabledCaptureMode: (CaptureModeToggleUiState.DisabledReason) -> Unit,
+    captureModeUiState: CaptureModeUiState.Enabled
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("Default") }
 
     Column(modifier = modifier) {
         AnimatedVisibility(
@@ -642,44 +647,84 @@ fun CaptureModeDropDown(
             fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
+            fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
+                if (selectableState is SingleSelectableState.Disabled) {
+                    { onDisabledCaptureMode(selectableState.disabledReason) }
+                } else {
+                    { TODO("Enabled should not have disabled click") }
+                }
+
             Column {
-                Text(
+                DropDownItem(
                     text = "Default",
-                    modifier = Modifier
-                        .clickable {
-                            selectedOption = "Default"
-                            isExpanded = false
-                        }
-                        .padding(16.dp)
+                    enabled = captureModeUiState.defaultCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.DEFAULT)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
                 )
-                Text(
+                DropDownItem(
                     text = "Image Only",
-                    modifier = Modifier
-                        .clickable {
-                            selectedOption = "Image Only"
-                            isExpanded = false
-                        }
-                        .padding(16.dp)
+                    enabled = captureModeUiState.imageOnlyCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.IMAGE_ONLY)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
                 )
-                Text(
+                DropDownItem(
                     text = "Video Only",
-                    modifier = Modifier
-                        .clickable {
-                            selectedOption = "Video Only"
-                            isExpanded = false
-                        }
-                        .padding(16.dp)
+                    enabled = captureModeUiState.videoOnlyCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.VIDEO_ONLY)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.videoOnlyCaptureState
+                    )
+
                 )
             }
         }
+        // current selection
         Box(
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
                 .padding(8.dp)
         ) {
-            Text(text = selectedOption, modifier = Modifier.padding(16.dp))
+            Text(
+                text = captureModeUiState.currentSelection.toString(),
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
+}
+
+@Composable
+fun DropDownItem(
+    modifier: Modifier = Modifier,
+    text: String,
+    onClick: () -> Unit = {},
+    onDisabledClick: () -> Unit = {},
+    enabled: Boolean = true,
+    isSelected: Boolean = false
+) {
+    Text(
+        text = text,
+        color = if (enabled) Color.Unspecified else Color.DarkGray,
+        modifier = modifier
+            .clickable(enabled = true, onClick = if (enabled) onClick else onDisabledClick)
+            .apply {
+                if (!enabled) {
+                    alpha(.37f)
+                }
+            }
+            .padding(16.dp)
+    )
 }
 
 @Composable
@@ -733,6 +778,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
+
                         VideoRecordingState.Starting -> currentColor
                     }
                 )
