@@ -185,7 +185,7 @@ class PreviewViewModel @AssistedInject constructor(
                     }.copy(
                         // Update or initialize PreviewUiState.Ready
                         previewMode = previewMode,
-                        currentCameraSettings = cameraAppSettings,
+                        currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
                         zoomScale = cameraState.zoomScale,
                         videoRecordingState = cameraState.videoRecordingState,
@@ -208,6 +208,10 @@ class PreviewViewModel @AssistedInject constructor(
                         captureModeUiState = getCaptureModeUiState(
                             systemConstraints,
                             cameraAppSettings
+                        ),
+                        captureButtonUiState = getCaptureButtonUiState(
+                            cameraAppSettings,
+                            cameraState
                         )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
@@ -354,6 +358,8 @@ class PreviewViewModel @AssistedInject constructor(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): CaptureModeUiState {
+        Log.d(TAG, "new capture mode state ${cameraAppSettings.captureMode}")
+
         val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
             cameraAppSettings
         )
@@ -531,6 +537,17 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun getCaptureButtonUiState(
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState
+    ): CaptureButtonUiState {
+        Log.d(TAG, "new capture button state ${cameraAppSettings.captureMode}")
+        return CaptureButtonUiState.Enabled(
+            captureMode = cameraAppSettings.captureMode,
+            previewMode = previewMode,
+            videoRecordingState = cameraState.videoRecordingState
+        )
+    }
     /*
     private fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,
@@ -732,7 +749,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             cameraUseCase.setStreamConfig(streamConfig)
         }
