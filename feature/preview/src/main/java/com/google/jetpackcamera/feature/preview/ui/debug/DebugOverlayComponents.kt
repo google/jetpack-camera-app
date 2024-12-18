@@ -123,7 +123,7 @@ fun DebugOverlayComponent(
                     } else {
                         val rect = previewUiState.debugUiState.videoResolution
                         abs(rect.left - rect.right).toString() + "x" +
-                                abs(rect.top - rect.bottom).toString()
+                            abs(rect.top - rect.bottom).toString()
                     }
                     Text(
                         modifier = Modifier.testTag(
@@ -143,7 +143,6 @@ fun DebugOverlayComponent(
                 ) {
                     Text(text = "Set Zoom Ratio")
                 }
-
             }
 
             // Openable contents
