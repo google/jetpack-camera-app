@@ -149,7 +149,7 @@ fun PreviewScreen(
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onChangeImageFormat = viewModel::setImageFormat,
-                onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
+                onDisabledCaptureMode = viewModel::showSnackBarForDisabledHdrToggle,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
@@ -185,7 +185,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -263,7 +263,7 @@ private fun ContentScreen(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
-                onToggleWhenDisabled = onToggleWhenDisabled,
+                onDisabledCaptureMode = onDisabledCaptureMode,
                 onSetPause = onSetPause,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
@@ -349,6 +349,6 @@ private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
     videoRecordingState = VideoRecordingState.Inactive(),
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-    previewMode = PreviewMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeToggleUiState.Invisible
+    previewMode = PreviewMode.StandardMode {}
+    // captureModeToggleUiState = CaptureModeToggleUiState.Invisible
 )

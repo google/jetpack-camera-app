@@ -106,8 +106,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
+import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
@@ -635,7 +635,7 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (CaptureModeToggleUiState.DisabledReason) -> Unit,
+    onDisabledCaptureMode: (DisabledReason) -> Unit,
     captureModeUiState: CaptureModeUiState.Enabled
 ) {
     var isExpanded by remember { mutableStateOf(false) }

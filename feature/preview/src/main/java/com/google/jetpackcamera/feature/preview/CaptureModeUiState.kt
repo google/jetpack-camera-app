@@ -36,13 +36,53 @@ sealed interface CaptureModeUiState {
     ) : CaptureModeUiState
 }
 
+enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
+    VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
+        VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+        R.string.toast_video_capture_external_unsupported
+    ),
+    IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED(
+        IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+        R.string.toast_image_capture_external_unsupported
+
+    ),
+    IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA(
+        IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG,
+        R.string.toast_image_capture_unsupported_concurrent_camera
+    ),
+    HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
+        HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG,
+        R.string.toast_hdr_video_unsupported_on_device
+    ),
+    HDR_VIDEO_UNSUPPORTED_ON_LENS(
+        HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG,
+        R.string.toast_hdr_video_unsupported_on_lens
+    ),
+    HDR_IMAGE_UNSUPPORTED_ON_DEVICE(
+        HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG,
+        R.string.toast_hdr_photo_unsupported_on_device
+    ),
+    HDR_IMAGE_UNSUPPORTED_ON_LENS(
+        HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG,
+        R.string.toast_hdr_photo_unsupported_on_lens
+    ),
+    HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(
+        HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG,
+        R.string.toast_hdr_photo_unsupported_on_lens_single_stream
+    ),
+    HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(
+        HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG,
+        R.string.toast_hdr_photo_unsupported_on_lens_multi_stream
+    )
+}
+
 /** State for the individual options on Popup dialog settings */
 sealed interface SingleSelectableState {
     data object Selectable : SingleSelectableState
-    data class Disabled(val disabledReason: CaptureModeToggleUiState.DisabledReason) :
-        SingleSelectableState
+    data class Disabled(val disabledReason: DisabledReason) : SingleSelectableState
 }
 
+/*
 sealed interface CaptureModeToggleUiState {
 
     data object Invisible : CaptureModeToggleUiState
@@ -100,4 +140,5 @@ sealed interface CaptureModeToggleUiState {
         CAPTURE_TOGGLE_IMAGE,
         CAPTURE_TOGGLE_VIDEO
     }
-}
+    }
+ */
