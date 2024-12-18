@@ -94,7 +94,8 @@ sealed class FlashModeUiState {
 
     data class Available(
         val selectedFlashMode: FlashMode,
-        val availableFlashModes: List<FlashMode>
+        val availableFlashModes: List<FlashMode>,
+        val isActive: Boolean
     ) : FlashModeUiState() {
         init {
             check(selectedFlashMode in availableFlashModes) {
@@ -136,7 +137,8 @@ sealed class FlashModeUiState {
             } else {
                 Available(
                     selectedFlashMode = selectedFlashMode,
-                    availableFlashModes = availableModes
+                    availableFlashModes = availableModes,
+                    isActive = false
                 )
             }
         }
