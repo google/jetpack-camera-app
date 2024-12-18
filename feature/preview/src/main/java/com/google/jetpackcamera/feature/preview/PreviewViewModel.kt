@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import android.graphics.Rect
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
@@ -74,6 +75,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -196,12 +198,31 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        videoQuality = getVideoQualityFromCropRect(
+                            cameraUseCase.getVideoResolutionInfo()?.cropRect
+                        )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
                 }
             }.collect {}
+        }
+    }
+
+    private fun getVideoQualityFromCropRect(cropRect: Rect?): VideoQuality {
+        if (cropRect == null) {
+            return VideoQuality.AUTO
+        }
+        val width = abs(cropRect.top - cropRect.bottom)
+        return if (width < 720) {
+            VideoQuality.SD
+        } else if (width < 1080) {
+            VideoQuality.HD
+        } else if (width == 1080) {
+            VideoQuality.FHD
+        } else {
+            VideoQuality.UHD
         }
     }
 

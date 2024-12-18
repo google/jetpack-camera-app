@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -50,7 +51,8 @@ sealed interface PreviewUiState {
         val currentLogicalCameraId: String? = null,
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val videoQuality: VideoQuality = VideoQuality.AUTO
     ) : PreviewUiState
 }
 
