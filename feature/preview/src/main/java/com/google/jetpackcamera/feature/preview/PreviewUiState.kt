@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -53,7 +54,8 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-        val audioUiState: AudioUiState = AudioUiState.Disabled
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -65,7 +67,20 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+val DEFAULT_CAPTURE_BUTTON_UISTATE = CaptureButtonUiState.Enabled(
+    captureMode = CaptureMode.STANDARD,
+    previewMode = PreviewMode.StandardMode {},
+    videoRecordingState = VideoRecordingState.Inactive()
+)
+sealed interface CaptureButtonUiState {
 
+    data object Unavailable : CaptureButtonUiState
+    data class Enabled(
+        val captureMode: CaptureMode,
+        val previewMode: PreviewMode,
+        val videoRecordingState: VideoRecordingState
+    ) : CaptureButtonUiState
+}
 sealed interface AudioUiState {
     val amplitude: Double
 

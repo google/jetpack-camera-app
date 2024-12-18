@@ -109,12 +109,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -733,22 +735,34 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 
 @Composable
 fun CaptureButton(
-    onClick: () -> Unit,
-    onLongPress: () -> Unit,
-    onRelease: () -> Unit,
-    videoRecordingState: VideoRecordingState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCaptureImage: () -> Unit,
+    onStartVideoRecording: () -> Unit,
+    onStopVideoRecording: () -> Unit,
+    captureButtonUiState: CaptureButtonUiState
 ) {
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
     var isPressedDown by remember {
         mutableStateOf(false)
     }
+    var isLongPressing by remember {
+        mutableStateOf(false)
+    }
+
     val currentColor = LocalContentColor.current
     Box(
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
-                        onLongPress()
+                        isLongPressing = true
+                        var curr = currentUiState.value
+                        if (curr is CaptureButtonUiState.Enabled) {
+                            when (curr.captureMode) {
+                                CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> onStartVideoRecording()
+                                CaptureMode.IMAGE_ONLY -> {}
+                            }
+                        }
                     },
                     // TODO: @kimblebee - stopVideoRecording is being called every time the capture
                     // button is pressed -- regardless of tap or long press
@@ -756,9 +770,43 @@ fun CaptureButton(
                         isPressedDown = true
                         awaitRelease()
                         isPressedDown = false
-                        onRelease()
+                        isLongPressing = false
+                        var curr = currentUiState.value
+                        when (curr) {
+                            CaptureButtonUiState.Unavailable -> {}
+                            is CaptureButtonUiState.Enabled -> {
+                                if (curr.captureMode == CaptureMode.DEFAULT) {
+                                    onStopVideoRecording()
+                                }
+                            }
+                        }
                     },
-                    onTap = { onClick() }
+                    onTap = {
+                        var curr = currentUiState.value
+                        when (curr) {
+                            CaptureButtonUiState.Unavailable -> {}
+                            is CaptureButtonUiState.Enabled -> {
+                                Log.d(TAG, "capture mode ${curr.captureMode}")
+                                if (!isLongPressing) {
+                                    when (curr.captureMode) {
+                                        CaptureMode.DEFAULT,
+                                        CaptureMode.IMAGE_ONLY -> onCaptureImage()
+
+                                        CaptureMode.VIDEO_ONLY -> when (curr.videoRecordingState) {
+                                            is VideoRecordingState.Starting -> {}
+                                            is VideoRecordingState.Inactive -> {
+                                                onStartVideoRecording()
+                                            }
+
+                                            is VideoRecordingState.Active -> {
+                                                onStopVideoRecording()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
             }
             .size(120.dp)
@@ -769,23 +817,31 @@ fun CaptureButton(
             modifier = Modifier
                 .size(110.dp),
             onDraw = {
-                drawCircle(
-                    alpha = when (videoRecordingState) {
-                        is VideoRecordingState.Active.Paused -> .37f
-                        else -> 1f
-                    },
-                    color =
-                    when (videoRecordingState) {
-                        is VideoRecordingState.Inactive -> {
-                            if (isPressedDown) currentColor else Color.Transparent
-                        }
-
-                        is VideoRecordingState.Active.Recording,
-                        is VideoRecordingState.Active.Paused -> Color.Red
-
-                        VideoRecordingState.Starting -> currentColor
+                when (captureButtonUiState) {
+                    CaptureButtonUiState.Unavailable -> {
+                        drawCircle(color = Color.DarkGray)
                     }
-                )
+
+                    is CaptureButtonUiState.Enabled -> {
+                        drawCircle(
+                            alpha = when (captureButtonUiState.videoRecordingState) {
+                                is VideoRecordingState.Active.Paused -> .37f
+                                else -> 1f
+                            },
+                            color =
+                            when (captureButtonUiState.videoRecordingState) {
+                                is VideoRecordingState.Inactive -> {
+                                    if (isPressedDown) currentColor else Color.Transparent
+                                }
+
+                                is VideoRecordingState.Active.Recording,
+                                is VideoRecordingState.Active.Paused -> Color.Red
+
+                                VideoRecordingState.Starting -> currentColor
+                            }
+                        )
+                    }
+                }
             }
         )
     }

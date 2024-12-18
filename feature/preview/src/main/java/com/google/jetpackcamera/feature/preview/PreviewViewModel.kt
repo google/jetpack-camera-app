@@ -58,9 +58,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -77,6 +74,9 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -191,7 +191,7 @@ class PreviewViewModel @AssistedInject constructor(
                     }.copy(
                         // Update or initialize PreviewUiState.Ready
                         previewMode = previewMode,
-                        currentCameraSettings = cameraAppSettings,
+                        currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
                         zoomScale = cameraState.zoomScale,
                         videoRecordingState = cameraState.videoRecordingState,
@@ -218,7 +218,10 @@ class PreviewViewModel @AssistedInject constructor(
                         videoQuality = cameraState.videoQualityInfo.quality,
                         audioUiState = getAudioUiState(
                             cameraAppSettings.audioEnabled,
-                            cameraState.videoRecordingState
+                            cameraState.videoRecordingState),
+                        captureButtonUiState = getCaptureButtonUiState(
+                            cameraAppSettings,
+                            cameraState
                         )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
@@ -388,7 +391,17 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
-
+    fun getCaptureButtonUiState(
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState
+    ): CaptureButtonUiState {
+        Log.d(TAG, "new capture button state ${cameraAppSettings.captureMode}")
+        return CaptureButtonUiState.Enabled(
+            captureMode = cameraAppSettings.captureMode,
+            previewMode = previewMode,
+            videoRecordingState = cameraState.videoRecordingState
+        )
+    }
     private fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
@@ -585,7 +598,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             cameraUseCase.setStreamConfig(streamConfig)
         }
