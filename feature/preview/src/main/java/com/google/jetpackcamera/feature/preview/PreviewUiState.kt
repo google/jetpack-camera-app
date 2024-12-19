@@ -43,13 +43,14 @@ sealed interface PreviewUiState {
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+        // val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -80,9 +81,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }

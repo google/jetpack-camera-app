@@ -62,6 +62,7 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -141,13 +142,14 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onChangeZoomScale = viewModel::setZoomScale,
+                onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onChangeCaptureMode = viewModel::setCaptureMode,
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onChangeImageFormat = viewModel::setImageFormat,
-                onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
+                onDisabledCaptureMode = viewModel::showSnackBarForDisabledHdrToggle,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
@@ -173,6 +175,7 @@ private fun ContentScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onChangeZoomScale: (Float) -> Unit = {},
@@ -182,7 +185,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -253,13 +256,14 @@ private fun ContentScreen(
             CameraControlsOverlay(
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
+                onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onMuteAudio = onToggleMuteAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
-                onToggleWhenDisabled = onToggleWhenDisabled,
+                onDisabledCaptureMode = onDisabledCaptureMode,
                 onSetPause = onSetPause,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
@@ -345,6 +349,6 @@ private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
     videoRecordingState = VideoRecordingState.Inactive(),
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-    previewMode = PreviewMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeToggleUiState.Invisible
+    previewMode = PreviewMode.StandardMode {}
+    // captureModeToggleUiState = CaptureModeToggleUiState.Invisible
 )
