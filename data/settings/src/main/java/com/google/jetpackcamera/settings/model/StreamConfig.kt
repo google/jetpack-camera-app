@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.settings.model
 
-enum class CaptureMode {
+enum class StreamConfig {
     MULTI_STREAM,
     SINGLE_STREAM
 }

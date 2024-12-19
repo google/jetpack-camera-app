@@ -64,7 +64,6 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -72,6 +71,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -128,9 +128,9 @@ internal suspend fun runSingleCameraSession(
     launch {
         processVideoControlEvents(
             videoCaptureUseCase,
-            captureTypeSuffix = when (sessionSettings.captureMode) {
-                CaptureMode.MULTI_STREAM -> "MultiStream"
-                CaptureMode.SINGLE_STREAM -> "SingleStream"
+            captureTypeSuffix = when (sessionSettings.streamConfig) {
+                StreamConfig.MULTI_STREAM -> "MultiStream"
+                StreamConfig.SINGLE_STREAM -> "SingleStream"
             }
         )
     }
@@ -149,9 +149,9 @@ internal suspend fun runSingleCameraSession(
             dynamicRange = sessionSettings.dynamicRange,
             imageFormat = sessionSettings.imageFormat,
             useCaseMode = useCaseMode,
-            effect = when (sessionSettings.captureMode) {
-                CaptureMode.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
-                CaptureMode.MULTI_STREAM -> null
+            effect = when (sessionSettings.streamConfig) {
+                StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
+                StreamConfig.MULTI_STREAM -> null
             }
         ).apply {
             getImageCapture()?.let(onImageCaptureCreated)

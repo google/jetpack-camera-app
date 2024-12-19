@@ -15,6 +15,16 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+// ////////////////////////////////
+//
+// !!!HEY YOU!!!
+// MODIFICATIONS TO EXISTING TEST TAGS WILL BREAK EXISTING EXTERNAL
+// AUTOMATED TESTS THAT SEARCH FOR THESE TAGS.
+//
+// PLEASE UPDATE YOUR TESTS ACCORDINGLY!
+//
+// ////////////////////////////////
+
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
