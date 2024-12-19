@@ -300,7 +300,8 @@ fun ExpandedQuickSettingsUiPreview() {
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                    isActive = false
                 )
             ),
             currentCameraSettings = CameraAppSettings(),
