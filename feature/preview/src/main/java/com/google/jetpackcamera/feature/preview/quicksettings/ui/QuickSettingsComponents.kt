@@ -189,7 +189,9 @@ fun QuickSetFlash(
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
@@ -470,7 +472,9 @@ fun FlashModeIndicator(
             )
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -485,7 +489,10 @@ fun QuickSettingsIndicators(
     modifier: Modifier = Modifier
 ) {
     Row(modifier) {
-        FlashModeIndicator(flashModeUiState, onFlashModeClick)
+        FlashModeIndicator(
+            flashModeUiState,
+            onFlashModeClick
+        )
     }
 }
 
@@ -493,9 +500,14 @@ private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = available
     get((indexOf(selectedFlashMode) + 1) % size)
 }
 
-private fun FlashMode.toCameraFlashMode() = when (this) {
+private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
     FlashMode.OFF -> CameraFlashMode.OFF
     FlashMode.AUTO -> CameraFlashMode.AUTO
     FlashMode.ON -> CameraFlashMode.ON
-    FlashMode.LOW_LIGHT_BOOST -> CameraFlashMode.LOW_LIGHT_BOOST
+    FlashMode.LOW_LIGHT_BOOST -> {
+        when (isActive) {
+            true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+            false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+        }
+    }
 }
