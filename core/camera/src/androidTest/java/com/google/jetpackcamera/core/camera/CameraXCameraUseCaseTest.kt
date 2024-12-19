@@ -168,7 +168,7 @@ class CameraXCameraUseCaseTest {
         iODispatcher = Dispatchers.IO,
         constraintsRepository = constraintsRepository
     ).apply {
-        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD) {}
+        initialize(appSettings) {}
         providePreviewSurface()
     }
 
