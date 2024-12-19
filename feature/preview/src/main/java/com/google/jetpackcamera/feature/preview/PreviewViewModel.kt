@@ -421,6 +421,7 @@ class PreviewViewModel @AssistedInject constructor(
             }
         val supportedCaptureModes = getSupportedCaptureModes(
             cameraAppSettings,
+            isHdrOn,
             currentHdrDynamicRangeSupported,
             currentHdrImageFormatSupported
         )
@@ -456,7 +457,7 @@ class PreviewViewModel @AssistedInject constructor(
                 videoCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
                 defaultCaptureState =
                     SingleSelectableState.Disabled(disabledReason = disabledReason)
-            } else {
+            } else if (!supportedCaptureModes.contains(CaptureMode.IMAGE_ONLY)) {
                 val disabledReason =
                     getCaptureModeDisabledReason(
                         disabledCaptureMode = CaptureMode.IMAGE_ONLY,
@@ -472,6 +473,13 @@ class PreviewViewModel @AssistedInject constructor(
                 imageCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
                 defaultCaptureState =
                     SingleSelectableState.Disabled(disabledReason = disabledReason)
+            } else {
+                videoCaptureState = SingleSelectableState.Selectable
+                imageCaptureState = SingleSelectableState.Selectable
+                defaultCaptureState =
+                    SingleSelectableState.Disabled(
+                        disabledReason = DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
+                    )
             }
             return CaptureModeUiState.Enabled(
                 currentSelection = cameraAppSettings.captureMode,
@@ -484,6 +492,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun getSupportedCaptureModes(
         cameraAppSettings: CameraAppSettings,
+        isHdrOn: Boolean,
         currentHdrDynamicRangeSupported: Boolean,
         currentHdrImageFormatSupported: Boolean
     ): List<CaptureMode> = if (
@@ -493,7 +502,12 @@ class PreviewViewModel @AssistedInject constructor(
         currentHdrImageFormatSupported &&
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
     ) {
-        listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        // do not allow both use cases to be bound if hdr is on
+        if (isHdrOn) {
+            listOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        } else {
+            listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        }
     } else if (
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
         previewMode is PreviewMode.ExternalImageCaptureMode ||

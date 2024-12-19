@@ -590,8 +590,12 @@ constructor(
                         if (constraints.supportedImageFormatsMap[streamConfig]
                                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
                         ) {
-                            // if  both image/video are supported, we don't need to change our current capture mode
-                            this.captureMode
+                            // if both image/video are supported, only change capture mode if default is the current
+                            if (this.captureMode != CaptureMode.STANDARD) {
+                                this.captureMode
+                            } else {
+                                CaptureMode.VIDEO_ONLY
+                            }
                         } else {
                             // if only video is supported, change to video only
                             CaptureMode.VIDEO_ONLY
@@ -700,8 +704,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
                 val newVideoQuality = get(dynamicRange).let {
                     if (it == null) {
@@ -718,7 +722,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
