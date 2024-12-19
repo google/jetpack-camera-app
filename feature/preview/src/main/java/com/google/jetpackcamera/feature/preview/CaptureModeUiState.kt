@@ -19,6 +19,7 @@ import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_DEVI
 import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG
+import com.google.jetpackcamera.feature.preview.ui.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG
 import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -73,6 +74,10 @@ enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
     HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(
         HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG,
         R.string.toast_hdr_photo_unsupported_on_lens_multi_stream
+    ),
+    HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
+        HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG,
+        R.string.toast_hdr_simultaneous_image_video_unsupported
     )
 }
 

@@ -39,6 +39,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
+import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_UISTATE
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -60,6 +62,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGr
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -294,14 +297,16 @@ fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-                previewMode = PreviewMode.StandardMode {},
-                videoRecordingState = VideoRecordingState.Inactive(),
-                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                ),
+                captureButtonUiState = CaptureButtonUiState.Enabled(
+                    CaptureMode.DEFAULT,
+                    PreviewMode.StandardMode({}),
+
+                    VideoRecordingState.Inactive()
                 )
             ),
             currentCameraSettings = CameraAppSettings(),
@@ -324,11 +329,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-                previewMode = PreviewMode.StandardMode {},
-                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive()
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_UISTATE
             ),
             currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),
             onLensFaceClick = { },
@@ -346,9 +348,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
 
 private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
     TYPICAL_SYSTEM_CONSTRAINTS.copy(
-        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate {
-                (lensFacing, constraints)
-            ->
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate { (lensFacing, constraints) ->
             lensFacing to constraints.copy(
                 supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
             )

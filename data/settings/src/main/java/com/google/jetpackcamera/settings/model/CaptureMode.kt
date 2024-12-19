@@ -15,8 +15,35 @@
  */
 package com.google.jetpackcamera.settings.model
 
+/**
+ * Class representing the app's configuration to capture an image
+ */
 enum class CaptureMode {
+
+    /**
+     * Both Image and Video use cases will be bound.
+     *
+     * Tap the Capture Button to take an image.
+     *
+     * Hold the Capture button to start recording, and release to complete the recording.
+     */
     DEFAULT,
+
+    /**
+     * Video use case will be bound. Image use case will not be bound.
+     *
+     * Tap the Capture Button to start recording.
+     * Hold the Capture button to start recording; releasing will not stop the recording.
+     *
+     * Tap the capture button again after recording has started to complete the recording.
+     */
     VIDEO_ONLY,
+
+    /**
+     * Image use case will be bound. Video use case will not be bound.
+     *
+     * Tap the Capture Button to capture an Image.
+     * Holding the Capture Button will do nothing. Subsequent release of the Capture button will also do nothing.
+     */
     IMAGE_ONLY
 }

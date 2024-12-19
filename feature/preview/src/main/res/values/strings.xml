@@ -47,6 +47,8 @@
     <string name="toast_hdr_photo_unsupported_on_lens_multi_stream">Multi-stream mode does not support UltraHDR photo capture for current lens</string>
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
+    <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
+
 
 
     <string name="quick_settings_front_camera_text">FRONT</string>
