@@ -632,9 +632,12 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 @Composable
 fun DraggableSwitch(
     modifier: Modifier = Modifier,
-    onLeftRelease: () -> Unit = {},
-    onRightRelease: () -> Unit = {}
+    onCaptureImage: () -> Unit,
+    onStartVideoRecording: () -> Unit,
+    onStopVideoRecording: () -> Unit,
+    videoRecordingState: VideoRecordingState
 ) {
+    var currentVideoRecordingState = rememberUpdatedState(videoRecordingState)
     var isPressedDown by remember {
         mutableStateOf(false)
     }
@@ -721,7 +724,7 @@ fun DraggableSwitch(
         // capture button ring... center horizontally
         // this Ring is the "true" capture button
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .align(Alignment.Center)
                 .size(120.dp)
                 .padding(18.dp)
@@ -729,16 +732,30 @@ fun DraggableSwitch(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
+                            onStartVideoRecording()
                             isLockVisible = true
                         },
                         onPress = {
+                            switchPosition = 1f
                             isPressedDown = true
                             awaitRelease()
                             isPressedDown = false
-
+                            // if recording isn't locked... stop recording
+                            if (isLockVisible && !shouldBeLocked(switchPosition)) {
+                                onStopVideoRecording
+                            }
                             isLockVisible = false
+                            // isLockVisible = false
                         },
-                        onTap = {}
+                        onTap = {
+                            // only capture image if video recording state is inactive
+                            if (currentVideoRecordingState.value is VideoRecordingState.Inactive) {
+                                onCaptureImage()
+                            } else {
+                                onStopVideoRecording()
+                                isLockVisible = false
+                            }
+                        }
                     )
                 }
                 .pointerInput(Unit) {
@@ -748,11 +765,9 @@ fun DraggableSwitch(
                             isDragging = false
                             switchPosition = if (switchPosition < 0.4f) 0f else 1f
                             if (switchPosition == 0f) {
-                                onLeftRelease()
-                                // switchPosition = 1f
+                                // todo on drag end when locked
                             } else {
-                                onRightRelease()
-                                // switchPosition = 1f
+                                // todo on drag end when not locked
                             }
                         },
                         onDrag = { change, dragAmount ->
@@ -763,7 +778,38 @@ fun DraggableSwitch(
                         }
                     )
                 }
-        )
+        ) {
+            // inner big circle
+            Canvas(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(110.dp),
+                onDraw = {
+                    drawCircle(
+                        alpha = when (videoRecordingState) {
+                            is VideoRecordingState.Active.Paused -> .37f
+                            else -> 1f
+                        },
+                        color =
+                        when (videoRecordingState) {
+                            is VideoRecordingState.Inactive -> {
+                                if (isPressedDown &&
+                                    !isLockVisible
+                                ) {
+                                    Color.White
+                                } else {
+                                    Color.Transparent
+                                }
+                            }
+
+                            is VideoRecordingState.Active.Recording,
+                            is VideoRecordingState.Active.Paused -> if (!isLockVisible) Color.Red else Color.Transparent
+                            VideoRecordingState.Starting -> Color.White
+                        }
+                    )
+                }
+            )
+        }
     }
 }
 

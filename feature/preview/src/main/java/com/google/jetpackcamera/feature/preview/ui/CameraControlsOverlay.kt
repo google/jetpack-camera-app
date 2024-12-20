@@ -319,8 +319,8 @@ private fun ControlsBottom(
                     )
                 }
             }
-            DraggableSwitch()
-           /* CaptureButton(
+            // DraggableSwitch()
+            CaptureButton(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
@@ -328,7 +328,7 @@ private fun ControlsBottom(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
-            )*/
+            )
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (videoRecordingState is VideoRecordingState.Active) {
                     AmplitudeVisualizer(
@@ -378,9 +378,9 @@ private fun CaptureButton(
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
-    CaptureButton(
+    DraggableSwitch(
         modifier = modifier.testTag(CAPTURE_BUTTON),
-        onClick = {
+        onCaptureImage = {
             multipleEventsCutter.processEvent {
                 when (previewUiState.previewMode) {
                     is PreviewMode.StandardMode -> {
@@ -427,7 +427,7 @@ private fun CaptureButton(
                 onToggleQuickSettings()
             }
         },
-        onLongPress = {
+        onStartVideoRecording = {
             when (previewUiState.previewMode) {
                 is PreviewMode.StandardMode -> {
                     onStartVideoRecording(null, false) {}
@@ -449,7 +449,7 @@ private fun CaptureButton(
                 onToggleQuickSettings()
             }
         },
-        onRelease = {
+        onStopVideoRecording = {
             onStopVideoRecording()
         },
         videoRecordingState = videoRecordingState
