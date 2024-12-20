@@ -56,6 +56,8 @@ import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -109,15 +111,13 @@ fun QuickSetHdr(
     onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
     selectedDynamicRange: DynamicRange,
     selectedImageOutputFormat: ImageOutputFormat,
-    hdrDynamicRange: DynamicRange,
-    hdrImageFormat: ImageOutputFormat,
     hdrDynamicRangeSupported: Boolean,
     previewMode: PreviewMode,
     enabled: Boolean
 ) {
     val enum =
-        if (selectedDynamicRange == hdrDynamicRange ||
-            selectedImageOutputFormat == hdrImageFormat
+        if (selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+            selectedImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -130,7 +130,7 @@ fun QuickSetHdr(
         onClick = {
             val newDynamicRange =
                 if (selectedDynamicRange == DynamicRange.SDR && hdrDynamicRangeSupported) {
-                    hdrDynamicRange
+                    DEFAULT_HDR_DYNAMIC_RANGE
                 } else {
                     DynamicRange.SDR
                 }
@@ -138,7 +138,7 @@ fun QuickSetHdr(
                 if (!hdrDynamicRangeSupported ||
                     previewMode is PreviewMode.ExternalImageCaptureMode
                 ) {
-                    hdrImageFormat
+                    DEFAULT_HDR_IMAGE_OUTPUT
                 } else {
                     ImageOutputFormat.JPEG
                 }
