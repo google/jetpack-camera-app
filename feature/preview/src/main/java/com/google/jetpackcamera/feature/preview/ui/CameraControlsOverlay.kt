@@ -319,7 +319,8 @@ private fun ControlsBottom(
                     )
                 }
             }
-            CaptureButton(
+            DraggableSwitch()
+           /* CaptureButton(
                 previewUiState = previewUiState,
                 isQuickSettingsOpen = isQuickSettingsOpen,
                 videoRecordingState = videoRecordingState,
@@ -327,7 +328,7 @@ private fun ControlsBottom(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
-            )
+            )*/
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (videoRecordingState is VideoRecordingState.Active) {
                     AmplitudeVisualizer(

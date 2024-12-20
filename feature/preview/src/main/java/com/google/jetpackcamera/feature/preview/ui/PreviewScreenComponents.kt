@@ -36,6 +36,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -44,10 +45,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,6 +59,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pause
@@ -78,6 +83,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -102,6 +108,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -619,6 +626,119 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
                 text = physicalCameraId ?: "---"
             )
         }
+    }
+}
+
+@Composable
+fun DraggableSwitch(
+    modifier: Modifier = Modifier,
+    onLeftRelease: () -> Unit = {},
+    onRightRelease: () -> Unit = {}
+) {
+    var switchPosition by remember { mutableFloatStateOf(1f) } // 0f = left, 1f = right
+    var isDragging by remember { mutableStateOf(false) }
+    val circleSize = 45.dp
+    val switchWidth = circleSize * 2.5f // 100.dp
+    val switchHeight = circleSize * 1.4f // 50.dp
+    Box {
+        Row(modifier = Modifier.align(Alignment.Center)) {
+            Box(
+                modifier = Modifier
+                    .width(switchWidth)
+                    .height(switchHeight)
+                    .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { isDragging = true },
+                            onDragEnd = {
+                                isDragging = false
+                                switchPosition = if (switchPosition < 0.4f) 0f else 1f
+                                if (switchPosition == 0f) {
+                                    onLeftRelease()
+                                    // switchPosition = 1f
+                                } else {
+                                    onRightRelease()
+                                    // switchPosition = 1f
+                                }
+                            },
+                            onDrag = { change, dragAmount ->
+                                val newPosition =
+                                    switchPosition + (dragAmount.x / switchWidth.toPx())
+                                switchPosition = newPosition.coerceIn(0f, 1f)
+                                change.consume()
+                            }
+                        )
+                    }
+            ) {
+                Box {
+                    // grey cylinder
+                    Box(
+                        Modifier
+                            .width(switchWidth)
+                            .height(switchHeight)
+                            .alpha(.37f)
+                            .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
+                            .background(Color.Black) // Background color
+                    )
+                    // Static Circle
+                    // Animated Circle
+                    Box(
+                        modifier = Modifier
+                            .size(circleSize)
+                            .offset {
+                                IntOffset(
+                                    x = ((switchWidth - circleSize) * switchPosition).roundToPx(),
+                                    y = ((switchHeight - circleSize) / 2).roundToPx()
+                                )
+                            }
+                            .background(
+                                /*if (switchPosition < .4f) {
+                                    Color.Yellow
+                                } else */
+                                if (isDragging) {
+                                    Color.Red
+                                } else {
+                                    Color.Magenta
+                                },
+                                CircleShape
+                            )
+                    )
+                    // locked icon
+                    Icon(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .align(Alignment.CenterStart)
+                            .padding(start = 8.dp)
+                            .clickable { switchPosition = 0f },
+                        tint = Color.White,
+                        imageVector = if (switchPosition >
+                            .4f
+                        ) {
+                            Icons.Default.LockOpen
+                        } else {
+                            Icons.Default.Lock
+                        },
+                        contentDescription = null
+                    )
+                }
+            }
+            // keep everything centered without needing to calculate displacement
+            Spacer(
+                modifier = Modifier
+                    // .background(color = Color.Cyan)
+                    .height(switchHeight)
+                    .width(switchWidth - circleSize)
+            )
+        }
+
+        // capture button ring... center horizontally
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(120.dp)
+                .padding(18.dp)
+                .border(4.dp, Color.White, CircleShape)
+        )
     }
 }
 
