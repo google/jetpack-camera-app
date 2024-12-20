@@ -36,7 +36,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -635,109 +635,134 @@ fun DraggableSwitch(
     onLeftRelease: () -> Unit = {},
     onRightRelease: () -> Unit = {}
 ) {
+    var isPressedDown by remember {
+        mutableStateOf(false)
+    }
+    var isLockVisible by remember { mutableStateOf(false) }
     var switchPosition by remember { mutableFloatStateOf(1f) } // 0f = left, 1f = right
     var isDragging by remember { mutableStateOf(false) }
     val circleSize = 45.dp
     val switchWidth = circleSize * 2.5f // 100.dp
     val switchHeight = circleSize * 1.4f // 50.dp
+    fun shouldBeLocked(switchPosition: Float): Boolean = switchPosition < .4f
     Box {
-        Row(modifier = Modifier.align(Alignment.Center)) {
-            Box(
-                modifier = Modifier
-                    .width(switchWidth)
-                    .height(switchHeight)
-                    .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { isDragging = true },
-                            onDragEnd = {
-                                isDragging = false
-                                switchPosition = if (switchPosition < 0.4f) 0f else 1f
-                                if (switchPosition == 0f) {
-                                    onLeftRelease()
-                                    // switchPosition = 1f
-                                } else {
-                                    onRightRelease()
-                                    // switchPosition = 1f
+        if (isLockVisible) {
+            // row containing switch and spacer
+            Row(modifier = Modifier.align(Alignment.Center)) {
+                Box(
+                    modifier = Modifier
+                        .width(switchWidth)
+                        .height(switchHeight)
+                    // .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
+                ) {
+                    Box {
+                        // grey cylinder
+                        Box(
+                            Modifier
+                                .width(switchWidth)
+                                .height(switchHeight)
+                                .alpha(.37f)
+                                .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
+                                .background(Color.Black) // Background color
+                        )
+                        // Animated Circle
+                        Box(
+                            modifier = Modifier
+                                .size(circleSize)
+                                .offset {
+                                    IntOffset(
+                                        x = ((switchWidth - circleSize) * switchPosition).roundToPx(),
+                                        y = ((switchHeight - circleSize) / 2).roundToPx()
+                                    )
                                 }
+                                .background(
+                                    if (isDragging) {
+                                        Color.Red
+                                    } else {
+                                        Color.Magenta
+                                    },
+                                    CircleShape
+                                )
+                        )
+                        // locked icon
+                        Icon(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.CenterStart)
+                                .padding(start = 8.dp)
+                                .clickable { switchPosition = 0f },
+                            tint = Color.White,
+                            imageVector = if (shouldBeLocked(switchPosition)) {
+                                Icons.Default.Lock
+                            } else {
+                                Icons.Default.LockOpen
                             },
-                            onDrag = { change, dragAmount ->
-                                val newPosition =
-                                    switchPosition + (dragAmount.x / switchWidth.toPx())
-                                switchPosition = newPosition.coerceIn(0f, 1f)
-                                change.consume()
-                            }
+                            contentDescription = null
                         )
                     }
-            ) {
-                Box {
-                    // grey cylinder
-                    Box(
-                        Modifier
-                            .width(switchWidth)
-                            .height(switchHeight)
-                            .alpha(.37f)
-                            .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
-                            .background(Color.Black) // Background color
-                    )
-                    // Static Circle
-                    // Animated Circle
-                    Box(
-                        modifier = Modifier
-                            .size(circleSize)
-                            .offset {
-                                IntOffset(
-                                    x = ((switchWidth - circleSize) * switchPosition).roundToPx(),
-                                    y = ((switchHeight - circleSize) / 2).roundToPx()
-                                )
-                            }
-                            .background(
-                                /*if (switchPosition < .4f) {
-                                    Color.Yellow
-                                } else */
-                                if (isDragging) {
-                                    Color.Red
-                                } else {
-                                    Color.Magenta
-                                },
-                                CircleShape
-                            )
-                    )
-                    // locked icon
-                    Icon(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .align(Alignment.CenterStart)
-                            .padding(start = 8.dp)
-                            .clickable { switchPosition = 0f },
-                        tint = Color.White,
-                        imageVector = if (switchPosition >
-                            .4f
-                        ) {
-                            Icons.Default.LockOpen
-                        } else {
-                            Icons.Default.Lock
-                        },
-                        contentDescription = null
-                    )
                 }
+                // keep everything centered without needing to calculate displacement
+                Spacer(
+                    modifier = Modifier
+                        // .background(color = Color.Cyan)
+                        .height(switchHeight)
+                        .width(switchWidth - circleSize)
+                )
             }
-            // keep everything centered without needing to calculate displacement
+        } else {
             Spacer(
-                modifier = Modifier
-                    // .background(color = Color.Cyan)
-                    .height(switchHeight)
-                    .width(switchWidth - circleSize)
+                modifier = Modifier.height(switchHeight).width(
+                    switchWidth + (switchWidth - circleSize)
+                )
             )
         }
 
+        // static circle
         // capture button ring... center horizontally
+        // this Ring is the "true" capture button
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(120.dp)
                 .padding(18.dp)
                 .border(4.dp, Color.White, CircleShape)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            isLockVisible = true
+                        },
+                        onPress = {
+                            isPressedDown = true
+                            awaitRelease()
+                            isPressedDown = false
+
+                            isLockVisible = false
+                        },
+                        onTap = {}
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { isDragging = true },
+                        onDragEnd = {
+                            isDragging = false
+                            switchPosition = if (switchPosition < 0.4f) 0f else 1f
+                            if (switchPosition == 0f) {
+                                onLeftRelease()
+                                // switchPosition = 1f
+                            } else {
+                                onRightRelease()
+                                // switchPosition = 1f
+                            }
+                        },
+                        onDrag = { change, dragAmount ->
+                            val newPosition =
+                                switchPosition + (dragAmount.x / switchWidth.toPx())
+                            switchPosition = newPosition.coerceIn(0f, 1f)
+                            change.consume()
+                        }
+                    )
+                }
         )
     }
 }
