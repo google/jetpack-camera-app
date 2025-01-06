@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
-import android.graphics.Rect
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
@@ -57,7 +56,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.math.abs
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
