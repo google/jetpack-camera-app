@@ -719,7 +719,9 @@ fun VideoQualitySetting(
                     .verticalScroll(rememberScrollState())
             ) {
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)),
+                    modifier = Modifier.testTag(
+                        getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)
+                    ),
                     text = stringResource(getVideoQualityStringRes(VideoQuality.UNSPECIFIED)),
                     secondaryText = stringResource(
                         getVideoQualitySecondaryStringRes(
@@ -743,7 +745,7 @@ fun VideoQualitySetting(
                         ),
                         selected = videQualityUiState.currentVideoQuality == videoQuality,
                         enabled = videQualityUiState.videoQualitySDState is
-                                SingleSelectableState.Selectable,
+                            SingleSelectableState.Selectable,
                         onClick = { setVideoQuality(videoQuality) }
                     )
                 }
