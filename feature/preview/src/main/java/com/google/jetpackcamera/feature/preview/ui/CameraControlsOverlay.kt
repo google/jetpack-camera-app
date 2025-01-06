@@ -185,7 +185,7 @@ private fun ControlsTop(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
-    videoQuality: VideoQuality = VideoQuality.AUTO,
+    videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
     flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
     Column(modifier) {

@@ -20,6 +20,7 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -191,7 +192,10 @@ class PreviewViewModel @AssistedInject constructor(
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
                             cameraPropertiesJSON = cameraPropertiesJSON,
-                            videoResolution = cameraUseCase.getVideoResolutionInfo()?.cropRect,
+                            videoResolution = Size(
+                                cameraState.videoQualityInfo.width,
+                                cameraState.videoQualityInfo.height
+                            ),
                             isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
@@ -199,30 +203,12 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState
                         ),
                         flashModeUiState = flashModeUiState,
-                        videoQuality = getVideoQualityFromCropRect(
-                            cameraUseCase.getVideoResolutionInfo()?.cropRect
-                        )
+                        videoQuality = cameraState.videoQualityInfo.quality
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
                 }
             }.collect {}
-        }
-    }
-
-    private fun getVideoQualityFromCropRect(cropRect: Rect?): VideoQuality {
-        if (cropRect == null) {
-            return VideoQuality.AUTO
-        }
-        val width = abs(cropRect.top - cropRect.bottom)
-        return if (width < 720) {
-            VideoQuality.SD
-        } else if (width < 1080) {
-            VideoQuality.HD
-        } else if (width == 1080) {
-            VideoQuality.FHD
-        } else {
-            VideoQuality.UHD
         }
     }
 

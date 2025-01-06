@@ -19,6 +19,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
@@ -30,6 +31,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -105,7 +107,6 @@ internal suspend fun runSingleCameraSession(
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {},
-    onVideoCaptureCreated: (VideoCapture<Recorder>) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -159,7 +160,6 @@ internal suspend fun runSingleCameraSession(
             }
         ).apply {
             getImageCapture()?.let(onImageCaptureCreated)
-            getVideoCapture()?.let(onVideoCaptureCreated)
         }
 
         cameraProvider.runWith(
@@ -176,6 +176,20 @@ internal suspend fun runSingleCameraSession(
                 camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
                     currentCameraState.update { old ->
                         old.copy(torchEnabled = torchState == TorchState.ON)
+                    }
+                }
+            }
+
+            if (videoCaptureUseCase != null) {
+                launch {
+                    currentCameraState.update { old ->
+                        old.copy(
+                            videoQualityInfo = VideoQualityInfo(
+                                getVideoQualityFromResolution(videoCaptureUseCase.resolutionInfo?.resolution),
+                                getWidthFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect),
+                                getHeightFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect)
+                            )
+                        )
                     }
                 }
             }
@@ -377,6 +391,35 @@ internal fun createUseCaseGroup(
 
         effect?.let { addEffect(it) }
     }.build()
+}
+
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
+    if (resolution == null) {
+        return VideoQuality.UNSPECIFIED
+    }
+    return if (resolution.width < 720) {
+        VideoQuality.SD
+    } else if (resolution.width < 1080) {
+        VideoQuality.HD
+    } else if (resolution.width < 2160) {
+        VideoQuality.FHD
+    } else {
+        VideoQuality.UHD
+    }
+}
+
+private fun getWidthFromCropRect(cropRect: Rect?): Int {
+    if (cropRect == null) {
+        return 0
+    }
+    return abs(cropRect.top - cropRect.bottom)
+}
+
+private fun getHeightFromCropRect(cropRect: Rect?): Int {
+    if (cropRect == null) {
+        return 0
+    }
+    return abs(cropRect.left - cropRect.right)
 }
 
 private fun createImageUseCase(

@@ -18,7 +18,6 @@ package com.google.jetpackcamera.core.camera
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ResolutionInfo
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -95,8 +94,6 @@ interface CameraUseCase {
     fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
-
-    fun getVideoResolutionInfo(): ResolutionInfo?
 
     fun setFlashMode(flashMode: FlashMode)
 
@@ -197,7 +194,10 @@ data class CameraState(
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val debugInfo: DebugInfo = DebugInfo(null, null),
+    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )
 
 data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+
+data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)

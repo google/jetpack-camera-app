@@ -544,7 +544,7 @@ fun StabilizationIcon(
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
-        if (videoQuality != VideoQuality.AUTO) {
+        if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
                 painter = when (videoQuality) {
                     VideoQuality.SD ->

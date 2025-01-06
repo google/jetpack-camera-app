@@ -60,7 +60,7 @@ internal suspend fun runConcurrentCameraSession(
             TARGET_FPS_AUTO,
             StabilizationMode.OFF,
             DynamicRange.SDR,
-            VideoQuality.AUTO,
+            VideoQuality.UNSPECIFIED,
             backgroundDispatcher
         )
     } else {

@@ -20,7 +20,7 @@ option java_package = "com.google.jetpackcamera.settings";
 option java_multiple_files = true;
 
 enum VideoQuality {
-  VIDEO_QUALITY_AUTO = 0;
+  VIDEO_QUALITY_UNSPECIFIED = 0;
   VIDEO_QUALITY_LOWEST = 1;
   VIDEO_QUALITY_HIGHEST = 2;
   VIDEO_QUALITY_SD = 3;

@@ -237,7 +237,7 @@ class SettingsViewModel @Inject constructor(
             VideoQualityUiState.Enabled(
                 currentVideoQuality = cameraAppSettings.videoQuality,
                 videoQualityAutoState = getSingleVideoQualityState(
-                    VideoQuality.AUTO,
+                    VideoQuality.UNSPECIFIED,
                     supportedVideQualities
                 ),
                 videoQualitySDState = getSingleVideoQualityState(
@@ -278,7 +278,7 @@ class SettingsViewModel @Inject constructor(
         videoQuality: VideoQuality,
         supportedVideQualities: List<VideoQuality>?
     ): SingleSelectableState {
-        return if (videoQuality == VideoQuality.AUTO ||
+        return if (videoQuality == VideoQuality.UNSPECIFIED ||
             (
                 !supportedVideQualities.isNullOrEmpty() &&
                     supportedVideQualities.contains(videoQuality)
@@ -363,7 +363,7 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
-        if (currentSettings.videoQuality != VideoQuality.AUTO &&
+        if (currentSettings.videoQuality != VideoQuality.UNSPECIFIED &&
             newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
                 currentSettings.videoQuality
             ) != true

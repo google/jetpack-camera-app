@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settings.model
 import com.google.jetpackcamera.settings.VideoQuality as VideoQualityProto
 
 enum class VideoQuality {
-    AUTO,
+    UNSPECIFIED,
     LOWEST,
     HIGHEST,
     SD,
@@ -36,15 +36,15 @@ enum class VideoQuality {
                 VideoQualityProto.VIDEO_QUALITY_HD -> HD
                 VideoQualityProto.VIDEO_QUALITY_FHD -> FHD
                 VideoQualityProto.VIDEO_QUALITY_UHD -> UHD
-                VideoQualityProto.VIDEO_QUALITY_AUTO,
+                VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED,
                 VideoQualityProto.UNRECOGNIZED
-                -> AUTO
+                -> UNSPECIFIED
             }
         }
 
         fun VideoQuality.toProto(): com.google.jetpackcamera.settings.VideoQuality {
             return when (this) {
-                AUTO -> VideoQualityProto.VIDEO_QUALITY_AUTO
+                UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
                 LOWEST -> VideoQualityProto.VIDEO_QUALITY_LOWEST
                 HIGHEST -> VideoQualityProto.VIDEO_QUALITY_HIGHEST
                 SD -> VideoQualityProto.VIDEO_QUALITY_SD

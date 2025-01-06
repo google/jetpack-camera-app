@@ -121,9 +121,8 @@ fun DebugOverlayComponent(
                     val videoResText = if (previewUiState.debugUiState.videoResolution == null) {
                         "null"
                     } else {
-                        val rect = previewUiState.debugUiState.videoResolution
-                        abs(rect.left - rect.right).toString() + "x" +
-                            abs(rect.top - rect.bottom).toString()
+                        val size = previewUiState.debugUiState.videoResolution
+                        abs(size.height).toString() + "x" + abs(size.width).toString()
                     }
                     Text(
                         modifier = Modifier.testTag(

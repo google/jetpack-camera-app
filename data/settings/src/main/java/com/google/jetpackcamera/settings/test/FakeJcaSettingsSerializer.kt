@@ -25,6 +25,7 @@ import com.google.jetpackcamera.settings.FlashMode
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.jetpackcamera.settings.LensFacing
 import com.google.jetpackcamera.settings.StabilizationMode
+import com.google.jetpackcamera.settings.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
@@ -42,6 +43,7 @@ class FakeJcaSettingsSerializer(
         .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
         .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_SDR)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

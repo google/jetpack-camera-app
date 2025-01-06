@@ -28,13 +28,11 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ResolutionInfo
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapture
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.common.DefaultDispatcher
@@ -102,8 +100,6 @@ constructor(
 
     private var imageCaptureUseCase: ImageCapture? = null
 
-    private var videoCaptureUseCase: VideoCapture<Recorder>? = null
-
     private lateinit var systemConstraints: SystemConstraints
     private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
@@ -122,8 +118,6 @@ constructor(
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
-
-    override fun getVideoResolutionInfo(): ResolutionInfo? = videoCaptureUseCase?.resolutionInfo
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
@@ -161,16 +155,15 @@ constructor(
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
                         val supportedVideoQualitiesMap =
-                            mutableMapOf<DynamicRange, List<VideoQuality>>()
-                        for (dynamicRange in supportedDynamicRanges) {
-                            val supportedVideoQualities = mutableListOf<VideoQuality>()
-                            supportedVideoQualities.addAll(
-                                videoCapabilities.getSupportedQualities(
-                                    dynamicRange.toCXDynamicRange()
-                                ).map { it.toVideoQuality() }
-                            )
-                            supportedVideoQualitiesMap[dynamicRange] = supportedVideoQualities
-                        }
+                            buildMap {
+                                for (dynamicRange in supportedDynamicRanges) {
+                                    val supportedVideoQualities =
+                                        videoCapabilities.getSupportedQualities(
+                                            dynamicRange.toCXDynamicRange()
+                                        ).map { it.toVideoQuality() }
+                                    put(dynamicRange, supportedVideoQualities)
+                                }
+                            }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -379,9 +372,6 @@ constructor(
                                     useCaseMode = useCaseMode,
                                     onImageCaptureCreated = { imageCapture ->
                                         imageCaptureUseCase = imageCapture
-                                    },
-                                    onVideoCaptureCreated = { videoCapture ->
-                                        videoCaptureUseCase = videoCapture
                                     }
                                 )
 
@@ -679,10 +669,10 @@ constructor(
                     if (get(dynamicRange)!!.contains(videoQuality)) {
                         videoQuality
                     } else {
-                        VideoQuality.AUTO
+                        VideoQuality.UNSPECIFIED
                     }
                 } else {
-                    VideoQuality.AUTO
+                    VideoQuality.UNSPECIFIED
                 }
 
                 this@tryApplyVideoQualityConstraints.copy(

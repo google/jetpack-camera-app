@@ -34,7 +34,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.VideoQuality.AUTO
+import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
 import com.google.jetpackcamera.settings.model.VideoQuality.HIGHEST
@@ -102,7 +102,7 @@ fun VideoQuality.toQuality(): Quality? {
         HD -> Quality.HD
         FHD -> Quality.FHD
         UHD -> Quality.UHD
-        AUTO -> null
+        UNSPECIFIED -> null
     }
 }
 
@@ -114,7 +114,7 @@ fun Quality.toVideoQuality(): VideoQuality {
         Quality.HD -> HD
         Quality.FHD -> FHD
         Quality.UHD -> UHD
-        else -> AUTO
+        else -> UNSPECIFIED
     }
 }
 

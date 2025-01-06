@@ -29,7 +29,7 @@ data class CameraAppSettings(
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
-    val videoQuality: VideoQuality = VideoQuality.AUTO,
+    val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
     val defaultHdrDynamicRange: DynamicRange = DynamicRange.HLG10,
     val defaultHdrImageOutputFormat: ImageOutputFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
     val zoomScale: Float = 1f,
