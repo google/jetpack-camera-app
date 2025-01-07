@@ -106,7 +106,7 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -185,7 +185,9 @@ internal suspend fun runSingleCameraSession(
                     currentCameraState.update { old ->
                         old.copy(
                             videoQualityInfo = VideoQualityInfo(
-                                getVideoQualityFromResolution(videoCaptureUseCase.resolutionInfo?.resolution),
+                                getVideoQualityFromResolution(
+                                    videoCaptureUseCase.resolutionInfo?.resolution
+                                ),
                                 getWidthFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect),
                                 getHeightFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect)
                             )
