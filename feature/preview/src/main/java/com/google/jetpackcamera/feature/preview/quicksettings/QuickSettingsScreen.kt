@@ -229,7 +229,7 @@ private fun ExpandedQuickSettingsUi(
                                 this.supportedDynamicRanges.size > 1
 
                             fun CameraConstraints.hdrImageFormatSupported(): Boolean =
-                                supportedImageFormatsMap[currentCameraSettings.captureMode]
+                                supportedImageFormatsMap[currentCameraSettings.streamConfig]
                                     ?.let { it.size > 1 } == true
 
                             // TODO(tm): Move this to PreviewUiState
