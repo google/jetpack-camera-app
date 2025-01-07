@@ -34,13 +34,13 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
 import com.google.jetpackcamera.settings.model.VideoQuality.HIGHEST
 import com.google.jetpackcamera.settings.model.VideoQuality.LOWEST
 import com.google.jetpackcamera.settings.model.VideoQuality.SD
 import com.google.jetpackcamera.settings.model.VideoQuality.UHD
+import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
