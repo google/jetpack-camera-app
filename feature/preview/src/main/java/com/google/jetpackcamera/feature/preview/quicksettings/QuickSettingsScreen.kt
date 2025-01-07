@@ -213,9 +213,9 @@ private fun ExpandedQuickSettingsUi(
 
                         add {
                             QuickSetCaptureMode(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON),
-                                setCaptureMode = { c: StreamConfig -> onCaptureModeClick(c) },
-                                currentStreamConfig = currentCameraSettings.streamConfig,
+                                modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
+                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                                currentCaptureMode = currentCameraSettings.captureMode,
                                 enabled = currentCameraSettings.concurrentCameraMode ==
                                     ConcurrentCameraMode.OFF
                             )
