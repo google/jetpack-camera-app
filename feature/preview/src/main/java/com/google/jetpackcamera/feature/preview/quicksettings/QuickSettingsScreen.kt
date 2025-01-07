@@ -213,9 +213,9 @@ private fun ExpandedQuickSettingsUi(
 
                         add {
                             QuickSetCaptureMode(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON),
-                                setCaptureMode = { c: StreamConfig -> onCaptureModeClick(c) },
-                                currentStreamConfig = currentCameraSettings.streamConfig,
+                                modifier = Modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_BUTTON),
+                                setCaptureMode = { c: CaptureMode -> onCaptureModeClick(c) },
+                                currentCaptureMode = currentCameraSettings.captureMode,
                                 enabled = currentCameraSettings.concurrentCameraMode ==
                                     ConcurrentCameraMode.OFF
                             )
@@ -229,8 +229,8 @@ private fun ExpandedQuickSettingsUi(
                                 this.supportedDynamicRanges.size > 1
 
                             fun CameraConstraints.hdrImageFormatSupported(): Boolean =
-                                supportedImageFormatsMap[currentCameraSettings.streamConfig]
-                                    ?.let { it.size > 1 } ?: false
+                                supportedImageFormatsMap[currentCameraSettings.captureMode]
+                                    ?.let { it.size > 1 } == true
 
                             // TODO(tm): Move this to PreviewUiState
                             fun shouldEnable(): Boolean = when {
@@ -251,8 +251,6 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
-                                hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported =
                                 cameraConstraints?.hdrDynamicRangeSupported() ?: false,
                                 previewMode = previewUiState.previewMode,
