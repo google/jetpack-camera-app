@@ -20,6 +20,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -30,8 +31,10 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
@@ -67,6 +70,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import java.io.File
@@ -182,6 +186,7 @@ internal suspend fun runSingleCameraSession(
 }
 
 context(CameraSessionContext)
+@OptIn(ExperimentalCamera2Interop::class)
 internal suspend fun processTransientSettingEvents(
     camera: Camera,
     useCaseGroup: UseCaseGroup,
@@ -240,6 +245,28 @@ internal suspend fun processTransientSettingEvents(
                     flashMode = newTransientSettings.flashMode,
                     isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
                 )
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+            prevTransientSettings.flashMode != newTransientSettings.flashMode
+        ) {
+            when (newTransientSettings.flashMode) {
+                FlashMode.LOW_LIGHT_BOOST -> {
+                    val captureRequestOptions = CaptureRequestOptions.Builder()
+                        .setCaptureRequestOption(
+                            CaptureRequest.CONTROL_AE_MODE,
+                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                        )
+                        .build()
+
+                    Camera2CameraControl.from(camera.cameraControl)
+                        .addCaptureRequestOptions(captureRequestOptions)
+                }
+                else -> {
+                    Camera2CameraControl.from(camera.cameraControl)
+                        .setCaptureRequestOptions(CaptureRequestOptions.Builder().build())
+                }
             }
         }
 
@@ -898,6 +925,23 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
+                    val boostState = when (nativeBoostState) {
+                        CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
+                            LowLightBoostState.ACTIVE
+                        else -> LowLightBoostState.INACTIVE
+                    }
+                    currentCameraState.update { old ->
+                        if (old.lowLightBoostState != boostState) {
+                            old.copy(lowLightBoostState = boostState)
+                        } else {
+                            old
+                        }
+                    }
+                }
+
                 val logicalCameraId = session.device.id
                 if (logicalCameraId != targetCameraLogicalId) return
                 try {

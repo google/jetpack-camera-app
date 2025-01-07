@@ -55,6 +55,8 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -109,15 +111,13 @@ fun QuickSetHdr(
     onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
     selectedDynamicRange: DynamicRange,
     selectedImageOutputFormat: ImageOutputFormat,
-    hdrDynamicRange: DynamicRange,
-    hdrImageFormat: ImageOutputFormat,
     hdrDynamicRangeSupported: Boolean,
     previewMode: PreviewMode,
     enabled: Boolean
 ) {
     val enum =
-        if (selectedDynamicRange == hdrDynamicRange ||
-            selectedImageOutputFormat == hdrImageFormat
+        if (selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+            selectedImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -130,7 +130,7 @@ fun QuickSetHdr(
         onClick = {
             val newDynamicRange =
                 if (selectedDynamicRange == DynamicRange.SDR && hdrDynamicRangeSupported) {
-                    hdrDynamicRange
+                    DEFAULT_HDR_DYNAMIC_RANGE
                 } else {
                     DynamicRange.SDR
                 }
@@ -138,7 +138,7 @@ fun QuickSetHdr(
                 if (!hdrDynamicRangeSupported ||
                     previewMode is PreviewMode.ExternalImageCaptureMode
                 ) {
-                    hdrImageFormat
+                    DEFAULT_HDR_IMAGE_OUTPUT
                 } else {
                     ImageOutputFormat.JPEG
                 }
@@ -189,7 +189,9 @@ fun QuickSetFlash(
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
@@ -470,7 +472,9 @@ fun FlashModeIndicator(
             )
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(),
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isActive
+                ),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -485,7 +489,10 @@ fun QuickSettingsIndicators(
     modifier: Modifier = Modifier
 ) {
     Row(modifier) {
-        FlashModeIndicator(flashModeUiState, onFlashModeClick)
+        FlashModeIndicator(
+            flashModeUiState,
+            onFlashModeClick
+        )
     }
 }
 
@@ -493,9 +500,14 @@ private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = available
     get((indexOf(selectedFlashMode) + 1) % size)
 }
 
-private fun FlashMode.toCameraFlashMode() = when (this) {
+private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
     FlashMode.OFF -> CameraFlashMode.OFF
     FlashMode.AUTO -> CameraFlashMode.AUTO
     FlashMode.ON -> CameraFlashMode.ON
-    FlashMode.LOW_LIGHT_BOOST -> CameraFlashMode.LOW_LIGHT_BOOST
+    FlashMode.LOW_LIGHT_BOOST -> {
+        when (isActive) {
+            true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+            false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+        }
+    }
 }
