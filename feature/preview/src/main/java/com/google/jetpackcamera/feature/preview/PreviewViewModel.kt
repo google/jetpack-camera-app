@@ -46,6 +46,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -176,8 +177,10 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentCameraSettings = cameraAppSettings,
                                 previousCameraSettings = previousCameraSettings,
                                 currentConstraints = systemConstraints,
-                                previousConstraints = previousConstraints
+                                previousConstraints = previousConstraints,
+                                cameraState = cameraState
                             )
+
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
                             old
@@ -220,7 +223,8 @@ class PreviewViewModel @AssistedInject constructor(
         currentCameraSettings: CameraAppSettings,
         previousCameraSettings: CameraAppSettings,
         currentConstraints: SystemConstraints,
-        previousConstraints: SystemConstraints
+        previousConstraints: SystemConstraints,
+        cameraState: CameraState
     ): FlashModeUiState {
         val currentFlashMode = currentCameraSettings.flashMode
         val currentSupportedFlashModes =
@@ -247,8 +251,14 @@ class PreviewViewModel @AssistedInject constructor(
                     // Only the selected flash mode has changed, just update the flash mode
                     copy(selectedFlashMode = currentFlashMode)
                 } else {
-                    // Nothing has changed
-                    this
+                    if (currentFlashMode == FlashMode.LOW_LIGHT_BOOST) {
+                        copy(
+                            isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
+                        )
+                    } else {
+                        // Nothing has changed
+                        this
+                    }
                 }
             }
         }

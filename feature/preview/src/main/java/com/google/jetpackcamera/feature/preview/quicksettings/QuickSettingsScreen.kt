@@ -229,8 +229,8 @@ private fun ExpandedQuickSettingsUi(
                                 this.supportedDynamicRanges.size > 1
 
                             fun CameraConstraints.hdrImageFormatSupported(): Boolean =
-                                supportedImageFormatsMap[currentCameraSettings.streamConfig]
-                                    ?.let { it.size > 1 } ?: false
+                                supportedImageFormatsMap[currentCameraSettings.captureMode]
+                                    ?.let { it.size > 1 } == true
 
                             // TODO(tm): Move this to PreviewUiState
                             fun shouldEnable(): Boolean = when {
@@ -251,8 +251,6 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
-                                hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported =
                                 cameraConstraints?.hdrDynamicRangeSupported() ?: false,
                                 previewMode = previewUiState.previewMode,
@@ -302,7 +300,8 @@ fun ExpandedQuickSettingsUiPreview() {
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                    isActive = false
                 )
             ),
             currentCameraSettings = CameraAppSettings(),
