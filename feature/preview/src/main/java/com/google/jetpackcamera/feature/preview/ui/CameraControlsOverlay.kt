@@ -547,7 +547,8 @@ private fun Preview_ControlsTop_FlashModeOn() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.ON,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                isActive = false
             )
         )
     }
@@ -561,7 +562,8 @@ private fun Preview_ControlsTop_FlashModeAuto() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.AUTO,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                isActive = false
             )
         )
     }

@@ -56,7 +56,7 @@
     <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
     <!-- Stream Config mode setting strings -->
-    <string name="stream_config_title">Set Stream Config</string>
+    <string name="stream_config_title">Set Stream Configuration</string>
 
     <string name="stream_config_selector_multi_stream">Multi Stream Capture</string>
     <string name="stream_config_selector_single_stream">Single Stream Capture</string>

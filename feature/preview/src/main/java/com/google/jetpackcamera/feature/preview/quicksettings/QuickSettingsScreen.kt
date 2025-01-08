@@ -232,7 +232,7 @@ private fun ExpandedQuickSettingsUi(
 
                             fun CameraConstraints.hdrImageFormatSupported(): Boolean =
                                 supportedImageFormatsMap[currentCameraSettings.streamConfig]
-                                    ?.let { it.size > 1 } ?: false
+                                    ?.let { it.size > 1 } == true
 
                             // TODO(tm): Move this to PreviewUiState
                             fun shouldEnable(): Boolean = when {
@@ -253,8 +253,6 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
-                                hdrDynamicRange = currentCameraSettings.defaultHdrDynamicRange,
-                                hdrImageFormat = currentCameraSettings.defaultHdrImageOutputFormat,
                                 hdrDynamicRangeSupported =
                                 cameraConstraints?.hdrDynamicRangeSupported() ?: false,
                                 previewMode = previewUiState.previewMode,
@@ -300,14 +298,11 @@ fun ExpandedQuickSettingsUiPreview() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                    isActive = false
                 ),
-                captureButtonUiState = CaptureButtonUiState.Enabled(
-                    CaptureMode.DEFAULT,
-                    PreviewMode.StandardMode({}),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_UISTATE
 
-                    VideoRecordingState.Inactive()
-                )
             ),
             currentCameraSettings = CameraAppSettings(),
             onLensFaceClick = { },
