@@ -254,7 +254,7 @@ private fun ExpandedQuickSettingsUi(
                                 selectedDynamicRange = currentCameraSettings.dynamicRange,
                                 selectedImageOutputFormat = currentCameraSettings.imageFormat,
                                 hdrDynamicRangeSupported =
-                                cameraConstraints?.hdrDynamicRangeSupported() ?: false,
+                                    cameraConstraints?.hdrDynamicRangeSupported() == true,
                                 previewMode = previewUiState.previewMode,
                                 enabled = shouldEnable()
                             )
@@ -302,7 +302,6 @@ fun ExpandedQuickSettingsUiPreview() {
                     isActive = false
                 ),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_UISTATE
-
             ),
             currentCameraSettings = CameraAppSettings(),
             onLensFaceClick = { },
