@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -35,8 +36,7 @@ private const val TAG = "ConcurrentCameraSession"
 context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
-    sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
-    useCaseMode: CameraUseCase.UseCaseMode
+    sessionSettings: PerpetualSessionSettings.ConcurrentCamera
 ) = coroutineScope {
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
     val secondaryLensFacing = sessionSettings.secondaryCameraInfo.appLensFacing
@@ -50,7 +50,7 @@ internal suspend fun runConcurrentCameraSession(
         .filterNotNull()
         .first()
 
-    val videoCapture = if (useCaseMode != CameraUseCase.UseCaseMode.IMAGE_ONLY) {
+    val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
         createVideoUseCase(
             cameraProvider.getCameraInfo(
                 initialTransientSettings.primaryLensFacing.toCameraSelector()
@@ -72,7 +72,7 @@ internal suspend fun runConcurrentCameraSession(
         aspectRatio = sessionSettings.aspectRatio,
         dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
-        useCaseMode = useCaseMode,
+        captureMode = sessionSettings.captureMode,
         videoCaptureUseCase = videoCapture
     )
 
