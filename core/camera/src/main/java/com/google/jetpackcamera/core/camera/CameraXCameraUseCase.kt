@@ -567,8 +567,12 @@ constructor(
                         if (constraints.supportedImageFormatsMap[streamConfig]
                                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
                         ) {
-                            // if  both image/video are supported, we don't need to change our current capture mode
-                            this.captureMode
+                            // if both image/video are supported, only change capture mode if default is the current
+                            if (this.captureMode != CaptureMode.DEFAULT) {
+                                this.captureMode
+                            } else {
+                                CaptureMode.VIDEO_ONLY
+                            }
                         } else {
                             // if only video is supported, change to video only
                             CaptureMode.VIDEO_ONLY
