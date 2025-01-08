@@ -414,7 +414,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCaptureMode(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             settingsRepository.updateStreamConfig(streamConfig)
             Log.d(TAG, "set default capture mode: $streamConfig")

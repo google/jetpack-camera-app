@@ -47,7 +47,7 @@ import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
-import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
+import com.google.jetpackcamera.feature.preview.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
@@ -219,24 +219,24 @@ fun QuickFlipCamera(
 }
 
 @Composable
-fun QuickSetCaptureMode(
-    setCaptureMode: (StreamConfig) -> Unit,
+fun QuickSetStreamConfig(
+    setStreamConfig: (StreamConfig) -> Unit,
     currentStreamConfig: StreamConfig,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val enum: CameraCaptureMode =
+    val enum: CameraStreamConfig =
         when (currentStreamConfig) {
-            StreamConfig.MULTI_STREAM -> CameraCaptureMode.MULTI_STREAM
-            StreamConfig.SINGLE_STREAM -> CameraCaptureMode.SINGLE_STREAM
+            StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
+            StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
         }
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
         onClick = {
             when (currentStreamConfig) {
-                StreamConfig.MULTI_STREAM -> setCaptureMode(StreamConfig.SINGLE_STREAM)
-                StreamConfig.SINGLE_STREAM -> setCaptureMode(StreamConfig.MULTI_STREAM)
+                StreamConfig.MULTI_STREAM -> setStreamConfig(StreamConfig.SINGLE_STREAM)
+                StreamConfig.SINGLE_STREAM -> setStreamConfig(StreamConfig.MULTI_STREAM)
             }
         },
         enabled = enabled

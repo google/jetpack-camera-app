@@ -66,7 +66,7 @@ fun SettingsScreen(
         setFlashMode = viewModel::setFlashMode,
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
-        setCaptureMode = viewModel::setCaptureMode,
+        setCaptureMode = viewModel::setStreamConfig,
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode
