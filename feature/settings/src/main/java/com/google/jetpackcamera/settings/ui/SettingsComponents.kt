@@ -304,7 +304,7 @@ fun AspectRatioSetting(
 @Composable
 fun StreamConfigSetting(
     streamConfigUiState: StreamConfigUiState,
-    setCaptureMode: (StreamConfig) -> Unit,
+    setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
@@ -332,14 +332,14 @@ fun StreamConfigSetting(
                     text = stringResource(id = R.string.stream_config_selector_multi_stream),
                     selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(StreamConfig.MULTI_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stream_config_description_single_stream),
                     selected = streamConfigUiState.currentStreamConfig ==
                         StreamConfig.SINGLE_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(StreamConfig.SINGLE_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
                 )
             }
         }

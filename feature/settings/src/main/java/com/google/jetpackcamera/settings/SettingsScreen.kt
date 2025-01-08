@@ -150,7 +150,7 @@ fun SettingsList(
 
     StreamConfigSetting(
         streamConfigUiState = uiState.streamConfigUiState,
-        setCaptureMode = setCaptureMode
+        setStreamConfig = setCaptureMode
     )
 
     SectionHeader(title = stringResource(R.string.section_title_recording_settings))
