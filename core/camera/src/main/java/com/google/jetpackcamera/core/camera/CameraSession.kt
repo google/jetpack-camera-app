@@ -189,7 +189,7 @@ internal suspend fun runSingleCameraSession(
                     Log.e(
                         TAG,
                         "Failed to select video quality: " + sessionSettings.videoQuality +
-                                ". Fallback: " + videoQuality
+                            ". Fallback: " + videoQuality
                     )
                 }
                 launch {
