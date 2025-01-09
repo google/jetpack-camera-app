@@ -734,21 +734,22 @@ fun VideoQualitySetting(
                         SingleSelectableState.Selectable,
                     onClick = { setVideoQuality(VideoQuality.UNSPECIFIED) }
                 )
-                listOf(VideoQuality.SD, VideoQuality.HD, VideoQuality.FHD).forEach { videoQuality ->
-                    SingleChoiceSelector(
-                        modifier = Modifier.testTag(getVideoQualityOptionTestTag(videoQuality)),
-                        text = stringResource(getVideoQualityStringRes(videoQuality)),
-                        secondaryText = stringResource(
-                            getVideoQualitySecondaryStringRes(
-                                videoQuality
-                            )
-                        ),
-                        selected = videQualityUiState.currentVideoQuality == videoQuality,
-                        enabled = videQualityUiState.videoQualitySDState is
-                            SingleSelectableState.Selectable,
-                        onClick = { setVideoQuality(videoQuality) }
-                    )
-                }
+                listOf(VideoQuality.SD, VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD)
+                    .forEach { videoQuality ->
+                        SingleChoiceSelector(
+                            modifier = Modifier.testTag(getVideoQualityOptionTestTag(videoQuality)),
+                            text = stringResource(getVideoQualityStringRes(videoQuality)),
+                            secondaryText = stringResource(
+                                getVideoQualitySecondaryStringRes(
+                                    videoQuality
+                                )
+                            ),
+                            selected = videQualityUiState.currentVideoQuality == videoQuality,
+                            enabled = videQualityUiState.videoQualitySDState is
+                                    SingleSelectableState.Selectable,
+                            onClick = { setVideoQuality(videoQuality) }
+                        )
+                    }
             }
         }
     )

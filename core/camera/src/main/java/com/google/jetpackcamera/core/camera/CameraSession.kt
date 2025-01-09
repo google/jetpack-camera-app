@@ -51,6 +51,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
@@ -181,13 +182,21 @@ internal suspend fun runSingleCameraSession(
             }
 
             if (videoCaptureUseCase != null) {
+                val videoQuality = getVideoQualityFromResolution(
+                    videoCaptureUseCase.resolutionInfo?.resolution
+                )
+                if (videoQuality != sessionSettings.videoQuality) {
+                    Log.e(
+                        TAG,
+                        "Failed to select video quality: " + sessionSettings.videoQuality +
+                                ". Fallback: " + videoQuality
+                    )
+                }
                 launch {
                     currentCameraState.update { old ->
                         old.copy(
                             videoQualityInfo = VideoQualityInfo(
-                                getVideoQualityFromResolution(
-                                    videoCaptureUseCase.resolutionInfo?.resolution
-                                ),
+                                videoQuality,
                                 getWidthFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect),
                                 getHeightFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect)
                             )
@@ -459,7 +468,12 @@ internal fun createVideoUseCase(
         .apply {
             videoQuality.toQuality()?.let { quality ->
                 // No fallback strategy is used. The app will crash if the quality is unsupported
-                setQualitySelector(QualitySelector.from(quality))
+                setQualitySelector(
+                    QualitySelector.from(
+                        quality,
+                        FallbackStrategy.lowerQualityOrHigherThan(quality)
+                    )
+                )
             }
         }.build()
 
