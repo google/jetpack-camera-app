@@ -746,7 +746,7 @@ fun VideoQualitySetting(
                             ),
                             selected = videQualityUiState.currentVideoQuality == videoQuality,
                             enabled = videQualityUiState.videoQualitySDState is
-                                    SingleSelectableState.Selectable,
+                                SingleSelectableState.Selectable,
                             onClick = { setVideoQuality(videoQuality) }
                         )
                     }
