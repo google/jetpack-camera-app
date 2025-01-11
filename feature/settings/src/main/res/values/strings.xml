@@ -55,14 +55,14 @@
     <string name="flash_mode_description_off">Flash is Off</string>
     <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
-    <!-- Capture mode setting strings -->
-    <string name="capture_mode_title">Set Capture Mode</string>
+    <!-- Stream Config mode setting strings -->
+    <string name="stream_config_title">Set Stream Configuration</string>
 
-    <string name="capture_mode_selector_multi_stream">Multi Stream Capture</string>
-    <string name="capture_mode_selector_single_stream">Single Stream Capture</string>
+    <string name="stream_config_selector_multi_stream">Multi Stream Capture</string>
+    <string name="stream_config_selector_single_stream">Single Stream Capture</string>
 
-    <string name="capture_mode_description_multi_stream">Multi Stream</string>
-    <string name="capture_mode_description_single_stream">Single Stream</string>
+    <string name="stream_config_description_multi_stream">Multi Stream</string>
+    <string name="stream_config_description_single_stream">Single Stream</string>
 
     <!-- Aspect Ratio setting strings -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>

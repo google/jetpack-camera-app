@@ -18,12 +18,12 @@ package com.google.jetpackcamera.settings
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -43,7 +43,7 @@ sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
-        val captureModeUiState: CaptureModeUiState,
+        val streamConfigUiState: StreamConfigUiState,
         val darkModeUiState: DarkModeUiState,
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
@@ -107,16 +107,14 @@ sealed interface DisabledRationale {
 fun getLensUnsupportedRationale(
     lensFacing: LensFacing,
     affectedSettingNameResId: Int
-): LensUnsupportedRationale {
-    return when (lensFacing) {
-        LensFacing.BACK -> LensUnsupportedRationale.RearLensUnsupportedRationale(
-            affectedSettingNameResId
-        )
+): LensUnsupportedRationale = when (lensFacing) {
+    LensFacing.BACK -> LensUnsupportedRationale.RearLensUnsupportedRationale(
+        affectedSettingNameResId
+    )
 
-        LensFacing.FRONT -> LensUnsupportedRationale.FrontLensUnsupportedRationale(
-            affectedSettingNameResId
-        )
-    }
+    LensFacing.FRONT -> LensUnsupportedRationale.FrontLensUnsupportedRationale(
+        affectedSettingNameResId
+    )
 }
 
 /* Settings that currently have constraints **/
@@ -139,9 +137,7 @@ sealed interface FpsUiState {
 sealed interface FlipLensUiState {
     val currentLensFacing: LensFacing
 
-    data class Enabled(
-        override val currentLensFacing: LensFacing
-    ) : FlipLensUiState
+    data class Enabled(override val currentLensFacing: LensFacing) : FlipLensUiState
 
     data class Disabled(
         override val currentLensFacing: LensFacing,
@@ -168,38 +164,28 @@ sealed interface StabilizationUiState {
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
-    data class Enabled(
-        val currentFlashMode: FlashMode,
-        val additionalContext: String = ""
-    ) : FlashUiState
+    data class Enabled(val currentFlashMode: FlashMode, val additionalContext: String = "") :
+        FlashUiState
 }
 
 sealed interface AspectRatioUiState {
-    data class Enabled(
-        val currentAspectRatio: AspectRatio,
-        val additionalContext: String = ""
-    ) : AspectRatioUiState
+    data class Enabled(val currentAspectRatio: AspectRatio, val additionalContext: String = "") :
+        AspectRatioUiState
 }
 
-sealed interface CaptureModeUiState {
-    data class Enabled(
-        val currentCaptureMode: CaptureMode,
-        val additionalContext: String = ""
-    ) : CaptureModeUiState
+sealed interface StreamConfigUiState {
+    data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
+        StreamConfigUiState
 }
 
 sealed interface DarkModeUiState {
-    data class Enabled(
-        val currentDarkMode: DarkMode,
-        val additionalContext: String = ""
-    ) : DarkModeUiState
+    data class Enabled(val currentDarkMode: DarkMode, val additionalContext: String = "") :
+        DarkModeUiState
 }
 
 sealed interface MaxVideoDurationUiState {
-    data class Enabled(
-        val currentMaxDurationMillis: Long,
-        val additionalContext: String = ""
-    ) : MaxVideoDurationUiState
+    data class Enabled(val currentMaxDurationMillis: Long, val additionalContext: String = "") :
+        MaxVideoDurationUiState
 }
 
 /**
@@ -208,7 +194,7 @@ sealed interface MaxVideoDurationUiState {
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+    streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
