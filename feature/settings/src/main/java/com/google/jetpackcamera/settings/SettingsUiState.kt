@@ -18,22 +18,17 @@ package com.google.jetpackcamera.settings
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
-
-const val FPS_AUTO = 0
-const val FPS_15 = 15
-const val FPS_30 = 30
-const val FPS_60 = 60
 
 // seconds duration in millis
 const val UNLIMITED_VIDEO_DURATION = 0L
@@ -49,7 +44,7 @@ sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
-        val captureModeUiState: CaptureModeUiState,
+        val streamConfigUiState: StreamConfigUiState,
         val darkModeUiState: DarkModeUiState,
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
@@ -169,6 +164,7 @@ sealed interface StabilizationUiState {
         val stabilizationAutoState: SingleSelectableState,
         val stabilizationOnState: SingleSelectableState,
         val stabilizationHighQualityState: SingleSelectableState,
+        val stabilizationOpticalState: SingleSelectableState,
         // Contains text like "Selected stabilization mode only supported by rear lens"
         val additionalContext: String = ""
     ) : StabilizationUiState
@@ -205,9 +201,9 @@ sealed interface AspectRatioUiState {
         AspectRatioUiState
 }
 
-sealed interface CaptureModeUiState {
-    data class Enabled(val currentCaptureMode: CaptureMode, val additionalContext: String = "") :
-        CaptureModeUiState
+sealed interface StreamConfigUiState {
+    data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
+        StreamConfigUiState
 }
 
 sealed interface DarkModeUiState {
@@ -226,7 +222,7 @@ sealed interface MaxVideoDurationUiState {
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    captureModeUiState = CaptureModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+    streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
     audioUiState = if (DEFAULT_CAMERA_APP_SETTINGS.audioEnabled) {
         AudioUiState.Enabled.On()

@@ -21,14 +21,15 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -103,7 +104,7 @@ interface CameraUseCase {
 
     suspend fun tapToFocus(x: Float, y: Float)
 
-    suspend fun setCaptureMode(captureMode: CaptureMode)
+    suspend fun setStreamConfig(streamConfig: StreamConfig)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
@@ -138,7 +139,7 @@ interface CameraUseCase {
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
     }
 
     enum class UseCaseMode {
@@ -149,6 +150,12 @@ interface CameraUseCase {
 }
 
 sealed interface VideoRecordingState {
+
+    /**
+     * [PendingRecording][androidx.camera.video.PendingRecording] has not yet started but is about to.
+     * This state may be used as a signal to start processes just before the recording actually starts.
+     */
+    data object Starting : VideoRecordingState
 
     /**
      * Camera is not currently recording a video
@@ -183,6 +190,7 @@ data class CameraState(
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
+    val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 

@@ -38,11 +38,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -54,14 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
-import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
-import com.google.jetpackcamera.settings.FPS_15
-import com.google.jetpackcamera.settings.FPS_30
-import com.google.jetpackcamera.settings.FPS_60
-import com.google.jetpackcamera.settings.FPS_AUTO
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
@@ -70,15 +67,20 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
+import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -301,43 +303,44 @@ fun AspectRatioSetting(
 }
 
 @Composable
-fun CaptureModeSetting(
-    captureModeUiState: CaptureModeUiState,
-    setCaptureMode: (CaptureMode) -> Unit,
+fun StreamConfigSetting(
+    streamConfigUiState: StreamConfigUiState,
+    setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
-        title = stringResource(R.string.capture_mode_title),
+        title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
         description =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
-            when (captureModeUiState.currentCaptureMode) {
-                CaptureMode.MULTI_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_multi_stream
+        if (streamConfigUiState is StreamConfigUiState.Enabled) {
+            when (streamConfigUiState.currentStreamConfig) {
+                StreamConfig.MULTI_STREAM -> stringResource(
+                    id = R.string.stream_config_description_multi_stream
                 )
 
-                CaptureMode.SINGLE_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_single_stream
+                StreamConfig.SINGLE_STREAM -> stringResource(
+                    id = R.string.stream_config_description_single_stream
                 )
             }
         } else {
-            TODO("capture mode currently has no disabled criteria")
+            TODO("stream config currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_selector_multi_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.MULTI_STREAM,
+                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_description_single_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.SINGLE_STREAM,
+                    text = stringResource(id = R.string.stream_config_description_single_stream),
+                    selected = streamConfigUiState.currentStreamConfig ==
+                        StreamConfig.SINGLE_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
                 )
             }
         }
@@ -471,6 +474,7 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.AUTO -> R.string.stabilization_description_auto
         StabilizationMode.ON -> R.string.stabilization_description_on
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
+        StabilizationMode.OPTICAL -> R.string.stabilization_description_optical
     }
 
 /**
@@ -604,6 +608,34 @@ fun StabilizationSetting(
                             }
                         )
 
+                        // optical selector
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationOpticalState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationOpticalState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(
+                                id = R.string.stabilization_selector_optical
+                            ),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_optical_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationOpticalState
+                                == SingleSelectableState.Selectable,
+
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OPTICAL,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.OPTICAL)
+                            }
+                        )
+
                         // off selector
                         SingleChoiceSelector(
                             text = stringResource(id = R.string.stabilization_selector_off),
@@ -686,9 +718,9 @@ fun BasicPopupSetting(
     leadingIcon: @Composable (() -> Unit)?,
     popupContents: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean
+    enabled: Boolean,
+    popupStatus: MutableState<Boolean> = remember { mutableStateOf(false) }
 ) {
-    val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
@@ -707,7 +739,12 @@ fun BasicPopupSetting(
                 )
             },
             title = { Text(text = title) },
-            text = popupContents
+            text = {
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
+                    content = popupContents
+                )
+            }
         )
     }
 }
@@ -866,5 +903,41 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
 private fun Preview_VersionInfo() {
     SettingsPreviewTheme {
         VersionInfo(versionName = "0.1.0", buildType = "debug")
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_Popup() {
+    SettingsPreviewTheme {
+        BasicPopupSetting(
+            title = "Test Popup",
+            description = "Test Description",
+            leadingIcon = null,
+            popupContents = {
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        text = "Test sub-text",
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    SingleChoiceSelector(
+                        text = "Option 1",
+                        selected = true,
+                        enabled = true,
+                        onClick = { }
+                    )
+                    SingleChoiceSelector(
+                        text = "Option 2",
+                        selected = false,
+                        enabled = true,
+                        onClick = { }
+                    )
+                }
+            },
+            enabled = true,
+            popupStatus = remember { mutableStateOf(true) }
+        )
     }
 }

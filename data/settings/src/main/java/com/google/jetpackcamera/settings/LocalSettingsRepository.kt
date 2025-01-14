@@ -17,13 +17,12 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.CaptureMode as CaptureModeProto
 import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
 import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
 import com.google.jetpackcamera.settings.StabilizationMode as StabilizationModeProto
+import com.google.jetpackcamera.settings.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
@@ -33,6 +32,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toPro
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -63,10 +63,10 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
                 targetFrameRate = it.targetFrameRate,
-                captureMode = when (it.captureModeStatus) {
-                    CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM -> CaptureMode.SINGLE_STREAM
-                    CaptureModeProto.CAPTURE_MODE_MULTI_STREAM -> CaptureMode.MULTI_STREAM
-                    else -> CaptureMode.MULTI_STREAM
+                streamConfig = when (it.streamConfigStatus) {
+                    StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
+                    StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
+                    else -> StreamConfig.MULTI_STREAM
                 },
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
@@ -134,14 +134,14 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         }
     }
 
-    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
-        val newStatus = when (captureMode) {
-            CaptureMode.MULTI_STREAM -> CaptureModeProto.CAPTURE_MODE_MULTI_STREAM
-            CaptureMode.SINGLE_STREAM -> CaptureModeProto.CAPTURE_MODE_SINGLE_STREAM
+    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
+        val newStatus = when (streamConfig) {
+            StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
+            StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setCaptureModeStatus(newStatus)
+                .setStreamConfigStatus(newStatus)
                 .build()
         }
     }
@@ -152,6 +152,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
             StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
             StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
             StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
+            StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
         }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()

@@ -24,7 +24,7 @@ import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
-import androidx.camera.viewfinder.surface.ImplementationMode
+import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -106,6 +106,7 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -471,36 +472,65 @@ fun PreviewDisplay(
 
 @Composable
 fun StabilizationIcon(
-    stabilizationMode: StabilizationMode,
-    modifier: Modifier = Modifier,
-    active: Boolean = true
+    stabilizationUiState: StabilizationUiState.Enabled,
+    modifier: Modifier = Modifier
 ) {
     val contentColor = Color.White.let {
-        if (!active) it.copy(alpha = 0.38f) else it
+        if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
     }
     CompositionLocalProvider(LocalContentColor provides contentColor) {
-        if (stabilizationMode != StabilizationMode.OFF) {
+        if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
             Icon(
-                painter = when (stabilizationMode) {
-                    StabilizationMode.AUTO ->
-                        painterResource(R.drawable.video_stable_auto_filled_icon)
+                painter = when (stabilizationUiState) {
+                    is StabilizationUiState.Specific ->
+                        when (stabilizationUiState.stabilizationMode) {
+                            StabilizationMode.AUTO ->
+                                throw IllegalStateException(
+                                    "AUTO is not a specific StabilizationUiState."
+                                )
+                            StabilizationMode.HIGH_QUALITY ->
+                                painterResource(R.drawable.video_stable_hq_filled_icon)
 
-                    StabilizationMode.HIGH_QUALITY ->
-                        painterResource(R.drawable.video_stable_hq_filled_icon)
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_filled_icon)
 
-                    else -> rememberVectorPainter(Icons.Filled.VideoStable)
+                            StabilizationMode.ON ->
+                                rememberVectorPainter(Icons.Filled.VideoStable)
+
+                            else ->
+                                TODO(
+                                    "Cannot retrieve icon for unimplemented stabilization mode:" +
+                                        "${stabilizationUiState.stabilizationMode}"
+                                )
+                        }
+                    is StabilizationUiState.Auto -> {
+                        when (stabilizationUiState.stabilizationMode) {
+                            StabilizationMode.ON ->
+                                painterResource(R.drawable.video_stable_auto_filled_icon)
+
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+                            else ->
+                                TODO(
+                                    "Auto stabilization not yet implemented for " +
+                                        "${stabilizationUiState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
+                                )
+                        }
+                    }
                 },
-                // previewStabilization will not be on for high quality
-                contentDescription = when (stabilizationMode) {
-                    StabilizationMode.AUTO -> stringResource(
-                        R.string.stabilization_icon_description_auto
-                    )
+                contentDescription = when (stabilizationUiState.stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        stringResource(R.string.stabilization_icon_description_auto)
 
                     StabilizationMode.ON ->
                         stringResource(R.string.stabilization_icon_description_preview_and_video)
 
                     StabilizationMode.HIGH_QUALITY ->
                         stringResource(R.string.stabilization_icon_description_video_only)
+
+                    StabilizationMode.OPTICAL ->
+                        stringResource(R.string.stabilization_icon_description_optical)
 
                     else -> null
                 },
@@ -643,6 +673,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
+                        VideoRecordingState.Starting -> currentColor
                     }
                 )
             }

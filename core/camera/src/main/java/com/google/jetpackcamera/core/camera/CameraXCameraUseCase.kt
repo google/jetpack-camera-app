@@ -24,7 +24,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -42,7 +41,8 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -51,6 +51,7 @@ import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
@@ -81,9 +82,6 @@ const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
 
 const val UNLIMITED_VIDEO_DURATION = 0L
-
-val STABILIZATION_ON_UNSUPPORTED_FPS = setOf(TARGET_FPS_15, TARGET_FPS_60)
-val STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS = setOf(TARGET_FPS_60)
 
 /**
  * CameraX based implementation for [CameraUseCase]
@@ -165,7 +163,23 @@ constructor(
                                 add(StabilizationMode.HIGH_QUALITY)
                             }
 
+                            if (camInfo.isOpticalStabilizationSupported) {
+                                add(StabilizationMode.OPTICAL)
+                                add(StabilizationMode.AUTO)
+                            }
+
                             add(StabilizationMode.OFF)
+                        }
+
+                        val unsupportedStabilizationFpsMap = buildMap {
+                            for (stabilizationMode in supportedStabilizationModes) {
+                                when (stabilizationMode) {
+                                    StabilizationMode.ON -> setOf(FPS_15, FPS_60)
+                                    StabilizationMode.HIGH_QUALITY -> setOf(FPS_60)
+                                    StabilizationMode.OPTICAL -> emptySet()
+                                    else -> null
+                                }?.let { put(stabilizationMode, it) }
+                            }
                         }
 
                         val supportedFixedFrameRates =
@@ -213,11 +227,12 @@ constructor(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
                                     // Ultra HDR now.
-                                    Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                                    Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
+                                    Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
                                 supportedIlluminants = supportedIlluminants,
-                                supportedFlashModes = supportedFlashModes
+                                supportedFlashModes = supportedFlashModes,
+                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                             )
                         )
                     }
@@ -264,33 +279,28 @@ constructor(
                     isAudioEnabled = currentCameraSettings.audioEnabled,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
+                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
                     zoomScale = currentCameraSettings.zoomScale
-                )
-
-                val cameraConstraints = checkNotNull(
-                    systemConstraints.forCurrentLens(currentCameraSettings)
-                ) {
-                    "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
-                }
-
-                val resolvedStabilizationMode = resolveStabilizationMode(
-                    stabilizationMode = currentCameraSettings.stabilizationMode,
-                    targetFrameRate = currentCameraSettings.targetFrameRate,
-                    supportedStabilizationModes = cameraConstraints.supportedStabilizationModes,
-                    concurrentCameraMode = currentCameraSettings.concurrentCameraMode
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraSelector = when (currentCameraSettings.cameraLensFacing) {
-                            LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
-                            LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                        val cameraConstraints = checkNotNull(
+                            systemConstraints.forCurrentLens(currentCameraSettings)
+                        ) {
+                            "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
                         }
 
+                        val resolvedStabilizationMode = resolveStabilizationMode(
+                            requestedStabilizationMode = currentCameraSettings.stabilizationMode,
+                            targetFrameRate = currentCameraSettings.targetFrameRate,
+                            cameraConstraints = cameraConstraints,
+                            concurrentCameraMode = currentCameraSettings.concurrentCameraMode
+                        )
+
                         PerpetualSessionSettings.SingleCamera(
-                            cameraInfo = cameraProvider.getCameraInfo(cameraSelector),
                             aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
+                            streamConfig = currentCameraSettings.streamConfig,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
@@ -367,38 +377,34 @@ constructor(
     }
 
     private fun resolveStabilizationMode(
-        stabilizationMode: StabilizationMode,
+        requestedStabilizationMode: StabilizationMode,
         targetFrameRate: Int,
-        supportedStabilizationModes: Set<StabilizationMode>,
+        cameraConstraints: CameraConstraints,
         concurrentCameraMode: ConcurrentCameraMode
     ): StabilizationMode = if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
         StabilizationMode.OFF
     } else {
-        when (stabilizationMode) {
-            StabilizationMode.AUTO,
-            StabilizationMode.ON -> {
-                if (
-                    supportedStabilizationModes.contains(StabilizationMode.ON) &&
-                    targetFrameRate !in STABILIZATION_ON_UNSUPPORTED_FPS
-                ) {
-                    StabilizationMode.ON
-                } else {
-                    StabilizationMode.OFF
-                }
+        with(cameraConstraints) {
+            // Convert AUTO stabilization mode to the first supported stabilization mode
+            val stabilizationMode = if (requestedStabilizationMode == StabilizationMode.AUTO) {
+                // Choose between ON, OPTICAL, or OFF, depending on support, in that order
+                sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
+                    .first {
+                        it in supportedStabilizationModes &&
+                            targetFrameRate !in it.unsupportedFpsSet
+                    }
+            } else {
+                requestedStabilizationMode
             }
 
-            StabilizationMode.HIGH_QUALITY -> {
-                if (
-                    supportedStabilizationModes.contains(StabilizationMode.HIGH_QUALITY) &&
-                    targetFrameRate !in STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-                ) {
-                    StabilizationMode.HIGH_QUALITY
-                } else {
-                    StabilizationMode.OFF
-                }
+            // Check that the stabilization mode can be supported, otherwise return OFF
+            if (stabilizationMode in supportedStabilizationModes &&
+                targetFrameRate !in stabilizationMode.unsupportedFpsSet
+            ) {
+                stabilizationMode
+            } else {
+                StabilizationMode.OFF
             }
-
-            StabilizationMode.OFF -> StabilizationMode.OFF
         }
     }
 
@@ -577,7 +583,7 @@ constructor(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[captureMode]) {
+            with(constraints.supportedImageFormatsMap[streamConfig]) {
                 val newImageFormat = if (this != null && contains(imageFormat)) {
                     imageFormat
                 } else {
@@ -607,27 +613,20 @@ constructor(
 
     private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            val invalidFps = when (stabilizationMode) {
-                StabilizationMode.ON -> STABILIZATION_ON_UNSUPPORTED_FPS
-                StabilizationMode.HIGH_QUALITY -> STABILIZATION_HIGH_QUALITY_UNSUPPORTED_FPS
-                else -> emptySet()
-            }
-
-            val newStabilizationMode = if (targetFrameRate in invalidFps) {
-                StabilizationMode.AUTO
-            } else {
-                stabilizationMode
-            }.let {
-                if (it !in constraints.supportedStabilizationModes) {
-                    StabilizationMode.OFF
+            with(constraints) {
+                val newStabilizationMode = if (stabilizationMode != StabilizationMode.AUTO &&
+                    stabilizationMode in constraints.supportedStabilizationModes &&
+                    targetFrameRate !in stabilizationMode.unsupportedFpsSet
+                ) {
+                    stabilizationMode
                 } else {
-                    it
+                    StabilizationMode.AUTO
                 }
-            }
 
-            this@tryApplyStabilizationConstraints.copy(
-                stabilizationMode = newStabilizationMode
-            )
+                this@tryApplyStabilizationConstraints.copy(
+                    stabilizationMode = newStabilizationMode
+                )
+            }
         } ?: this
 
     private fun CameraAppSettings.tryApplyConcurrentCameraModeConstraints(): CameraAppSettings =
@@ -638,7 +637,7 @@ constructor(
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO,
                         dynamicRange = DynamicRange.SDR,
-                        captureMode = CaptureMode.MULTI_STREAM
+                        streamConfig = StreamConfig.MULTI_STREAM
                     )
                 } else {
                     copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
@@ -683,9 +682,9 @@ constructor(
         }
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
