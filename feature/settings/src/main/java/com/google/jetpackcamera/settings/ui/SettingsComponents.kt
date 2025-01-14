@@ -57,7 +57,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
-import com.google.jetpackcamera.settings.CaptureModeUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -69,6 +68,7 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
+import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
@@ -78,12 +78,12 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_1
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -306,43 +306,44 @@ fun AspectRatioSetting(
 }
 
 @Composable
-fun CaptureModeSetting(
-    captureModeUiState: CaptureModeUiState,
-    setCaptureMode: (CaptureMode) -> Unit,
+fun StreamConfigSetting(
+    streamConfigUiState: StreamConfigUiState,
+    setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
-        title = stringResource(R.string.capture_mode_title),
+        title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
         description =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
-            when (captureModeUiState.currentCaptureMode) {
-                CaptureMode.MULTI_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_multi_stream
+        if (streamConfigUiState is StreamConfigUiState.Enabled) {
+            when (streamConfigUiState.currentStreamConfig) {
+                StreamConfig.MULTI_STREAM -> stringResource(
+                    id = R.string.stream_config_description_multi_stream
                 )
 
-                CaptureMode.SINGLE_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_single_stream
+                StreamConfig.SINGLE_STREAM -> stringResource(
+                    id = R.string.stream_config_description_single_stream
                 )
             }
         } else {
-            TODO("capture mode currently has no disabled criteria")
+            TODO("stream config currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_selector_multi_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.MULTI_STREAM,
+                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_description_single_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.SINGLE_STREAM,
+                    text = stringResource(id = R.string.stream_config_description_single_stream),
+                    selected = streamConfigUiState.currentStreamConfig ==
+                        StreamConfig.SINGLE_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
                 )
             }
         }
@@ -937,8 +938,8 @@ fun SingleChoiceSelector(
 
 @Composable
 @ReadOnlyComposable
-fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    return when (disabledRationale) {
+fun disabledRationaleString(disabledRationale: DisabledRationale): String =
+    when (disabledRationale) {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
@@ -966,7 +967,6 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
             stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
-}
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)

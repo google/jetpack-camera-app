@@ -15,6 +15,16 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+// ////////////////////////////////
+//
+// !!!HEY YOU!!!
+// MODIFICATIONS TO EXISTING TEST TAGS WILL BREAK EXISTING EXTERNAL
+// AUTOMATED TESTS THAT SEARCH FOR THESE TAGS.
+//
+// PLEASE UPDATE YOUR TESTS ACCORDINGLY!
+//
+// ////////////////////////////////
+
 const val BACK_BUTTON = "BackButton"
 
 // unsupported rationale tags

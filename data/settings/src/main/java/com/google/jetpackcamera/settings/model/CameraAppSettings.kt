@@ -27,7 +27,7 @@ data class CameraAppSettings(
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
-    val captureMode: CaptureMode = CaptureMode.MULTI_STREAM,
+    val streamConfig: StreamConfig = StreamConfig.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
@@ -41,8 +41,7 @@ data class CameraAppSettings(
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
 )
 
-fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? {
-    return perLensConstraints[cameraAppSettings.cameraLensFacing]
-}
+fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =
+    perLensConstraints[cameraAppSettings.cameraLensFacing]
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

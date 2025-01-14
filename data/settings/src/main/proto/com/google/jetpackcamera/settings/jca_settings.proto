@@ -36,7 +36,7 @@ message JcaSettings {
   FlashMode flash_mode_status = 2;
   int32 target_frame_rate = 3;
   AspectRatio aspect_ratio_status = 4;
-  CaptureMode capture_mode_status = 5;
+  StreamConfig stream_config_status = 5;
   StabilizationMode stabilization_mode = 6;
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
