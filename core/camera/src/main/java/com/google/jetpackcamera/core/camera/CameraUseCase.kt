@@ -192,7 +192,7 @@ data class CameraState(
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
-    //val isMicOn: Boolean = false,
+    // val isMicOn: Boolean = false,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 

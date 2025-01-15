@@ -196,7 +196,10 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState
                         ),
                         flashModeUiState = flashModeUiState,
-                        audioUiState = getAudioUiState(cameraAppSettings.audioEnabled, cameraState.videoRecordingState)
+                        audioUiState = getAudioUiState(
+                            cameraAppSettings.audioEnabled,
+                            cameraState.videoRecordingState
+                        )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -253,13 +256,19 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun getAudioUiState(isAudioEnabled:Boolean, videoRecordingState: VideoRecordingState):AudioUiState {
+    private fun getAudioUiState(
+        isAudioEnabled: Boolean,
+        videoRecordingState: VideoRecordingState
+    ): AudioUiState {
         return if (isAudioEnabled) {
-            if(videoRecordingState is VideoRecordingState.Active)
+            if (videoRecordingState is VideoRecordingState.Active) {
                 AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-            else AudioUiState.Enabled.On(0.0)
-
-        } else AudioUiState.Enabled.Mute
+            } else {
+                AudioUiState.Enabled.On(0.0)
+            }
+        } else {
+            AudioUiState.Enabled.Mute
+        }
     }
 
     private fun stabilizationUiStateFrom(
