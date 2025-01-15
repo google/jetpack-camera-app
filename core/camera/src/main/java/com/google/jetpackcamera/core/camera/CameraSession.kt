@@ -77,7 +77,10 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality.Companion.QUALITY_RANGE_MAP
+import com.google.jetpackcamera.settings.model.VideoQuality.FHD
+import com.google.jetpackcamera.settings.model.VideoQuality.HD
+import com.google.jetpackcamera.settings.model.VideoQuality.SD
+import com.google.jetpackcamera.settings.model.VideoQuality.UHD
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -102,6 +105,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraSession"
+private val QUALITY_RANGE_MAP = mapOf(
+    UHD to Range.create(2160, 4319),
+    FHD to Range.create(1080, 1439),
+    HD to Range.create(720, 1079),
+    SD to Range.create(241, 719)
+)
 
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
