@@ -25,9 +25,9 @@ import com.google.jetpackcamera.settings.ImageOutputFormat
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.jetpackcamera.settings.LensFacing
 import com.google.jetpackcamera.settings.StabilizationMode
-import com.google.jetpackcamera.settings.VideoQuality
 import com.google.jetpackcamera.settings.StreamConfig
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
