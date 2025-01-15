@@ -78,6 +78,7 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+
     suspend fun pauseVideoRecording()
 
     suspend fun resumeVideoRecording()
@@ -191,6 +192,7 @@ data class CameraState(
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
+    //val isMicOn: Boolean = false,
     val debugInfo: DebugInfo = DebugInfo(null, null)
 )
 

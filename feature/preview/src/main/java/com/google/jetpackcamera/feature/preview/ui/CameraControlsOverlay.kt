@@ -335,7 +335,7 @@ private fun ControlsBottom(
                             .weight(1f)
                             .fillMaxSize(),
                         onToggleAudio = onToggleAudio,
-                        audioAmplitude = videoRecordingState.audioAmplitude
+                        audioUiState = previewUiState.audioUiState
                     )
                 } else {
                     if (!isQuickSettingsOpen &&
@@ -408,7 +408,7 @@ private fun CaptureButton(
                             context.contentResolver,
                             null,
                             previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                ignoreUri,
+                                    ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
@@ -497,9 +497,9 @@ private fun CaptureModeToggleButton(
         },
         enabled = uiState is CaptureModeToggleUiState.Enabled,
         leftIconDescription =
-        stringResource(id = R.string.capture_mode_image_capture_content_description),
+            stringResource(id = R.string.capture_mode_image_capture_content_description),
         rightIconDescription =
-        stringResource(id = R.string.capture_mode_video_recording_content_description),
+            stringResource(id = R.string.capture_mode_video_recording_content_description),
         modifier = modifier
     )
 }
@@ -662,7 +662,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()

@@ -26,6 +26,7 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -194,7 +195,8 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        audioUiState = getAudioUiState(cameraAppSettings.audioEnabled, cameraState.videoRecordingState)
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -249,6 +251,15 @@ class PreviewViewModel @AssistedInject constructor(
                 }
             }
         }
+    }
+
+    private fun getAudioUiState(isAudioEnabled:Boolean, videoRecordingState: VideoRecordingState):AudioUiState {
+        return if (isAudioEnabled) {
+            if(videoRecordingState is VideoRecordingState.Active)
+                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
+            else AudioUiState.Enabled.On(0.0)
+
+        } else AudioUiState.Enabled.Mute
     }
 
     private fun stabilizationUiStateFrom(
@@ -564,10 +575,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         Log.d(
             TAG,
-            "Toggle Audio ${
-                (previewUiState.value as PreviewUiState.Ready)
-                    .currentCameraSettings.audioEnabled
-            }"
+            "Toggle Audio: $shouldEnableAudio"
         )
     }
 
