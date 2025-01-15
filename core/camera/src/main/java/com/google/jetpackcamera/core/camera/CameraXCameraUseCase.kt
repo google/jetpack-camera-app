@@ -663,16 +663,14 @@ constructor(
     private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
-                val newVideoQuality = if (contains(dynamicRange) &&
-                    !get(dynamicRange).isNullOrEmpty()
-                ) {
-                    if (get(dynamicRange)!!.contains(videoQuality)) {
+                val newVideoQuality =  get(dynamicRange).let {
+                    if (it == null) {
+                        VideoQuality.UNSPECIFIED
+                    } else if (it.contains(videoQuality)) {
                         videoQuality
                     } else {
                         VideoQuality.UNSPECIFIED
                     }
-                } else {
-                    VideoQuality.UNSPECIFIED
                 }
 
                 this@tryApplyVideoQualityConstraints.copy(

@@ -117,18 +117,13 @@
 
     <!-- video quality strings -->
     <string name="video_quality_title">Set Video Quality</string>
-    <string name="video_quality_description_current">Current quality: %1$s</string>
     <string name="video_quality_value_auto">Auto</string>
-    <string name="video_quality_value_lowest">Lowest</string>
-    <string name="video_quality_value_highest">Highest</string>
     <string name="video_quality_value_sd">SD</string>
     <string name="video_quality_value_hd">HD</string>
     <string name="video_quality_value_fhd">FHD</string>
     <string name="video_quality_value_uhd">UHD</string>
 
     <string name="video_quality_value_auto_info">Video quality automatically selected by the device.</string>
-    <string name="video_quality_value_lowest_info">The lowest video quality supported by the video frame producer.</string>
-    <string name="video_quality_value_highest_info">The highest video quality supported by the video frame producer.</string>
     <string name="video_quality_value_sd_info">Standard Definition (SD) 480p video quality.</string>
     <string name="video_quality_value_hd_info">High Definition (HD) video quality.</string>
     <string name="video_quality_value_fhd_info">Full High Definition (FHD) 1080p video quality.</string>

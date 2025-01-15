@@ -15,12 +15,11 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import android.util.Range
 import com.google.jetpackcamera.settings.VideoQuality as VideoQualityProto
 
 enum class VideoQuality {
     UNSPECIFIED,
-    LOWEST,
-    HIGHEST,
     SD,
     HD,
     FHD,
@@ -30,8 +29,6 @@ enum class VideoQuality {
         /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
         fun fromProto(videoQualityProto: VideoQualityProto): VideoQuality {
             return when (videoQualityProto) {
-                VideoQualityProto.VIDEO_QUALITY_LOWEST -> LOWEST
-                VideoQualityProto.VIDEO_QUALITY_HIGHEST -> HIGHEST
                 VideoQualityProto.VIDEO_QUALITY_SD -> SD
                 VideoQualityProto.VIDEO_QUALITY_HD -> HD
                 VideoQualityProto.VIDEO_QUALITY_FHD -> FHD
@@ -45,13 +42,18 @@ enum class VideoQuality {
         fun VideoQuality.toProto(): com.google.jetpackcamera.settings.VideoQuality {
             return when (this) {
                 UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
-                LOWEST -> VideoQualityProto.VIDEO_QUALITY_LOWEST
-                HIGHEST -> VideoQualityProto.VIDEO_QUALITY_HIGHEST
                 SD -> VideoQualityProto.VIDEO_QUALITY_SD
                 HD -> VideoQualityProto.VIDEO_QUALITY_HD
                 FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
                 UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
             }
         }
+
+        val QUALITY_RANGE_MAP = mapOf(
+            VideoQuality.UHD to Range.create(2160, 4319),
+            VideoQuality.FHD to Range.create(1080, 1439),
+            VideoQuality.HD to Range.create(720, 1079),
+            VideoQuality.SD to Range.create(241, 719),
+        )
     }
 }

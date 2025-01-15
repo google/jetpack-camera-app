@@ -231,38 +231,30 @@ class SettingsViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings
     ): VideoQualityUiState {
         val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
-        val supportedVideQualities: List<VideoQuality>? =
+        val supportedVideoQualities: List<VideoQuality>? =
             cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
-        return if (!supportedVideQualities.isNullOrEmpty()) {
+        return if (!supportedVideoQualities.isNullOrEmpty()) {
             VideoQualityUiState.Enabled(
                 currentVideoQuality = cameraAppSettings.videoQuality,
                 videoQualityAutoState = getSingleVideoQualityState(
                     VideoQuality.UNSPECIFIED,
-                    supportedVideQualities
+                    supportedVideoQualities
                 ),
                 videoQualitySDState = getSingleVideoQualityState(
                     VideoQuality.SD,
-                    supportedVideQualities
+                    supportedVideoQualities
                 ),
                 videoQualityHDState = getSingleVideoQualityState(
                     VideoQuality.HD,
-                    supportedVideQualities
+                    supportedVideoQualities
                 ),
                 videoQualityFHDState = getSingleVideoQualityState(
                     VideoQuality.FHD,
-                    supportedVideQualities
+                    supportedVideoQualities
                 ),
                 videoQualityUHDState = getSingleVideoQualityState(
                     VideoQuality.UHD,
-                    supportedVideQualities
-                ),
-                videoQualityHighestState = getSingleVideoQualityState(
-                    VideoQuality.HIGHEST,
-                    supportedVideQualities
-                ),
-                videoQualityLowestState = getSingleVideoQualityState(
-                    VideoQuality.LOWEST,
-                    supportedVideQualities
+                    supportedVideoQualities
                 )
             )
         } else {

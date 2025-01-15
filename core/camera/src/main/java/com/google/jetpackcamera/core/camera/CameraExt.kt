@@ -36,8 +36,6 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
-import com.google.jetpackcamera.settings.model.VideoQuality.HIGHEST
-import com.google.jetpackcamera.settings.model.VideoQuality.LOWEST
 import com.google.jetpackcamera.settings.model.VideoQuality.SD
 import com.google.jetpackcamera.settings.model.VideoQuality.UHD
 import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
@@ -96,8 +94,6 @@ fun Int.toAppImageFormat(): ImageOutputFormat? {
 
 fun VideoQuality.toQuality(): Quality? {
     return when (this) {
-        LOWEST -> Quality.LOWEST
-        HIGHEST -> Quality.HIGHEST
         SD -> Quality.SD
         HD -> Quality.HD
         FHD -> Quality.FHD
@@ -108,8 +104,6 @@ fun VideoQuality.toQuality(): Quality? {
 
 fun Quality.toVideoQuality(): VideoQuality {
     return when (this) {
-        Quality.LOWEST -> LOWEST
-        Quality.HIGHEST -> HIGHEST
         Quality.SD -> SD
         Quality.HD -> HD
         Quality.FHD -> FHD

@@ -77,6 +77,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality.Companion.QUALITY_RANGE_MAP
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -188,8 +189,8 @@ internal suspend fun runSingleCameraSession(
                 if (videoQuality != sessionSettings.videoQuality) {
                     Log.e(
                         TAG,
-                        "Failed to select video quality: " + sessionSettings.videoQuality +
-                            ". Fallback: " + videoQuality
+                        "Failed to select video quality: $sessionSettings.videoQuality. " +
+                                "Fallback: $videoQuality"
                     )
                 }
                 launch {
@@ -405,18 +406,11 @@ internal fun createUseCaseGroup(
 }
 
 private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    if (resolution == null) {
-        return VideoQuality.UNSPECIFIED
-    }
-    return if (resolution.width < 720) {
-        VideoQuality.SD
-    } else if (resolution.width < 1080) {
-        VideoQuality.HD
-    } else if (resolution.width < 2160) {
-        VideoQuality.FHD
-    } else {
-        VideoQuality.UHD
-    }
+    return resolution?.let { res ->
+        QUALITY_RANGE_MAP.firstNotNullOfOrNull {
+            if (it.value.contains(res.height)) it.key else null
+        }
+    } ?: VideoQuality.UNSPECIFIED
 }
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {

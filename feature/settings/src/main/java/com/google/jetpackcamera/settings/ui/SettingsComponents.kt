@@ -482,8 +482,6 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
 
 private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (videoQuality) {
     VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto
-    VideoQuality.LOWEST -> R.string.video_quality_value_lowest
-    VideoQuality.HIGHEST -> R.string.video_quality_value_highest
     VideoQuality.SD -> R.string.video_quality_value_sd
     VideoQuality.HD -> R.string.video_quality_value_hd
     VideoQuality.FHD -> R.string.video_quality_value_fhd
@@ -493,8 +491,6 @@ private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (vi
 private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
     when (videoQuality) {
         VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto_info
-        VideoQuality.LOWEST -> R.string.video_quality_value_lowest_info
-        VideoQuality.HIGHEST -> R.string.video_quality_value_highest_info
         VideoQuality.SD -> R.string.video_quality_value_sd_info
         VideoQuality.HD -> R.string.video_quality_value_hd_info
         VideoQuality.FHD -> R.string.video_quality_value_fhd_info
@@ -503,8 +499,6 @@ private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
 
 private fun getVideoQualityOptionTestTag(quality: VideoQuality): String = when (quality) {
     VideoQuality.UNSPECIFIED -> VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
-    VideoQuality.LOWEST -> VIDEO_QUALITY_OPTION_LOWEST_TAG
-    VideoQuality.HIGHEST -> VIDEO_QUALITY_OPTION_HIGHEST_TAG
     VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
     VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
     VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
@@ -702,10 +696,7 @@ fun VideoQualitySetting(
         enabled = videQualityUiState is VideoQualityUiState.Enabled,
         description = when (videQualityUiState) {
             is VideoQualityUiState.Enabled ->
-                stringResource(
-                    R.string.video_quality_description_current,
-                    stringResource(getVideoQualityStringRes(videQualityUiState.currentVideoQuality))
-                )
+                stringResource(getVideoQualityStringRes(videQualityUiState.currentVideoQuality))
 
             is VideoQualityUiState.Disabled -> {
                 disabledRationaleString(
