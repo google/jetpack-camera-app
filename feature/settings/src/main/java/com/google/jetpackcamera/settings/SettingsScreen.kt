@@ -34,6 +34,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
@@ -45,6 +46,7 @@ import com.google.jetpackcamera.settings.ui.StabilizationSetting
 import com.google.jetpackcamera.settings.ui.StreamConfigSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
+import com.google.jetpackcamera.settings.ui.VideoQualitySetting
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -69,7 +71,8 @@ fun SettingsScreen(
         setCaptureMode = viewModel::setStreamConfig,
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
-        setDarkMode = viewModel::setDarkMode
+        setDarkMode = viewModel::setDarkMode,
+        setVideoQuality = viewModel::setVideoQuality
     )
 }
 
@@ -85,7 +88,8 @@ private fun SettingsScreen(
     setCaptureMode: (StreamConfig) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
-    setDarkMode: (DarkMode) -> Unit = {}
+    setDarkMode: (DarkMode) -> Unit = {},
+    setVideoQuality: (VideoQuality) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -107,7 +111,8 @@ private fun SettingsScreen(
                 setCaptureMode = setCaptureMode,
                 setStabilizationMode = setStabilizationMode,
                 setMaxVideoDuration = setMaxVideoDuration,
-                setDarkMode = setDarkMode
+                setDarkMode = setDarkMode,
+                setVideoQuality = setVideoQuality
             )
         }
     }
@@ -123,6 +128,7 @@ fun SettingsList(
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (StreamConfig) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
+    setVideoQuality: (VideoQuality) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
@@ -162,6 +168,11 @@ fun SettingsList(
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
         setStabilizationMode = setStabilizationMode
+    )
+
+    VideoQualitySetting(
+        videQualityUiState = uiState.videoQualityUiState,
+        setVideoQuality = setVideoQuality
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))

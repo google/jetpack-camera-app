@@ -115,6 +115,21 @@
     <string name="duration_description_none">Unlimited duration</string>
     <string name="duration_description_seconds">%d seconds</string>
 
+    <!-- video quality strings -->
+    <string name="video_quality_title">Set Video Quality</string>
+    <string name="video_quality_value_auto">Auto</string>
+    <string name="video_quality_value_sd">SD</string>
+    <string name="video_quality_value_hd">HD</string>
+    <string name="video_quality_value_fhd">FHD</string>
+    <string name="video_quality_value_uhd">UHD</string>
+
+    <string name="video_quality_value_auto_info">Video quality automatically selected by the device.</string>
+    <string name="video_quality_value_sd_info">Standard Definition (SD) 480p video quality.</string>
+    <string name="video_quality_value_hd_info">High Definition (HD) video quality.</string>
+    <string name="video_quality_value_fhd_info">Full High Definition (FHD) 1080p video quality.</string>
+    <string name="video_quality_value_uhd_info">Ultra High Definition (UHD) 2160p video quality.</string>
+
+
     <!-- disabled rationale strings-->
 
     <string name="device_unsupported">%1$s is unsupported by the device</string>
@@ -123,12 +138,16 @@
     <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
     <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
     <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
+    <string name="video_quality_unsupported">%1$s is unsupported by the current lens</string>
 
 
     <!-- Rationale prefixes -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
     <string name="lens_rationale_prefix">Lens flip</string>
     <string name="fps_rationale_prefix">Fps</string>
+    <string name="video_quality_rationale_prefix">Video quality</string>
+    <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
+    <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
     <string name="front_lens_rationale_prefix">Front lens</string>
     <string name="rear_lens_rationale_prefix">Rear lens</string>

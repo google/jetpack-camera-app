@@ -30,6 +30,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -99,6 +100,8 @@ interface CameraUseCase {
     fun isScreenFlashEnabled(): Boolean
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
+
+    suspend fun setVideoQuality(videoQuality: VideoQuality)
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 
@@ -191,7 +194,10 @@ data class CameraState(
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val debugInfo: DebugInfo = DebugInfo(null, null),
+    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )
 
 data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+
+data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)
