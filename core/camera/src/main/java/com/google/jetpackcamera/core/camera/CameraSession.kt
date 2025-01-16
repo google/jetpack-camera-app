@@ -75,8 +75,8 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
 import com.google.jetpackcamera.settings.model.VideoQuality.SD
@@ -199,7 +199,7 @@ internal suspend fun runSingleCameraSession(
                     Log.e(
                         TAG,
                         "Failed to select video quality: $sessionSettings.videoQuality. " +
-                                "Fallback: $videoQuality"
+                            "Fallback: $videoQuality"
                     )
                 }
                 launch {
