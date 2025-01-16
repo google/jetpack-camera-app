@@ -23,8 +23,8 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -207,7 +207,7 @@ sealed interface VideoQualityUiState {
         val videoQualitySDState: SingleSelectableState,
         val videoQualityHDState: SingleSelectableState,
         val videoQualityFHDState: SingleSelectableState,
-        val videoQualityUHDState: SingleSelectableState,
+        val videoQualityUHDState: SingleSelectableState
     ) : VideoQualityUiState
 
     data class Disabled(val disabledRationale: DisabledRationale) : VideoQualityUiState
