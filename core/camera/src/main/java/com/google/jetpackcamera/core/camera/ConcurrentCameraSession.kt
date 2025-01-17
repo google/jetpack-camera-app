@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -66,6 +67,7 @@ internal suspend fun runConcurrentCameraSession(
             TARGET_FPS_AUTO,
             StabilizationMode.OFF,
             DynamicRange.SDR,
+            VideoQuality.UNSPECIFIED,
             backgroundDispatcher
         )
     } else {

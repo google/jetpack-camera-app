@@ -111,6 +111,7 @@ import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -532,6 +533,50 @@ fun StabilizationIcon(
 
                     StabilizationMode.OPTICAL ->
                         stringResource(R.string.stabilization_icon_description_optical)
+
+                    else -> null
+                },
+                modifier = modifier
+            )
+        }
+    }
+}
+
+@Composable
+fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        if (videoQuality != VideoQuality.UNSPECIFIED) {
+            Icon(
+                painter = when (videoQuality) {
+                    VideoQuality.SD ->
+                        painterResource(R.drawable.video_resolution_sd_icon)
+
+                    VideoQuality.HD ->
+                        painterResource(R.drawable.video_resolution_hd_icon)
+
+                    VideoQuality.FHD ->
+                        painterResource(R.drawable.video_resolution_fhd_icon)
+
+                    VideoQuality.UHD ->
+                        painterResource(R.drawable.video_resolution_uhd_icon)
+
+                    else ->
+                        throw IllegalStateException(
+                            "Illegal video quality state"
+                        )
+                },
+                contentDescription = when (videoQuality) {
+                    VideoQuality.SD ->
+                        stringResource(R.string.video_quality_description_sd)
+
+                    VideoQuality.HD ->
+                        stringResource(R.string.video_quality_description_hd)
+
+                    VideoQuality.FHD ->
+                        stringResource(R.string.video_quality_description_fhd)
+
+                    VideoQuality.UHD ->
+                        stringResource(R.string.video_quality_description_uhd)
 
                     else -> null
                 },

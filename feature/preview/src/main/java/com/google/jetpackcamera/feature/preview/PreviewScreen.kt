@@ -63,13 +63,13 @@ import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomState
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.flow.transformWhile
 
@@ -179,7 +179,7 @@ private fun ContentScreen(
     onChangeZoomScale: (CameraZoomState) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
-    onChangeCaptureMode: (CaptureMode) -> Unit = {},
+    onChangeCaptureMode: (StreamConfig) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
@@ -245,7 +245,7 @@ private fun ContentScreen(
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
-                onCaptureModeClick = onChangeCaptureMode,
+                onStreamConfigClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode

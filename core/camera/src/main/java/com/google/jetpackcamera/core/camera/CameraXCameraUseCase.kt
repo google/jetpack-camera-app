@@ -24,7 +24,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -44,7 +43,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraZoomState
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -53,16 +51,11 @@ import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
-import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -75,6 +68,14 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
+import kotlin.properties.Delegates
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -152,10 +153,21 @@ constructor(
                 for (lensFacing in availableCameraLenses) {
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
+                        val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
                         val supportedDynamicRanges =
-                            Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
+                            videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        val supportedVideoQualitiesMap =
+                            buildMap {
+                                for (dynamicRange in supportedDynamicRanges) {
+                                    val supportedVideoQualities =
+                                        videoCapabilities.getSupportedQualities(
+                                            dynamicRange.toCXDynamicRange()
+                                        ).map { it.toVideoQuality() }
+                                    put(dynamicRange, supportedVideoQualities)
+                                }
+                            }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -231,9 +243,10 @@ constructor(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
                                     // Ultra HDR now.
-                                    Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                                    Pair(CaptureMode.MULTI_STREAM, supportedImageFormats)
+                                    Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
@@ -255,6 +268,7 @@ constructor(
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
+                .tryApplyVideoQualityConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -304,10 +318,11 @@ constructor(
 
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
+                            streamConfig = currentCameraSettings.streamConfig,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
+                            videoQuality = currentCameraSettings.videoQuality,
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
@@ -599,7 +614,7 @@ constructor(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[captureMode]) {
+            with(constraints.supportedImageFormatsMap[streamConfig]) {
                 val newImageFormat = if (this != null && contains(imageFormat)) {
                     imageFormat
                 } else {
@@ -653,12 +668,32 @@ constructor(
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO,
                         dynamicRange = DynamicRange.SDR,
-                        captureMode = CaptureMode.MULTI_STREAM
+                        streamConfig = StreamConfig.MULTI_STREAM
                     )
                 } else {
                     copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
                 }
         }
+
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedVideoQualitiesMap) {
+                val newVideoQuality = get(dynamicRange).let {
+                    if (it == null) {
+                        VideoQuality.UNSPECIFIED
+                    } else if (it.contains(videoQuality)) {
+                        videoQuality
+                    } else {
+                        VideoQuality.UNSPECIFIED
+                    }
+                }
+
+                this@tryApplyVideoQualityConstraints.copy(
+                    videoQuality = newVideoQuality
+                )
+            }
+        } ?: this
+    }
 
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
@@ -698,11 +733,19 @@ constructor(
         }
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+    override suspend fun setVideoQuality(videoQuality: VideoQuality) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            old?.copy(videoQuality = videoQuality)
+                ?.tryApplyVideoQualityConstraints()
+        }
+    }
+
+    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
+        currentSettings.update { old ->
+            old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyVideoQualityConstraints()
         }
     }
 

@@ -15,6 +15,16 @@
  */
 package com.google.jetpackcamera.settings.ui
 
+// ////////////////////////////////
+//
+// !!!HEY YOU!!!
+// MODIFICATIONS TO EXISTING TEST TAGS WILL BREAK EXISTING EXTERNAL
+// AUTOMATED TESTS THAT SEARCH FOR THESE TAGS.
+//
+// PLEASE UPDATE YOUR TESTS ACCORDINGLY!
+//
+// ////////////////////////////////
+
 const val BACK_BUTTON = "BackButton"
 
 // unsupported rationale tags
@@ -22,3 +32,10 @@ const val DEVICE_UNSUPPORTED_TAG = "DeviceUnsupportedTag"
 const val STABILIZATION_UNSUPPORTED_TAG = "StabilizationUnsupportedTag"
 const val LENS_UNSUPPORTED_TAG = "LensUnsupportedTag"
 const val FPS_UNSUPPORTED_TAG = "FpsUnsupportedTag"
+const val VIDEO_QUALITY_UNSUPPORTED_TAG = "VideoQualityUnsupportedTag"
+const val VIDEO_QUALITY_SELECTOR_TAG = "VideoQualitySelectorTag"
+const val VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG = "VideoQualityUnspecifiedTag"
+const val VIDEO_QUALITY_OPTION_SD_TAG = "VideoQualitySdTag"
+const val VIDEO_QUALITY_OPTION_HD_TAG = "VideoQualityHdTag"
+const val VIDEO_QUALITY_OPTION_FHD_TAG = "VideoQualityFhdTag"
+const val VIDEO_QUALITY_OPTION_UHD_TAG = "VideoQualityUhdTag"

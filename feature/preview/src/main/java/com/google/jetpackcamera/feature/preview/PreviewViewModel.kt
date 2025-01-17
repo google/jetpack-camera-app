@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,6 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraZoomState
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -49,15 +49,14 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -74,6 +73,9 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -188,14 +190,19 @@ class PreviewViewModel @AssistedInject constructor(
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
-                            cameraPropertiesJSON,
-                            isDebugMode
+                            cameraPropertiesJSON = cameraPropertiesJSON,
+                            videoResolution = Size(
+                                cameraState.videoQualityInfo.width,
+                                cameraState.videoQualityInfo.height
+                            ),
+                            isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        videoQuality = cameraState.videoQualityInfo.quality
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -317,8 +324,8 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setFlashMode(entry.value as FlashMode)
                 }
 
-                CameraAppSettings::captureMode -> {
-                    cameraUseCase.setCaptureMode(entry.value as CaptureMode)
+                CameraAppSettings::streamConfig -> {
+                    cameraUseCase.setStreamConfig(entry.value as StreamConfig)
                 }
 
                 CameraAppSettings::aspectRatio -> {
@@ -335,6 +342,10 @@ class PreviewViewModel @AssistedInject constructor(
 
                 CameraAppSettings::maxVideoDurationMillis -> {
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
+                CameraAppSettings::videoQuality -> {
+                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
                 }
 
                 CameraAppSettings::darkMode -> {}
@@ -355,7 +366,7 @@ class PreviewViewModel @AssistedInject constructor(
             it.supportedDynamicRanges.size > 1
         } ?: false
         val hdrImageFormatSupported =
-            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.captureMode)?.let {
+            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)?.let {
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
@@ -389,7 +400,7 @@ class PreviewViewModel @AssistedInject constructor(
                         hdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.captureMode,
+                        cameraAppSettings.streamConfig,
                         cameraAppSettings.concurrentCameraMode
                     )
                 )
@@ -405,7 +416,7 @@ class PreviewViewModel @AssistedInject constructor(
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
-        currentCaptureMode: CaptureMode,
+        currentStreamConfig: StreamConfig,
         concurrentCameraMode: ConcurrentCameraMode
     ): CaptureModeToggleUiState.DisabledReason {
         when (captureModeToggleUiState) {
@@ -425,14 +436,14 @@ class PreviewViewModel @AssistedInject constructor(
                     if (systemConstraints
                             .perLensConstraints[currentLensFacing]
                             ?.supportedImageFormatsMap
-                            ?.anySupportsUltraHdr { it != currentCaptureMode } == true
+                            ?.anySupportsUltraHdr { it != currentStreamConfig } == true
                     ) {
-                        return when (currentCaptureMode) {
-                            CaptureMode.MULTI_STREAM ->
+                        return when (currentStreamConfig) {
+                            StreamConfig.MULTI_STREAM ->
                                 CaptureModeToggleUiState.DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
 
-                            CaptureMode.SINGLE_STREAM ->
+                            StreamConfig.SINGLE_STREAM ->
                                 CaptureModeToggleUiState.DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
                         }
@@ -474,14 +485,14 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
     } != null
 
-    private fun Map<CaptureMode, Set<ImageOutputFormat>>.anySupportsUltraHdr(
-        captureModeFilter: (CaptureMode) -> Boolean
+    private fun Map<StreamConfig, Set<ImageOutputFormat>>.anySupportsUltraHdr(
+        captureModeFilter: (StreamConfig) -> Boolean
     ): Boolean = asSequence().firstOrNull {
         captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
     } != null
 
     private fun SystemConstraints.anySupportsUltraHdr(
-        captureModeFilter: (CaptureMode) -> Boolean = { true },
+        captureModeFilter: (StreamConfig) -> Boolean = { true },
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
@@ -540,9 +551,9 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(captureMode: CaptureMode) {
+    fun setCaptureMode(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            cameraUseCase.setCaptureMode(captureMode)
+            cameraUseCase.setStreamConfig(streamConfig)
         }
     }
 
@@ -844,6 +855,7 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     debugUiState = DebugUiState(
                         old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.videoResolution,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
                     )
