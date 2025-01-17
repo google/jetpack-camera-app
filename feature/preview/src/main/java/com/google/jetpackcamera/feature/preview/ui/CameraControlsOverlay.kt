@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -259,6 +260,7 @@ private fun ControlsBottom(
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
+    elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
     onFlipCamera: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -292,18 +294,11 @@ private fun ControlsBottom(
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
+                if (elapsedTimeUiState is ElapsedTimeUiState.Enabled)
                 ElapsedTimeText(
                     modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                     videoRecordingState = videoRecordingState,
-                    elapsedNs = when (previewUiState.videoRecordingState) {
-                        is VideoRecordingState.Active ->
-                            previewUiState.videoRecordingState.elapsedTimeNanos
-
-                        is VideoRecordingState.Inactive ->
-                            previewUiState.videoRecordingState.finalElapsedTimeNanos
-
-                        VideoRecordingState.Starting -> 0L
-                    }
+                    elapsedTimeUiState = elapsedTimeUiState,
                 )
             }
         }

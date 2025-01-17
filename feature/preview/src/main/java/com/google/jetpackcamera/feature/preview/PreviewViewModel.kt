@@ -21,6 +21,8 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
@@ -77,6 +79,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.nanoseconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -219,12 +222,37 @@ class PreviewViewModel @AssistedInject constructor(
                         audioUiState = getAudioUiState(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
-                        )
-                        // TODO(kc): set elapsed time UI state once VideoRecordingState
-                        // refactor is complete.
+                        ),
+                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState, cameraAppSettings.maxVideoDurationMillis)
                     )
                 }
             }.collect {}
+        }
+    }
+
+    private fun getElapsedTimeUiState(videoRecordingState: VideoRecordingState, maxDurationMillis: Long):ElapsedTimeUiState{
+        //when incrementing, time counts up from 0
+        // when decrementing, time counts down from maxDurationMillis
+        when (videoRecordingState) {
+            is VideoRecordingState.Active -> {
+                return if (videoRecordingState.maxDurationMillis == 0L)
+                    ElapsedTimeUiState.Enabled.Incrementing(videoRecordingState.elapsedTimeNanos)
+                else ElapsedTimeUiState.Enabled.Decrementing(videoRecordingState.elapsedTimeNanos, videoRecordingState.maxDurationMillis)
+            }
+            is VideoRecordingState.Inactive -> {
+                return if (maxDurationMillis == 0L) ElapsedTimeUiState.Enabled.Incrementing(
+                    videoRecordingState.finalElapsedTimeNanos
+                )
+                else
+                    ElapsedTimeUiState.Enabled.Decrementing(videoRecordingState.finalElapsedTimeNanos, maxDurationMillis)
+            }
+            VideoRecordingState.Starting -> {
+                return if (maxDurationMillis == 0L) ElapsedTimeUiState.Enabled.Incrementing(
+                    0L
+                )
+                else
+                    ElapsedTimeUiState.Enabled.Decrementing(0L, maxDurationMillis)
+            }
         }
     }
 

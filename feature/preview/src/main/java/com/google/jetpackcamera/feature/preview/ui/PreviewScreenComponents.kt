@@ -21,7 +21,6 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -110,6 +109,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
@@ -118,12 +118,13 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -132,8 +133,9 @@ private const val BLINK_TIME = 100L
 fun ElapsedTimeText(
     modifier: Modifier = Modifier,
     videoRecordingState: VideoRecordingState,
-    elapsedNs: Long
+    elapsedTimeUiState: ElapsedTimeUiState.Enabled
 ) {
+    val currentUiState = rememberUpdatedState(elapsedTimeUiState)
     AnimatedVisibility(
         visible = (videoRecordingState is VideoRecordingState.Active),
         enter = fadeIn(),
@@ -141,7 +143,7 @@ fun ElapsedTimeText(
     ) {
         Text(
             modifier = modifier,
-            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
+            text = currentUiState.value.elapsedTimeNanos.nanoseconds.toComponents { minutes, seconds, _ ->
                 "%02d:%02d".format(minutes, seconds)
             },
             textAlign = TextAlign.Center

@@ -53,11 +53,10 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-        val audioUiState: AudioUiState = AudioUiState.Disabled
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable
     ) : PreviewUiState
 }
-
-// todo(kc): add ElapsedTimeUiState class
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
@@ -65,6 +64,17 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+
+sealed interface ElapsedTimeUiState {
+    data object Unavailable: ElapsedTimeUiState
+
+    sealed interface Enabled: ElapsedTimeUiState {
+        val elapsedTimeNanos: Long
+        data class Incrementing(override val elapsedTimeNanos: Long) : Enabled
+        data class Decrementing(override val elapsedTimeNanos: Long, val durationLimit: Long) :
+            Enabled
+    }
+}
 
 sealed interface AudioUiState {
     val amplitude: Double
