@@ -73,6 +73,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -143,6 +144,7 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings,
                     onToggleDebugOverlay = onToggleDebugOverlay,
                     stabilizationUiState = previewUiState.stabilizationUiState,
+                    videoQuality = previewUiState.videoQuality,
                     flashModeUiState = previewUiState.flashModeUiState
                 )
             }
@@ -183,6 +185,7 @@ private fun ControlsTop(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+    videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
     flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
     Column(modifier) {
@@ -230,6 +233,7 @@ private fun ControlsTop(
                         StabilizationIcon(stabilizationUiState = it)
                     }
                 }
+                VideoQualityIcon(videoQuality, Modifier.testTag(VIDEO_QUALITY_TAG))
             }
         }
         if (isDebugMode) {
@@ -533,7 +537,8 @@ private fun Preview_ControlsTop_FlashModeOn() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.ON,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                isActive = false
             )
         )
     }
@@ -547,7 +552,8 @@ private fun Preview_ControlsTop_FlashModeAuto() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.AUTO,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                isActive = false
             )
         )
     }

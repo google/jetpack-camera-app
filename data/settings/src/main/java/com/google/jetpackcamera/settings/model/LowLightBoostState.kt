@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,17 @@
  */
 package com.google.jetpackcamera.settings.model
 
-enum class CaptureMode {
-    MULTI_STREAM,
-    SINGLE_STREAM
+/**
+ * Enum describing the state of Low Light Boost state.
+ */
+enum class LowLightBoostState {
+    /**
+     * Low Light Boost is turned on, and active
+     */
+    ACTIVE,
+
+    /**
+     * Low Light Boost is turned on, but inactive
+     */
+    INACTIVE
 }

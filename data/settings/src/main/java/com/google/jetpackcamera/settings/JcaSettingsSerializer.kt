@@ -32,11 +32,12 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
+        .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
         .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
@@ -96,9 +97,15 @@ enum class CameraFlashMode : QuickSettingsEnum {
         override fun getTextResId() = R.string.quick_settings_flash_on
         override fun getDescriptionResId() = R.string.quick_settings_flash_on_description
     },
-    LOW_LIGHT_BOOST {
+    LOW_LIGHT_BOOST_INACTIVE {
         override fun getDrawableResId() = null
         override fun getImageVector() = Icons.Outlined.Nightlight
+        override fun getTextResId() = R.string.quick_settings_flash_llb
+        override fun getDescriptionResId() = R.string.quick_settings_flash_llb_description
+    },
+    LOW_LIGHT_BOOST_ACTIVE {
+        override fun getDrawableResId() = null
+        override fun getImageVector() = Icons.Filled.Nightlight
         override fun getTextResId() = R.string.quick_settings_flash_llb
         override fun getDescriptionResId() = R.string.quick_settings_flash_llb_description
     }
@@ -125,7 +132,7 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-enum class CameraCaptureMode : QuickSettingsEnum {
+enum class CameraStreamConfig : QuickSettingsEnum {
     MULTI_STREAM {
         override fun getDrawableResId() = R.drawable.multi_stream_icon
         override fun getImageVector() = null // this icon is not available

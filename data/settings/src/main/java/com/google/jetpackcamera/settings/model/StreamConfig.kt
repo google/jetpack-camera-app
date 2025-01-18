@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.jetpackcamera.settings.model
 
-syntax = "proto3";
-
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-enum StreamConfig {
-  STREAM_CONFIG_UNDEFINED = 0;
-  STREAM_CONFIG_MULTI_STREAM = 1;
-  STREAM_CONFIG_SINGLE_STREAM = 2;
+enum class StreamConfig {
+    MULTI_STREAM,
+    SINGLE_STREAM
 }

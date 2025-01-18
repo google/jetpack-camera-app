@@ -21,14 +21,16 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -99,11 +101,13 @@ interface CameraUseCase {
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
+    suspend fun setVideoQuality(videoQuality: VideoQuality)
+
     suspend fun setLensFacing(lensFacing: LensFacing)
 
     suspend fun tapToFocus(x: Float, y: Float)
 
-    suspend fun setCaptureMode(captureMode: CaptureMode)
+    suspend fun setStreamConfig(streamConfig: StreamConfig)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
@@ -189,7 +193,11 @@ data class CameraState(
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
+    val debugInfo: DebugInfo = DebugInfo(null, null),
+    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )
 
 data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+
+data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)

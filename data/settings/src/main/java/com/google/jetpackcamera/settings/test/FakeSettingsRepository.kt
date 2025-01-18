@@ -18,7 +18,6 @@ package com.google.jetpackcamera.settings.test
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -26,6 +25,8 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -50,9 +51,9 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(flashMode = flashMode)
     }
 
-    override suspend fun updateCaptureMode(captureMode: CaptureMode) {
+    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
         currentCameraSettings =
-            currentCameraSettings.copy(captureMode = captureMode)
+            currentCameraSettings.copy(streamConfig = streamConfig)
     }
 
     override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
@@ -81,5 +82,9 @@ object FakeSettingsRepository : SettingsRepository {
 
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         currentCameraSettings = currentCameraSettings.copy(maxVideoDurationMillis = durationMillis)
+    }
+
+    override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
+        currentCameraSettings = currentCameraSettings.copy(videoQuality = videoQuality)
     }
 }
