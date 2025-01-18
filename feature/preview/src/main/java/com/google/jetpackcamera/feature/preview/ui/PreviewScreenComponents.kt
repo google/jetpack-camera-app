@@ -221,16 +221,18 @@ fun AmplitudeVisualizer(
             }
         )
 
+        val audioVisualizerStateDescription = if (audioAmplitude != 0.0) {
+            stringResource(id = R.string.audio_visualizer_recording_state_description)
+        } else {
+            stringResource(id = R.string.audio_visualizer_not_recording_state_description)
+        }
         Icon(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
-                .apply {
-                    if (audioAmplitude != 0.0) {
-                        testTag(AMPLITUDE_HOT_TAG)
-                    } else {
-                        testTag(AMPLITUDE_NONE_TAG)
-                    }
+                .testTag(AUDIO_VISUALIZER_TAG)
+                .semantics {
+                    stateDescription = audioVisualizerStateDescription
                 },
             tint = Color.Black,
             imageVector = if (audioAmplitude != 0.0) {
@@ -238,7 +240,7 @@ fun AmplitudeVisualizer(
             } else {
                 Icons.Filled.MicOff
             },
-            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+            contentDescription = stringResource(id = R.string.audio_visualizer_content_description)
         )
     }
 }
