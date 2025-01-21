@@ -40,6 +40,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -179,7 +180,7 @@ class PreviewViewModel @AssistedInject constructor(
                         previewMode = previewMode,
                         currentCameraSettings = cameraAppSettings,
                         systemConstraints = systemConstraints,
-                        zoomScale = cameraState.zoomScale,
+                        zoomRatios = cameraState.zoomRatios,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         captureModeToggleUiState = getCaptureToggleUiState(
@@ -815,8 +816,8 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setZoomScale(scale: Float) {
-        cameraUseCase.setZoomScale(scale = scale)
+    fun setZoom(newZoomState: CameraZoomState) {
+        cameraUseCase.changeZoom(newZoomState = newZoomState)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {

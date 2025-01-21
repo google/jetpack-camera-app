@@ -68,6 +68,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -98,9 +99,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -117,7 +120,8 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture) -> Unit = {},
+    onSetZoomRatioMap: (Map<LensFacing, Float>) -> Unit = { _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -215,6 +219,84 @@ internal suspend fun runSingleCameraSession(
                 }
             }
 
+            // update camerastate to mirror current zoomstate
+            launch {
+                /*
+                TODO bug?? Flaky behavior here.  does not always update zoomstate properly when:
+                switching HDR on or off on front lens
+                Setting aspect ratio on either lens...
+                basically anything that restarts the session
+                 */
+                camera.cameraInfo.zoomState.asFlow()
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .onCompletion {
+                        // reset current camera state when changing cameras.
+                        currentCameraState.update {
+                                old ->
+                            old.copy(
+                                zoomRatios = emptyMap(),
+                                linearZoomScales = emptyMap()
+                            )
+                        }
+                    }
+                    .collectLatest { zoomState ->
+                        currentCameraState.update { old ->
+                            old.copy(
+                                zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                    put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
+                                },
+                                linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                    put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
+                                }
+                            )
+                        }
+                        // update current settings to mirror current camera state
+                        onSetZoomRatioMap(
+                            currentCameraState.value.zoomRatios
+                        )
+                    }
+            }
+
+            launch {
+                // Immediately Apply camera zoom from current settings when opening a new camera
+                camera.cameraControl.setZoomRatio(
+                    currentTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
+                )
+                Log.d(
+                    TAG,
+                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio ${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                )
+
+                // Apply zoom changes to camera
+                zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
+                    val currentZoomState = camera.cameraInfo.zoomState.asFlow().first()
+                    when (zoomChange) {
+                        is CameraZoomState.Ratio -> {
+                            camera.cameraControl.setZoomRatio(
+                                zoomChange.value.coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            )
+                        }
+
+                        is CameraZoomState.Linear -> {
+                            camera.cameraControl.setLinearZoom(zoomChange.value)
+                        }
+
+                        is CameraZoomState.Scale -> {
+                            val newRatio =
+                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
+                                    currentZoomState.minZoomRatio,
+                                    currentZoomState.maxZoomRatio
+                                )
+                            camera.cameraControl.setZoomRatio(newRatio)
+                        }
+                    }
+                }
+            }
+
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
             processTransientSettingEvents(
                 camera,
@@ -251,21 +333,6 @@ internal suspend fun processTransientSettingEvents(
     }.collectLatest {
         val newTransientSettings = it.first
         val cameraState = it.second
-
-        // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
-                }
-            }
-        }
 
         // todo(): How should we handle torch on Auto FlashMode?
         // enable torch only while recording is in progress
@@ -698,7 +765,8 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
+    onRestoreSettings: () -> Unit = {}
 ): Recording {
     Log.d(TAG, "recordVideo")
     // todo(b/336886716): default setting to enable or disable audio when permission is granted
@@ -818,6 +886,7 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
+                        onRestoreSettings()
                     }
 
                     ERROR_DURATION_LIMIT_REACHED -> {
@@ -873,7 +942,8 @@ private suspend fun runVideoRecording(
     videoCaptureUri: Uri?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
+    onRestoreSettings: () -> Unit = {}
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -891,7 +961,8 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord
+            onVideoRecord = onVideoRecord,
+            onRestoreSettings = onRestoreSettings
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -974,7 +1045,8 @@ internal suspend fun processVideoControlEvents(
                     event.videoCaptureUri,
                     videoCaptureControlEvents,
                     event.shouldUseUri,
-                    event.onVideoRecord
+                    event.onVideoRecord,
+                    event.onRestoreSettings
                 )
             }
 

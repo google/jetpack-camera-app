@@ -43,6 +43,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -111,9 +112,12 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
+    // todo: zoomchanges init with cameraappsettings zoomratio
+    private val zoomChanges = MutableStateFlow<CameraZoomState?>(null)
+
     // Could be improved by setting initial value only when camera is initialized
-    private var _currentCameraState = MutableStateFlow(CameraState())
-    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
+    private var currentCameraState = MutableStateFlow(CameraState())
+    override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -294,7 +298,7 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomRatios = currentCameraSettings.defaultZoomRatios
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -360,7 +364,8 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            currentCameraState = _currentCameraState,
+                            zoomChanges = zoomChanges.asStateFlow(),
+                            currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
                         )
@@ -370,6 +375,16 @@ constructor(
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
                                     useCaseMode = useCaseMode,
+                                    onSetZoomRatioMap = { newZoomRatios ->
+                                        currentSettings.update { old ->
+                                            old?.copy(
+                                                defaultZoomRatios =
+                                                old.defaultZoomRatios.toMutableMap().apply {
+                                                    putAll(newZoomRatios)
+                                                }
+                                            )
+                                        }
+                                    },
                                     onImageCaptureCreated = { imageCapture ->
                                         imageCaptureUseCase = imageCapture
                                     }
@@ -378,6 +393,11 @@ constructor(
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
                                         sessionSettings,
+                                        onSetZoomRatioMap = { newZoomRatios ->
+                                            currentSettings.update { old ->
+                                                old?.copy(defaultZoomRatios = newZoomRatios)
+                                            }
+                                        },
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
                                     )
                             }
@@ -523,6 +543,7 @@ constructor(
         shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        val initialRecordSettings = currentSettings.value
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
@@ -534,7 +555,32 @@ constructor(
                 shouldUseUri,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                onVideoRecord
+                onVideoRecord = onVideoRecord,
+
+                onRestoreSettings = {
+                    // restore settings to be called after video recording completes.
+                    // this resets certain settings to their values pre-recording
+                    initialRecordSettings?.let {
+                        currentSettings.update { old ->
+                            old?.copy(
+                                cameraLensFacing = initialRecordSettings.cameraLensFacing,
+                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios,
+                                audioMuted = initialRecordSettings.audioMuted
+
+                            )
+                        }
+
+                        // if the lens doesnt flip when restoring settings, the zoom will need to be
+                        // manually reapplied since zoom changes are processed through state changes to
+                        // zoomchanges and not settings
+                        zoomChanges.update {
+                            CameraZoomState.Ratio(
+                                initialRecordSettings
+                                    .defaultZoomRatios[initialRecordSettings.cameraLensFacing] ?: 1f
+                            )
+                        }
+                    }
+                }
             )
         )
     }
@@ -551,9 +597,9 @@ constructor(
         videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
-    override fun setZoomScale(scale: Float) {
-        currentSettings.update { old ->
-            old?.copy(zoomScale = scale)
+    override fun changeZoom(newZoomState: CameraZoomState) {
+        zoomChanges.update {
+            newZoomState
         }
     }
 
@@ -660,8 +706,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
                 val newVideoQuality = get(dynamicRange).let {
                     if (it == null) {
@@ -678,7 +724,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->

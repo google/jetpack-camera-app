@@ -34,10 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -53,6 +51,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
@@ -67,7 +66,7 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
 @Composable
 fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
-    onChangeZoomScale: (Float) -> Unit,
+    onChangeZoomScale: (CameraZoomState) -> Unit,
     toggleIsOpen: () -> Unit,
     previewUiState: PreviewUiState.Ready
 ) {
@@ -154,7 +153,7 @@ fun DebugOverlayComponent(
 
             // Set zoom ratio
             if (zoomRatioDialog.value) {
-                SetZoomRatioComponent(previewUiState, onChangeZoomScale) {
+                SetZoomRatioComponent(onChangeZoomScale) {
                     zoomRatioDialog.value = false
                 }
             }
@@ -185,8 +184,7 @@ private fun CameraPropertiesJSONComponent(
 
 @Composable
 private fun SetZoomRatioComponent(
-    previewUiState: PreviewUiState.Ready,
-    onChangeZoomScale: (Float) -> Unit,
+    onChangeZoomRatio: (CameraZoomState.Ratio) -> Unit,
     onClose: () -> Unit
 ) {
     var zoomRatioText = remember { mutableStateOf("") }
@@ -211,14 +209,12 @@ private fun SetZoomRatioComponent(
             ),
             onClick = {
                 try {
-                    val relativeRatio = if (zoomRatioText.value.isEmpty()) {
+                    val newRatio = if (zoomRatioText.value.isEmpty()) {
                         1f
                     } else {
                         zoomRatioText.value.toFloat()
                     }
-                    val currentRatio = previewUiState.zoomScale
-                    val absoluteRatio = relativeRatio / currentRatio
-                    onChangeZoomScale(absoluteRatio)
+                    onChangeZoomRatio(CameraZoomState.Ratio(newRatio))
                 } catch (e: NumberFormatException) {
                     Log.d(TAG, "Zoom ratio should be a float")
                 }
