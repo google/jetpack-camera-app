@@ -233,7 +233,7 @@ internal suspend fun runSingleCameraSession(
                     .onCompletion {
                         // reset current camera state when changing cameras.
                         currentCameraState.update {
-                            old ->
+                                old ->
                             old.copy(
                                 zoomRatios = emptyMap(),
                                 linearZoomScales = emptyMap()
@@ -251,7 +251,7 @@ internal suspend fun runSingleCameraSession(
                                 }
                             )
                         }
-                        //update current settings to mirror current camera state
+                        // update current settings to mirror current camera state
                         onSetZoomRatioMap(
                             currentCameraState.value.zoomRatios
                         )
@@ -766,7 +766,7 @@ private suspend fun startVideoRecordingInternal(
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {},
+    onRestoreSettings: () -> Unit = {}
 ): Recording {
     Log.d(TAG, "recordVideo")
     // todo(b/336886716): default setting to enable or disable audio when permission is granted
@@ -943,7 +943,7 @@ private suspend fun runVideoRecording(
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {},
+    onRestoreSettings: () -> Unit = {}
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 

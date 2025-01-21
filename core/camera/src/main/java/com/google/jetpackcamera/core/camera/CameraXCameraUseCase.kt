@@ -377,11 +377,12 @@ constructor(
                                     useCaseMode = useCaseMode,
                                     onSetZoomRatioMap = { newZoomRatios ->
                                         currentSettings.update { old ->
-                                            old?.copy(defaultZoomRatios =
+                                            old?.copy(
+                                                defaultZoomRatios =
                                                 old.defaultZoomRatios.toMutableMap().apply {
                                                     putAll(newZoomRatios)
                                                 }
-                                                )
+                                            )
                                         }
                                     },
                                     onImageCaptureCreated = { imageCapture ->
@@ -555,24 +556,29 @@ constructor(
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
                 onVideoRecord = onVideoRecord,
+
                 onRestoreSettings = {
-                    Log.d(TAG, "INITIAL RECORD SETTINGS: $initialRecordSettings")
-
-                    Log.d(TAG, "CURRENT RECORD SETTINGS: ${currentSettings.value}")
-
+                    // restore settings to be called after video recording completes.
+                    // this resets certain settings to their values pre-recording
                     initialRecordSettings?.let {
                         currentSettings.update { old ->
                             old?.copy(
                                 cameraLensFacing = initialRecordSettings.cameraLensFacing,
                                 defaultZoomRatios = initialRecordSettings.defaultZoomRatios,
-                                audioMuted = initialRecordSettings.audioMuted,
+                                audioMuted = initialRecordSettings.audioMuted
 
                             )
                         }
 
-                        //zoom needs to be manually reset on the current lens since it doesn't read updates directly from the settings
-                        zoomChanges.update { CameraZoomState.Ratio(
-                            initialRecordSettings.defaultZoomRatios[initialRecordSettings.cameraLensFacing]?:1f) }
+                        // if the lens doesnt flip when restoring settings, the zoom will need to be
+                        // manually reapplied since zoom changes are processed through state changes to
+                        // zoomchanges and not settings
+                        zoomChanges.update {
+                            CameraZoomState.Ratio(
+                                initialRecordSettings
+                                    .defaultZoomRatios[initialRecordSettings.cameraLensFacing] ?: 1f
+                            )
+                        }
                     }
                 }
             )
@@ -700,8 +706,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
                 val newVideoQuality = get(dynamicRange).let {
                     if (it == null) {
@@ -718,7 +724,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
