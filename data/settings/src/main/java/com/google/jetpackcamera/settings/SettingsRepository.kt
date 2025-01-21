@@ -57,4 +57,6 @@ interface SettingsRepository {
     suspend fun updateMaxVideoDuration(durationMillis: Long)
 
     suspend fun updateVideoQuality(videoQuality: VideoQuality)
+
+    suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 }
