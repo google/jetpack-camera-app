@@ -35,7 +35,7 @@ data class CameraAppSettings(
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
-    val audioMuted: Boolean = false,
+    val audioEnabled: Boolean = true,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION

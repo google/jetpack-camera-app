@@ -42,6 +42,7 @@ message JcaSettings {
   ImageOutputFormat image_format_status = 10;
   uint64 max_video_duration_millis = 11;
   VideoQuality video_quality = 12;
+  bool audio_enabled_status = 13;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

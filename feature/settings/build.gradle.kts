@@ -75,6 +75,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.rules)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -102,6 +103,9 @@ dependencies {
     androidTestImplementation(libs.truth)
 
     implementation(libs.androidx.core.ktx)
+
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
 
     // Futures
     implementation(libs.futures.ktx)

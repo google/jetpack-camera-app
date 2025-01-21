@@ -87,4 +87,9 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
         currentCameraSettings = currentCameraSettings.copy(videoQuality = videoQuality)
     }
+
+    override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
+        currentCameraSettings =
+            currentCameraSettings.copy(audioEnabled = isAudioEnabled)
+    }
 }

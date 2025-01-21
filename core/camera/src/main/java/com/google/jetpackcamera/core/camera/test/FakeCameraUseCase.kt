@@ -93,10 +93,6 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
                 isScreenFlash =
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
-
-                _currentCameraState.update { old ->
-                    old.copy(zoomScale = it.zoomScale)
-                }
             }
     }
 
@@ -229,9 +225,9 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old.copy(audioMuted = isAudioMuted)
+            old.copy(audioEnabled = isAudioEnabled)
         }
     }
 

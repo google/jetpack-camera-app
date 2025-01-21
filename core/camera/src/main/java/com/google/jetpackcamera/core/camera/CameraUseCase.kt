@@ -79,6 +79,7 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+
     suspend fun pauseVideoRecording()
 
     suspend fun resumeVideoRecording()
@@ -117,7 +118,7 @@ interface CameraUseCase {
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
-    suspend fun setAudioMuted(isAudioMuted: Boolean)
+    suspend fun setAudioEnabled(isAudioEnabled: Boolean)
 
     suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 

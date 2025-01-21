@@ -290,7 +290,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    isAudioMuted = currentCameraSettings.audioMuted,
+                    isAudioEnabled = currentCameraSettings.audioEnabled,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
@@ -781,9 +781,9 @@ constructor(
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old?.copy(audioMuted = isAudioMuted)
+            old?.copy(audioEnabled = isAudioEnabled)
         }
     }
 
