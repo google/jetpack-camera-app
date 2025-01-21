@@ -32,6 +32,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -175,6 +176,12 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
             old.copy(aspectRatio = aspectRatio)
+        }
+    }
+
+    override suspend fun setVideoQuality(videoQuality: VideoQuality) {
+        currentSettings.update { old ->
+            old.copy(videoQuality = videoQuality)
         }
     }
 

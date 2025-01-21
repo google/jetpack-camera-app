@@ -24,6 +24,7 @@ import "com/google/jetpackcamera/settings/flash_mode.proto";
 import "com/google/jetpackcamera/settings/image_output_format.proto";
 import "com/google/jetpackcamera/settings/lens_facing.proto";
 import "com/google/jetpackcamera/settings/stabilization_mode.proto";
+import "com/google/jetpackcamera/settings/video_quality.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -40,7 +41,8 @@ message JcaSettings {
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
   uint64 max_video_duration_millis = 11;
-  bool audio_enabled_status = 12;
+  VideoQuality video_quality = 12;
+  bool audio_enabled_status = 13;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

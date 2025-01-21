@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
@@ -22,6 +23,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -50,6 +52,7 @@ sealed interface PreviewUiState {
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
         val audioUiState: AudioUiState = AudioUiState.Disabled
     ) : PreviewUiState
 }
@@ -58,6 +61,7 @@ sealed interface PreviewUiState {
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
+    val videoResolution: Size? = null,
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )

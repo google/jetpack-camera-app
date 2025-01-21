@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.LensFacing
 import com.google.jetpackcamera.settings.StabilizationMode
 import com.google.jetpackcamera.settings.StreamConfig
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
@@ -43,6 +44,7 @@ class FakeJcaSettingsSerializer(var failReadWithCorruptionException: Boolean = f
         .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
         .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_SDR)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
         .build()

@@ -27,11 +27,18 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
+import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.VideoQuality.FHD
+import com.google.jetpackcamera.settings.model.VideoQuality.HD
+import com.google.jetpackcamera.settings.model.VideoQuality.SD
+import com.google.jetpackcamera.settings.model.VideoQuality.UHD
+import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
@@ -82,6 +89,26 @@ fun Int.toAppImageFormat(): ImageOutputFormat? {
         ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> ImageOutputFormat.JPEG_ULTRA_HDR
         // All other output formats unsupported. Return null.
         else -> null
+    }
+}
+
+fun VideoQuality.toQuality(): Quality? {
+    return when (this) {
+        SD -> Quality.SD
+        HD -> Quality.HD
+        FHD -> Quality.FHD
+        UHD -> Quality.UHD
+        UNSPECIFIED -> null
+    }
+}
+
+fun Quality.toVideoQuality(): VideoQuality {
+    return when (this) {
+        Quality.SD -> SD
+        Quality.HD -> HD
+        Quality.FHD -> FHD
+        Quality.UHD -> UHD
+        else -> UNSPECIFIED
     }
 }
 
