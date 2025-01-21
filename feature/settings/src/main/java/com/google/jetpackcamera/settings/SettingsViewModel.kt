@@ -43,11 +43,13 @@ import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
@@ -63,13 +65,14 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
-    private var grantedPermissions = mutableSetOf<String>()
+    private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
     val settingsUiState: StateFlow<SettingsUiState> =
         combine(
             settingsRepository.defaultCameraAppSettings,
-            constraintsRepository.systemConstraints.filterNotNull()
-        ) { updatedSettings, constraints ->
+            constraintsRepository.systemConstraints.filterNotNull(),
+            grantedPermissions
+        ) { updatedSettings, constraints, grantedPerms ->
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
@@ -81,7 +84,7 @@ class SettingsViewModel @Inject constructor(
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 audioUiState = getAudioUiState(
                     updatedSettings.audioEnabled,
-                    grantedPermissions.contains(Manifest.permission.RECORD_AUDIO)
+                    grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
@@ -124,11 +127,13 @@ class SettingsViewModel @Inject constructor(
                 permissions.add(permissionState.permission)
             }
         }
-        grantedPermissions = permissions.toMutableSet()
+        grantedPermissions.update {
+            permissions
+        }
     }
 
     fun setGrantedPermissions(permissions: MutableSet<String>) {
-        grantedPermissions = permissions
+        grantedPermissions.update { permissions }
     }
 
     private fun getStabilizationUiState(
@@ -317,21 +322,19 @@ class SettingsViewModel @Inject constructor(
     private fun getSingleVideoQualityState(
         videoQuality: VideoQuality,
         supportedVideQualities: List<VideoQuality>?
-    ): SingleSelectableState {
-        return if (videoQuality == VideoQuality.UNSPECIFIED ||
-            (
-                !supportedVideQualities.isNullOrEmpty() &&
-                    supportedVideQualities.contains(videoQuality)
-                )
-        ) {
-            SingleSelectableState.Selectable
-        } else {
-            SingleSelectableState.Disabled(
-                DisabledRationale.VideoQualityUnsupportedRationale(
-                    R.string.video_quality_rationale_prefix
-                )
+    ): SingleSelectableState = if (videoQuality == VideoQuality.UNSPECIFIED ||
+        (
+            !supportedVideQualities.isNullOrEmpty() &&
+                supportedVideQualities.contains(videoQuality)
             )
-        }
+    ) {
+        SingleSelectableState.Selectable
+    } else {
+        SingleSelectableState.Disabled(
+            DisabledRationale.VideoQualityUnsupportedRationale(
+                R.string.video_quality_rationale_prefix
+            )
+        )
     }
 
     /**
