@@ -231,11 +231,16 @@ internal suspend fun runSingleCameraSession(
                     .filterNotNull()
                     .distinctUntilChanged()
                     .onCompletion {
-                        // save current zoom state to current camera settings when changing cameras
-                        onSetZoomRatioMap(
-                            currentCameraState.value.zoomRatios
-                        )
-                    }.collectLatest { zoomState ->
+                        // reset current camera state when changing cameras.
+                        currentCameraState.update {
+                            old ->
+                            old.copy(
+                                zoomRatios = emptyMap(),
+                                linearZoomScales = emptyMap()
+                            )
+                        }
+                    }
+                    .collectLatest { zoomState ->
                         currentCameraState.update { old ->
                             old.copy(
                                 zoomRatios = old.zoomRatios.toMutableMap().apply {
@@ -246,6 +251,10 @@ internal suspend fun runSingleCameraSession(
                                 }
                             )
                         }
+                        //update current settings to mirror current camera state
+                        onSetZoomRatioMap(
+                            currentCameraState.value.zoomRatios
+                        )
                     }
             }
 
@@ -259,7 +268,7 @@ internal suspend fun runSingleCameraSession(
                     "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio ${camera.cameraInfo.zoomState.value?.zoomRatio}"
                 )
 
-                // Apply camera zoom changes
+                // Apply zoom changes to camera
                 zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
                     val currentZoomState = camera.cameraInfo.zoomState.asFlow().first()
                     when (zoomChange) {
@@ -756,7 +765,8 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
+    onRestoreSettings: () -> Unit = {},
 ): Recording {
     Log.d(TAG, "recordVideo")
     // todo(b/336886716): default setting to enable or disable audio when permission is granted
@@ -876,6 +886,7 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
+                        onRestoreSettings()
                     }
 
                     ERROR_DURATION_LIMIT_REACHED -> {
@@ -931,7 +942,8 @@ private suspend fun runVideoRecording(
     videoCaptureUri: Uri?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
+    onRestoreSettings: () -> Unit = {},
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -949,7 +961,8 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord
+            onVideoRecord = onVideoRecord,
+            onRestoreSettings = onRestoreSettings
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -1032,7 +1045,8 @@ internal suspend fun processVideoControlEvents(
                     event.videoCaptureUri,
                     videoCaptureControlEvents,
                     event.shouldUseUri,
-                    event.onVideoRecord
+                    event.onVideoRecord,
+                    event.onRestoreSettings
                 )
             }
 

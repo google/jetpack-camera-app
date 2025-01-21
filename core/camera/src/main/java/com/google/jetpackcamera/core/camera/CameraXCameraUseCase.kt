@@ -377,7 +377,11 @@ constructor(
                                     useCaseMode = useCaseMode,
                                     onSetZoomRatioMap = { newZoomRatios ->
                                         currentSettings.update { old ->
-                                            old?.copy(defaultZoomRatios = newZoomRatios)
+                                            old?.copy(defaultZoomRatios =
+                                                old.defaultZoomRatios.toMutableMap().apply {
+                                                    putAll(newZoomRatios)
+                                                }
+                                                )
                                         }
                                     },
                                     onImageCaptureCreated = { imageCapture ->
@@ -538,6 +542,7 @@ constructor(
         shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        val initialRecordSettings = currentSettings.value
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
@@ -549,7 +554,27 @@ constructor(
                 shouldUseUri,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                onVideoRecord
+                onVideoRecord = onVideoRecord,
+                onRestoreSettings = {
+                    Log.d(TAG, "INITIAL RECORD SETTINGS: $initialRecordSettings")
+
+                    Log.d(TAG, "CURRENT RECORD SETTINGS: ${currentSettings.value}")
+
+                    initialRecordSettings?.let {
+                        currentSettings.update { old ->
+                            old?.copy(
+                                cameraLensFacing = initialRecordSettings.cameraLensFacing,
+                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios,
+                                audioMuted = initialRecordSettings.audioMuted,
+
+                            )
+                        }
+
+                        //zoom needs to be manually reset on the current lens since it doesn't read updates directly from the settings
+                        zoomChanges.update { CameraZoomState.Ratio(
+                            initialRecordSettings.defaultZoomRatios[initialRecordSettings.cameraLensFacing]?:1f) }
+                    }
+                }
             )
         )
     }
