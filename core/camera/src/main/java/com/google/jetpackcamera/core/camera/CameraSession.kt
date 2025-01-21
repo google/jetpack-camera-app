@@ -82,6 +82,12 @@ import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
 import com.google.jetpackcamera.settings.model.VideoQuality.SD
 import com.google.jetpackcamera.settings.model.VideoQuality.UHD
+import java.io.File
+import java.util.Date
+import java.util.concurrent.Executor
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -100,12 +106,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.util.Date
-import java.util.concurrent.Executor
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "CameraSession"
 private val QUALITY_RANGE_MAP = mapOf(
