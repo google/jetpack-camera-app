@@ -232,8 +232,7 @@ internal suspend fun runSingleCameraSession(
                     .distinctUntilChanged()
                     .onCompletion {
                         // reset current camera state when changing cameras.
-                        currentCameraState.update {
-                                old ->
+                        currentCameraState.update { old ->
                             old.copy(
                                 zoomRatios = emptyMap(),
                                 linearZoomScales = emptyMap()
@@ -245,10 +244,10 @@ internal suspend fun runSingleCameraSession(
                             old.copy(
                                 zoomRatios = old.zoomRatios.toMutableMap().apply {
                                     put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
-                                },
+                                }.toMap(),
                                 linearZoomScales = old.linearZoomScales.toMutableMap().apply {
                                     put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
-                                }
+                                }.toMap()
                             )
                         }
                         // update current settings to mirror current camera state
@@ -265,12 +264,14 @@ internal suspend fun runSingleCameraSession(
                 )
                 Log.d(
                     TAG,
-                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio ${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio " +
+                        "${camera.cameraInfo.zoomState.value?.zoomRatio}"
                 )
 
                 // Apply zoom changes to camera
                 zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
-                    val currentZoomState = camera.cameraInfo.zoomState.asFlow().first()
+                    val currentZoomState = camera.cameraInfo.zoomState
+                        .asFlow().filterNotNull().first()
                     when (zoomChange) {
                         is CameraZoomState.Ratio -> {
                             camera.cameraControl.setZoomRatio(
@@ -481,13 +482,12 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    return resolution?.let { res ->
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+    resolution?.let { res ->
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
             if (it.value.contains(res.height)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
-}
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {
     if (cropRect == null) {

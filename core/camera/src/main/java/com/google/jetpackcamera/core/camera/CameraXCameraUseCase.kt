@@ -395,7 +395,12 @@ constructor(
                                         sessionSettings,
                                         onSetZoomRatioMap = { newZoomRatios ->
                                             currentSettings.update { old ->
-                                                old?.copy(defaultZoomRatios = newZoomRatios)
+                                                old?.copy(
+                                                    defaultZoomRatios =
+                                                    old.defaultZoomRatios.toMutableMap().apply {
+                                                        putAll(newZoomRatios)
+                                                    }
+                                                )
                                             }
                                         },
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY

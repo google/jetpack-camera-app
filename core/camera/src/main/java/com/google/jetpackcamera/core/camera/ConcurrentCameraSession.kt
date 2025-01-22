@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -134,12 +133,7 @@ internal suspend fun runConcurrentCameraSession(
         launch {
             // todo bug? why isn't this catching the initial setZoomRatio? the camerastate zoom is not updating properly
             primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().distinctUntilChanged()
-                .onCompletion {
-                    // save current zoom state to current camera settings when flipping
-                    onSetZoomRatioMap(
-                        currentCameraState.value.zoomRatios
-                    )
-                }.collectLatest { zoomState ->
+                .collectLatest { zoomState ->
                     currentCameraState.update { old ->
                         old.copy(
                             zoomRatios = old.zoomRatios.toMutableMap().apply {
@@ -150,17 +144,20 @@ internal suspend fun runConcurrentCameraSession(
                             }.toMap()
                         )
                     }
+                    // update current settings to mirror current camera state
+                    onSetZoomRatioMap(
+                        currentCameraState.value.zoomRatios
+                    )
                 }
         }
 
         launch {
-            // Apply camera zoom
             // Immediately Apply camera zoom from current settings when opening a new camera
             primaryCamera.cameraControl.setZoomRatio(
                 initialTransientSettings.zoomRatios[primaryLensFacing] ?: 1f
             ).await()
 
-            // todo: what is happening after the first setZoomRatio? The zoom applies but is not reflected in cameraInfo.ZoomState?
+            // todo: what is happening after the first setZoomRatio? The initial setzoom applies but is not reflected in cameraInfo.ZoomState?
             // the only ways this works is to call it twice for some reason... somethings going wrong somewhere
             primaryCamera.cameraControl.setZoomRatio(
                 initialTransientSettings.zoomRatios[primaryLensFacing] ?: 1f
@@ -177,11 +174,11 @@ internal suspend fun runConcurrentCameraSession(
                                 currentZoomState.minZoomRatio,
                                 currentZoomState.maxZoomRatio
                             )
-                        ).await()
+                        )
                     }
 
                     is CameraZoomState.Linear -> {
-                        primaryCamera.cameraControl.setLinearZoom(zoomChange.value).await()
+                        primaryCamera.cameraControl.setLinearZoom(zoomChange.value)
                     }
 
                     is CameraZoomState.Scale -> {
@@ -190,7 +187,7 @@ internal suspend fun runConcurrentCameraSession(
                                 currentZoomState.minZoomRatio,
                                 currentZoomState.maxZoomRatio
                             )
-                        primaryCamera.cameraControl.setZoomRatio(newRatio).await()
+                        primaryCamera.cameraControl.setZoomRatio(newRatio)
                     }
                 }
             }
