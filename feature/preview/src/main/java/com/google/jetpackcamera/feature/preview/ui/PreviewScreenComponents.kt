@@ -104,6 +104,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
@@ -187,15 +188,17 @@ fun PauseResumeToggleButton(
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
     size: Float = 75f,
-    audioAmplitude: Double,
-    onToggleMute: () -> Unit
+    audioUiState: AudioUiState,
+    onToggleAudio: () -> Unit
 ) {
+    val currentUiState = rememberUpdatedState(audioUiState)
+
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
+        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier.clickable { onToggleMute() }) {
+    Box(modifier = modifier.clickable { onToggleAudio() }) {
         // animated circle
         Canvas(
             modifier = Modifier
@@ -216,7 +219,7 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
-                    radius = (size.toFloat()),
+                    radius = (size),
                     color = Color.White
                 )
             }
@@ -227,14 +230,14 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
                 .apply {
-                    if (audioAmplitude != 0.0) {
+                    if (currentUiState.value is AudioUiState.Enabled.On) {
                         testTag(AMPLITUDE_HOT_TAG)
                     } else {
                         testTag(AMPLITUDE_NONE_TAG)
                     }
                 },
             tint = Color.Black,
-            imageVector = if (audioAmplitude != 0.0) {
+            imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
                 Icons.Filled.Mic
             } else {
                 Icons.Filled.MicOff
@@ -490,6 +493,7 @@ fun StabilizationIcon(
                                 throw IllegalStateException(
                                     "AUTO is not a specific StabilizationUiState."
                                 )
+
                             StabilizationMode.HIGH_QUALITY ->
                                 painterResource(R.drawable.video_stable_hq_filled_icon)
 
@@ -505,6 +509,7 @@ fun StabilizationIcon(
                                         "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
+
                     is StabilizationUiState.Auto -> {
                         when (stabilizationUiState.stabilizationMode) {
                             StabilizationMode.ON ->
@@ -512,6 +517,7 @@ fun StabilizationIcon(
 
                             StabilizationMode.OPTICAL ->
                                 painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
@@ -719,6 +725,7 @@ fun CaptureButton(
 
                         is VideoRecordingState.Active.Recording,
                         is VideoRecordingState.Active.Paused -> Color.Red
+
                         VideoRecordingState.Starting -> currentColor
                     }
                 )

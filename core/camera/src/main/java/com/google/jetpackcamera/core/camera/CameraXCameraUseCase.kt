@@ -294,7 +294,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    isAudioMuted = currentCameraSettings.audioMuted,
+                    isAudioEnabled = currentCameraSettings.audioEnabled,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
@@ -569,9 +569,7 @@ constructor(
                         currentSettings.update { old ->
                             old?.copy(
                                 cameraLensFacing = initialRecordSettings.cameraLensFacing,
-                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios,
-                                audioMuted = initialRecordSettings.audioMuted
-
+                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios
                             )
                         }
 
@@ -831,9 +829,9 @@ constructor(
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old?.copy(audioMuted = isAudioMuted)
+            old?.copy(audioEnabled = isAudioEnabled)
         }
     }
 

@@ -101,7 +101,7 @@ fun CameraControlsOverlay(
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
-    onMuteAudio: () -> Unit = {},
+    onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -164,7 +164,7 @@ fun CameraControlsOverlay(
                 onFlipCamera = onFlipCamera,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
-                onToggleAudioMuted = onMuteAudio,
+                onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
@@ -261,7 +261,7 @@ private fun ControlsBottom(
         (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioMuted: () -> Unit = {},
+    onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
@@ -342,8 +342,8 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
-                        onToggleMute = onToggleAudioMuted,
-                        audioAmplitude = videoRecordingState.audioAmplitude
+                        onToggleAudio = onToggleAudio,
+                        audioUiState = previewUiState.audioUiState
                     )
                 } else {
                     if (!isQuickSettingsOpen &&

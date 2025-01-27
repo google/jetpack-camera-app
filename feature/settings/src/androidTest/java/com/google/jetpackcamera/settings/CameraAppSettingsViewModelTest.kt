@@ -63,7 +63,10 @@ internal class CameraAppSettingsViewModelTest {
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }
-        settingsViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
+        settingsViewModel = SettingsViewModel(
+            settingsRepository,
+            constraintsRepository
+        )
         advanceUntilIdle()
     }
 
@@ -79,6 +82,9 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+        )
         val uiState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
         }
@@ -86,6 +92,52 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(uiState).isEqualTo(
             TYPICAL_SETTINGS_UISTATE
         )
+    }
+
+    @Test
+    fun setMute_permission_granted() = runTest(StandardTestDispatcher()) {
+        // permission must be granted or the setting will be disabled
+        // Wait for first Enabled state
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+        )
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialAudioState = assertIsEnabled(initialState).audioUiState
+        // assert that muteUiState is Enabled
+        assertThat(initialAudioState).isInstanceOf(AudioUiState.Enabled.On::class.java)
+
+        val nextAudioUiState = AudioUiState.Enabled.Mute()
+        settingsViewModel.setVideoAudio(false)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.audioUiState).isEqualTo(nextAudioUiState)
+        }
+    }
+
+    @Test
+    fun setMute_permission_not_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialAudioState = assertIsEnabled(initialState).audioUiState
+        // assert that muteUiState is disabled
+        assertThat(initialAudioState).isNotInstanceOf(AudioUiState.Enabled::class.java)
+
+        settingsViewModel.setVideoAudio(false)
+
+        advanceUntilIdle()
+
+        // ensure still disabled
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.audioUiState).isNotInstanceOf(AudioUiState.Enabled::class.java)
+        }
     }
 
     @Test
@@ -138,11 +190,10 @@ internal class CameraAppSettingsViewModelTest {
     }
 }
 
-private fun assertIsEnabled(settingsUiState: SettingsUiState): SettingsUiState.Enabled {
-    return when (settingsUiState) {
+private fun assertIsEnabled(settingsUiState: SettingsUiState): SettingsUiState.Enabled =
+    when (settingsUiState) {
         is SettingsUiState.Enabled -> settingsUiState
         else -> throw AssertionError(
             "SettingsUiState expected to be Enabled, but was ${settingsUiState::class}"
         )
     }
-}

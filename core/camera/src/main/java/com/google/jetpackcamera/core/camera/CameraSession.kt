@@ -761,7 +761,7 @@ private fun getPendingRecording(
 
 context(CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
-    initialMuted: Boolean,
+    isInitialAudioEnabled: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -780,14 +780,15 @@ private suspend fun startVideoRecordingInternal(
     // if the video recording isn't started with audio enabled, you will not be able to un-mute it
     // the toggle should only affect whether or not the audio is muted.
     // the permission will determine whether or not the audio is enabled.
-    val audioEnabled = checkSelfPermission(
+    val isAudioGranted = checkSelfPermission(
         context,
         Manifest.permission.RECORD_AUDIO
     ) == PackageManager.PERMISSION_GRANTED
 
     pendingRecord.apply {
-        if (audioEnabled) {
-            withAudioEnabled()
+        if (isAudioGranted) {
+            Log.d(TAG, "INITIAL AUDIO $isInitialAudioEnabled")
+            withAudioEnabled(isInitialAudioEnabled)
         }
     }
         .asPersistentRecording()
@@ -928,7 +929,7 @@ private suspend fun startVideoRecordingInternal(
             }
         }
     }.apply {
-        mute(initialMuted)
+        mute(!isInitialAudioEnabled)
     }
 }
 
@@ -957,7 +958,7 @@ private suspend fun runVideoRecording(
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
-            initialMuted = currentSettings.isAudioMuted,
+            isInitialAudioEnabled = currentSettings.isAudioEnabled,
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
@@ -969,8 +970,8 @@ private suspend fun runVideoRecording(
 
                 transientSettings.filterNotNull()
                     .collectLatest { newTransientSettings ->
-                        if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
-                            recording.mute(newTransientSettings.isAudioMuted)
+                        if (currentSettings.isAudioEnabled != newTransientSettings.isAudioEnabled) {
+                            recording.mute(newTransientSettings.isAudioEnabled)
                         }
                         if (currentSettings.isFlashModeOn() !=
                             newTransientSettings.isFlashModeOn()

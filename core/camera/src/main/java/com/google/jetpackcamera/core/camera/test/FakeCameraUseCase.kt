@@ -224,9 +224,9 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old.copy(audioMuted = isAudioMuted)
+            old.copy(audioEnabled = isAudioEnabled)
         }
     }
 
