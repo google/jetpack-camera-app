@@ -110,6 +110,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlin.time.Duration.Companion.nanoseconds
@@ -378,15 +379,15 @@ fun PreviewDisplay(
     previewUiState: PreviewUiState.Ready,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
-    onZoomChange: (Float) -> Unit,
+    onZoomChange: (CameraZoomState) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
 ) {
     val transformableState = rememberTransformableState(
-        onTransformation = { zoomChange, _, _ ->
-            onZoomChange(zoomChange)
+        onTransformation = { pinchZoomChange, _, _ ->
+            onZoomChange(CameraZoomState.Scale(pinchZoomChange))
         }
     )
 
@@ -639,7 +640,7 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomScaleText(zoomScale: Float) {
+fun ZoomRatioText(zoomRatio: Float) {
     val contentAlpha = animateFloatAsState(
         targetValue = 10f,
         label = "zoomScaleAlphaAnimation",
@@ -649,7 +650,7 @@ fun ZoomScaleText(zoomScale: Float) {
         modifier = Modifier
             .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_scale_text, zoomScale)
+        text = stringResource(id = R.string.zoom_scale_text, zoomRatio)
     )
 }
 
