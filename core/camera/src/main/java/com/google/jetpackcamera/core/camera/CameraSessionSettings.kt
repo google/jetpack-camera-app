@@ -25,6 +25,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Camera settings that persist as long as a camera is running.
@@ -43,6 +44,7 @@ internal sealed interface PerpetualSessionSettings {
         val targetFrameRate: Int,
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
+        val videoQuality: VideoQuality,
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
 
@@ -63,7 +65,7 @@ internal sealed interface PerpetualSessionSettings {
  * The use cases typically will not need to be re-bound.
  */
 internal data class TransientSessionSettings(
-    val isAudioMuted: Boolean,
+    val isAudioEnabled: Boolean,
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
     val zoomScale: Float,

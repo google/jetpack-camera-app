@@ -24,10 +24,13 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.VIDEO_QUALITY_UNSUPPORTED_TAG
 
 // seconds duration in millis
 const val UNLIMITED_VIDEO_DURATION = 0L
@@ -49,7 +52,9 @@ sealed interface SettingsUiState {
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
         val stabilizationUiState: StabilizationUiState,
-        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled
+        val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+        val videoQualityUiState: VideoQualityUiState,
+        val audioUiState: AudioUiState
     ) : SettingsUiState
 }
 
@@ -65,6 +70,13 @@ sealed interface DisabledRationale {
     val affectedSettingNameResId: Int
     val reasonTextResId: Int
     val testTag: String
+
+    data class PermissionRecordAudioNotGrantedRationale(
+        override val affectedSettingNameResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.permission_record_audio_unsupported
+        override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
+    }
 
     /**
      * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
@@ -87,6 +99,15 @@ sealed interface DisabledRationale {
         DisabledRationale {
         override val reasonTextResId = R.string.stabilization_unsupported
         override val testTag = STABILIZATION_UNSUPPORTED_TAG
+    }
+
+    data class VideoQualityUnsupportedRationale(
+        override val affectedSettingNameResId: Int,
+        val currentDynamicRange: Int = R.string.video_quality_rationale_suffix_default
+    ) :
+        DisabledRationale {
+        override val reasonTextResId = R.string.video_quality_unsupported
+        override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
     sealed interface LensUnsupportedRationale : DisabledRationale {
@@ -117,7 +138,11 @@ fun getLensUnsupportedRationale(
     )
 }
 
-/* Settings that currently have constraints **/
+// ////////////////////////////////////////////////////////////
+//
+// Settings that currently depend on constraints
+//
+// ////////////////////////////////////////////////////////////
 
 sealed interface FpsUiState {
     data class Enabled(
@@ -160,7 +185,22 @@ sealed interface StabilizationUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : StabilizationUiState
 }
 
-/* Settings that don't currently depend on constraints */
+sealed interface AudioUiState {
+
+    sealed interface Enabled : AudioUiState {
+        val additionalContext: String
+        data class On(override val additionalContext: String = "") : Enabled
+        data class Mute(override val additionalContext: String = "") : Enabled
+    }
+
+    data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
+}
+
+// ////////////////////////////////////////////////////////////
+//
+// Settings that DON'T currently depend on constraints
+//
+// ////////////////////////////////////////////////////////////
 
 // this could be constrained w/ a check to see if a torch is available?
 sealed interface FlashUiState {
@@ -188,6 +228,19 @@ sealed interface MaxVideoDurationUiState {
         MaxVideoDurationUiState
 }
 
+sealed interface VideoQualityUiState {
+    data class Enabled(
+        val currentVideoQuality: VideoQuality,
+        val videoQualityAutoState: SingleSelectableState,
+        val videoQualitySDState: SingleSelectableState,
+        val videoQualityHDState: SingleSelectableState,
+        val videoQualityFHDState: SingleSelectableState,
+        val videoQualityUHDState: SingleSelectableState
+    ) : VideoQualityUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : VideoQualityUiState
+}
+
 /**
  * Settings Ui State for testing, based on Typical System Constraints.
  * @see[com.google.jetpackcamera.settings.model.SystemConstraints]
@@ -196,6 +249,11 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
+    audioUiState = if (DEFAULT_CAMERA_APP_SETTINGS.audioEnabled) {
+        AudioUiState.Enabled.On()
+    } else {
+        AudioUiState.Enabled.Mute()
+    },
     flashUiState =
     FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
     fpsUiState = FpsUiState.Enabled(
@@ -212,5 +270,8 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     stabilizationUiState =
     StabilizationUiState.Disabled(
         DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
+    ),
+    videoQualityUiState = VideoQualityUiState.Disabled(
+        DisabledRationale.VideoQualityUnsupportedRationale(R.string.video_quality_rationale_prefix)
     )
 )

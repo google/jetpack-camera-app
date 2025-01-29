@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
@@ -22,6 +23,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -36,20 +38,20 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        // val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
         val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable
     ) : PreviewUiState
 }
@@ -58,9 +60,26 @@ sealed interface PreviewUiState {
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
+    val videoResolution: Size? = null,
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+
+sealed interface AudioUiState {
+    val amplitude: Double
+
+    sealed interface Enabled : AudioUiState {
+        data class On(override val amplitude: Double) : Enabled
+        data object Mute : Enabled {
+            override val amplitude = 0.0
+        }
+    }
+
+    // todo give a disabledreason when audio permission is not granted
+    data object Disabled : AudioUiState {
+        override val amplitude = 0.0
+    }
+}
 
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState

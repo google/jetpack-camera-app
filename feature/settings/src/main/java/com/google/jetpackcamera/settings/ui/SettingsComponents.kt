@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -55,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
+import com.google.jetpackcamera.settings.AudioUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -70,6 +73,7 @@ import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQualityUiState
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
@@ -80,6 +84,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -304,7 +309,7 @@ fun AspectRatioSetting(
 @Composable
 fun StreamConfigSetting(
     streamConfigUiState: StreamConfigUiState,
-    setCaptureMode: (StreamConfig) -> Unit,
+    setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
@@ -332,14 +337,14 @@ fun StreamConfigSetting(
                     text = stringResource(id = R.string.stream_config_selector_multi_stream),
                     selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(StreamConfig.MULTI_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
                     text = stringResource(id = R.string.stream_config_description_single_stream),
                     selected = streamConfigUiState.currentStreamConfig ==
                         StreamConfig.SINGLE_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(StreamConfig.SINGLE_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
                 )
             }
         }
@@ -475,6 +480,31 @@ private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int
         StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
         StabilizationMode.OPTICAL -> R.string.stabilization_description_optical
     }
+
+private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (videoQuality) {
+    VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto
+    VideoQuality.SD -> R.string.video_quality_value_sd
+    VideoQuality.HD -> R.string.video_quality_value_hd
+    VideoQuality.FHD -> R.string.video_quality_value_fhd
+    VideoQuality.UHD -> R.string.video_quality_value_uhd
+}
+
+private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
+    when (videoQuality) {
+        VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto_info
+        VideoQuality.SD -> R.string.video_quality_value_sd_info
+        VideoQuality.HD -> R.string.video_quality_value_hd_info
+        VideoQuality.FHD -> R.string.video_quality_value_fhd_info
+        VideoQuality.UHD -> R.string.video_quality_value_uhd_info
+    }
+
+private fun getVideoQualityOptionTestTag(quality: VideoQuality): String = when (quality) {
+    VideoQuality.UNSPECIFIED -> VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
+    VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
+    VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
+    VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
+    VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
+}
 
 /**
  * A Setting to set preview and video stabilization.
@@ -651,6 +681,100 @@ fun StabilizationSetting(
                 }
             }
         }
+    )
+}
+
+@Composable
+fun VideoQualitySetting(
+    videQualityUiState: VideoQualityUiState,
+    setVideoQuality: (VideoQuality) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier.testTag(VIDEO_QUALITY_SELECTOR_TAG),
+        title = stringResource(R.string.video_quality_title),
+        leadingIcon = null,
+        enabled = videQualityUiState is VideoQualityUiState.Enabled,
+        description = when (videQualityUiState) {
+            is VideoQualityUiState.Enabled ->
+                stringResource(getVideoQualityStringRes(videQualityUiState.currentVideoQuality))
+
+            is VideoQualityUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = videQualityUiState.disabledRationale
+                )
+            }
+        },
+        popupContents = {
+            Column(
+                Modifier
+                    .selectableGroup()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)
+                    ),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.UNSPECIFIED)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.UNSPECIFIED
+                        )
+                    ),
+                    selected = (videQualityUiState as VideoQualityUiState.Enabled)
+                        .currentVideoQuality == VideoQuality.UNSPECIFIED,
+                    enabled = videQualityUiState.videoQualityAutoState is
+                        SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.UNSPECIFIED) }
+                )
+                listOf(VideoQuality.SD, VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD)
+                    .forEach { videoQuality ->
+                        SingleChoiceSelector(
+                            modifier = Modifier.testTag(getVideoQualityOptionTestTag(videoQuality)),
+                            text = stringResource(getVideoQualityStringRes(videoQuality)),
+                            secondaryText = stringResource(
+                                getVideoQualitySecondaryStringRes(
+                                    videoQuality
+                                )
+                            ),
+                            selected = videQualityUiState.currentVideoQuality == videoQuality,
+                            enabled = videQualityUiState.videoQualitySDState is
+                                SingleSelectableState.Selectable,
+                            onClick = { setVideoQuality(videoQuality) }
+                        )
+                    }
+            }
+        }
+    )
+}
+
+@Composable
+fun RecordingAudioSetting(
+    modifier: Modifier = Modifier,
+    audioUiState: AudioUiState,
+    setDefaultAudio: (Boolean) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier,
+        title = stringResource(id = R.string.audio_title),
+        description = when (audioUiState) {
+            is AudioUiState.Enabled.On -> {
+                stringResource(R.string.audio_selector_on)
+            }
+            is AudioUiState.Enabled.Mute -> {
+                stringResource(R.string.audio_selector_off)
+            }
+            is AudioUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on -> setDefaultAudio(on) },
+        settingValue = when (audioUiState) {
+            is AudioUiState.Enabled.On -> true
+            is AudioUiState.Disabled, is AudioUiState.Enabled.Mute -> false
+        },
+        enabled = audioUiState is AudioUiState.Enabled
     )
 }
 
@@ -856,6 +980,16 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         )
 
         is DisabledRationale.StabilizationUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.VideoQualityUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

@@ -19,6 +19,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
@@ -30,6 +31,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -49,10 +51,12 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
+import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -73,6 +77,11 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.VideoQuality.FHD
+import com.google.jetpackcamera.settings.model.VideoQuality.HD
+import com.google.jetpackcamera.settings.model.VideoQuality.SD
+import com.google.jetpackcamera.settings.model.VideoQuality.UHD
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -97,6 +106,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraSession"
+private val QUALITY_RANGE_MAP = mapOf(
+    UHD to Range.create(2160, 4319),
+    FHD to Range.create(1080, 1439),
+    HD to Range.create(720, 1079),
+    SD to Range.create(241, 719)
+)
 
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
@@ -117,6 +132,7 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.targetFrameRate,
                 sessionSettings.stabilizationMode,
                 sessionSettings.dynamicRange,
+                sessionSettings.videoQuality,
                 backgroundDispatcher
             )
         else -> {
@@ -170,6 +186,30 @@ internal suspend fun runSingleCameraSession(
                 camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
                     currentCameraState.update { old ->
                         old.copy(torchEnabled = torchState == TorchState.ON)
+                    }
+                }
+            }
+
+            if (videoCaptureUseCase != null) {
+                val videoQuality = getVideoQualityFromResolution(
+                    videoCaptureUseCase.resolutionInfo?.resolution
+                )
+                if (videoQuality != sessionSettings.videoQuality) {
+                    Log.e(
+                        TAG,
+                        "Failed to select video quality: $sessionSettings.videoQuality. " +
+                            "Fallback: $videoQuality"
+                    )
+                }
+                launch {
+                    currentCameraState.update { old ->
+                        old.copy(
+                            videoQualityInfo = VideoQualityInfo(
+                                videoQuality,
+                                getWidthFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect),
+                                getHeightFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect)
+                            )
+                        )
                     }
                 }
             }
@@ -373,6 +413,28 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
+    return resolution?.let { res ->
+        QUALITY_RANGE_MAP.firstNotNullOfOrNull {
+            if (it.value.contains(res.height)) it.key else null
+        }
+    } ?: VideoQuality.UNSPECIFIED
+}
+
+private fun getWidthFromCropRect(cropRect: Rect?): Int {
+    if (cropRect == null) {
+        return 0
+    }
+    return abs(cropRect.top - cropRect.bottom)
+}
+
+private fun getHeightFromCropRect(cropRect: Rect?): Int {
+    if (cropRect == null) {
+        return 0
+    }
+    return abs(cropRect.left - cropRect.right)
+}
+
 private fun createImageUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
@@ -396,6 +458,7 @@ internal fun createVideoUseCase(
     targetFrameRate: Int,
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
+    videoQuality: VideoQuality,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -403,7 +466,19 @@ internal fun createVideoUseCase(
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor()).build()
+        .setExecutor(backgroundDispatcher.asExecutor())
+        .apply {
+            videoQuality.toQuality()?.let { quality ->
+                // No fallback strategy is used. The app will crash if the quality is unsupported
+                setQualitySelector(
+                    QualitySelector.from(
+                        quality,
+                        FallbackStrategy.lowerQualityOrHigherThan(quality)
+                    )
+                )
+            }
+        }.build()
+
     return VideoCapture.Builder(recorder).apply {
         // set video stabilization
         if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
@@ -618,7 +693,7 @@ private fun getPendingRecording(
 
 context(CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
-    initialMuted: Boolean,
+    isInitialAudioEnabled: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -636,14 +711,15 @@ private suspend fun startVideoRecordingInternal(
     // if the video recording isn't started with audio enabled, you will not be able to un-mute it
     // the toggle should only affect whether or not the audio is muted.
     // the permission will determine whether or not the audio is enabled.
-    val audioEnabled = checkSelfPermission(
+    val isAudioGranted = checkSelfPermission(
         context,
         Manifest.permission.RECORD_AUDIO
     ) == PackageManager.PERMISSION_GRANTED
 
     pendingRecord.apply {
-        if (audioEnabled) {
-            withAudioEnabled()
+        if (isAudioGranted) {
+            Log.d(TAG, "INITIAL AUDIO $isInitialAudioEnabled")
+            withAudioEnabled(isInitialAudioEnabled)
         }
     }
         .asPersistentRecording()
@@ -783,7 +859,7 @@ private suspend fun startVideoRecordingInternal(
             }
         }
     }.apply {
-        mute(initialMuted)
+        mute(!isInitialAudioEnabled)
     }
 }
 
@@ -811,7 +887,7 @@ private suspend fun runVideoRecording(
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
-            initialMuted = currentSettings.isAudioMuted,
+            isInitialAudioEnabled = currentSettings.isAudioEnabled,
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
@@ -822,8 +898,8 @@ private suspend fun runVideoRecording(
 
                 transientSettings.filterNotNull()
                     .collectLatest { newTransientSettings ->
-                        if (currentSettings.isAudioMuted != newTransientSettings.isAudioMuted) {
-                            recording.mute(newTransientSettings.isAudioMuted)
+                        if (currentSettings.isAudioEnabled != newTransientSettings.isAudioEnabled) {
+                            recording.mute(newTransientSettings.isAudioEnabled)
                         }
                         if (currentSettings.isFlashModeOn() !=
                             newTransientSettings.isFlashModeOn()

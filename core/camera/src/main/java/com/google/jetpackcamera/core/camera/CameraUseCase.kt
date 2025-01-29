@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -78,6 +79,7 @@ interface CameraUseCase {
         shouldUseUri: Boolean,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
+
     suspend fun pauseVideoRecording()
 
     suspend fun resumeVideoRecording()
@@ -100,6 +102,8 @@ interface CameraUseCase {
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
+    suspend fun setVideoQuality(videoQuality: VideoQuality)
+
     suspend fun setLensFacing(lensFacing: LensFacing)
 
     suspend fun tapToFocus(x: Float, y: Float)
@@ -114,7 +118,7 @@ interface CameraUseCase {
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
-    suspend fun setAudioMuted(isAudioMuted: Boolean)
+    suspend fun setAudioEnabled(isAudioEnabled: Boolean)
 
     suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
@@ -186,7 +190,10 @@ data class CameraState(
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val debugInfo: DebugInfo = DebugInfo(null, null),
+    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )
 
 data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+
+data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)
