@@ -38,7 +38,7 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        val audioMuted: Boolean = false,
+        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
@@ -52,7 +52,8 @@ sealed interface PreviewUiState {
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
-        val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED
+        val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
+        val audioUiState: AudioUiState = AudioUiState.Disabled
     ) : PreviewUiState
 }
 
@@ -64,6 +65,22 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+
+sealed interface AudioUiState {
+    val amplitude: Double
+
+    sealed interface Enabled : AudioUiState {
+        data class On(override val amplitude: Double) : Enabled
+        data object Mute : Enabled {
+            override val amplitude = 0.0
+        }
+    }
+
+    // todo give a disabledreason when audio permission is not granted
+    data object Disabled : AudioUiState {
+        override val amplitude = 0.0
+    }
+}
 
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState

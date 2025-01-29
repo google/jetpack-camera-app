@@ -15,9 +15,13 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
@@ -39,15 +43,19 @@ import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+val previewStabilizationUnsupportedFps = setOf(FPS_15, FPS_60)
+val videoStabilizationUnsupportedFps = setOf(FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -57,12 +65,14 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
+    private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
     val settingsUiState: StateFlow<SettingsUiState> =
         combine(
             settingsRepository.defaultCameraAppSettings,
-            constraintsRepository.systemConstraints.filterNotNull()
-        ) { updatedSettings, constraints ->
+            constraintsRepository.systemConstraints.filterNotNull(),
+            grantedPermissions
+        ) { updatedSettings, constraints, grantedPerms ->
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
@@ -72,6 +82,10 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                audioUiState = getAudioUiState(
+                    updatedSettings.audioEnabled,
+                    grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
@@ -82,6 +96,45 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = SettingsUiState.Disabled
         )
+
+// ////////////////////////////////////////////////////////////
+//
+// Get UiStates for components
+//
+// ////////////////////////////////////////////////////////////
+
+    private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
+        if (permissionGranted) {
+            if (isAudioEnabled) {
+                AudioUiState.Enabled.On()
+            } else {
+                AudioUiState.Enabled.Mute()
+            }
+        } else {
+            AudioUiState.Disabled(
+                DisabledRationale
+                    .PermissionRecordAudioNotGrantedRationale(
+                        R.string.mute_audio_rationale_prefix
+                    )
+            )
+        }
+
+    @OptIn(ExperimentalPermissionsApi::class)
+    fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
+        val permissions = mutableSetOf<String>()
+        for (permissionState in multiplePermissionsState.permissions) {
+            if (permissionState.status.isGranted) {
+                permissions.add(permissionState.permission)
+            }
+        }
+        grantedPermissions.update {
+            permissions
+        }
+    }
+
+    fun setGrantedPermissions(permissions: MutableSet<String>) {
+        grantedPermissions.update { permissions }
+    }
 
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
@@ -269,21 +322,19 @@ class SettingsViewModel @Inject constructor(
     private fun getSingleVideoQualityState(
         videoQuality: VideoQuality,
         supportedVideQualities: List<VideoQuality>?
-    ): SingleSelectableState {
-        return if (videoQuality == VideoQuality.UNSPECIFIED ||
-            (
-                !supportedVideQualities.isNullOrEmpty() &&
-                    supportedVideQualities.contains(videoQuality)
-                )
-        ) {
-            SingleSelectableState.Selectable
-        } else {
-            SingleSelectableState.Disabled(
-                DisabledRationale.VideoQualityUnsupportedRationale(
-                    R.string.video_quality_rationale_prefix
-                )
+    ): SingleSelectableState = if (videoQuality == VideoQuality.UNSPECIFIED ||
+        (
+            !supportedVideQualities.isNullOrEmpty() &&
+                supportedVideQualities.contains(videoQuality)
             )
-        }
+    ) {
+        SingleSelectableState.Selectable
+    } else {
+        SingleSelectableState.Disabled(
+            DisabledRationale.VideoQualityUnsupportedRationale(
+                R.string.video_quality_rationale_prefix
+            )
+        )
     }
 
     /**
@@ -460,6 +511,12 @@ class SettingsViewModel @Inject constructor(
         return SingleSelectableState.Selectable
     }
 
+// ////////////////////////////////////////////////////////////
+//
+// Settings Repository functions
+//
+// ////////////////////////////////////////////////////////////
+
     fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
             settingsRepository.updateDefaultLensFacing(lensFacing)
@@ -520,6 +577,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateVideoQuality(videoQuality)
             Log.d(TAG, "set video quality: $videoQuality ms")
+        }
+    }
+
+    fun setVideoAudio(isAudioEnabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateAudioEnabled(isAudioEnabled)
+            Log.d(TAG, "recording audio muted: $isAudioEnabled")
         }
     }
 }

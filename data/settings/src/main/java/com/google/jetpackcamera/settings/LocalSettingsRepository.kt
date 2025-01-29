@@ -73,7 +73,8 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
-                videoQuality = VideoQuality.fromProto(it.videoQuality)
+                videoQuality = VideoQuality.fromProto(it.videoQuality),
+                audioEnabled = it.audioEnabledStatus
             )
         }
 
@@ -190,6 +191,14 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setVideoQuality(videoQuality.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setAudioEnabledStatus(isAudioEnabled)
                 .build()
         }
     }
