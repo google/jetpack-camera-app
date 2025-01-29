@@ -111,6 +111,7 @@ private val QUALITY_RANGE_MAP = mapOf(
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
+private var zoomScaleMap = mutableMapOf<LensFacing, Float>()
 
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
@@ -216,6 +217,7 @@ internal suspend fun runSingleCameraSession(
             }
 
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+            setZoomScale(camera, 1f)
             processTransientSettingEvents(
                 camera,
                 useCaseGroup,
@@ -253,18 +255,9 @@ internal suspend fun processTransientSettingEvents(
         val cameraState = it.second
 
         // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
-                }
-            }
+        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale
+        ) {
+            setZoomScale(camera, newTransientSettings.zoomScale)
         }
 
         // todo(): How should we handle torch on Auto FlashMode?
@@ -324,6 +317,28 @@ internal suspend fun processTransientSettingEvents(
         }
 
         prevTransientSettings = newTransientSettings
+    }
+}
+
+context(CameraSessionContext)
+internal fun setZoomScale(camera: Camera, zoomScale: Float) {
+    camera.cameraInfo.zoomState.value?.let { zoomState ->
+        transientSettings.value?.let { transientSettings ->
+            if (!zoomScaleMap.containsKey(transientSettings.primaryLensFacing)) {
+                zoomScaleMap[transientSettings.primaryLensFacing] = 1f
+            }
+            val oldScale = zoomScaleMap[transientSettings.primaryLensFacing]!!
+            val finalScale =
+                (oldScale * zoomScale).coerceIn(
+                    zoomState.minZoomRatio,
+                    zoomState.maxZoomRatio
+                )
+            camera.cameraControl.setZoomRatio(finalScale)
+            zoomScaleMap[transientSettings.primaryLensFacing] = finalScale
+            currentCameraState.update { old ->
+                old.copy(zoomScale = finalScale)
+            }
+        }
     }
 }
 
