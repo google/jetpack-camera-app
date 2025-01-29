@@ -117,6 +117,9 @@ constructor(
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
+    private val _cameraSessionZoomScale = MutableStateFlow(1f)
+    private var prevCameraSessionLensFacing: LensFacing? = null
+
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
@@ -351,6 +354,10 @@ constructor(
                 }
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
+                if (transientSettings.value?.primaryLensFacing != prevCameraSessionLensFacing) {
+                    _cameraSessionZoomScale.update { 1f }
+                }
+                prevCameraSessionLensFacing = transientSettings.value?.primaryLensFacing
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -362,7 +369,8 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings
+                            transientSettings = transientSettings,
+                            zoomScale = _cameraSessionZoomScale
                         )
                     ) {
                         try {

@@ -111,7 +111,6 @@ private val QUALITY_RANGE_MAP = mapOf(
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
-private var zoomScaleMap = mutableMapOf<LensFacing, Float>()
 
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
@@ -321,20 +320,16 @@ internal suspend fun processTransientSettingEvents(
 }
 
 context(CameraSessionContext)
-internal fun setZoomScale(camera: Camera, zoomScale: Float) {
+internal fun setZoomScale(camera: Camera, zoomScaleRelative: Float) {
     camera.cameraInfo.zoomState.value?.let { zoomState ->
         transientSettings.value?.let { transientSettings ->
-            if (!zoomScaleMap.containsKey(transientSettings.primaryLensFacing)) {
-                zoomScaleMap[transientSettings.primaryLensFacing] = 1f
-            }
-            val oldScale = zoomScaleMap[transientSettings.primaryLensFacing]!!
             val finalScale =
-                (oldScale * zoomScale).coerceIn(
+                (zoomScale.value * zoomScaleRelative).coerceIn(
                     zoomState.minZoomRatio,
                     zoomState.maxZoomRatio
                 )
             camera.cameraControl.setZoomRatio(finalScale)
-            zoomScaleMap[transientSettings.primaryLensFacing] = finalScale
+            zoomScale.update { finalScale }
             currentCameraState.update { old ->
                 old.copy(zoomScale = finalScale)
             }
