@@ -39,5 +39,6 @@ internal data class CameraSessionContext(
     val videoCaptureControlEvents: Channel<VideoCaptureControlEvent>,
     val currentCameraState: MutableStateFlow<CameraState>,
     val surfaceRequests: MutableStateFlow<SurfaceRequest?>,
-    val transientSettings: StateFlow<TransientSessionSettings?>
+    val transientSettings: StateFlow<TransientSessionSettings?>,
+    var zoomScale: MutableStateFlow<Float>
 )
