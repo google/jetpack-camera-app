@@ -15,9 +15,13 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
@@ -29,23 +33,29 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_3
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+val previewStabilizationUnsupportedFps = setOf(FPS_15, FPS_60)
+val videoStabilizationUnsupportedFps = setOf(FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -55,12 +65,15 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
+    private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
     val settingsUiState: StateFlow<SettingsUiState> =
         combine(
             settingsRepository.defaultCameraAppSettings,
-            constraintsRepository.systemConstraints.filterNotNull()
-        ) { updatedSettings, constraints ->
+            constraintsRepository.systemConstraints.filterNotNull(),
+            grantedPermissions
+        ) { updatedSettings, constraints, grantedPerms ->
+            updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 streamConfigUiState = StreamConfigUiState.Enabled(updatedSettings.streamConfig),
@@ -69,15 +82,59 @@ class SettingsViewModel @Inject constructor(
                 ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                audioUiState = getAudioUiState(
+                    updatedSettings.audioEnabled,
+                    grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = SettingsUiState.Disabled
         )
+
+// ////////////////////////////////////////////////////////////
+//
+// Get UiStates for components
+//
+// ////////////////////////////////////////////////////////////
+
+    private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
+        if (permissionGranted) {
+            if (isAudioEnabled) {
+                AudioUiState.Enabled.On()
+            } else {
+                AudioUiState.Enabled.Mute()
+            }
+        } else {
+            AudioUiState.Disabled(
+                DisabledRationale
+                    .PermissionRecordAudioNotGrantedRationale(
+                        R.string.mute_audio_rationale_prefix
+                    )
+            )
+        }
+
+    @OptIn(ExperimentalPermissionsApi::class)
+    fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
+        val permissions = mutableSetOf<String>()
+        for (permissionState in multiplePermissionsState.permissions) {
+            if (permissionState.status.isGranted) {
+                permissions.add(permissionState.permission)
+            }
+        }
+        grantedPermissions.update {
+            permissions
+        }
+    }
+
+    fun setGrantedPermissions(permissions: MutableSet<String>) {
+        grantedPermissions.update { permissions }
+    }
 
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
@@ -222,6 +279,64 @@ class SettingsViewModel @Inject constructor(
         return SingleSelectableState.Selectable
     }
 
+    private fun getVideoQualityUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): VideoQualityUiState {
+        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
+        val supportedVideoQualities: List<VideoQuality>? =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
+        return if (!supportedVideoQualities.isNullOrEmpty()) {
+            VideoQualityUiState.Enabled(
+                currentVideoQuality = cameraAppSettings.videoQuality,
+                videoQualityAutoState = getSingleVideoQualityState(
+                    VideoQuality.UNSPECIFIED,
+                    supportedVideoQualities
+                ),
+                videoQualitySDState = getSingleVideoQualityState(
+                    VideoQuality.SD,
+                    supportedVideoQualities
+                ),
+                videoQualityHDState = getSingleVideoQualityState(
+                    VideoQuality.HD,
+                    supportedVideoQualities
+                ),
+                videoQualityFHDState = getSingleVideoQualityState(
+                    VideoQuality.FHD,
+                    supportedVideoQualities
+                ),
+                videoQualityUHDState = getSingleVideoQualityState(
+                    VideoQuality.UHD,
+                    supportedVideoQualities
+                )
+            )
+        } else {
+            VideoQualityUiState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+    }
+
+    private fun getSingleVideoQualityState(
+        videoQuality: VideoQuality,
+        supportedVideQualities: List<VideoQuality>?
+    ): SingleSelectableState = if (videoQuality == VideoQuality.UNSPECIFIED ||
+        (
+            !supportedVideQualities.isNullOrEmpty() &&
+                supportedVideQualities.contains(videoQuality)
+            )
+    ) {
+        SingleSelectableState.Selectable
+    } else {
+        SingleSelectableState.Disabled(
+            DisabledRationale.VideoQualityUnsupportedRationale(
+                R.string.video_quality_rationale_prefix
+            )
+        )
+    }
+
     /**
      * Enables or disables default camera switch based on:
      * - number of cameras available
@@ -287,6 +402,23 @@ class SettingsViewModel @Inject constructor(
                         LensFacing.BACK -> R.string.front_lens_rationale_prefix
                         LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
                     }
+                )
+            )
+        }
+
+        if (currentSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+            newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
+                currentSettings.videoQuality
+            ) != true
+        ) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = DisabledRationale.VideoQualityUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    },
+                    R.string.video_quality_rationale_suffix_sdr
                 )
             )
         }
@@ -379,6 +511,12 @@ class SettingsViewModel @Inject constructor(
         return SingleSelectableState.Selectable
     }
 
+// ////////////////////////////////////////////////////////////
+//
+// Settings Repository functions
+//
+// ////////////////////////////////////////////////////////////
+
     fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
             settingsRepository.updateDefaultLensFacing(lensFacing)
@@ -414,7 +552,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCaptureMode(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             settingsRepository.updateStreamConfig(streamConfig)
             Log.d(TAG, "set default capture mode: $streamConfig")
@@ -432,6 +570,20 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateMaxVideoDuration(durationMillis)
             Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoQuality(videoQuality: VideoQuality) {
+        viewModelScope.launch {
+            settingsRepository.updateVideoQuality(videoQuality)
+            Log.d(TAG, "set video quality: $videoQuality ms")
+        }
+    }
+
+    fun setVideoAudio(isAudioEnabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateAudioEnabled(isAudioEnabled)
+            Log.d(TAG, "recording audio muted: $isAudioEnabled")
         }
     }
 }

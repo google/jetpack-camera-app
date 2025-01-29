@@ -27,7 +27,7 @@ enum class CaptureMode {
      *
      * Hold the Capture button to start recording, and release to complete the recording.
      */
-    DEFAULT,
+    STANDARD,
 
     /**
      * Video use case will be bound. Image use case will not be bound.

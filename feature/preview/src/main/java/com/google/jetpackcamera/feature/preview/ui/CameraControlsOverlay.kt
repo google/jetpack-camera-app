@@ -67,6 +67,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -95,7 +96,7 @@ fun CameraControlsOverlay(
     onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
-    onMuteAudio: () -> Unit = {},
+    onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -138,6 +139,7 @@ fun CameraControlsOverlay(
                     onToggleQuickSettings = onToggleQuickSettings,
                     onToggleDebugOverlay = onToggleDebugOverlay,
                     stabilizationUiState = previewUiState.stabilizationUiState,
+                    videoQuality = previewUiState.videoQuality,
                     flashModeUiState = previewUiState.flashModeUiState
                 )
             }
@@ -158,7 +160,7 @@ fun CameraControlsOverlay(
                 onFlipCamera = onFlipCamera,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
-                onToggleAudioMuted = onMuteAudio,
+                onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
                 onDisabledCaptureMode = onDisabledCaptureMode,
@@ -179,6 +181,7 @@ private fun ControlsTop(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+    videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
     flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable
 ) {
     Column(modifier) {
@@ -226,6 +229,7 @@ private fun ControlsTop(
                         StabilizationIcon(stabilizationUiState = it)
                     }
                 }
+                VideoQualityIcon(videoQuality, Modifier.testTag(VIDEO_QUALITY_TAG))
             }
         }
         if (isDebugMode) {
@@ -253,7 +257,7 @@ private fun ControlsBottom(
         (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
-    onToggleAudioMuted: () -> Unit = {},
+    onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
@@ -343,8 +347,8 @@ private fun ControlsBottom(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
-                        onToggleMute = onToggleAudioMuted,
-                        audioAmplitude = videoRecordingState.audioAmplitude
+                        onToggleAudio = onToggleAudio,
+                        audioUiState = previewUiState.audioUiState
                     )
                 }
                 /* else {

@@ -54,6 +54,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -145,10 +146,21 @@ constructor(
                 for (lensFacing in availableCameraLenses) {
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
+                        val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
                         val supportedDynamicRanges =
-                            Recorder.getVideoCapabilities(camInfo).supportedDynamicRanges
+                            videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        val supportedVideoQualitiesMap =
+                            buildMap {
+                                for (dynamicRange in supportedDynamicRanges) {
+                                    val supportedVideoQualities =
+                                        videoCapabilities.getSupportedQualities(
+                                            dynamicRange.toCXDynamicRange()
+                                        ).map { it.toVideoQuality() }
+                                    put(dynamicRange, supportedVideoQualities)
+                                }
+                            }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -227,6 +239,7 @@ constructor(
                                     Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
@@ -249,6 +262,7 @@ constructor(
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
+                .tryApplyVideoQualityConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -274,7 +288,7 @@ constructor(
             .filterNotNull()
             .map { currentCameraSettings ->
                 transientSettings.value = TransientSessionSettings(
-                    isAudioMuted = currentCameraSettings.audioMuted,
+                    isAudioEnabled = currentCameraSettings.audioEnabled,
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
@@ -303,6 +317,7 @@ constructor(
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
+                            videoQuality = currentCameraSettings.videoQuality,
                             imageFormat = currentCameraSettings.imageFormat
                         )
                     }
@@ -352,10 +367,11 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings
-                                ) { imageCapture ->
-                                    imageCaptureUseCase = imageCapture
-                                }
+                                    sessionSettings,
+                                    onImageCaptureCreated = { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
+                                    }
+                                )
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
@@ -611,7 +627,7 @@ constructor(
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
         captureMode: CaptureMode
     ): CameraAppSettings = when (captureMode) {
-        CaptureMode.DEFAULT -> this
+        CaptureMode.STANDARD -> this
         CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
         CaptureMode.VIDEO_ONLY ->
@@ -681,6 +697,26 @@ constructor(
                 }
         }
 
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedVideoQualitiesMap) {
+                val newVideoQuality = get(dynamicRange).let {
+                    if (it == null) {
+                        VideoQuality.UNSPECIFIED
+                    } else if (it.contains(videoQuality)) {
+                        videoQuality
+                    } else {
+                        VideoQuality.UNSPECIFIED
+                    }
+                }
+
+                this@tryApplyVideoQualityConstraints.copy(
+                    videoQuality = newVideoQuality
+                )
+            }
+        } ?: this
+    }
+
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFlashModes) {
@@ -719,12 +755,20 @@ constructor(
         }
     }
 
+    override suspend fun setVideoQuality(videoQuality: VideoQuality) {
+        currentSettings.update { old ->
+            old?.copy(videoQuality = videoQuality)
+                ?.tryApplyVideoQualityConstraints()
+        }
+    }
+
     override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
             old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyVideoQualityConstraints()
         }
     }
 
@@ -782,9 +826,9 @@ constructor(
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old?.copy(audioMuted = isAudioMuted)
+            old?.copy(audioEnabled = isAudioEnabled)
         }
     }
 

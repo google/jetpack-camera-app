@@ -152,7 +152,7 @@ fun PreviewScreen(
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
-                onMuteAudio = viewModel::setAudioMuted,
+                onSetAudioEnabled = viewModel::setAudioEnabled,
                 onCaptureImageWithUri = viewModel::captureImageWithUri,
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
@@ -188,7 +188,7 @@ private fun ContentScreen(
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
-    onMuteAudio: (Boolean) -> Unit = {},
+    onSetAudioEnabled: (Boolean) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -216,12 +216,12 @@ private fun ContentScreen(
 
         val onFlipCamera = { onSetLensFacing(lensFacing.flip()) }
 
-        val isMuted = remember(previewUiState) {
-            previewUiState.currentCameraSettings.audioMuted
+        val isAudioEnabled = remember(previewUiState) {
+            previewUiState.currentCameraSettings.audioEnabled
         }
-        val onToggleMuteAudio = remember(isMuted) {
+        val onToggleAudio = remember(isAudioEnabled) {
             {
-                onMuteAudio(!isMuted)
+                onSetAudioEnabled(!isAudioEnabled)
             }
         }
 
@@ -246,7 +246,7 @@ private fun ContentScreen(
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
-                onCaptureModeClick = onChangeCaptureMode,
+                onStreamConfigClick = onChangeCaptureMode,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode
@@ -258,7 +258,7 @@ private fun ContentScreen(
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
-                onMuteAudio = onToggleMuteAudio,
+                onToggleAudio = onToggleAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,

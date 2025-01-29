@@ -132,7 +132,7 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-enum class CameraCaptureMode : QuickSettingsEnum {
+enum class CameraStreamConfig : QuickSettingsEnum {
     MULTI_STREAM {
         override fun getDrawableResId() = R.drawable.multi_stream_icon
         override fun getImageVector() = null // this icon is not available

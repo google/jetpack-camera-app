@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.settings.model
+
 const val TARGET_FPS_AUTO = 0
 const val UNLIMITED_VIDEO_DURATION = 0L
 val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
@@ -23,7 +24,7 @@ val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
-    val captureMode: CaptureMode = CaptureMode.DEFAULT,
+    val captureMode: CaptureMode = CaptureMode.STANDARD,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,
@@ -31,10 +32,11 @@ data class CameraAppSettings(
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
+    val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
     val zoomScale: Float = 1f,
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
-    val audioMuted: Boolean = false,
+    val audioEnabled: Boolean = true,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION

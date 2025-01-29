@@ -21,7 +21,6 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -106,6 +105,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DisabledReason
@@ -117,12 +117,14 @@ import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
-import kotlin.time.Duration.Companion.nanoseconds
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -192,15 +194,17 @@ fun PauseResumeToggleButton(
 fun AmplitudeVisualizer(
     modifier: Modifier = Modifier,
     size: Float = 75f,
-    audioAmplitude: Double,
-    onToggleMute: () -> Unit
+    audioUiState: AudioUiState,
+    onToggleAudio: () -> Unit
 ) {
+    val currentUiState = rememberUpdatedState(audioUiState)
+
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedScaling by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * audioAmplitude.toFloat())),
+        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier.clickable { onToggleMute() }) {
+    Box(modifier = modifier.clickable { onToggleAudio() }) {
         // animated circle
         Canvas(
             modifier = Modifier
@@ -221,7 +225,7 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
-                    radius = (size.toFloat()),
+                    radius = (size),
                     color = Color.White
                 )
             }
@@ -232,14 +236,14 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
                 .apply {
-                    if (audioAmplitude != 0.0) {
+                    if (currentUiState.value is AudioUiState.Enabled.On) {
                         testTag(AMPLITUDE_HOT_TAG)
                     } else {
                         testTag(AMPLITUDE_NONE_TAG)
                     }
                 },
             tint = Color.Black,
-            imageVector = if (audioAmplitude != 0.0) {
+            imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
                 Icons.Filled.Mic
             } else {
                 Icons.Filled.MicOff
@@ -550,6 +554,50 @@ fun StabilizationIcon(
     }
 }
 
+@Composable
+fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        if (videoQuality != VideoQuality.UNSPECIFIED) {
+            Icon(
+                painter = when (videoQuality) {
+                    VideoQuality.SD ->
+                        painterResource(R.drawable.video_resolution_sd_icon)
+
+                    VideoQuality.HD ->
+                        painterResource(R.drawable.video_resolution_hd_icon)
+
+                    VideoQuality.FHD ->
+                        painterResource(R.drawable.video_resolution_fhd_icon)
+
+                    VideoQuality.UHD ->
+                        painterResource(R.drawable.video_resolution_uhd_icon)
+
+                    else ->
+                        throw IllegalStateException(
+                            "Illegal video quality state"
+                        )
+                },
+                contentDescription = when (videoQuality) {
+                    VideoQuality.SD ->
+                        stringResource(R.string.video_quality_description_sd)
+
+                    VideoQuality.HD ->
+                        stringResource(R.string.video_quality_description_hd)
+
+                    VideoQuality.FHD ->
+                        stringResource(R.string.video_quality_description_fhd)
+
+                    VideoQuality.UHD ->
+                        stringResource(R.string.video_quality_description_uhd)
+
+                    else -> null
+                },
+                modifier = modifier
+            )
+        }
+    }
+}
+
 /**
  * A temporary button that can be added to preview for quick testing purposes
  */
@@ -657,17 +705,17 @@ fun CaptureModeDropDown(
 
             Column {
                 DropDownItem(
-                    text = "Default",
+                    text = stringResource(R.string.capture_mode_text_standard),
                     enabled = captureModeUiState.defaultCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
-                        onSetCaptureMode(CaptureMode.DEFAULT)
+                        onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
                     },
                     onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
                 )
                 DropDownItem(
-                    text = "Image Only",
+                    text = stringResource(R.string.capture_mode_text_image_only),
                     enabled = captureModeUiState.imageOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -677,7 +725,7 @@ fun CaptureModeDropDown(
                     onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
                 )
                 DropDownItem(
-                    text = "Video Only",
+                    text = stringResource(R.string.capture_mode_text_video_only),
                     enabled = captureModeUiState.videoOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -691,14 +739,18 @@ fun CaptureModeDropDown(
                 )
             }
         }
-        // current selection
+        // this text displays the current selection
         Box(
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
                 .padding(8.dp)
         ) {
             Text(
-                text = captureModeUiState.currentSelection.toString(),
+                text = when (captureModeUiState.currentSelection) {
+                    CaptureMode.STANDARD -> stringResource(R.string.capture_mode_text_standard)
+                    CaptureMode.VIDEO_ONLY -> stringResource(R.string.capture_mode_text_video_only)
+                    CaptureMode.IMAGE_ONLY -> stringResource(R.string.capture_mode_text_image_only)
+                },
                 modifier = Modifier.padding(16.dp)
             )
         }

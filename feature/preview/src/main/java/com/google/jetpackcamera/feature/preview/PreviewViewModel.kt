@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +27,7 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
@@ -50,6 +52,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -125,7 +128,7 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
         val captureMode = previewMode.toCaptureMode()
-        return if (captureMode == CaptureMode.DEFAULT) {
+        return if (captureMode == CaptureMode.STANDARD) {
             this
         } else {
             this.copy(captureMode = captureMode)
@@ -200,14 +203,23 @@ class PreviewViewModel @AssistedInject constructor(
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
-                            cameraPropertiesJSON,
-                            isDebugMode
+                            cameraPropertiesJSON = cameraPropertiesJSON,
+                            videoResolution = Size(
+                                cameraState.videoQualityInfo.width,
+                                cameraState.videoQualityInfo.height
+                            ),
+                            isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
                         flashModeUiState = flashModeUiState,
+                        videoQuality = cameraState.videoQualityInfo.quality,
+                        audioUiState = getAudioUiState(
+                            cameraAppSettings.audioEnabled,
+                            cameraState.videoRecordingState
+                        ),
                         captureModeUiState = getCaptureModeUiState(
                             systemConstraints,
                             cameraAppSettings
@@ -272,6 +284,21 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    private fun getAudioUiState(
+        isAudioEnabled: Boolean,
+        videoRecordingState: VideoRecordingState
+    ): AudioUiState {
+        return if (isAudioEnabled) {
+            if (videoRecordingState is VideoRecordingState.Active) {
+                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
+            } else {
+                AudioUiState.Enabled.On(0.0)
+            }
+        } else {
+            AudioUiState.Enabled.Mute
+        }
+    }
+
     private fun stabilizationUiStateFrom(
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState
@@ -305,7 +332,7 @@ class PreviewViewModel @AssistedInject constructor(
         is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CaptureMode.DEFAULT
+        is PreviewMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
@@ -357,6 +384,14 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
                 }
 
+                CameraAppSettings::videoQuality -> {
+                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
+                }
+
+                CameraAppSettings::audioEnabled -> {
+                    cameraUseCase.setAudioEnabled(entry.value as Boolean)
+                }
+
                 CameraAppSettings::darkMode -> {}
 
                 else -> TODO("Unhandled CameraAppSetting $entry")
@@ -398,7 +433,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
         // if all capture modes are supported, return capturemodeuistate
         if (supportedCaptureModes.containsAll(
-                listOf(CaptureMode.DEFAULT, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+                listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
             )
         ) {
             return CaptureModeUiState.Enabled(currentSelection = cameraAppSettings.captureMode)
@@ -477,7 +512,7 @@ class PreviewViewModel @AssistedInject constructor(
         if (isHdrOn) {
             listOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
         } else {
-            listOf(CaptureMode.DEFAULT, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+            listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
         }
     } else if (
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
@@ -555,7 +590,7 @@ class PreviewViewModel @AssistedInject constructor(
 
                 throw RuntimeException("Unknown DisabledReason for image mode.")
             }
-            CaptureMode.DEFAULT -> {
+            CaptureMode.STANDARD -> {
                 TODO()
             }
         }
@@ -784,17 +819,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setAudioMuted(shouldMuteAudio: Boolean) {
+    fun setAudioEnabled(shouldEnableAudio: Boolean) {
         viewModelScope.launch {
-            cameraUseCase.setAudioMuted(shouldMuteAudio)
+            cameraUseCase.setAudioEnabled(shouldEnableAudio)
         }
 
         Log.d(
             TAG,
-            "Toggle Audio ${
-                (previewUiState.value as PreviewUiState.Ready)
-                    .currentCameraSettings.audioMuted
-            }"
+            "Toggle Audio: $shouldEnableAudio"
         )
     }
 
@@ -1080,6 +1112,7 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     debugUiState = DebugUiState(
                         old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.videoResolution,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
                     )

@@ -53,11 +53,11 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickFlipCamera
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetStreamConfig
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -83,7 +83,7 @@ fun QuickSettingsScreenOverlay(
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
-    onCaptureModeClick: (streamConfig: StreamConfig) -> Unit,
+    onStreamConfigClick: (streamConfig: StreamConfig) -> Unit,
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
@@ -135,7 +135,7 @@ fun QuickSettingsScreenOverlay(
                 onLensFaceClick = onLensFaceClick,
                 onFlashModeClick = onFlashModeClick,
                 onAspectRatioClick = onAspectRatioClick,
-                onCaptureModeClick = onCaptureModeClick,
+                onStreamConfigClick = onStreamConfigClick,
                 onDynamicRangeClick = onDynamicRangeClick,
                 onImageOutputFormatClick = onImageOutputFormatClick,
                 onConcurrentCameraModeClick = onConcurrentCameraModeClick
@@ -162,7 +162,7 @@ private fun ExpandedQuickSettingsUi(
     onLensFaceClick: (newLensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
-    onCaptureModeClick: (streamConfig: StreamConfig) -> Unit,
+    onStreamConfigClick: (streamConfig: StreamConfig) -> Unit,
     shouldShowQuickSetting: IsExpandedQuickSetting,
     setVisibleQuickSetting: (IsExpandedQuickSetting) -> Unit,
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
@@ -214,9 +214,9 @@ private fun ExpandedQuickSettingsUi(
                         }
 
                         add {
-                            QuickSetCaptureMode(
+                            QuickSetStreamConfig(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON),
-                                setCaptureMode = { c: StreamConfig -> onCaptureModeClick(c) },
+                                setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
                                 currentStreamConfig = currentCameraSettings.streamConfig,
                                 enabled = currentCameraSettings.concurrentCameraMode ==
                                     ConcurrentCameraMode.OFF
@@ -309,7 +309,7 @@ fun ExpandedQuickSettingsUiPreview() {
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
             setVisibleQuickSetting = { },
             onAspectRatioClick = { },
-            onCaptureModeClick = { },
+            onStreamConfigClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
             onConcurrentCameraModeClick = { }
@@ -332,7 +332,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             shouldShowQuickSetting = IsExpandedQuickSetting.NONE,
             setVisibleQuickSetting = { },
             onAspectRatioClick = { },
-            onCaptureModeClick = { },
+            onStreamConfigClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
             onConcurrentCameraModeClick = { }

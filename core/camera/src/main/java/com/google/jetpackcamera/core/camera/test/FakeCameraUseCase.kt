@@ -33,6 +33,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,10 +93,6 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
                 isScreenFlash =
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
-
-                _currentCameraState.update { old ->
-                    old.copy(zoomScale = it.zoomScale)
-                }
             }
     }
 
@@ -182,6 +179,12 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
         }
     }
 
+    override suspend fun setVideoQuality(videoQuality: VideoQuality) {
+        currentSettings.update { old ->
+            old.copy(videoQuality = videoQuality)
+        }
+    }
+
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
             old.copy(cameraLensFacing = lensFacing)
@@ -222,9 +225,9 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old.copy(audioMuted = isAudioMuted)
+            old.copy(audioEnabled = isAudioEnabled)
         }
     }
 
