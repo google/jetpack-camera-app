@@ -125,7 +125,7 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
         val captureMode = previewMode.toCaptureMode()
-        return if (captureMode == CaptureMode.DEFAULT) {
+        return if (captureMode == CaptureMode.STANDARD) {
             this
         } else {
             this.copy(captureMode = captureMode)
@@ -301,7 +301,7 @@ class PreviewViewModel @AssistedInject constructor(
         is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CaptureMode.DEFAULT
+        is PreviewMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
@@ -391,7 +391,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
         // if all capture modes are supported, return capturemodeuistate
         if (supportedCaptureModes.containsAll(
-                listOf(CaptureMode.DEFAULT, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+                listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
             )
         ) {
             return CaptureModeUiState.Enabled(currentSelection = cameraAppSettings.captureMode)
@@ -458,7 +458,7 @@ class PreviewViewModel @AssistedInject constructor(
         currentHdrImageFormatSupported &&
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
     ) {
-        listOf(CaptureMode.DEFAULT, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
     } else if (
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
         previewMode is PreviewMode.ExternalImageCaptureMode ||
@@ -535,7 +535,7 @@ class PreviewViewModel @AssistedInject constructor(
 
                 throw RuntimeException("Unknown DisabledReason for image mode.")
             }
-            CaptureMode.DEFAULT -> {
+            CaptureMode.STANDARD -> {
                 TODO()
             }
         }

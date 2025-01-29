@@ -607,7 +607,7 @@ constructor(
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
         captureMode: CaptureMode
     ): CameraAppSettings = when (captureMode) {
-        CaptureMode.DEFAULT -> this
+        CaptureMode.STANDARD -> this
         CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
         CaptureMode.VIDEO_ONLY ->

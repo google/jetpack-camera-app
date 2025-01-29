@@ -656,17 +656,17 @@ fun CaptureModeDropDown(
 
             Column {
                 DropDownItem(
-                    text = "Default",
+                    text = stringResource(R.string.capture_mode_text_standard),
                     enabled = captureModeUiState.defaultCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
-                        onSetCaptureMode(CaptureMode.DEFAULT)
+                        onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
                     },
                     onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
                 )
                 DropDownItem(
-                    text = "Image Only",
+                    text = stringResource(R.string.capture_mode_text_image_only),
                     enabled = captureModeUiState.imageOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -676,7 +676,7 @@ fun CaptureModeDropDown(
                     onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
                 )
                 DropDownItem(
-                    text = "Video Only",
+                    text = stringResource(R.string.capture_mode_text_video_only),
                     enabled = captureModeUiState.videoOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -690,14 +690,18 @@ fun CaptureModeDropDown(
                 )
             }
         }
-        // current selection
+        // this text displays the current selection
         Box(
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
                 .padding(8.dp)
         ) {
             Text(
-                text = captureModeUiState.currentSelection.toString(),
+                text = when (captureModeUiState.currentSelection) {
+                    CaptureMode.STANDARD -> stringResource(R.string.capture_mode_text_standard)
+                    CaptureMode.VIDEO_ONLY -> stringResource(R.string.capture_mode_text_video_only)
+                    CaptureMode.IMAGE_ONLY -> stringResource(R.string.capture_mode_text_image_only)
+                },
                 modifier = Modifier.padding(16.dp)
             )
         }

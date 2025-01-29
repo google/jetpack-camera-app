@@ -28,6 +28,10 @@
 
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
+    <!-- Capture Mode Text -->
+    <string name= "capture_mode_text_standard">Standard</string>
+    <string name= "capture_mode_text_video_only">Video Only</string>
+    <string name= "capture_mode_text_image_only">Image Only</string>
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
@@ -48,7 +52,7 @@
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
 
-
+<!-- Quick Settings Text -->
     <string name="quick_settings_front_camera_text">FRONT</string>
     <string name="quick_settings_back_camera_text">BACK</string>
     <string name="quick_settings_front_camera_description">Front Camera</string>

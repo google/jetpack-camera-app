@@ -110,7 +110,7 @@ internal suspend fun runSingleCameraSession(
         .primaryLensFacing.toCameraSelector()
 
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
-        CaptureMode.DEFAULT, CaptureMode.VIDEO_ONLY ->
+        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
             createVideoUseCase(
                 cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
