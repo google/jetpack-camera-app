@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,6 +50,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -187,14 +189,19 @@ class PreviewViewModel @AssistedInject constructor(
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
-                            cameraPropertiesJSON,
-                            isDebugMode
+                            cameraPropertiesJSON = cameraPropertiesJSON,
+                            videoResolution = Size(
+                                cameraState.videoQualityInfo.width,
+                                cameraState.videoQualityInfo.height
+                            ),
+                            isDebugMode = isDebugMode
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
                             cameraState
                         ),
-                        flashModeUiState = flashModeUiState
+                        flashModeUiState = flashModeUiState,
+                        videoQuality = cameraState.videoQualityInfo.quality
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
                     )
@@ -334,6 +341,10 @@ class PreviewViewModel @AssistedInject constructor(
 
                 CameraAppSettings::maxVideoDurationMillis -> {
                     cameraUseCase.setMaxVideoDuration(entry.value as Long)
+                }
+
+                CameraAppSettings::videoQuality -> {
+                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
                 }
 
                 CameraAppSettings::darkMode -> {}
@@ -843,6 +854,7 @@ class PreviewViewModel @AssistedInject constructor(
                 (old as? PreviewUiState.Ready)?.copy(
                     debugUiState = DebugUiState(
                         old.debugUiState.cameraPropertiesJSON,
+                        old.debugUiState.videoResolution,
                         old.debugUiState.isDebugMode,
                         !old.debugUiState.isDebugOverlayOpen
                     )
