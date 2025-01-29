@@ -117,9 +117,6 @@ constructor(
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
-    private val cameraSessionZoomScale = MutableStateFlow(1f)
-    private var prevCameraSessionLensFacing: LensFacing? = null
-
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override suspend fun initialize(
@@ -289,6 +286,8 @@ constructor(
         Log.d(TAG, "runCamera")
 
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
+        val cameraSessionZoomScale = MutableStateFlow(1f)
+        var prevCameraSessionLensFacing: LensFacing? = null
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
