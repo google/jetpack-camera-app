@@ -107,6 +107,7 @@ android {
 dependencies {
     implementation(libs.androidx.tracing)
     implementation(project(":core:common"))
+    implementation(project(":feature:postcapture"))
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

@@ -33,12 +33,14 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
+import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
+import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
@@ -112,7 +114,8 @@ private fun JetpackCameraNavHost(
                 }
             }
             PreviewScreen(
-                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onNavigateToSettings = { navController.navigate(POST_CAPTURE_ROUTE) },
+                onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 previewMode = previewMode,
@@ -143,6 +146,10 @@ private fun JetpackCameraNavHost(
                 ),
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+
+        composable(POST_CAPTURE_ROUTE) {
+            PostCaptureScreen()
         }
     }
 }
