@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera.feature.preview.quicksettings.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,9 +35,11 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -277,10 +282,14 @@ fun ToggleQuickSettingsButton(
     isOpen: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (isOpen) 180f else 0f,
+        animationSpec = tween(durationMillis = 300) // Adjust duration as needed
+    )
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
+        modifier = modifier.rotate(rotationAngle)
     ) {
         // dropdown icon
         Icon(
@@ -293,10 +302,13 @@ fun ToggleQuickSettingsButton(
             modifier = Modifier
                 .testTag(QUICK_SETTINGS_DROP_DOWN)
                 .size(72.dp)
-                .clickable {
-                    toggleDropDown()
-                }
-                .scale(1f, if (isOpen) -1f else 1f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    // removes the greyish background animation that appears when clicking on a clickable
+                    indication = null,
+                    onClick = toggleDropDown
+                )
+            // .scale(1f, if (isOpen) -1f else 1f)
         )
     }
 }
@@ -454,7 +466,12 @@ fun TopBarSettingIndicator(
             contentDescription = stringResource(id = enum.getDescriptionResId()),
             modifier = modifier
                 .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
-                .clickable(onClick = onClick, enabled = enabled)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                    enabled = enabled
+                )
         )
     }
 }
@@ -484,11 +501,11 @@ fun FlashModeIndicator(
 
 @Composable
 fun QuickSettingsIndicators(
+    modifier: Modifier = Modifier,
     flashModeUiState: FlashModeUiState,
-    onFlashModeClick: (flashMode: FlashMode) -> Unit,
-    modifier: Modifier = Modifier
+    onFlashModeClick: (flashMode: FlashMode) -> Unit
 ) {
-    Row(modifier) {
+    Row(modifier = modifier) {
         FlashModeIndicator(
             flashModeUiState,
             onFlashModeClick

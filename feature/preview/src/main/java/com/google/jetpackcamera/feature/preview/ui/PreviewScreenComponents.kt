@@ -26,9 +26,12 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -78,8 +81,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -87,6 +92,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -110,6 +116,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlin.time.Duration.Companion.nanoseconds
@@ -118,6 +125,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -608,18 +616,34 @@ fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifi
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
+    lensFacing: LensFacing,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var rotation by remember { mutableFloatStateOf(0f) }
+    val animatedRotation = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
     IconButton(
         modifier = modifier.size(40.dp),
-        onClick = onClick,
+        onClick = {
+            rotation -= 360f
+            coroutineScope.launch {
+                animatedRotation.animateTo(
+                    targetValue = rotation,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessVeryLow
+                    )
+                )
+            }
+            onClick()
+        },
         enabled = enabledCondition
     ) {
         Icon(
             imageVector = Icons.Filled.FlipCameraAndroid,
             contentDescription = stringResource(id = R.string.flip_camera_content_description),
-            modifier = Modifier.size(72.dp)
+            modifier = Modifier.size(72.dp).rotate(animatedRotation.value)
         )
     }
 }
