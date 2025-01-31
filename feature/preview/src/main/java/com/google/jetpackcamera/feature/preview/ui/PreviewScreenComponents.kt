@@ -863,8 +863,8 @@ fun CaptureButton(
                     }
                 )
             }
-            .size(120.dp)
-            .padding(18.dp)
+            .size(80.dp)
+            // .padding(18.dp)
             .border(4.dp, currentColor, CircleShape) // border is the white ring
     ) {
         // now we draw center circle
@@ -891,6 +891,16 @@ fun CaptureButton(
             },
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
         )
+      /*  val cornerRadius = when (currentUiState.value) {
+            is CaptureButtonUiState.Enabled.Idle -> centerShapeSize / 2
+            is CaptureButtonUiState.Enabled.Recording.PressedRecording -> centerShapeSize / 2
+            is
+        }
+        val cornerRadius = if (currentUiState.value is CaptureButtonUiState.Enabled.Idle) {
+            centerShapeSize / 2 // Circle when Idle
+        } else {
+            30.dp // Or a fixed value in pixels for the rounded square
+        }*/
 
         val animatedColor by animateColorAsState(
             targetValue = when (val uiState = currentUiState.value) {
@@ -909,6 +919,16 @@ fun CaptureButton(
             modifier = Modifier
                 .size(centerShapeSize)
                 .clip(RoundedCornerShape(cornerRadius))
+                .alpha(
+                    if (isPressedDown &&
+                        currentUiState.value ==
+                        CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+                    ) {
+                        .5f // fade out to show you tap the button for image capture, ONLY on IMAGE_ONLY
+                    } else {
+                        1f // solid color the rest of the time
+                    }
+                )
                 .background(animatedColor)
         )
     }
