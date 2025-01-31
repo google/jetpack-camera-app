@@ -15,8 +15,9 @@
  */
 package com.google.jetpackcamera.feature.preview.quicksettings.ui
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -36,10 +37,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -72,7 +76,7 @@ import kotlin.math.min
 // completed components ready to go into preview screen
 
 @Composable
-fun ExpandedQuickSetRatio(
+fun FocusedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
     currentRatio: AspectRatio,
     modifier: Modifier = Modifier
@@ -179,9 +183,9 @@ fun QuickSetRatio(
 
 @Composable
 fun QuickSetFlash(
+    modifier: Modifier = Modifier,
     onClick: (FlashMode) -> Unit,
-    flashModeUiState: FlashModeUiState,
-    modifier: Modifier = Modifier
+    flashModeUiState: FlashModeUiState
 ) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
@@ -283,8 +287,8 @@ fun ToggleQuickSettingsButton(
     modifier: Modifier = Modifier
 ) {
     val rotationAngle by animateFloatAsState(
-        targetValue = if (isOpen) 180f else 0f,
-        animationSpec = tween(durationMillis = 300) // Adjust duration as needed
+        targetValue = if (isOpen) -180f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessLow) // Adjust duration as needed
     )
     Row(
         horizontalArrangement = Arrangement.Center,
@@ -308,7 +312,6 @@ fun ToggleQuickSettingsButton(
                     indication = null,
                     onClick = toggleDropDown
                 )
-            // .scale(1f, if (isOpen) -1f else 1f)
         )
     }
 }
@@ -347,12 +350,33 @@ fun QuickSettingUiItem(
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
+    val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
+
+    var buttonClicked by remember { mutableStateOf(false) }
+    val animatedScale by animateFloatAsState(
+        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        finishedListener = {
+            buttonClicked = false // Reset the trigger
+        }
+    )
     Column(
         modifier =
         modifier
             .wrapContentSize()
             .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable(onClick = onClick, enabled = enabled),
+            .clickable(
+                enabled = enabled,
+                onClick = {
+                    buttonClicked = true
+                    onClick()
+                },
+                indication = null,
+                interactionSource = null
+            ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -366,9 +390,7 @@ fun QuickSettingUiItem(
             Icon(
                 painter = painter,
                 contentDescription = accessibilityText,
-                modifier = Modifier.size(
-                    dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
-                )
+                modifier = Modifier.size(iconSize).scale(animatedScale)
             )
 
             Text(text = text, textAlign = TextAlign.Center)

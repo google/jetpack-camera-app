@@ -151,6 +151,8 @@ fun CameraControlsOverlay(
 
             ControlsBottom(
                 modifier = Modifier
+                    // padding to avoid snackbar
+                    .padding(bottom = 60.dp)
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
@@ -198,7 +200,11 @@ private fun ControlsTop(
                         .testTag(SETTINGS_BUTTON),
                     onNavigateToSettings = onNavigateToSettings
                 )
-                if (!isQuickSettingsOpen) {
+                AnimatedVisibility(
+                    visible = !isQuickSettingsOpen,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
                     QuickSettingsIndicators(
                         flashModeUiState = flashModeUiState,
                         onFlashModeClick = onChangeFlash
@@ -272,7 +278,10 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
@@ -307,20 +316,27 @@ private fun ControlsBottom(
         ) {
             // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Inactive) {
-                    FlipCameraButton(
-                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
-                        onClick = onFlipCamera,
-                        // enable only when phone has front and rear camera
-                        enabledCondition = systemConstraints.availableLenses.size > 1
-                    )
-                } else if (!isQuickSettingsOpen &&
-                    videoRecordingState is VideoRecordingState.Active
+                // animation fades in/out this component based on quick settings
+                AnimatedVisibility(
+                    visible = !isQuickSettingsOpen,
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    PauseResumeToggleButton(
-                        onSetPause = onSetPause,
-                        currentRecordingState = videoRecordingState
-                    )
+                    if (videoRecordingState is VideoRecordingState.Inactive) {
+                        FlipCameraButton(
+                            modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                            onClick = onFlipCamera,
+                            lensFacing = previewUiState.currentCameraSettings.cameraLensFacing,
+                            // enable only when phone has front and rear camera
+                            enabledCondition = systemConstraints.availableLenses.size > 1
+                        )
+                    } else if (videoRecordingState is VideoRecordingState.Active
+                    ) {
+                        PauseResumeToggleButton(
+                            onSetPause = onSetPause,
+                            currentRecordingState = videoRecordingState
+                        )
+                    }
                 }
             }
             CaptureButton(
