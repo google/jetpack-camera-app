@@ -154,6 +154,7 @@ fun PreviewScreen(
                 onCaptureImageWithUri = viewModel::captureImageWithUri,
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
+                onLockVideoRecording = viewModel::setLockedRecording,
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
@@ -198,6 +199,7 @@ private fun ContentScreen(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit = {},
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
@@ -263,6 +265,7 @@ private fun ContentScreen(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
+                onLockVideoRecording = onLockVideoRecording,
                 zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
             )
 

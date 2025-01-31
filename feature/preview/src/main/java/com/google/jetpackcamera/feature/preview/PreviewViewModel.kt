@@ -68,6 +68,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transform
@@ -94,6 +95,7 @@ class PreviewViewModel @AssistedInject constructor(
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
+    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     val previewUiState: StateFlow<PreviewUiState> =
         _previewUiState.asStateFlow()
@@ -152,8 +154,9 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getCurrentCameraState()
-            ) { cameraAppSettings, systemConstraints, cameraState ->
+                cameraUseCase.getCurrentCameraState(),
+                lockedRecordingState.filterNotNull().distinctUntilChanged()
+            ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
                 _previewUiState.update { old ->
@@ -221,7 +224,8 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState.videoRecordingState),
                         captureButtonUiState = getCaptureButtonUiState(
                             cameraAppSettings,
-                            cameraState
+                            cameraState,
+                            lockedState
                         )
                         // TODO(kc): set elapsed time UI state once VideoRecordingState
                         // refactor is complete.
@@ -393,15 +397,25 @@ class PreviewViewModel @AssistedInject constructor(
     }
     fun getCaptureButtonUiState(
         cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState
-    ): CaptureButtonUiState {
-        Log.d(TAG, "new capture button state ${cameraAppSettings.captureMode}")
-        return CaptureButtonUiState.Enabled(
-            captureMode = cameraAppSettings.captureMode,
-            previewMode = previewMode,
-            videoRecordingState = cameraState.videoRecordingState
-        )
+        cameraState: CameraState,
+        lockedState: Boolean
+    ): CaptureButtonUiState = when (cameraState.videoRecordingState) {
+        // if not currently recording, check capturemode to determine idle capture button UI
+        is VideoRecordingState.Inactive -> CaptureButtonUiState.Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+
+        // display different capture button UI depending on if recording is pressed or locked
+        is VideoRecordingState.Active.Recording -> if (lockedState) {
+            CaptureButtonUiState.Enabled.Recording.LockedRecording
+        } else {
+            CaptureButtonUiState.Enabled.Recording.PressedRecording
+        }
+        //todo: how to handle pause...
+        is VideoRecordingState.Active.Paused -> CaptureButtonUiState.Enabled.Recording.LockedRecording
+
+        // todo: how to handle starting...
+        VideoRecordingState.Starting -> CaptureButtonUiState.Enabled.Idle(captureMode = cameraAppSettings.captureMode)
     }
+
     private fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
@@ -857,6 +871,18 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cameraUseCase.stopVideoRecording()
             recordingJob?.cancel()
+        }
+        setLockedRecording(false)
+    }
+
+    /**
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     */
+    fun setLockedRecording(isLocked: Boolean) {
+        viewModelScope.launch {
+            lockedRecordingState.update {
+                isLocked
+            }
         }
     }
 

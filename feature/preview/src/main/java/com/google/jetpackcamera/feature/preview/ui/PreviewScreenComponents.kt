@@ -21,14 +21,16 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -109,8 +111,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.AudioUiState
+import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
@@ -120,12 +122,13 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -739,6 +742,7 @@ fun CaptureButton(
     onCaptureImage: () -> Unit,
     onStartVideoRecording: () -> Unit,
     onStopVideoRecording: () -> Unit,
+    onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState
 ) {
     var currentUiState = rememberUpdatedState(captureButtonUiState)
@@ -751,15 +755,17 @@ fun CaptureButton(
 
     val currentColor = LocalContentColor.current
     Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
                         isLongPressing = true
-                        var curr = currentUiState.value
-                        if (curr is CaptureButtonUiState.Enabled) {
-                            when (curr.captureMode) {
-                                CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> onStartVideoRecording()
+                        var uiState = currentUiState.value
+                        if (uiState is CaptureButtonUiState.Enabled.Idle) {
+                            when (uiState.captureMode) {
+                                CaptureMode.STANDARD,
+                                CaptureMode.VIDEO_ONLY -> onStartVideoRecording()
                                 CaptureMode.IMAGE_ONLY -> {}
                             }
                         }
@@ -771,78 +777,92 @@ fun CaptureButton(
                         awaitRelease()
                         isPressedDown = false
                         isLongPressing = false
-                        var curr = currentUiState.value
-                        when (curr) {
-                            CaptureButtonUiState.Unavailable -> {}
-                            is CaptureButtonUiState.Enabled -> {
-                                if (curr.captureMode == CaptureMode.DEFAULT) {
-                                    onStopVideoRecording()
-                                }
+                        var uiState = currentUiState.value
+
+                        when (uiState) {
+                            // stop recording after button is lifted
+                            is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
+                                onStopVideoRecording()
                             }
+
+                            is CaptureButtonUiState.Enabled.Idle, CaptureButtonUiState.Unavailable -> {}
+                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
                         }
                     },
                     onTap = {
-                        var curr = currentUiState.value
-                        when (curr) {
-                            CaptureButtonUiState.Unavailable -> {}
-                            is CaptureButtonUiState.Enabled -> {
-                                Log.d(TAG, "capture mode ${curr.captureMode}")
+                        var uiState = currentUiState.value
+                        when (uiState) {
+                            is CaptureButtonUiState.Enabled.Idle -> {
+                                Log.d(TAG, "capture mode ${uiState.captureMode}")
                                 if (!isLongPressing) {
-                                    when (curr.captureMode) {
-                                        CaptureMode.DEFAULT,
+                                    when (uiState.captureMode) {
+                                        CaptureMode.STANDARD,
                                         CaptureMode.IMAGE_ONLY -> onCaptureImage()
 
-                                        CaptureMode.VIDEO_ONLY -> when (curr.videoRecordingState) {
-                                            is VideoRecordingState.Starting -> {}
-                                            is VideoRecordingState.Inactive -> {
-                                                onStartVideoRecording()
-                                            }
-
-                                            is VideoRecordingState.Active -> {
-                                                onStopVideoRecording()
-                                            }
+                                        CaptureMode.VIDEO_ONLY -> {
+                                            onLockVideoRecording(true)
+                                            onStartVideoRecording()
                                         }
                                     }
                                 }
                             }
+                            // stop if locked recording
+                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {
+                                onStopVideoRecording()
+                            }
+                            CaptureButtonUiState.Unavailable,
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording -> {}
                         }
                     }
                 )
             }
             .size(120.dp)
             .padding(18.dp)
-            .border(4.dp, currentColor, CircleShape)
+            .border(4.dp, currentColor, CircleShape) // border is the white ring
     ) {
-        Canvas(
-            modifier = Modifier
-                .size(110.dp),
-            onDraw = {
-                when (captureButtonUiState) {
-                    CaptureButtonUiState.Unavailable -> {
-                        drawCircle(color = Color.DarkGray)
-                    }
-
-                    is CaptureButtonUiState.Enabled -> {
-                        drawCircle(
-                            alpha = when (captureButtonUiState.videoRecordingState) {
-                                is VideoRecordingState.Active.Paused -> .37f
-                                else -> 1f
-                            },
-                            color =
-                            when (captureButtonUiState.videoRecordingState) {
-                                is VideoRecordingState.Inactive -> {
-                                    if (isPressedDown) currentColor else Color.Transparent
-                                }
-
-                                is VideoRecordingState.Active.Recording,
-                                is VideoRecordingState.Active.Paused -> Color.Red
-
-                                VideoRecordingState.Starting -> currentColor
-                            }
-                        )
-                    }
+        // now we draw center circle
+        val centerShapeSize by animateDpAsState(
+            targetValue = when (val uiState = currentUiState.value) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording -> 40.dp
+                CaptureButtonUiState.Enabled.Recording.PressedRecording -> 60.dp
+                CaptureButtonUiState.Unavailable -> 0.dp
+                is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
+                    CaptureMode.STANDARD -> 0.dp // no inner circle will be visible
+                    CaptureMode.IMAGE_ONLY -> 60.dp // large white circle will be visible
+                    CaptureMode.VIDEO_ONLY -> 30.dp // small red circle will be visible
                 }
-            }
+            },
+            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+        )
+        // radius is number between 0 is square, 100 is circle
+        val cornerRadius by animateFloatAsState(
+            targetValue = when (currentUiState.value) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording -> 30f // rounded square when locked
+                is CaptureButtonUiState.Enabled.Idle -> 100f // all shapes used when idle are circles
+                CaptureButtonUiState.Enabled.Recording.PressedRecording -> 100f // circle when pressing
+                CaptureButtonUiState.Unavailable -> 0f
+            },
+            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+        )
+
+        val animatedColor by animateColorAsState(
+            targetValue = when (val uiState = currentUiState.value) {
+                is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
+                    CaptureMode.STANDARD -> Color.White
+                    CaptureMode.IMAGE_ONLY -> Color.White
+                    CaptureMode.VIDEO_ONLY -> Color.Red
+                }
+                is CaptureButtonUiState.Enabled.Recording -> Color.Red
+                is CaptureButtonUiState.Unavailable -> Color.Transparent
+            },
+            animationSpec = tween(durationMillis = 500)
+        )
+        // inner shape for the circle
+        Box(
+            modifier = Modifier
+                .size(centerShapeSize)
+                .clip(RoundedCornerShape(cornerRadius))
+                .background(animatedColor)
         )
     }
 }
