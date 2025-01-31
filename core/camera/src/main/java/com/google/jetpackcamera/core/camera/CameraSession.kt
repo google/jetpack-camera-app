@@ -216,6 +216,7 @@ internal suspend fun runSingleCameraSession(
             }
 
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+            setZoomScale(camera, 1f)
             processTransientSettingEvents(
                 camera,
                 useCaseGroup,
@@ -253,18 +254,9 @@ internal suspend fun processTransientSettingEvents(
         val cameraState = it.second
 
         // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
-                }
-            }
+        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale
+        ) {
+            setZoomScale(camera, newTransientSettings.zoomScale)
         }
 
         // todo(): How should we handle torch on Auto FlashMode?
@@ -324,6 +316,24 @@ internal suspend fun processTransientSettingEvents(
         }
 
         prevTransientSettings = newTransientSettings
+    }
+}
+
+context(CameraSessionContext)
+internal fun setZoomScale(camera: Camera, zoomScaleRelative: Float) {
+    camera.cameraInfo.zoomState.value?.let { zoomState ->
+        transientSettings.value?.let { transientSettings ->
+            val finalScale =
+                (zoomScale.value * zoomScaleRelative).coerceIn(
+                    zoomState.minZoomRatio,
+                    zoomState.maxZoomRatio
+                )
+            camera.cameraControl.setZoomRatio(finalScale)
+            zoomScale.update { finalScale }
+            currentCameraState.update { old ->
+                old.copy(zoomScale = finalScale)
+            }
+        }
     }
 }
 

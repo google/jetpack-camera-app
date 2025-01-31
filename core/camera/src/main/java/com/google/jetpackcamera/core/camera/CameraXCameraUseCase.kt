@@ -286,6 +286,8 @@ constructor(
         Log.d(TAG, "runCamera")
 
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
+        val cameraSessionZoomScale = MutableStateFlow(1f)
+        var prevCameraSessionLensFacing: LensFacing? = null
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
@@ -351,6 +353,10 @@ constructor(
                 }
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
+                if (transientSettings.value?.primaryLensFacing != prevCameraSessionLensFacing) {
+                    cameraSessionZoomScale.update { 1f }
+                }
+                prevCameraSessionLensFacing = transientSettings.value?.primaryLensFacing
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -362,7 +368,8 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = _currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings
+                            transientSettings = transientSettings,
+                            zoomScale = cameraSessionZoomScale
                         )
                     ) {
                         try {
