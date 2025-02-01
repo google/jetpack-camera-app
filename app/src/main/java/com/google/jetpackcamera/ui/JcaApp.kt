@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -36,6 +38,7 @@ import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun JcaApp(
     openAppSettings: () -> Unit,
@@ -56,6 +59,7 @@ fun JcaApp(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun JetpackCameraNavHost(
@@ -88,15 +92,23 @@ private fun JetpackCameraNavHost(
         }
 
         composable(PREVIEW_ROUTE) {
-            val permissionStates = rememberMultiplePermissionsState(
-                permissions = listOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO
-                )
+            val mediaPermissions = listOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_AUDIO
             )
+
+            val allPermissions = listOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO
+            ) + mediaPermissions
+
+            val permissionStates = rememberMultiplePermissionsState(permissions = allPermissions)
+
+
             // Automatically navigate to permissions screen when camera permission revoked
-            LaunchedEffect(key1 = permissionStates.permissions[0].status) {
-                if (!permissionStates.permissions[0].status.isGranted) {
+            LaunchedEffect( key1 = permissionStates.permissions) {
+                if (permissionStates.permissions.any { it.status.isGranted.not() }) {
                     // Pop off the preview screen
                     navController.navigate(PERMISSIONS_ROUTE) {
                         popUpTo(PREVIEW_ROUTE) {
