@@ -123,18 +123,15 @@ private fun JetpackCameraNavHost(
             route = SETTINGS_ROUTE,
             enterTransition = {
                 fadeIn(
-                    animationSpec = tween(
-                        300,
-                        easing = LinearEasing
-                    )
+                    animationSpec = tween(easing = LinearEasing)
                 ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
+                    animationSpec = tween(easing = EaseIn),
                     towards = AnimatedContentTransitionScope.SlideDirection.Start
                 )
             },
             exitTransition = {
                 slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
+                    animationSpec = tween(easing = EaseOut),
                     towards = AnimatedContentTransitionScope.SlideDirection.End
                 )
             }
