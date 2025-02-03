@@ -19,13 +19,19 @@ import android.Manifest
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -92,6 +98,7 @@ fun SettingsScreen(
     viewModel.setGrantedPermissions(permissionStates)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsScreen(
     uiState: SettingsUiState,
@@ -108,30 +115,42 @@ private fun SettingsScreen(
     setDarkMode: (DarkMode) -> Unit = {},
     setVideoQuality: (VideoQuality) -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .background(color = MaterialTheme.colorScheme.background)
-    ) {
-        SettingsPageHeader(
-            title = stringResource(id = R.string.settings_title),
-            navBack = onNavigateBack
-        )
-        if (uiState is SettingsUiState.Enabled) {
-            SettingsList(
-                uiState = uiState,
-                versionInfo = versionInfo,
-                setDefaultLensFacing = setDefaultLensFacing,
-                setFlashMode = setFlashMode,
-                setTargetFrameRate = setTargetFrameRate,
-                setAspectRatio = setAspectRatio,
-                setCaptureMode = setCaptureMode,
-                setStabilizationMode = setStabilizationMode,
-                setAudio = setAudio,
-                setMaxVideoDuration = setMaxVideoDuration,
-                setDarkMode = setDarkMode,
-                setVideoQuality = setVideoQuality
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+        rememberTopAppBarState()
+    )
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            SettingsPageHeader(
+                title = stringResource(id = R.string.settings_title),
+                navBack = onNavigateBack,
+                scrollBehavior = scrollBehavior
             )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .background(color = MaterialTheme.colorScheme.background)
+        ) {
+            if (uiState is SettingsUiState.Enabled) {
+                SettingsList(
+                    uiState = uiState,
+                    versionInfo = versionInfo,
+                    setDefaultLensFacing = setDefaultLensFacing,
+                    setFlashMode = setFlashMode,
+                    setTargetFrameRate = setTargetFrameRate,
+                    setAspectRatio = setAspectRatio,
+                    setCaptureMode = setCaptureMode,
+                    setStabilizationMode = setStabilizationMode,
+                    setAudio = setAudio,
+                    setMaxVideoDuration = setMaxVideoDuration,
+                    setDarkMode = setDarkMode,
+                    setVideoQuality = setVideoQuality
+                )
+            }
         }
     }
 }

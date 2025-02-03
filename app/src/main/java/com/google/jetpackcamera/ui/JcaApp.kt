@@ -16,6 +16,12 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -87,7 +93,7 @@ private fun JetpackCameraNavHost(
             )
         }
 
-        composable(PREVIEW_ROUTE) {
+        composable(route = PREVIEW_ROUTE, enterTransition = { fadeIn() }) {
             val permissionStates = rememberMultiplePermissionsState(
                 permissions = listOf(
                     Manifest.permission.CAMERA,
@@ -113,7 +119,23 @@ private fun JetpackCameraNavHost(
                 isDebugMode = isDebugMode
             )
         }
-        composable(SETTINGS_ROUTE) {
+        composable(
+            route = SETTINGS_ROUTE,
+            enterTransition = {
+                fadeIn(
+                    animationSpec = tween(easing = LinearEasing)
+                ) + slideIntoContainer(
+                    animationSpec = tween(easing = EaseIn),
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    animationSpec = tween(easing = EaseOut),
+                    towards = AnimatedContentTransitionScope.SlideDirection.End
+                )
+            }
+        ) {
             SettingsScreen(
                 versionInfo = VersionInfoHolder(
                     versionName = BuildConfig.VERSION_NAME,
