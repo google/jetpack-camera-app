@@ -606,7 +606,9 @@ constructor(
                     }
                 } else {
                     // if no dynamic range value is set, its OK to return the current value
-                    return this
+                    // return this
+                    // TODO(KC): Delete the line below and uncomment the line above once Capture mode button design is finalized
+                    CaptureMode.STANDARD
                 }
             Log.d(TAG, "new capture mode $newCaptureMode")
             return this@tryApplyCaptureModeConstraints.copy(
