@@ -16,8 +16,12 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
-import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -38,7 +42,6 @@ import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun JcaApp(
     openAppSettings: () -> Unit,
@@ -59,7 +62,6 @@ fun JcaApp(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun JetpackCameraNavHost(
@@ -91,24 +93,16 @@ private fun JetpackCameraNavHost(
             )
         }
 
-        composable(PREVIEW_ROUTE) {
-            val mediaPermissions = listOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_AUDIO
+        composable(route = PREVIEW_ROUTE, enterTransition = { fadeIn() }) {
+            val permissionStates = rememberMultiplePermissionsState(
+                permissions = listOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO
+                )
             )
-
-            val allPermissions = listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO
-            ) + mediaPermissions
-
-            val permissionStates = rememberMultiplePermissionsState(permissions = allPermissions)
-
-
             // Automatically navigate to permissions screen when camera permission revoked
-            LaunchedEffect( key1 = permissionStates.permissions) {
-                if (permissionStates.permissions.any { it.status.isGranted.not() }) {
+            LaunchedEffect(key1 = permissionStates.permissions[0].status) {
+                if (!permissionStates.permissions[0].status.isGranted) {
                     // Pop off the preview screen
                     navController.navigate(PERMISSIONS_ROUTE) {
                         popUpTo(PREVIEW_ROUTE) {
@@ -125,7 +119,23 @@ private fun JetpackCameraNavHost(
                 isDebugMode = isDebugMode
             )
         }
-        composable(SETTINGS_ROUTE) {
+        composable(
+            route = SETTINGS_ROUTE,
+            enterTransition = {
+                fadeIn(
+                    animationSpec = tween(easing = LinearEasing)
+                ) + slideIntoContainer(
+                    animationSpec = tween(easing = EaseIn),
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start
+                )
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    animationSpec = tween(easing = EaseOut),
+                    towards = AnimatedContentTransitionScope.SlideDirection.End
+                )
+            }
+        ) {
             SettingsScreen(
                 versionInfo = VersionInfoHolder(
                     versionName = BuildConfig.VERSION_NAME,
