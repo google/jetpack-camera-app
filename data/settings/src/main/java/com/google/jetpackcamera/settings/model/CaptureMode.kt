@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.settings.model
 
 enum class CaptureMode {
-    DEFAULT,
+    STANDARD,
     VIDEO_ONLY,
     IMAGE_ONLY
 }

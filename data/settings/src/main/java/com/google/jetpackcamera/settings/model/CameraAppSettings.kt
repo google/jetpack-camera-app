@@ -24,7 +24,7 @@ val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
-    val captureMode: CaptureMode = CaptureMode.DEFAULT,
+    val captureMode: CaptureMode = CaptureMode.STANDARD,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.SYSTEM,
     val flashMode: FlashMode = FlashMode.OFF,

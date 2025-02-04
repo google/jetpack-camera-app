@@ -591,7 +591,7 @@ constructor(
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
         captureMode: CaptureMode
     ): CameraAppSettings = when (captureMode) {
-        CaptureMode.DEFAULT -> this
+        CaptureMode.STANDARD -> this
         CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
         CaptureMode.VIDEO_ONLY ->
@@ -661,8 +661,8 @@ constructor(
                 }
         }
 
-    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings {
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
                 val newVideoQuality = get(dynamicRange).let {
                     if (it == null) {
@@ -679,7 +679,6 @@ constructor(
                 )
             }
         } ?: this
-    }
 
     private fun CameraAppSettings.tryApplyFlashModeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->

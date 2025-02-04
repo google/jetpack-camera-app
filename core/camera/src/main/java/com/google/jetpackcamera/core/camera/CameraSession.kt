@@ -125,7 +125,7 @@ internal suspend fun runSingleCameraSession(
         .primaryLensFacing.toCameraSelector()
 
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
-        CaptureMode.DEFAULT, CaptureMode.VIDEO_ONLY ->
+        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
             createVideoUseCase(
                 cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
@@ -423,13 +423,12 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    return resolution?.let { res ->
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+    resolution?.let { res ->
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
             if (it.value.contains(res.height)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
-}
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {
     if (cropRect == null) {

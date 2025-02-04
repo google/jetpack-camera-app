@@ -128,7 +128,7 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
         val captureMode = previewMode.toCaptureMode()
-        return if (captureMode == CaptureMode.DEFAULT) {
+        return if (captureMode == CaptureMode.STANDARD) {
             this
         } else {
             this.copy(captureMode = captureMode)
@@ -279,16 +279,14 @@ class PreviewViewModel @AssistedInject constructor(
     private fun getAudioUiState(
         isAudioEnabled: Boolean,
         videoRecordingState: VideoRecordingState
-    ): AudioUiState {
-        return if (isAudioEnabled) {
-            if (videoRecordingState is VideoRecordingState.Active) {
-                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-            } else {
-                AudioUiState.Enabled.On(0.0)
-            }
+    ): AudioUiState = if (isAudioEnabled) {
+        if (videoRecordingState is VideoRecordingState.Active) {
+            AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
         } else {
-            AudioUiState.Enabled.Mute
+            AudioUiState.Enabled.On(0.0)
         }
+    } else {
+        AudioUiState.Enabled.Mute
     }
 
     private fun stabilizationUiStateFrom(
@@ -324,7 +322,7 @@ class PreviewViewModel @AssistedInject constructor(
         is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
         is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CaptureMode.DEFAULT
+        is PreviewMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
