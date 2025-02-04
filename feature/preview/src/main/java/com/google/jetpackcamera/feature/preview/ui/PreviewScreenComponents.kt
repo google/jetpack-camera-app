@@ -26,9 +26,11 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -81,6 +83,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -90,6 +93,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -117,6 +122,7 @@ import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlin.time.Duration.Companion.nanoseconds
@@ -154,7 +160,7 @@ fun ElapsedTimeText(
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
-    size: Float = 75f,
+    size: Float = 80f,
     currentRecordingState: VideoRecordingState.Active
 ) {
     Box(
@@ -198,21 +204,47 @@ fun AmplitudeVisualizer(
     onToggleAudio: () -> Unit
 ) {
     val currentUiState = rememberUpdatedState(audioUiState)
+    var buttonClicked by remember { mutableStateOf(false) }
+    // animation value for the toggle icon itself
+    val animatedToggleScale by animateFloatAsState(
+        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        finishedListener = {
+            buttonClicked = false // Reset the trigger
+        }
+    )
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
-    val animatedScaling by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
+    val animatedAudioScale by animateFloatAsState(
+        targetValue = 1 + (1.75f * currentUiState.value.amplitude.toFloat()),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "AudioAnimation"
     )
-    Box(modifier = modifier.clickable { onToggleAudio() }) {
-        // animated circle
+    Box(
+        modifier = modifier.clickable(
+            onClick = {
+                buttonClicked = true
+                onToggleAudio()
+            },
+            interactionSource = null,
+            // removes the greyish background animation that appears when clicking
+            indication = null
+        )
+    ) {
+        // animated audio circle
         Canvas(
             modifier = Modifier
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
                     // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedScaling).coerceIn(size, size * 1.65f),
+                    radius = (size * animatedAudioScale).coerceIn(size, size * 1.65f),
                     alpha = .5f,
                     color = Color.White
                 )
@@ -225,7 +257,7 @@ fun AmplitudeVisualizer(
                 .align(Alignment.Center),
             onDraw = {
                 drawCircle(
-                    radius = (size),
+                    radius = (size * animatedToggleScale),
                     color = Color.White
                 )
             }
@@ -235,6 +267,7 @@ fun AmplitudeVisualizer(
             modifier = Modifier
                 .align(Alignment.Center)
                 .size((0.5 * size).dp)
+                .scale(animatedToggleScale)
                 .apply {
                     if (currentUiState.value is AudioUiState.Enabled.On) {
                         testTag(AMPLITUDE_HOT_TAG)
@@ -615,9 +648,32 @@ fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifi
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
+    lensFacing: LensFacing,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var rotation by remember { mutableFloatStateOf(0f) }
+    val animatedRotation = remember { Animatable(0f) }
+    var initialLaunch by remember { mutableStateOf(false) }
+
+    // spin animate whenever lensfacing changes
+    LaunchedEffect(lensFacing) {
+        if (initialLaunch) {
+            // full 360
+            rotation -= 180f
+            animatedRotation.animateTo(
+                targetValue = rotation,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessVeryLow
+                )
+            )
+        }
+        // dont rotate on the initial launch
+        else {
+            initialLaunch = true
+        }
+    }
     IconButton(
         modifier = modifier.size(40.dp),
         onClick = onClick,
@@ -626,7 +682,9 @@ fun FlipCameraButton(
         Icon(
             imageVector = Icons.Filled.FlipCameraAndroid,
             contentDescription = stringResource(id = R.string.flip_camera_content_description),
-            modifier = Modifier.size(72.dp)
+            modifier = Modifier
+                .size(72.dp)
+                .rotate(animatedRotation.value)
         )
     }
 }

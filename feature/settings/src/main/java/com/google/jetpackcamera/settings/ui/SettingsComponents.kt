@@ -39,6 +39,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReadOnlyComposable
@@ -94,7 +95,12 @@ import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(title: String, navBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsPageHeader(
+    title: String,
+    navBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    scrollBehavior: TopAppBarScrollBehavior? = null
+) {
     TopAppBar(
         modifier = modifier,
         title = {
@@ -110,7 +116,8 @@ fun SettingsPageHeader(title: String, navBack: () -> Unit, modifier: Modifier = 
                     stringResource(id = R.string.nav_back_accessibility)
                 )
             }
-        }
+        },
+        scrollBehavior = scrollBehavior
     )
 }
 
