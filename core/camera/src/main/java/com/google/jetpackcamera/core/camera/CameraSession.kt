@@ -423,13 +423,12 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    return resolution?.let { res ->
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+    resolution?.let { res ->
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
             if (it.value.contains(res.height)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
-}
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {
     if (cropRect == null) {
