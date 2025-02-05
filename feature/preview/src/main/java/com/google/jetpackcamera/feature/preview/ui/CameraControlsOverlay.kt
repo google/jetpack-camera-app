@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -67,6 +68,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIn
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -95,10 +97,11 @@ fun CameraControlsOverlay(
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
@@ -163,13 +166,14 @@ fun CameraControlsOverlay(
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
+                onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
-                onToggleWhenDisabled = onToggleWhenDisabled,
+                onDisabledCaptureMode = onDisabledCaptureMode,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording
             )
@@ -270,7 +274,8 @@ private fun ControlsBottom(
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
@@ -278,10 +283,21 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+   /* if (videoRecordingState is VideoRecordingState.Inactive &&
+        previewUiState.captureModeUiState is CaptureModeUiState.Enabled
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // todo(kc): Finalize design/placement of component. uncomment this block for testing
+            // apply the todo in CameraAppSettings.tryApplyCaptureModeConstraints() if you want to test with this component
+            CaptureModeDropDown(
+                modifier = Modifier.align(Alignment.BottomEnd),
+                onSetCaptureMode = onSetCaptureMode,
+                captureModeUiState = previewUiState.captureModeUiState,
+                onDisabledCaptureMode = onDisabledCaptureMode
+            )
+        }
+    }*/
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
@@ -358,13 +374,15 @@ private fun ControlsBottom(
                         audioUiState = previewUiState.audioUiState
                     )
                 } else {
+                    // todo(kc): delete this once new capture mode ui is finalized
+
                     if (!isQuickSettingsOpen &&
                         previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
                     ) {
                         CaptureModeToggleButton(
                             uiState = previewUiState.captureModeToggleUiState,
                             onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onToggleWhenDisabled,
+                            onToggleWhenDisabled = onDisabledCaptureMode,
                             modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                         )
                     }
@@ -475,11 +493,12 @@ private fun CaptureButton(
     )
 }
 
+// todo(kc): delete this once new capture mode ui is finalized
 @Composable
 private fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Visible,
     onChangeImageFormat: (ImageOutputFormat) -> Unit,
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit,
+    onToggleWhenDisabled: (DisabledReason) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).

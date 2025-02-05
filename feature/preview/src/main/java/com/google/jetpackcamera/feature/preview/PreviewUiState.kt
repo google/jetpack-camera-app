@@ -38,13 +38,14 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
+
+        // todo(kc): delete this once new capture mode ui is finalized
         val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
@@ -53,7 +54,8 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-        val audioUiState: AudioUiState = AudioUiState.Disabled
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -101,9 +103,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }
