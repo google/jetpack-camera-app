@@ -48,6 +48,10 @@ internal sealed interface PerpetualSessionSettings {
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
 
+    /**
+     * @property captureMode is always [CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
+     * Concurrent Camera currently only supports video capture
+     */
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,

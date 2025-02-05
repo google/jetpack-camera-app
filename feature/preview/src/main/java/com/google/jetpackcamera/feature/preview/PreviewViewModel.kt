@@ -128,7 +128,7 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
         val captureMode = previewMode.toCaptureMode()
-        return if (captureMode == CaptureMode.STANDARD) {
+        return if (captureMode == this.captureMode) {
             this
         } else {
             this.copy(captureMode = captureMode)
