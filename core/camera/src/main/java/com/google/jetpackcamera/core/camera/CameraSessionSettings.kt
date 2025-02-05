@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import androidx.camera.core.CameraInfo
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -34,9 +35,11 @@ import com.google.jetpackcamera.settings.model.VideoQuality
  */
 internal sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
+    val captureMode: CaptureMode
 
     data class SingleCamera(
         override val aspectRatio: AspectRatio,
+        override val captureMode: CaptureMode,
         val streamConfig: StreamConfig,
         val targetFrameRate: Int,
         val stabilizationMode: StabilizationMode,
@@ -45,11 +48,17 @@ internal sealed interface PerpetualSessionSettings {
         val imageFormat: ImageOutputFormat
     ) : PerpetualSessionSettings
 
+    /**
+     * @property captureMode is always [CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
+     * Concurrent Camera currently only supports video capture
+     */
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,
         override val aspectRatio: AspectRatio
-    ) : PerpetualSessionSettings
+    ) : PerpetualSessionSettings {
+        override val captureMode: CaptureMode = CaptureMode.VIDEO_ONLY
+    }
 }
 
 /**
