@@ -146,8 +146,9 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performTouchInput { longClick() }
                 composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                    // image_only capture UI does not display the video unsupported snackbar
                     composeTestRule.onNodeWithTag(VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)
-                        .isDisplayed()
+                        .isNotDisplayed()
                 }
                 uiDevice.pressBack()
             }
