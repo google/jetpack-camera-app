@@ -28,6 +28,7 @@ import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -234,11 +235,7 @@ fun AmplitudeVisualizer(
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val animatedAudioScale by animateFloatAsState(
-        targetValue = 1 + (1.75f * currentUiState.value.amplitude.toFloat()),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
         label = "AudioAnimation"
     )
     Box(
@@ -908,7 +905,7 @@ fun CaptureButton(
                 Box(
                     modifier = Modifier
                         .size(smallBoxSize)
-                        .clip(RoundedCornerShape(smallBoxSize * .25f))
+                        .clip(RoundedCornerShape(smallBoxSize * .2f))
                         .background(color = Color.White)
                 )
             }
