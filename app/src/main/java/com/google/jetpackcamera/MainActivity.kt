@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +51,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -135,25 +138,25 @@ class MainActivity : ComponentActivity() {
                                 },
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            JcaApp(
-                                previewMode = getPreviewMode(),
-                                isDebugMode = isDebugMode,
-                                openAppSettings = ::openAppSettings,
-                                onRequestWindowColorMode = { colorMode ->
-                                    // Window color mode APIs require API level 26+
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                JcaApp(
+                                    previewMode = getPreviewMode(),
+                                    isDebugMode = isDebugMode,
+                                    openAppSettings = ::openAppSettings,
+                                    onRequestWindowColorMode = { colorMode ->
+                                        // Window color mode APIs require API level 26+
                                         Log.d(
                                             TAG,
                                             "Setting window color mode to:" +
                                                 " ${colorMode.toColorModeString()}"
                                         )
                                         window?.colorMode = colorMode
+                                    },
+                                    onFirstFrameCaptureCompleted = {
+                                        firstFrameComplete?.complete(Unit)
                                     }
-                                },
-                                onFirstFrameCaptureCompleted = {
-                                    firstFrameComplete?.complete(Unit)
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
