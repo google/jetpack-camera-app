@@ -98,9 +98,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -768,6 +770,7 @@ fun CaptureButton(
     var isLongPressing by remember {
         mutableStateOf(false)
     }
+    val haptic = LocalHapticFeedback.current
 
     val currentColor = LocalContentColor.current
     Box(
@@ -781,7 +784,10 @@ fun CaptureButton(
                         if (uiState is CaptureButtonUiState.Enabled.Idle) {
                             when (uiState.captureMode) {
                                 CaptureMode.STANDARD,
-                                CaptureMode.VIDEO_ONLY -> onStartVideoRecording()
+                                CaptureMode.VIDEO_ONLY -> {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onStartVideoRecording()
+                                }
 
                                 CaptureMode.IMAGE_ONLY -> {}
                             }
@@ -803,7 +809,9 @@ fun CaptureButton(
                             }
 
                             is CaptureButtonUiState.Enabled.Idle,
-                            CaptureButtonUiState.Unavailable -> {}
+                            CaptureButtonUiState.Unavailable -> {
+                            }
+
                             CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
                         }
                     },
