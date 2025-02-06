@@ -256,7 +256,7 @@ private fun ExpandedQuickSettingsUi(
                             selectedDynamicRange = currentCameraSettings.dynamicRange,
                             selectedImageOutputFormat = currentCameraSettings.imageFormat,
                             hdrDynamicRangeSupported =
-                            cameraConstraints?.hdrDynamicRangeSupported() == false,
+                            cameraConstraints?.hdrDynamicRangeSupported() == true,
                             previewMode = previewUiState.previewMode,
                             enabled = shouldEnable()
                         )
@@ -296,6 +296,7 @@ fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         ExpandedQuickSettingsUi(
             previewUiState = PreviewUiState.Ready(
+                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 videoRecordingState = VideoRecordingState.Inactive(),
@@ -349,9 +350,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
 
 private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
     TYPICAL_SYSTEM_CONSTRAINTS.copy(
-        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate {
-                (lensFacing, constraints)
-            ->
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate { (lensFacing, constraints) ->
             lensFacing to constraints.copy(
                 supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
             )
