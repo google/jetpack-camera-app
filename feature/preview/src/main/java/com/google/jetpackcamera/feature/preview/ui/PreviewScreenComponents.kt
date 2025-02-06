@@ -189,7 +189,7 @@ fun PauseResumeToggleButton(
                 .size(size = size.dp)
                 .scale(scale = animatedToggleScale)
                 .clip(CircleShape)
-                //.border(4.dp, Color.White, CircleShape)
+                // .border(4.dp, Color.White, CircleShape)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
@@ -759,7 +759,7 @@ fun CaptureButton(
     onStopVideoRecording: () -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
-    captureButtonSize: Float = 80f // 120f
+    captureButtonSize: Float = 80f
 ) {
     var currentUiState = rememberUpdatedState(captureButtonUiState)
     var isPressedDown by remember {
@@ -865,12 +865,22 @@ fun CaptureButton(
             },
             animationSpec = tween(durationMillis = 500)
         )
-        // inner shape for the circle
+        // inner circle
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(centerShapeSize)
                 .clip(CircleShape)
+                .alpha(
+                    if (isPressedDown &&
+                        currentUiState.value ==
+                        CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+                    ) {
+                        .5f // transparency to indicate click ONLY on IMAGE_ONLY
+                    } else {
+                        1f // solid alpha the rest of the time
+                    }
+                )
                 .background(animatedColor)
         ) {
             // central "square" stop icon
