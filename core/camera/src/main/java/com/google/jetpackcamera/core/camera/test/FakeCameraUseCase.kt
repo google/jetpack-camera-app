@@ -63,7 +63,6 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode,
         isDebugMode: Boolean,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
