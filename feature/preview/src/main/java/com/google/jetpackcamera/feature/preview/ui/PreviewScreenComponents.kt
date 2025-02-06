@@ -802,7 +802,8 @@ fun CaptureButton(
                                 onStopVideoRecording()
                             }
 
-                            is CaptureButtonUiState.Enabled.Idle, CaptureButtonUiState.Unavailable -> {}
+                            is CaptureButtonUiState.Enabled.Idle,
+                            CaptureButtonUiState.Unavailable -> {}
                             CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
                         }
                     },
@@ -840,13 +841,19 @@ fun CaptureButton(
         // now we draw center circle
         val centerShapeSize by animateDpAsState(
             targetValue = when (val uiState = currentUiState.value) {
+                // inner circle fills white ring when locked
                 CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
-                CaptureButtonUiState.Enabled.Recording.PressedRecording -> (captureButtonSize * .7f).dp
+                // larger circle while recording, but not max size
+                CaptureButtonUiState.Enabled.Recording.PressedRecording ->
+                    (captureButtonSize * .7f).dp
                 CaptureButtonUiState.Unavailable -> 0.dp
                 is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                    CaptureMode.STANDARD -> 0.dp // no inner circle will be visible
-                    CaptureMode.IMAGE_ONLY -> (captureButtonSize * .7f).dp // large white circle will be visible
-                    CaptureMode.VIDEO_ONLY -> (captureButtonSize * .35f).dp // small red circle will be visible
+                    // no inner circle will be visible on STANDARD
+                    CaptureMode.STANDARD -> 0.dp
+                    // large white circle will be visible on IMAGE_ONLY
+                    CaptureMode.IMAGE_ONLY -> (captureButtonSize * .7f).dp
+                    // small red circle will be visible on VIDEO_ONLY
+                    CaptureMode.VIDEO_ONLY -> (captureButtonSize * .35f).dp
                 }
             },
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
@@ -885,7 +892,8 @@ fun CaptureButton(
         ) {
             // central "square" stop icon
             AnimatedVisibility(
-                visible = currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording,
+                visible = currentUiState.value is
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording,
                 exit = fadeOut()
             ) {
                 var smallBoxSize = centerShapeSize / 3

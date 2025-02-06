@@ -350,9 +350,10 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
 
 private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
     TYPICAL_SYSTEM_CONSTRAINTS.copy(
-        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries.associate { (lensFacing, constraints) ->
-            lensFacing to constraints.copy(
-                supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
-            )
-        }
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS
+            .perLensConstraints.entries.associate { (lensFacing, constraints) ->
+                lensFacing to constraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+                )
+            }
     )
