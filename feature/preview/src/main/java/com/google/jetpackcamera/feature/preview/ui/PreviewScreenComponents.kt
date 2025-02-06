@@ -901,7 +901,7 @@ fun CaptureButton(
                     CaptureButtonUiState.Enabled.Recording.LockedRecording,
                 exit = fadeOut()
             ) {
-                var smallBoxSize = centerShapeSize / 3
+                var smallBoxSize = centerShapeSize / 4
                 Box(
                     modifier = Modifier
                         .size(smallBoxSize)
