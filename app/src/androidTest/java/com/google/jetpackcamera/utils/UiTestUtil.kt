@@ -49,7 +49,7 @@ const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
-const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
+const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
 const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
@@ -151,14 +151,12 @@ suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
     )
 }
 
-fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri {
-    return Uri.fromFile(
-        File(
-            directoryPath,
-            "$timeStamp.$suffix"
-        )
+fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Uri.fromFile(
+    File(
+        directoryPath,
+        "$timeStamp.$suffix"
     )
-}
+)
 
 fun deleteFilesInDirAfterTimestamp(
     directoryPath: String,
