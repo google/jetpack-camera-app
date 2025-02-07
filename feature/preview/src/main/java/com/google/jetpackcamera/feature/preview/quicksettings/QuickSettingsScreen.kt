@@ -298,7 +298,6 @@ fun ExpandedQuickSettingsUiPreview() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 videoRecordingState = VideoRecordingState.Inactive(),
-                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
@@ -328,7 +327,6 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Inactive()
             ),
             currentCameraSettings = CameraAppSettings(dynamicRange = DynamicRange.HLG10),

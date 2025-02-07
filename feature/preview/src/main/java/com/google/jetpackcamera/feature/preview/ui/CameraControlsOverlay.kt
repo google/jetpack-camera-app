@@ -365,19 +365,6 @@ private fun ControlsBottom(
                         audioUiState = previewUiState.audioUiState
                     )
                 }
-                /* else {
-                    if (!isQuickSettingsOpen &&
-                        previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
-                    ) {
-                        CaptureModeToggleButton(
-                            uiState = previewUiState.captureModeToggleUiState,
-                            onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onDisabledCaptureMode,
-                            modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                        )
-                    }
-                }
-                 */
             }
         }
     }
@@ -483,55 +470,6 @@ private fun CaptureButton(
         videoRecordingState = videoRecordingState
     )
 }
-/*
-@Composable
-private fun CaptureModeToggleButton(
-    uiState: CaptureModeToggleUiState.Visible,
-    onChangeImageFormat: (ImageOutputFormat) -> Unit,
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
-    val initialState =
-        when (uiState.currentMode) {
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE -> ToggleState.Left
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO -> ToggleState.Right
-        }
-    ToggleButton(
-        leftIcon = if (uiState.currentMode ==
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
-        ) {
-            rememberVectorPainter(image = Icons.Filled.CameraAlt)
-        } else {
-            rememberVectorPainter(image = Icons.Outlined.CameraAlt)
-        },
-        rightIcon = if (uiState.currentMode ==
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO
-        ) {
-            rememberVectorPainter(image = Icons.Filled.Videocam)
-        } else {
-            rememberVectorPainter(image = Icons.Outlined.Videocam)
-        },
-        initialState = initialState,
-        onToggleStateChanged = {
-            val imageFormat = when (it) {
-                ToggleState.Left -> ImageOutputFormat.JPEG_ULTRA_HDR
-                ToggleState.Right -> ImageOutputFormat.JPEG
-            }
-            onChangeImageFormat(imageFormat)
-        },
-        onToggleWhenDisabled = {
-            check(uiState is CaptureModeToggleUiState.Disabled)
-            onToggleWhenDisabled(uiState.disabledReason)
-        },
-        enabled = uiState is CaptureModeToggleUiState.Enabled,
-        leftIconDescription =
-        stringResource(id = R.string.capture_mode_image_capture_content_description),
-        rightIconDescription =
-        stringResource(id = R.string.capture_mode_video_recording_content_description),
-        modifier = modifier
-    )
-}*/
 
 @Preview(backgroundColor = 0xFF000000, showBackground = true)
 @Composable
@@ -618,7 +556,6 @@ private fun Preview_ControlsBottom() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-//                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Inactive()
             ),
             zoomLevel = 1.3f,
@@ -639,7 +576,6 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Inactive()
             ),
             zoomLevel = 1.3f,
@@ -660,7 +596,6 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-//                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Inactive()
             ),
             zoomLevel = 1.3f,
@@ -681,7 +616,6 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-//                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Inactive()
             ),
             zoomLevel = 1.3f,
@@ -708,7 +642,6 @@ private fun Preview_ControlsBottom_Recording() {
                 currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-//                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000)
 
             ),
