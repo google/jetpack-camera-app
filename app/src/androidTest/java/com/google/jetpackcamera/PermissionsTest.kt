@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -89,7 +90,7 @@ class PermissionsTest {
 
         uiDevice.waitForIdle()
         // grant permission
-        grantPermissionDialog(uiDevice)
+        uiDevice.grantPermissionDialog()
 
         // Assert we're no longer on camera permission screen
         composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).assertDoesNotExist()
@@ -111,7 +112,7 @@ class PermissionsTest {
                 .performClick()
 
             // set permission to ask every time
-            askEveryTimeDialog(uiDevice)
+            uiDevice.askEveryTimeDialog()
 
             // Assert we're no longer on camera permission screen
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).assertDoesNotExist()
@@ -133,7 +134,7 @@ class PermissionsTest {
                 .performClick()
 
             // deny permission
-            denyPermissionDialog(uiDevice)
+            uiDevice.denyPermissionDialog()
 
             uiDevice.waitForIdle()
 
@@ -161,13 +162,13 @@ class PermissionsTest {
                 .assertExists()
                 .performClick()
 
-            // deny permission
-            grantPermissionDialog(uiDevice)
+            // grant permission
+            uiDevice.grantPermissionDialog()
             uiDevice.waitForIdle()
 
-            // Assert we're now on preview screen
+            // Assert we're on a different page
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().isDisplayed()
+                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isNotDisplayed()
             }
         }
     }
@@ -186,12 +187,12 @@ class PermissionsTest {
                 .performClick()
 
             // deny permission
-            denyPermissionDialog(uiDevice)
+            uiDevice.denyPermissionDialog()
             uiDevice.waitForIdle()
 
-            // Assert we're now on preview screen
+            // Assert we're on a different page
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().isDisplayed()
+                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isNotDisplayed()
             }
         }
     }

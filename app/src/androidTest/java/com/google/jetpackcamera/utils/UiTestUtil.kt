@@ -28,16 +28,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.common.truth.Truth.assertWithMessage
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
-import com.google.jetpackcamera.MainActivity
-import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
 import java.net.URLConnection
 import java.util.concurrent.TimeoutException
@@ -260,30 +256,28 @@ class IndividualTestGrantPermissionRule(
 }
 
 // functions for interacting with system permission dialog
-fun askEveryTimeDialog(uiDevice: UiDevice) {
+fun UiDevice.askEveryTimeDialog() {
     if (Build.VERSION.SDK_INT >= 30) {
         Log.d(TAG, "Searching for Allow Once Button...")
 
-        val askPermission = findObjectById(
-            uiDevice = uiDevice,
+        val askPermission = this.findObjectById(
             resId = "com.android.permissioncontroller:id/permission_allow_one_time_button"
         )
 
         Log.d(TAG, "Clicking Allow Once Button")
 
-        askPermission!!.click()
+        askPermission?.click()
     }
 }
 
 /**
  *  Clicks ALLOW option on an open permission dialog
  */
-fun grantPermissionDialog(uiDevice: UiDevice) {
+fun UiDevice.grantPermissionDialog() {
     if (Build.VERSION.SDK_INT >= 23) {
         Log.d(TAG, "Searching for Allow Button...")
 
-        val allowPermission = findObjectById(
-            uiDevice = uiDevice,
+        val allowPermission = this.findObjectById(
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_allow_button"
@@ -293,19 +287,17 @@ fun grantPermissionDialog(uiDevice: UiDevice) {
         )
         Log.d(TAG, "Clicking Allow Button")
 
-        allowPermission!!.click()
+        allowPermission?.click()
     }
 }
 
 /**
  * Clicks the DENY option on an open permission dialog
  */
-fun denyPermissionDialog(uiDevice: UiDevice) {
+fun UiDevice.denyPermissionDialog() {
     if (Build.VERSION.SDK_INT >= 23) {
         Log.d(TAG, "Searching for Deny Button...")
-        val denyPermission = findObjectById(
-            uiDevice = uiDevice,
-
+        val denyPermission = this.findObjectById(
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_deny_button"
@@ -314,7 +306,7 @@ fun denyPermissionDialog(uiDevice: UiDevice) {
         )
         Log.d(TAG, "Clicking Deny Button")
 
-        denyPermission!!.click()
+        denyPermission?.click()
     }
 }
 
@@ -322,19 +314,18 @@ fun denyPermissionDialog(uiDevice: UiDevice) {
  * Finds a system button by its resource ID.
  * fails if not found
  */
-private fun findObjectById(
-    uiDevice: UiDevice,
+private fun UiDevice.findObjectById(
     resId: String,
     timeout: Long = 10000,
     shouldFailIfNotFound: Boolean = true
 ): UiObject2? {
     val selector = By.res(resId)
-    return if (!uiDevice.wait(Until.hasObject(selector), timeout)) {
+    return if (!this.wait(Until.hasObject(selector), timeout)) {
         if (shouldFailIfNotFound) {
             fail("Could not find object with RESOURCE ID: $resId")
         }
         null
     } else {
-        uiDevice.findObject(selector)
+        this.findObject(selector)
     }
 }
