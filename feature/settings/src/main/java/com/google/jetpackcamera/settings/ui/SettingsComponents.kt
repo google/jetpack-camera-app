@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -37,12 +39,15 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -53,27 +58,35 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.AspectRatioUiState
-import com.google.jetpackcamera.settings.CaptureModeUiState
+import com.google.jetpackcamera.settings.AudioUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
+import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
+import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
+import com.google.jetpackcamera.settings.StreamConfigUiState
+import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
+import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
+import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQualityUiState
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
-
-const val FPS_AUTO = 0
-const val FPS_15 = 15
-const val FPS_30 = 30
-const val FPS_60 = 60
 
 /**
  * MAJOR SETTING UI COMPONENTS
@@ -82,7 +95,12 @@ const val FPS_60 = 60
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPageHeader(title: String, navBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsPageHeader(
+    title: String,
+    navBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    scrollBehavior: TopAppBarScrollBehavior? = null
+) {
     TopAppBar(
         modifier = modifier,
         title = {
@@ -98,7 +116,8 @@ fun SettingsPageHeader(title: String, navBack: () -> Unit, modifier: Modifier = 
                     stringResource(id = R.string.nav_back_accessibility)
                 )
             }
-        }
+        },
+        scrollBehavior = scrollBehavior
     )
 }
 
@@ -110,37 +129,6 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
         text = title,
         color = MaterialTheme.colorScheme.primary,
         fontSize = 18.sp
-    )
-}
-
-@Composable
-fun DefaultCameraFacing(
-    modifier: Modifier = Modifier,
-    lensUiState: FlipLensUiState,
-    setDefaultLensFacing: (LensFacing) -> Unit
-) {
-    SwitchSettingUI(
-        modifier = modifier.apply {
-            if (lensUiState is FlipLensUiState.Disabled) {
-                testTag(lensUiState.disabledRationale.testTag)
-            }
-        },
-        title = stringResource(id = R.string.default_facing_camera_title),
-        description = when (lensUiState) {
-            is FlipLensUiState.Disabled -> {
-                disabledRationaleString(disabledRationale = lensUiState.disabledRationale)
-            }
-
-            is FlipLensUiState.Enabled -> {
-                null
-            }
-        },
-        leadingIcon = null,
-        onSwitchChanged = { on ->
-            setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
-        },
-        settingValue = lensUiState.currentLensFacing == LensFacing.FRONT,
-        enabled = lensUiState is FlipLensUiState.Enabled
     )
 }
 
@@ -190,6 +178,37 @@ fun DarkModeSetting(
 }
 
 @Composable
+fun DefaultCameraFacing(
+    modifier: Modifier = Modifier,
+    lensUiState: FlipLensUiState,
+    setDefaultLensFacing: (LensFacing) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.apply {
+            if (lensUiState is FlipLensUiState.Disabled) {
+                testTag(lensUiState.disabledRationale.testTag)
+            }
+        },
+        title = stringResource(id = R.string.default_facing_camera_title),
+        description = when (lensUiState) {
+            is FlipLensUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = lensUiState.disabledRationale)
+            }
+
+            is FlipLensUiState.Enabled -> {
+                null
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setDefaultLensFacing(if (on) LensFacing.FRONT else LensFacing.BACK)
+        },
+        settingValue = lensUiState.currentLensFacing == LensFacing.FRONT,
+        enabled = lensUiState is FlipLensUiState.Enabled
+    )
+}
+
+@Composable
 fun FlashModeSetting(
     flashUiState: FlashUiState,
     setFlashMode: (FlashMode) -> Unit,
@@ -206,6 +225,9 @@ fun FlashModeSetting(
                 FlashMode.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
+                FlashMode.LOW_LIGHT_BOOST -> stringResource(
+                    id = R.string.flash_mode_description_llb
+                )
             }
         } else {
             TODO("flash mode currently has no disabled criteria")
@@ -229,6 +251,13 @@ fun FlashModeSetting(
                     selected = flashUiState.currentFlashMode == FlashMode.OFF,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.OFF) }
+                )
+                // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
+                SingleChoiceSelector(
+                    text = stringResource(id = R.string.flash_mode_selector_llb),
+                    selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
+                    enabled = true,
+                    onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
                 )
             }
         }
@@ -285,44 +314,90 @@ fun AspectRatioSetting(
 }
 
 @Composable
-fun CaptureModeSetting(
-    captureModeUiState: CaptureModeUiState,
-    setCaptureMode: (CaptureMode) -> Unit,
+fun StreamConfigSetting(
+    streamConfigUiState: StreamConfigUiState,
+    setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier,
-        title = stringResource(R.string.capture_mode_title),
+        title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
         description =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
-            when (captureModeUiState.currentCaptureMode) {
-                CaptureMode.MULTI_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_multi_stream
+        if (streamConfigUiState is StreamConfigUiState.Enabled) {
+            when (streamConfigUiState.currentStreamConfig) {
+                StreamConfig.MULTI_STREAM -> stringResource(
+                    id = R.string.stream_config_description_multi_stream
                 )
 
-                CaptureMode.SINGLE_STREAM -> stringResource(
-                    id = R.string.capture_mode_description_single_stream
+                StreamConfig.SINGLE_STREAM -> stringResource(
+                    id = R.string.stream_config_description_single_stream
                 )
             }
         } else {
-            TODO("capture mode currently has no disabled criteria")
+            TODO("stream config currently has no disabled criteria")
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_selector_multi_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.MULTI_STREAM,
+                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.MULTI_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
-                    text = stringResource(id = R.string.capture_mode_description_single_stream),
-                    selected = captureModeUiState.currentCaptureMode == CaptureMode.SINGLE_STREAM,
+                    text = stringResource(id = R.string.stream_config_description_single_stream),
+                    selected = streamConfigUiState.currentStreamConfig ==
+                        StreamConfig.SINGLE_STREAM,
                     enabled = true,
-                    onClick = { setCaptureMode(CaptureMode.SINGLE_STREAM) }
+                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
                 )
+            }
+        }
+    )
+}
+
+@Composable
+fun MaxVideoDurationSetting(
+    maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
+    setMaxDuration: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier,
+        enabled = true,
+        title = stringResource(R.string.duration_title),
+        leadingIcon = null,
+        description = when (val maxDuration = maxVideoDurationUiState.currentMaxDurationMillis) {
+            UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
+            else -> stringResource(R.string.duration_description_seconds, (maxDuration / 1000))
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    enabled = true,
+                    text = stringResource(R.string.duration_description_none),
+                    selected = maxVideoDurationUiState.currentMaxDurationMillis
+                        == UNLIMITED_VIDEO_DURATION,
+                    onClick = { setMaxDuration(UNLIMITED_VIDEO_DURATION) }
+                )
+                listOf(
+                    FIVE_SECONDS_DURATION,
+                    TEN_SECONDS_DURATION,
+                    THIRTY_SECONDS_DURATION,
+                    SIXTY_SECONDS_DURATION
+                ).forEach { maxDuration ->
+                    SingleChoiceSelector(
+                        enabled = true,
+                        text = stringResource(
+                            R.string.duration_description_seconds,
+                            (maxDuration / 1000)
+                        ),
+                        selected = maxVideoDurationUiState.currentMaxDurationMillis == maxDuration,
+                        onClick = { setMaxDuration(maxDuration) }
+                    )
+                }
             }
         }
     )
@@ -404,21 +479,38 @@ fun TargetFpsSetting(
  * High Quality - preview is unspecified and video is ON.
  * Off - Every other configuration.
  */
-private fun getStabilizationStringRes(
-    previewStabilization: Stabilization,
-    videoStabilization: Stabilization
-): Int {
-    return if (previewStabilization == Stabilization.ON &&
-        videoStabilization != Stabilization.OFF
-    ) {
-        R.string.stabilization_description_on
-    } else if (previewStabilization == Stabilization.UNDEFINED &&
-        videoStabilization == Stabilization.ON
-    ) {
-        R.string.stabilization_description_high_quality
-    } else {
-        R.string.stabilization_description_off
+private fun getStabilizationStringRes(stabilizationMode: StabilizationMode): Int =
+    when (stabilizationMode) {
+        StabilizationMode.OFF -> R.string.stabilization_description_off
+        StabilizationMode.AUTO -> R.string.stabilization_description_auto
+        StabilizationMode.ON -> R.string.stabilization_description_on
+        StabilizationMode.HIGH_QUALITY -> R.string.stabilization_description_high_quality
+        StabilizationMode.OPTICAL -> R.string.stabilization_description_optical
     }
+
+private fun getVideoQualityStringRes(videoQuality: VideoQuality): Int = when (videoQuality) {
+    VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto
+    VideoQuality.SD -> R.string.video_quality_value_sd
+    VideoQuality.HD -> R.string.video_quality_value_hd
+    VideoQuality.FHD -> R.string.video_quality_value_fhd
+    VideoQuality.UHD -> R.string.video_quality_value_uhd
+}
+
+private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
+    when (videoQuality) {
+        VideoQuality.UNSPECIFIED -> R.string.video_quality_value_auto_info
+        VideoQuality.SD -> R.string.video_quality_value_sd_info
+        VideoQuality.HD -> R.string.video_quality_value_hd_info
+        VideoQuality.FHD -> R.string.video_quality_value_fhd_info
+        VideoQuality.UHD -> R.string.video_quality_value_uhd_info
+    }
+
+private fun getVideoQualityOptionTestTag(quality: VideoQuality): String = when (quality) {
+    VideoQuality.UNSPECIFIED -> VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
+    VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
+    VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
+    VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
+    VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
 }
 
 /**
@@ -433,8 +525,7 @@ private fun getStabilizationStringRes(
 @Composable
 fun StabilizationSetting(
     stabilizationUiState: StabilizationUiState,
-    setVideoStabilization: (Stabilization) -> Unit,
-    setPreviewStabilization: (Stabilization) -> Unit,
+    setStabilizationMode: (StabilizationMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // entire setting disabled when no available fps or target fps = 60
@@ -454,10 +545,7 @@ fun StabilizationSetting(
         description = when (stabilizationUiState) {
             is StabilizationUiState.Enabled ->
                 stringResource(
-                    id = getStabilizationStringRes(
-                        previewStabilization = stabilizationUiState.currentPreviewStabilization,
-                        videoStabilization = stabilizationUiState.currentVideoStabilization
-                    )
+                    id = getStabilizationStringRes(stabilizationUiState.currentStabilizationMode)
                 )
 
             is StabilizationUiState.Disabled -> {
@@ -481,6 +569,30 @@ fun StabilizationSetting(
                     is StabilizationUiState.Enabled -> {
                         SingleChoiceSelector(
                             modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationAutoState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationAutoState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(id = R.string.stabilization_selector_auto),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_auto_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationAutoState is
+                                SingleSelectableState.Selectable,
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.AUTO,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.AUTO)
+                            }
+                        )
+
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
                                 if (stabilizationUiState.stabilizationOnState
                                         is SingleSelectableState.Disabled
                                 ) {
@@ -496,17 +608,10 @@ fun StabilizationSetting(
                             ),
                             enabled = stabilizationUiState.stabilizationOnState is
                                 SingleSelectableState.Selectable,
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    == Stabilization.ON
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        != Stabilization.OFF
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.ON,
                             onClick = {
-                                setVideoStabilization(Stabilization.UNDEFINED)
-                                setPreviewStabilization(Stabilization.ON)
+                                setStabilizationMode(StabilizationMode.ON)
                             }
                         )
 
@@ -532,34 +637,48 @@ fun StabilizationSetting(
                             enabled = stabilizationUiState.stabilizationHighQualityState
                                 == SingleSelectableState.Selectable,
 
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    == Stabilization.UNDEFINED
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        == Stabilization.ON
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.HIGH_QUALITY,
                             onClick = {
-                                setVideoStabilization(Stabilization.ON)
-                                setPreviewStabilization(Stabilization.UNDEFINED)
+                                setStabilizationMode(StabilizationMode.HIGH_QUALITY)
+                            }
+                        )
+
+                        // optical selector
+                        SingleChoiceSelector(
+                            modifier = Modifier.apply {
+                                if (stabilizationUiState.stabilizationOpticalState
+                                        is SingleSelectableState.Disabled
+                                ) {
+                                    testTag(
+                                        stabilizationUiState.stabilizationOpticalState
+                                            .disabledRationale.testTag
+                                    )
+                                }
+                            },
+                            text = stringResource(
+                                id = R.string.stabilization_selector_optical
+                            ),
+                            secondaryText = stringResource(
+                                id = R.string.stabilization_selector_optical_info
+                            ),
+                            enabled = stabilizationUiState.stabilizationOpticalState
+                                == SingleSelectableState.Selectable,
+
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OPTICAL,
+                            onClick = {
+                                setStabilizationMode(StabilizationMode.OPTICAL)
                             }
                         )
 
                         // off selector
                         SingleChoiceSelector(
                             text = stringResource(id = R.string.stabilization_selector_off),
-                            selected = (
-                                stabilizationUiState.currentPreviewStabilization
-                                    != Stabilization.ON
-                                ) &&
-                                (
-                                    stabilizationUiState.currentVideoStabilization
-                                        != Stabilization.ON
-                                    ),
+                            selected = stabilizationUiState.currentStabilizationMode
+                                == StabilizationMode.OFF,
                             onClick = {
-                                setVideoStabilization(Stabilization.OFF)
-                                setPreviewStabilization(Stabilization.OFF)
+                                setStabilizationMode(StabilizationMode.OFF)
                             },
                             enabled = true
                         )
@@ -569,6 +688,100 @@ fun StabilizationSetting(
                 }
             }
         }
+    )
+}
+
+@Composable
+fun VideoQualitySetting(
+    videQualityUiState: VideoQualityUiState,
+    setVideoQuality: (VideoQuality) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier.testTag(VIDEO_QUALITY_SELECTOR_TAG),
+        title = stringResource(R.string.video_quality_title),
+        leadingIcon = null,
+        enabled = videQualityUiState is VideoQualityUiState.Enabled,
+        description = when (videQualityUiState) {
+            is VideoQualityUiState.Enabled ->
+                stringResource(getVideoQualityStringRes(videQualityUiState.currentVideoQuality))
+
+            is VideoQualityUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = videQualityUiState.disabledRationale
+                )
+            }
+        },
+        popupContents = {
+            Column(
+                Modifier
+                    .selectableGroup()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)
+                    ),
+                    text = stringResource(getVideoQualityStringRes(VideoQuality.UNSPECIFIED)),
+                    secondaryText = stringResource(
+                        getVideoQualitySecondaryStringRes(
+                            VideoQuality.UNSPECIFIED
+                        )
+                    ),
+                    selected = (videQualityUiState as VideoQualityUiState.Enabled)
+                        .currentVideoQuality == VideoQuality.UNSPECIFIED,
+                    enabled = videQualityUiState.videoQualityAutoState is
+                        SingleSelectableState.Selectable,
+                    onClick = { setVideoQuality(VideoQuality.UNSPECIFIED) }
+                )
+                listOf(VideoQuality.SD, VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD)
+                    .forEach { videoQuality ->
+                        SingleChoiceSelector(
+                            modifier = Modifier.testTag(getVideoQualityOptionTestTag(videoQuality)),
+                            text = stringResource(getVideoQualityStringRes(videoQuality)),
+                            secondaryText = stringResource(
+                                getVideoQualitySecondaryStringRes(
+                                    videoQuality
+                                )
+                            ),
+                            selected = videQualityUiState.currentVideoQuality == videoQuality,
+                            enabled = videQualityUiState.videoQualitySDState is
+                                SingleSelectableState.Selectable,
+                            onClick = { setVideoQuality(videoQuality) }
+                        )
+                    }
+            }
+        }
+    )
+}
+
+@Composable
+fun RecordingAudioSetting(
+    modifier: Modifier = Modifier,
+    audioUiState: AudioUiState,
+    setDefaultAudio: (Boolean) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier,
+        title = stringResource(id = R.string.audio_title),
+        description = when (audioUiState) {
+            is AudioUiState.Enabled.On -> {
+                stringResource(R.string.audio_selector_on)
+            }
+            is AudioUiState.Enabled.Mute -> {
+                stringResource(R.string.audio_selector_off)
+            }
+            is AudioUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on -> setDefaultAudio(on) },
+        settingValue = when (audioUiState) {
+            is AudioUiState.Enabled.On -> true
+            is AudioUiState.Disabled, is AudioUiState.Enabled.Mute -> false
+        },
+        enabled = audioUiState is AudioUiState.Enabled
     )
 }
 
@@ -605,9 +818,9 @@ fun BasicPopupSetting(
     leadingIcon: @Composable (() -> Unit)?,
     popupContents: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean
+    enabled: Boolean,
+    popupStatus: MutableState<Boolean> = remember { mutableStateOf(false) }
 ) {
-    val popupStatus = remember { mutableStateOf(false) }
     SettingUI(
         modifier = modifier.clickable(enabled = enabled) { popupStatus.value = true },
         title = title,
@@ -626,7 +839,12 @@ fun BasicPopupSetting(
                 )
             },
             title = { Text(text = title) },
-            text = popupContents
+            text = {
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
+                    content = popupContents
+                )
+            }
         )
     }
 }
@@ -749,8 +967,8 @@ fun SingleChoiceSelector(
 
 @Composable
 @ReadOnlyComposable
-fun disabledRationaleString(disabledRationale: DisabledRationale): String {
-    return when (disabledRationale) {
+fun disabledRationaleString(disabledRationale: DisabledRationale): String =
+    when (disabledRationale) {
         is DisabledRationale.DeviceUnsupportedRationale -> stringResource(
 
             disabledRationale.reasonTextResId,
@@ -772,8 +990,17 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
+
+        is DisabledRationale.VideoQualityUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
     }
-}
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -781,5 +1008,41 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String {
 private fun Preview_VersionInfo() {
     SettingsPreviewTheme {
         VersionInfo(versionName = "0.1.0", buildType = "debug")
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Preview_Popup() {
+    SettingsPreviewTheme {
+        BasicPopupSetting(
+            title = "Test Popup",
+            description = "Test Description",
+            leadingIcon = null,
+            popupContents = {
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        text = "Test sub-text",
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    SingleChoiceSelector(
+                        text = "Option 1",
+                        selected = true,
+                        enabled = true,
+                        onClick = { }
+                    )
+                    SingleChoiceSelector(
+                        text = "Option 2",
+                        selected = false,
+                        enabled = true,
+                        onClick = { }
+                    )
+                }
+            },
+            enabled = true,
+            popupStatus = remember { mutableStateOf(true) }
+        )
     }
 }

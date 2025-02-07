@@ -24,31 +24,26 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableSharedFlow
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
-class FakeCameraUseCase(
-    private val coroutineScope: CoroutineScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default),
-    defaultCameraSettings: CameraAppSettings = CameraAppSettings()
-) : CameraUseCase {
+class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSettings()) :
+    CameraUseCase {
     private val availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK)
     private var initialized = false
     private var useCasesBinded = false
@@ -57,17 +52,19 @@ class FakeCameraUseCase(
     var numPicturesTaken = 0
 
     var recordingInProgress = false
+    var isRecordingPaused = false
 
     var isLensFacingFront = false
 
     private var isScreenFlash = true
-    private var screenFlashEvents = MutableSharedFlow<CameraUseCase.ScreenFlashEvent>()
+    private var screenFlashEvents = Channel<CameraUseCase.ScreenFlashEvent>(capacity = UNLIMITED)
 
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode
+        isDebugMode: Boolean,
+        cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         initialized = true
     }
@@ -95,10 +92,6 @@ class FakeCameraUseCase(
                 isScreenFlash =
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
-
-                _currentCameraState.update { old ->
-                    old.copy(zoomScale = it.zoomScale)
-                }
             }
     }
 
@@ -107,14 +100,12 @@ class FakeCameraUseCase(
             throw IllegalStateException("Usecases not bound")
         }
         if (isScreenFlash) {
-            coroutineScope.launch {
-                screenFlashEvents.emit(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) { }
-                )
-                screenFlashEvents.emit(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
-                )
-            }
+            screenFlashEvents.trySend(
+                CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) { }
+            )
+            screenFlashEvents.trySend(
+                CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
+            )
         }
         numPicturesTaken += 1
     }
@@ -131,9 +122,7 @@ class FakeCameraUseCase(
     }
 
     fun emitScreenFlashEvent(event: CameraUseCase.ScreenFlashEvent) {
-        coroutineScope.launch {
-            screenFlashEvents.emit(event)
-        }
+        screenFlashEvents.trySend(event)
     }
 
     override suspend fun startVideoRecording(
@@ -147,7 +136,15 @@ class FakeCameraUseCase(
         recordingInProgress = true
     }
 
-    override fun stopVideoRecording() {
+    override suspend fun pauseVideoRecording() {
+        isRecordingPaused = true
+    }
+
+    override suspend fun resumeVideoRecording() {
+        isRecordingPaused = false
+    }
+
+    override suspend fun stopVideoRecording() {
         recordingInProgress = false
     }
 
@@ -181,6 +178,12 @@ class FakeCameraUseCase(
         }
     }
 
+    override suspend fun setVideoQuality(videoQuality: VideoQuality) {
+        currentSettings.update { old ->
+            old.copy(videoQuality = videoQuality)
+        }
+    }
+
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
             old.copy(cameraLensFacing = lensFacing)
@@ -191,9 +194,9 @@ class FakeCameraUseCase(
         TODO("Not yet implemented")
     }
 
-    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
-            old.copy(captureMode = captureMode)
+            old.copy(streamConfig = streamConfig)
         }
     }
 
@@ -209,39 +212,39 @@ class FakeCameraUseCase(
         }
     }
 
+    override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        currentSettings.update { old ->
+            old.copy(concurrentCameraMode = concurrentCameraMode)
+        }
+    }
+
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old.copy(imageFormat = imageFormat)
         }
     }
 
-    override suspend fun setLowLightBoost(lowLightBoost: LowLightBoost) {
+    override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
-            old.copy(lowLightBoost = lowLightBoost)
+            old.copy(audioEnabled = isAudioEnabled)
         }
     }
 
-    override suspend fun setAudioMuted(isAudioMuted: Boolean) {
+    override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old.copy(audioMuted = isAudioMuted)
-        }
-    }
-
-    override suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization) {
-        currentSettings.update { old ->
-            old.copy(videoCaptureStabilization = videoCaptureStabilization)
-        }
-    }
-
-    override suspend fun setPreviewStabilization(previewStabilization: Stabilization) {
-        currentSettings.update { old ->
-            old.copy(previewStabilization = previewStabilization)
+            old.copy(stabilizationMode = stabilizationMode)
         }
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
         currentSettings.update { old ->
             old.copy(targetFrameRate = targetFrameRate)
+        }
+    }
+
+    override suspend fun setMaxVideoDuration(durationInMillis: Long) {
+        currentSettings.update { old ->
+            old.copy(maxVideoDurationMillis = durationInMillis)
         }
     }
 }

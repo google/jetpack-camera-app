@@ -16,17 +16,31 @@
 package com.google.jetpackcamera.settings.model
 
 data class SystemConstraints(
-    val availableLenses: List<LensFacing>,
-    val perLensConstraints: Map<LensFacing, CameraConstraints>
+    val availableLenses: List<LensFacing> = emptyList(),
+    val concurrentCamerasSupported: Boolean = false,
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 )
 
 data class CameraConstraints(
-    val supportedStabilizationModes: Set<SupportedStabilizationMode>,
+    val supportedStabilizationModes: Set<StabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
-    val supportedImageFormatsMap: Map<CaptureMode, Set<ImageOutputFormat>>,
-    val hasFlashUnit: Boolean
-)
+    val supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>,
+    val supportedImageFormatsMap: Map<StreamConfig, Set<ImageOutputFormat>>,
+    val supportedIlluminants: Set<Illuminant>,
+    val supportedFlashModes: Set<FlashMode>,
+    val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>
+) {
+    val StabilizationMode.unsupportedFpsSet
+        get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
+
+    companion object {
+        const val FPS_AUTO = 0
+        const val FPS_15 = 15
+        const val FPS_30 = 30
+        const val FPS_60 = 60
+    }
+}
 
 /**
  * Useful set of constraints for testing
@@ -34,19 +48,23 @@ data class CameraConstraints(
 val TYPICAL_SYSTEM_CONSTRAINTS =
     SystemConstraints(
         availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK),
+        concurrentCamerasSupported = false,
         perLensConstraints = buildMap {
             for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
                 put(
                     lensFacing,
                     CameraConstraints(
                         supportedFixedFrameRates = setOf(15, 30),
-                        supportedStabilizationModes = emptySet(),
+                        supportedStabilizationModes = setOf(StabilizationMode.OFF),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
                         supportedImageFormatsMap = mapOf(
-                            Pair(CaptureMode.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                            Pair(CaptureMode.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
+                            Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
+                            Pair(StreamConfig.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
                         ),
-                        hasFlashUnit = lensFacing == LensFacing.BACK
+                        supportedVideoQualitiesMap = emptyMap(),
+                        supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
+                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                        unsupportedStabilizationFpsMap = emptyMap()
                     )
                 )
             }

@@ -19,12 +19,10 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -34,18 +32,17 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.VIDEO_DURATION_MILLIS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesImageFileExist
-import com.google.jetpackcamera.utils.getIntent
+import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.longClickForVideoRecording
+import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
-import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +51,7 @@ import org.junit.runner.RunWith
 internal class VideoRecordingDeviceTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
-        GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
+        GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -63,18 +60,18 @@ internal class VideoRecordingDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun video_capture() = runScenarioTest<MainActivity> {
+    fun video_capture(): Unit = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    ) {
         val timeStamp = System.currentTimeMillis()
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
-        longClickForVideoRecording()
+        composeTestRule.longClickForVideoRecording()
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        Truth.assertThat(File(DIR_PATH).lastModified() > timeStamp).isTrue()
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test
@@ -83,15 +80,15 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                longClickForVideoRecording()
+                composeTestRule.longClickForVideoRecording()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_OK)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
@@ -101,19 +98,19 @@ internal class VideoRecordingDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                longClickForVideoRecording()
+                composeTestRule.longClickForVideoRecording()
                 composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
     }
 
@@ -123,7 +120,7 @@ internal class VideoRecordingDeviceTest {
         val uri = getTestUri(ImageCaptureDeviceTest.DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -140,32 +137,8 @@ internal class VideoRecordingDeviceTest {
                 }
                 uiDevice.pressBack()
             }
-        Truth.assertThat(result?.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
-    }
-
-    private fun longClickForVideoRecording() {
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-            .assertExists()
-            .performTouchInput {
-                down(center)
-            }
-        idleForVideoDuration()
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-            .assertExists()
-            .performTouchInput {
-                up()
-            }
-    }
-
-    private fun idleForVideoDuration() {
-        // TODO: replace with a check for the timestamp UI of the video duration
-        try {
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
-                composeTestRule.onNodeWithTag("dummyTagForLongPress").isDisplayed()
-            }
-        } catch (e: ComposeTimeoutException) {
-        }
     }
 
     companion object {

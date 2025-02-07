@@ -23,7 +23,6 @@ plugins {
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
-    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     namespace = "com.google.jetpackcamera"
 
@@ -58,11 +57,6 @@ android {
         create("stable") {
             dimension = "flavor"
             isDefault = true
-        }
-
-        create("preview") {
-            dimension = "flavor"
-            targetSdkPreview = libs.versions.targetSdkPreview.get()
         }
     }
 

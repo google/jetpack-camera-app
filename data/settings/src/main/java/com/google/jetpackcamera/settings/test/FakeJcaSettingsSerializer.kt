@@ -18,32 +18,35 @@ package com.google.jetpackcamera.settings.test
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.jetpackcamera.settings.AspectRatio
-import com.google.jetpackcamera.settings.CaptureMode
 import com.google.jetpackcamera.settings.DarkMode
 import com.google.jetpackcamera.settings.DynamicRange
 import com.google.jetpackcamera.settings.FlashMode
+import com.google.jetpackcamera.settings.ImageOutputFormat
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.jetpackcamera.settings.LensFacing
-import com.google.jetpackcamera.settings.PreviewStabilization
-import com.google.jetpackcamera.settings.VideoStabilization
+import com.google.jetpackcamera.settings.StabilizationMode
+import com.google.jetpackcamera.settings.StreamConfig
+import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.settings.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-class FakeJcaSettingsSerializer(
-    var failReadWithCorruptionException: Boolean = false
-) : Serializer<JcaSettings> {
+class FakeJcaSettingsSerializer(var failReadWithCorruptionException: Boolean = false) :
+    Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
-        .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
-        .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
+        .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
+        .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_SDR)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
+        .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
+        .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

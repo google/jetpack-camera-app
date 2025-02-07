@@ -26,7 +26,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecordStatus
 import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.settings.ConstraintsRepository
@@ -35,8 +34,11 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,8 +48,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.fail
@@ -62,9 +66,9 @@ import org.junit.runner.RunWith
 class CameraXCameraUseCaseTest {
 
     companion object {
-        private const val STATUS_VERIFY_COUNT = 5
         private const val GENERAL_TIMEOUT_MS = 3_000L
-        private const val STATUS_VERIFY_TIMEOUT_MS = 10_000L
+        private const val RECORDING_TIMEOUT_MS = 10_000L
+        private const val RECORDING_START_DURATION_MS = 500L
     }
 
     @get:Rule
@@ -95,16 +99,20 @@ class CameraXCameraUseCaseTest {
         cameraUseCase.runCameraOnMain()
 
         // Act.
-        val recordEvent = cameraUseCase.startRecordingAndGetEvents()
+        val recordingComplete = CompletableDeferred<Unit>()
+        cameraUseCase.startRecording {
+            when (it) {
+                is OnVideoRecorded -> {
+                    recordingComplete.complete(Unit)
+                }
+                is OnVideoRecordError -> recordingComplete.completeExceptionally(it.error)
+            }
+        }
 
-        // Assert.
-        recordEvent.onRecordStatus.await(STATUS_VERIFY_TIMEOUT_MS)
-
-        // Act.
         cameraUseCase.stopVideoRecording()
 
         // Assert.
-        recordEvent.onRecorded.await()
+        recordingComplete.await()
     }
 
     @Test
@@ -127,20 +135,27 @@ class CameraXCameraUseCaseTest {
         torchEnabled.awaitValue(false)
 
         // Act: Start recording with FlashMode.ON
+        val recordingComplete = CompletableDeferred<Unit>()
         cameraUseCase.setFlashMode(FlashMode.ON)
-        val recordEvent = cameraUseCase.startRecordingAndGetEvents()
+        cameraUseCase.startRecording {
+            when (it) {
+                is OnVideoRecorded -> {
+                    recordingComplete.complete(Unit)
+                }
+                is OnVideoRecordError -> recordingComplete.completeExceptionally(it.error)
+            }
+        }
 
         // Assert: Torch enabled transitions to true.
         torchEnabled.awaitValue(true)
 
-        // Act: Ensure enough data is received and stop recording.
-        recordEvent.onRecordStatus.await(STATUS_VERIFY_TIMEOUT_MS)
         cameraUseCase.stopVideoRecording()
 
         // Assert: Torch enabled transitions to false.
         torchEnabled.awaitValue(false)
 
         // Clean-up.
+        recordingComplete.await()
         torchEnabled.cancel()
     }
 
@@ -148,19 +163,14 @@ class CameraXCameraUseCaseTest {
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
         constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl()
     ) = CameraXCameraUseCase(
-        application,
-        useCaseScope,
-        Dispatchers.Default,
-        constraintsRepository
+        application = application,
+        defaultDispatcher = Dispatchers.Default,
+        iODispatcher = Dispatchers.IO,
+        constraintsRepository = constraintsRepository
     ).apply {
-        initialize(appSettings, CameraUseCase.UseCaseMode.STANDARD)
+        initialize(appSettings) {}
         providePreviewSurface()
     }
-
-    private data class RecordEvents(
-        val onRecorded: CompletableDeferred<Unit>,
-        val onRecordStatus: CompletableDeferred<Unit>
-    )
 
     private suspend fun CompletableDeferred<*>.await(timeoutMs: Long = GENERAL_TIMEOUT_MS) =
         withTimeoutOrNull(timeoutMs) {
@@ -177,31 +187,38 @@ class CameraXCameraUseCaseTest {
         }
     } ?: fail("Timeout while waiting for expected value: $expectedValue")
 
-    private suspend fun CameraXCameraUseCase.startRecordingAndGetEvents(
-        statusVerifyCount: Int = STATUS_VERIFY_COUNT
-    ): RecordEvents {
-        val onRecorded = CompletableDeferred<Unit>()
-        val onRecordStatus = CompletableDeferred<Unit>()
-        var statusCount = 0
-        startVideoRecording(null, false) {
-            when (it) {
-                is OnVideoRecorded -> {
-                    val videoUri = it.savedUri
-                    if (videoUri != Uri.EMPTY) {
-                        videosToDelete.add(videoUri)
-                    }
-                    onRecorded.complete(Unit)
-                }
-                is OnVideoRecordError -> onRecorded.complete(Unit)
-                is OnVideoRecordStatus -> {
-                    statusCount++
-                    if (statusCount == statusVerifyCount) {
-                        onRecordStatus.complete(Unit)
-                    }
+    private suspend fun CameraXCameraUseCase.startRecording(
+        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    ) {
+        // Start recording
+        startVideoRecording(
+            videoCaptureUri = null,
+            shouldUseUri = false
+        ) { event ->
+            // Track files that need to be deleted
+            if (event is OnVideoRecorded) {
+                val videoUri = event.savedUri
+                if (videoUri != Uri.EMPTY) {
+                    videosToDelete.add(videoUri)
                 }
             }
+
+            // Forward event to provided callback
+            onVideoRecord(event)
         }
-        return RecordEvents(onRecorded, onRecordStatus)
+
+        // Wait for recording duration to reach start duration to consider it started
+        withTimeout(RECORDING_TIMEOUT_MS) {
+            getCurrentCameraState().transform { cameraState ->
+                (cameraState.videoRecordingState as? VideoRecordingState.Active)?.let {
+                    emit(
+                        it.elapsedTimeNanos.toDuration(DurationUnit.NANOSECONDS).inWholeMilliseconds
+                    )
+                }
+            }.first { elapsedTimeMs ->
+                elapsedTimeMs >= RECORDING_START_DURATION_MS
+            }
+        }
     }
 
     private fun CameraXCameraUseCase.providePreviewSurface() {
@@ -218,13 +235,14 @@ class CameraXCameraUseCaseTest {
         }
     }
 
-    private suspend fun CameraXCameraUseCase.runCameraOnMain() {
+    private fun CameraXCameraUseCase.runCameraOnMain() {
         useCaseScope.launch(Dispatchers.Main) { runCamera() }
         instrumentation.waitForIdleSync()
     }
 
     private suspend fun ConstraintsRepository.hasFlashUnit(lensFacing: LensFacing): Boolean =
-        systemConstraints.first()!!.perLensConstraints[lensFacing]!!.hasFlashUnit
+        Illuminant.FLASH_UNIT in
+            systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
     private fun deleteVideos() {
         for (uri in videosToDelete) {

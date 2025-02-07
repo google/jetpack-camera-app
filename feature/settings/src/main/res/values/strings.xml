@@ -22,6 +22,8 @@
     <string name="nav_back_accessibility">Button to navigate back out of settings</string>
 
     <string name="section_title_camera_settings">Default Camera Settings</string>
+    <string name="section_title_recording_settings">Default Recording Settings</string>
+
     <string name="section_title_app_settings">App Settings</string>
     <string name="section_title_software_info">Software Information</string>
 
@@ -46,19 +48,30 @@
     <string name="flash_mode_selector_auto">Auto</string>
     <string name="flash_mode_selector_on">On</string>
     <string name="flash_mode_selector_off">Off</string>
+    <string name="flash_mode_selector_llb">Low Light Boost</string>
 
     <string name="flash_mode_description_auto">Flash is set to Auto</string>
     <string name="flash_mode_description_on">Flash is On</string>
     <string name="flash_mode_description_off">Flash is Off</string>
+    <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
-    <!-- Capture mode setting strings -->
-    <string name="capture_mode_title">Set Capture Mode</string>
+    <!-- Audio setting strings -->
+    <string name="audio_title">Enable Audio</string>
 
-    <string name="capture_mode_selector_multi_stream">Multi Stream Capture</string>
-    <string name="capture_mode_selector_single_stream">Single Stream Capture</string>
+    <string name="audio_selector_on">Recordings will start with audio enabled</string>
+    <string name="audio_selector_off">Recordings will start muted</string>
 
-    <string name="capture_mode_description_multi_stream">Multi Stream</string>
-    <string name="capture_mode_description_single_stream">Single Stream</string>
+    <string name="audio_description_on">Recordings will start with audio enabled</string>
+    <string name="audio_description_off">Recordings will start muted</string>
+
+    <!-- Stream Config mode setting strings -->
+    <string name="stream_config_title">Set Stream Configuration</string>
+
+    <string name="stream_config_selector_multi_stream">Multi Stream Capture</string>
+    <string name="stream_config_selector_single_stream">Single Stream Capture</string>
+
+    <string name="stream_config_description_multi_stream">Multi Stream</string>
+    <string name="stream_config_description_single_stream">Single Stream</string>
 
     <!-- Aspect Ratio setting strings -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>
@@ -74,15 +87,21 @@
     <!-- Stabilization setting strings -->
     <string name="video_stabilization_title">Set Video Stabilization</string>
 
+    <string name="stabilization_selector_auto">Auto</string>
     <string name="stabilization_selector_on">On</string>
-    <string name="stabilization_selector_high_quality">High Quality</string>
+    <string name="stabilization_selector_high_quality">High Quality</string>\
+    <string name="stabilization_selector_optical">Optical</string>
     <string name="stabilization_selector_off">Off</string>
 
-    <string name="stabilization_selector_on_info">Both preview and video streams will be stabilized</string>
-    <string name="stabilization_selector_high_quality_info">Video stream will be stabilized, but preview might not be. This mode ensures highest-quality video stream.</string>
+    <string name="stabilization_selector_auto_info">Stabilization automatically turned on when device configuration supports it.</string>
+    <string name="stabilization_selector_on_info">Both preview and video streams stabilized.</string>
+    <string name="stabilization_selector_high_quality_info">Video stream stabilized, but preview might not be. Ensures highest-quality recordings.</string>
+    <string name="stabilization_selector_optical_info">All streams are stabilized by OIS hardware only.</string>
 
     <string name="stabilization_description_on">Stabilization On</string>
+    <string name="stabilization_description_optical">Stabilization Optical</string>
     <string name="stabilization_description_high_quality">Stabilization High Quality</string>
+    <string name="stabilization_description_auto">Stabilization Auto</string>
     <string name="stabilization_description_off">Stabilization Off</string>
     <string name="stabilization_description_unsupported_device">Stabilization unsupported by device</string>
     <string name="stabilization_description_unsupported_fps">Stabilization unsupported due to frame rate</string>
@@ -94,31 +113,57 @@
     <string name="fps_description_auto">Auto Frame Rate</string>
     <string name="fps_description">%d fps</string>
 
-
     <string name="fps_selector_auto">Auto</string>
     <string name="fps_selector_value">%d</string>
 
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
-    <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lens.</string>
+    <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lenses.</string>
+
+    <!-- video limit strings -->
+    <string name="duration_title">Set Maximum Video Duration</string>
+    <string name="duration_description_none">Unlimited duration</string>
+    <string name="duration_description_seconds">%d seconds</string>
+
+    <!-- video quality strings -->
+    <string name="video_quality_title">Set Video Quality</string>
+    <string name="video_quality_value_auto">Auto</string>
+    <string name="video_quality_value_sd">SD</string>
+    <string name="video_quality_value_hd">HD</string>
+    <string name="video_quality_value_fhd">FHD</string>
+    <string name="video_quality_value_uhd">UHD</string>
+
+    <string name="video_quality_value_auto_info">Video quality automatically selected by the device.</string>
+    <string name="video_quality_value_sd_info">Standard Definition (SD) 480p video quality.</string>
+    <string name="video_quality_value_hd_info">High Definition (HD) video quality.</string>
+    <string name="video_quality_value_fhd_info">Full High Definition (FHD) 1080p video quality.</string>
+    <string name="video_quality_value_uhd_info">Ultra High Definition (UHD) 2160p video quality.</string>
+
 
     <!-- disabled rationale strings-->
+
     <string name="device_unsupported">%1$s is unsupported by the device</string>
     <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
-    <string name="stabilization_unsupported">%$1s is unsupported by the current stabilization</string>
-    <string name="current_lens_unsupported">%$s is unsupported by the current lens</string>
-    <string name="rear_lens_unsupported">%$s is unsupported by the rear lens</string>
-    <string name="front_lens_unsupported">%$s is unsupported by the front lens</string>
+    <string name="stabilization_unsupported">%1$s is unsupported by the current stabilization</string>
+    <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
+    <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
+    <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
+    <string name="video_quality_unsupported">%1$s is unsupported by the current lens</string>
+    <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
 
 
     <!-- Rationale prefixes -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
     <string name="lens_rationale_prefix">Lens flip</string>
     <string name="fps_rationale_prefix">Fps</string>
+    <string name="video_quality_rationale_prefix">Video quality</string>
+    <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
+    <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
     <string name="front_lens_rationale_prefix">Front lens</string>
     <string name="rear_lens_rationale_prefix">Rear lens</string>
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
+    <string name="mute_audio_rationale_prefix">Mute</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>

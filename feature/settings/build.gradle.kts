@@ -24,7 +24,6 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.settings"
     compileSdk = libs.versions.compileSdk.get().toInt()
-    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -39,11 +38,6 @@ android {
         create("stable") {
             dimension = "flavor"
             isDefault = true
-        }
-
-        create("preview") {
-            dimension = "flavor"
-            targetSdkPreview = libs.versions.targetSdkPreview.get()
         }
     }
 
@@ -81,6 +75,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.rules)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -108,6 +103,9 @@ dependencies {
     androidTestImplementation(libs.truth)
 
     implementation(libs.androidx.core.ktx)
+
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
 
     // Futures
     implementation(libs.futures.ktx)

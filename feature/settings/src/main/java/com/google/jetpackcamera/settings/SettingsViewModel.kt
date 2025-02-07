@@ -15,36 +15,47 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
-import com.google.jetpackcamera.settings.model.SupportedStabilizationMode
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.ui.FPS_15
-import com.google.jetpackcamera.settings.ui.FPS_30
-import com.google.jetpackcamera.settings.ui.FPS_60
-import com.google.jetpackcamera.settings.ui.FPS_AUTO
+import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+val previewStabilizationUnsupportedFps = setOf(FPS_15, FPS_60)
+val videoStabilizationUnsupportedFps = setOf(FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -54,21 +65,31 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {
+    private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
     val settingsUiState: StateFlow<SettingsUiState> =
         combine(
             settingsRepository.defaultCameraAppSettings,
-            constraintsRepository.systemConstraints.filterNotNull()
-        ) { updatedSettings, constraints ->
+            constraintsRepository.systemConstraints.filterNotNull(),
+            grantedPermissions
+        ) { updatedSettings, constraints, grantedPerms ->
+            updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                captureModeUiState = CaptureModeUiState.Enabled(updatedSettings.captureMode),
-                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                streamConfigUiState = StreamConfigUiState.Enabled(updatedSettings.streamConfig),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
+                    updatedSettings.maxVideoDurationMillis
+                ),
                 flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
+                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                audioUiState = getAudioUiState(
+                    updatedSettings.audioEnabled,
+                    grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
-
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
@@ -76,18 +97,62 @@ class SettingsViewModel @Inject constructor(
             initialValue = SettingsUiState.Disabled
         )
 
+// ////////////////////////////////////////////////////////////
+//
+// Get UiStates for components
+//
+// ////////////////////////////////////////////////////////////
+
+    private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
+        if (permissionGranted) {
+            if (isAudioEnabled) {
+                AudioUiState.Enabled.On()
+            } else {
+                AudioUiState.Enabled.Mute()
+            }
+        } else {
+            AudioUiState.Disabled(
+                DisabledRationale
+                    .PermissionRecordAudioNotGrantedRationale(
+                        R.string.mute_audio_rationale_prefix
+                    )
+            )
+        }
+
+    @OptIn(ExperimentalPermissionsApi::class)
+    fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
+        val permissions = mutableSetOf<String>()
+        for (permissionState in multiplePermissionsState.permissions) {
+            if (permissionState.status.isGranted) {
+                permissions.add(permissionState.permission)
+            }
+        }
+        grantedPermissions.update {
+            permissions
+        }
+    }
+
+    fun setGrantedPermissions(permissions: MutableSet<String>) {
+        grantedPermissions.update { permissions }
+    }
+
     private fun getStabilizationUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): StabilizationUiState {
-        val deviceStabilizations: Set<SupportedStabilizationMode> =
+        val deviceStabilizations: Set<StabilizationMode> =
             systemConstraints
-                .perLensConstraints[cameraAppSettings.cameraLensFacing]
-                ?.supportedStabilizationModes
-                ?: emptySet()
+                .perLensConstraints.values
+                .asSequence()
+                .flatMap { it.supportedStabilizationModes }
+                .toSet()
 
-        // if no lens supports
-        if (deviceStabilizations.isEmpty()) {
+        fun supportsStabilization(stabilizationModes: Collection<StabilizationMode>): Boolean =
+            stabilizationModes.isNotEmpty() &&
+                stabilizationModes.toSet() != setOf(StabilizationMode.OFF)
+
+        // if no lens supports stabilization
+        if (!supportsStabilization(deviceStabilizations)) {
             return StabilizationUiState.Disabled(
                 DeviceUnsupportedRationale(
                     R.string.stabilization_rationale_prefix
@@ -95,122 +160,181 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
-        // if a lens supports but it isn't the current
-        if (systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
-                ?.supportedStabilizationModes?.isEmpty() == true
+        // if a lens supports any stabilization but it isn't the current
+        val currentLensConstraints = checkNotNull(
+            systemConstraints.forCurrentLens(cameraAppSettings)
         ) {
-            return StabilizationUiState.Disabled(
+            "Lens constraints for ${cameraAppSettings.cameraLensFacing} not available."
+        }
+
+        with(currentLensConstraints) {
+            supportedStabilizationModes.let {
+                if (!supportsStabilization(it)) {
+                    return StabilizationUiState.Disabled(
+                        getLensUnsupportedRationale(
+                            cameraAppSettings.cameraLensFacing,
+                            R.string.stabilization_rationale_prefix
+                        )
+                    )
+                }
+            }
+
+            // if fps is too high for any stabilization
+            val maxCommonUnsupportedFps = currentLensConstraints.unsupportedStabilizationFpsMap
+                .asSequence()
+                .filter {
+                    it.key != StabilizationMode.AUTO &&
+                        it.key != StabilizationMode.OFF &&
+                        it.key in currentLensConstraints.supportedStabilizationModes
+                }
+                .map { it.value }
+                .reduceOrNull { acc, additionalUnsupported -> additionalUnsupported intersect acc }
+                ?.maxOrNull()
+
+            if (maxCommonUnsupportedFps != null &&
+                maxCommonUnsupportedFps <= cameraAppSettings.targetFrameRate
+            ) {
+                return StabilizationUiState.Disabled(
+                    FpsUnsupportedRationale(
+                        R.string.stabilization_rationale_prefix,
+                        maxCommonUnsupportedFps
+                    )
+                )
+            }
+
+            return StabilizationUiState.Enabled(
+                currentStabilizationMode = cameraAppSettings.stabilizationMode,
+                stabilizationAutoState = getSingleStabilizationState(
+                    stabilizationMode = StabilizationMode.AUTO,
+                    currentFrameRate = cameraAppSettings.targetFrameRate,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceStabilizations = deviceStabilizations,
+                    currentLensStabilizations = supportedStabilizationModes,
+                    unsupportedFrameRates = StabilizationMode.AUTO.unsupportedFpsSet
+                ),
+                stabilizationOnState = getSingleStabilizationState(
+                    stabilizationMode = StabilizationMode.ON,
+                    currentFrameRate = cameraAppSettings.targetFrameRate,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceStabilizations = deviceStabilizations,
+                    currentLensStabilizations = supportedStabilizationModes,
+                    unsupportedFrameRates = StabilizationMode.ON.unsupportedFpsSet
+                ),
+                stabilizationHighQualityState = getSingleStabilizationState(
+                    stabilizationMode = StabilizationMode.HIGH_QUALITY,
+                    currentFrameRate = cameraAppSettings.targetFrameRate,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceStabilizations = deviceStabilizations,
+                    currentLensStabilizations = supportedStabilizationModes,
+                    unsupportedFrameRates = StabilizationMode.HIGH_QUALITY.unsupportedFpsSet
+                ),
+                stabilizationOpticalState = getSingleStabilizationState(
+                    stabilizationMode = StabilizationMode.OPTICAL,
+                    currentFrameRate = cameraAppSettings.targetFrameRate,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceStabilizations = deviceStabilizations,
+                    currentLensStabilizations = supportedStabilizationModes,
+                    unsupportedFrameRates = StabilizationMode.OPTICAL.unsupportedFpsSet
+                )
+            )
+        }
+    }
+
+    private fun getSingleStabilizationState(
+        stabilizationMode: StabilizationMode,
+        currentFrameRate: Int,
+        defaultLensFacing: LensFacing,
+        deviceStabilizations: Set<StabilizationMode>,
+        currentLensStabilizations: Set<StabilizationMode>?,
+        unsupportedFrameRates: Set<Int>
+    ): SingleSelectableState {
+        // if unsupported by device
+        if (!deviceStabilizations.contains(stabilizationMode)) {
+            return SingleSelectableState.Disabled(
+                disabledRationale =
+                DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
+            )
+        }
+
+        // if unsupported by by current lens
+        if (currentLensStabilizations?.contains(stabilizationMode) == false) {
+            return SingleSelectableState.Disabled(
                 getLensUnsupportedRationale(
-                    cameraAppSettings.cameraLensFacing,
+                    defaultLensFacing,
                     R.string.stabilization_rationale_prefix
                 )
             )
         }
 
-        // if fps is too high for any stabilization
-        if (cameraAppSettings.targetFrameRate >= TARGET_FPS_60) {
-            return StabilizationUiState.Disabled(
+        // if fps is unsupported by preview stabilization
+        if (currentFrameRate in unsupportedFrameRates) {
+            return SingleSelectableState.Disabled(
                 FpsUnsupportedRationale(
                     R.string.stabilization_rationale_prefix,
-                    FPS_60
+                    currentFrameRate
                 )
             )
         }
 
-        return StabilizationUiState.Enabled(
-            currentPreviewStabilization = cameraAppSettings.previewStabilization,
-            currentVideoStabilization = cameraAppSettings.videoCaptureStabilization,
-            stabilizationOnState = getPreviewStabilizationState(
-                currentFrameRate = cameraAppSettings.targetFrameRate,
-                defaultLensFacing = cameraAppSettings.cameraLensFacing,
-                deviceStabilizations = deviceStabilizations,
-                currentLensStabilizations = systemConstraints
-                    .perLensConstraints[cameraAppSettings.cameraLensFacing]
-                    ?.supportedStabilizationModes
-            ),
-            stabilizationHighQualityState =
-            getVideoStabilizationState(
-                currentFrameRate = cameraAppSettings.targetFrameRate,
-                deviceStabilizations = deviceStabilizations,
-                defaultLensFacing = cameraAppSettings.cameraLensFacing,
-                currentLensStabilizations = systemConstraints
-                    .perLensConstraints[cameraAppSettings.cameraLensFacing]
-                    ?.supportedStabilizationModes
+        return SingleSelectableState.Selectable
+    }
+
+    private fun getVideoQualityUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): VideoQualityUiState {
+        val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
+        val supportedVideoQualities: List<VideoQuality>? =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
+        return if (!supportedVideoQualities.isNullOrEmpty()) {
+            VideoQualityUiState.Enabled(
+                currentVideoQuality = cameraAppSettings.videoQuality,
+                videoQualityAutoState = getSingleVideoQualityState(
+                    VideoQuality.UNSPECIFIED,
+                    supportedVideoQualities
+                ),
+                videoQualitySDState = getSingleVideoQualityState(
+                    VideoQuality.SD,
+                    supportedVideoQualities
+                ),
+                videoQualityHDState = getSingleVideoQualityState(
+                    VideoQuality.HD,
+                    supportedVideoQualities
+                ),
+                videoQualityFHDState = getSingleVideoQualityState(
+                    VideoQuality.FHD,
+                    supportedVideoQualities
+                ),
+                videoQualityUHDState = getSingleVideoQualityState(
+                    VideoQuality.UHD,
+                    supportedVideoQualities
+                )
+            )
+        } else {
+            VideoQualityUiState.Disabled(
+                DisabledRationale.VideoQualityUnsupportedRationale(
+                    R.string.video_quality_rationale_prefix
+                )
+            )
+        }
+    }
+
+    private fun getSingleVideoQualityState(
+        videoQuality: VideoQuality,
+        supportedVideQualities: List<VideoQuality>?
+    ): SingleSelectableState = if (videoQuality == VideoQuality.UNSPECIFIED ||
+        (
+            !supportedVideQualities.isNullOrEmpty() &&
+                supportedVideQualities.contains(videoQuality)
+            )
+    ) {
+        SingleSelectableState.Selectable
+    } else {
+        SingleSelectableState.Disabled(
+            DisabledRationale.VideoQualityUnsupportedRationale(
+                R.string.video_quality_rationale_prefix
             )
         )
-    }
-
-    private fun getPreviewStabilizationState(
-        currentFrameRate: Int,
-        defaultLensFacing: LensFacing,
-        deviceStabilizations: Set<SupportedStabilizationMode>,
-        currentLensStabilizations: Set<SupportedStabilizationMode>?
-    ): SingleSelectableState {
-        // if unsupported by device
-        if (!deviceStabilizations.contains(SupportedStabilizationMode.ON)) {
-            return SingleSelectableState.Disabled(
-                disabledRationale =
-                DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-            )
-        }
-
-        // if unsupported by by current lens
-        if (currentLensStabilizations?.contains(SupportedStabilizationMode.ON) == false) {
-            return SingleSelectableState.Disabled(
-                getLensUnsupportedRationale(
-                    defaultLensFacing,
-                    R.string.stabilization_rationale_prefix
-                )
-            )
-        }
-
-        // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60 || currentFrameRate == TARGET_FPS_15) {
-            return SingleSelectableState.Disabled(
-                FpsUnsupportedRationale(
-                    R.string.stabilization_rationale_prefix,
-                    currentFrameRate
-                )
-            )
-        }
-
-        return SingleSelectableState.Selectable
-    }
-
-    private fun getVideoStabilizationState(
-        currentFrameRate: Int,
-        defaultLensFacing: LensFacing,
-        deviceStabilizations: Set<SupportedStabilizationMode>,
-        currentLensStabilizations: Set<SupportedStabilizationMode>?
-    ): SingleSelectableState {
-        // if unsupported by device
-        if (!deviceStabilizations.contains(SupportedStabilizationMode.ON)) {
-            return SingleSelectableState.Disabled(
-                disabledRationale =
-                DeviceUnsupportedRationale(R.string.stabilization_rationale_prefix)
-            )
-        }
-
-        // if unsupported by by current lens
-        if (currentLensStabilizations?.contains(SupportedStabilizationMode.HIGH_QUALITY) == false) {
-            return SingleSelectableState.Disabled(
-                getLensUnsupportedRationale(
-                    defaultLensFacing,
-                    R.string.stabilization_rationale_prefix
-                )
-            )
-        }
-        // if fps is unsupported by preview stabilization
-        if (currentFrameRate == TARGET_FPS_60) {
-            return SingleSelectableState.Disabled(
-                FpsUnsupportedRationale(
-                    R.string.stabilization_rationale_prefix,
-                    currentFrameRate
-                )
-            )
-        }
-
-        return SingleSelectableState.Selectable
     }
 
     /**
@@ -267,38 +391,36 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
-        // if preview stabilization is currently on and the other lens won't support it
-        if (currentSettings.previewStabilization == Stabilization.ON) {
-            if (!newLensConstraints.supportedStabilizationModes.contains(
-                    SupportedStabilizationMode.ON
+        // If a non-AUTO stabilization is currently on and the other lens won't support it
+        if (currentSettings.stabilizationMode != StabilizationMode.AUTO &&
+            currentSettings.stabilizationMode !in newLensConstraints.supportedStabilizationModes
+        ) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = StabilizationUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    }
                 )
-            ) {
-                return FlipLensUiState.Disabled(
-                    currentLensFacing = currentSettings.cameraLensFacing,
-                    disabledRationale = StabilizationUnsupportedRationale(
-                        when (currentSettings.cameraLensFacing) {
-                            LensFacing.BACK -> R.string.front_lens_rationale_prefix
-                            LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
-                        }
-                    )
-                )
-            }
+            )
         }
-        // if video stabilization is currently on and the other lens won't support it
-        if (currentSettings.videoCaptureStabilization == Stabilization.ON) {
-            if (!newLensConstraints.supportedStabilizationModes
-                    .contains(SupportedStabilizationMode.HIGH_QUALITY)
-            ) {
-                return FlipLensUiState.Disabled(
-                    currentLensFacing = currentSettings.cameraLensFacing,
-                    disabledRationale = StabilizationUnsupportedRationale(
-                        when (currentSettings.cameraLensFacing) {
-                            LensFacing.BACK -> R.string.front_lens_rationale_prefix
-                            LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
-                        }
-                    )
+
+        if (currentSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+            newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
+                currentSettings.videoQuality
+            ) != true
+        ) {
+            return FlipLensUiState.Disabled(
+                currentLensFacing = currentSettings.cameraLensFacing,
+                disabledRationale = DisabledRationale.VideoQualityUnsupportedRationale(
+                    when (currentSettings.cameraLensFacing) {
+                        LensFacing.BACK -> R.string.front_lens_rationale_prefix
+                        LensFacing.FRONT -> R.string.rear_lens_rationale_prefix
+                    },
+                    R.string.video_quality_rationale_suffix_sdr
                 )
-            }
+            )
         }
 
         return FlipLensUiState.Enabled(currentLensFacing = currentSettings.cameraLensFacing)
@@ -310,32 +432,41 @@ class SettingsViewModel @Inject constructor(
     ): FpsUiState {
         val optionConstraintRationale: MutableMap<Int, SingleSelectableState> = mutableMapOf()
 
-        val currentLensFrameRates: Set<Int> = systemConstraints
-            .perLensConstraints[cameraAppSettings.cameraLensFacing]
-            ?.supportedFixedFrameRates ?: emptySet()
+        val deviceSupportedFrameRates = systemConstraints.perLensConstraints
+            .asSequence()
+            .flatMap { it.value.supportedFixedFrameRates }
+            .toSet()
 
         // if device supports no fixed frame rates, disable
-        if (currentLensFrameRates.isEmpty()) {
+        if (deviceSupportedFrameRates.isEmpty()) {
             return FpsUiState.Disabled(
                 DeviceUnsupportedRationale(R.string.no_fixed_fps_rationale_prefix)
             )
         }
 
-        // provide selectable states for each of the fps options
-        fpsOptions.forEach { fpsOption ->
-            val fpsUiState = isFpsOptionEnabled(
-                fpsOption,
-                cameraAppSettings.cameraLensFacing,
-                currentLensFrameRates,
-                systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
-                    ?.supportedFixedFrameRates ?: emptySet(),
-                cameraAppSettings.previewStabilization,
-                cameraAppSettings.videoCaptureStabilization
-            )
-            if (fpsUiState is SingleSelectableState.Disabled) {
-                Log.d(TAG, "fps option $fpsOption disabled. ${fpsUiState.disabledRationale::class}")
+        val currentLensConstraints = checkNotNull(
+            systemConstraints.forCurrentLens(cameraAppSettings)
+        ) {
+            "Lens constraints for ${cameraAppSettings.cameraLensFacing} not available."
+        }
+
+        with(currentLensConstraints) {
+            // provide selectable states for each of the fps options
+            fpsOptions.forEach { fpsOption ->
+                val fpsUiState = isFpsOptionEnabled(
+                    fpsOption = fpsOption,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceSupportedFrameRates = deviceSupportedFrameRates,
+                    stabilizationMode = cameraAppSettings.stabilizationMode
+                )
+                if (fpsUiState is SingleSelectableState.Disabled) {
+                    Log.d(
+                        TAG,
+                        "fps option $fpsOption disabled. ${fpsUiState.disabledRationale::class}"
+                    )
+                }
+                optionConstraintRationale[fpsOption] = fpsUiState
             }
-            optionConstraintRationale[fpsOption] = fpsUiState
         }
         return FpsUiState.Enabled(
             currentSelection = cameraAppSettings.targetFrameRate,
@@ -349,22 +480,20 @@ class SettingsViewModel @Inject constructor(
     /**
      * Auxiliary function to determine if an FPS option should be disabled or not
      */
-    private fun isFpsOptionEnabled(
+    private fun CameraConstraints.isFpsOptionEnabled(
         fpsOption: Int,
         defaultLensFacing: LensFacing,
-        deviceFrameRates: Set<Int>,
-        lensFrameRates: Set<Int>,
-        previewStabilization: Stabilization,
-        videoStabilization: Stabilization
+        deviceSupportedFrameRates: Set<Int>,
+        stabilizationMode: StabilizationMode
     ): SingleSelectableState {
-        // if device doesnt support the fps option, disable
-        if (!deviceFrameRates.contains(fpsOption)) {
+        // if device doesn't support the fps option, disable
+        if (!deviceSupportedFrameRates.contains(fpsOption)) {
             return SingleSelectableState.Disabled(
                 disabledRationale = DeviceUnsupportedRationale(R.string.fps_rationale_prefix)
             )
         }
-        // if the current lens doesnt support the fps, disable
-        if (!lensFrameRates.contains(fpsOption)) {
+        // if the current lens doesn't support the fps, disable
+        if (!supportedFixedFrameRates.contains(fpsOption)) {
             Log.d(TAG, "FPS disabled for current lens")
 
             return SingleSelectableState.Disabled(
@@ -373,12 +502,7 @@ class SettingsViewModel @Inject constructor(
         }
 
         // if stabilization is on and the option is incompatible, disable
-        if ((
-                previewStabilization == Stabilization.ON &&
-                    (fpsOption == FPS_15 || fpsOption == FPS_60)
-                ) ||
-            (videoStabilization == Stabilization.ON && fpsOption == FPS_60)
-        ) {
+        if (fpsOption in stabilizationMode.unsupportedFpsSet) {
             return SingleSelectableState.Disabled(
                 StabilizationUnsupportedRationale(R.string.fps_rationale_prefix)
             )
@@ -386,6 +510,12 @@ class SettingsViewModel @Inject constructor(
 
         return SingleSelectableState.Selectable
     }
+
+// ////////////////////////////////////////////////////////////
+//
+// Settings Repository functions
+//
+// ////////////////////////////////////////////////////////////
 
     fun setDefaultLensFacing(lensFacing: LensFacing) {
         viewModelScope.launch {
@@ -422,24 +552,38 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCaptureMode(captureMode: CaptureMode) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
-            settingsRepository.updateCaptureMode(captureMode)
-            Log.d(TAG, "set default capture mode: $captureMode")
+            settingsRepository.updateStreamConfig(streamConfig)
+            Log.d(TAG, "set default capture mode: $streamConfig")
         }
     }
 
-    fun setPreviewStabilization(stabilization: Stabilization) {
+    fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         viewModelScope.launch {
-            settingsRepository.updatePreviewStabilization(stabilization)
-            Log.d(TAG, "set preview stabilization: $stabilization")
+            settingsRepository.updateStabilizationMode(stabilizationMode)
+            Log.d(TAG, "set stabilization mode: $stabilizationMode")
         }
     }
 
-    fun setVideoStabilization(stabilization: Stabilization) {
+    fun setMaxVideoDuration(durationMillis: Long) {
         viewModelScope.launch {
-            settingsRepository.updateVideoStabilization(stabilization)
-            Log.d(TAG, "set video stabilization: $stabilization")
+            settingsRepository.updateMaxVideoDuration(durationMillis)
+            Log.d(TAG, "set video duration: $durationMillis ms")
+        }
+    }
+
+    fun setVideoQuality(videoQuality: VideoQuality) {
+        viewModelScope.launch {
+            settingsRepository.updateVideoQuality(videoQuality)
+            Log.d(TAG, "set video quality: $videoQuality ms")
+        }
+    }
+
+    fun setVideoAudio(isAudioEnabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateAudioEnabled(isAudioEnabled)
+            Log.d(TAG, "recording audio muted: $isAudioEnabled")
         }
     }
 }

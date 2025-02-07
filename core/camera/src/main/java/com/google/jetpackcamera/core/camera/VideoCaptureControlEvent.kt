@@ -30,8 +30,19 @@ sealed interface VideoCaptureControlEvent {
     class StartRecordingEvent(
         val videoCaptureUri: Uri?,
         val shouldUseUri: Boolean,
+        val maxVideoDuration: Long,
         val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent
+
+    /**
+     * Pauses a video recording.
+     */
+    data object PauseRecordingEvent : VideoCaptureControlEvent
+
+    /**
+     * Resumes a paused video recording.
+     */
+    data object ResumeRecordingEvent : VideoCaptureControlEvent
 
     /**
      * Stops video recording.

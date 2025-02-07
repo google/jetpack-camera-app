@@ -17,13 +17,14 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -43,15 +44,19 @@ interface SettingsRepository {
 
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun updateCaptureMode(captureMode: CaptureMode)
+    suspend fun updateStreamConfig(streamConfig: StreamConfig)
 
-    suspend fun updatePreviewStabilization(stabilization: Stabilization)
-
-    suspend fun updateVideoStabilization(stabilization: Stabilization)
+    suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
+
+    suspend fun updateMaxVideoDuration(durationMillis: Long)
+
+    suspend fun updateVideoQuality(videoQuality: VideoQuality)
+
+    suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 }

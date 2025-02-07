@@ -15,40 +15,55 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.Stabilization
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
-import com.google.jetpackcamera.settings.ui.CaptureModeSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
+import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
+import com.google.jetpackcamera.settings.ui.StreamConfigSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
+import com.google.jetpackcamera.settings.ui.VideoQualitySetting
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
  * Screen used for the Settings feature.
  */
+
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
@@ -65,13 +80,25 @@ fun SettingsScreen(
         setFlashMode = viewModel::setFlashMode,
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
-        setCaptureMode = viewModel::setCaptureMode,
-        setVideoStabilization = viewModel::setVideoStabilization,
-        setPreviewStabilization = viewModel::setPreviewStabilization,
-        setDarkMode = viewModel::setDarkMode
+        setCaptureMode = viewModel::setStreamConfig,
+        setAudio = viewModel::setVideoAudio,
+        setStabilizationMode = viewModel::setStabilizationMode,
+        setMaxVideoDuration = viewModel::setMaxVideoDuration,
+        setDarkMode = viewModel::setDarkMode,
+        setVideoQuality = viewModel::setVideoQuality
     )
+    val permissionStates = rememberMultiplePermissionsState(
+        permissions =
+        listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        )
+    )
+
+    viewModel.setGrantedPermissions(permissionStates)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsScreen(
     uiState: SettingsUiState,
@@ -81,33 +108,49 @@ private fun SettingsScreen(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (CaptureMode) -> Unit = {},
-    setVideoStabilization: (Stabilization) -> Unit = {},
-    setPreviewStabilization: (Stabilization) -> Unit = {},
-    setDarkMode: (DarkMode) -> Unit = {}
+    setCaptureMode: (StreamConfig) -> Unit = {},
+    setStabilizationMode: (StabilizationMode) -> Unit = {},
+    setAudio: (Boolean) -> Unit = {},
+    setMaxVideoDuration: (Long) -> Unit = {},
+    setDarkMode: (DarkMode) -> Unit = {},
+    setVideoQuality: (VideoQuality) -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .background(color = MaterialTheme.colorScheme.background)
-    ) {
-        SettingsPageHeader(
-            title = stringResource(id = R.string.settings_title),
-            navBack = onNavigateBack
-        )
-        if (uiState is SettingsUiState.Enabled) {
-            SettingsList(
-                uiState = uiState,
-                versionInfo = versionInfo,
-                setDefaultLensFacing = setDefaultLensFacing,
-                setFlashMode = setFlashMode,
-                setTargetFrameRate = setTargetFrameRate,
-                setAspectRatio = setAspectRatio,
-                setCaptureMode = setCaptureMode,
-                setVideoStabilization = setVideoStabilization,
-                setPreviewStabilization = setPreviewStabilization,
-                setDarkMode = setDarkMode
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+        rememberTopAppBarState()
+    )
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            SettingsPageHeader(
+                title = stringResource(id = R.string.settings_title),
+                navBack = onNavigateBack,
+                scrollBehavior = scrollBehavior
             )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .background(color = MaterialTheme.colorScheme.background)
+        ) {
+            if (uiState is SettingsUiState.Enabled) {
+                SettingsList(
+                    uiState = uiState,
+                    versionInfo = versionInfo,
+                    setDefaultLensFacing = setDefaultLensFacing,
+                    setFlashMode = setFlashMode,
+                    setTargetFrameRate = setTargetFrameRate,
+                    setAspectRatio = setAspectRatio,
+                    setCaptureMode = setCaptureMode,
+                    setStabilizationMode = setStabilizationMode,
+                    setAudio = setAudio,
+                    setMaxVideoDuration = setMaxVideoDuration,
+                    setDarkMode = setDarkMode,
+                    setVideoQuality = setVideoQuality
+                )
+            }
         }
     }
 }
@@ -120,9 +163,11 @@ fun SettingsList(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (CaptureMode) -> Unit = {},
-    setVideoStabilization: (Stabilization) -> Unit = {},
-    setPreviewStabilization: (Stabilization) -> Unit = {},
+    setCaptureMode: (StreamConfig) -> Unit = {},
+    setAudio: (Boolean) -> Unit = {},
+    setStabilizationMode: (StabilizationMode) -> Unit = {},
+    setVideoQuality: (VideoQuality) -> Unit = {},
+    setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {}
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
@@ -147,15 +192,31 @@ fun SettingsList(
         setAspectRatio = setAspectRatio
     )
 
-    CaptureModeSetting(
-        captureModeUiState = uiState.captureModeUiState,
-        setCaptureMode = setCaptureMode
+    StreamConfigSetting(
+        streamConfigUiState = uiState.streamConfigUiState,
+        setStreamConfig = setCaptureMode
+    )
+
+    SectionHeader(title = stringResource(R.string.section_title_recording_settings))
+
+    RecordingAudioSetting(
+        audioUiState = uiState.audioUiState,
+        setDefaultAudio = setAudio
+    )
+
+    MaxVideoDurationSetting(
+        maxVideoDurationUiState = uiState.maxVideoDurationUiState,
+        setMaxDuration = setMaxVideoDuration
     )
 
     StabilizationSetting(
         stabilizationUiState = uiState.stabilizationUiState,
-        setVideoStabilization = setVideoStabilization,
-        setPreviewStabilization = setPreviewStabilization
+        setStabilizationMode = setStabilizationMode
+    )
+
+    VideoQualitySetting(
+        videQualityUiState = uiState.videoQualityUiState,
+        setVideoQuality = setVideoQuality
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
@@ -175,10 +236,7 @@ fun SettingsList(
 
 // will allow you to open stabilization popup or give disabled rationale
 
-data class VersionInfoHolder(
-    val versionName: String,
-    val buildType: String
-)
+data class VersionInfoHolder(val versionName: String, val buildType: String)
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)

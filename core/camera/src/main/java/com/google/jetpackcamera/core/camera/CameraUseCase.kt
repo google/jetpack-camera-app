@@ -21,15 +21,17 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoost
-import com.google.jetpackcamera.settings.model.Stabilization
-import kotlinx.coroutines.flow.SharedFlow
+import com.google.jetpackcamera.settings.model.LowLightBoostState
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.VideoQuality
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -41,7 +43,11 @@ interface CameraUseCase {
      *
      * @return list of available lenses.
      */
-    suspend fun initialize(cameraAppSettings: CameraAppSettings, useCaseMode: UseCaseMode)
+    suspend fun initialize(
+        cameraAppSettings: CameraAppSettings,
+        isDebugMode: Boolean = false,
+        cameraPropertiesJSONCallback: (result: String) -> Unit
+    )
 
     /**
      * Starts the camera.
@@ -73,7 +79,11 @@ interface CameraUseCase {
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 
-    fun stopVideoRecording()
+    suspend fun pauseVideoRecording()
+
+    suspend fun resumeVideoRecording()
+
+    suspend fun stopVideoRecording()
 
     fun setZoomScale(scale: Float)
 
@@ -81,7 +91,7 @@ interface CameraUseCase {
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
-    fun getScreenFlashEvents(): SharedFlow<ScreenFlashEvent>
+    fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
 
@@ -91,27 +101,29 @@ interface CameraUseCase {
 
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
+    suspend fun setVideoQuality(videoQuality: VideoQuality)
+
     suspend fun setLensFacing(lensFacing: LensFacing)
 
     suspend fun tapToFocus(x: Float, y: Float)
 
-    suspend fun setCaptureMode(captureMode: CaptureMode)
+    suspend fun setStreamConfig(streamConfig: StreamConfig)
 
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
-    suspend fun setLowLightBoost(lowLightBoost: LowLightBoost)
+    suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
-    suspend fun setAudioMuted(isAudioMuted: Boolean)
+    suspend fun setAudioEnabled(isAudioEnabled: Boolean)
 
-    suspend fun setVideoCaptureStabilization(videoCaptureStabilization: Stabilization)
-
-    suspend fun setPreviewStabilization(previewStabilization: Stabilization)
+    suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
     suspend fun setTargetFrameRate(targetFrameRate: Int)
+
+    suspend fun setMaxVideoDuration(durationInMillis: Long)
 
     /**
      * Represents the events required for screen flash.
@@ -126,26 +138,60 @@ interface CameraUseCase {
     /**
      * Represents the events for video recording.
      */
+
     sealed interface OnVideoRecordEvent {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
-        data class OnVideoRecordStatus(val audioAmplitude: Double) : OnVideoRecordEvent
-
-        data class OnVideoRecordError(val error: Throwable?) : OnVideoRecordEvent
+        data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
     }
+}
 
-    enum class UseCaseMode {
-        STANDARD,
-        IMAGE_ONLY,
-        VIDEO_ONLY
+sealed interface VideoRecordingState {
+
+    /**
+     * [PendingRecording][androidx.camera.video.PendingRecording] has not yet started but is about to.
+     * This state may be used as a signal to start processes just before the recording actually starts.
+     */
+    data object Starting : VideoRecordingState
+
+    /**
+     * Camera is not currently recording a video
+     */
+    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
+
+    /**
+     * Camera is currently active; paused, stopping, or recording a video
+     */
+    sealed interface Active : VideoRecordingState {
+        val maxDurationMillis: Long
+        val audioAmplitude: Double
+        val elapsedTimeNanos: Long
+
+        data class Recording(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
+
+        data class Paused(
+            override val maxDurationMillis: Long,
+            override val audioAmplitude: Double,
+            override val elapsedTimeNanos: Long
+        ) : Active
     }
 }
 
 data class CameraState(
+    val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
     val zoomScale: Float = 1f,
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
-    val debugInfo: DebugInfo = DebugInfo(null, null)
+    val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
+    val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
+    val debugInfo: DebugInfo = DebugInfo(null, null),
+    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )
 
 data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
+
+data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)

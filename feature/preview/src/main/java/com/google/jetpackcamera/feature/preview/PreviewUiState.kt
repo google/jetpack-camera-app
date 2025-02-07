@@ -15,10 +15,15 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Size
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.VideoQuality
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -28,38 +33,133 @@ sealed interface PreviewUiState {
 
     data class Ready(
         // "quick" settings
-        val currentCameraSettings: CameraAppSettings,
-        val systemConstraints: SystemConstraints,
+        val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
+        val systemConstraints: SystemConstraints = SystemConstraints(),
         val zoomScale: Float = 1f,
-        val videoRecordingState: VideoRecordingState = VideoRecordingState.INACTIVE,
+        val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        val audioAmplitude: Double = 0.0,
-        val audioMuted: Boolean = false,
+        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode,
-        val captureModeToggleUiState: CaptureModeToggleUiState,
+        val previewMode: PreviewMode = PreviewMode.StandardMode {},
+        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val isDebugMode: Boolean = false
+        val debugUiState: DebugUiState = DebugUiState(),
+        val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
+        val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
+        val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
+        val audioUiState: AudioUiState = AudioUiState.Disabled
     ) : PreviewUiState
 }
 
-/**
- * Defines the current state of Video Recording
- */
-enum class VideoRecordingState {
-    /**
-     * Camera is not currently recording a video
-     */
-    INACTIVE,
+// todo(kc): add ElapsedTimeUiState class
 
-    /**
-     * Camera is currently recording a video
-     */
-    ACTIVE
+data class DebugUiState(
+    val cameraPropertiesJSON: String = "",
+    val videoResolution: Size? = null,
+    val isDebugMode: Boolean = false,
+    val isDebugOverlayOpen: Boolean = false
+)
+
+sealed interface AudioUiState {
+    val amplitude: Double
+
+    sealed interface Enabled : AudioUiState {
+        data class On(override val amplitude: Double) : Enabled
+        data object Mute : Enabled {
+            override val amplitude = 0.0
+        }
+    }
+
+    // todo give a disabledreason when audio permission is not granted
+    data object Disabled : AudioUiState {
+        override val amplitude = 0.0
+    }
+}
+
+sealed interface StabilizationUiState {
+    data object Disabled : StabilizationUiState
+
+    sealed interface Enabled : StabilizationUiState {
+        val stabilizationMode: StabilizationMode
+        val active: Boolean
+    }
+
+    data class Specific(
+        override val stabilizationMode: StabilizationMode,
+        override val active: Boolean = true
+    ) : Enabled {
+        init {
+            require(stabilizationMode != StabilizationMode.AUTO) {
+                "Specific StabilizationUiState cannot have AUTO stabilization mode."
+            }
+        }
+    }
+
+    data class Auto(
+        override val stabilizationMode: StabilizationMode
+    ) : Enabled {
+        override val active = true
+    }
+}
+
+sealed class FlashModeUiState {
+    data object Unavailable : FlashModeUiState()
+
+    data class Available(
+        val selectedFlashMode: FlashMode,
+        val availableFlashModes: List<FlashMode>,
+        val isActive: Boolean
+    ) : FlashModeUiState() {
+        init {
+            check(selectedFlashMode in availableFlashModes) {
+                "Selected flash mode of $selectedFlashMode not in available modes: " +
+                    "$availableFlashModes"
+            }
+        }
+    }
+
+    companion object {
+        private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
+            FlashMode.OFF,
+            FlashMode.ON,
+            FlashMode.AUTO,
+            FlashMode.LOW_LIGHT_BOOST
+        )
+
+        /**
+         * Creates a FlashModeUiState from a selected flash mode and a set of supported flash modes
+         * that may not include flash modes supported by the UI.
+         */
+        fun createFrom(
+            selectedFlashMode: FlashMode,
+            supportedFlashModes: Set<FlashMode>
+        ): FlashModeUiState {
+            // Ensure we at least support one flash mode
+            check(supportedFlashModes.isNotEmpty()) {
+                "No flash modes supported. Should at least support OFF."
+            }
+
+            // Convert available flash modes to list we support in the UI in our desired order
+            val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
+                it in supportedFlashModes
+            }
+
+            return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
+                // If we only support OFF, then return "Unavailable".
+                Unavailable
+            } else {
+                Available(
+                    selectedFlashMode = selectedFlashMode,
+                    availableFlashModes = availableModes,
+                    isActive = false
+                )
+            }
+        }
+    }
 }

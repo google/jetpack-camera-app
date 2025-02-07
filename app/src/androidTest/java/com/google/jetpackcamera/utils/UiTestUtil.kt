@@ -24,11 +24,11 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertWithMessage
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
@@ -40,16 +40,96 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.settings.model.LensFacing
 import java.io.File
 import java.net.URLConnection
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.fail
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
+const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
 private const val TAG = "UiTestUtil"
+const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
+const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
+const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
+inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
+    mediaUri: Uri,
+    filePrefix: String = "",
+    expectedNumFiles: Int = 1,
+    fileWaitTimeoutMs: Duration = 10.seconds,
+    fileObserverContext: CoroutineContext = Dispatchers.IO,
+    crossinline block: ActivityScenario<T>.() -> Unit
+) = runBlocking {
+    val debugTag = "MediaStoreAutoDelete"
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    val insertedMediaStoreEntries = mutableMapOf<String, Uri>()
+    val observeFilesJob = launch(fileObserverContext) {
+        mediaStoreInsertedFlow(
+            mediaUri = mediaUri,
+            instrumentation = instrumentation,
+            filePrefix = filePrefix
+        ).take(expectedNumFiles)
+            .collect {
+                Log.d(debugTag, "Discovered new media store file: ${it.first}")
+                insertedMediaStoreEntries[it.first] = it.second
+            }
+    }
+
+    var succeeded = false
+    try {
+        runScenarioTest(block = block)
+        succeeded = true
+    } finally {
+        withContext(NonCancellable) {
+            if (!succeeded ||
+                withTimeoutOrNull(fileWaitTimeoutMs) {
+                    // Wait for normal completion with timeout
+                    observeFilesJob.join()
+                } == null
+            ) {
+                // If the test didn't succeed, or we've timed out waiting for files,
+                // cancel file observer and ensure job is complete
+                observeFilesJob.cancelAndJoin()
+            }
+
+            val detectedNumFiles = insertedMediaStoreEntries.size
+            // Delete all inserted files that we know about at this point
+            insertedMediaStoreEntries.forEach {
+                Log.d(debugTag, "Deleting media store file: $it")
+                val deletedRows = instrumentation.targetContext.contentResolver.delete(
+                    it.value,
+                    null,
+                    null
+                )
+                if (deletedRows > 0) {
+                    Log.d(debugTag, "Deleted $deletedRows files")
+                } else {
+                    Log.e(debugTag, "Failed to delete ${it.key}")
+                }
+            }
+
+            if (succeeded) {
+                assertWithMessage("Expected number of saved files does not match detected number")
+                    .that(detectedNumFiles).isEqualTo(expectedNumFiles)
+            }
+        }
+    }
+}
 
 inline fun <reified T : Activity> runScenarioTest(
     crossinline block: ActivityScenario<T>.() -> Unit
@@ -62,51 +142,28 @@ inline fun <reified T : Activity> runScenarioTest(
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
     crossinline block: ActivityScenario<T>.() -> Unit
-): Instrumentation.ActivityResult? {
+): Instrumentation.ActivityResult {
     ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
-        return scenario.result
+        return runBlocking { scenario.pollResult() }
     }
 }
 
-context(ActivityScenario<MainActivity>)
-fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromQuickSettings = true
-        }
+// Workaround for https://github.com/android/android-test/issues/676
+suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
+    // Choose timeout to match
+    // https://github.com/android/android-test/blob/67fa7cb12b9a14dc790b75947f4241c3063e80dc/runner/monitor/java/androidx/test/internal/platform/app/ActivityLifecycleTimeout.java#L22
+    timeout: Duration = 45.seconds
+): Instrumentation.ActivityResult = withTimeoutOrNull(timeout) {
+    // Poll for the state to be destroyed before we return the result
+    while (state != Lifecycle.State.DESTROYED) {
+        delay(100)
     }
-
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
-        "LensFacing can only be retrieved from PreviewScreen or QuickSettings screen"
+    checkNotNull(result)
+} ?: run {
+    throw TimeoutException(
+        "Timed out while waiting for activity result. Waited $timeout."
     )
-
-    try {
-        return onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
-            "Flip camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].any { description ->
-                when (description) {
-                    getResString(R.string.quick_settings_front_camera_description) ->
-                        return@let LensFacing.FRONT
-
-                    getResString(R.string.quick_settings_back_camera_description) ->
-                        return@let LensFacing.BACK
-
-                    else -> false
-                }
-            }
-            throw AssertionError("Unable to determine lens facing from quick settings")
-        }
-    } finally {
-        if (needReturnFromQuickSettings) {
-            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
-                .assertExists()
-                .performClick()
-        }
-    }
 }
 
 fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri {
@@ -124,13 +181,13 @@ fun deleteFilesInDirAfterTimestamp(
     timeStamp: Long
 ): Boolean {
     var hasDeletedFile = false
-    for (file in File(directoryPath).listFiles()) {
+    for (file in File(directoryPath).listFiles() ?: emptyArray()) {
         if (file.lastModified() >= timeStamp) {
             file.delete()
             if (file.exists()) {
-                file.getCanonicalFile().delete()
+                file.canonicalFile.delete()
                 if (file.exists()) {
-                    instrumentation.targetContext.applicationContext.deleteFile(file.getName())
+                    instrumentation.targetContext.applicationContext.deleteFile(file.name)
                 }
             }
             hasDeletedFile = true
@@ -140,28 +197,45 @@ fun deleteFilesInDirAfterTimestamp(
 }
 
 fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
-    val file = File(uri.path)
-    if (file.exists()) {
+    val file = uri.path?.let { File(it) }
+    if (file?.exists() == true) {
         val mimeType = URLConnection.guessContentTypeFromName(uri.path)
         return mimeType != null && mimeType.startsWith(prefix)
     }
     return false
 }
 
-fun getIntent(uri: Uri, action: String): Intent {
+fun getSingleImageCaptureIntent(uri: Uri, action: String): Intent {
     val intent = Intent(action)
     intent.setComponent(
         ComponentName(
-            "com.google.jetpackcamera",
-            "com.google.jetpackcamera.MainActivity"
+            COMPONENT_PACKAGE_NAME,
+            COMPONENT_CLASS
         )
     )
     intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
     return intent
 }
 
+fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String): Intent {
+    val intent = Intent(action)
+    intent.setComponent(
+        ComponentName(
+            COMPONENT_PACKAGE_NAME,
+            COMPONENT_CLASS
+        )
+    )
+    intent.putStringArrayListExtra(MediaStore.EXTRA_OUTPUT, uriStrings)
+    return intent
+}
+
+fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
+    SemanticsProperties.StateDescription in it.config &&
+        (it.config[SemanticsProperties.StateDescription] == expected)
+}
+
 /**
- * Rule that you to specify test methods that will have permissions granted prior to starting
+ * Rule to specify test methods that will have permissions granted prior to running
  *
  * @param permissions the permissions to be granted
  * @param targetTestNames the names of the tests that this rule will apply to

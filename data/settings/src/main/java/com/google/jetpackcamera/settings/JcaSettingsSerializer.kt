@@ -20,7 +20,11 @@ import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-
+/**
+ * This constant is `0L` because the `DURATION_UNLIMITED`
+ * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
+ */
+const val UNLIMITED_VIDEO_DURATION = 0L
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
@@ -28,11 +32,13 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-        .setCaptureModeStatus(CaptureMode.CAPTURE_MODE_MULTI_STREAM)
-        .setStabilizePreview(PreviewStabilization.PREVIEW_STABILIZATION_UNDEFINED)
-        .setStabilizeVideo(VideoStabilization.VIDEO_STABILIZATION_UNDEFINED)
+        .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
+        .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
+        .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
+        .setAudioEnabledStatus(true)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

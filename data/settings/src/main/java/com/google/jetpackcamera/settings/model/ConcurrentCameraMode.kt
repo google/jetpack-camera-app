@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.jetpackcamera.settings.model
 
-syntax = "proto3";
-
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-enum PreviewStabilization {
-  PREVIEW_STABILIZATION_UNDEFINED = 0;
-  PREVIEW_STABILIZATION_OFF = 1;
-  PREVIEW_STABILIZATION_ON = 2;
+enum class ConcurrentCameraMode {
+    OFF,
+    DUAL
 }

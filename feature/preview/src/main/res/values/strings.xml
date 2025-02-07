@@ -16,6 +16,10 @@
   -->
 <resources>
     <string name="camera_not_ready">Camera Loading…</string>
+
+    <string name="capture_mode_image_capture_content_description">Image capture mode</string>
+    <string name="capture_mode_video_recording_content_description">Video recording mode</string>
+
     <string name="settings_content_description">Settings</string>
     <string name="flip_camera_content_description">Flip Camera</string>
 
@@ -32,8 +36,15 @@
     <string name="toast_video_capture_failure">Video Capture Failure</string>
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
     <string name="toast_image_capture_external_unsupported">Image capture not supported while app is in video-only capture mode</string>
+    <string name="toast_image_capture_unsupported_concurrent_camera">Image capture not supported in dual camera mode</string>
+    <string name="stabilization_icon_description_auto">Stabilization is on</string>
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
+    <string name="stabilization_icon_description_optical">Optical stabilization is Enabled</string>
+    <string name="video_quality_description_sd">Video quality is SD</string>
+    <string name="video_quality_description_hd">Video quality is HD</string>
+    <string name="video_quality_description_fhd">Video quality is FHD</string>
+    <string name="video_quality_description_uhd">Video quality is UHD</string>
     <string name="toast_hdr_photo_unsupported_on_device">Ultra HDR photos not supported on this device</string>
     <string name="toast_hdr_photo_unsupported_on_lens">Ultra HDR photos not supported by current lens</string>
     <string name="toast_hdr_photo_unsupported_on_lens_single_stream">Single-stream mode does not support UltraHDR photo capture for current lens</string>
@@ -63,9 +74,11 @@
     <string name="quick_settings_flash_off">OFF</string>
     <string name="quick_settings_flash_auto">AUTO</string>
     <string name="quick_settings_flash_on">ON</string>
+    <string name="quick_settings_flash_llb">LLB</string>
     <string name="quick_settings_flash_off_description">Flash off</string>
     <string name="quick_settings_flash_auto_description">Auto flash</string>
     <string name="quick_settings_flash_on_description">Flash on</string>
+    <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
     <string name="quick_settings_capture_mode_single">Single Stream</string>
     <string name="quick_settings_capture_mode_multi">Multi Stream</string>
@@ -79,4 +92,9 @@
     <string name="quick_settings_lowlightboost_disabled">Low light boost off</string>
     <string name="quick_settings_lowlightboost_enabled_description">Low light boost on</string>
     <string name="quick_settings_lowlightboost_disabled_description">Low light boost off</string>
+
+    <string name="quick_settings_concurrent_camera_off">SINGLE</string>
+    <string name="quick_settings_concurrent_camera_dual">DUAL</string>
+    <string name="quick_settings_concurrent_camera_off_description">Concurrent cameras off</string>
+    <string name="quick_settings_concurrent_camera_dual_description">Concurrent dual camera on</string>
 </resources>

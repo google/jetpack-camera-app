@@ -24,7 +24,6 @@ plugins {
 android {
     namespace = "com.google.jetpackcamera.core.common"
     compileSdk = libs.versions.compileSdk.get().toInt()
-    compileSdkPreview = libs.versions.compileSdkPreview.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -53,11 +52,6 @@ android {
             dimension = "flavor"
             isDefault = true
         }
-
-        create("preview") {
-            dimension = "flavor"
-            targetSdkPreview = libs.versions.targetSdkPreview.get()
-        }
     }
 
     compileOptions {
@@ -73,7 +67,6 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.android.material)
     implementation(libs.kotlinx.atomicfu)
     implementation(libs.androidx.tracing)
 

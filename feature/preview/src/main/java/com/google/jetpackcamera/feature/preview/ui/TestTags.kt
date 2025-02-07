@@ -15,14 +15,27 @@
  */
 package com.google.jetpackcamera.feature.preview.ui
 
+// ////////////////////////////////
+//
+// !!!HEY YOU!!!
+// MODIFICATIONS TO EXISTING TEST TAGS WILL BREAK EXISTING EXTERNAL
+// AUTOMATED TESTS THAT SEARCH FOR THESE TAGS.
+//
+// PLEASE UPDATE YOUR TESTS ACCORDINGLY!
+//
+// ////////////////////////////////
+
 const val CAPTURE_BUTTON = "CaptureButton"
+const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
 const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
 const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
+const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
+const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
+    "ImageCaptureUnsupportedConcurrentCameraTag"
+const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
 const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
 const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
-const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
-const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
 const val SETTINGS_BUTTON = "SettingsButton"
@@ -37,3 +50,12 @@ const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val ZOOM_RATIO_TAG = "ZoomRatioTag"
 const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
 const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
+const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
+const val VIDEO_QUALITY_TAG = "VideoQualityTag"
+const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
+const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
+const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
+const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"
+const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTextField"
+const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
+const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"

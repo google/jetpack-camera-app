@@ -17,13 +17,27 @@ package com.google.jetpackcamera.utils
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
+import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import org.junit.AssumptionViolatedException
 
 /**
@@ -82,6 +96,117 @@ fun SemanticsNodeInteraction.assume(
         )
     }
     return this
+}
+
+fun ComposeTestRule.longClickForVideoRecording() {
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            down(center)
+        }
+    idleForVideoDuration()
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            up()
+        }
+}
+
+private fun ComposeTestRule.idleForVideoDuration() {
+    // TODO: replace with a check for the timestamp UI of the video duration
+    try {
+        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
+            onNodeWithTag("dummyTagForLongPress").isDisplayed()
+        }
+    } catch (e: ComposeTimeoutException) {
+    }
+}
+
+fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
+    onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
+        "Flip camera button is not visible when expected."
+    ).let { node ->
+        node.config[SemanticsProperties.ContentDescription].any { description ->
+            when (description) {
+                getResString(R.string.quick_settings_front_camera_description) ->
+                    return@let LensFacing.FRONT
+                getResString(R.string.quick_settings_back_camera_description) ->
+                    return@let LensFacing.BACK
+                else -> false
+            }
+        }
+        throw AssertionError("Unable to determine lens facing from quick settings")
+    }
+}
+
+fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
+    onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
+        "Flash button is not visible when expected."
+    ).let { node ->
+        node.config[SemanticsProperties.ContentDescription].any { description ->
+            when (description) {
+                getResString(R.string.quick_settings_flash_off_description) ->
+                    return@let FlashMode.OFF
+                getResString(R.string.quick_settings_flash_on_description) ->
+                    return@let FlashMode.ON
+                getResString(R.string.quick_settings_flash_auto_description) ->
+                    return@let FlashMode.AUTO
+                getResString(R.string.quick_settings_flash_llb_description) ->
+                    return@let FlashMode.LOW_LIGHT_BOOST
+                else -> false
+            }
+        }
+        throw AssertionError("Unable to determine flash mode from quick settings")
+    }
+}
+
+// Navigates to quick settings if not already there and perform action from provided block.
+// This will return from quick settings if not already there, or remain on quick settings if there.
+inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
+    var needReturnFromQuickSettings = false
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
+        if (isDisplayed()) {
+            performClick()
+            needReturnFromQuickSettings = true
+        }
+    }
+
+    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
+        "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
+    )
+
+    try {
+        return block()
+    } finally {
+        if (needReturnFromQuickSettings) {
+            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
+                .assertExists()
+                .performClick()
+        }
+    }
+}
+
+fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
+    visitQuickSettings {
+        // Click the flash button to switch to ON
+        onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
+            .assertExists()
+            .assume(isEnabled()) {
+                "Current lens does not support any flash modes"
+            }.apply {
+                val initialFlashMode = getCurrentFlashMode()
+                var currentFlashMode = initialFlashMode
+                while (currentFlashMode != flashMode) {
+                    performClick()
+                    currentFlashMode = getCurrentFlashMode()
+                    if (currentFlashMode == initialFlashMode) {
+                        throw AssumptionViolatedException(
+                            "Current lens does not support $flashMode"
+                        )
+                    }
+                }
+            }
+    }
 }
 
 internal fun buildGeneralErrorMessage(

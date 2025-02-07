@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.jetpackcamera.settings.model
 
-syntax = "proto3";
+/**
+ * Enum describing the state of Low Light Boost state.
+ */
+enum class LowLightBoostState {
+    /**
+     * Low Light Boost is turned on, and active
+     */
+    ACTIVE,
 
-option java_package = "com.google.jetpackcamera.settings";
-option java_multiple_files = true;
-
-enum VideoStabilization {
-  VIDEO_STABILIZATION_UNDEFINED = 0;
-  VIDEO_STABILIZATION_OFF = 1;
-  VIDEO_STABILIZATION_ON = 2;
+    /**
+     * Low Light Boost is turned on, but inactive
+     */
+    INACTIVE
 }
