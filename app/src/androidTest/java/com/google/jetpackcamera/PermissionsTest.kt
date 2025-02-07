@@ -141,6 +141,14 @@ class PermissionsTest {
             // Assert we're still on camera permission screen
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
 
+            // text changed after permission denied
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithText(
+                    com.google.jetpackcamera.permissions.R.string
+                        .camera_permission_declined_rationale
+                )
+                    .isDisplayed()
+            }
             // request permissions button should now say to navigate to settings
             composeTestRule.onNodeWithText(
                 com.google.jetpackcamera.permissions
