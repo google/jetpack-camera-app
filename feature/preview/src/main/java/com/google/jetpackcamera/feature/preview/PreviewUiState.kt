@@ -38,7 +38,6 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
@@ -66,12 +65,12 @@ data class DebugUiState(
 )
 
 sealed interface ElapsedTimeUiState {
-    data object Unavailable: ElapsedTimeUiState
+    data object Unavailable : ElapsedTimeUiState
 
     data class Enabled(
         val elapsedTimeNanos: Long,
-        val maxVideoDurationMillis:Long
-    ): ElapsedTimeUiState
+        val maxVideoDurationMillis: Long
+    ) : ElapsedTimeUiState
 }
 
 sealed interface AudioUiState {

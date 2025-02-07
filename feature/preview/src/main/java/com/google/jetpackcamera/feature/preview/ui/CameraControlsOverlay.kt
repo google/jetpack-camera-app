@@ -38,7 +38,6 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -295,15 +294,18 @@ private fun ControlsBottom(
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                if(previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+                if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
                     AnimatedVisibility(
-                        visible = (previewUiState.videoRecordingState is VideoRecordingState.Active),
+                        visible = (
+                            previewUiState.videoRecordingState is
+                                VideoRecordingState.Active
+                            ),
                         enter = fadeIn(),
                         exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
                     ) {
                         ElapsedTimeText(
                             modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                            elapsedTimeUiState = previewUiState.elapsedTimeUiState,
+                            elapsedTimeUiState = previewUiState.elapsedTimeUiState
                         )
                     }
                 }
@@ -430,7 +432,7 @@ private fun CaptureButton(
                             context.contentResolver,
                             null,
                             previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri,
+                                ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
@@ -519,9 +521,9 @@ private fun CaptureModeToggleButton(
         },
         enabled = uiState is CaptureModeToggleUiState.Enabled,
         leftIconDescription =
-            stringResource(id = R.string.capture_mode_image_capture_content_description),
+        stringResource(id = R.string.capture_mode_image_capture_content_description),
         rightIconDescription =
-            stringResource(id = R.string.capture_mode_video_recording_content_description),
+        stringResource(id = R.string.capture_mode_video_recording_content_description),
         modifier = modifier
     )
 }
@@ -684,7 +686,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()
