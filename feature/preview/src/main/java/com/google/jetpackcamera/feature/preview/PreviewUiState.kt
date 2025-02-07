@@ -68,12 +68,10 @@ data class DebugUiState(
 sealed interface ElapsedTimeUiState {
     data object Unavailable: ElapsedTimeUiState
 
-    sealed interface Enabled: ElapsedTimeUiState {
-        val elapsedTimeNanos: Long
-        data class Incrementing(override val elapsedTimeNanos: Long) : Enabled
-        data class Decrementing(override val elapsedTimeNanos: Long, val durationLimit: Long) :
-            Enabled
-    }
+    data class Enabled(
+        val elapsedTimeNanos: Long,
+        val maxVideoDurationMillis:Long
+    ): ElapsedTimeUiState
 }
 
 sealed interface AudioUiState {

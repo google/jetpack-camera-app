@@ -175,6 +175,7 @@ class PreviewViewModel @AssistedInject constructor(
                             // PreviewUiState.Ready from defaults and initialize it below.
                             PreviewUiState.Ready()
                         }
+
                         is PreviewUiState.Ready -> {
                             val previousCameraSettings = old.currentCameraSettings
                             val previousConstraints = old.systemConstraints
@@ -223,36 +224,35 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
                         ),
-                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState, cameraAppSettings.maxVideoDurationMillis)
+                        elapsedTimeUiState = getElapsedTimeUiState(
+                            cameraState.videoRecordingState,
+                            cameraAppSettings.maxVideoDurationMillis
+                        )
                     )
                 }
             }.collect {}
         }
     }
 
-    private fun getElapsedTimeUiState(videoRecordingState: VideoRecordingState, maxDurationMillis: Long):ElapsedTimeUiState{
-        //when incrementing, time counts up from 0
-        // when decrementing, time counts down from maxDurationMillis
-        when (videoRecordingState) {
+    private fun getElapsedTimeUiState(
+        videoRecordingState: VideoRecordingState,
+        maxDurationMillis: Long
+    ): ElapsedTimeUiState {
+
+        return when (videoRecordingState) {
             is VideoRecordingState.Active -> {
-                return if (videoRecordingState.maxDurationMillis == 0L)
-                    ElapsedTimeUiState.Enabled.Incrementing(videoRecordingState.elapsedTimeNanos)
-                else ElapsedTimeUiState.Enabled.Decrementing(videoRecordingState.elapsedTimeNanos, videoRecordingState.maxDurationMillis)
-            }
-            is VideoRecordingState.Inactive -> {
-                return if (maxDurationMillis == 0L) ElapsedTimeUiState.Enabled.Incrementing(
-                    videoRecordingState.finalElapsedTimeNanos
+                ElapsedTimeUiState.Enabled(
+                    videoRecordingState.elapsedTimeNanos,
+                    maxDurationMillis
                 )
-                else
-                    ElapsedTimeUiState.Enabled.Decrementing(videoRecordingState.finalElapsedTimeNanos, maxDurationMillis)
             }
-            VideoRecordingState.Starting -> {
-                return if (maxDurationMillis == 0L) ElapsedTimeUiState.Enabled.Incrementing(
-                    0L
-                )
-                else
-                    ElapsedTimeUiState.Enabled.Decrementing(0L, maxDurationMillis)
-            }
+
+            is VideoRecordingState.Inactive -> ElapsedTimeUiState.Enabled(
+                videoRecordingState.finalElapsedTimeNanos,
+                maxDurationMillis
+            )
+
+            VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L, maxDurationMillis)
         }
     }
 
@@ -277,6 +277,7 @@ class PreviewViewModel @AssistedInject constructor(
                     supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
                 )
             }
+
             is FlashModeUiState.Available -> {
                 val previousFlashMode = previousCameraSettings.flashMode
                 val previousSupportedFlashModes =
@@ -432,15 +433,15 @@ class PreviewViewModel @AssistedInject constructor(
                 it.size > 1
             } ?: false
         val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            previewMode is PreviewMode.ExternalVideoCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+                previewMode is PreviewMode.ExternalVideoCaptureMode ||
+                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+                cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
         val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-            hdrDynamicRangeSupported &&
-            hdrImageFormatSupported &&
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
+                previewMode !is PreviewMode.ExternalVideoCaptureMode &&
+                hdrDynamicRangeSupported &&
+                hdrImageFormatSupported &&
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
         return if (isShown) {
             val currentMode = if (
                 cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
@@ -558,9 +559,9 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
-            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                captureModeFilter(it)
-            }
+                lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                    captureModeFilter(it)
+                }
     } != null
 
     fun startCamera() {
@@ -671,7 +672,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+                    PreviewMode.ExternalVideoCaptureMode
         ) {
             showExternalVideoCaptureUnsupportedToast()
             return
@@ -679,7 +680,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+                    PreviewMode.ExternalVideoCaptureMode
         ) {
             viewModelScope.launch {
                 _previewUiState.update { old ->
@@ -699,16 +700,16 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
                 (
-                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                        PreviewMode.ExternalMultipleImageCaptureMode
-                    )?.let {
-                    val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
-                        null
-                    } else {
-                        it.imageCaptureUris[externalUriIndex]
-                    }
-                    Pair(externalUriIndex, uri)
-                } ?: Pair(-1, imageCaptureUri)
+                        (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
+                                PreviewMode.ExternalMultipleImageCaptureMode
+                        )?.let {
+                        val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
+                            null
+                        } else {
+                            it.imageCaptureUris[externalUriIndex]
+                        }
+                        Pair(externalUriIndex, uri)
+                    } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
@@ -732,14 +733,14 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
-            (previewUiState.value as? PreviewUiState.Ready)
-                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
-            )?.let {
-            if (!it.imageCaptureUris.isNullOrEmpty()) {
-                externalUriIndex++
-                Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
+                (previewUiState.value as? PreviewUiState.Ready)
+                    ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+                )?.let {
+                if (!it.imageCaptureUris.isNullOrEmpty()) {
+                    externalUriIndex++
+                    Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
+                }
             }
-        }
     }
 
     private suspend fun <T> captureImageInternal(
@@ -805,7 +806,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+                    PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             viewModelScope.launch {

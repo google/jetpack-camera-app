@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -260,7 +262,6 @@ private fun ControlsBottom(
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
-    elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
     onFlipCamera: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
@@ -294,12 +295,18 @@ private fun ControlsBottom(
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                if (elapsedTimeUiState is ElapsedTimeUiState.Enabled)
-                ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                    videoRecordingState = videoRecordingState,
-                    elapsedTimeUiState = elapsedTimeUiState,
-                )
+                if(previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+                    AnimatedVisibility(
+                        visible = (previewUiState.videoRecordingState is VideoRecordingState.Active),
+                        enter = fadeIn(),
+                        exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                    ) {
+                        ElapsedTimeText(
+                            modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                            elapsedTimeUiState = previewUiState.elapsedTimeUiState,
+                        )
+                    }
+                }
             }
         }
 
@@ -423,7 +430,7 @@ private fun CaptureButton(
                             context.contentResolver,
                             null,
                             previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                ignoreUri,
+                                    ignoreUri,
                             previewUiState.previewMode.onImageCapture
                         )
                     }
@@ -512,9 +519,9 @@ private fun CaptureModeToggleButton(
         },
         enabled = uiState is CaptureModeToggleUiState.Enabled,
         leftIconDescription =
-        stringResource(id = R.string.capture_mode_image_capture_content_description),
+            stringResource(id = R.string.capture_mode_image_capture_content_description),
         rightIconDescription =
-        stringResource(id = R.string.capture_mode_video_recording_content_description),
+            stringResource(id = R.string.capture_mode_video_recording_content_description),
         modifier = modifier
     )
 }
@@ -677,7 +684,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()
