@@ -20,6 +20,7 @@ import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -27,6 +28,11 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
 import java.net.URLConnection
@@ -43,12 +49,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Assert.fail
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 2_000L
+private const val TAG = "UiTestUtil"
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
 const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
@@ -217,4 +228,104 @@ fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String
 fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
     SemanticsProperties.StateDescription in it.config &&
         (it.config[SemanticsProperties.StateDescription] == expected)
+}
+
+/**
+ * Rule to specify test methods that will have permissions granted prior to running
+ *
+ * @param permissions the permissions to be granted
+ * @param targetTestNames the names of the tests that this rule will apply to
+ */
+class IndividualTestGrantPermissionRule(
+    private val permissions: Array<String>,
+    private val targetTestNames: Array<String>
+) :
+    TestRule {
+    private lateinit var wrappedRule: GrantPermissionRule
+
+    override fun apply(base: Statement, description: Description): Statement {
+        for (targetName in targetTestNames) {
+            if (description.methodName == targetName) {
+                wrappedRule = GrantPermissionRule.grant(*permissions)
+                return wrappedRule.apply(base, description)
+            }
+        }
+        // If no match, return the base statement without granting permissions
+        return base
+    }
+}
+
+// functions for interacting with system permission dialog
+fun UiDevice.askEveryTimeDialog() {
+    if (Build.VERSION.SDK_INT >= 30) {
+        Log.d(TAG, "Searching for Allow Once Button...")
+
+        val askPermission = this.findObjectById(
+            resId = "com.android.permissioncontroller:id/permission_allow_one_time_button"
+        )
+
+        Log.d(TAG, "Clicking Allow Once Button")
+
+        askPermission?.click()
+    }
+}
+
+/**
+ *  Clicks ALLOW option on an open permission dialog
+ */
+fun UiDevice.grantPermissionDialog() {
+    if (Build.VERSION.SDK_INT >= 23) {
+        Log.d(TAG, "Searching for Allow Button...")
+
+        val allowPermission = this.findObjectById(
+            resId = when {
+                Build.VERSION.SDK_INT <= 29 ->
+                    "com.android.packageinstaller:id/permission_allow_button"
+                else ->
+                    "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+            }
+        )
+        Log.d(TAG, "Clicking Allow Button")
+
+        allowPermission?.click()
+    }
+}
+
+/**
+ * Clicks the DENY option on an open permission dialog
+ */
+fun UiDevice.denyPermissionDialog() {
+    if (Build.VERSION.SDK_INT >= 23) {
+        Log.d(TAG, "Searching for Deny Button...")
+        val denyPermission = this.findObjectById(
+            resId = when {
+                Build.VERSION.SDK_INT <= 29 ->
+                    "com.android.packageinstaller:id/permission_deny_button"
+                else -> "com.android.permissioncontroller:id/permission_deny_button"
+            }
+        )
+        Log.d(TAG, "Clicking Deny Button")
+
+        denyPermission?.click()
+    }
+}
+
+/**
+ * Finds a system button by its resource ID.
+ * fails if not found
+ */
+private fun UiDevice.findObjectById(
+    resId: String,
+    timeout: Long = 10000,
+    shouldFailIfNotFound: Boolean = true
+): UiObject2? {
+    val selector = By.res(resId)
+    return if (!this.wait(Until.hasObject(selector), timeout)) {
+        if (shouldFailIfNotFound) {
+            fail("Could not find object with RESOURCE ID: $resId")
+        }
+        null
+    } else {
+        this.findObject(selector)
+    }
 }

@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
+import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 
 const val CAMERA_PERMISSION = "android.permission.CAMERA"
 const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
@@ -55,6 +57,8 @@ sealed interface PermissionInfoProvider {
 
     fun isOptional(): Boolean
 
+    fun getTestTag(): String
+
     @DrawableRes
     fun getDrawableResId(): Int?
 
@@ -84,6 +88,8 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun isOptional(): Boolean = false
 
+        override fun getTestTag(): String = CAMERA_PERMISSION_BUTTON
+
         override fun getDrawableResId(): Int? = null
 
         override fun getImageVector(): ImageVector = Icons.Outlined.CameraAlt
@@ -104,6 +110,8 @@ enum class PermissionEnum : PermissionInfoProvider {
         override fun getPermission(): String = AUDIO_RECORD_PERMISSION
 
         override fun isOptional(): Boolean = true
+
+        override fun getTestTag(): String = RECORD_AUDIO_PERMISSION_BUTTON
 
         override fun getDrawableResId(): Int? = null
 
