@@ -80,6 +80,7 @@ sealed interface CaptureButtonUiState {
         }
     }
 }
+
 sealed interface AudioUiState {
     val amplitude: Double
 
@@ -115,9 +116,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }

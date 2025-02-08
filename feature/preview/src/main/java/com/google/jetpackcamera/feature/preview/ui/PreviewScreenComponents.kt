@@ -131,12 +131,14 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.nanoseconds
 import androidx.camera.core.DynamicRange as CXDynamicRange
 
@@ -148,55 +150,73 @@ fun VolumeButtonsHandler(
     onImageCapture: () -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState
 ) {
+    // todo(kc): capture button and volume button controls should be aware of who started the pressed recording
+    // todo(kc): include keycode for selfie stick?
     var currentUiState = rememberUpdatedState(captureButtonUiState)
-    val volumeUpPressed = remember { mutableStateOf(false) }
-    val volumeDownPressed = remember { mutableStateOf(false) }
-    val isLongPressing = remember { mutableStateOf<Int?>(null) }
-    var volumeUpJob by remember { mutableStateOf<Job?>(null) }
-    var volumeDownJob by remember { mutableStateOf<Job?>(null) }
+    val firstKeyPressed = remember { mutableStateOf<Int?>(null) }
+    val isLongPressing = remember { mutableStateOf<Boolean>(false) }
+    var longPressJob by remember { mutableStateOf<Job?>(null) }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val view = LocalView.current
 
-    suspend fun triggerLongPress(keyCode: Int) {
+    // while a key is already pressed, ignore other presses
+    suspend fun onLongPress() {
         delay(ViewConfiguration.getLongPressTimeout().toLong())
-        if (isLongPressing.value == null && volumeUpPressed.value == true) {
-            when (val current = currentUiState.value) {
-                is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
-                    CaptureMode.STANDARD,
-                    CaptureMode.VIDEO_ONLY -> {
-                        isLongPressing.value = keyCode
-                        onStartRecording()
-                    }
+        withContext(NonCancellable) {
+            if (isLongPressing.value == false) {
+                when (val current = currentUiState.value) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                        CaptureMode.STANDARD,
+                        CaptureMode.VIDEO_ONLY -> {
+                            isLongPressing.value = true
+                            Log.d(TAG, "Starting recording")
+                            onStartRecording()
+                        }
+                        CaptureMode.IMAGE_ONLY -> {}}
 
-                    CaptureMode.IMAGE_ONLY -> {}
+
+                    else -> {}
                 }
-
-                else -> {}
             }
         }
     }
 
-    fun onKeyUp(keyCode: Int, keyPressed: Boolean) {
-        // if releasing while long pressed and not locked, it must be the same button
-        if (isLongPressing.value == keyCode) {
+    fun onKeyPress(keyCode: Int) {
+        if (firstKeyPressed.value == null) {
+            firstKeyPressed.value = keyCode
+            longPressJob = scope.launch { onLongPress() }
+        }
+    }
+    fun onKeyUp(keyCode: Int) {
+        longPressJob?.cancel()
+        longPressJob = null
+
+        // releasing while pressed recording
+        if (isLongPressing.value == true && firstKeyPressed.value == keyCode) {
             if (currentUiState.value is CaptureButtonUiState.Enabled.Recording.PressedRecording) {
+                Log.d(TAG, "Stopping volume recording")
                 onStopRecording()
             }
-            isLongPressing.value = null
+            firstKeyPressed.value = null
+            isLongPressing.value = false
         }
 
-        // on click
-        else if (keyPressed == true) {
+        // on click. elif is here to protect against holding a button when navigating to preview
+        else if (firstKeyPressed.value == keyCode) {
             when (val current = currentUiState.value) {
                 is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                     CaptureMode.STANDARD,
                     CaptureMode.IMAGE_ONLY -> onImageCapture()
 
-                    CaptureMode.VIDEO_ONLY -> onStartRecording()
+                    CaptureMode.VIDEO_ONLY -> {
+                        onLockVideoRecording(true)
+                        onStartRecording()
+                    }
                 }
 
                 CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
@@ -210,43 +230,16 @@ fun VolumeButtonsHandler(
     DisposableEffect(context) {
         val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
             when (event.keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP -> {
+                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         // pressed down
-                        volumeUpPressed.value = true
-                        volumeUpJob = scope.launch {
-                            triggerLongPress(keyCode = event.keyCode)
-                        }
+                        onKeyPress(event.keyCode)
                     }
 
                     // volume up released
                     if (event.action == KeyEvent.ACTION_UP) {
-                        volumeUpJob?.cancel()
-                        volumeUpJob = null
-                        onKeyUp(event.keyCode, volumeUpPressed.value)
-                        volumeUpPressed.value = false
+                        onKeyUp(event.keyCode)
                     }
-                    // consume the event
-                    true
-                }
-
-                KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    if (event.action == KeyEvent.ACTION_DOWN) {
-                        // pressed down
-                        volumeUpPressed.value = true
-                        volumeUpJob = scope.launch {
-                            triggerLongPress(keyCode = event.keyCode)
-                        }
-                    }
-
-                    // volume up released
-                    if (event.action == KeyEvent.ACTION_UP) {
-                        volumeDownJob?.cancel()
-                        volumeDownJob = null
-                        onKeyUp(event.keyCode, volumeDownPressed.value)
-                        volumeDownPressed.value = false
-                    }
-
                     // consume the event
                     true
                 }
@@ -261,6 +254,8 @@ fun VolumeButtonsHandler(
 
         onDispose {
             ViewCompat.removeOnUnhandledKeyEventListener(view, keyEventDispatcher)
+            firstKeyPressed.value = null
+            isLongPressing.value = false
         }
     }
 }
@@ -897,6 +892,13 @@ fun CaptureButton(
     }
 
     val currentColor = LocalContentColor.current
+    VolumeButtonsHandler(
+        onImageCapture = onCaptureImage,
+        onStartRecording = onStartVideoRecording,
+        onStopRecording = onStopVideoRecording,
+        onLockVideoRecording = onLockVideoRecording,
+        captureButtonUiState = captureButtonUiState
+    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
