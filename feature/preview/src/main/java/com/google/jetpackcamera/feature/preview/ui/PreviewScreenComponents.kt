@@ -243,11 +243,6 @@ fun CaptureControls(
         captureButtonSize = captureButtonSize
     )
 }
-private enum class CaptureSource {
-    CAPTURE_BUTTON,
-    VOLUME_UP,
-    VOLUME_DOWN
-}
 
 /**
  * Handler for using certain key events buttons as capture buttons.
@@ -909,6 +904,106 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     }
 }
 
+private enum class CaptureSource {
+    CAPTURE_BUTTON,
+    VOLUME_UP,
+    VOLUME_DOWN
+}
+
+@Composable
+fun CaptureButton(
+    modifier: Modifier = Modifier,
+    onImageCapture: () -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onLockVideoRecording: (Boolean) -> Unit,
+    captureButtonUiState: CaptureButtonUiState,
+    captureButtonSize: Float = 80f
+) {
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
+    val isLongPressing = remember { mutableStateOf<Boolean>(false) }
+    var longPressJob by remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
+
+    suspend fun onLongPress() {
+        delay(ViewConfiguration.getLongPressTimeout().toLong())
+        withContext(NonCancellable) {
+            if (isLongPressing.value == false) {
+                when (val current = currentUiState.value) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                        CaptureMode.STANDARD,
+                        CaptureMode.VIDEO_ONLY -> {
+                            isLongPressing.value = true
+                            Log.d(TAG, "Starting recording")
+                            onStartRecording()
+                        }
+
+                        CaptureMode.IMAGE_ONLY -> {}
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    fun onPress(captureSource: CaptureSource) {
+        if (firstKeyPressed.value == null) {
+            firstKeyPressed.value = captureSource
+            longPressJob = scope.launch { onLongPress() }
+        }
+    }
+
+    fun onKeyUp(captureSource: CaptureSource) {
+        // releasing while pressed recording
+        if (firstKeyPressed.value == captureSource) {
+            if (isLongPressing.value) {
+                if (currentUiState.value is
+                        CaptureButtonUiState.Enabled.Recording.PressedRecording
+                ) {
+                    Log.d(TAG, "Stopping recording")
+                    onStopRecording()
+                }
+            }
+            // on click
+            else {
+                when (val current = currentUiState.value) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                        CaptureMode.STANDARD,
+                        CaptureMode.IMAGE_ONLY -> onImageCapture()
+
+                        CaptureMode.VIDEO_ONLY -> {
+                            onLockVideoRecording(true)
+                            Log.d(TAG, "Starting recording")
+                            onStartRecording()
+                        }
+                    }
+
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                    CaptureButtonUiState.Unavailable -> {}
+                }
+            }
+            longPressJob?.cancel()
+            longPressJob = null
+            isLongPressing.value = false
+            firstKeyPressed.value = null
+        }
+    }
+
+    CaptureKeyHandler(
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) }
+    )
+    CaptureButton(
+        modifier = modifier,
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) },
+        captureButtonUiState = captureButtonUiState,
+        captureButtonSize = captureButtonSize
+    )
+}
+
 @Composable
 private fun CaptureButton(
     modifier: Modifier = Modifier,
@@ -933,7 +1028,6 @@ private fun CaptureButton(
                         onPress(CaptureSource.CAPTURE_BUTTON)
                         awaitRelease()
                         isCaptureButtonPressed = false
-                        Log.d(TAG, "RELEASING LONG PRESS CAPBUTTON")
                         onRelease(CaptureSource.CAPTURE_BUTTON)
                     }
                 )
@@ -983,6 +1077,7 @@ private fun CaptureButton(
             modifier = Modifier
                 .size(centerShapeSize)
                 .clip(CircleShape)
+                .background(animatedColor)
                 .alpha(
                     if (isCaptureButtonPressed &&
                         currentUiState.value ==
@@ -993,7 +1088,6 @@ private fun CaptureButton(
                         1f // solid alpha the rest of the time
                     }
                 )
-                .background(animatedColor)
         ) {
             // central "square" stop icon
             AnimatedVisibility(
@@ -1010,6 +1104,53 @@ private fun CaptureButton(
                         .background(color = Color.White)
                 )
             }
+        }
+    }
+}
+
+/**
+ * Handler for using certain key events buttons as capture buttons.
+ */
+@Composable
+private fun CaptureKeyHandler(
+    onPress: (CaptureSource) -> Unit,
+    onRelease: (CaptureSource) -> Unit
+) {
+    val context = LocalContext.current
+    val view = LocalView.current
+
+    fun keyCodeToCaptureSource(keyCode: Int): CaptureSource = when (keyCode) {
+        KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
+        KeyEvent.KEYCODE_VOLUME_DOWN -> CaptureSource.VOLUME_DOWN
+        else -> TODO("Keycode not assigned to CaptureSource")
+    }
+
+    DisposableEffect(context) {
+        val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    val captureSource = keyCodeToCaptureSource(event.keyCode)
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        // pressed down
+                        onPress(captureSource)
+                    }
+                    // released
+                    if (event.action == KeyEvent.ACTION_UP) {
+                        onRelease(captureSource)
+                    }
+                    // consume the event
+                    true
+                }
+                else -> {
+                    false
+                }
+            }
+        }
+
+        ViewCompat.addOnUnhandledKeyEventListener(view, keyEventDispatcher)
+
+        onDispose {
+            ViewCompat.removeOnUnhandledKeyEventListener(view, keyEventDispatcher)
         }
     }
 }
