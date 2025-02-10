@@ -164,7 +164,6 @@ fun VolumeButtonsHandler(
     val context = LocalContext.current
     val view = LocalView.current
 
-    // while a key is already pressed, ignore other presses
     suspend fun onLongPress() {
         delay(ViewConfiguration.getLongPressTimeout().toLong())
         withContext(NonCancellable) {
@@ -186,28 +185,17 @@ fun VolumeButtonsHandler(
         }
     }
 
-    fun onKeyPress(keyCode: Int) {
-        if (firstKeyPressed.value == null) {
-            firstKeyPressed.value = keyCode
-            longPressJob = scope.launch { onLongPress() }
-        }
-    }
-    fun onKeyUp(keyCode: Int) {
-        longPressJob?.cancel()
-        longPressJob = null
-
+    fun onKeyUp(longPressing: Boolean) {
         // releasing while pressed recording
-        if (isLongPressing.value == true && firstKeyPressed.value == keyCode) {
+        if (longPressing) {
             if (currentUiState.value is CaptureButtonUiState.Enabled.Recording.PressedRecording) {
                 Log.d(TAG, "Stopping volume recording")
                 onStopRecording()
             }
-            firstKeyPressed.value = null
-            isLongPressing.value = false
         }
 
         // on click. elif is here to protect against holding a button when navigating to preview
-        else if (firstKeyPressed.value == keyCode) {
+        else {
             when (val current = currentUiState.value) {
                 is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                     CaptureMode.STANDARD,
@@ -233,12 +221,21 @@ fun VolumeButtonsHandler(
                 KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         // pressed down
-                        onKeyPress(event.keyCode)
+                        if (firstKeyPressed.value == null) {
+                            firstKeyPressed.value = event.keyCode
+                            longPressJob = scope.launch { onLongPress() }
+                        }
                     }
 
-                    // volume up released
+                    // released
                     if (event.action == KeyEvent.ACTION_UP) {
-                        onKeyUp(event.keyCode)
+                        if (firstKeyPressed.value == event.keyCode) {
+                            onKeyUp(isLongPressing.value)
+                            longPressJob?.cancel()
+                            longPressJob = null
+                            isLongPressing.value = false
+                            firstKeyPressed.value = null
+                        }
                     }
                     // consume the event
                     true
