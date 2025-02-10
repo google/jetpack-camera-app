@@ -59,10 +59,10 @@ const val STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG = "StreamConfigOptionMul
 // Max Video Duration
 const val MAX_VIDEO_DURATION_SELECTOR_TAG = "MaxVideoDurationSelectorTag"
 const val MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG = "MaxVideoDurationOptionUnlimitedTag"
-const val MAX_VIDEO_DURATION_OPTION_5s_TAG = "MaxVideoDurationOption5sTag"
-const val MAX_VIDEO_DURATION_OPTION_10s_TAG = "MaxVideoDurationOption10sTag"
-const val MAX_VIDEO_DURATION_OPTION_30s_TAG = "MaxVideoDurationOption30sTag"
-const val MAX_VIDEO_DURATION_OPTION_60s_TAG = "MaxVideoDurationOption60sTag"
+const val MAX_VIDEO_DURATION_OPTION_ONE_SEC_TAG = "MaxVideoDurationOptionOneSecTag"
+const val MAX_VIDEO_DURATION_OPTION_TEN_SEC_TAG = "MaxVideoDurationOptionTenSecTag"
+const val MAX_VIDEO_DURATION_OPTION_THIRTY_SEC_TAG = "MaxVideoDurationOptionThirtySecTag"
+const val MAX_VIDEO_DURATION_OPTION_SIXTY_SEC_TAG = "MaxVideoDurationOptionSixtySecTag"
 // Video Stabilization
 const val VIDEO_STABILIZATION_SELECTOR_TAG = "VideoStabilizationSelectorTag"
 const val VIDEO_STABILIZATION_OPTION_AUTO_TAG = "VideoStabilizationOptionAutoTag"
