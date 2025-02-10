@@ -132,7 +132,7 @@ fun DarkModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier,
+        modifier = modifier.testTag(DARK_MODE_SELECTOR_TAG),
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -148,18 +148,21 @@ fun DarkModeSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
+                    modifier = modifier.testTag(DARK_MODE_OPTION_ON_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_dark),
                     selected = darkModeUiState.currentDarkMode == DarkMode.DARK,
                     enabled = true,
                     onClick = { setDarkMode(DarkMode.DARK) }
                 )
                 SingleChoiceSelector(
+                    modifier = modifier.testTag(DARK_MODE_OPTION_OFF_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_light),
                     selected = darkModeUiState.currentDarkMode == DarkMode.LIGHT,
                     enabled = true,
                     onClick = { setDarkMode(DarkMode.LIGHT) }
                 )
                 SingleChoiceSelector(
+                    modifier = modifier.testTag(DARK_MODE_OPTION_SYSTEM_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_system),
                     selected = darkModeUiState.currentDarkMode == DarkMode.SYSTEM,
                     enabled = true,
@@ -208,7 +211,7 @@ fun FlashModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier,
+        modifier = modifier.testTag(FLASH_MODE_SELECTOR_TAG),
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -228,18 +231,21 @@ fun FlashModeSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(FLASH_MODE_OPTION_AUTO_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_auto),
                     selected = flashUiState.currentFlashMode == FlashMode.AUTO,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.AUTO) }
                 )
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(FLASH_MODE_OPTION_ON_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_on),
                     selected = flashUiState.currentFlashMode == FlashMode.ON,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.ON) }
                 )
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(FLASH_MODE_OPTION_OFF_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = flashUiState.currentFlashMode == FlashMode.OFF,
                     enabled = true,
@@ -247,6 +253,7 @@ fun FlashModeSetting(
                 )
                 // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(FLASH_MODE_OPTION_LOW_LIGHT_BOOST_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_llb),
                     selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
                     enabled = true,
@@ -264,7 +271,7 @@ fun AspectRatioSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier,
+        modifier = modifier.testTag(ASPECT_RATIO_SELECTOR_TAG),
         title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
         description =
@@ -284,18 +291,21 @@ fun AspectRatioSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_9_16_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_9_16),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_3_4_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
                 )
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_1_1_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_1_1),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
                     enabled = true,
@@ -313,7 +323,7 @@ fun StreamConfigSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier,
+        modifier = modifier.testTag(STREAM_CONFIG_SELECTOR_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
@@ -334,12 +344,14 @@ fun StreamConfigSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG),
                     text = stringResource(id = R.string.stream_config_selector_multi_stream),
                     selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
                     onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
+                    modifier = Modifier.testTag(STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
                     text = stringResource(id = R.string.stream_config_description_single_stream),
                     selected = streamConfigUiState.currentStreamConfig ==
                         StreamConfig.SINGLE_STREAM,
@@ -351,6 +363,15 @@ fun StreamConfigSetting(
     )
 }
 
+private fun getMaxVideoDurationTestTag(videoDuration: Long): String = when (videoDuration) {
+    UNLIMITED_VIDEO_DURATION -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
+    FIVE_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_5s_TAG
+    TEN_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_10s_TAG
+    THIRTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_30s_TAG
+    SIXTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_60s_TAG
+    else -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
+}
+
 @Composable
 fun MaxVideoDurationSetting(
     maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
@@ -358,7 +379,7 @@ fun MaxVideoDurationSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier,
+        modifier = modifier.testTag(MAX_VIDEO_DURATION_SELECTOR_TAG),
         enabled = true,
         title = stringResource(R.string.duration_title),
         leadingIcon = null,
@@ -369,10 +390,15 @@ fun MaxVideoDurationSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
+                    modifier = modifier.testTag(
+                        getMaxVideoDurationTestTag(
+                            UNLIMITED_VIDEO_DURATION
+                        )
+                    ),
                     enabled = true,
                     text = stringResource(R.string.duration_description_none),
                     selected = maxVideoDurationUiState.currentMaxDurationMillis
-                        == UNLIMITED_VIDEO_DURATION,
+                            == UNLIMITED_VIDEO_DURATION,
                     onClick = { setMaxDuration(UNLIMITED_VIDEO_DURATION) }
                 )
                 listOf(
@@ -382,6 +408,7 @@ fun MaxVideoDurationSetting(
                     SIXTY_SECONDS_DURATION
                 ).forEach { maxDuration ->
                     SingleChoiceSelector(
+                        modifier = Modifier.testTag(getMaxVideoDurationTestTag(maxDuration)),
                         enabled = true,
                         text = stringResource(
                             R.string.duration_description_seconds,
@@ -396,6 +423,14 @@ fun MaxVideoDurationSetting(
     )
 }
 
+private fun getTargetFpsTestTag(fpsOption: Int): String = when (fpsOption) {
+    FPS_15 -> FRAME_RATE_OPTION_15_TAG
+    FPS_30 -> FRAME_RATE_OPTION_30_TAG
+    FPS_60 -> FRAME_RATE_OPTION_60_TAG
+    FPS_AUTO -> FRAME_RATE_OPTION_AUTO_TAG
+    else -> FRAME_RATE_OPTION_AUTO_TAG
+}
+
 @Composable
 fun TargetFpsSetting(
     fpsUiState: FpsUiState,
@@ -403,11 +438,14 @@ fun TargetFpsSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.apply {
-            if (fpsUiState is FpsUiState.Disabled) {
-                testTag(fpsUiState.disabledRationale.testTag)
-            }
-        },
+        modifier = modifier
+            .apply {
+                if (fpsUiState is FpsUiState.Disabled) {
+                    testTag(fpsUiState.disabledRationale.testTag)
+                } else {
+                    testTag(FRAME_RATE_SELECTOR_TAG)
+                }
+            },
         title = stringResource(id = R.string.fps_title),
         enabled = fpsUiState is FpsUiState.Enabled,
         leadingIcon = null,
@@ -427,6 +465,7 @@ fun TargetFpsSetting(
             if (fpsUiState is FpsUiState.Enabled) {
                 Column(Modifier.selectableGroup()) {
                     Text(
+                        modifier = Modifier.testTag(getTargetFpsTestTag(FPS_AUTO)),
                         text = stringResource(id = R.string.fps_stabilization_disclaimer),
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -440,6 +479,7 @@ fun TargetFpsSetting(
                     )
                     listOf(FPS_15, FPS_30, FPS_60).forEach { fpsOption ->
                         SingleChoiceSelector(
+                            modifier = Modifier.testTag(getTargetFpsTestTag(fpsOption)),
                             text = "%d".format(fpsOption),
                             selected = fpsUiState.currentSelection == fpsOption,
                             onClick = { setTargetFps(fpsOption) },
@@ -529,7 +569,7 @@ fun StabilizationSetting(
                 is StabilizationUiState.Disabled ->
                     testTag(stabilizationUiState.disabledRationale.testTag)
 
-                else -> {}
+                else -> testTag(VIDEO_STABILIZATION_SELECTOR_TAG)
             }
         },
         title = stringResource(R.string.video_stabilization_title),
@@ -569,6 +609,8 @@ fun StabilizationSetting(
                                         stabilizationUiState.stabilizationAutoState
                                             .disabledRationale.testTag
                                     )
+                                } else {
+                                    testTag(VIDEO_STABILIZATION_OPTION_AUTO_TAG)
                                 }
                             },
                             text = stringResource(id = R.string.stabilization_selector_auto),
@@ -593,6 +635,8 @@ fun StabilizationSetting(
                                         stabilizationUiState.stabilizationOnState
                                             .disabledRationale.testTag
                                     )
+                                } else {
+                                    testTag(VIDEO_STABILIZATION_OPTION_ON_TAG)
                                 }
                             },
                             text = stringResource(id = R.string.stabilization_selector_on),
@@ -619,6 +663,8 @@ fun StabilizationSetting(
                                         stabilizationUiState.stabilizationHighQualityState
                                             .disabledRationale.testTag
                                     )
+                                } else {
+                                    testTag(VIDEO_STABILIZATION_OPTION_HIGH_QUALITY_TAG)
                                 }
                             },
                             text = stringResource(
@@ -647,6 +693,8 @@ fun StabilizationSetting(
                                         stabilizationUiState.stabilizationOpticalState
                                             .disabledRationale.testTag
                                     )
+                                } else {
+                                    testTag(VIDEO_STABILIZATION_OPTION_OPTICAL_TAG)
                                 }
                             },
                             text = stringResource(
@@ -667,6 +715,7 @@ fun StabilizationSetting(
 
                         // off selector
                         SingleChoiceSelector(
+                            modifier = Modifier.testTag(VIDEO_STABILIZATION_OPTION_OFF_TAG),
                             text = stringResource(id = R.string.stabilization_selector_off),
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.OFF,
@@ -755,7 +804,7 @@ fun RecordingAudioSetting(
     setDefaultAudio: (Boolean) -> Unit
 ) {
     SwitchSettingUI(
-        modifier = modifier,
+        modifier = modifier.testTag(ENABLE_AUDIO_SWITCH_TAG),
         title = stringResource(id = R.string.audio_title),
         description = when (audioUiState) {
             is AudioUiState.Enabled.On -> {
@@ -792,7 +841,7 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
             } else {
                 ""
             }
-        Text(text = versionString)
+        Text(text = versionString, modifier = Modifier.testTag(APP_VERSION_TAG))
     }
 }
 
@@ -859,12 +908,14 @@ fun SwitchSettingUI(
     modifier: Modifier = Modifier
 ) {
     SettingUI(
-        modifier = modifier.toggleable(
-            enabled = enabled,
-            role = Role.Switch,
-            value = settingValue,
-            onValueChange = { value -> onSwitchChanged(value) }
-        ),
+        modifier = modifier
+            .toggleable(
+                enabled = enabled,
+                role = Role.Switch,
+                value = settingValue,
+                onValueChange = { value -> onSwitchChanged(value) }
+            )
+            .testTag(DEFAULT_CAMERA_FACING_SWITCH_TAG),
         enabled = enabled,
         title = title,
         description = description,
