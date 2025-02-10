@@ -45,7 +45,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: UseCaseMode,
         isDebugMode: Boolean = false,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
@@ -144,12 +143,6 @@ interface CameraUseCase {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
-    }
-
-    enum class UseCaseMode {
-        STANDARD,
-        IMAGE_ONLY,
-        VIDEO_ONLY
     }
 }
 

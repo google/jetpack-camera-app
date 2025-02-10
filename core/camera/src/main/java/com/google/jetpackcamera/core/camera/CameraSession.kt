@@ -68,6 +68,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -115,7 +116,6 @@ private val QUALITY_RANGE_MAP = mapOf(
 context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
@@ -124,8 +124,8 @@ internal suspend fun runSingleCameraSession(
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
 
-    val videoCaptureUseCase = when (useCaseMode) {
-        CameraUseCase.UseCaseMode.STANDARD, CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+    val videoCaptureUseCase = when (sessionSettings.captureMode) {
+        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
             createVideoUseCase(
                 cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
@@ -135,7 +135,6 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.videoQuality,
                 backgroundDispatcher
             )
-
         else -> {
             null
         }
@@ -164,7 +163,7 @@ internal suspend fun runSingleCameraSession(
             aspectRatio = sessionSettings.aspectRatio,
             dynamicRange = sessionSettings.dynamicRange,
             imageFormat = sessionSettings.imageFormat,
-            useCaseMode = useCaseMode,
+            captureMode = sessionSettings.captureMode,
             effect = when (sessionSettings.streamConfig) {
                 StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
                 StreamConfig.MULTI_STREAM -> null
@@ -216,6 +215,7 @@ internal suspend fun runSingleCameraSession(
             }
 
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+            setZoomScale(camera, 1f)
             processTransientSettingEvents(
                 camera,
                 useCaseGroup,
@@ -253,18 +253,9 @@ internal suspend fun processTransientSettingEvents(
         val cameraState = it.second
 
         // Apply camera zoom
-        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale) {
-            camera.cameraInfo.zoomState.value?.let { zoomState ->
-                val finalScale =
-                    (zoomState.zoomRatio * newTransientSettings.zoomScale).coerceIn(
-                        zoomState.minZoomRatio,
-                        zoomState.maxZoomRatio
-                    )
-                camera.cameraControl.setZoomRatio(finalScale)
-                currentCameraState.update { old ->
-                    old.copy(zoomScale = finalScale)
-                }
-            }
+        if (prevTransientSettings.zoomScale != newTransientSettings.zoomScale
+        ) {
+            setZoomScale(camera, newTransientSettings.zoomScale)
         }
 
         // todo(): How should we handle torch on Auto FlashMode?
@@ -327,6 +318,24 @@ internal suspend fun processTransientSettingEvents(
     }
 }
 
+context(CameraSessionContext)
+internal fun setZoomScale(camera: Camera, zoomScaleRelative: Float) {
+    camera.cameraInfo.zoomState.value?.let { zoomState ->
+        transientSettings.value?.let { transientSettings ->
+            val finalScale =
+                (zoomScale.value * zoomScaleRelative).coerceIn(
+                    zoomState.minZoomRatio,
+                    zoomState.maxZoomRatio
+                )
+            camera.cameraControl.setZoomRatio(finalScale)
+            zoomScale.update { finalScale }
+            currentCameraState.update { old ->
+                old.copy(zoomScale = finalScale)
+            }
+        }
+    }
+}
+
 internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
@@ -359,7 +368,7 @@ internal fun createUseCaseGroup(
     videoCaptureUseCase: VideoCapture<Recorder>?,
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
-    useCaseMode: CameraUseCase.UseCaseMode,
+    captureMode: CaptureMode,
     effect: CameraEffect? = null
 ): UseCaseGroup {
     val previewUseCase =
@@ -368,7 +377,7 @@ internal fun createUseCaseGroup(
             aspectRatio,
             stabilizationMode
         )
-    val imageCaptureUseCase = if (useCaseMode != CameraUseCase.UseCaseMode.VIDEO_ONLY) {
+    val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
     } else {
         null
@@ -414,13 +423,12 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    return resolution?.let { res ->
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+    resolution?.let { res ->
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
             if (it.value.contains(res.height)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
-}
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {
     if (cropRect == null) {
