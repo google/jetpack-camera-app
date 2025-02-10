@@ -404,7 +404,7 @@ private fun CaptureButton(
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
-    CaptureControls(
+    CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
