@@ -99,11 +99,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -767,7 +765,6 @@ fun CaptureButton(
     var isLongPressing by remember {
         mutableStateOf(false)
     }
-    val haptic = LocalHapticFeedback.current
 
     val currentColor = LocalContentColor.current
     Box(
@@ -782,7 +779,6 @@ fun CaptureButton(
                             when (uiState.captureMode) {
                                 CaptureMode.STANDARD,
                                 CaptureMode.VIDEO_ONLY -> {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onStartVideoRecording()
                                 }
 
@@ -851,6 +847,7 @@ fun CaptureButton(
                 // larger circle while recording, but not max size
                 CaptureButtonUiState.Enabled.Recording.PressedRecording ->
                     (captureButtonSize * .7f).dp
+
                 CaptureButtonUiState.Unavailable -> 0.dp
                 is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
                     // no inner circle will be visible on STANDARD
@@ -872,6 +869,7 @@ fun CaptureButton(
                     CaptureMode.IMAGE_ONLY -> Color.White
                     CaptureMode.VIDEO_ONLY -> Color.Red
                 }
+
                 is CaptureButtonUiState.Enabled.Recording -> Color.Red
                 is CaptureButtonUiState.Unavailable -> Color.Transparent
             },
