@@ -19,6 +19,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.view.KeyEvent
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
@@ -37,6 +38,7 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
@@ -70,9 +72,9 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun image_capture() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun image_capture_button() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        filePrefix = "JCA"
+        filePrefix = FILE_PREFIX
     ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -82,6 +84,39 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+    }
+
+    @Test
+    fun image_capture_volumeUp() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = FILE_PREFIX
+    ) {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_UP)
+
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+    }
+
+    @Test
+    fun image_capture_volumeDown() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = FILE_PREFIX
+    ) {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+        uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_DOWN)
+
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
@@ -164,7 +199,9 @@ internal class ImageCaptureDeviceTest {
                     throw AssertionError(
                         "$VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG should not be present"
                     )
-                } catch (e: ComposeTimeoutException) { /*do nothing. we want to time out */ }
+                } catch (e: ComposeTimeoutException) {
+                    /*do nothing. we want to time out */
+                }
 
                 uiDevice.pressBack()
             }
