@@ -48,7 +48,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
@@ -275,19 +274,6 @@ private fun ControlsBottom(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {}
 ) {
-    if (videoRecordingState is VideoRecordingState.Inactive &&
-        previewUiState.captureModeUiState is CaptureModeUiState.Enabled
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // todo(kc): WIP UI... still need to properly style this
-            CaptureModeDropDown(
-                modifier = Modifier.align(Alignment.BottomEnd),
-                onSetCaptureMode = onSetCaptureMode,
-                captureModeUiState = previewUiState.captureModeUiState,
-                onDisabledCaptureMode = onDisabledCaptureMode
-            )
-        }
-    }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
