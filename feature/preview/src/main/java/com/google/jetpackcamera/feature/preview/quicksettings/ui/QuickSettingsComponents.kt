@@ -143,7 +143,9 @@ fun QuickSetCaptureMode(
                 CaptureMode.STANDARD -> CaptureMode.VIDEO_ONLY
                 CaptureMode.VIDEO_ONLY -> CaptureMode.IMAGE_ONLY
                 CaptureMode.IMAGE_ONLY -> {
-                    if (captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable) {
+                    if (captureModeUiState.defaultCaptureState
+                            is SingleSelectableState.Selectable
+                    ) {
                         CaptureMode.STANDARD
                     } else {
                         CaptureMode.VIDEO_ONLY
