@@ -576,21 +576,37 @@ constructor(
         }
     }
 
-    private fun CameraAppSettings.tryApplyCaptureModeConstraints(): CameraAppSettings {
+    /**
+     * Applies an appropriate Capture Mode for given settings, if necessary
+     *
+     * Should be applied whenever
+     * [tryApplyImageFormatConstraints],
+     * [tryApplyDynamicRangeConstraints],
+     * or [tryApplyConcurrentCameraModeConstraints] would be called
+     *
+     * @param defaultCaptureMode if multiple capture modes are supported by the device, this capture
+     * mode will be applied. If left null, it will not change the current capture mode.
+     */
+    private fun CameraAppSettings.tryApplyCaptureModeConstraints(
+        defaultCaptureMode: CaptureMode? = null
+    ): CameraAppSettings {
         Log.d(TAG, "applying capture mode constraints")
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             val newCaptureMode =
+                // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                    Log.d(TAG, "CONCURRENT CAMERA CAPTURE MODE")
                     CaptureMode.VIDEO_ONLY
-                } else if (dynamicRange == DynamicRange.HLG10 ||
+                }
+                // if hdr is enabled, select an appropriate capture mode
+                else if (dynamicRange == DynamicRange.HLG10 ||
                     imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
                 ) {
                     if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)) {
                         if (constraints.supportedImageFormatsMap[streamConfig]
                                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
                         ) {
-                            // if both image/video are supported, only change capture mode if default is the current
+                            // if both image/video HDR is supported, only change if STANDARD is the current capture mode.
+                            // image and video capture use cases cannot be simultaneously bound while HDR is enabled
                             if (this.captureMode != CaptureMode.STANDARD) {
                                 this.captureMode
                             } else {
@@ -606,7 +622,7 @@ constructor(
                     }
                 } else {
                     // if no dynamic range value is set, its OK to return the current value
-                    return this
+                    defaultCaptureMode ?: return this
                 }
             Log.d(TAG, "new capture mode $newCaptureMode")
             return this@tryApplyCaptureModeConstraints.copy(
@@ -782,7 +798,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
@@ -796,14 +812,14 @@ constructor(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
-                ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
