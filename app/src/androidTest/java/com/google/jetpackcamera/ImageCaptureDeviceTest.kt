@@ -19,6 +19,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.view.KeyEvent
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -66,7 +67,7 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun image_capture() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun image_capture_button() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         filePrefix = "JCA"
     ) {
@@ -78,6 +79,39 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+    }
+
+    @Test
+    fun image_capture_volumeUp() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = "JCA"
+    ) {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+
+        uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_UP)
+
+        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+    }
+
+    @Test
+    fun image_capture_volumeDown() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        filePrefix = "JCA"
+    ) {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        }
+        uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_DOWN)
+
         composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
