@@ -54,7 +54,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
-import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
@@ -164,11 +163,11 @@ fun QuickSetCaptureMode(
 @Composable
 fun QuickSetHdr(
     modifier: Modifier = Modifier,
-    onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
+    onClick: (DynamicRange, ImageOutputFormat) -> Unit,
     selectedDynamicRange: DynamicRange,
     selectedImageOutputFormat: ImageOutputFormat,
     hdrDynamicRangeSupported: Boolean,
-    previewMode: PreviewMode,
+    hdrImageFormatSupported: Boolean,
     enabled: Boolean
 ) {
     val enum =
@@ -180,25 +179,31 @@ fun QuickSetHdr(
             CameraDynamicRange.SDR
         }
 
+    val newVideoDynamicRange = if (
+        enum == CameraDynamicRange.SDR &&
+        selectedDynamicRange == DynamicRange.SDR &&
+        hdrDynamicRangeSupported
+    ) {
+        DEFAULT_HDR_DYNAMIC_RANGE
+    } else {
+        DynamicRange.SDR
+    }
+
+    val newImageOutputFormat = if (
+        enum == CameraDynamicRange.SDR &&
+        selectedImageOutputFormat == ImageOutputFormat.JPEG &&
+        hdrImageFormatSupported
+    ) {
+        DEFAULT_HDR_IMAGE_OUTPUT
+    } else {
+        ImageOutputFormat.JPEG
+    }
+
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
         onClick = {
-            val newDynamicRange =
-                if (selectedDynamicRange == DynamicRange.SDR && hdrDynamicRangeSupported) {
-                    DEFAULT_HDR_DYNAMIC_RANGE
-                } else {
-                    DynamicRange.SDR
-                }
-            val newImageOutputFormat =
-                if (!hdrDynamicRangeSupported ||
-                    previewMode is PreviewMode.ExternalImageCaptureMode
-                ) {
-                    DEFAULT_HDR_IMAGE_OUTPUT
-                } else {
-                    ImageOutputFormat.JPEG
-                }
-            onClick(newDynamicRange, newImageOutputFormat)
+            onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
         enabled = enabled

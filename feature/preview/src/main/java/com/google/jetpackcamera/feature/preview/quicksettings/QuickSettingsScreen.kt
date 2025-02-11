@@ -245,10 +245,9 @@ private fun ExpandedQuickSettingsUi(
                                 ConcurrentCameraMode.OFF -> false
 
                             else -> (
-                                cameraConstraints?.hdrDynamicRangeSupported() == true &&
-                                    previewUiState.previewMode is PreviewMode.StandardMode
-                                ) ||
-                                cameraConstraints?.hdrImageFormatSupported() == true
+                                cameraConstraints?.hdrDynamicRangeSupported() == true ||
+                                    cameraConstraints?.hdrImageFormatSupported() == true
+                                )
                         }
 
                         QuickSetHdr(
@@ -260,8 +259,9 @@ private fun ExpandedQuickSettingsUi(
                             selectedDynamicRange = currentCameraSettings.dynamicRange,
                             selectedImageOutputFormat = currentCameraSettings.imageFormat,
                             hdrDynamicRangeSupported =
-                            cameraConstraints?.hdrDynamicRangeSupported() ?: false,
-                            previewMode = previewUiState.previewMode,
+                            cameraConstraints?.hdrDynamicRangeSupported() == true,
+                            hdrImageFormatSupported =
+                            cameraConstraints?.hdrImageFormatSupported() == true,
                             enabled = shouldEnable()
                         )
                     }
@@ -277,8 +277,10 @@ private fun ExpandedQuickSettingsUi(
                             currentCameraSettings.concurrentCameraMode,
                             enabled =
                             previewUiState.systemConstraints.concurrentCamerasSupported &&
-                                previewUiState.previewMode
-                                    !is PreviewMode.ExternalImageCaptureMode
+                                previewUiState.previewMode !is
+                                    PreviewMode.ExternalImageCaptureMode &&
+                                currentCameraSettings.captureMode != CaptureMode.IMAGE_ONLY &&
+                                currentCameraSettings.dynamicRange == DynamicRange.SDR
                         )
                     }
 

@@ -124,6 +124,7 @@ internal suspend fun runSingleCameraSession(
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
 
+    // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
         CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
             createVideoUseCase(
@@ -377,6 +378,8 @@ internal fun createUseCaseGroup(
             aspectRatio,
             stabilizationMode
         )
+
+    // only create image use case in image or standard
     val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
         createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
     } else {
@@ -404,32 +407,21 @@ internal fun createUseCaseGroup(
             ).build()
         )
         addUseCase(previewUseCase)
-        imageCaptureUseCase?.let {
-            if (dynamicRange == DynamicRange.SDR ||
-                imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-            ) {
-                addUseCase(imageCaptureUseCase)
-            }
-        }
 
-        // Not to bind VideoCapture when Ultra HDR is enabled to keep the app design simple.
-        videoCaptureUseCase?.let {
-            if (imageFormat == ImageOutputFormat.JPEG) {
-                addUseCase(videoCaptureUseCase)
-            }
-        }
+        // image and video use cases are only created if supported by the configuration
+        imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
+        videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
 
         effect?.let { addEffect(it) }
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality {
-    return resolution?.let { res ->
+private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+    resolution?.let { res ->
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
             if (it.value.contains(res.height)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
-}
 
 private fun getWidthFromCropRect(cropRect: Rect?): Int {
     if (cropRect == null) {
