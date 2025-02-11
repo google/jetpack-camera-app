@@ -52,10 +52,13 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
@@ -63,6 +66,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
@@ -112,6 +116,47 @@ fun FocusedQuickSetRatio(
             }
         )
     ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    captureModeUiState: CaptureModeUiState
+) {
+    if (captureModeUiState is CaptureModeUiState.Enabled) {
+        val enum = when (captureModeUiState.currentSelection) {
+            CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+            CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+            CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+        }
+        val list: List<SingleSelectableState> =
+            listOf(
+                captureModeUiState.defaultCaptureState,
+                captureModeUiState.imageOnlyCaptureState,
+                captureModeUiState.videoOnlyCaptureState
+            )
+        // only enabled if there are at least 2 supported capturemodes
+        val enabled = list.count { it is SingleSelectableState.Selectable } >= 2
+        val nextCaptureMode: CaptureMode =
+            when (captureModeUiState.currentSelection) {
+                CaptureMode.STANDARD -> CaptureMode.VIDEO_ONLY
+                CaptureMode.VIDEO_ONLY -> CaptureMode.IMAGE_ONLY
+                CaptureMode.IMAGE_ONLY -> {
+                    if (captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable) {
+                        CaptureMode.STANDARD
+                    } else {
+                        CaptureMode.VIDEO_ONLY
+                    }
+                }
+            }
+        QuickSettingUiItem(
+            modifier = modifier,
+            enum = enum,
+            onClick = { onSetCaptureMode(nextCaptureMode) },
+            enabled = enabled
+        )
+    }
 }
 
 @Composable
@@ -195,6 +240,7 @@ fun QuickSetFlash(
                 enabled = false,
                 onClick = {}
             )
+
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
@@ -342,11 +388,11 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
+    modifier: Modifier = Modifier,
     text: String,
     painter: Painter,
     accessibilityText: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
@@ -390,7 +436,9 @@ fun QuickSettingUiItem(
             Icon(
                 painter = painter,
                 contentDescription = accessibilityText,
-                modifier = Modifier.size(iconSize).scale(animatedScale)
+                modifier = Modifier
+                    .size(iconSize)
+                    .scale(animatedScale)
             )
 
             Text(text = text, textAlign = TextAlign.Center)
@@ -418,8 +466,15 @@ fun ExpandedQuickSetting(
                         )
                     ) /
                     (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
+                            (
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
                         )
                 ).toInt()
         )
@@ -453,8 +508,15 @@ fun QuickSettingsGrid(
                         )
                     ) /
                     (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
+                            (
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
                         )
                 ).toInt()
         )
@@ -509,6 +571,7 @@ fun FlashModeIndicator(
                 enum = CameraFlashMode.OFF,
                 enabled = false
             )
+
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(

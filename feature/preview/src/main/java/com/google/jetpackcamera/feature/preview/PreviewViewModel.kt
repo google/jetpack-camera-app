@@ -279,16 +279,14 @@ class PreviewViewModel @AssistedInject constructor(
     private fun getAudioUiState(
         isAudioEnabled: Boolean,
         videoRecordingState: VideoRecordingState
-    ): AudioUiState {
-        return if (isAudioEnabled) {
-            if (videoRecordingState is VideoRecordingState.Active) {
-                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-            } else {
-                AudioUiState.Enabled.On(0.0)
-            }
+    ): AudioUiState = if (isAudioEnabled) {
+        if (videoRecordingState is VideoRecordingState.Active) {
+            AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
         } else {
-            AudioUiState.Enabled.Mute
+            AudioUiState.Enabled.On(0.0)
         }
+    } else {
+        AudioUiState.Enabled.Mute
     }
 
     private fun stabilizationUiStateFrom(

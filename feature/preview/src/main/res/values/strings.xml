@@ -86,10 +86,10 @@
     <string name="quick_settings_flash_on_description">Flash on</string>
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
-    <string name="quick_settings_capture_mode_single">Single Stream</string>
-    <string name="quick_settings_capture_mode_multi">Multi Stream</string>
-    <string name="quick_settings_capture_mode_single_description">Single-stream capture mode on</string>
-    <string name="quick_settings_capture_mode_multi_description">Multi-stream capture mode on</string>
+    <string name="quick_settings_stream_config_single">Single Stream</string>
+    <string name="quick_settings_stream_config_multi">Multi Stream</string>
+    <string name="quick_settings_stream_config_single_description">Single-stream capture mode on</string>
+    <string name="quick_settings_stream_config_multi_description">Multi-stream capture mode on</string>
 
     <string name="quick_settings_dropdown_open_description">Quick settings open</string>
     <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
@@ -103,4 +103,12 @@
     <string name="quick_settings_concurrent_camera_dual">DUAL</string>
     <string name="quick_settings_concurrent_camera_off_description">Concurrent cameras off</string>
     <string name="quick_settings_concurrent_camera_dual_description">Concurrent dual camera on</string>
+
+    <string name="quick_settings_capture_mode_standard">Standard Capture</string>
+    <string name="quick_settings_capture_mode_video_only">Video Only</string>
+    <string name="quick_settings_capture_mode_image_only">Image Only</string>
+    <string name="quick_settings_capture_mode_standard_description">Standard Capture</string>
+    <string name="quick_settings_capture_mode_video_only_description">Video only capture</string>
+    <string name="quick_settings_capture_mode_image_only_description">Image only capture</string>
+
 </resources>

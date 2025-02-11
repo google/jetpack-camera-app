@@ -145,7 +145,7 @@ fun PreviewScreen(
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
-                onChangeCaptureMode = viewModel::setCaptureMode,
+                onChangeStreamConfig = viewModel::setCaptureMode,
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onChangeImageFormat = viewModel::setImageFormat,
@@ -181,7 +181,7 @@ private fun ContentScreen(
     onChangeZoomScale: (Float) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
-    onChangeCaptureMode: (StreamConfig) -> Unit = {},
+    onChangeStreamConfig: (StreamConfig) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
@@ -247,10 +247,11 @@ private fun ContentScreen(
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
-                onStreamConfigClick = onChangeCaptureMode,
+                onStreamConfigClick = onChangeStreamConfig,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
-                onConcurrentCameraModeClick = onChangeConcurrentCameraMode
+                onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
+                onCaptureModeClick = onSetCaptureMode
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(

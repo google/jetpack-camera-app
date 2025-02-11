@@ -19,6 +19,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
@@ -26,7 +27,9 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
 import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.PhotoCameraFront
 import androidx.compose.material.icons.filled.PictureInPicture
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
@@ -136,14 +139,15 @@ enum class CameraStreamConfig : QuickSettingsEnum {
     MULTI_STREAM {
         override fun getDrawableResId() = R.drawable.multi_stream_icon
         override fun getImageVector() = null // this icon is not available
-        override fun getTextResId() = R.string.quick_settings_capture_mode_multi
-        override fun getDescriptionResId() = R.string.quick_settings_capture_mode_multi_description
+        override fun getTextResId() = R.string.quick_settings_stream_config_multi
+        override fun getDescriptionResId() = R.string.quick_settings_stream_config_multi_description
     },
     SINGLE_STREAM {
         override fun getDrawableResId() = R.drawable.single_stream_capture_icon
         override fun getImageVector() = null // this icon is not available
-        override fun getTextResId() = R.string.quick_settings_capture_mode_single
-        override fun getDescriptionResId() = R.string.quick_settings_capture_mode_single_description
+        override fun getTextResId() = R.string.quick_settings_stream_config_single
+        override fun getDescriptionResId() =
+            R.string.quick_settings_stream_config_single_description
     }
 }
 
@@ -162,6 +166,38 @@ enum class CameraDynamicRange : QuickSettingsEnum {
     }
 }
 
+enum class CameraCaptureMode : QuickSettingsEnum {
+    STANDARD {
+        override fun getDrawableResId() = null
+
+        override fun getImageVector() = Icons.Default.PhotoCameraFront
+
+        override fun getTextResId() = R.string.quick_settings_capture_mode_standard
+
+        override fun getDescriptionResId() =
+            R.string.quick_settings_capture_mode_standard_description
+    },
+    VIDEO_ONLY {
+        override fun getDrawableResId() = null
+
+        override fun getImageVector() = Icons.Default.Videocam
+
+        override fun getTextResId() = R.string.quick_settings_capture_mode_video_only
+
+        override fun getDescriptionResId() =
+            R.string.quick_settings_capture_mode_video_only_description
+    },
+    IMAGE_ONLY {
+        override fun getDrawableResId() = null
+
+        override fun getImageVector() = Icons.Default.CameraAlt
+
+        override fun getTextResId() = R.string.quick_settings_capture_mode_image_only
+
+        override fun getDescriptionResId() =
+            R.string.quick_settings_capture_mode_image_only_description
+    }
+}
 enum class CameraConcurrentCameraMode : QuickSettingsEnum {
     OFF {
         override fun getDrawableResId() = R.drawable.picture_in_picture_off_icon
