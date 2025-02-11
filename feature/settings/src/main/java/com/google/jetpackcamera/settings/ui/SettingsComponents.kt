@@ -139,7 +139,7 @@ fun DarkModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(DARK_MODE_SELECTOR_TAG),
+        modifier = modifier.testTag(DARK_MODE_SETTINGS_TAG),
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -218,7 +218,7 @@ fun FlashModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(FLASH_MODE_SELECTOR_TAG),
+        modifier = modifier.testTag(FLASH_MODE_SETTINGS_TAG),
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -260,7 +260,7 @@ fun FlashModeSetting(
                 )
                 // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(FLASH_MODE_OPTION_LOW_LIGHT_BOOST_TAG),
+                    modifier = Modifier.testTag(FLASH_MODE_OPTION_LLB_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_llb),
                     selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
                     enabled = true,
@@ -278,7 +278,7 @@ fun AspectRatioSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(ASPECT_RATIO_SELECTOR_TAG),
+        modifier = modifier.testTag(ASPECT_RATIO_SETTINGS_TAG),
         title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
         description =
@@ -330,7 +330,7 @@ fun StreamConfigSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(STREAM_CONFIG_SELECTOR_TAG),
+        modifier = modifier.testTag(STREAM_CONFIG_SETTINGS_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
@@ -372,10 +372,10 @@ fun StreamConfigSetting(
 
 private fun getMaxVideoDurationTestTag(videoDuration: Long): String = when (videoDuration) {
     UNLIMITED_VIDEO_DURATION -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
-    FIVE_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_ONE_SEC_TAG
-    TEN_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_TEN_SEC_TAG
-    THIRTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_THIRTY_SEC_TAG
-    SIXTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_SIXTY_SEC_TAG
+    FIVE_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_1_SEC_TAG
+    TEN_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_10_SEC_TAG
+    THIRTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_30_SEC_TAG
+    SIXTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_60_SEC_TAG
     else -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
 }
 
@@ -386,7 +386,7 @@ fun MaxVideoDurationSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(MAX_VIDEO_DURATION_SELECTOR_TAG),
+        modifier = modifier.testTag(MAX_VIDEO_DURATION_SETTINGS_TAG),
         enabled = true,
         title = stringResource(R.string.duration_title),
         leadingIcon = null,
@@ -450,7 +450,7 @@ fun TargetFpsSetting(
                 if (fpsUiState is FpsUiState.Disabled) {
                     testTag(fpsUiState.disabledRationale.testTag)
                 } else {
-                    testTag(FRAME_RATE_SELECTOR_TAG)
+                    testTag(FRAME_RATE_SETTINGS_TAG)
                 }
             },
         title = stringResource(id = R.string.fps_title),
@@ -576,7 +576,7 @@ fun StabilizationSetting(
                 is StabilizationUiState.Disabled ->
                     testTag(stabilizationUiState.disabledRationale.testTag)
 
-                else -> testTag(VIDEO_STABILIZATION_SELECTOR_TAG)
+                else -> testTag(VIDEO_STABILIZATION_SETTINGS_TAG)
             }
         },
         title = stringResource(R.string.video_stabilization_title),
@@ -747,7 +747,7 @@ fun VideoQualitySetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(VIDEO_QUALITY_SELECTOR_TAG),
+        modifier = modifier.testTag(VIDEO_QUALITY_SETTINGS_TAG),
         title = stringResource(R.string.video_quality_title),
         leadingIcon = null,
         enabled = videQualityUiState is VideoQualityUiState.Enabled,
