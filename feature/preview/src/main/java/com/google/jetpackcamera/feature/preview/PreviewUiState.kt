@@ -67,10 +67,7 @@ data class DebugUiState(
 sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
 
-    data class Enabled(
-        val elapsedTimeNanos: Long,
-        val maxVideoDurationMillis: Long
-    ) : ElapsedTimeUiState
+    data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
 
 sealed interface AudioUiState {
@@ -108,9 +105,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }

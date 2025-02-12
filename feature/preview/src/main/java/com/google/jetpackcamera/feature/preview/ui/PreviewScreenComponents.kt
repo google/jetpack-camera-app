@@ -128,10 +128,9 @@ private const val BLINK_TIME = 100L
 
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState.Enabled) {
-    val currentUiState = rememberUpdatedState(elapsedTimeUiState)
     Text(
         modifier = modifier,
-        text = currentUiState.value.elapsedTimeNanos.nanoseconds
+        text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
             .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
         textAlign = TextAlign.Center
     )
