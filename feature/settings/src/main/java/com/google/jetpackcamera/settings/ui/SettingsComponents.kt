@@ -139,7 +139,7 @@ fun DarkModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(DARK_MODE_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG),
         title = stringResource(id = R.string.dark_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -155,21 +155,21 @@ fun DarkModeSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    modifier = modifier.testTag(DARK_MODE_OPTION_ON_TAG),
+                    modifier = modifier.testTag(BTN_DIALOG_DARK_MODE_OPTION_ON_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_dark),
                     selected = darkModeUiState.currentDarkMode == DarkMode.DARK,
                     enabled = true,
                     onClick = { setDarkMode(DarkMode.DARK) }
                 )
                 SingleChoiceSelector(
-                    modifier = modifier.testTag(DARK_MODE_OPTION_OFF_TAG),
+                    modifier = modifier.testTag(BTN_DIALOG_DARK_MODE_OPTION_OFF_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_light),
                     selected = darkModeUiState.currentDarkMode == DarkMode.LIGHT,
                     enabled = true,
                     onClick = { setDarkMode(DarkMode.LIGHT) }
                 )
                 SingleChoiceSelector(
-                    modifier = modifier.testTag(DARK_MODE_OPTION_SYSTEM_TAG),
+                    modifier = modifier.testTag(BTN_DIALOG_DARK_MODE_OPTION_SYSTEM_TAG),
                     text = stringResource(id = R.string.dark_mode_selector_system),
                     selected = darkModeUiState.currentDarkMode == DarkMode.SYSTEM,
                     enabled = true,
@@ -218,7 +218,7 @@ fun FlashModeSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(FLASH_MODE_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG),
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
         enabled = true,
@@ -238,21 +238,21 @@ fun FlashModeSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(FLASH_MODE_OPTION_AUTO_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_AUTO_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_auto),
                     selected = flashUiState.currentFlashMode == FlashMode.AUTO,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.AUTO) }
                 )
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(FLASH_MODE_OPTION_ON_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_on),
                     selected = flashUiState.currentFlashMode == FlashMode.ON,
                     enabled = true,
                     onClick = { setFlashMode(FlashMode.ON) }
                 )
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(FLASH_MODE_OPTION_OFF_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_OFF_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_off),
                     selected = flashUiState.currentFlashMode == FlashMode.OFF,
                     enabled = true,
@@ -260,7 +260,7 @@ fun FlashModeSetting(
                 )
                 // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(FLASH_MODE_OPTION_LLB_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_llb),
                     selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
                     enabled = true,
@@ -278,7 +278,7 @@ fun AspectRatioSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(ASPECT_RATIO_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG),
         title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
         description =
@@ -298,21 +298,21 @@ fun AspectRatioSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_9_16_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_9_16),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_3_4_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
                 )
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(ASPECT_RATIO_OPTION_1_1_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_1_1),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
                     enabled = true,
@@ -330,7 +330,7 @@ fun StreamConfigSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(STREAM_CONFIG_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
         enabled = true,
@@ -351,14 +351,16 @@ fun StreamConfigSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG),
+                    modifier = Modifier.testTag(
+                        BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+                    ),
                     text = stringResource(id = R.string.stream_config_selector_multi_stream),
                     selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
                     enabled = true,
                     onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                 )
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
+                    modifier = Modifier.testTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
                     text = stringResource(id = R.string.stream_config_description_single_stream),
                     selected = streamConfigUiState.currentStreamConfig ==
                         StreamConfig.SINGLE_STREAM,
@@ -371,12 +373,12 @@ fun StreamConfigSetting(
 }
 
 private fun getMaxVideoDurationTestTag(videoDuration: Long): String = when (videoDuration) {
-    UNLIMITED_VIDEO_DURATION -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
-    FIVE_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_1_SEC_TAG
-    TEN_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_10_SEC_TAG
-    THIRTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_30_SEC_TAG
-    SIXTY_SECONDS_DURATION -> MAX_VIDEO_DURATION_OPTION_60_SEC_TAG
-    else -> MAX_VIDEO_DURATION_OPTION_UNLIMITED_TAG
+    UNLIMITED_VIDEO_DURATION -> BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG
+    FIVE_SECONDS_DURATION -> BTN_DIALOG_VIDEO_DURATION_OPTION_1S_TAG
+    TEN_SECONDS_DURATION -> BTN_DIALOG_VIDEO_DURATION_OPTION_10S_TAG
+    THIRTY_SECONDS_DURATION -> BTN_DIALOG_VIDEO_DURATION_OPTION_30S_TAG
+    SIXTY_SECONDS_DURATION -> BTN_DIALOG_VIDEO_DURATION_OPTION_60S_TAG
+    else -> BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG
 }
 
 @Composable
@@ -386,7 +388,7 @@ fun MaxVideoDurationSetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(MAX_VIDEO_DURATION_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG),
         enabled = true,
         title = stringResource(R.string.duration_title),
         leadingIcon = null,
@@ -431,11 +433,11 @@ fun MaxVideoDurationSetting(
 }
 
 private fun getTargetFpsTestTag(fpsOption: Int): String = when (fpsOption) {
-    FPS_15 -> FRAME_RATE_OPTION_15_TAG
-    FPS_30 -> FRAME_RATE_OPTION_30_TAG
-    FPS_60 -> FRAME_RATE_OPTION_60_TAG
-    FPS_AUTO -> FRAME_RATE_OPTION_AUTO_TAG
-    else -> FRAME_RATE_OPTION_AUTO_TAG
+    FPS_15 -> BTN_DIALOG_FPS_OPTION_15_TAG
+    FPS_30 -> BTN_DIALOG_FPS_OPTION_30_TAG
+    FPS_60 -> BTN_DIALOG_FPS_OPTION_60_TAG
+    FPS_AUTO -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
+    else -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
 }
 
 @Composable
@@ -450,7 +452,7 @@ fun TargetFpsSetting(
                 if (fpsUiState is FpsUiState.Disabled) {
                     testTag(fpsUiState.disabledRationale.testTag)
                 } else {
-                    testTag(FRAME_RATE_SETTINGS_TAG)
+                    testTag(BTN_OPEN_DIALOG_SETTING_FPS_TAG)
                 }
             },
         title = stringResource(id = R.string.fps_title),
@@ -546,11 +548,11 @@ private fun getVideoQualitySecondaryStringRes(videoQuality: VideoQuality): Int =
     }
 
 private fun getVideoQualityOptionTestTag(quality: VideoQuality): String = when (quality) {
-    VideoQuality.UNSPECIFIED -> VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
-    VideoQuality.SD -> VIDEO_QUALITY_OPTION_SD_TAG
-    VideoQuality.HD -> VIDEO_QUALITY_OPTION_HD_TAG
-    VideoQuality.FHD -> VIDEO_QUALITY_OPTION_FHD_TAG
-    VideoQuality.UHD -> VIDEO_QUALITY_OPTION_UHD_TAG
+    VideoQuality.UNSPECIFIED -> BTN_DIALOG_VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
+    VideoQuality.SD -> BTN_DIALOG_VIDEO_QUALITY_OPTION_SD_TAG
+    VideoQuality.HD -> BTN_DIALOG_VIDEO_QUALITY_OPTION_HD_TAG
+    VideoQuality.FHD -> BTN_DIALOG_VIDEO_QUALITY_OPTION_FHD_TAG
+    VideoQuality.UHD -> BTN_DIALOG_VIDEO_QUALITY_OPTION_UHD_TAG
 }
 
 /**
@@ -576,7 +578,7 @@ fun StabilizationSetting(
                 is StabilizationUiState.Disabled ->
                     testTag(stabilizationUiState.disabledRationale.testTag)
 
-                else -> testTag(VIDEO_STABILIZATION_SETTINGS_TAG)
+                else -> testTag(BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG)
             }
         },
         title = stringResource(R.string.video_stabilization_title),
@@ -617,7 +619,7 @@ fun StabilizationSetting(
                                             .disabledRationale.testTag
                                     )
                                 } else {
-                                    testTag(VIDEO_STABILIZATION_OPTION_AUTO_TAG)
+                                    testTag(BTN_DIALOG_VIDEO_STABILIZATION_OPTION_AUTO_TAG)
                                 }
                             },
                             text = stringResource(id = R.string.stabilization_selector_auto),
@@ -643,7 +645,7 @@ fun StabilizationSetting(
                                             .disabledRationale.testTag
                                     )
                                 } else {
-                                    testTag(VIDEO_STABILIZATION_OPTION_ON_TAG)
+                                    testTag(BTN_DIALOG_VIDEO_STABILIZATION_OPTION_ON_TAG)
                                 }
                             },
                             text = stringResource(id = R.string.stabilization_selector_on),
@@ -671,7 +673,7 @@ fun StabilizationSetting(
                                             .disabledRationale.testTag
                                     )
                                 } else {
-                                    testTag(VIDEO_STABILIZATION_OPTION_HIGH_QUALITY_TAG)
+                                    testTag(BTN_DIALOG_VIDEO_STABILIZATION_OPTION_HIGH_QUALITY_TAG)
                                 }
                             },
                             text = stringResource(
@@ -701,7 +703,7 @@ fun StabilizationSetting(
                                             .disabledRationale.testTag
                                     )
                                 } else {
-                                    testTag(VIDEO_STABILIZATION_OPTION_OPTICAL_TAG)
+                                    testTag(BTN_DIALOG_VIDEO_STABILIZATION_OPTION_OPTICAL_TAG)
                                 }
                             },
                             text = stringResource(
@@ -722,7 +724,9 @@ fun StabilizationSetting(
 
                         // off selector
                         SingleChoiceSelector(
-                            modifier = Modifier.testTag(VIDEO_STABILIZATION_OPTION_OFF_TAG),
+                            modifier = Modifier.testTag(
+                                BTN_DIALOG_VIDEO_STABILIZATION_OPTION_OFF_TAG
+                            ),
                             text = stringResource(id = R.string.stabilization_selector_off),
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.OFF,
@@ -747,7 +751,7 @@ fun VideoQualitySetting(
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
-        modifier = modifier.testTag(VIDEO_QUALITY_SETTINGS_TAG),
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG),
         title = stringResource(R.string.video_quality_title),
         leadingIcon = null,
         enabled = videQualityUiState is VideoQualityUiState.Enabled,
@@ -811,7 +815,7 @@ fun RecordingAudioSetting(
     setDefaultAudio: (Boolean) -> Unit
 ) {
     SwitchSettingUI(
-        modifier = modifier.testTag(ENABLE_AUDIO_SWITCH_TAG),
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_ENABLE_AUDIO_TAG),
         title = stringResource(id = R.string.audio_title),
         description = when (audioUiState) {
             is AudioUiState.Enabled.On -> {
@@ -848,7 +852,7 @@ fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: S
             } else {
                 ""
             }
-        Text(text = versionString, modifier = Modifier.testTag(APP_VERSION_TAG))
+        Text(text = versionString, modifier = Modifier.testTag(TEXT_SETTING_APP_VERSION_TAG))
     }
 }
 
@@ -922,7 +926,7 @@ fun SwitchSettingUI(
                 value = settingValue,
                 onValueChange = { value -> onSwitchChanged(value) }
             )
-            .testTag(DEFAULT_CAMERA_FACING_SWITCH_TAG),
+            .testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG),
         enabled = enabled,
         title = title,
         description = description,
