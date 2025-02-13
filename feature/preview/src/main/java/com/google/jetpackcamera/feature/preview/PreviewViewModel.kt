@@ -221,10 +221,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
                         ),
-                        elapsedTimeUiState = getElapsedTimeUiState(
-                            cameraState.videoRecordingState,
-                            cameraAppSettings.maxVideoDurationMillis
-                        )
+                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState)
                     )
                 }
             }.collect {}
@@ -232,24 +229,15 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun getElapsedTimeUiState(
-        videoRecordingState: VideoRecordingState,
-        maxDurationMillis: Long
-    ): ElapsedTimeUiState {
-        return when (videoRecordingState) {
-            is VideoRecordingState.Active -> {
-                ElapsedTimeUiState.Enabled(
-                    videoRecordingState.elapsedTimeNanos,
-                    maxDurationMillis
-                )
-            }
+        videoRecordingState: VideoRecordingState
+    ): ElapsedTimeUiState = when (videoRecordingState) {
+        is VideoRecordingState.Active ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
 
-            is VideoRecordingState.Inactive -> ElapsedTimeUiState.Enabled(
-                videoRecordingState.finalElapsedTimeNanos,
-                maxDurationMillis
-            )
+        is VideoRecordingState.Inactive ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
 
-            VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L, maxDurationMillis)
-        }
+        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
     }
 
     /**
