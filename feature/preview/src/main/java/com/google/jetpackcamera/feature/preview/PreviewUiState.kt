@@ -38,7 +38,6 @@ sealed interface PreviewUiState {
         val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
@@ -53,11 +52,10 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-        val audioUiState: AudioUiState = AudioUiState.Disabled
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable
     ) : PreviewUiState
 }
-
-// todo(kc): add ElapsedTimeUiState class
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
@@ -65,6 +63,12 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+
+sealed interface ElapsedTimeUiState {
+    data object Unavailable : ElapsedTimeUiState
+
+    data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
+}
 
 sealed interface AudioUiState {
     val amplitude: Double
@@ -101,9 +105,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }

@@ -25,15 +25,12 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -110,6 +107,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
@@ -129,24 +127,13 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 
 @Composable
-fun ElapsedTimeText(
-    modifier: Modifier = Modifier,
-    videoRecordingState: VideoRecordingState,
-    elapsedNs: Long
-) {
-    AnimatedVisibility(
-        visible = (videoRecordingState is VideoRecordingState.Active),
-        enter = fadeIn(),
-        exit = fadeOut(animationSpec = tween(delayMillis = 1000))
-    ) {
-        Text(
-            modifier = modifier,
-            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
-                "%02d:%02d".format(minutes, seconds)
-            },
-            textAlign = TextAlign.Center
-        )
-    }
+fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState.Enabled) {
+    Text(
+        modifier = modifier,
+        text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable
