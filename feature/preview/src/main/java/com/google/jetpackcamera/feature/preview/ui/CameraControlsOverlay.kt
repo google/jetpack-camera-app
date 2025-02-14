@@ -113,7 +113,8 @@ fun CameraControlsOverlay(
         Boolean,
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {},
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -167,7 +168,8 @@ fun CameraControlsOverlay(
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                onImageWellClick = onImageWellClick
             )
         }
     }
@@ -266,7 +268,8 @@ private fun ControlsBottom(
         Boolean,
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(
@@ -338,14 +341,22 @@ private fun ControlsBottom(
                         audioAmplitude = videoRecordingState.audioAmplitude
                     )
                 } else {
-                    if (!isQuickSettingsOpen &&
-                        previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
-                    ) {
-                        CaptureModeToggleButton(
-                            uiState = previewUiState.captureModeToggleUiState,
-                            onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onToggleWhenDisabled,
-                            modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    Column {
+                        if (!isQuickSettingsOpen &&
+                            previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
+                        ) {
+                            CaptureModeToggleButton(
+                                uiState = previewUiState.captureModeToggleUiState,
+                                onChangeImageFormat = onChangeImageFormat,
+                                onToggleWhenDisabled = onToggleWhenDisabled,
+                                modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                            )
+                        }
+
+                        ImageWell(
+                            previewUiState = previewUiState,
+                            modifier = Modifier.weight(1f),
+                            onClick = onImageWellClick
                         )
                     }
                 }
