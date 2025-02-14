@@ -38,6 +38,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -894,13 +895,14 @@ fun CaptureButton(
             AnimatedVisibility(
                 visible = currentUiState.value is
                     CaptureButtonUiState.Enabled.Recording.LockedRecording,
+                enter = scaleIn(initialScale = .5f) + fadeIn(),
                 exit = fadeOut()
             ) {
-                var smallBoxSize = centerShapeSize / 4
+                var smallBoxSize = (captureButtonSize / 5f).dp
                 Box(
                     modifier = Modifier
                         .size(smallBoxSize)
-                        .clip(RoundedCornerShape(smallBoxSize * .2f))
+                        .clip(RoundedCornerShape(smallBoxSize * .15f))
                         .background(color = Color.White)
                 )
             }
