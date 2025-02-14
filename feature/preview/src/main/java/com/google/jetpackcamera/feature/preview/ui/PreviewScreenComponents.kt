@@ -23,6 +23,7 @@ import android.view.KeyEvent
 import android.view.ViewConfiguration
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -130,6 +131,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -139,19 +141,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.nanoseconds
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 
 @Composable
 fun CaptureControls(
+    modifier: Modifier = Modifier,
     onImageCapture: () -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
-    captureButtonUiState: CaptureButtonUiState
+    captureButtonUiState: CaptureButtonUiState,
+    captureButtonSize: Float = 80f
 ) {
     var currentUiState = rememberUpdatedState(captureButtonUiState)
     val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
@@ -175,7 +177,8 @@ fun CaptureControls(
                             onStartRecording()
                         }
 
-                        CaptureMode.IMAGE_ONLY -> {}}
+                        CaptureMode.IMAGE_ONLY -> {}
+                    }
 
                     else -> {}
                 }
@@ -194,7 +197,9 @@ fun CaptureControls(
         // releasing while pressed recording
         if (firstKeyPressed.value == captureSource) {
             if (isLongPressing.value) {
-                if (currentUiState.value is CaptureButtonUiState.Enabled.Recording.PressedRecording) {
+                if (currentUiState.value is
+                        CaptureButtonUiState.Enabled.Recording.PressedRecording
+                ) {
                     Log.d(TAG, "Stopping recording")
                     onStopRecording()
                 }
@@ -208,6 +213,7 @@ fun CaptureControls(
 
                         CaptureMode.VIDEO_ONLY -> {
                             onLockVideoRecording(true)
+                            Log.d(TAG, "Starting recording")
                             onStartRecording()
                         }
                     }
@@ -228,6 +234,13 @@ fun CaptureControls(
     VolumeButtonsHandler(
         onPress = { captureSource -> onPress(captureSource) },
         onRelease = { captureSource -> onKeyUp(captureSource) }
+    )
+    CaptureButton(
+        modifier = modifier,
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) },
+        captureButtonUiState = captureButtonUiState,
+        captureButtonSize = captureButtonSize
     )
 }
 private enum class CaptureSource {
@@ -897,95 +910,31 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 }
 
 @Composable
-fun CaptureButton(
+private fun CaptureButton(
     modifier: Modifier = Modifier,
-    onCaptureImage: () -> Unit,
-    onStartVideoRecording: () -> Unit,
-    onStopVideoRecording: () -> Unit,
-    onLockVideoRecording: (Boolean) -> Unit,
+    onPress: (CaptureSource) -> Unit,
+    onRelease: (CaptureSource) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    val currentUiState = rememberUpdatedState(captureButtonUiState)
-    var isPressedDown by remember {
-        mutableStateOf(false)
-    }
-    var isLongPressing by remember {
-        mutableStateOf(false)
-    }
-
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    var isCaptureButtonPressed by remember { mutableStateOf(false) }
     val currentColor = LocalContentColor.current
-
-    CaptureControls(
-        onImageCapture = onCaptureImage,
-        onStartRecording = onStartVideoRecording,
-        onStopRecording = onStopVideoRecording,
-        onLockVideoRecording = onLockVideoRecording,
-        captureButtonUiState = captureButtonUiState
-    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onLongPress = {
-                        isLongPressing = true
-                        val uiState = currentUiState.value
-                        if (uiState is CaptureButtonUiState.Enabled.Idle) {
-                            when (uiState.captureMode) {
-                                CaptureMode.STANDARD,
-                                CaptureMode.VIDEO_ONLY -> {
-                                    onStartVideoRecording()
-                                }
-
-                                CaptureMode.IMAGE_ONLY -> {}
-                            }
-                        }
-                    },
+                    // onLongPress cannot be null, otherwise it won't detect the release if the
+                    // touch is dragged off the component
+                    onLongPress = {},
                     onPress = {
-                        isPressedDown = true
+                        isCaptureButtonPressed = true
+                        onPress(CaptureSource.CAPTURE_BUTTON)
                         awaitRelease()
-                        isPressedDown = false
-                        isLongPressing = false
-                        var uiState = currentUiState.value
-                        when (uiState) {
-                            // stop recording after button is lifted
-                            is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            is CaptureButtonUiState.Enabled.Idle,
-                            CaptureButtonUiState.Unavailable -> {
-                            }
-
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
-                        }
-                    },
-                    onTap = {
-                        val uiState = currentUiState.value
-                        when (uiState) {
-                            is CaptureButtonUiState.Enabled.Idle -> {
-                                if (!isLongPressing) {
-                                    when (uiState.captureMode) {
-                                        CaptureMode.STANDARD,
-                                        CaptureMode.IMAGE_ONLY -> onCaptureImage()
-
-                                        CaptureMode.VIDEO_ONLY -> {
-                                            onLockVideoRecording(true)
-                                            onStartVideoRecording()
-                                        }
-                                    }
-                                }
-                            }
-                            // stop if locked recording
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            CaptureButtonUiState.Unavailable,
-                            CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                            }
-                        }
+                        isCaptureButtonPressed = false
+                        Log.d(TAG, "RELEASING LONG PRESS CAPBUTTON")
+                        onRelease(CaptureSource.CAPTURE_BUTTON)
                     }
                 )
             }
@@ -1035,7 +984,7 @@ fun CaptureButton(
                 .size(centerShapeSize)
                 .clip(CircleShape)
                 .alpha(
-                    if (isPressedDown &&
+                    if (isCaptureButtonPressed &&
                         currentUiState.value ==
                         CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
                     ) {
