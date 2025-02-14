@@ -19,6 +19,8 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -60,6 +62,8 @@ const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
+const val VIDEO_PREFIX = "video"
+const val IMAGE_PREFIX = "image"
 const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
@@ -191,13 +195,58 @@ fun deleteFilesInDirAfterTimestamp(
     return hasDeletedFile
 }
 
-fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
-    val file = uri.path?.let { File(it) }
-    if (file?.exists() == true) {
-        val mimeType = URLConnection.guessContentTypeFromName(uri.path)
-        return mimeType != null && mimeType.startsWith(prefix)
+fun doesFileExist(uri: Uri): Boolean = uri.path?.let { File(it) }?.exists() == true
+
+fun doesMediaExist(uri: Uri, prefix: String): Boolean {
+    if (prefix == IMAGE_PREFIX) {
+        return doesImageExist(uri)
+    } else if (prefix == VIDEO_PREFIX) {
+        return doesVideoExist(uri, prefix)
     }
     return false
+}
+
+fun doesImageExist(uri: Uri): Boolean {
+    val bitmap = uri.path?.let { path -> BitmapFactory.decodeFile(path) }
+    val mimeType = URLConnection.guessContentTypeFromName(uri.path)
+    return mimeType != null && mimeType.startsWith(IMAGE_PREFIX) && bitmap != null
+}
+
+// this does not work with the image capture tests...
+fun doesVideoExist(
+    uri: Uri,
+    prefix: String,
+    checkAudio: Boolean = false,
+    durationMs: Long? = null
+): Boolean {
+    if (!doesFileExist(uri)) {
+        return false
+    }
+    var hasCorrectContents = MediaMetadataRetriever().useAndRelease {
+        try {
+            it.setDataSource(uri.path)
+        } catch (e: Exception) {
+            Log.e(TAG, e.stackTraceToString())
+            throw e
+            return@useAndRelease false
+        }
+        if (!it.getMimeType().startsWith(prefix)) {
+            return@useAndRelease false
+        }
+        if (prefix == VIDEO_PREFIX && !it.hasVideo()) {
+            return@useAndRelease false
+        }
+        if (checkAudio && !it.hasAudio()) {
+            return@useAndRelease false
+        }
+
+        if (durationMs != null && it.getDurationMs() != durationMs) {
+            return@useAndRelease false
+        }
+
+        return@useAndRelease true
+    }
+    return hasCorrectContents == true
 }
 
 fun getSingleImageCaptureIntent(uri: Uri, action: String): Intent {
@@ -238,8 +287,7 @@ fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescript
 class IndividualTestGrantPermissionRule(
     private val permissions: Array<String>,
     private val targetTestNames: Array<String>
-) :
-    TestRule {
+) : TestRule {
     private lateinit var wrappedRule: GrantPermissionRule
 
     override fun apply(base: Statement, description: Description): Statement {

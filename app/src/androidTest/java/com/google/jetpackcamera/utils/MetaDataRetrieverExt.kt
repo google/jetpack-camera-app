@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.utils
 
 import android.media.MediaMetadataRetriever
@@ -26,11 +25,14 @@ import android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH
 import android.util.Rational
 import android.util.Size
 
-fun MediaMetadataRetriever.useAndRelease(block: (MediaMetadataRetriever) -> Unit) {
-    try {
-        block(this)
+inline fun <R> MediaMetadataRetriever.useAndRelease(
+    crossinline block: (MediaMetadataRetriever) -> R
+): R? {
+    return try {
+        return block(this)
     } finally {
         release()
+        null
     }
 }
 

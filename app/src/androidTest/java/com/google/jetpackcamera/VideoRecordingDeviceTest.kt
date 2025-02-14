@@ -32,10 +32,12 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
-import com.google.jetpackcamera.utils.doesImageFileExist
+import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
@@ -89,7 +91,7 @@ internal class VideoRecordingDeviceTest {
                 composeTestRule.longClickForVideoRecording()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
-        Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
+        Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -112,8 +114,8 @@ internal class VideoRecordingDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
-        Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
-        Truth.assertThat(doesImageFileExist(uri, "video")).isTrue()
+        Truth.assertThat(doesMediaExist(uri, IMAGE_PREFIX)).isFalse()
+        Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -135,7 +137,7 @@ internal class VideoRecordingDeviceTest {
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
-        Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
+        Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isFalse()
     }
 
     companion object {
