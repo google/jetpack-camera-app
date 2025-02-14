@@ -118,6 +118,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
@@ -176,8 +177,8 @@ fun CameraControlsOverlay(
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
+                onImageWellClick = onImageWellClick,
                 onLockVideoRecording = onLockVideoRecording
-
             )
         }
     }
@@ -283,6 +284,7 @@ private fun ControlsBottom(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     Column(
@@ -368,14 +370,22 @@ private fun ControlsBottom(
                         audioUiState = previewUiState.audioUiState
                     )
                 } else {
-                    if (!isQuickSettingsOpen &&
-                        previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
-                    ) {
-                        CaptureModeToggleButton(
-                            uiState = previewUiState.captureModeToggleUiState,
-                            onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onToggleWhenDisabled,
-                            modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    Column {
+                        if (!isQuickSettingsOpen &&
+                            previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
+                        ) {
+                            CaptureModeToggleButton(
+                                uiState = previewUiState.captureModeToggleUiState,
+                                onChangeImageFormat = onChangeImageFormat,
+                                onToggleWhenDisabled = onToggleWhenDisabled,
+                                modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                            )
+                        }
+
+                        ImageWell(
+                            previewUiState = previewUiState,
+                            modifier = Modifier.weight(1f),
+                            onClick = onImageWellClick
                         )
                     }
                 }

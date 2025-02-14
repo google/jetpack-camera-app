@@ -81,7 +81,7 @@ private const val TAG = "PreviewScreen"
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
-    onNavigateToPostCapture: () -> Unit,
+    onNavigateToPostCapture: (uri: Uri?) -> Unit,
     previewMode: PreviewMode,
     isDebugMode: Boolean,
     modifier: Modifier = Modifier,
@@ -161,7 +161,8 @@ fun PreviewScreen(
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode
+                isDebugMode = isDebugMode,
+                onImageWellClick = { uri -> onNavigateToPostCapture(uri)},
             )
         }
     }
@@ -206,7 +207,8 @@ private fun ContentScreen(
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false
+    isDebugMode: Boolean = false,
+    onImageWellClick: (uri: Uri?) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -268,8 +270,9 @@ private fun ContentScreen(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
-                onLockVideoRecording = onLockVideoRecording,
-                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
+                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) },
+                onImageWellClick = onImageWellClick,
+                onLockVideoRecording = onLockVideoRecording
             )
 
             DebugOverlayComponent(
@@ -279,22 +282,22 @@ private fun ContentScreen(
             )
 
             // displays toast when there is a message to show
-            if (previewUiState.toastMessageToShow != null) {
-                TestableToast(
-                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
-                    toastMessage = previewUiState.toastMessageToShow,
-                    onToastShown = onToastShown
-                )
-            }
+//            if (previewUiState.toastMessageToShow != null) {
+//                TestableToast(
+//                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
+//                    toastMessage = previewUiState.toastMessageToShow,
+//                    onToastShown = onToastShown
+//                )
+//            }
 
-            if (previewUiState.snackBarToShow != null) {
-                TestableSnackbar(
-                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
-                    snackbarToShow = previewUiState.snackBarToShow,
-                    snackbarHostState = snackbarHostState,
-                    onSnackbarResult = onSnackBarResult
-                )
-            }
+//            if (previewUiState.snackBarToShow != null) {
+//                TestableSnackbar(
+//                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
+//                    snackbarToShow = previewUiState.snackBarToShow,
+//                    snackbarHostState = snackbarHostState,
+//                    onSnackbarResult = onSnackBarResult
+//                )
+//            }
             // Screen flash overlay that stays on top of everything but invisible normally. This should
             // not be enabled based on whether screen flash is enabled because a previous image capture
             // may still be running after flash mode change and clear actions (e.g. brightness restore)

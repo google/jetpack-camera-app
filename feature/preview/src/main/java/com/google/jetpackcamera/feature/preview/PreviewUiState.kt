@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.net.Uri
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -43,6 +44,7 @@ sealed interface PreviewUiState {
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarToShow: SnackbarData? = null,
+        val lastCaptureUri: Uri? = null,
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
         val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
