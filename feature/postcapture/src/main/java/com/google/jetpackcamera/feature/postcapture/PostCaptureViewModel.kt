@@ -25,7 +25,10 @@ import kotlinx.coroutines.flow.update
 @HiltViewModel
 class PostCaptureViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PostCaptureUiState(lastCapturedImagePath = "/storage/emulated/0/Pictures/JCA-2025-01-30-16-22-43-769.jpg"))
+    private val _uiState = MutableStateFlow(PostCaptureUiState(
+//        lastCapturedImagePath = "/storage/emulated/0/Pictures/JCA-2025-01-30-16-22-43-769.jpg"
+                lastCapturedImagePath = "/storage/emulated/0/Pictures/JCA-2025-02-10-22-13-13-574.jpg"
+    ))
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
     fun setCapturedImage(path: String) {
@@ -38,6 +41,10 @@ class PostCaptureViewModel : ViewModel() {
 
     fun shareImage(path: String, shareImage: (String) -> Unit) {
         shareImage(path) // This will invoke the sharing functionality
+    }
+
+    fun setLastCapturedImagePath(path: String?) {
+        _uiState.update { it.copy(lastCapturedImagePath = path) }
     }
 
 }
