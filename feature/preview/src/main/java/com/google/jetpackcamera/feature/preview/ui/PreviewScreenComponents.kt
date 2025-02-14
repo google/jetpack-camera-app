@@ -190,7 +190,6 @@ fun PauseResumeToggleButton(
                 .size(size = size.dp)
                 .scale(scale = animatedToggleScale)
                 .clip(CircleShape)
-                // .border(4.dp, Color.White, CircleShape)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
@@ -758,7 +757,7 @@ fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    val currentUiState = rememberUpdatedState(captureButtonUiState)
     var isPressedDown by remember {
         mutableStateOf(false)
     }
@@ -774,7 +773,7 @@ fun CaptureButton(
                 detectTapGestures(
                     onLongPress = {
                         isLongPressing = true
-                        var uiState = currentUiState.value
+                        val uiState = currentUiState.value
                         if (uiState is CaptureButtonUiState.Enabled.Idle) {
                             when (uiState.captureMode) {
                                 CaptureMode.STANDARD,
@@ -786,8 +785,6 @@ fun CaptureButton(
                             }
                         }
                     },
-                    // TODO: @kimblebee - stopVideoRecording is being called every time the capture
-                    // button is pressed -- regardless of tap or long press
                     onPress = {
                         isPressedDown = true
                         awaitRelease()
@@ -809,7 +806,7 @@ fun CaptureButton(
                         }
                     },
                     onTap = {
-                        var uiState = currentUiState.value
+                        val uiState = currentUiState.value
                         when (uiState) {
                             is CaptureButtonUiState.Enabled.Idle -> {
                                 if (!isLongPressing) {
