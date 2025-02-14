@@ -19,6 +19,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -37,11 +38,14 @@ import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
-import com.google.jetpackcamera.utils.doesImageFileExist
+import com.google.jetpackcamera.utils.doesFileExist
+import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
@@ -100,8 +104,12 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
             }
+
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
-        Truth.assertThat(doesImageFileExist(uri, "image")).isTrue()
+
+        Truth.assertThat(
+            doesMediaExist(uri, IMAGE_PREFIX)
+        ).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -120,13 +128,14 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
                     .performClick()
+
                 composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
                 }
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
-        Truth.assertThat(doesImageFileExist(uri, "image")).isFalse()
+        Truth.assertThat(doesFileExist(uri)).isFalse()
     }
 
     @Test
@@ -144,15 +153,23 @@ internal class ImageCaptureDeviceTest {
 
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
-                    .performTouchInput { longClick() }
-                composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)
-                        .isDisplayed()
-                }
+                    .performTouchInput { longClick(durationMillis = 3_000) }
+
+                try {
+                    composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                        // image_only capture UI does not display the video unsupported snackbar
+                        composeTestRule.onNodeWithTag(VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)
+                            .isDisplayed()
+                    }
+                    throw AssertionError(
+                        "$VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG should not be present"
+                    )
+                } catch (e: ComposeTimeoutException) { /*do nothing. we want to time out */ }
+
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
-        Truth.assertThat(doesImageFileExist(uri, "video")).isFalse()
+        Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isFalse()
     }
 
     @Test
@@ -184,7 +201,9 @@ internal class ImageCaptureDeviceTest {
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         for (string in uriStrings) {
-            Truth.assertThat(doesImageFileExist(Uri.parse(string), "image")).isTrue()
+            Truth.assertThat(
+                doesMediaExist(Uri.parse(string), IMAGE_PREFIX)
+            ).isTrue()
         }
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
@@ -253,7 +272,9 @@ internal class ImageCaptureDeviceTest {
                 clickCapture()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
-        Truth.assertThat(doesImageFileExist(Uri.parse(uriStrings[1]), "image")).isTrue()
+        Truth.assertThat(
+            doesMediaExist(Uri.parse(uriStrings[1]), IMAGE_PREFIX)
+        ).isTrue()
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
