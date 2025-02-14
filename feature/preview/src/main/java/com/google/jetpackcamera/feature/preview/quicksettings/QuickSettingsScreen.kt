@@ -65,6 +65,8 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -274,7 +276,13 @@ private fun ExpandedQuickSettingsUi(
                             enabled =
                             previewUiState.systemConstraints.concurrentCamerasSupported &&
                                 previewUiState.previewMode
-                                    !is PreviewMode.ExternalImageCaptureMode
+                                    !is PreviewMode.ExternalImageCaptureMode &&
+                                (
+                                    currentCameraSettings.dynamicRange !=
+                                        DEFAULT_HDR_DYNAMIC_RANGE &&
+                                        currentCameraSettings.imageFormat !=
+                                        DEFAULT_HDR_IMAGE_OUTPUT
+                                    )
                         )
                     }
                 }
