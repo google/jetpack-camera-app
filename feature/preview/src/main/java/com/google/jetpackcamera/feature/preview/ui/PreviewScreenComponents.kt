@@ -97,6 +97,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -791,8 +794,7 @@ fun CaptureButton(
                         awaitRelease()
                         isPressedDown = false
                         isLongPressing = false
-                        var uiState = currentUiState.value
-
+                        val uiState = currentUiState.value
                         when (uiState) {
                             // stop recording after button is lifted
                             is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
@@ -890,20 +892,21 @@ fun CaptureButton(
                     }
                 )
                 .background(animatedColor)
+        ) {}
+        // central "square" stop icon
+        AnimatedVisibility(
+            visible = currentUiState.value is
+                CaptureButtonUiState.Enabled.Recording.LockedRecording,
+            enter = scaleIn(initialScale = .5f) + fadeIn(),
+            exit = fadeOut()
         ) {
-            // central "square" stop icon
-            AnimatedVisibility(
-                visible = currentUiState.value is
-                    CaptureButtonUiState.Enabled.Recording.LockedRecording,
-                enter = scaleIn(initialScale = .5f) + fadeIn(),
-                exit = fadeOut()
-            ) {
-                var smallBoxSize = (captureButtonSize / 5f).dp
-                Box(
-                    modifier = Modifier
-                        .size(smallBoxSize)
-                        .clip(RoundedCornerShape(smallBoxSize * .15f))
-                        .background(color = Color.White)
+            val smallBoxSize = (captureButtonSize / 5f).dp
+            Canvas(modifier = Modifier) {
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
+                    size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
+                    cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
                 )
             }
         }

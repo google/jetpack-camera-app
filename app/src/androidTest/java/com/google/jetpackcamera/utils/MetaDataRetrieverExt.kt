@@ -28,11 +28,10 @@ import android.util.Size
 inline fun <R> MediaMetadataRetriever.useAndRelease(
     crossinline block: (MediaMetadataRetriever) -> R
 ): R? {
-    return try {
+    try {
         return block(this)
     } finally {
         release()
-        null
     }
 }
 
@@ -40,11 +39,20 @@ fun MediaMetadataRetriever.hasAudio(): Boolean = extractMetadata(METADATA_KEY_HA
 
 fun MediaMetadataRetriever.hasVideo(): Boolean = extractMetadata(METADATA_KEY_HAS_VIDEO) == "yes"
 
-fun MediaMetadataRetriever.getDurationMs(): Long = extractMetadata(METADATA_KEY_DURATION)!!.toLong()
+fun MediaMetadataRetriever.getDurationMs(): Long =
+    checkNotNull(extractMetadata(METADATA_KEY_DURATION)?.toLong()) {
+        "duration unavailable"
+    }
 
-fun MediaMetadataRetriever.getWidth(): Int = extractMetadata(METADATA_KEY_VIDEO_WIDTH)!!.toInt()
+fun MediaMetadataRetriever.getWidth(): Int =
+    checkNotNull(extractMetadata(METADATA_KEY_VIDEO_WIDTH)?.toInt()) {
+        "width unavailable"
+    }
 
-fun MediaMetadataRetriever.getHeight(): Int = extractMetadata(METADATA_KEY_VIDEO_HEIGHT)!!.toInt()
+fun MediaMetadataRetriever.getHeight(): Int =
+    checkNotNull(extractMetadata(METADATA_KEY_VIDEO_HEIGHT)?.toInt()) {
+        "height information unavailable"
+    }
 
 fun MediaMetadataRetriever.getResolution(): Size = Size(getWidth(), getHeight())
 
