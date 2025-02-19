@@ -263,7 +263,8 @@ fun FlashModeSetting(
                     modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
                     text = stringResource(id = R.string.flash_mode_selector_llb),
                     selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
-                    enabled = true,
+                    enabled = flashUiState.lowLightSelectableState is
+                        SingleSelectableState.Selectable,
                     onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
                 )
             }

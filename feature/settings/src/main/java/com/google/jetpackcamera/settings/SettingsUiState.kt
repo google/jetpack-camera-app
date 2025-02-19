@@ -104,8 +104,7 @@ sealed interface DisabledRationale {
     data class VideoQualityUnsupportedRationale(
         override val affectedSettingNameResId: Int,
         val currentDynamicRange: Int = R.string.video_quality_rationale_suffix_default
-    ) :
-        DisabledRationale {
+    ) : DisabledRationale {
         override val reasonTextResId = R.string.video_quality_unsupported
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
@@ -189,6 +188,7 @@ sealed interface AudioUiState {
 
     sealed interface Enabled : AudioUiState {
         val additionalContext: String
+
         data class On(override val additionalContext: String = "") : Enabled
         data class Mute(override val additionalContext: String = "") : Enabled
     }
@@ -196,17 +196,19 @@ sealed interface AudioUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
 }
 
+sealed interface FlashUiState {
+    data class Enabled(
+        val currentFlashMode: FlashMode,
+        val lowLightSelectableState: SingleSelectableState,
+        val additionalContext: String = ""
+    ) : FlashUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
 //
 // ////////////////////////////////////////////////////////////
-
-// this could be constrained w/ a check to see if a torch is available?
-sealed interface FlashUiState {
-    data class Enabled(val currentFlashMode: FlashMode, val additionalContext: String = "") :
-        FlashUiState
-}
 
 sealed interface AspectRatioUiState {
     data class Enabled(val currentAspectRatio: AspectRatio, val additionalContext: String = "") :
@@ -255,7 +257,12 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         AudioUiState.Enabled.Mute()
     },
     flashUiState =
-    FlashUiState.Enabled(currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+    FlashUiState.Enabled(
+        currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode,
+        lowLightSelectableState = SingleSelectableState.Disabled(
+            DeviceUnsupportedRationale(R.string.llb_rationale_prefix)
+        )
+    ),
     fpsUiState = FpsUiState.Enabled(
         currentSelection = DEFAULT_CAMERA_APP_SETTINGS.targetFrameRate,
         fpsAutoState = SingleSelectableState.Selectable,

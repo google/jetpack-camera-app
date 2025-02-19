@@ -54,8 +54,6 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
 private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
-val previewStabilizationUnsupportedFps = setOf(FPS_15, FPS_60)
-val videoStabilizationUnsupportedFps = setOf(FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -80,7 +78,7 @@ class SettingsViewModel @Inject constructor(
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
-                flashUiState = FlashUiState.Enabled(updatedSettings.flashMode),
+                flashUiState = getFlashUiState(updatedSettings, constraints),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 audioUiState = getAudioUiState(
                     updatedSettings.audioEnabled,
@@ -102,6 +100,38 @@ class SettingsViewModel @Inject constructor(
 // Get UiStates for components
 //
 // ////////////////////////////////////////////////////////////
+
+    private fun getFlashUiState(
+        cameraAppSettings: CameraAppSettings,
+        constraints: SystemConstraints
+    ): FlashUiState {
+        val supportedFlashModes =
+            constraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes ?: emptySet()
+
+        // check if llb constraints:
+        // llb must be supported by device
+        val llbSetting =
+            if (!supportedFlashModes.contains(FlashMode.LOW_LIGHT_BOOST)) {
+                SingleSelectableState.Disabled(
+                    DeviceUnsupportedRationale(R.string.llb_rationale_prefix)
+                )
+            } // llb unsupported above 30fps
+            else if (cameraAppSettings.targetFrameRate > FPS_30) {
+                SingleSelectableState.Disabled(
+                    FpsUnsupportedRationale(
+                        R.string.llb_rationale_prefix,
+                        cameraAppSettings.targetFrameRate
+                    )
+                )
+            } else {
+                SingleSelectableState.Selectable
+            }
+
+        return FlashUiState.Enabled(
+            currentFlashMode = cameraAppSettings.flashMode,
+            lowLightSelectableState = llbSetting
+        )
+    }
 
     private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
         if (permissionGranted) {
