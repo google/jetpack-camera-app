@@ -15,11 +15,24 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import kotlin.reflect.KProperty1
+
 data class SystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
     val concurrentCamerasSupported: Boolean = false,
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
-)
+) {
+
+    inline fun <reified R> forDevice(property: KProperty1<CameraConstraints, Any>): R =
+        perLensConstraints.values.asSequence()
+            .flatMap {
+                when (val value = property.get(it)) {
+                    is Iterable<*> -> value.asSequence()
+                    is Sequence<*> -> value
+                    else -> sequenceOf(value)
+                }
+            }.toSet() as R
+}
 
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,

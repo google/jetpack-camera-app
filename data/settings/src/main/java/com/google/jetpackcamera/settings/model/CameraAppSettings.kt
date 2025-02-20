@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.settings.model
 
-import kotlin.reflect.KProperty1
-
 const val TARGET_FPS_AUTO = 0
 const val UNLIMITED_VIDEO_DURATION = 0L
 val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
@@ -47,14 +45,4 @@ data class CameraAppSettings(
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =
     perLensConstraints[cameraAppSettings.cameraLensFacing]
 
-inline fun <reified T> SystemConstraints.forDevice(
-    property: KProperty1<CameraConstraints, Any>
-): Set<T> = perLensConstraints.values.asSequence().flatMap {
-    val someting = when (val value = property.get(it)) {
-        is Iterable<*> -> value.filterIsInstance<T>().asSequence() // Convert to Sequence
-        is Sequence<*> -> value.filterIsInstance<T>()
-        else -> emptySequence()
-    }
-    someting
-}.toSet()
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

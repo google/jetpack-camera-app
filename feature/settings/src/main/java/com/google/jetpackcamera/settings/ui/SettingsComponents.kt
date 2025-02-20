@@ -244,14 +244,16 @@ fun FlashModeSetting(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_AUTO_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_auto),
                         selected = flashUiState.currentFlashMode == FlashMode.AUTO,
-                        enabled = flashUiState.autoSelectableState is SingleSelectableState.Selectable,
+                        enabled = flashUiState.autoSelectableState is
+                            SingleSelectableState.Selectable,
                         onClick = { setFlashMode(FlashMode.AUTO) }
                     )
                     SingleChoiceSelector(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_on),
                         selected = flashUiState.currentFlashMode == FlashMode.ON,
-                        enabled = flashUiState.onSelectableState is SingleSelectableState.Selectable,
+                        enabled = flashUiState.onSelectableState is
+                            SingleSelectableState.Selectable,
                         onClick = { setFlashMode(FlashMode.ON) }
                     )
                     SingleChoiceSelector(
