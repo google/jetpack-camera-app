@@ -221,10 +221,10 @@ fun FlashModeSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG),
         title = stringResource(id = R.string.flash_mode_title),
         leadingIcon = null,
-        enabled = true,
+        enabled = flashUiState is FlashUiState.Enabled,
         description =
-        if (flashUiState is FlashUiState.Enabled) {
-            when (flashUiState.currentFlashMode) {
+        when (flashUiState) {
+            is FlashUiState.Enabled -> when (flashUiState.currentFlashMode) {
                 FlashMode.AUTO -> stringResource(id = R.string.flash_mode_description_auto)
                 FlashMode.ON -> stringResource(id = R.string.flash_mode_description_on)
                 FlashMode.OFF -> stringResource(id = R.string.flash_mode_description_off)
@@ -232,41 +232,45 @@ fun FlashModeSetting(
                     id = R.string.flash_mode_description_llb
                 )
             }
-        } else {
-            TODO("flash mode currently has no disabled criteria")
+            is FlashUiState.Disabled -> stringResource(
+                flashUiState.disabledRationale.reasonTextResId,
+                stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
+            )
         },
         popupContents = {
-            Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_AUTO_TAG),
-                    text = stringResource(id = R.string.flash_mode_selector_auto),
-                    selected = flashUiState.currentFlashMode == FlashMode.AUTO,
-                    enabled = true,
-                    onClick = { setFlashMode(FlashMode.AUTO) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
-                    text = stringResource(id = R.string.flash_mode_selector_on),
-                    selected = flashUiState.currentFlashMode == FlashMode.ON,
-                    enabled = true,
-                    onClick = { setFlashMode(FlashMode.ON) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_OFF_TAG),
-                    text = stringResource(id = R.string.flash_mode_selector_off),
-                    selected = flashUiState.currentFlashMode == FlashMode.OFF,
-                    enabled = true,
-                    onClick = { setFlashMode(FlashMode.OFF) }
-                )
-                // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
-                    text = stringResource(id = R.string.flash_mode_selector_llb),
-                    selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
-                    enabled = flashUiState.lowLightSelectableState is
-                        SingleSelectableState.Selectable,
-                    onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
-                )
+            if (flashUiState is FlashUiState.Enabled) {
+                Column(Modifier.selectableGroup()) {
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_AUTO_TAG),
+                        text = stringResource(id = R.string.flash_mode_selector_auto),
+                        selected = flashUiState.currentFlashMode == FlashMode.AUTO,
+                        enabled = flashUiState.autoSelectableState is SingleSelectableState.Selectable,
+                        onClick = { setFlashMode(FlashMode.AUTO) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
+                        text = stringResource(id = R.string.flash_mode_selector_on),
+                        selected = flashUiState.currentFlashMode == FlashMode.ON,
+                        enabled = flashUiState.onSelectableState is SingleSelectableState.Selectable,
+                        onClick = { setFlashMode(FlashMode.ON) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_OFF_TAG),
+                        text = stringResource(id = R.string.flash_mode_selector_off),
+                        selected = flashUiState.currentFlashMode == FlashMode.OFF,
+                        enabled = true,
+                        onClick = { setFlashMode(FlashMode.OFF) }
+                    )
+                    // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
+                        text = stringResource(id = R.string.flash_mode_selector_llb),
+                        selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
+                        enabled = flashUiState.lowLightSelectableState is
+                            SingleSelectableState.Selectable,
+                        onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
+                    )
+                }
             }
         }
     )

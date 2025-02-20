@@ -199,9 +199,13 @@ sealed interface AudioUiState {
 sealed interface FlashUiState {
     data class Enabled(
         val currentFlashMode: FlashMode,
+        val onSelectableState: SingleSelectableState,
+        val autoSelectableState: SingleSelectableState,
         val lowLightSelectableState: SingleSelectableState,
         val additionalContext: String = ""
     ) : FlashUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : FlashUiState
 }
 
 // ////////////////////////////////////////////////////////////
@@ -259,8 +263,10 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     flashUiState =
     FlashUiState.Enabled(
         currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode,
+        autoSelectableState = SingleSelectableState.Selectable,
+        onSelectableState = SingleSelectableState.Selectable,
         lowLightSelectableState = SingleSelectableState.Disabled(
-            DeviceUnsupportedRationale(R.string.llb_rationale_prefix)
+            DeviceUnsupportedRationale(R.string.flash_llb_rationale_prefix)
         )
     ),
     fpsUiState = FpsUiState.Enabled(

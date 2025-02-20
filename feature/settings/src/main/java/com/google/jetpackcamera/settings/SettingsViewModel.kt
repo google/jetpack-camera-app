@@ -41,6 +41,7 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.settings.model.forDevice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,21 +106,74 @@ class SettingsViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings,
         constraints: SystemConstraints
     ): FlashUiState {
-        val supportedFlashModes =
+        val currentSupportedFlashModes =
             constraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes ?: emptySet()
+
+        check(currentSupportedFlashModes.isNotEmpty()) {
+            "No flash modes supported. Should at least support OFF."
+        }
+        val deviceSupportedFlashModes = constraints.forDevice<FlashMode>(
+            CameraConstraints::supportedFlashModes
+        )
+        // disable entire setting when:
+        //  device only supports off... device unsupported rationale
+        //  lens only supports off... lens unsupported rationale
+        if (deviceSupportedFlashModes.size == 1) {
+            return FlashUiState.Disabled(
+                DeviceUnsupportedRationale(R.string.flash_rationale_prefix)
+            )
+        } else if (currentSupportedFlashModes.size == 1) {
+            return FlashUiState.Disabled(
+                getLensUnsupportedRationale(
+                    cameraAppSettings.cameraLensFacing,
+                    R.string.flash_rationale_prefix
+                )
+            )
+        }
+
+        // if options besides off are available for this lens...
+        val onSelectableState = if (currentSupportedFlashModes.contains(FlashMode.ON)) {
+            SingleSelectableState.Selectable
+        } else if (deviceSupportedFlashModes.contains(FlashMode.ON)) {
+            SingleSelectableState.Disabled(
+                getLensUnsupportedRationale(
+                    cameraAppSettings.cameraLensFacing,
+                    affectedSettingNameResId = R.string.flash_on_rationale_prefix
+                )
+            )
+        } else {
+            SingleSelectableState.Disabled(
+                DeviceUnsupportedRationale(R.string.flash_on_rationale_prefix)
+            )
+        }
+
+        val autoSelectableState = if (currentSupportedFlashModes.contains(FlashMode.AUTO)) {
+            SingleSelectableState.Selectable
+        } else if (deviceSupportedFlashModes.contains(FlashMode.AUTO)) {
+            SingleSelectableState.Disabled(
+                getLensUnsupportedRationale(
+                    cameraAppSettings.cameraLensFacing,
+                    affectedSettingNameResId = R.string.flash_auto_rationale_prefix
+                )
+            )
+        } else {
+            SingleSelectableState.Disabled(
+                DeviceUnsupportedRationale(R.string.flash_auto_rationale_prefix)
+            )
+        }
 
         // check if llb constraints:
         // llb must be supported by device
-        val llbSetting =
-            if (!supportedFlashModes.contains(FlashMode.LOW_LIGHT_BOOST)) {
+        val llbSelectableState =
+            if (!currentSupportedFlashModes.contains(FlashMode.LOW_LIGHT_BOOST)) {
                 SingleSelectableState.Disabled(
-                    DeviceUnsupportedRationale(R.string.llb_rationale_prefix)
+                    DeviceUnsupportedRationale(R.string.flash_llb_rationale_prefix)
                 )
             } // llb unsupported above 30fps
             else if (cameraAppSettings.targetFrameRate > FPS_30) {
                 SingleSelectableState.Disabled(
                     FpsUnsupportedRationale(
-                        R.string.llb_rationale_prefix,
+                        R.string.flash_llb_rationale_prefix,
                         cameraAppSettings.targetFrameRate
                     )
                 )
@@ -129,7 +183,9 @@ class SettingsViewModel @Inject constructor(
 
         return FlashUiState.Enabled(
             currentFlashMode = cameraAppSettings.flashMode,
-            lowLightSelectableState = llbSetting
+            onSelectableState = onSelectableState,
+            autoSelectableState = autoSelectableState,
+            lowLightSelectableState = llbSelectableState
         )
     }
 
