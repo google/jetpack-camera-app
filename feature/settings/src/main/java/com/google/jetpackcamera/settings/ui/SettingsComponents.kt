@@ -248,6 +248,7 @@ fun FlashModeSetting(
                             SingleSelectableState.Selectable,
                         onClick = { setFlashMode(FlashMode.AUTO) }
                     )
+
                     SingleChoiceSelector(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_on),
@@ -256,14 +257,7 @@ fun FlashModeSetting(
                             SingleSelectableState.Selectable,
                         onClick = { setFlashMode(FlashMode.ON) }
                     )
-                    SingleChoiceSelector(
-                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_OFF_TAG),
-                        text = stringResource(id = R.string.flash_mode_selector_off),
-                        selected = flashUiState.currentFlashMode == FlashMode.OFF,
-                        enabled = true,
-                        onClick = { setFlashMode(FlashMode.OFF) }
-                    )
-                    // TODO(yasith): Add logic to only show LLB toggle if current lens supports LLB
+
                     SingleChoiceSelector(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_llb),
@@ -271,6 +265,14 @@ fun FlashModeSetting(
                         enabled = flashUiState.lowLightSelectableState is
                             SingleSelectableState.Selectable,
                         onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
+                    )
+
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_OFF_TAG),
+                        text = stringResource(id = R.string.flash_mode_selector_off),
+                        selected = flashUiState.currentFlashMode == FlashMode.OFF,
+                        enabled = true,
+                        onClick = { setFlashMode(FlashMode.OFF) }
                     )
                 }
             }

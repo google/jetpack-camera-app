@@ -41,6 +41,7 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.settings.model.forDevice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,9 +112,9 @@ class SettingsViewModel @Inject constructor(
         check(currentSupportedFlashModes.isNotEmpty()) {
             "No flash modes supported. Should at least support OFF."
         }
-        val deviceSupportedFlashModes: Set<FlashMode> = constraints.forDevice(
-            CameraConstraints::supportedFlashModes
-        )
+        val deviceSupportedFlashModes: Set<FlashMode> = constraints.forDevice {
+            it.supportedFlashModes
+        }
         // disable entire setting when:
         //  device only supports off... device unsupported rationale
         //  lens only supports off... lens unsupported rationale
