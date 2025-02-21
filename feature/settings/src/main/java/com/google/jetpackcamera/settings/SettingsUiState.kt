@@ -242,7 +242,16 @@ sealed interface VideoQualityUiState {
         val videoQualityHDState: SingleSelectableState,
         val videoQualityFHDState: SingleSelectableState,
         val videoQualityUHDState: SingleSelectableState
-    ) : VideoQualityUiState
+    ) : VideoQualityUiState {
+        fun getSelectableState(videoQuality: VideoQuality): SingleSelectableState =
+            when (videoQuality) {
+                VideoQuality.UNSPECIFIED -> this.videoQualityAutoState
+                VideoQuality.SD -> this.videoQualitySDState
+                VideoQuality.HD -> this.videoQualityHDState
+                VideoQuality.FHD -> this.videoQualityFHDState
+                VideoQuality.UHD -> this.videoQualityUHDState
+            }
+    }
 
     data class Disabled(val disabledRationale: DisabledRationale) : VideoQualityUiState
 }

@@ -370,15 +370,15 @@ class SettingsViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings
     ): VideoQualityUiState {
         val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
-        val supportedVideoQualities: List<VideoQuality>? =
-            cameraConstraints?.supportedVideoQualitiesMap?.get(cameraAppSettings.dynamicRange)
-        return if (!supportedVideoQualities.isNullOrEmpty()) {
+        val supportedVideoQualities: List<VideoQuality> =
+            cameraConstraints?.supportedVideoQualitiesMap?.get(
+                cameraAppSettings.dynamicRange
+            ) ?: listOf(VideoQuality.UNSPECIFIED)
+
+        return if (supportedVideoQualities != listOf(VideoQuality.UNSPECIFIED)) {
             VideoQualityUiState.Enabled(
                 currentVideoQuality = cameraAppSettings.videoQuality,
-                videoQualityAutoState = getSingleVideoQualityState(
-                    VideoQuality.UNSPECIFIED,
-                    supportedVideoQualities
-                ),
+                videoQualityAutoState = SingleSelectableState.Selectable,
                 videoQualitySDState = getSingleVideoQualityState(
                     VideoQuality.SD,
                     supportedVideoQualities
@@ -407,13 +407,8 @@ class SettingsViewModel @Inject constructor(
 
     private fun getSingleVideoQualityState(
         videoQuality: VideoQuality,
-        supportedVideQualities: List<VideoQuality>?
-    ): SingleSelectableState = if (videoQuality == VideoQuality.UNSPECIFIED ||
-        (
-            !supportedVideQualities.isNullOrEmpty() &&
-                supportedVideQualities.contains(videoQuality)
-            )
-    ) {
+        supportedVideQualities: List<VideoQuality>
+    ): SingleSelectableState = if (supportedVideQualities.contains(videoQuality)) {
         SingleSelectableState.Selectable
     } else {
         SingleSelectableState.Disabled(
@@ -492,6 +487,7 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
+        // if other lens doesnt support the video quality
         if (currentSettings.videoQuality != VideoQuality.UNSPECIFIED &&
             newLensConstraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.contains(
                 currentSettings.videoQuality
