@@ -175,6 +175,7 @@ class PreviewViewModel @AssistedInject constructor(
                             // PreviewUiState.Ready from defaults and initialize it below.
                             PreviewUiState.Ready()
                         }
+
                         is PreviewUiState.Ready -> {
                             val previousCameraSettings = old.currentCameraSettings
                             val previousConstraints = old.systemConstraints
@@ -223,17 +224,28 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
                         ),
+                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState),
                         captureButtonUiState = getCaptureButtonUiState(
                             cameraAppSettings,
                             cameraState,
                             lockedState
                         )
-                        // TODO(kc): set elapsed time UI state once VideoRecordingState
-                        // refactor is complete.
                     )
                 }
             }.collect {}
         }
+    }
+
+    private fun getElapsedTimeUiState(
+        videoRecordingState: VideoRecordingState
+    ): ElapsedTimeUiState = when (videoRecordingState) {
+        is VideoRecordingState.Active ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
+
+        is VideoRecordingState.Inactive ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
+
+        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
     }
 
     /**
@@ -257,6 +269,7 @@ class PreviewViewModel @AssistedInject constructor(
                     supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
                 )
             }
+
             is FlashModeUiState.Available -> {
                 val previousFlashMode = previousCameraSettings.flashMode
                 val previousSupportedFlashModes =
