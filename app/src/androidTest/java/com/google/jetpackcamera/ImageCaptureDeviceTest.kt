@@ -202,7 +202,6 @@ internal class ImageCaptureDeviceTest {
                 } catch (e: ComposeTimeoutException) {
                     /*do nothing. we want to time out */
                 }
-
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
