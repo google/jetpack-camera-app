@@ -118,11 +118,11 @@ class SettingsViewModel @Inject constructor(
         // disable entire setting when:
         //  device only supports off... device unsupported rationale
         //  lens only supports off... lens unsupported rationale
-        if (deviceSupportedFlashModes.size == 1) {
+        if (deviceSupportedFlashModes == setOf(FlashMode.OFF)) {
             return FlashUiState.Disabled(
                 DeviceUnsupportedRationale(R.string.flash_rationale_prefix)
             )
-        } else if (currentSupportedFlashModes.size == 1) {
+        } else if (deviceSupportedFlashModes == setOf(FlashMode.OFF)) {
             return FlashUiState.Disabled(
                 getLensUnsupportedRationale(
                     cameraAppSettings.cameraLensFacing,
