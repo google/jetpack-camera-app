@@ -23,6 +23,10 @@ data class SystemConstraints(
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 )
 
+inline fun <reified T> SystemConstraints.forDevice(
+    crossinline constraintSelector: (CameraConstraints) -> Iterable<T>
+) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
+
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,

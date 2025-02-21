@@ -44,6 +44,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -66,7 +67,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -105,7 +105,6 @@ constructor(
     private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var systemConstraints: SystemConstraints
-    private var useCaseMode by Delegates.notNull<CameraUseCase.UseCaseMode>()
 
     private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
@@ -128,11 +127,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: CameraUseCase.UseCaseMode,
         isDebugMode: Boolean,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
-        this.useCaseMode = useCaseMode
         cameraProvider = ProcessCameraProvider.awaitInstance(application)
 
         // updates values for available cameras
@@ -269,13 +266,14 @@ constructor(
         currentSettings.value =
             cameraAppSettings
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(this.useCaseMode)
+                .tryApplyAspectRatioForExternalCapture(cameraAppSettings.captureMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
                 .tryApplyVideoQualityConstraints()
+                .tryApplyCaptureModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -325,6 +323,7 @@ constructor(
 
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
+                            captureMode = currentCameraSettings.captureMode,
                             streamConfig = currentCameraSettings.streamConfig,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
@@ -380,17 +379,14 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    useCaseMode = useCaseMode,
-                                    onImageCaptureCreated = { imageCapture ->
-                                        imageCaptureUseCase = imageCapture
-                                    }
-                                )
+                                    sessionSettings
+                                ) { imageCapture ->
+                                    imageCaptureUseCase = imageCapture
+                                }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
-                                        sessionSettings,
-                                        useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
+                                        sessionSettings
                                     )
                             }
                         } finally {
@@ -600,10 +596,77 @@ constructor(
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
+                    ?.tryApplyCaptureModeConstraints()
             } else {
                 old
             }
         }
+    }
+
+    /**
+     * Applies an appropriate Capture Mode for given settings, if necessary
+     *
+     * Should be applied whenever
+     * [tryApplyImageFormatConstraints],
+     * [tryApplyDynamicRangeConstraints],
+     * or [tryApplyConcurrentCameraModeConstraints] would be called
+     *
+     * @param defaultCaptureMode if multiple capture modes are supported by the device, this capture
+     * mode will be applied. If left null, it will not change the current capture mode.
+     */
+    private fun CameraAppSettings.tryApplyCaptureModeConstraints(
+        defaultCaptureMode: CaptureMode? = null
+    ): CameraAppSettings {
+        Log.d(TAG, "applying capture mode constraints")
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            val newCaptureMode =
+                // concurrent currently only supports VIDEO_ONLY
+                if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                    CaptureMode.VIDEO_ONLY
+                } else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+                    CaptureMode.IMAGE_ONLY
+                } else if (dynamicRange == DynamicRange.HLG10) {
+                    CaptureMode.VIDEO_ONLY
+                }
+                // TODO(kc): the two elif statements above should be DELETED and the block below
+                //  should be used when a dedicated capture mode button is available
+
+                /*
+                 // if hdr is enabled, select an appropriate capture mode
+                 else if (dynamicRange == DynamicRange.HLG10 ||
+                    imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                ) {
+                    if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)) {
+                        if (constraints.supportedImageFormatsMap[streamConfig]
+                                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                        ) {
+                            // if both image/video HDR is supported, only change if STANDARD is the current capture mode.
+                            // image and video capture use cases cannot be simultaneously bound while HDR is enabled
+                            if (this.captureMode != CaptureMode.STANDARD) {
+                                this.captureMode
+                            } else {
+                                CaptureMode.VIDEO_ONLY
+                            }
+                        } else {
+                            // if only video is supported, change to video only
+                            CaptureMode.VIDEO_ONLY
+                        }
+                    } else {
+                        // if only image is supported, change to image only
+                        CaptureMode.IMAGE_ONLY
+                    }
+                }
+                 */
+                else {
+                    // if no dynamic range value is set, its OK to return the current value
+                    defaultCaptureMode ?: return this
+                }
+            Log.d(TAG, "new capture mode $newCaptureMode")
+            return this@tryApplyCaptureModeConstraints.copy(
+                captureMode = newCaptureMode
+            )
+        }
+            ?: return this
     }
 
     private fun CameraAppSettings.tryApplyNewZoomRatio(
@@ -664,13 +727,12 @@ constructor(
         } ?: this
 
     private fun CameraAppSettings.tryApplyAspectRatioForExternalCapture(
-        useCaseMode: CameraUseCase.UseCaseMode
-    ): CameraAppSettings = when (useCaseMode) {
-        CameraUseCase.UseCaseMode.STANDARD -> this
-        CameraUseCase.UseCaseMode.IMAGE_ONLY ->
+        captureMode: CaptureMode
+    ): CameraAppSettings = when (captureMode) {
+        CaptureMode.STANDARD -> this
+        CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
-
-        CameraUseCase.UseCaseMode.VIDEO_ONLY ->
+        CaptureMode.VIDEO_ONLY ->
             this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
 
@@ -814,6 +876,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
@@ -827,12 +890,14 @@ constructor(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
+                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
         }
     }
 
@@ -860,6 +925,12 @@ constructor(
     override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
         currentSettings.update { old ->
             old?.copy(audioEnabled = isAudioEnabled)
+        }
+    }
+
+    override suspend fun setCaptureMode(captureMode: CaptureMode) {
+        currentSettings.update { old ->
+            old?.copy(captureMode = captureMode)
         }
     }
 

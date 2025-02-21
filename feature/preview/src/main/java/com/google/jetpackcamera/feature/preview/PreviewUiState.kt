@@ -21,6 +21,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -40,7 +41,6 @@ sealed interface PreviewUiState {
         val zoomRatios: Map<LensFacing, Float> = mapOf(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
-        // val audioMuted: Boolean = false,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
@@ -56,6 +56,8 @@ sealed interface PreviewUiState {
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
         val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
+        val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
@@ -66,6 +68,24 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+val DEFAULT_CAPTURE_BUTTON_STATE = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
+
+sealed interface CaptureButtonUiState {
+    data object Unavailable : CaptureButtonUiState
+    sealed interface Enabled : CaptureButtonUiState {
+        data class Idle(val captureMode: CaptureMode) : Enabled
+
+        sealed interface Recording : Enabled {
+            data object PressedRecording : Recording
+            data object LockedRecording : Recording
+        }
+    }
+}
+sealed interface ElapsedTimeUiState {
+    data object Unavailable : ElapsedTimeUiState
+
+    data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
+}
 
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState

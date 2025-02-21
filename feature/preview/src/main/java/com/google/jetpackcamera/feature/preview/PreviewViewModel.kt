@@ -43,6 +43,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -59,9 +60,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -72,12 +70,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
+import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -95,6 +97,7 @@ class PreviewViewModel @AssistedInject constructor(
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
+    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     val previewUiState: StateFlow<PreviewUiState> =
         _previewUiState.asStateFlow()
@@ -118,10 +121,22 @@ class PreviewViewModel @AssistedInject constructor(
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
-            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first(),
-            previewMode.toUseCaseMode(),
-            isDebugMode
+            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
+                .applyPreviewMode(previewMode),
+            isDebugMode = isDebugMode
         ) { cameraPropertiesJSON = it }
+    }
+
+    /**
+     * updates the capture mode based on the preview mode
+     */
+    private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
+        val captureMode = previewMode.toCaptureMode()
+        return if (captureMode == this.captureMode) {
+            this
+        } else {
+            this.copy(captureMode = captureMode)
+        }
     }
 
     init {
@@ -141,8 +156,9 @@ class PreviewViewModel @AssistedInject constructor(
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
-                cameraUseCase.getCurrentCameraState()
-            ) { cameraAppSettings, systemConstraints, cameraState ->
+                cameraUseCase.getCurrentCameraState(),
+                lockedRecordingState.filterNotNull().distinctUntilChanged()
+            ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
                 _previewUiState.update { old ->
@@ -161,6 +177,7 @@ class PreviewViewModel @AssistedInject constructor(
                             // PreviewUiState.Ready from defaults and initialize it below.
                             PreviewUiState.Ready()
                         }
+
                         is PreviewUiState.Ready -> {
                             val previousCameraSettings = old.currentCameraSettings
                             val previousConstraints = old.systemConstraints
@@ -180,7 +197,7 @@ class PreviewViewModel @AssistedInject constructor(
                     }.copy(
                         // Update or initialize PreviewUiState.Ready
                         previewMode = previewMode,
-                        currentCameraSettings = cameraAppSettings,
+                        currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
                         zoomRatios = cameraState.zoomRatios,
                         videoRecordingState = cameraState.videoRecordingState,
@@ -209,6 +226,12 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
                         ),
+                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState),
+                        captureButtonUiState = getCaptureButtonUiState(
+                            cameraAppSettings,
+                            cameraState,
+                            lockedState
+                        ),
                         zoomUiState = getZoomUiState(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
@@ -218,6 +241,18 @@ class PreviewViewModel @AssistedInject constructor(
                 }
             }.collect {}
         }
+    }
+
+    private fun getElapsedTimeUiState(
+        videoRecordingState: VideoRecordingState
+    ): ElapsedTimeUiState = when (videoRecordingState) {
+        is VideoRecordingState.Active ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
+
+        is VideoRecordingState.Inactive ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
+
+        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
     }
 
     /**
@@ -241,6 +276,7 @@ class PreviewViewModel @AssistedInject constructor(
                     supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
                 )
             }
+
             is FlashModeUiState.Available -> {
                 val previousFlashMode = previousCameraSettings.flashMode
                 val previousSupportedFlashModes =
@@ -310,11 +346,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun PreviewMode.toUseCaseMode() = when (this) {
-        is PreviewMode.ExternalImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
-        is PreviewMode.ExternalMultipleImageCaptureMode -> CameraUseCase.UseCaseMode.IMAGE_ONLY
-        is PreviewMode.ExternalVideoCaptureMode -> CameraUseCase.UseCaseMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CameraUseCase.UseCaseMode.STANDARD
+    private fun PreviewMode.toCaptureMode() = when (this) {
+        is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
+        is PreviewMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
@@ -379,6 +415,32 @@ class PreviewViewModel @AssistedInject constructor(
                 else -> TODO("Unhandled CameraAppSetting $entry")
             }
         }
+    }
+    fun getCaptureButtonUiState(
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState,
+        lockedState: Boolean
+    ): CaptureButtonUiState = when (cameraState.videoRecordingState) {
+        // if not currently recording, check capturemode to determine idle capture button UI
+        is VideoRecordingState.Inactive ->
+            CaptureButtonUiState
+                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+
+        // display different capture button UI depending on if recording is pressed or locked
+        is VideoRecordingState.Active.Recording -> if (lockedState) {
+            CaptureButtonUiState.Enabled.Recording.LockedRecording
+        } else {
+            CaptureButtonUiState.Enabled.Recording.PressedRecording
+        }
+        // todo: how to handle pause...
+        is VideoRecordingState.Active.Paused ->
+            CaptureButtonUiState
+                .Enabled.Recording.LockedRecording
+
+        // todo: how to handle starting...
+        VideoRecordingState.Starting ->
+            CaptureButtonUiState
+                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
     }
 
     private fun getZoomUiState(
@@ -589,7 +651,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             cameraUseCase.setStreamConfig(streamConfig)
         }
@@ -848,6 +910,18 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cameraUseCase.stopVideoRecording()
             recordingJob?.cancel()
+        }
+        setLockedRecording(false)
+    }
+
+    /**
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     */
+    fun setLockedRecording(isLocked: Boolean) {
+        viewModelScope.launch {
+            lockedRecordingState.update {
+                isLocked
+            }
         }
     }
 

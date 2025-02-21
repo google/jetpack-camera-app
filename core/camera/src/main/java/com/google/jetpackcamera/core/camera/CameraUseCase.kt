@@ -22,6 +22,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -46,7 +47,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        useCaseMode: UseCaseMode,
         isDebugMode: Boolean = false,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
@@ -127,6 +127,8 @@ interface CameraUseCase {
 
     suspend fun setMaxVideoDuration(durationInMillis: Long)
 
+    suspend fun setCaptureMode(captureMode: CaptureMode)
+
     /**
      * Represents the events required for screen flash.
      */
@@ -145,12 +147,6 @@ interface CameraUseCase {
         data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
 
         data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
-    }
-
-    enum class UseCaseMode {
-        STANDARD,
-        IMAGE_ONLY,
-        VIDEO_ONLY
     }
 }
 

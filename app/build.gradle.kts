@@ -33,7 +33,9 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
+
 
     buildTypes {
         getByName("debug") {
@@ -77,8 +79,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
     @Suppress("UnstableApiUsage")
     testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -132,6 +137,8 @@ dependencies {
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.truth)
+    androidTestUtil(libs.androidx.orchestrator)
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -160,7 +167,6 @@ dependencies {
 
     // benchmark
     implementation(libs.androidx.profileinstaller)
-
 }
 
 // Allow references to generated code

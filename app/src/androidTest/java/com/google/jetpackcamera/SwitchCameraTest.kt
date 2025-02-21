@@ -32,6 +32,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.PREVIEW_DISPLAY
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getCurrentLensFacing
@@ -140,7 +141,7 @@ inline fun runFlipCameraTest(
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runScenarioTest {
     // Wait for the preview display to be visible
-    composeTestRule.waitUntil {
+    composeTestRule.waitUntil(APP_START_TIMEOUT_MILLIS) {
         composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).isDisplayed()
     }
 

@@ -63,9 +63,8 @@ fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
 /**
  * Fetch a string resources from a [SemanticsNodeInteractionsProvider] context.
  */
-fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String {
-    return ApplicationProvider.getApplicationContext<Context>().getString(strRes)
-}
+fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String =
+    ApplicationProvider.getApplicationContext<Context>().getString(strRes)
 
 /**
  * Assumes that the provided [matcher] is satisfied for this node.
@@ -110,6 +109,13 @@ fun ComposeTestRule.longClickForVideoRecording() {
         .performTouchInput {
             up()
         }
+}
+
+fun ComposeTestRule.tapStartLockedVideoRecording() {
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performClick()
+    idleForVideoDuration()
 }
 
 private fun ComposeTestRule.idleForVideoDuration() {

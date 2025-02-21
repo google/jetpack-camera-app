@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -66,7 +70,6 @@ import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -114,7 +117,8 @@ fun CameraControlsOverlay(
         Boolean,
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
@@ -151,6 +155,8 @@ fun CameraControlsOverlay(
 
             ControlsBottom(
                 modifier = Modifier
+                    // padding to avoid snackbar
+                    .padding(bottom = 60.dp)
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
@@ -169,7 +175,9 @@ fun CameraControlsOverlay(
                 onChangeImageFormat = onChangeImageFormat,
                 onToggleWhenDisabled = onToggleWhenDisabled,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                onLockVideoRecording = onLockVideoRecording
+
             )
         }
     }
@@ -198,7 +206,11 @@ private fun ControlsTop(
                         .testTag(SETTINGS_BUTTON),
                     onNavigateToSettings = onNavigateToSettings
                 )
-                if (!isQuickSettingsOpen) {
+                AnimatedVisibility(
+                    visible = !isQuickSettingsOpen,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
                     QuickSettingsIndicators(
                         flashModeUiState = flashModeUiState,
                         onFlashModeClick = onChangeFlash
@@ -270,9 +282,13 @@ private fun ControlsBottom(
         Boolean,
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
@@ -287,19 +303,21 @@ private fun ControlsBottom(
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                    videoRecordingState = videoRecordingState,
-                    elapsedNs = when (previewUiState.videoRecordingState) {
-                        is VideoRecordingState.Active ->
-                            previewUiState.videoRecordingState.elapsedTimeNanos
-
-                        is VideoRecordingState.Inactive ->
-                            previewUiState.videoRecordingState.finalElapsedTimeNanos
-
-                        VideoRecordingState.Starting -> 0L
+                if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+                    AnimatedVisibility(
+                        visible = (
+                            previewUiState.videoRecordingState is
+                                VideoRecordingState.Active
+                            ),
+                        enter = fadeIn(),
+                        exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                    ) {
+                        ElapsedTimeText(
+                            modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                            elapsedTimeUiState = previewUiState.elapsedTimeUiState
+                        )
                     }
-                )
+                }
             }
         }
 
@@ -311,30 +329,38 @@ private fun ControlsBottom(
         ) {
             // Row that holds flip camera, capture button, and audio
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (!isQuickSettingsOpen && videoRecordingState is VideoRecordingState.Inactive) {
-                    FlipCameraButton(
-                        modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
-                        onClick = onFlipCamera,
-                        // enable only when phone has front and rear camera
-                        enabledCondition = systemConstraints.availableLenses.size > 1
-                    )
-                } else if (!isQuickSettingsOpen &&
-                    videoRecordingState is VideoRecordingState.Active
+                // animation fades in/out this component based on quick settings
+                AnimatedVisibility(
+                    visible = !isQuickSettingsOpen,
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    PauseResumeToggleButton(
-                        onSetPause = onSetPause,
-                        currentRecordingState = videoRecordingState
-                    )
+                    if (videoRecordingState is VideoRecordingState.Inactive) {
+                        FlipCameraButton(
+                            modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                            onClick = onFlipCamera,
+                            lensFacing = previewUiState.currentCameraSettings.cameraLensFacing,
+                            // enable only when phone has front and rear camera
+                            enabledCondition = systemConstraints.availableLenses.size > 1
+                        )
+                    } else if (videoRecordingState is VideoRecordingState.Active
+                    ) {
+                        PauseResumeToggleButton(
+                            onSetPause = onSetPause,
+                            currentRecordingState = videoRecordingState
+                        )
+                    }
                 }
             }
             CaptureButton(
-                previewUiState = previewUiState,
+                captureButtonUiState = previewUiState.captureButtonUiState,
+                previewMode = previewUiState.previewMode,
                 isQuickSettingsOpen = isQuickSettingsOpen,
-                videoRecordingState = videoRecordingState,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording
+                onStopVideoRecording = onStopVideoRecording,
+                onLockVideoRecording = onLockVideoRecording
             )
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (videoRecordingState is VideoRecordingState.Active) {
@@ -364,102 +390,109 @@ private fun ControlsBottom(
 
 @Composable
 private fun CaptureButton(
-    previewUiState: PreviewUiState.Ready,
-    isQuickSettingsOpen: Boolean,
-    videoRecordingState: VideoRecordingState,
     modifier: Modifier = Modifier,
+    captureButtonUiState: CaptureButtonUiState,
+    isQuickSettingsOpen: Boolean,
+    previewMode: PreviewMode,
+    onToggleQuickSettings: () -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
         Boolean,
         (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
-    onToggleQuickSettings: () -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
-    onStopVideoRecording: () -> Unit = {}
+    onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
-        onClick = {
-            multipleEventsCutter.processEvent {
-                when (previewUiState.previewMode) {
+        onCaptureImage = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                multipleEventsCutter.processEvent {
+                    when (previewMode) {
+                        is PreviewMode.StandardMode -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                true
+                            ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                                previewMode.onImageCapture(event)
+                            }
+                        }
+
+                        is PreviewMode.ExternalImageCaptureMode -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                previewMode.imageCaptureUri,
+                                false
+                            ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                                previewMode.onImageCapture(event)
+                            }
+                        }
+
+                        is PreviewMode.ExternalMultipleImageCaptureMode -> {
+                            val ignoreUri =
+                                previewMode.imageCaptureUris.isNullOrEmpty()
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                previewMode.imageCaptureUris.isNullOrEmpty() ||
+                                    ignoreUri,
+                                previewMode.onImageCapture
+                            )
+                        }
+
+                        else -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                false
+                            ) { _: PreviewViewModel.ImageCaptureEvent, _: Int -> }
+                        }
+                    }
+                }
+            }
+            if (isQuickSettingsOpen) {
+                onToggleQuickSettings()
+            }
+        },
+        onStartVideoRecording = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                when (previewMode) {
                     is PreviewMode.StandardMode -> {
-                        onCaptureImageWithUri(
-                            context.contentResolver,
-                            null,
-                            true
-                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
-                            previewUiState.previewMode.onImageCapture(event)
-                        }
+                        onStartVideoRecording(null, false) {}
                     }
 
-                    is PreviewMode.ExternalImageCaptureMode -> {
-                        onCaptureImageWithUri(
-                            context.contentResolver,
-                            previewUiState.previewMode.imageCaptureUri,
-                            false
-                        ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
-                            previewUiState.previewMode.onImageCapture(event)
-                        }
-                    }
-
-                    is PreviewMode.ExternalMultipleImageCaptureMode -> {
-                        val ignoreUri = previewUiState.previewMode.imageCaptureUris.isNullOrEmpty()
-                        onCaptureImageWithUri(
-                            context.contentResolver,
-                            null,
-                            previewUiState.previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                ignoreUri,
-                            previewUiState.previewMode.onImageCapture
+                    is PreviewMode.ExternalVideoCaptureMode -> {
+                        onStartVideoRecording(
+                            previewMode.videoCaptureUri,
+                            true,
+                            previewMode.onVideoCapture
                         )
                     }
 
                     else -> {
-                        onCaptureImageWithUri(
-                            context.contentResolver,
-                            null,
-                            false
-                        ) { _: PreviewViewModel.ImageCaptureEvent, _: Int -> }
+                        onStartVideoRecording(null, false) {}
                     }
                 }
-            }
-            if (isQuickSettingsOpen) {
-                onToggleQuickSettings()
+                if (isQuickSettingsOpen) {
+                    onToggleQuickSettings()
+                }
             }
         },
-        onLongPress = {
-            when (previewUiState.previewMode) {
-                is PreviewMode.StandardMode -> {
-                    onStartVideoRecording(null, false) {}
-                }
-
-                is PreviewMode.ExternalVideoCaptureMode -> {
-                    onStartVideoRecording(
-                        previewUiState.previewMode.videoCaptureUri,
-                        true,
-                        previewUiState.previewMode.onVideoCapture
-                    )
-                }
-
-                else -> {
-                    onStartVideoRecording(null, false) {}
-                }
-            }
-            if (isQuickSettingsOpen) {
-                onToggleQuickSettings()
-            }
-        },
-        onRelease = {
+        onStopVideoRecording = {
             onStopVideoRecording()
         },
-        videoRecordingState = videoRecordingState
+        captureButtonUiState = captureButtonUiState,
+        onLockVideoRecording = onLockVideoRecording
     )
 }
 
@@ -594,11 +627,11 @@ private fun Preview_ControlsBottom() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive()
+                videoRecordingState = VideoRecordingState.Inactive(),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
@@ -615,11 +648,11 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive()
+                videoRecordingState = VideoRecordingState.Inactive(),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = false,
@@ -636,11 +669,11 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive()
+                videoRecordingState = VideoRecordingState.Inactive(),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
@@ -657,11 +690,11 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Inactive()
+                videoRecordingState = VideoRecordingState.Inactive(),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
@@ -684,12 +717,11 @@ private fun Preview_ControlsBottom_Recording() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                currentCameraSettings = CameraAppSettings(),
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
-                videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000)
-
+                videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
+                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
