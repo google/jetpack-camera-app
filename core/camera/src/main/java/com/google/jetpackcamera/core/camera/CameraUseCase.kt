@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -124,6 +125,8 @@ interface CameraUseCase {
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
     suspend fun setMaxVideoDuration(durationInMillis: Long)
+
+    suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**
      * Represents the events required for screen flash.

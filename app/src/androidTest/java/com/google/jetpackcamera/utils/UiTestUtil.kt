@@ -19,6 +19,8 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -58,11 +60,14 @@ const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
-const val VIDEO_DURATION_MILLIS = 2_000L
-private const val TAG = "UiTestUtil"
-const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 10_000L
+const val VIDEO_DURATION_MILLIS = 3_000L
+const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
+const val VIDEO_PREFIX = "video"
+const val IMAGE_PREFIX = "image"
 const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
+private const val TAG = "UiTestUtil"
+
 inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
@@ -162,14 +167,12 @@ suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
     )
 }
 
-fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri {
-    return Uri.fromFile(
-        File(
-            directoryPath,
-            "$timeStamp.$suffix"
-        )
+fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Uri.fromFile(
+    File(
+        directoryPath,
+        "$timeStamp.$suffix"
     )
-}
+)
 
 fun deleteFilesInDirAfterTimestamp(
     directoryPath: String,
@@ -192,13 +195,44 @@ fun deleteFilesInDirAfterTimestamp(
     return hasDeletedFile
 }
 
-fun doesImageFileExist(uri: Uri, prefix: String): Boolean {
-    val file = uri.path?.let { File(it) }
-    if (file?.exists() == true) {
-        val mimeType = URLConnection.guessContentTypeFromName(uri.path)
-        return mimeType != null && mimeType.startsWith(prefix)
+fun doesFileExist(uri: Uri): Boolean = uri.path?.let { File(it) }?.exists() == true
+
+fun doesMediaExist(uri: Uri, prefix: String): Boolean {
+    require(prefix == IMAGE_PREFIX || prefix == VIDEO_PREFIX) { "Uknown prefix: $prefix" }
+    return if (prefix == IMAGE_PREFIX) {
+        doesImageExist(uri)
+    } else {
+        doesVideoExist(uri, prefix)
     }
-    return false
+}
+
+private fun doesImageExist(uri: Uri): Boolean {
+    val bitmap = uri.path?.let { path -> BitmapFactory.decodeFile(path) }
+    val mimeType = URLConnection.guessContentTypeFromName(uri.path)
+    return mimeType != null && mimeType.startsWith(IMAGE_PREFIX) && bitmap != null
+}
+
+private fun doesVideoExist(
+    uri: Uri,
+    prefix: String,
+    checkAudio: Boolean = false,
+    durationMs: Long? = null
+): Boolean {
+    require(prefix == VIDEO_PREFIX) {
+        "doesVideoExist() only works for videos. Can't handle prefix: $prefix"
+    }
+
+    if (!doesFileExist(uri)) {
+        return false
+    }
+    return MediaMetadataRetriever().useAndRelease {
+        it.setDataSource(uri.path)
+
+        it.getMimeType().startsWith(prefix) &&
+            it.hasVideo() &&
+            (!checkAudio || it.hasAudio()) &&
+            (durationMs == null || it.getDurationMs() == durationMs)
+    } == true
 }
 
 fun getSingleImageCaptureIntent(uri: Uri, action: String): Intent {
@@ -239,8 +273,7 @@ fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescript
 class IndividualTestGrantPermissionRule(
     private val permissions: Array<String>,
     private val targetTestNames: Array<String>
-) :
-    TestRule {
+) : TestRule {
     private lateinit var wrappedRule: GrantPermissionRule
 
     override fun apply(base: Statement, description: Description): Statement {
