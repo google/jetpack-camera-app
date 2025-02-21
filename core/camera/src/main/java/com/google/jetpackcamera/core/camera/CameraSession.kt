@@ -121,7 +121,6 @@ internal suspend fun runSingleCameraSession(
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
-
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
 
@@ -151,125 +150,132 @@ internal suspend fun runSingleCameraSession(
         )
     }
 
-    transientSettings.filterNotNull().distinctUntilChanged { old, new ->
-        old.primaryLensFacing == new.primaryLensFacing
-    }.collectLatest { currentTransientSettings ->
-        cameraProvider.unbindAll()
-        val currentCameraSelector = currentTransientSettings.primaryLensFacing.toCameraSelector()
-        val useCaseGroup = createUseCaseGroup(
-            cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
-            videoCaptureUseCase = videoCaptureUseCase,
-            initialTransientSettings = currentTransientSettings,
-            stabilizationMode = sessionSettings.stabilizationMode,
-            aspectRatio = sessionSettings.aspectRatio,
-            dynamicRange = sessionSettings.dynamicRange,
-            imageFormat = sessionSettings.imageFormat,
-            captureMode = sessionSettings.captureMode,
-            effect = when (sessionSettings.streamConfig) {
-                StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
-                StreamConfig.MULTI_STREAM -> null
-            }
-        ).apply {
-            getImageCapture()?.let(onImageCaptureCreated)
-        }
-
-        cameraProvider.runWith(
-            currentCameraSelector,
-            useCaseGroup
-        ) { camera ->
-            Log.d(TAG, "Camera session started")
-
-            launch {
-                processFocusMeteringEvents(camera.cameraControl)
+    transientSettings
+        .filterNotNull()
+        .distinctUntilChanged { old, new -> old.primaryLensFacing == new.primaryLensFacing }
+        .collectLatest { currentTransientSettings ->
+            cameraProvider.unbindAll()
+            val currentCameraSelector = currentTransientSettings.primaryLensFacing
+                .toCameraSelector()
+            val useCaseGroup = createUseCaseGroup(
+                cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
+                videoCaptureUseCase = videoCaptureUseCase,
+                initialTransientSettings = currentTransientSettings,
+                stabilizationMode = sessionSettings.stabilizationMode,
+                aspectRatio = sessionSettings.aspectRatio,
+                dynamicRange = sessionSettings.dynamicRange,
+                imageFormat = sessionSettings.imageFormat,
+                captureMode = sessionSettings.captureMode,
+                effect = when (sessionSettings.streamConfig) {
+                    StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
+                    StreamConfig.MULTI_STREAM -> null
+                }
+            ).apply {
+                getImageCapture()?.let(onImageCaptureCreated)
             }
 
-            launch {
-                camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
-                    currentCameraState.update { old ->
-                        old.copy(torchEnabled = torchState == TorchState.ON)
+            cameraProvider.runWith(
+                currentCameraSelector,
+                useCaseGroup
+            ) { camera ->
+                Log.d(TAG, "Camera session started")
+
+                launch {
+                    processFocusMeteringEvents(camera.cameraControl)
+                }
+
+                launch {
+                    camera.cameraInfo.torchState.asFlow().collectLatest { torchState ->
+                        currentCameraState.update { old ->
+                            old.copy(torchEnabled = torchState == TorchState.ON)
+                        }
                     }
                 }
-            }
 
-            if (videoCaptureUseCase != null) {
-                val videoQuality = getVideoQualityFromResolution(
-                    videoCaptureUseCase.resolutionInfo?.resolution
-                )
-                if (videoQuality != sessionSettings.videoQuality) {
-                    Log.e(
-                        TAG,
-                        "Failed to select video quality: $sessionSettings.videoQuality. " +
-                            "Fallback: $videoQuality"
+                if (videoCaptureUseCase != null) {
+                    val videoQuality = getVideoQualityFromResolution(
+                        videoCaptureUseCase.resolutionInfo?.resolution
                     )
-                }
-                launch {
-                    currentCameraState.update { old ->
-                        old.copy(
-                            videoQualityInfo = VideoQualityInfo(
-                                videoQuality,
-                                getWidthFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect),
-                                getHeightFromCropRect(videoCaptureUseCase.resolutionInfo?.cropRect)
-                            )
+                    if (videoQuality != sessionSettings.videoQuality) {
+                        Log.e(
+                            TAG,
+                            "Failed to select video quality: $sessionSettings.videoQuality. " +
+                                "Fallback: $videoQuality"
                         )
                     }
+                    launch {
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoQualityInfo = VideoQualityInfo(
+                                    videoQuality,
+                                    getWidthFromCropRect(
+                                        videoCaptureUseCase.resolutionInfo?.cropRect
+                                    ),
+                                    getHeightFromCropRect(
+                                        videoCaptureUseCase.resolutionInfo?.cropRect
+                                    )
+                                )
+                            )
+                        }
+                    }
                 }
-            }
 
-            // update camerastate to mirror current zoomstate
-            launch {
+                // update camerastate to mirror current zoomstate
+                launch {
                 /*
                 TODO bug?? Flaky behavior here.  does not always update zoomstate properly when:
                 switching HDR on or off on front lens
                 Setting aspect ratio on either lens...
                 basically anything that restarts the session
                  */
-                camera.cameraInfo.zoomState.asFlow()
-                    .filterNotNull()
-                    .distinctUntilChanged()
-                    .onCompletion {
-                        // reset current camera state when changing cameras.
-                        currentCameraState.update { old ->
-                            old.copy(
-                                zoomRatios = emptyMap(),
-                                linearZoomScales = emptyMap()
-                            )
+                    camera.cameraInfo.zoomState
+                        .asFlow()
+                        .filterNotNull()
+                        .distinctUntilChanged()
+                        .onCompletion {
+                            // reset current camera state when changing cameras.
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    zoomRatios = emptyMap(),
+                                    linearZoomScales = emptyMap()
+                                )
+                            }
                         }
-                    }
-                    .collectLatest { zoomState ->
-                        currentCameraState.update { old ->
-                            old.copy(
-                                zoomRatios = old.zoomRatios.toMutableMap().apply {
-                                    put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
-                                }.toMap(),
-                                linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                                    put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
-                                }.toMap()
-                            )
+                        .collectLatest { zoomState ->
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                        put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
+                                    }.toMap(),
+                                    linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                        put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
+                                    }.toMap()
+                                )
+                            }
                         }
-                    }
-            }
+                }
 
-            launch {
-                // Immediately Apply camera zoom from current settings when opening a new camera
-                camera.cameraControl.setZoomRatio(
-                    currentTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
-                )
-                Log.d(
-                    TAG,
-                    "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio " +
-                        "${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                launch {
+                    // Immediately Apply camera zoom from current settings when opening a new camera
+                    camera.cameraControl.setZoomRatio(
+                        currentTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
+                    )
+                    Log.d(
+                        TAG,
+                        "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio " +
+                            "${camera.cameraInfo.zoomState.value?.zoomRatio}"
+                    )
+                }
+
+                applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+                processTransientSettingEvents(
+                    camera,
+                    useCaseGroup,
+                    currentTransientSettings,
+                    transientSettings
                 )
             }
-
-            applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
-            processTransientSettingEvents(
-                camera,
-                useCaseGroup,
-                currentTransientSettings,
-                transientSettings
-            )
         }
-    }
 }
 
 context(CameraSessionContext)
