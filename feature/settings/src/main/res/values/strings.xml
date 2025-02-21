@@ -147,7 +147,7 @@
     <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
     <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
     <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
-    <string name="video_quality_unsupported">%1$s is unsupported by the current lens</string>
+    <string name="video_quality_unsupported">%1$s is unsupported by the current video quality</string>
     <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
 
 
