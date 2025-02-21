@@ -101,6 +101,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -122,6 +125,7 @@ import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
@@ -292,24 +296,13 @@ private fun VolumeButtonsHandler(
 }
 
 @Composable
-fun ElapsedTimeText(
-    modifier: Modifier = Modifier,
-    videoRecordingState: VideoRecordingState,
-    elapsedNs: Long
-) {
-    AnimatedVisibility(
-        visible = (videoRecordingState is VideoRecordingState.Active),
-        enter = fadeIn(),
-        exit = fadeOut(animationSpec = tween(delayMillis = 1000))
-    ) {
-        Text(
-            modifier = modifier,
-            text = elapsedNs.nanoseconds.toComponents { minutes, seconds, _ ->
-                "%02d:%02d".format(minutes, seconds)
-            },
-            textAlign = TextAlign.Center
-        )
-    }
+fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState.Enabled) {
+    Text(
+        modifier = modifier,
+        text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable
@@ -1088,20 +1081,22 @@ private fun CaptureButton(
                         1f // solid alpha the rest of the time
                     }
                 )
+                .background(animatedColor)
+        ) {}
+        // central "square" stop icon
+        AnimatedVisibility(
+            visible = currentUiState.value is
+                CaptureButtonUiState.Enabled.Recording.LockedRecording,
+            enter = scaleIn(initialScale = .5f) + fadeIn(),
+            exit = fadeOut()
         ) {
-            // central "square" stop icon
-            AnimatedVisibility(
-                visible = currentUiState.value is
-                    CaptureButtonUiState.Enabled.Recording.LockedRecording,
-                enter = scaleIn(initialScale = .5f) + fadeIn(),
-                exit = fadeOut()
-            ) {
-                var smallBoxSize = (captureButtonSize / 5f).dp
-                Box(
-                    modifier = Modifier
-                        .size(smallBoxSize)
-                        .clip(RoundedCornerShape(smallBoxSize * .15f))
-                        .background(color = Color.White)
+            val smallBoxSize = (captureButtonSize / 5f).dp
+            Canvas(modifier = Modifier) {
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
+                    size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
+                    cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
                 )
             }
         }

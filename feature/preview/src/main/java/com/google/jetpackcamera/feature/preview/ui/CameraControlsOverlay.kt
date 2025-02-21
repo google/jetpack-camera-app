@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview.ui
 import android.content.ContentResolver
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +59,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
+import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
@@ -297,19 +299,21 @@ private fun ControlsBottom(
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
-                ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                    videoRecordingState = videoRecordingState,
-                    elapsedNs = when (previewUiState.videoRecordingState) {
-                        is VideoRecordingState.Active ->
-                            previewUiState.videoRecordingState.elapsedTimeNanos
-
-                        is VideoRecordingState.Inactive ->
-                            previewUiState.videoRecordingState.finalElapsedTimeNanos
-
-                        VideoRecordingState.Starting -> 0L
+                if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+                    AnimatedVisibility(
+                        visible = (
+                            previewUiState.videoRecordingState is
+                                VideoRecordingState.Active
+                            ),
+                        enter = fadeIn(),
+                        exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                    ) {
+                        ElapsedTimeText(
+                            modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                            elapsedTimeUiState = previewUiState.elapsedTimeUiState
+                        )
                     }
-                )
+                }
             }
         }
 
