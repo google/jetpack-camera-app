@@ -21,16 +21,13 @@ import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.concurrent.futures.await
 import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -42,7 +39,6 @@ context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
-    onSetZoomRatioMap: (Map<LensFacing, Float>) -> Unit = { _ -> },
     useCaseMode: CameraUseCase.UseCaseMode
 ) = coroutineScope {
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
@@ -144,10 +140,6 @@ internal suspend fun runConcurrentCameraSession(
                             }.toMap()
                         )
                     }
-                    // update current settings to mirror current camera state
-                    onSetZoomRatioMap(
-                        currentCameraState.value.zoomRatios
-                    )
                 }
         }
 
@@ -162,35 +154,6 @@ internal suspend fun runConcurrentCameraSession(
             primaryCamera.cameraControl.setZoomRatio(
                 initialTransientSettings.zoomRatios[primaryLensFacing] ?: 1f
             ).await()
-            zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
-                val currentZoomState = primaryCamera.cameraInfo.zoomState
-                    .asFlow()
-                    .filterNotNull()
-                    .first()
-                when (zoomChange) {
-                    is CameraZoomState.Ratio -> {
-                        primaryCamera.cameraControl.setZoomRatio(
-                            zoomChange.value.coerceIn(
-                                currentZoomState.minZoomRatio,
-                                currentZoomState.maxZoomRatio
-                            )
-                        )
-                    }
-
-                    is CameraZoomState.Linear -> {
-                        primaryCamera.cameraControl.setLinearZoom(zoomChange.value)
-                    }
-
-                    is CameraZoomState.Scale -> {
-                        val newRatio =
-                            (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
-                                currentZoomState.minZoomRatio,
-                                currentZoomState.maxZoomRatio
-                            )
-                        primaryCamera.cameraControl.setZoomRatio(newRatio)
-                    }
-                }
-            }
         }
 
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)

@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Range
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -54,11 +55,10 @@ sealed interface PreviewUiState {
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-        val audioUiState: AudioUiState = AudioUiState.Disabled
+        val audioUiState: AudioUiState = AudioUiState.Disabled,
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
-
-// todo(kc): add ElapsedTimeUiState class
 
 data class DebugUiState(
     val cameraPropertiesJSON: String = "",
@@ -67,6 +67,14 @@ data class DebugUiState(
     val isDebugOverlayOpen: Boolean = false
 )
 
+sealed interface ZoomUiState {
+    data object Unavailable : ZoomUiState
+    data class Enabled(
+        val zoomRange: Range<Float>,
+        val currentZoomRatio: Float?,
+        val currentLinearZoom: Float?
+    ) : ZoomUiState
+}
 sealed interface AudioUiState {
     val amplitude: Double
 
@@ -102,9 +110,7 @@ sealed interface StabilizationUiState {
         }
     }
 
-    data class Auto(
-        override val stabilizationMode: StabilizationMode
-    ) : Enabled {
+    data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
     }
 }

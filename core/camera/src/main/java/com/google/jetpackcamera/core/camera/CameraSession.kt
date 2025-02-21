@@ -68,7 +68,6 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -99,7 +98,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -120,8 +118,7 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     useCaseMode: CameraUseCase.UseCaseMode,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {},
-    onSetZoomRatioMap: (Map<LensFacing, Float>) -> Unit = { _ -> }
+    onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
 
@@ -250,10 +247,6 @@ internal suspend fun runSingleCameraSession(
                                 }.toMap()
                             )
                         }
-                        // update current settings to mirror current camera state
-                        onSetZoomRatioMap(
-                            currentCameraState.value.zoomRatios
-                        )
                     }
             }
 
@@ -267,35 +260,6 @@ internal suspend fun runSingleCameraSession(
                     "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio " +
                         "${camera.cameraInfo.zoomState.value?.zoomRatio}"
                 )
-
-                // Apply zoom changes to camera
-                zoomChanges.drop(1).filterNotNull().collectLatest { zoomChange ->
-                    val currentZoomState = camera.cameraInfo.zoomState
-                        .asFlow().filterNotNull().first()
-                    when (zoomChange) {
-                        is CameraZoomState.Ratio -> {
-                            camera.cameraControl.setZoomRatio(
-                                zoomChange.value.coerceIn(
-                                    currentZoomState.minZoomRatio,
-                                    currentZoomState.maxZoomRatio
-                                )
-                            )
-                        }
-
-                        is CameraZoomState.Linear -> {
-                            camera.cameraControl.setLinearZoom(zoomChange.value)
-                        }
-
-                        is CameraZoomState.Scale -> {
-                            val newRatio =
-                                (currentZoomState.zoomRatio * zoomChange.value).coerceIn(
-                                    currentZoomState.minZoomRatio,
-                                    currentZoomState.maxZoomRatio
-                                )
-                            camera.cameraControl.setZoomRatio(newRatio)
-                        }
-                    }
-                }
             }
 
             applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
@@ -391,6 +355,13 @@ internal suspend fun processTransientSettingEvents(
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
 
+        if (prevTransientSettings.primaryLensFacing == newTransientSettings.primaryLensFacing) {
+            newTransientSettings.primaryLensFacing.let {
+                if (prevTransientSettings.zoomRatios[it] != newTransientSettings.zoomRatios[it]) {
+                    camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
+                }
+            }
+        }
         prevTransientSettings = newTransientSettings
     }
 }

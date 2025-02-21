@@ -113,6 +113,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.ZoomChange
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -387,7 +388,11 @@ fun PreviewDisplay(
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomChange(CameraZoomState.Scale(pinchZoomChange))
+            onZoomChange(
+                CameraZoomState.Ratio(
+                    ZoomChange.Scale(pinchZoomChange)
+                )
+            )
         }
     )
 

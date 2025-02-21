@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
@@ -207,9 +208,12 @@ class PreviewViewModel @AssistedInject constructor(
                         audioUiState = getAudioUiState(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
+                        ),
+                        zoomUiState = getZoomUiState(
+                            systemConstraints,
+                            cameraAppSettings.cameraLensFacing,
+                            cameraState
                         )
-                        // TODO(kc): set elapsed time UI state once VideoRecordingState
-                        // refactor is complete.
                     )
                 }
             }.collect {}
@@ -267,16 +271,14 @@ class PreviewViewModel @AssistedInject constructor(
     private fun getAudioUiState(
         isAudioEnabled: Boolean,
         videoRecordingState: VideoRecordingState
-    ): AudioUiState {
-        return if (isAudioEnabled) {
-            if (videoRecordingState is VideoRecordingState.Active) {
-                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-            } else {
-                AudioUiState.Enabled.On(0.0)
-            }
+    ): AudioUiState = if (isAudioEnabled) {
+        if (videoRecordingState is VideoRecordingState.Active) {
+            AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
         } else {
-            AudioUiState.Enabled.Mute
+            AudioUiState.Enabled.On(0.0)
         }
+    } else {
+        AudioUiState.Enabled.Mute
     }
 
     private fun stabilizationUiStateFrom(
@@ -378,6 +380,18 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
+
+    private fun getZoomUiState(
+        systemConstraints: SystemConstraints,
+        lensFacing: LensFacing,
+        cameraState: CameraState
+    ): ZoomUiState = ZoomUiState.Enabled(
+        zoomRange =
+        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+            ?: Range<Float>(1f, 1f),
+        currentZoomRatio = cameraState.zoomRatios[lensFacing],
+        currentLinearZoom = cameraState.linearZoomScales[lensFacing]
+    )
 
     private fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,

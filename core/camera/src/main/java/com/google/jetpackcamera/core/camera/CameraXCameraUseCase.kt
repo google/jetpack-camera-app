@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
@@ -51,10 +52,12 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -168,6 +171,9 @@ constructor(
                                     put(dynamicRange, supportedVideoQualities)
                                 }
                             }
+                        val zoomState = camInfo.zoomState.value
+                        val supportedZoomRange: Range<Float>? =
+                            zoomState?.let { Range(it.minZoomRatio, it.maxZoomRatio) }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -249,6 +255,7 @@ constructor(
                                 supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
+                                supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                             )
                         )
@@ -375,16 +382,6 @@ constructor(
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
                                     useCaseMode = useCaseMode,
-                                    onSetZoomRatioMap = { newZoomRatios ->
-                                        currentSettings.update { old ->
-                                            old?.copy(
-                                                defaultZoomRatios =
-                                                old.defaultZoomRatios.toMutableMap().apply {
-                                                    putAll(newZoomRatios)
-                                                }
-                                            )
-                                        }
-                                    },
                                     onImageCaptureCreated = { imageCapture ->
                                         imageCaptureUseCase = imageCapture
                                     }
@@ -393,16 +390,6 @@ constructor(
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
                                         sessionSettings,
-                                        onSetZoomRatioMap = { newZoomRatios ->
-                                            currentSettings.update { old ->
-                                                old?.copy(
-                                                    defaultZoomRatios =
-                                                    old.defaultZoomRatios.toMutableMap().apply {
-                                                        putAll(newZoomRatios)
-                                                    }
-                                                )
-                                            }
-                                        },
                                         useCaseMode = CameraUseCase.UseCaseMode.VIDEO_ONLY
                                     )
                             }
@@ -572,16 +559,6 @@ constructor(
                                 defaultZoomRatios = initialRecordSettings.defaultZoomRatios
                             )
                         }
-
-                        // if the lens doesnt flip when restoring settings, the zoom will need to be
-                        // manually reapplied since zoom changes are processed through state changes to
-                        // zoomchanges and not settings
-                        zoomChanges.update {
-                            CameraZoomState.Ratio(
-                                initialRecordSettings
-                                    .defaultZoomRatios[initialRecordSettings.cameraLensFacing] ?: 1f
-                            )
-                        }
                     }
                 }
             )
@@ -601,8 +578,17 @@ constructor(
     }
 
     override fun changeZoom(newZoomState: CameraZoomState) {
-        zoomChanges.update {
-            newZoomState
+        when (newZoomState) {
+            is CameraZoomState.Ratio -> {
+                currentSettings.update { old ->
+                    old?.tryApplyNewZoomRatio(newZoomState)
+                        ?: old
+                }
+            }
+            is CameraZoomState.Linear -> {
+                // convert linear value to ratio?
+                TODO("need to handle linear zoom changes")
+            }
         }
     }
 
@@ -618,6 +604,48 @@ constructor(
                 old
             }
         }
+    }
+
+    private fun CameraAppSettings.tryApplyNewZoomRatio(
+        newZoomState: CameraZoomState.Ratio
+    ): CameraAppSettings {
+        val lensFacing = if (newZoomState.changeType.lensToZoom ==
+            LensToZoom.PRIMARY
+        ) {
+            cameraLensFacing
+        } else {
+            cameraLensFacing.flip()
+        }
+        return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
+            val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
+                when (val change = newZoomState.changeType) {
+                    is ZoomChange.Set -> change.value
+                    is ZoomChange.Scale -> (
+                        this.defaultZoomRatios[lensFacing]
+                            ?: 1f
+                        ) *
+                        change.value
+
+                    is ZoomChange.Increment -> (
+                        this.defaultZoomRatios[lensFacing]
+                            ?: 1f
+                        ) +
+                        change.value
+                }.coerceIn(
+                    zoomRatioRange.lower,
+                    zoomRatioRange.upper
+                )
+            } ?: 1f
+            this@tryApplyNewZoomRatio
+                .copy(
+                    defaultZoomRatios = this.defaultZoomRatios.toMutableMap().apply {
+                        put(
+                            lensFacing,
+                            newZoomRatio
+                        )
+                    }
+                )
+        } ?: this
     }
 
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
