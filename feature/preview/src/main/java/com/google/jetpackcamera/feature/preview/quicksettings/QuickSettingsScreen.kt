@@ -224,10 +224,10 @@ private fun ExpandedQuickSettingsUi(
                             ),
                             setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
                             currentStreamConfig = currentCameraSettings.streamConfig,
-                            enabled = (
+                            enabled = !(
                                 currentCameraSettings.concurrentCameraMode ==
-                                    ConcurrentCameraMode.OFF &&
-                                    currentCameraSettings.imageFormat !=
+                                    ConcurrentCameraMode.DUAL ||
+                                    currentCameraSettings.imageFormat ==
                                     ImageOutputFormat.JPEG_ULTRA_HDR
                                 )
                         )
