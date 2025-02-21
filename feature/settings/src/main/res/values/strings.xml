@@ -155,6 +155,11 @@
     <string name="stabilization_rationale_prefix">Stabilization</string>
     <string name="lens_rationale_prefix">Lens flip</string>
     <string name="fps_rationale_prefix">Fps</string>
+    <string name="flash_rationale_prefix">Flash</string>
+    <string name="flash_on_rationale_prefix">Flash On</string>
+    <string name="flash_auto_rationale_prefix">Flash Auto</string>
+    <string name="flash_llb_rationale_prefix">Low Light Boost</string>
+
     <string name="video_quality_rationale_prefix">Video quality</string>
     <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
     <string name="video_quality_rationale_suffix_sdr">SDR</string>
