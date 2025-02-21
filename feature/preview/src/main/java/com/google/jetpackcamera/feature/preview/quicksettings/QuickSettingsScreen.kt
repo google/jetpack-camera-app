@@ -154,6 +154,8 @@ private enum class FocusedQuickSetting {
     ASPECT_RATIO
 }
 
+// todo: Add UI states for Quick Settings buttons
+
 /**
  * The UI component for quick settings when it is focused.
  */
@@ -222,8 +224,12 @@ private fun ExpandedQuickSettingsUi(
                             ),
                             setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
                             currentStreamConfig = currentCameraSettings.streamConfig,
-                            enabled = currentCameraSettings.concurrentCameraMode ==
-                                ConcurrentCameraMode.OFF
+                            enabled = !(
+                                currentCameraSettings.concurrentCameraMode ==
+                                    ConcurrentCameraMode.DUAL ||
+                                    currentCameraSettings.imageFormat ==
+                                    ImageOutputFormat.JPEG_ULTRA_HDR
+                                )
                         )
                     }
 
