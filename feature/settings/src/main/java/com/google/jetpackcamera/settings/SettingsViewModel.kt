@@ -370,10 +370,10 @@ class SettingsViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings
     ): VideoQualityUiState {
         val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
-        val supportedVideoQualities: Set<VideoQuality> =
+        val supportedVideoQualities: List<VideoQuality> =
             cameraConstraints?.supportedVideoQualitiesMap?.get(
                 cameraAppSettings.dynamicRange
-            ) ?: setOf(VideoQuality.UNSPECIFIED)
+            ) ?: listOf(VideoQuality.UNSPECIFIED)
 
         return if (supportedVideoQualities != listOf(VideoQuality.UNSPECIFIED)) {
             VideoQualityUiState.Enabled(
@@ -407,7 +407,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun getSingleVideoQualityState(
         videoQuality: VideoQuality,
-        supportedVideQualities: Set<VideoQuality>
+        supportedVideQualities: List<VideoQuality>
     ): SingleSelectableState = if (supportedVideQualities.contains(videoQuality)) {
         SingleSelectableState.Selectable
     } else {

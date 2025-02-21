@@ -29,7 +29,7 @@ data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
-    val supportedVideoQualitiesMap: Map<DynamicRange, Set<VideoQuality>>,
+    val supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>,
     val supportedImageFormatsMap: Map<StreamConfig, Set<ImageOutputFormat>>,
     val supportedIlluminants: Set<Illuminant>,
     val supportedFlashModes: Set<FlashMode>,

@@ -157,7 +157,7 @@ constructor(
                                     val supportedVideoQualities =
                                         videoCapabilities.getSupportedQualities(
                                             dynamicRange.toCXDynamicRange()
-                                        ).map { it.toVideoQuality() }.toSortedSet()
+                                        ).map { it.toVideoQuality() }
                                     put(dynamicRange, supportedVideoQualities)
                                 }
                             }
