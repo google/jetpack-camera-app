@@ -237,8 +237,6 @@ Alternatively,
 * Low-light boost may not be applied to image capture when the app is in multi-stream mode. To
   guarantee low-light boost application in both image and video capture, utilize single-stream mode.
 
----
-
 ## Video Features
 
 This section explores the camera app's comprehensive video recording capabilities, providing tools
@@ -399,8 +397,6 @@ Switches between front and rear cameras during video recording.
 * Uses Persistent Recording API which is experimental, and may not always function as expected
 * May be buggy with pause/resume. This is being addressed.
 * Does not work with concurrent cameras, stabilization, or single stream.
-
----
 
 ## Advanced Camera Features
 
@@ -567,8 +563,6 @@ video, and image capture.
 
 * Ultra HDR cannot be enabled in single stream mode.
 * Multi or single stream selectors are not available when using Dual Concurrent Cameras.
-
----
 
 ## Special Application Features
 
