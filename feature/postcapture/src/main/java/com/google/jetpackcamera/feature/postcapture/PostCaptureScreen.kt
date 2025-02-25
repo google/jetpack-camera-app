@@ -18,10 +18,7 @@ package com.google.jetpackcamera.feature.postcapture
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +38,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -64,14 +62,18 @@ fun PostCaptureScreen(
     imageUri: Uri?,
 ) {
 
-//    viewModel.setLastCapturedImagePath(lastCapturedImagePath)
     val uiState : PostCaptureUiState by viewModel.uiState.collectAsState()
-
     val context = LocalContext.current
 
+    LaunchedEffect(imageUri) {
+        viewModel.setLastCapturedImageUri(imageUri)
+    }
+
+
     Box(modifier = Modifier.fillMaxSize()) {
-        imageUri?.let { uri ->
+        uiState.lastCapturedImageUri?.let { uri ->
             val bitmap = remember(uri) {
+                // TODO(yasith): Get the image rotation from the image
                 loadAndRotateBitmap(context, uri, 270f)
             }
 
@@ -119,8 +121,8 @@ fun PostCaptureScreen(
 
             IconButton(
                 onClick = {
-                    uiState.lastCapturedImagePath?.let { path ->
-                        shareImage(context, path)
+                    imageUri?.path?.let {
+                        shareImage(context, it)
                     }
                 },
                 modifier = Modifier
@@ -138,6 +140,12 @@ fun PostCaptureScreen(
     }
 }
 
+/**
+ * Starts an intent to share an image
+ *
+ * @param context The application context
+ * @param imagePath The path to the image to share
+ */
 private fun shareImage(context: Context, imagePath: String) {
     val file = File(imagePath)
     val uri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", file);

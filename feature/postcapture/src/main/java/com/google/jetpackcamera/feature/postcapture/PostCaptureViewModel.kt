@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.postcapture
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,31 +26,20 @@ import kotlinx.coroutines.flow.update
 @HiltViewModel
 class PostCaptureViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PostCaptureUiState(
-//        lastCapturedImagePath = "/storage/emulated/0/Pictures/JCA-2025-01-30-16-22-43-769.jpg"
-                lastCapturedImagePath = "/storage/emulated/0/Pictures/JCA-2025-02-10-22-13-13-574.jpg"
-    ))
+    private val _uiState = MutableStateFlow(PostCaptureUiState())
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
-    fun setCapturedImage(path: String) {
-        _uiState.update { it.copy(lastCapturedImagePath = path, isImageDeleted = false) }
+    fun setLastCapturedImageUri(imageUri: Uri?) {
+        _uiState.update { it.copy(lastCapturedImageUri = imageUri, isImageDeleted = false) }
     }
 
+    // TODO(yasith): Implement deletion
     fun deleteImage() {
-        _uiState.update { it.copy(lastCapturedImagePath = null, isImageDeleted = true) }
+        _uiState.update { it.copy(lastCapturedImageUri = null, isImageDeleted = true) }
     }
-
-    fun shareImage(path: String, shareImage: (String) -> Unit) {
-        shareImage(path) // This will invoke the sharing functionality
-    }
-
-    fun setLastCapturedImagePath(path: String?) {
-        _uiState.update { it.copy(lastCapturedImagePath = path) }
-    }
-
 }
 
 data class PostCaptureUiState(
-    val lastCapturedImagePath: String? = null,
+    val lastCapturedImageUri: Uri? = null,
     val isImageDeleted: Boolean = false
 )
