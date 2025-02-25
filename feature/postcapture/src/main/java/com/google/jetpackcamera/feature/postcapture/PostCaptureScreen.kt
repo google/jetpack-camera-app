@@ -49,10 +49,8 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.core.common.loadAndRotateBitmap
-import java.io.File
 
 @Composable
 fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUri: Uri?) {
@@ -104,6 +102,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
+            // Delete Image Button
             IconButton(
                 onClick = { viewModel.deleteImage() },
                 modifier = Modifier
@@ -122,9 +121,10 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
 
             Spacer(modifier = Modifier.weight(1f))
 
+            // Share Image Button
             IconButton(
                 onClick = {
-                    imageUri?.path?.let {
+                    imageUri?.let {
                         shareImage(context, it)
                     }
                 },
@@ -151,14 +151,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
  * @param context The application context
  * @param imagePath The path to the image to share
  */
-private fun shareImage(context: Context, imagePath: String) {
-    val file = File(imagePath)
-    val uri = FileProvider.getUriForFile(
-        context,
-        context.applicationContext.packageName + ".provider",
-        file
-    )
-
+private fun shareImage(context: Context, uri: Uri) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/jpeg"
         putExtra(Intent.EXTRA_STREAM, uri)
