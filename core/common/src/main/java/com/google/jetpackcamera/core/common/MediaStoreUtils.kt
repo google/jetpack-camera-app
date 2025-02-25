@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.common
 
 import android.content.ContentUris
@@ -55,7 +54,8 @@ fun getLastImageUri(context: Context): Uri? {
             val id = cursor.getLong(idColumn)
 
             return ContentUris.withAppendedId(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                id
             )
         }
     }

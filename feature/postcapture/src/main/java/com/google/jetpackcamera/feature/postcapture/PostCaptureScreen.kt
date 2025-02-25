@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.postcapture
 
 import android.content.Context
@@ -55,20 +54,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.core.common.loadAndRotateBitmap
 import java.io.File
 
-
 @Composable
-fun PostCaptureScreen(
-    viewModel: PostCaptureViewModel = hiltViewModel(),
-    imageUri: Uri?,
-) {
-
-    val uiState : PostCaptureUiState by viewModel.uiState.collectAsState()
+fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUri: Uri?) {
+    val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(imageUri) {
         viewModel.setLastCapturedImageUri(imageUri)
     }
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         uiState.lastCapturedImageUri?.let { uri ->
@@ -85,9 +78,17 @@ fun PostCaptureScreen(
                             size.height / bitmap.height
                         )
                         val imageSize = Size(bitmap.width * scale, bitmap.height * scale)
-                        canvas.nativeCanvas.drawBitmap(bitmap, null, android.graphics.RectF(
-                            0f, 0f, imageSize.width, imageSize.height
-                        ), null)
+                        canvas.nativeCanvas.drawBitmap(
+                            bitmap,
+                            null,
+                            android.graphics.RectF(
+                                0f,
+                                0f,
+                                imageSize.width,
+                                imageSize.height
+                            ),
+                            null
+                        )
                     }
                 }
             }
@@ -108,7 +109,9 @@ fun PostCaptureScreen(
                 modifier = Modifier
                     .size(56.dp)
                     .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -128,7 +131,9 @@ fun PostCaptureScreen(
                 modifier = Modifier
                     .size(56.dp)
                     .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
@@ -148,12 +153,16 @@ fun PostCaptureScreen(
  */
 private fun shareImage(context: Context, imagePath: String) {
     val file = File(imagePath)
-    val uri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", file);
+    val uri = FileProvider.getUriForFile(
+        context,
+        context.applicationContext.packageName + ".provider",
+        file
+    )
 
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/jpeg"
         putExtra(Intent.EXTRA_STREAM, uri)
     }
-    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     context.startActivity(Intent.createChooser(intent, "Share Image"))
 }

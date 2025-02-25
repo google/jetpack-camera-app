@@ -162,7 +162,7 @@ fun PreviewScreen(
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
                 isDebugMode = isDebugMode,
-                onImageWellClick = { uri -> onNavigateToPostCapture(uri)},
+                onImageWellClick = { uri -> onNavigateToPostCapture(uri) }
             )
         }
     }

@@ -372,7 +372,8 @@ private fun ControlsBottom(
                 } else {
                     Column {
                         if (!isQuickSettingsOpen &&
-                            previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
+                            previewUiState.captureModeToggleUiState
+                                is CaptureModeToggleUiState.Visible
                         ) {
                             CaptureModeToggleButton(
                                 uiState = previewUiState.captureModeToggleUiState,

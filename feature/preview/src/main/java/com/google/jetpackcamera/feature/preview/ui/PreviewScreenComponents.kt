@@ -135,13 +135,13 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
+import kotlin.math.min
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlin.math.min
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -557,13 +557,12 @@ fun ImageWell(
         if (bitmap != null) {
             Canvas(
                 modifier = Modifier
-                    .size(110.dp),
+                    .size(110.dp)
             ) {
                 drawIntoCanvas { canvas ->
                     val canvasSize = min(size.width, size.height)
 
                     val scale = canvasSize / min(bitmap.width, bitmap.height)
-
 
                     val imageWidth = bitmap.width * scale
                     val imageHeight = bitmap.height * scale
@@ -575,7 +574,10 @@ fun ImageWell(
                         bitmap,
                         null,
                         android.graphics.RectF(
-                            offsetX, offsetY, offsetX + imageWidth, offsetY + imageHeight
+                            offsetX,
+                            offsetY,
+                            offsetX + imageWidth,
+                            offsetY + imageHeight
                         ),
                         null
                     )
