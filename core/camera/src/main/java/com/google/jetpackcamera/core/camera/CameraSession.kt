@@ -243,18 +243,22 @@ internal suspend fun runSingleCameraSession(
                             ) {
                                 currentCameraState.update { old ->
                                     old.copy(
-                                        zoomRatios = old.zoomRatios.toMutableMap().apply {
-                                            put(
-                                                camera.cameraInfo.appLensFacing,
-                                                zoomState.zoomRatio
-                                            )
-                                        }.toMap(),
-                                        linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                                            put(
-                                                camera.cameraInfo.appLensFacing,
-                                                zoomState.linearZoom
-                                            )
-                                        }.toMap()
+                                        zoomRatios = old.zoomRatios
+                                            .toMutableMap()
+                                            .apply {
+                                                put(
+                                                    camera.cameraInfo.appLensFacing,
+                                                    zoomState.zoomRatio
+                                                )
+                                            }.toMap(),
+                                        linearZoomScales = old.linearZoomScales
+                                            .toMutableMap()
+                                            .apply {
+                                                put(
+                                                    camera.cameraInfo.appLensFacing,
+                                                    zoomState.linearZoom
+                                                )
+                                            }.toMap()
                                     )
                                 }
                             }
