@@ -44,8 +44,8 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
@@ -114,7 +114,6 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    // todo: zoomchanges init with cameraappsettings zoomratio
     private val zoomChanges = MutableStateFlow<CameraZoomState?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
@@ -370,7 +369,6 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            zoomChanges = zoomChanges.asStateFlow(),
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings

@@ -179,7 +179,6 @@ internal suspend fun runSingleCameraSession(
                 useCaseGroup
             ) { camera ->
                 Log.d(TAG, "Camera session started")
-
                 launch {
                     processFocusMeteringEvents(camera.cameraControl)
                 }
@@ -221,13 +220,8 @@ internal suspend fun runSingleCameraSession(
                 }
 
                 // update camerastate to mirror current zoomstate
+
                 launch {
-                /*
-                TODO bug?? Flaky behavior here.  does not always update zoomstate properly when:
-                switching HDR on or off on front lens
-                Setting aspect ratio on either lens...
-                basically anything that restarts the session
-                 */
                     camera.cameraInfo.zoomState
                         .asFlow()
                         .filterNotNull()
@@ -242,29 +236,29 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
                         .collectLatest { zoomState ->
-                            currentCameraState.update { old ->
-                                old.copy(
-                                    zoomRatios = old.zoomRatios.toMutableMap().apply {
-                                        put(camera.cameraInfo.appLensFacing, zoomState.zoomRatio)
-                                    }.toMap(),
-                                    linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                                        put(camera.cameraInfo.appLensFacing, zoomState.linearZoom)
-                                    }.toMap()
-                                )
+                            // TODO(): buggy race condition between our setZoomRatio call updating the ZoomState and camera startup
+                            if (zoomState.zoomRatio != 1.0f ||
+                                zoomState.zoomRatio == currentTransientSettings
+                                    .zoomRatios[currentTransientSettings.primaryLensFacing]
+                            ) {
+                                currentCameraState.update { old ->
+                                    old.copy(
+                                        zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                            put(
+                                                camera.cameraInfo.appLensFacing,
+                                                zoomState.zoomRatio
+                                            )
+                                        }.toMap(),
+                                        linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                            put(
+                                                camera.cameraInfo.appLensFacing,
+                                                zoomState.linearZoom
+                                            )
+                                        }.toMap()
+                                    )
+                                }
                             }
                         }
-                }
-
-                launch {
-                    // Immediately Apply camera zoom from current settings when opening a new camera
-                    camera.cameraControl.setZoomRatio(
-                        currentTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
-                    )
-                    Log.d(
-                        TAG,
-                        "Starting camera ${camera.cameraInfo.appLensFacing} at zoom ratio " +
-                            "${camera.cameraInfo.zoomState.value?.zoomRatio}"
-                    )
                 }
 
                 applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
@@ -286,6 +280,10 @@ internal suspend fun processTransientSettingEvents(
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>
 ) {
+    // Immediately Apply camera zoom from current settings when opening a new camera
+    camera.cameraControl.setZoomRatio(
+        initialTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
+    )
     var prevTransientSettings = initialTransientSettings
     val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
     var torchOn = false
@@ -304,7 +302,7 @@ internal suspend fun processTransientSettingEvents(
         val newTransientSettings = it.first
         val cameraState = it.second
 
-        // todo(): How should we handle torch on Auto FlashMode?
+        // todo(): handle torch on Auto FlashMode
         // enable torch only while recording is in progress
         if ((cameraState.videoRecordingState !is VideoRecordingState.Inactive) &&
             newTransientSettings.flashMode == FlashMode.ON &&
@@ -744,8 +742,6 @@ private suspend fun startVideoRecordingInternal(
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
     onRestoreSettings: () -> Unit = {}
 ): Recording {
-    Log.d(TAG, "recordVideo")
-    // todo(b/336886716): default setting to enable or disable audio when permission is granted
     // set the camerastate to starting
     currentCameraState.update { old ->
         old.copy(videoRecordingState = VideoRecordingState.Starting)
