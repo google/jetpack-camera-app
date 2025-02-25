@@ -735,11 +735,11 @@ class PreviewViewModel @AssistedInject constructor(
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
-                        _previewUiState.update { old ->
-                            (old as? PreviewUiState.Ready)?.copy(
-                                lastCaptureUri = savedUri
-                            ) ?: old
-                        }
+                    _previewUiState.update { old ->
+                        (old as? PreviewUiState.Ready)?.copy(
+                            lastCaptureUri = savedUri
+                        ) ?: old
+                    }
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
                 },
                 onFailure = { exception ->
