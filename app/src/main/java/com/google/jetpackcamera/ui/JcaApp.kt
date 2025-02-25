@@ -117,7 +117,7 @@ private fun JetpackCameraNavHost(
                 }
             }
             PreviewScreen(
-                onNavigateToSettings = { navController.navigate(POST_CAPTURE_ROUTE) },
+                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onNavigateToPostCapture = { imageUri ->
                     navController.navigate("$POST_CAPTURE_ROUTE?imageUri=${Uri.encode(imageUri.toString())}")
                 },

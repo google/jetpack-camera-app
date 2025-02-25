@@ -110,22 +110,9 @@ dependencies {
     // Futures
     implementation(libs.futures.ktx)
 
-    // CameraX
-    implementation(libs.camera.core)
-    implementation(libs.camera.compose)
-
-//    // Hilt
-//    implementation(libs.dagger.hilt.android)
-//    kapt(libs.dagger.hilt.compiler)
-
-    //Tracing
-//    implementation(libs.androidx.tracing)
-
     implementation(libs.kotlinx.atomicfu)
 
     // Project dependencies
-    implementation(project(":data:settings"))
-    implementation(project(":core:camera"))
     implementation(project(":core:common"))
     testImplementation(project(":core:common"))
 }

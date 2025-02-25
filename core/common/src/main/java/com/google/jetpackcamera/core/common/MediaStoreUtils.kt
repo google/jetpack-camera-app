@@ -62,6 +62,13 @@ fun getLastImageUri(context: Context): Uri? {
     return null
 }
 
+/**
+ * Loads a Bitmap from a given URI and rotates it by the specified degrees.
+ *
+ * @param context The application context.
+ * @param uri The URI of the image to load.
+ * @param degrees The number of degrees to rotate the image by.
+ */
 fun loadAndRotateBitmap(context: Context, uri: Uri?, degrees: Float): Bitmap? {
     val originalBitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
 
