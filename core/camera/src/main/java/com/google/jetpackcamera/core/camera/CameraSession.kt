@@ -236,30 +236,32 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
                         .collectLatest { zoomState ->
-                            // TODO(): buggy race condition between our setZoomRatio call updating the ZoomState and camera startup
-                            if (zoomState.zoomRatio != 1.0f ||
-                                zoomState.zoomRatio == currentTransientSettings
-                                    .zoomRatios[currentTransientSettings.primaryLensFacing]
-                            ) {
-                                currentCameraState.update { old ->
-                                    old.copy(
-                                        zoomRatios = old.zoomRatios
-                                            .toMutableMap()
-                                            .apply {
-                                                put(
-                                                    camera.cameraInfo.appLensFacing,
-                                                    zoomState.zoomRatio
-                                                )
-                                            }.toMap(),
-                                        linearZoomScales = old.linearZoomScales
-                                            .toMutableMap()
-                                            .apply {
-                                                put(
-                                                    camera.cameraInfo.appLensFacing,
-                                                    zoomState.linearZoom
-                                                )
-                                            }.toMap()
-                                    )
+                            // TODO(): remove checks after buggy zoomState is fixed
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                                if (zoomState.zoomRatio != 1.0f ||
+                                    zoomState.zoomRatio == currentTransientSettings
+                                        .zoomRatios[currentTransientSettings.primaryLensFacing]
+                                ) {
+                                    currentCameraState.update { old ->
+                                        old.copy(
+                                            zoomRatios = old.zoomRatios
+                                                .toMutableMap()
+                                                .apply {
+                                                    put(
+                                                        camera.cameraInfo.appLensFacing,
+                                                        zoomState.zoomRatio
+                                                    )
+                                                }.toMap(),
+                                            linearZoomScales = old.linearZoomScales
+                                                .toMutableMap()
+                                                .apply {
+                                                    put(
+                                                        camera.cameraInfo.appLensFacing,
+                                                        zoomState.linearZoom
+                                                    )
+                                                }.toMap()
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1059,6 +1061,26 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     currentCameraState.update { old ->
                         if (old.lowLightBoostState != boostState) {
                             old.copy(lowLightBoostState = boostState)
+                        } else {
+                            old
+                        }
+                    }
+                }
+                // todo(): remove after buggy zoomState is fixed
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // update camerastate with zoom ratio
+                    val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
+                    currentCameraState.update { old ->
+                        if (newZoomRatio != null &&
+                            old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
+                        ) {
+                            old.copy(
+                                zoomRatios = old.zoomRatios
+                                    .toMutableMap()
+                                    .apply {
+                                        put(targetCameraInfo.appLensFacing, newZoomRatio)
+                                    }.toMap()
+                            )
                         } else {
                             old
                         }
