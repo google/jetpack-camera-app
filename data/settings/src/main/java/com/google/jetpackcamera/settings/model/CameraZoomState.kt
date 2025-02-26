@@ -15,23 +15,56 @@
  */
 package com.google.jetpackcamera.settings.model
 
+/**
+ * Represents an action to modify the zoom
+ * @param changeType the [ZoomChange] to be performed
+ */
 sealed interface CameraZoomState {
     val changeType: ZoomChange
+
+    /**
+     * Represents an action to modify the current zoom Ratio
+     */
     data class Ratio(override val changeType: ZoomChange) : CameraZoomState
+
+    /**
+     * Represents an action to modify the current linear zoom value
+     */
     data class Linear(override val changeType: ZoomChange) : CameraZoomState
 }
+
+/**
+ * Abstract placeholders
+ */
 enum class LensToZoom {
+
+    /**
+     * An abstract placeholder for the "Current" [LensFacing] in a single camera session,
+     * or the Primary `LensFacing` in a concurrent session.
+     */
     PRIMARY,
+
+    /**
+     * An abstract placeholder for the "Inactive" [LensFacing] in a single camera session,
+     * or the `Secondary LensFacing` in a concurrent session.
+     *
+     * An "Inactive `LensFacing`" is not guaranteed in a single camera session.
+     * @see[SystemConstraints.availableLenses]
+     */
     SECONDARY
 }
+
+/**
+ * Represents the different types of actions to modify the current zoom state
+ */
 sealed interface ZoomChange {
     val value: Float
     val lensToZoom: LensToZoom
 
     /**
-     * Use Set to directly set a specific zoom ratio or linear state to the value
+     * Use Absolute to set the current zoom ratio or linear state to the value
      */
-    data class Set(
+    data class Absolute(
         override val value: Float,
         override val lensToZoom: LensToZoom = LensToZoom.PRIMARY
     ) : ZoomChange

@@ -575,12 +575,10 @@ constructor(
         when (newZoomState) {
             is CameraZoomState.Ratio -> {
                 currentSettings.update { old ->
-                    old?.tryApplyNewZoomRatio(newZoomState)
-                        ?: old
+                    old?.tryApplyNewZoomRatio(newZoomState) ?: old
                 }
             }
             is CameraZoomState.Linear -> {
-                // convert linear value to ratio?
                 TODO("need to handle linear zoom changes")
             }
         }
@@ -670,40 +668,35 @@ constructor(
     private fun CameraAppSettings.tryApplyNewZoomRatio(
         newZoomState: CameraZoomState.Ratio
     ): CameraAppSettings {
-        val lensFacing = if (newZoomState.changeType.lensToZoom ==
-            LensToZoom.PRIMARY
-        ) {
-            cameraLensFacing
-        } else {
-            cameraLensFacing.flip()
+        val lensFacing = when (newZoomState.changeType.lensToZoom) {
+            LensToZoom.PRIMARY -> cameraLensFacing
+            LensToZoom.SECONDARY -> {
+                val newLens = cameraLensFacing.flip()
+                check(systemConstraints.perLensConstraints[newLens] != null) {
+                    "Device does not have a secondary camera"
+                }
+                newLens
+            }
         }
         return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
             val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
                 when (val change = newZoomState.changeType) {
-                    is ZoomChange.Set -> change.value
+                    is ZoomChange.Absolute -> change.value
                     is ZoomChange.Scale -> (
                         this.defaultZoomRatios[lensFacing]
-                            ?: 1f
+                            ?: 1.0f
                         ) *
                         change.value
 
-                    is ZoomChange.Increment -> (
-                        this.defaultZoomRatios[lensFacing]
-                            ?: 1f
-                        ) +
-                        change.value
-                }.coerceIn(
-                    zoomRatioRange.lower,
-                    zoomRatioRange.upper
-                )
+                    is ZoomChange.Increment -> {
+                        (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
+                    }
+                }.coerceIn(zoomRatioRange.lower, zoomRatioRange.upper)
             } ?: 1f
             this@tryApplyNewZoomRatio
                 .copy(
                     defaultZoomRatios = this.defaultZoomRatios.toMutableMap().apply {
-                        put(
-                            lensFacing,
-                            newZoomRatio
-                        )
+                        put(lensFacing, newZoomRatio)
                     }
                 )
         } ?: this

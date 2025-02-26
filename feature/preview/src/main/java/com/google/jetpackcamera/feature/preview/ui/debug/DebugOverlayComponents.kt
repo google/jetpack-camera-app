@@ -217,7 +217,7 @@ private fun SetZoomRatioComponent(
                         zoomRatioText.value.toFloat()
                     }
                     onChangeZoomRatio(
-                        CameraZoomState.Ratio(ZoomChange.Set(newRatio, LensToZoom.PRIMARY))
+                        CameraZoomState.Ratio(ZoomChange.Absolute(newRatio, LensToZoom.PRIMARY))
                     )
                 } catch (e: NumberFormatException) {
                     Log.d(TAG, "Zoom ratio should be a float")

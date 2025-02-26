@@ -743,8 +743,7 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {}
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
@@ -863,7 +862,6 @@ private suspend fun startVideoRecordingInternal(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
-                        onRestoreSettings()
                     }
 
                     ERROR_DURATION_LIMIT_REACHED -> {
@@ -938,8 +936,7 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord,
-            onRestoreSettings = onRestoreSettings
+            onVideoRecord = onVideoRecord
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -972,6 +969,7 @@ private suspend fun runVideoRecording(
                 }
             }
         }
+        onRestoreSettings()
     }
 }
 
