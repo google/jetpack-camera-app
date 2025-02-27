@@ -775,8 +775,9 @@ fun DraggableLockSwitch(
                             .width(switchWidth)
                             .height(switchHeight)
                             .alpha(.37f)
-                            .clip(RoundedCornerShape(switchHeight / 2)) // Rounded rectangle background
-                            .background(Color.Black) // Background color
+                            // clips to a rounded rectangle
+                            .clip(RoundedCornerShape(switchHeight / 2))
+                            .background(Color.Black)
                     )
                     // small moveable Circle
                     Box(
@@ -800,7 +801,9 @@ fun DraggableLockSwitch(
                             .size(40.dp)
                             .align(Alignment.CenterStart)
                             .padding(start = 8.dp)
-                            .clickable { onToggleSwitchPosition() },
+                            .clickable(indication = null, interactionSource = null) {
+                                onToggleSwitchPosition()
+                            },
                         tint = Color.White,
                         imageVector = if (shouldBeLocked()) {
                             Icons.Default.Lock
@@ -857,10 +860,10 @@ fun CaptureButton(
 
     fun shouldBeLocked(): Boolean = switchPosition < .4f
     fun toggleSwitchPosition() = if (shouldBeLocked()) {
-        switchPosition = 0f
+        switchPosition = 1f
     } else {
         switchPosition =
-            1f
+            0f
     }
 
     val currentColor = LocalContentColor.current
