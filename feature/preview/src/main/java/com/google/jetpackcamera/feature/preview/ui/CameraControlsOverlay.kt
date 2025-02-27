@@ -122,7 +122,7 @@ fun CameraControlsOverlay(
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
-    LaunchedEffect(previewUiState.zoomScale) {
+    LaunchedEffect(previewUiState.zoomRatios) {
         if (firstRun) {
             firstRun = false
         } else {
@@ -160,7 +160,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
-                zoomLevel = previewUiState.zoomScale,
+                zoomRatios = previewUiState.zoomRatios,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
@@ -260,7 +260,7 @@ private fun ControlsBottom(
     previewUiState: PreviewUiState.Ready,
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
-    zoomLevel: Float,
+    zoomRatios: Map<LensFacing, Float> = mapOf(),
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
@@ -294,7 +294,11 @@ private fun ControlsBottom(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (showZoomLevel) {
-                    ZoomScaleText(zoomLevel)
+                    zoomRatios[previewUiState.currentCameraSettings.cameraLensFacing]?.let {
+                            zoomRatio
+                        ->
+                        ZoomRatioText(zoomRatio)
+                    }
                 }
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
@@ -629,7 +633,7 @@ private fun Preview_ControlsBottom() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -650,7 +654,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -671,7 +675,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -692,7 +696,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
@@ -719,7 +723,7 @@ private fun Preview_ControlsBottom_Recording() {
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomRatios = mapOf(Pair(LensFacing.BACK, 1.3f), Pair(LensFacing.FRONT, 1.0f)),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,

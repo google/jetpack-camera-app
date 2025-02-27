@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Range
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -22,6 +23,7 @@ import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -36,7 +38,7 @@ sealed interface PreviewUiState {
         // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
-        val zoomScale: Float = 1f,
+        val zoomRatios: Map<LensFacing, Float> = mapOf(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
 
@@ -55,7 +57,8 @@ sealed interface PreviewUiState {
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
         val audioUiState: AudioUiState = AudioUiState.Disabled,
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
-        val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable
+        val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -84,6 +87,14 @@ sealed interface ElapsedTimeUiState {
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
 
+sealed interface ZoomUiState {
+    data object Unavailable : ZoomUiState
+    data class Enabled(
+        val zoomRange: Range<Float>,
+        val currentZoomRatio: Float?,
+        val currentLinearZoom: Float?
+    ) : ZoomUiState
+}
 sealed interface AudioUiState {
     val amplitude: Double
 
