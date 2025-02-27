@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.common
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
 import android.provider.MediaStore
@@ -70,10 +71,18 @@ fun getLastImageUri(context: Context): Uri? {
  * @param degrees The number of degrees to rotate the image by.
  */
 fun loadAndRotateBitmap(context: Context, uri: Uri?, degrees: Float): Bitmap? {
-    val originalBitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+    uri?.let {
+        val bitmap = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P) {
+            MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+        } else {
+            val imageDecoderSource = ImageDecoder.createSource(context.contentResolver, it)
+            ImageDecoder.decodeBitmap(imageDecoderSource)
+        }
 
-    return originalBitmap?.let {
-        val matrix = Matrix().apply { postRotate(degrees) }
-        Bitmap.createBitmap(it, 0, 0, it.width, it.height, matrix, true)
+        return bitmap?.let {
+            val matrix = Matrix().apply { postRotate(degrees) }
+            Bitmap.createBitmap(it, 0, 0, it.width, it.height, matrix, true)
+        }
     }
+    return null
 }

@@ -32,6 +32,7 @@ import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
@@ -233,6 +234,15 @@ class PreviewViewModel @AssistedInject constructor(
                     )
                 }
             }.collect {}
+        }
+    }
+
+    fun updateLastCapturedImageUri(uri: Uri) {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as PreviewUiState.Ready)
+                    .copy(imageWellUiState = ImageWellUiState.LastCapture(uri))
+            }
         }
     }
 
@@ -735,10 +745,8 @@ class PreviewViewModel @AssistedInject constructor(
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
-                    _previewUiState.update { old ->
-                        (old as? PreviewUiState.Ready)?.copy(
-                            lastCaptureUri = savedUri
-                        ) ?: old
+                    savedUri?.let {
+                        updateLastCapturedImageUri(it)
                     }
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
                 },

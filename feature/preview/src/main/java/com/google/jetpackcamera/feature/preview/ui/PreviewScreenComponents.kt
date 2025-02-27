@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -103,8 +102,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -121,8 +118,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.core.common.getLastImageUri
-import com.google.jetpackcamera.core.common.loadAndRotateBitmap
 import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
@@ -135,7 +130,6 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import kotlin.math.min
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -519,69 +513,6 @@ fun PreviewDisplay(
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun ImageWell(
-    previewUiState: PreviewUiState.Ready,
-    modifier: Modifier = Modifier,
-    onClick: (uri: Uri?) -> Unit
-) {
-    val context = LocalContext.current
-    val uri = previewUiState.lastCaptureUri ?: getLastImageUri(context)
-
-    val bitmap = remember(uri) {
-        loadAndRotateBitmap(context, uri, 270f)
-    }
-
-    // Do a small pop-in animation when a new image is captured
-    val animatedScale = remember { Animatable(1f) }
-    LaunchedEffect(uri) {
-        animatedScale.snapTo(0.8f)
-        animatedScale.animateTo(1f, animationSpec = tween(durationMillis = 300))
-    }
-
-    Box(
-        modifier = modifier
-            .size(120.dp)
-            .padding(18.dp)
-            .border(2.dp, Color.White, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = { onClick(uri) })
-            .scale(animatedScale.value)
-
-    ) {
-        if (bitmap != null) {
-            Canvas(
-                modifier = Modifier
-                    .size(110.dp)
-            ) {
-                drawIntoCanvas { canvas ->
-                    val canvasSize = min(size.width, size.height)
-
-                    val scale = canvasSize / min(bitmap.width, bitmap.height)
-
-                    val imageWidth = bitmap.width * scale
-                    val imageHeight = bitmap.height * scale
-
-                    val offsetX = (canvasSize - imageWidth) / 2f
-                    val offsetY = (canvasSize - imageHeight) / 2f
-
-                    canvas.nativeCanvas.drawBitmap(
-                        bitmap,
-                        null,
-                        android.graphics.RectF(
-                            offsetX,
-                            offsetY,
-                            offsetX + imageWidth,
-                            offsetY + imageHeight
-                        ),
-                        null
-                    )
-                }
             }
         }
     }
