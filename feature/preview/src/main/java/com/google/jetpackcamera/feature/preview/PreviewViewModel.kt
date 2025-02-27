@@ -425,12 +425,14 @@ class PreviewViewModel @AssistedInject constructor(
         } else {
             CaptureButtonUiState.Enabled.Recording.PressedRecording
         }
-        // todo: how to handle pause...
         is VideoRecordingState.Active.Paused ->
-            CaptureButtonUiState
-                .Enabled.Recording.LockedRecording
+            if (lockedState) {
+                CaptureButtonUiState
+                    .Enabled.Recording.LockedRecording
+            } else {
+                CaptureButtonUiState.Enabled.Recording.PressedRecording
+            }
 
-        // todo: how to handle starting...
         VideoRecordingState.Starting ->
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
