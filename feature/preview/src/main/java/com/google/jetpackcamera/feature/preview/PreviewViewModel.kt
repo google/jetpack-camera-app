@@ -888,7 +888,6 @@ class PreviewViewModel @AssistedInject constructor(
             cameraUseCase.stopVideoRecording()
             recordingJob?.cancel()
         }
-        setLockedRecording(false)
     }
 
     /**
