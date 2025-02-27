@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
+import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,16 +30,16 @@ class PostCaptureViewModel : ViewModel() {
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
     fun setLastCapturedImageUri(imageUri: Uri?) {
-        _uiState.update { it.copy(lastCapturedImageUri = imageUri, isImageDeleted = false) }
+        _uiState.update { it.copy(imageUri = imageUri, isImageDeleted = false) }
     }
 
-    // TODO(yasith): Implement deletion
-    fun deleteImage() {
-        _uiState.update { it.copy(lastCapturedImageUri = null, isImageDeleted = true) }
+    fun deleteImage(contentResolver: ContentResolver) {
+        contentResolver.delete(uiState.value.imageUri!!, null, null)
+        _uiState.update { it.copy(imageUri = null, isImageDeleted = true) }
     }
 }
 
 data class PostCaptureUiState(
-    val lastCapturedImageUri: Uri? = null,
+    val imageUri: Uri? = null,
     val isImageDeleted: Boolean = false
 )

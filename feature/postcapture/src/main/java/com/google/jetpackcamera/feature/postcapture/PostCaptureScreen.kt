@@ -62,7 +62,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        uiState.lastCapturedImageUri?.let { uri ->
+        uiState.imageUri?.let { uri ->
             val bitmap = remember(uri) {
                 // TODO(yasith): Get the image rotation from the image
                 loadAndRotateBitmap(context, uri, 270f)
@@ -104,7 +104,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
         ) {
             // Delete Image Button
             IconButton(
-                onClick = { viewModel.deleteImage() },
+                onClick = { viewModel.deleteImage(context.contentResolver) },
                 modifier = Modifier
                     .size(56.dp)
                     .shadow(10.dp, CircleShape),
