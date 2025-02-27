@@ -26,6 +26,7 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
@@ -52,7 +53,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -120,7 +120,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
@@ -748,87 +747,92 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     }
 }
 
+// todo(kc): clean up animations
 @Composable
-fun DraggableLockSwitch(
+private fun DraggableLockSwitch(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
-    captureButtonSize: Dp,
+    switchCircleSize: Dp,
+    switchWidth: Dp,
     switchPosition: Float,
     onToggleSwitchPosition: () -> Unit,
     shouldBeLocked: () -> Boolean
 ) {
-    val switchCircleSize = captureButtonSize * .5f
-    val switchWidth = switchCircleSize * 2.5f // 100.dp
-    val switchHeight = switchCircleSize * 1.4f // 50.dp
-    if (captureButtonUiState == CaptureButtonUiState.Enabled.Recording.PressedRecording) {
-        // row containing switch and spacer
-        Row(modifier = modifier) {
-            Box(
-                modifier = Modifier
-                    .width(switchWidth)
-                    .height(switchHeight)
+    val switchHeight = (switchCircleSize * 1.4f)
+
+    Box(
+        modifier = modifier
+            .width(switchWidth)
+            .offset(x = -(switchWidth - switchCircleSize) / 2),
+        contentAlignment = Alignment.Center
+
+    ) {
+        Box(
+            contentAlignment = Alignment.CenterStart,
+            modifier = Modifier
+                .width(switchWidth)
+                .height(switchHeight)
+        ) {
+            AnimatedVisibility(
+                visible = captureButtonUiState ==
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                enter = fadeIn(),
+                exit = ExitTransition.None
             ) {
-                Box {
-                    // grey cylinder
-                    Box(
-                        Modifier
-                            .width(switchWidth)
-                            .height(switchHeight)
-                            .alpha(.37f)
-                            // clips to a rounded rectangle
-                            .clip(RoundedCornerShape(switchHeight / 2))
-                            .background(Color.Black)
-                    )
-                    // small moveable Circle
-                    Box(
-                        modifier = Modifier
-                            .size(switchCircleSize)
-                            .offset {
-                                IntOffset(
-                                    x = ((switchWidth - switchCircleSize) * switchPosition)
-                                        .roundToPx(),
-                                    y = ((switchHeight - switchCircleSize) / 2).roundToPx()
-                                )
-                            }
-                            .background(
-                                Color.Red,
-                                CircleShape
-                            )
-                    )
-                    // locked icon
-                    Icon(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .align(Alignment.CenterStart)
-                            .padding(start = 8.dp)
-                            .clickable(indication = null, interactionSource = null) {
-                                onToggleSwitchPosition()
-                            },
-                        tint = Color.White,
-                        imageVector = if (shouldBeLocked()) {
-                            Icons.Default.Lock
-                        } else {
-                            Icons.Default.LockOpen
-                        },
-                        contentDescription = null
+                // grey cylinder
+                Canvas(
+                    modifier = Modifier
+                        .size(switchWidth, switchHeight)
+                        .alpha(.37f)
+                ) {
+                    drawRoundRect(
+                        color = Color.Black,
+                        cornerRadius = CornerRadius((switchWidth * .5f).toPx())
                     )
                 }
             }
-            // keep everything centered without needing to calculate displacement
-            Spacer(
-                modifier = Modifier
-                    .height(switchHeight)
-                    .width(switchWidth - switchCircleSize)
-            )
-        }
-    } else {
-        Spacer(
-            modifier = Modifier
-                .height(switchHeight)
-                .width(
-                    switchWidth + (switchWidth - switchCircleSize)
+
+            // small moveable Circle remains behind lock icon but in front of the switch background
+
+            if (captureButtonUiState == CaptureButtonUiState.Enabled.Recording.PressedRecording) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = ((switchWidth - switchCircleSize) * switchPosition)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier.size(
+                            switchCircleSize
+                        ).background(Color.Red, CircleShape)
+                    )
+                }
+            }
+
+            // locked icon
+            AnimatedVisibility(
+                visible = captureButtonUiState ==
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                enter = fadeIn(),
+                exit = ExitTransition.None
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .size(switchHeight * .75f)
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp)
+                        .clickable(indication = null, interactionSource = null) {
+                            onToggleSwitchPosition()
+                        },
+                    tint = Color.White,
+                    imageVector = if (shouldBeLocked()) {
+                        Icons.Default.Lock
+                    } else {
+                        Icons.Default.LockOpen
+                    },
+                    contentDescription = null
                 )
-        )
+            }
+        }
     }
 }
 
@@ -855,8 +859,8 @@ fun CaptureButton(
         mutableStateOf(false)
     }
     var switchPosition by remember { mutableFloatStateOf(1f) } // 0f = left, 1f = right
-    val switchCircleSize = captureButtonSize * .5f
-    val switchWidth = switchCircleSize * 2.5f // 100.dp
+    val switchCircleSize = (captureButtonSize * .5f).dp
+    val switchWidth = (switchCircleSize * 2.75f)
 
     fun shouldBeLocked(): Boolean = switchPosition < .4f
     fun toggleSwitchPosition() = if (shouldBeLocked()) {
@@ -867,11 +871,12 @@ fun CaptureButton(
     }
 
     val currentColor = LocalContentColor.current
-    Box {
+    Box(contentAlignment = Alignment.Center) {
         DraggableLockSwitch(
             modifier = Modifier.align(Alignment.Center),
             captureButtonUiState = captureButtonUiState,
-            captureButtonSize = captureButtonSize.dp,
+            switchCircleSize = switchCircleSize,
+            switchWidth = switchWidth,
             switchPosition = switchPosition,
             onToggleSwitchPosition = { toggleSwitchPosition() },
             shouldBeLocked = { shouldBeLocked() }
@@ -954,7 +959,7 @@ fun CaptureButton(
                         onDragEnd = { switchPosition = if (shouldBeLocked()) 0f else 1f },
                         onDrag = { change, dragAmount ->
                             val newPosition =
-                                switchPosition + (dragAmount.x / switchWidth.dp.toPx())
+                                switchPosition + (dragAmount.x / switchWidth.toPx())
                             switchPosition = newPosition.coerceIn(0f, 1f)
                             change.consume()
                         }
