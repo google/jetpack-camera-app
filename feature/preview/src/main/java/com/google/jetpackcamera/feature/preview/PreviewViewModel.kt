@@ -420,17 +420,13 @@ class PreviewViewModel @AssistedInject constructor(
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
 
         // display different capture button UI depending on if recording is pressed or locked
-        is VideoRecordingState.Active.Recording -> if (lockedState) {
-            CaptureButtonUiState.Enabled.Recording.LockedRecording
-        } else {
-            CaptureButtonUiState.Enabled.Recording.PressedRecording
-        }
-        // todo: how to handle pause...
-        is VideoRecordingState.Active.Paused ->
-            CaptureButtonUiState
-                .Enabled.Recording.LockedRecording
+        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
+            if (lockedState) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording
+            } else {
+                CaptureButtonUiState.Enabled.Recording.PressedRecording
+            }
 
-        // todo: how to handle starting...
         VideoRecordingState.Starting ->
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
