@@ -410,7 +410,7 @@ private fun CaptureButton(
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
-        onCaptureImage = {
+        onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
                     when (previewMode) {
@@ -460,7 +460,7 @@ private fun CaptureButton(
                 onToggleQuickSettings()
             }
         },
-        onStartVideoRecording = {
+        onStartRecording = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 when (previewMode) {
                     is PreviewMode.StandardMode -> {
@@ -484,7 +484,7 @@ private fun CaptureButton(
                 }
             }
         },
-        onStopVideoRecording = {
+        onStopRecording = {
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
