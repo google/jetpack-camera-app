@@ -32,6 +32,7 @@ internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.RECORD_AUDIO)
     if (Build.VERSION.SDK_INT <= 28) {
         add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 }
 

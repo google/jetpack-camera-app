@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,44 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
-    compileSdk = libs.versions.compileSdk.get().toInt()
-
-    namespace = "com.google.jetpackcamera"
+    namespace = "com.google.jetpackcamera.feature.postcapture"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.google.jetpackcamera"
         minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
+        lint.targetSdk = libs.versions.targetSdk.get().toInt()
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
-
-    buildTypes {
-        getByName("debug") {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-        getByName("release") {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-        }
-        create("benchmark") {
-            initWith(buildTypes.getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
-        }
-    }
 
     flavorDimensions += "flavor"
     productFlavors {
@@ -74,16 +53,13 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 
     @Suppress("UnstableApiUsage")
     testOptions {
-        execution = "ANDROIDX_TEST_ORCHESTRATOR"
-
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -105,9 +81,9 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.tracing)
-    implementation(project(":core:common"))
-    implementation(project(":feature:postcapture"))
+
+    // Reflect
+    implementation(libs.kotlin.reflect)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -121,56 +97,37 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
 
-    // Compose - Integration with ViewModels
+    // Compose - Integration with ViewModels with Navigation and Hilt
+    implementation(libs.hilt.navigation.compose)
+
+    // Compose - Lifecycle utilities
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Compose - Integration with Activities
-    implementation(libs.androidx.activity.compose)
-
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
+    // noinspection TestManifestGradleConfiguration: required for release build unit tests
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.test.monitor)
+    implementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.rules)
-    androidTestImplementation(libs.androidx.uiautomator)
-    androidTestImplementation(libs.truth)
-    androidTestUtil(libs.androidx.orchestrator)
 
+    // Futures
+    implementation(libs.futures.ktx)
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.atomicfu)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
-
-    // Accompanist - Permissions
-    implementation(libs.accompanist.permissions)
-
-    // Jetpack Navigation
-    implementation(libs.androidx.navigation.compose)
-
-    // Access Settings data
-    implementation(project(":data:settings"))
-
-    // Camera Preview
-    implementation(project(":feature:preview"))
-
-    // Settings Screen
-    implementation(project(":feature:settings"))
-
-    // Permissions Screen
-    implementation(project(":feature:permissions"))
-
-    // benchmark
-    implementation(libs.androidx.profileinstaller)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
+    // Project dependencies
+    implementation(project(":core:common"))
+    testImplementation(project(":core:common"))
 }

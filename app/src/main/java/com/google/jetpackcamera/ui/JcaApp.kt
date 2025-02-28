@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
@@ -26,19 +27,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
+import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
+import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
@@ -113,6 +118,11 @@ private fun JetpackCameraNavHost(
             }
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+                onNavigateToPostCapture = { imageUri ->
+                    navController.navigate(
+                        "$POST_CAPTURE_ROUTE?imageUri=${Uri.encode(imageUri.toString())}"
+                    )
+                },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 previewMode = previewMode,
@@ -142,6 +152,29 @@ private fun JetpackCameraNavHost(
                     buildType = BuildConfig.BUILD_TYPE
                 ),
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            "$POST_CAPTURE_ROUTE?imageUri={imageUri}",
+            arguments = listOf(
+                navArgument("imageUri") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val imageUriString = backStackEntry.arguments?.getString("imageUri")
+
+            val imageUri = if (!imageUriString.isNullOrEmpty()) {
+                Uri.parse(
+                    imageUriString
+                )
+            } else {
+                null
+            }
+            PostCaptureScreen(
+                imageUri = imageUri
             )
         }
     }

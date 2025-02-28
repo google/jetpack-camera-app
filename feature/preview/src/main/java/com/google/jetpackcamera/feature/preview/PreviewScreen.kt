@@ -52,6 +52,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.common.getLastImageUri
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -81,6 +82,7 @@ private const val TAG = "PreviewScreen"
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToPostCapture: (uri: Uri?) -> Unit,
     previewMode: PreviewMode,
     isDebugMode: Boolean,
     modifier: Modifier = Modifier,
@@ -160,8 +162,17 @@ fun PreviewScreen(
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode
+                isDebugMode = isDebugMode,
+                onImageWellClick = { uri -> onNavigateToPostCapture(uri) }
             )
+
+            // TODO(yasith): Remove and use ImageRepository after implementing
+            LaunchedEffect(Unit) {
+                val lastCapturedImageUri = getLastImageUri(context)
+                lastCapturedImageUri?.let { uri ->
+                    viewModel.updateLastCapturedImageUri(uri)
+                }
+            }
         }
     }
 }
@@ -205,7 +216,8 @@ private fun ContentScreen(
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false
+    isDebugMode: Boolean = false,
+    onImageWellClick: (uri: Uri?) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -267,8 +279,9 @@ private fun ContentScreen(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
-                onLockVideoRecording = onLockVideoRecording,
-                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
+                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) },
+                onImageWellClick = onImageWellClick,
+                onLockVideoRecording = onLockVideoRecording
             )
 
             DebugOverlayComponent(
