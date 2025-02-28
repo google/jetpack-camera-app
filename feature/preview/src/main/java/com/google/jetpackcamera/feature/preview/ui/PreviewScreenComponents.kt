@@ -100,12 +100,14 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -766,11 +768,25 @@ fun CaptureButton(
     var isLongPressing by remember {
         mutableStateOf(false)
     }
+    var relativeDragOffset by remember { mutableStateOf(Offset.Unspecified) }
+    var globalCaptureButtonBounds = remember { mutableStateOf<Rect?>(null) }
+    var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
+    fun isDragAbove(): Boolean =
+        relativeCaptureButtonBounds?.let { it.top > relativeDragOffset.y } == true
+
+    fun isDragOutside(): Boolean = relativeCaptureButtonBounds?.let {
+        !it.contains(relativeDragOffset)
+    } == true
 
     val currentColor = LocalContentColor.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
+            .onGloballyPositioned { coordinates ->
+                val size = coordinates.size
+                relativeCaptureButtonBounds =
+                    Rect(0f, 0f, size.width.toFloat(), size.height.toFloat())
+            }
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -836,20 +852,27 @@ fun CaptureButton(
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
+                    onDragStart = { initialOffset -> relativeDragOffset = initialOffset },
                     onDrag = { change, offset ->
                         if (currentUiState.value ==
                             CaptureButtonUiState.Enabled.Recording.PressedRecording
                         ) {
-                            // todo(kc): enable drag zoom only when y is above bounds of the capture button
-                            var zoom = 0f
-                            zoom += offset.y * -0.01f // Adjust sensitivity
-                            zoom = zoom.coerceIn(-3f, 3f) // Limit zoom range
-                            onSetZoom(
-                                CameraZoomState.Ratio(ZoomChange.Increment(zoom))
-                            )
+                            relativeDragOffset =
+                                relativeDragOffset.let { Offset(it.x + offset.x, it.y + offset.y) }
+                            if (isDragAbove()) {
+                                // todo(kc): zoom should always return to the original when you drag
+                                //  back to the capture button.
+                                var zoom = 0f
+                                zoom += offset.y * -0.01f // Adjust sensitivity
+                                zoom = zoom.coerceIn(-3f, 3f) // Limit zoom range
+                                onSetZoom(
+                                    CameraZoomState.Ratio(ZoomChange.Increment(zoom))
+                                )
+                            }
                         }
                         Log.d(TAG, "dragging ${offset.y}")
-                    }
+                    },
+                    onDragEnd = { relativeDragOffset = Offset.Unspecified }
                 )
             }
             .size(captureButtonSize.dp)
