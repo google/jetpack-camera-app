@@ -142,7 +142,7 @@ fun PreviewScreen(
                 onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
-                onChangeZoomScale = viewModel::setZoom,
+                onZoomChange = viewModel::setZoom,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onSetStreamConfig = viewModel::setStreamConfig,
@@ -178,7 +178,7 @@ private fun ContentScreen(
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
-    onChangeZoomScale: (CameraZoomState) -> Unit = {},
+    onZoomChange: (CameraZoomState) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
@@ -233,7 +233,7 @@ private fun ContentScreen(
                 previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
-                onZoomChange = onChangeZoomScale,
+                onZoomChange = onZoomChange,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
@@ -260,6 +260,7 @@ private fun ContentScreen(
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
+                onSetZoom = onZoomChange,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
@@ -275,7 +276,7 @@ private fun ContentScreen(
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
                 previewUiState = previewUiState,
-                onChangeZoomScale = onChangeZoomScale
+                onChangeZoomScale = onZoomChange
             )
 
             // displays toast when there is a message to show

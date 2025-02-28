@@ -43,6 +43,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -750,6 +751,7 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 @Composable
 fun CaptureButton(
     modifier: Modifier = Modifier,
+    onSetZoom: (CameraZoomState) -> Unit,
     onCaptureImage: () -> Unit,
     onStartVideoRecording: () -> Unit,
     onStopVideoRecording: () -> Unit,
@@ -829,6 +831,24 @@ fun CaptureButton(
                             CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
                             }
                         }
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectDragGesturesAfterLongPress(
+                    onDrag = { change, offset ->
+                        if (currentUiState.value ==
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording
+                        ) {
+                            // todo(kc): enable drag zoom only when y is above bounds of the capture button
+                            var zoom = 0f
+                            zoom += offset.y * -0.01f // Adjust sensitivity
+                            zoom = zoom.coerceIn(-3f, 3f) // Limit zoom range
+                            onSetZoom(
+                                CameraZoomState.Ratio(ZoomChange.Increment(zoom))
+                            )
+                        }
+                        Log.d(TAG, "dragging ${offset.y}")
                     }
                 )
             }
