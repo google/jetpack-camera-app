@@ -22,6 +22,8 @@ import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
 import android.provider.MediaStore
+import java.io.File
+import java.io.FileNotFoundException
 
 /**
  * Retrieves the URI for the most recently added image whose filename starts with "JCA".
@@ -71,18 +73,28 @@ fun getLastImageUri(context: Context): Uri? {
  * @param degrees The number of degrees to rotate the image by.
  */
 fun loadAndRotateBitmap(context: Context, uri: Uri?, degrees: Float): Bitmap? {
-    uri?.let {
+    uri ?: return null
+
+    if (uri.scheme == "file") {
+        val file = File(uri.path ?: "")
+        if (!file.exists()) {
+            return null
+        }
+    }
+
+    return try {
         val bitmap = if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P) {
-            MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         } else {
-            val imageDecoderSource = ImageDecoder.createSource(context.contentResolver, it)
+            val imageDecoderSource = ImageDecoder.createSource(context.contentResolver, uri)
             ImageDecoder.decodeBitmap(imageDecoderSource)
         }
 
-        return bitmap?.let {
+        bitmap?.let {
             val matrix = Matrix().apply { postRotate(degrees) }
             Bitmap.createBitmap(it, 0, 0, it.width, it.height, matrix, true)
         }
+    } catch (e: FileNotFoundException) {
+        null
     }
-    return null
 }
