@@ -15,4 +15,12 @@
  */
 package com.google.jetpackcamera.data.media
 
-class LocalMediaRepository : MediaRepository
+class LocalMediaRepository : MediaRepository {
+    override suspend fun getLastCapturedMedia(): MediaDescriptor {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
+        TODO("Not yet implemented")
+    }
+}
