@@ -140,9 +140,10 @@ dependencies {
     implementation(libs.kotlinx.atomicfu)
 
     // Project dependencies
-    implementation(project(":data:settings"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
+    implementation(project(":data:media"))
+    implementation(project(":data:settings"))
     testImplementation(project(":core:common"))
 }
 
