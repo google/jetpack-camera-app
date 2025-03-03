@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Copyright (C) 2023 The Android Open Source Project
+  ~ Copyright (C) 2025 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -14,17 +14,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-      ~ Used for testing only. This can be moved to main manifest if file management is added
-      ~ to the app
-      -->
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"
-        android:minSdkVersion="33"
-        tools:ignore="SelectedPhotoAccess" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
-        android:minSdkVersion="33"
-        tools:ignore="SelectedPhotoAccess" />
 </manifest>
