@@ -47,6 +47,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.JetpackCamera"
+        android:requestLegacyExternalStorage="true"
         tools:targetApi="33">
         <profileable android:shell="true"/>
         <activity
