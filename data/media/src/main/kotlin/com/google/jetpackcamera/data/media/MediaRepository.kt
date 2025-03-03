@@ -13,11 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.data.media
+
+import android.graphics.Bitmap
+import android.net.Uri
 
 /**
  * Data layer for Media.
  */
 interface MediaRepository {
+    suspend fun getLastCapturedMedia() : MediaDescriptor
+    suspend fun load(mediaDescriptor: MediaDescriptor) : Media
 }
+
+/**
+ * Descriptors used for [Media].
+ */
+sealed class MediaDescriptor {
+    data object None : MediaDescriptor()
+    class Image(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor()
+    class Video(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor()
+}
+
+/**
+ * Media items that are supported by [MediaRepository].
+ */
+sealed class Media {
+    data object None : Media()
+    class Image(val bitmap: Bitmap?) : Media()
+    class Video(val uri: Uri) : Media()
+}
+
+

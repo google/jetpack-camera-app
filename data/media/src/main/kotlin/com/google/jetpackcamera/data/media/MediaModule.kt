@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.data.media
 
 import dagger.Module
@@ -31,5 +30,5 @@ class MediaModule {
 
     @Provides
     @Singleton
-    fun provideMediaRepository() : MediaRepository = LocalMediaRepository()
+    fun provideMediaRepository(): MediaRepository = LocalMediaRepository()
 }
