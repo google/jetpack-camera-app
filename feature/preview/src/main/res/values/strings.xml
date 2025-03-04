@@ -28,6 +28,10 @@
 
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
+    <!-- Capture Mode Text -->
+    <string name= "capture_mode_text_standard">Standard</string>
+    <string name= "capture_mode_text_video_only">Video Only</string>
+    <string name= "capture_mode_text_image_only">Image Only</string>
 
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
@@ -51,8 +55,10 @@
     <string name="toast_hdr_photo_unsupported_on_lens_multi_stream">Multi-stream mode does not support UltraHDR photo capture for current lens</string>
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
+    <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
 
 
+<!-- Quick Settings Text -->
     <string name="quick_settings_front_camera_text">FRONT</string>
     <string name="quick_settings_back_camera_text">BACK</string>
     <string name="quick_settings_front_camera_description">Front Camera</string>
@@ -80,10 +86,10 @@
     <string name="quick_settings_flash_on_description">Flash on</string>
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
-    <string name="quick_settings_capture_mode_single">Single Stream</string>
-    <string name="quick_settings_capture_mode_multi">Multi Stream</string>
-    <string name="quick_settings_capture_mode_single_description">Single-stream capture mode on</string>
-    <string name="quick_settings_capture_mode_multi_description">Multi-stream capture mode on</string>
+    <string name="quick_settings_stream_config_single">Single Stream</string>
+    <string name="quick_settings_stream_config_multi">Multi Stream</string>
+    <string name="quick_settings_stream_config_single_description">Single-stream capture mode on</string>
+    <string name="quick_settings_stream_config_multi_description">Multi-stream capture mode on</string>
 
     <string name="quick_settings_dropdown_open_description">Quick settings open</string>
     <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
@@ -97,4 +103,12 @@
     <string name="quick_settings_concurrent_camera_dual">DUAL</string>
     <string name="quick_settings_concurrent_camera_off_description">Concurrent cameras off</string>
     <string name="quick_settings_concurrent_camera_dual_description">Concurrent dual camera on</string>
+
+    <string name="quick_settings_capture_mode_standard">Standard Capture</string>
+    <string name="quick_settings_capture_mode_video_only">Video Only</string>
+    <string name="quick_settings_capture_mode_image_only">Image Only</string>
+    <string name="quick_settings_capture_mode_standard_description">Standard Capture</string>
+    <string name="quick_settings_capture_mode_video_only_description">Video only capture</string>
+    <string name="quick_settings_capture_mode_image_only_description">Image only capture</string>
+
 </resources>

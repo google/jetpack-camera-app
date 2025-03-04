@@ -200,10 +200,6 @@ class PreviewViewModel @AssistedInject constructor(
                         zoomScale = cameraState.zoomScale,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                        captureModeToggleUiState = getCaptureToggleUiState(
-                            systemConstraints,
-                            cameraAppSettings
-                        ),
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
                         debugUiState = DebugUiState(
@@ -229,6 +225,14 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState,
                             lockedState
+                        ),
+                        captureModeToggleUiState = getCaptureToggleUiState(
+                            systemConstraints,
+                            cameraAppSettings
+                        ),
+                        captureModeUiState = getCaptureModeUiState(
+                            systemConstraints,
+                            cameraAppSettings
                         )
                     )
                 }
@@ -409,6 +413,7 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
+
     fun getCaptureButtonUiState(
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
@@ -432,79 +437,158 @@ class PreviewViewModel @AssistedInject constructor(
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
     }
 
-    private fun getCaptureToggleUiState(
+    private fun getCaptureModeUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings
-    ): CaptureModeToggleUiState {
+    ): CaptureModeUiState {
         val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
             cameraAppSettings
         )
-        val hdrDynamicRangeSupported = cameraConstraints?.let {
-            it.supportedDynamicRanges.size > 1
-        } ?: false
-        val hdrImageFormatSupported =
-            cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)?.let {
-                it.size > 1
-            } ?: false
-        val isShown = previewMode is PreviewMode.ExternalImageCaptureMode ||
-            previewMode is PreviewMode.ExternalVideoCaptureMode ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
-        val enabled = previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-            hdrDynamicRangeSupported &&
-            hdrImageFormatSupported &&
-            cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
-        return if (isShown) {
-            val currentMode = if (
-                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-                previewMode is PreviewMode.ExternalImageCaptureMode ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-            ) {
-                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
+        val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+        val currentHdrDynamicRangeSupported =
+            if (isHdrOn) {
+                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
             } else {
-                CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO
+                true
             }
-            if (enabled) {
-                CaptureModeToggleUiState.Enabled(currentMode)
+
+        val currentHdrImageFormatSupported =
+            if (isHdrOn) {
+                cameraConstraints?.supportedImageFormatsMap?.get(
+                    cameraAppSettings.streamConfig
+                )?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
             } else {
-                CaptureModeToggleUiState.Disabled(
-                    currentMode,
-                    getCaptureToggleUiStateDisabledReason(
-                        currentMode,
-                        hdrDynamicRangeSupported,
-                        hdrImageFormatSupported,
+                true
+            }
+        val supportedCaptureModes = getSupportedCaptureModes(
+            cameraAppSettings,
+            isHdrOn,
+            currentHdrDynamicRangeSupported,
+            currentHdrImageFormatSupported
+        )
+        // if all capture modes are supported, return capturemodeuistate
+        if (supportedCaptureModes.containsAll(
+                listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+            )
+        ) {
+            return CaptureModeUiState.Enabled(currentSelection = cameraAppSettings.captureMode)
+        }
+        // if all capture modes are not supported, give disabledReason
+        // if image or video is not supported, default will also be disabled
+        else {
+            lateinit var defaultCaptureState: SingleSelectableState.Disabled
+            lateinit var imageCaptureState: SingleSelectableState
+            lateinit var videoCaptureState: SingleSelectableState
+            if (!supportedCaptureModes.contains(
+                    CaptureMode.VIDEO_ONLY
+                )
+            ) {
+                val disabledReason =
+                    getCaptureModeDisabledReason(
+                        disabledCaptureMode = CaptureMode.VIDEO_ONLY,
+                        hdrDynamicRangeSupported = currentHdrDynamicRangeSupported,
+                        hdrImageFormatSupported = currentHdrImageFormatSupported,
+                        systemConstraints = systemConstraints,
+                        cameraAppSettings.cameraLensFacing,
+                        cameraAppSettings.streamConfig,
+                        cameraAppSettings.concurrentCameraMode
+                    )
+
+                imageCaptureState = SingleSelectableState.Selectable
+                videoCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
+                defaultCaptureState =
+                    SingleSelectableState.Disabled(disabledReason = disabledReason)
+            } else if (!supportedCaptureModes.contains(CaptureMode.IMAGE_ONLY)) {
+                val disabledReason =
+                    getCaptureModeDisabledReason(
+                        disabledCaptureMode = CaptureMode.IMAGE_ONLY,
+                        currentHdrDynamicRangeSupported,
+                        currentHdrImageFormatSupported,
                         systemConstraints,
                         cameraAppSettings.cameraLensFacing,
                         cameraAppSettings.streamConfig,
                         cameraAppSettings.concurrentCameraMode
                     )
-                )
+
+                videoCaptureState = SingleSelectableState.Selectable
+                imageCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
+                defaultCaptureState =
+                    SingleSelectableState.Disabled(disabledReason = disabledReason)
+            } else {
+                videoCaptureState = SingleSelectableState.Selectable
+                imageCaptureState = SingleSelectableState.Selectable
+                defaultCaptureState =
+                    SingleSelectableState.Disabled(
+                        disabledReason = DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
+                    )
             }
-        } else {
-            CaptureModeToggleUiState.Invisible
+            return CaptureModeUiState.Enabled(
+                currentSelection = cameraAppSettings.captureMode,
+                videoOnlyCaptureState = videoCaptureState,
+                imageOnlyCaptureState = imageCaptureState,
+                defaultCaptureState = defaultCaptureState
+            )
         }
     }
 
-    private fun getCaptureToggleUiStateDisabledReason(
-        captureModeToggleUiState: CaptureModeToggleUiState.ToggleMode,
+    fun getCaptureToggleUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings
+    ): CaptureModeUiState = if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+        cameraAppSettings.dynamicRange == DynamicRange.HLG10
+    ) {
+        getCaptureModeUiState(systemConstraints, cameraAppSettings)
+    } else {
+        CaptureModeUiState.Unavailable
+    }
+
+    private fun getSupportedCaptureModes(
+        cameraAppSettings: CameraAppSettings,
+        isHdrOn: Boolean,
+        currentHdrDynamicRangeSupported: Boolean,
+        currentHdrImageFormatSupported: Boolean
+    ): List<CaptureMode> = if (
+        previewMode !is PreviewMode.ExternalImageCaptureMode &&
+        previewMode !is PreviewMode.ExternalVideoCaptureMode &&
+        currentHdrDynamicRangeSupported &&
+        currentHdrImageFormatSupported &&
+        cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
+    ) {
+        // do not allow both use cases to be bound if hdr is on
+        if (isHdrOn) {
+            listOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        } else {
+            listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+        }
+    } else if (
+        cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
+        previewMode is PreviewMode.ExternalImageCaptureMode ||
+        cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+    ) {
+        listOf(CaptureMode.IMAGE_ONLY)
+    } else {
+        listOf(CaptureMode.VIDEO_ONLY)
+    }
+
+    private fun getCaptureModeDisabledReason(
+        disabledCaptureMode: CaptureMode,
         hdrDynamicRangeSupported: Boolean,
         hdrImageFormatSupported: Boolean,
         systemConstraints: SystemConstraints,
         currentLensFacing: LensFacing,
         currentStreamConfig: StreamConfig,
         concurrentCameraMode: ConcurrentCameraMode
-    ): CaptureModeToggleUiState.DisabledReason {
-        when (captureModeToggleUiState) {
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO -> {
+    ): DisabledReason {
+        when (disabledCaptureMode) {
+            CaptureMode.IMAGE_ONLY -> {
                 if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
-                    return CaptureModeToggleUiState.DisabledReason
+                    return DisabledReason
                         .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
                 }
 
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                    return CaptureModeToggleUiState.DisabledReason
+                    return DisabledReason
                         .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
                 }
 
@@ -517,41 +601,44 @@ class PreviewViewModel @AssistedInject constructor(
                     ) {
                         return when (currentStreamConfig) {
                             StreamConfig.MULTI_STREAM ->
-                                CaptureModeToggleUiState.DisabledReason
+                                DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
 
                             StreamConfig.SINGLE_STREAM ->
-                                CaptureModeToggleUiState.DisabledReason
+                                DisabledReason
                                     .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
                         }
                     }
 
                     // Check if any other lens supports HDR image
                     if (systemConstraints.anySupportsUltraHdr { it != currentLensFacing }) {
-                        return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                        return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
                     }
 
                     // No lenses support HDR image on device
-                    return CaptureModeToggleUiState.DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
+                    return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
                 }
 
                 throw RuntimeException("Unknown DisabledReason for video mode.")
             }
 
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE -> {
+            CaptureMode.VIDEO_ONLY -> {
                 if (previewMode is PreviewMode.ExternalImageCaptureMode) {
-                    return CaptureModeToggleUiState.DisabledReason
+                    return DisabledReason
                         .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
                 }
 
                 if (!hdrDynamicRangeSupported) {
                     if (systemConstraints.anySupportsHdrDynamicRange { it != currentLensFacing }) {
-                        return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
+                        return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
                     }
-                    return CaptureModeToggleUiState.DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
+                    return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
                 }
 
                 throw RuntimeException("Unknown DisabledReason for image mode.")
+            }
+            CaptureMode.STANDARD -> {
+                TODO()
             }
         }
     }
@@ -796,7 +883,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
+    fun showSnackBarForDisabledHdrToggle(disabledReason: DisabledReason) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         viewModelScope.launch {
@@ -921,6 +1008,12 @@ class PreviewViewModel @AssistedInject constructor(
     fun setImageFormat(imageFormat: ImageOutputFormat) {
         viewModelScope.launch {
             cameraUseCase.setImageFormat(imageFormat)
+        }
+    }
+
+    fun setCaptureMode(captureMode: CaptureMode) {
+        viewModelScope.launch {
+            cameraUseCase.setCaptureMode(captureMode)
         }
     }
 

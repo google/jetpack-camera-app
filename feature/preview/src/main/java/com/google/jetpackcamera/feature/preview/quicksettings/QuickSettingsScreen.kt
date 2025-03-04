@@ -41,12 +41,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
@@ -55,6 +56,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickFlipCamera
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
@@ -64,6 +66,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGr
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
@@ -80,6 +83,7 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
  */
 @Composable
 fun QuickSettingsScreenOverlay(
+    modifier: Modifier = Modifier,
     previewUiState: PreviewUiState.Ready,
     currentCameraSettings: CameraAppSettings,
     toggleIsOpen: () -> Unit,
@@ -90,7 +94,7 @@ fun QuickSettingsScreenOverlay(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    modifier: Modifier = Modifier,
+    onCaptureModeClick: (CaptureMode) -> Unit,
     isOpen: Boolean = false
 ) {
     var focusedQuickSetting by remember {
@@ -142,7 +146,8 @@ fun QuickSettingsScreenOverlay(
                 onStreamConfigClick = onStreamConfigClick,
                 onDynamicRangeClick = onDynamicRangeClick,
                 onImageOutputFormatClick = onImageOutputFormatClick,
-                onConcurrentCameraModeClick = onConcurrentCameraModeClick
+                onConcurrentCameraModeClick = onConcurrentCameraModeClick,
+                onCaptureModeClick = onCaptureModeClick
             )
         }
     }
@@ -151,7 +156,8 @@ fun QuickSettingsScreenOverlay(
 // enum representing which individual quick setting is currently focused
 private enum class FocusedQuickSetting {
     NONE,
-    ASPECT_RATIO
+    ASPECT_RATIO,
+    CAPTURE_MODE
 }
 
 // todo: Add UI states for Quick Settings buttons
@@ -172,7 +178,8 @@ private fun ExpandedQuickSettingsUi(
     setFocusedQuickSetting: (FocusedQuickSetting) -> Unit,
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
-    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit
+    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
+    onCaptureModeClick: (CaptureMode) -> Unit
 ) {
     Column(
         modifier =
@@ -248,11 +255,11 @@ private fun ExpandedQuickSettingsUi(
                         fun shouldEnable(): Boolean = when {
                             currentCameraSettings.concurrentCameraMode !=
                                 ConcurrentCameraMode.OFF -> false
+
                             else -> (
-                                cameraConstraints?.hdrDynamicRangeSupported() == true &&
-                                    previewUiState.previewMode is PreviewMode.StandardMode
-                                ) ||
-                                cameraConstraints?.hdrImageFormatSupported() == true
+                                cameraConstraints?.hdrDynamicRangeSupported() == true ||
+                                    cameraConstraints?.hdrImageFormatSupported() == true
+                                )
                         }
 
                         QuickSetHdr(
@@ -265,7 +272,8 @@ private fun ExpandedQuickSettingsUi(
                             selectedImageOutputFormat = currentCameraSettings.imageFormat,
                             hdrDynamicRangeSupported =
                             cameraConstraints?.hdrDynamicRangeSupported() == true,
-                            previewMode = previewUiState.previewMode,
+                            hdrImageFormatSupported =
+                            cameraConstraints?.hdrImageFormatSupported() == true,
                             enabled = shouldEnable()
                         )
                     }
@@ -291,6 +299,18 @@ private fun ExpandedQuickSettingsUi(
                                     )
                         )
                     }
+
+                    add {
+                        QuickSetCaptureMode(
+                            modifier = Modifier,
+                            onSetCaptureMode = {
+                                setFocusedQuickSetting(
+                                    FocusedQuickSetting.CAPTURE_MODE
+                                )
+                            },
+                            captureModeUiState = previewUiState.captureModeUiState
+                        )
+                    }
                 }
             QuickSettingsGrid(quickSettingsButtons = displayedQuickSettings)
         }
@@ -299,6 +319,13 @@ private fun ExpandedQuickSettingsUi(
             FocusedQuickSetRatio(
                 setRatio = onAspectRatioClick,
                 currentRatio = currentCameraSettings.aspectRatio
+            )
+        }
+
+        AnimatedVisibility(visible = (focusedQuickSetting == FocusedQuickSetting.CAPTURE_MODE)) {
+            FocusedQuickSetCaptureMode(
+                onSetCaptureMode = onCaptureModeClick,
+                captureModeUiState = previewUiState.captureModeUiState
             )
         }
     }
@@ -314,7 +341,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 videoRecordingState = VideoRecordingState.Inactive(),
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
@@ -331,7 +358,8 @@ fun ExpandedQuickSettingsUiPreview() {
             onStreamConfigClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { }
+            onConcurrentCameraModeClick = { },
+            onCaptureModeClick = { }
         )
     }
 }
@@ -344,7 +372,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
@@ -357,15 +385,16 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             onStreamConfigClick = { },
             onDynamicRangeClick = { },
             onImageOutputFormatClick = { },
-            onConcurrentCameraModeClick = { }
+            onConcurrentCameraModeClick = { },
+            onCaptureModeClick = { }
         )
     }
 }
 
 private val TYPICAL_SYSTEM_CONSTRAINTS_WITH_HDR =
     TYPICAL_SYSTEM_CONSTRAINTS.copy(
-        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS
-            .perLensConstraints.entries.associate { (lensFacing, constraints) ->
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.entries
+            .associate { (lensFacing, constraints) ->
                 lensFacing to constraints.copy(
                     supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
                 )

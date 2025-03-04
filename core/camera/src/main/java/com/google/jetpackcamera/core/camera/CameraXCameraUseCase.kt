@@ -261,6 +261,7 @@ constructor(
                 .tryApplyStabilizationConstraints()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
+                .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
                 .tryApplyCaptureModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -374,10 +375,11 @@ constructor(
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings
-                                ) { imageCapture ->
-                                    imageCaptureUseCase = imageCapture
-                                }
+                                    sessionSettings,
+                                    onImageCaptureCreated = { imageCapture ->
+                                        imageCaptureUseCase = imageCapture
+                                    }
+                                )
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
@@ -595,17 +597,9 @@ constructor(
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                     CaptureMode.VIDEO_ONLY
-                } else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-                    CaptureMode.IMAGE_ONLY
-                } else if (dynamicRange == DynamicRange.HLG10) {
-                    CaptureMode.VIDEO_ONLY
                 }
-                // TODO(kc): the two elif statements above should be DELETED and the block below
-                //  should be used when a dedicated capture mode button is available
-
-                /*
-                 // if hdr is enabled, select an appropriate capture mode
-                 else if (dynamicRange == DynamicRange.HLG10 ||
+                // if hdr is enabled, select an appropriate capture mode
+                else if (dynamicRange == DynamicRange.HLG10 ||
                     imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
                 ) {
                     if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)) {
@@ -627,9 +621,7 @@ constructor(
                         // if only image is supported, change to image only
                         CaptureMode.IMAGE_ONLY
                     }
-                }
-                 */
-                else {
+                } else {
                     // if no dynamic range value is set, its OK to return the current value
                     defaultCaptureMode ?: return this
                 }
@@ -798,6 +790,7 @@ constructor(
             old?.copy(streamConfig = streamConfig)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureModeConstraints()
                 ?.tryApplyVideoQualityConstraints()
         }
     }

@@ -57,8 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
-import com.google.jetpackcamera.feature.preview.CaptureModeToggleUiState
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
+import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
@@ -66,10 +67,12 @@ import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -98,10 +101,11 @@ fun CameraControlsOverlay(
     modifier: Modifier = Modifier,
     zoomLevelDisplayState: ZoomLevelDisplayState = remember { ZoomLevelDisplayState() },
     onNavigateToSettings: () -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
@@ -167,13 +171,14 @@ fun CameraControlsOverlay(
                 isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
                 systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
+                onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
                 onChangeImageFormat = onChangeImageFormat,
-                onToggleWhenDisabled = onToggleWhenDisabled,
+                onDisabledCaptureMode = onDisabledCaptureMode,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
                 onLockVideoRecording = onLockVideoRecording
@@ -276,7 +281,8 @@ private fun ControlsBottom(
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
@@ -285,10 +291,7 @@ private fun ControlsBottom(
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
@@ -369,12 +372,12 @@ private fun ControlsBottom(
                     )
                 } else {
                     if (!isQuickSettingsOpen &&
-                        previewUiState.captureModeToggleUiState is CaptureModeToggleUiState.Visible
+                        previewUiState.captureModeToggleUiState is CaptureModeUiState.Enabled
                     ) {
                         CaptureModeToggleButton(
                             uiState = previewUiState.captureModeToggleUiState,
                             onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onToggleWhenDisabled,
+                            onToggleWhenDisabled = onDisabledCaptureMode,
                             modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                         )
                     }
@@ -494,27 +497,28 @@ private fun CaptureButton(
 
 @Composable
 private fun CaptureModeToggleButton(
-    uiState: CaptureModeToggleUiState.Visible,
+    uiState: CaptureModeUiState.Enabled,
     onChangeImageFormat: (ImageOutputFormat) -> Unit,
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit,
+    onToggleWhenDisabled: (DisabledReason) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val initialState =
-        when (uiState.currentMode) {
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE -> ToggleState.Left
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO -> ToggleState.Right
+        when (uiState.currentSelection) {
+            CaptureMode.IMAGE_ONLY -> ToggleState.Left
+            CaptureMode.VIDEO_ONLY -> ToggleState.Right
+            CaptureMode.STANDARD -> TODO("toggle should not be visible for STANDARD mode")
         }
     ToggleButton(
-        leftIcon = if (uiState.currentMode ==
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_IMAGE
+        leftIcon = if (uiState.currentSelection ==
+            CaptureMode.IMAGE_ONLY
         ) {
             rememberVectorPainter(image = Icons.Filled.CameraAlt)
         } else {
             rememberVectorPainter(image = Icons.Outlined.CameraAlt)
         },
-        rightIcon = if (uiState.currentMode ==
-            CaptureModeToggleUiState.ToggleMode.CAPTURE_TOGGLE_VIDEO
+        rightIcon = if (uiState.currentSelection ==
+            CaptureMode.VIDEO_ONLY
         ) {
             rememberVectorPainter(image = Icons.Filled.Videocam)
         } else {
@@ -529,10 +533,16 @@ private fun CaptureModeToggleButton(
             onChangeImageFormat(imageFormat)
         },
         onToggleWhenDisabled = {
-            check(uiState is CaptureModeToggleUiState.Disabled)
-            onToggleWhenDisabled(uiState.disabledReason)
+            val disabledReason: DisabledReason? =
+                (uiState.videoOnlyCaptureState as? SingleSelectableState.Disabled)?.disabledReason
+                    ?: (uiState.imageOnlyCaptureState as? SingleSelectableState.Disabled)
+                        ?.disabledReason
+            disabledReason?.let { onToggleWhenDisabled(it) }
         },
-        enabled = uiState is CaptureModeToggleUiState.Enabled,
+        // toggle only enabled when both capture modes are available
+        enabled =
+        uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
+            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable,
         leftIconDescription =
         stringResource(id = R.string.capture_mode_image_capture_content_description),
         rightIconDescription =
@@ -625,7 +635,7 @@ private fun Preview_ControlsBottom() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
@@ -646,7 +656,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
@@ -667,7 +677,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
@@ -688,7 +698,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
@@ -715,7 +725,7 @@ private fun Preview_ControlsBottom_Recording() {
             previewUiState = PreviewUiState.Ready(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+                captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
