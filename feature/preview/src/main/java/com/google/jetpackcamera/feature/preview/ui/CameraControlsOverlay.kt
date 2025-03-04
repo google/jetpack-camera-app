@@ -122,6 +122,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
@@ -181,8 +182,8 @@ fun CameraControlsOverlay(
                 onDisabledCaptureMode = onDisabledCaptureMode,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
+                onImageWellClick = onImageWellClick,
                 onLockVideoRecording = onLockVideoRecording
-
             )
         }
     }
@@ -289,6 +290,7 @@ private fun ControlsBottom(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
+    onImageWellClick: (uri: Uri?) -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -320,66 +322,86 @@ private fun ControlsBottom(
             }
         }
 
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Row that holds flip camera, capture button, and audio
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                // animation fades in/out this component based on quick settings
-                AnimatedVisibility(
-                    visible = !isQuickSettingsOpen,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+        Column {
+            if (!isQuickSettingsOpen &&
+                previewUiState.captureModeToggleUiState
+                    is CaptureModeUiState.Enabled
+            ) {
+                // TODO(yasith): Align to end of ImageWell based on alignment lines
+                Box(
+                    Modifier.align(Alignment.End).padding(end = 12.dp)
                 ) {
-                    if (videoRecordingState is VideoRecordingState.Inactive) {
-                        FlipCameraButton(
-                            modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
-                            onClick = onFlipCamera,
-                            lensFacing = previewUiState.currentCameraSettings.cameraLensFacing,
-                            // enable only when phone has front and rear camera
-                            enabledCondition = systemConstraints.availableLenses.size > 1
-                        )
-                    } else if (videoRecordingState is VideoRecordingState.Active
-                    ) {
-                        PauseResumeToggleButton(
-                            onSetPause = onSetPause,
-                            currentRecordingState = videoRecordingState
-                        )
-                    }
+                    CaptureModeToggleButton(
+                        uiState = previewUiState.captureModeToggleUiState,
+                        onChangeImageFormat = onChangeImageFormat,
+                        onToggleWhenDisabled = onDisabledCaptureMode,
+                        modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    )
                 }
             }
-            CaptureButton(
-                captureButtonUiState = previewUiState.captureButtonUiState,
-                previewMode = previewUiState.previewMode,
-                isQuickSettingsOpen = isQuickSettingsOpen,
-                onCaptureImageWithUri = onCaptureImageWithUri,
-                onToggleQuickSettings = onToggleQuickSettings,
-                onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                onLockVideoRecording = onLockVideoRecording
-            )
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                if (videoRecordingState is VideoRecordingState.Active) {
-                    AmplitudeVisualizer(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxSize(),
-                        onToggleAudio = onToggleAudio,
-                        audioUiState = previewUiState.audioUiState
-                    )
-                } else {
-                    if (!isQuickSettingsOpen &&
-                        previewUiState.captureModeToggleUiState is CaptureModeUiState.Enabled
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Row that holds flip camera, capture button, and audio
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    // animation fades in/out this component based on quick settings
+                    AnimatedVisibility(
+                        visible = !isQuickSettingsOpen,
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        CaptureModeToggleButton(
-                            uiState = previewUiState.captureModeToggleUiState,
-                            onChangeImageFormat = onChangeImageFormat,
-                            onToggleWhenDisabled = onDisabledCaptureMode,
-                            modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                        if (videoRecordingState is VideoRecordingState.Inactive) {
+                            FlipCameraButton(
+                                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                                onClick = onFlipCamera,
+                                lensFacing = previewUiState.currentCameraSettings.cameraLensFacing,
+                                // enable only when phone has front and rear camera
+                                enabledCondition = systemConstraints.availableLenses.size > 1
+                            )
+                        } else if (videoRecordingState is VideoRecordingState.Active
+                        ) {
+                            PauseResumeToggleButton(
+                                onSetPause = onSetPause,
+                                currentRecordingState = videoRecordingState
+                            )
+                        }
+                    }
+                }
+                CaptureButton(
+                    captureButtonUiState = previewUiState.captureButtonUiState,
+                    previewMode = previewUiState.previewMode,
+                    isQuickSettingsOpen = isQuickSettingsOpen,
+                    onCaptureImageWithUri = onCaptureImageWithUri,
+                    onToggleQuickSettings = onToggleQuickSettings,
+                    onStartVideoRecording = onStartVideoRecording,
+                    onStopVideoRecording = onStopVideoRecording,
+                    onLockVideoRecording = onLockVideoRecording
+                )
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    if (videoRecordingState is VideoRecordingState.Active) {
+                        AmplitudeVisualizer(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxSize(),
+                            onToggleAudio = onToggleAudio,
+                            audioUiState = previewUiState.audioUiState
                         )
+                    } else {
+                        Column {
+                            if (!isQuickSettingsOpen &&
+                                previewUiState.previewMode is PreviewMode.StandardMode
+                            ) {
+                                ImageWell(
+                                    modifier = Modifier.weight(1f),
+                                    imageWellUiState = previewUiState.imageWellUiState,
+                                    onClick = onImageWellClick
+                                )
+                            }
+                        }
                     }
                 }
             }
