@@ -15,11 +15,15 @@
  */
 package com.google.jetpackcamera.data.media
 
+import android.content.Context
+import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 /**
  * Dagger [Module] for Media dependencies.
@@ -30,5 +34,8 @@ class MediaModule {
 
     @Provides
     @Singleton
-    fun provideMediaRepository(): MediaRepository = LocalMediaRepository()
+    fun provideMediaRepository(
+        @ApplicationContext context: Context,
+        @IODispatcher ioDispatcher: CoroutineDispatcher
+    ): MediaRepository = LocalMediaRepository(context, ioDispatcher)
 }
