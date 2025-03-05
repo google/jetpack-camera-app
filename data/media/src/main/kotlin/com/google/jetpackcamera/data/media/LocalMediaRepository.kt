@@ -65,24 +65,28 @@ class LocalMediaRepository
     }
 
     private suspend fun loadImage(uri: Uri): Media = withContext(iODispatcher) {
-        return@withContext try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        try {
+            val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10 (API 29) and above: Use ImageDecoder
-                val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     BitmapFactory.decodeStream(inputStream)
                 }
-
-                Media.Image(bitmap)
             } else {
                 // Android 9 (API 28) and below: Use BitmapFactory
-                val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     BitmapFactory.decodeStream(inputStream)
                 }
-                Media.Image(bitmap)
             }
+
+            return@withContext if(loadedBitmap != null) {
+                 Media.Image(loadedBitmap)
+            } else {
+                 Media.Error
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
-            Media.None
+            return@withContext Media.Error
         }
     }
 

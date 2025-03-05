@@ -40,6 +40,7 @@ sealed class MediaDescriptor {
  */
 sealed class Media {
     data object None : Media()
-    class Image(val bitmap: Bitmap?) : Media()
+    data object Error : Media()
+    class Image(val bitmap: Bitmap) : Media()
     class Video(val uri: Uri) : Media()
 }
