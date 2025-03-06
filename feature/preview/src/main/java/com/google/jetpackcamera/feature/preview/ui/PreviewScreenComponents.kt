@@ -20,7 +20,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
-import android.view.ViewConfiguration
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -111,6 +110,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -137,14 +137,12 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -772,26 +770,22 @@ fun CaptureButton(
     val isLongPressing = remember { mutableStateOf<Boolean>(false) }
     var longPressJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
-
-    suspend fun onLongPress() {
-        delay(ViewConfiguration.getLongPressTimeout().toLong())
-        withContext(NonCancellable) {
-            if (isLongPressing.value == false) {
-                when (val current = currentUiState.value) {
-                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
-                        CaptureMode.STANDARD,
-                        CaptureMode.VIDEO_ONLY -> {
-                            isLongPressing.value = true
-                            Log.d(TAG, "Starting recording")
-                            onStartRecording()
-                        }
-
-                        CaptureMode.IMAGE_ONLY -> {
-                            isLongPressing.value = true
-                        }
+    val longPressTimeout = LocalViewConfiguration.current.longPressTimeoutMillis
+    fun onLongPress() {
+        if (isLongPressing.value == false) {
+            when (val current = currentUiState.value) {
+                is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                    CaptureMode.STANDARD,
+                    CaptureMode.VIDEO_ONLY -> {
+                        isLongPressing.value = true
+                        Log.d(TAG, "Starting recording")
+                        onStartRecording()
                     }
-                    else -> {}
+                    CaptureMode.IMAGE_ONLY -> {
+                        isLongPressing.value = true
+                    }
                 }
+                else -> {}
             }
         }
     }
@@ -799,7 +793,10 @@ fun CaptureButton(
     fun onPress(captureSource: CaptureSource) {
         if (firstKeyPressed.value == null) {
             firstKeyPressed.value = captureSource
-            longPressJob = scope.launch { onLongPress() }
+            longPressJob = scope.launch {
+                delay(longPressTimeout)
+                onLongPress()
+            }
         }
     }
 
@@ -861,7 +858,7 @@ private fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    var currentUiState by remember { mutableStateOf(captureButtonUiState) }
     var isCaptureButtonPressed by remember { mutableStateOf(false) }
     val currentColor = LocalContentColor.current
     Box(
@@ -886,7 +883,7 @@ private fun CaptureButton(
     ) {
         // now we draw center circle
         val centerShapeSize by animateDpAsState(
-            targetValue = when (val uiState = currentUiState.value) {
+            targetValue = when (val uiState = currentUiState) {
                 // inner circle fills white ring when locked
                 CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
                 // larger circle while recording, but not max size
@@ -908,7 +905,7 @@ private fun CaptureButton(
 
         // used to fade between red/white in the center of the capture button
         val animatedColor by animateColorAsState(
-            targetValue = when (val uiState = currentUiState.value) {
+            targetValue = when (val uiState = currentUiState) {
                 is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
                     CaptureMode.STANDARD -> Color.White
                     CaptureMode.IMAGE_ONLY -> Color.White
@@ -929,7 +926,7 @@ private fun CaptureButton(
                 .background(animatedColor)
                 .alpha(
                     if (isCaptureButtonPressed &&
-                        currentUiState.value ==
+                        currentUiState ==
                         CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
                     ) {
                         .5f // transparency to indicate click ONLY on IMAGE_ONLY
@@ -941,7 +938,7 @@ private fun CaptureButton(
         ) {}
         // central "square" stop icon
         AnimatedVisibility(
-            visible = currentUiState.value is
+            visible = currentUiState is
                 CaptureButtonUiState.Enabled.Recording.LockedRecording,
             enter = scaleIn(initialScale = .5f) + fadeIn(),
             exit = fadeOut()
@@ -967,8 +964,9 @@ private fun CaptureKeyHandler(
     onPress: (CaptureSource) -> Unit,
     onRelease: (CaptureSource) -> Unit
 ) {
-    val context = LocalContext.current
     val view = LocalView.current
+    val currentOnPress by rememberUpdatedState(onPress)
+    val currentOnRelease by rememberUpdatedState(onRelease)
 
     fun keyCodeToCaptureSource(keyCode: Int): CaptureSource = when (keyCode) {
         KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
@@ -976,18 +974,22 @@ private fun CaptureKeyHandler(
         else -> TODO("Keycode not assigned to CaptureSource")
     }
 
-    DisposableEffect(context) {
+    DisposableEffect(view) {
+        // todo call once per keydown
+        var keyActionDown: Int? = null
         val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
             when (event.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     val captureSource = keyCodeToCaptureSource(event.keyCode)
-                    if (event.action == KeyEvent.ACTION_DOWN) {
-                        // pressed down
-                        onPress(captureSource)
+                    // pressed down
+                    if (event.action == KeyEvent.ACTION_DOWN && keyActionDown == null) {
+                        keyActionDown = event.keyCode
+                        currentOnPress(captureSource)
                     }
                     // released
-                    if (event.action == KeyEvent.ACTION_UP) {
-                        onRelease(captureSource)
+                    if (event.action == KeyEvent.ACTION_UP && keyActionDown == event.keyCode) {
+                        keyActionDown = null
+                        currentOnRelease(captureSource)
                     }
                     // consume the event
                     true
