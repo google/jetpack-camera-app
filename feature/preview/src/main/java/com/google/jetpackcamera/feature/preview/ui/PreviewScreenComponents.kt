@@ -858,7 +858,7 @@ private fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    var currentUiState by remember { mutableStateOf(captureButtonUiState) }
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
     var isCaptureButtonPressed by remember { mutableStateOf(false) }
     val currentColor = LocalContentColor.current
     Box(
@@ -883,7 +883,7 @@ private fun CaptureButton(
     ) {
         // now we draw center circle
         val centerShapeSize by animateDpAsState(
-            targetValue = when (val uiState = currentUiState) {
+            targetValue = when (val uiState = currentUiState.value) {
                 // inner circle fills white ring when locked
                 CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
                 // larger circle while recording, but not max size
@@ -905,7 +905,7 @@ private fun CaptureButton(
 
         // used to fade between red/white in the center of the capture button
         val animatedColor by animateColorAsState(
-            targetValue = when (val uiState = currentUiState) {
+            targetValue = when (val uiState = currentUiState.value) {
                 is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
                     CaptureMode.STANDARD -> Color.White
                     CaptureMode.IMAGE_ONLY -> Color.White
@@ -926,7 +926,7 @@ private fun CaptureButton(
                 .background(animatedColor)
                 .alpha(
                     if (isCaptureButtonPressed &&
-                        currentUiState ==
+                        currentUiState.value ==
                         CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
                     ) {
                         .5f // transparency to indicate click ONLY on IMAGE_ONLY
@@ -938,7 +938,7 @@ private fun CaptureButton(
         ) {}
         // central "square" stop icon
         AnimatedVisibility(
-            visible = currentUiState is
+            visible = currentUiState.value is
                 CaptureButtonUiState.Enabled.Recording.LockedRecording,
             enter = scaleIn(initialScale = .5f) + fadeIn(),
             exit = fadeOut()
