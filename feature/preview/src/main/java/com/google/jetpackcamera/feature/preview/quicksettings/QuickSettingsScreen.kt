@@ -47,6 +47,7 @@ import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
@@ -302,7 +303,7 @@ private fun ExpandedQuickSettingsUi(
 
                     add {
                         QuickSetCaptureMode(
-                            modifier = Modifier,
+                            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE),
                             onSetCaptureMode = {
                                 setFocusedQuickSetting(
                                     FocusedQuickSetting.CAPTURE_MODE

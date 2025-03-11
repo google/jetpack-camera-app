@@ -128,7 +128,8 @@ fun FocusedQuickSetCaptureMode(
             arrayOf(
                 {
                     QuickSetCaptureMode(
-                        modifier = Modifier.testTag("todo"),
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
                         onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
                         assignedCaptureMode = CaptureMode.STANDARD,
                         captureModeUiState = captureModeUiState,
@@ -137,7 +138,8 @@ fun FocusedQuickSetCaptureMode(
                 },
                 {
                     QuickSetCaptureMode(
-                        modifier = Modifier.testTag("todo"),
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
                         onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
                         assignedCaptureMode = CaptureMode.VIDEO_ONLY,
                         captureModeUiState = captureModeUiState,
@@ -146,7 +148,8 @@ fun FocusedQuickSetCaptureMode(
                 },
                 {
                     QuickSetCaptureMode(
-                        modifier = Modifier.testTag("todo"),
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
                         onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
                         assignedCaptureMode = CaptureMode.IMAGE_ONLY,
                         captureModeUiState = captureModeUiState,

@@ -35,3 +35,12 @@ const val QUICK_SETTINGS_RATIO_3_4_BUTTON = "QuickSettingsRatio3:4Button"
 const val QUICK_SETTINGS_RATIO_9_16_BUTTON = "QuickSettingsRatio9:16Button"
 const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSettingsRatio1:1Button"
 const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSettingsRatioButton"
+
+// quick settings capture mode
+const val BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE = "btn_quicksetting_focus_capture_mode"
+const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD =
+    "btn_quicksetting_focused_capture_mode_option_standard"
+const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY =
+    "btn_quicksetting_focused_capture_mode_option_video_only"
+const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY =
+    "btn_quicksetting_focused_capture_mode_option_image_only"
