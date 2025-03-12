@@ -118,11 +118,7 @@ private fun JetpackCameraNavHost(
             }
             PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
-                onNavigateToPostCapture = { imageUri ->
-                    navController.navigate(
-                        "$POST_CAPTURE_ROUTE?imageUri=${Uri.encode(imageUri.toString())}"
-                    )
-                },
+                onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 previewMode = previewMode,
@@ -156,26 +152,9 @@ private fun JetpackCameraNavHost(
         }
 
         composable(
-            "$POST_CAPTURE_ROUTE?imageUri={imageUri}",
-            arguments = listOf(
-                navArgument("imageUri") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                }
-            )
-        ) { backStackEntry ->
-            val imageUriString = backStackEntry.arguments?.getString("imageUri")
-
-            val imageUri = if (!imageUriString.isNullOrEmpty()) {
-                Uri.parse(
-                    imageUriString
-                )
-            } else {
-                null
-            }
-            PostCaptureScreen(
-                imageUri = imageUri
-            )
+            POST_CAPTURE_ROUTE,
+        ) {
+            PostCaptureScreen()
         }
     }
 }
