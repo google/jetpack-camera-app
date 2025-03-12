@@ -64,6 +64,9 @@ android {
                 }
             }
         }
+        unitTests {
+            isReturnDefaultValues = true
+        }
     }
 }
 
@@ -72,16 +75,15 @@ dependencies {
 
     // Hilt
     implementation(libs.dagger.hilt.android)
+    implementation(libs.core.ktx)
     kapt(libs.dagger.hilt.compiler)
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
     testImplementation(libs.truth)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
 
     // Project dependencies
     implementation(project(":core:common"))
