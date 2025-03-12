@@ -17,6 +17,7 @@ package com.google.jetpackcamera.data.media
 
 import android.content.Context
 import com.google.jetpackcamera.core.common.IODispatcher
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,12 +31,11 @@ import kotlinx.coroutines.CoroutineDispatcher
  */
 @Module
 @InstallIn(SingletonComponent::class)
-class MediaModule {
+interface MediaModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideMediaRepository(
-        @ApplicationContext context: Context,
-        @IODispatcher ioDispatcher: CoroutineDispatcher
-    ): MediaRepository = LocalMediaRepository(context, ioDispatcher)
+    fun bindsMediaRepository(
+        localMediaRepository: LocalMediaRepository
+    ): MediaRepository
 }
