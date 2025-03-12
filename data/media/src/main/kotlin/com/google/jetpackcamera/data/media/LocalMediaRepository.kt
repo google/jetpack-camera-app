@@ -24,13 +24,14 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Size
 import com.google.jetpackcamera.core.common.IODispatcher
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class LocalMediaRepository
 @Inject constructor(
-    private val context: Context,
+    @ApplicationContext private val context: Context,
     @IODispatcher private val iODispatcher: CoroutineDispatcher
 ) : MediaRepository {
 

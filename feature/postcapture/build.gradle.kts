@@ -16,6 +16,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -111,6 +113,10 @@ dependencies {
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.compose.junit)
 
+    // Hilt
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -129,5 +135,11 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
+    implementation(project(":data:media"))
     testImplementation(project(":core:common"))
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }
