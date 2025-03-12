@@ -22,8 +22,8 @@ import android.net.Uri
  * Data layer for Media.
  */
 interface MediaRepository {
-    suspend fun getLastCapturedMedia() : MediaDescriptor
-    suspend fun load(mediaDescriptor: MediaDescriptor) : Media
+    suspend fun getLastCapturedMedia(): MediaDescriptor
+    suspend fun load(mediaDescriptor: MediaDescriptor): Media
 }
 
 /**
@@ -43,5 +43,3 @@ sealed class Media {
     class Image(val bitmap: Bitmap?) : Media()
     class Video(val uri: Uri) : Media()
 }
-
-
