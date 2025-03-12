@@ -29,6 +29,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
@@ -92,7 +93,8 @@ class PreviewViewModel @AssistedInject constructor(
     @Assisted val isDebugMode: Boolean,
     private val cameraUseCase: CameraUseCase,
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: ConstraintsRepository
+    private val constraintsRepository: ConstraintsRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
@@ -237,11 +239,15 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun updateLastCapturedImageUri(uri: Uri) {
+    fun updateLastCapturedMedia() {
         viewModelScope.launch {
+            val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
             _previewUiState.update { old ->
-                (old as PreviewUiState.Ready)
-                    .copy(imageWellUiState = ImageWellUiState.LastCapture(uri))
+                (old as PreviewUiState.Ready).copy(
+                    imageWellUiState = ImageWellUiState.LastCapture(
+                        mediaDescriptor = lastCapturedMediaDescriptor
+                    )
+                ) ?: old
             }
         }
     }
@@ -745,9 +751,7 @@ class PreviewViewModel @AssistedInject constructor(
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
-                    savedUri?.let {
-                        updateLastCapturedImageUri(it)
-                    }
+                    updateLastCapturedMedia()
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
                 },
                 onFailure = { exception ->
