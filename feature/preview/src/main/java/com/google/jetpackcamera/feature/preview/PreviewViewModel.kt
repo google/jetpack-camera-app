@@ -1025,6 +1025,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 withDismissAction = true,
                                 testTag = VIDEO_CAPTURE_SUCCESS_TAG
                             )
+                            updateLastCapturedMedia()
                         }
 
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecordError -> {
