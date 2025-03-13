@@ -19,6 +19,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,11 +51,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
 private const val TAG = "PostCaptureScreen"
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     Log.d(TAG, "PostCaptureScreen")
@@ -88,10 +93,11 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                 }
             }
             is Media.Video -> {
-                Text(
-                    text = "Video support pending",
-                    modifier = Modifier.align(Alignment.Center)
+                PlayerSurface(
+                    player = viewModel.player,
+                    surfaceType = SURFACE_TYPE_SURFACE_VIEW
                 )
+                viewModel.playVideo()
             }
             Media.None -> {
                 Text(
