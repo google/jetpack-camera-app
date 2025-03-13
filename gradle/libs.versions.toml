@@ -27,6 +27,7 @@ androidxDatastore = "1.1.1"
 androidxGraphicsCore = "1.0.2"
 androidxHiltNavigationCompose = "1.2.0"
 androidxLifecycle = "2.8.7"
+androidxMedia3 = "1.6.0-beta01"
 androidxNavigationCompose = "2.8.4"
 androidxProfileinstaller = "1.4.1"
 androidxTestEspresso = "3.6.1"
@@ -58,6 +59,8 @@ androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTe
 androidx-lifecycle-livedata = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "androidxMedia3" }
+androidx-media3-ui-compose = { module = "androidx.media3:media3-ui-compose", version.ref = "androidxMedia3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
 androidx-orchestrator = { module = "androidx.test:orchestrator", version.ref = "orchestrator" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "androidxProfileinstaller" }
