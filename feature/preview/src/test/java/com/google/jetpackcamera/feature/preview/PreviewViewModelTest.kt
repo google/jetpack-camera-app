@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
+import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -54,7 +55,8 @@ class PreviewViewModelTest {
             false,
             cameraUseCase = cameraUseCase,
             constraintsRepository = constraintsRepository,
-            settingsRepository = FakeSettingsRepository
+            settingsRepository = FakeSettingsRepository,
+            mediaRepository = FakeMediaRepository
         )
         advanceUntilIdle()
     }
