@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.postcapture
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,15 +51,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.data.media.Media
-import android.util.Log
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
 private const val TAG = "PostCaptureScreen"
 
 @Composable
-fun PostCaptureScreen(
-    viewModel: PostCaptureViewModel = hiltViewModel()
-) {
+fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     Log.d(TAG, "PostCaptureScreen")
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
@@ -69,7 +67,7 @@ fun PostCaptureScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when(val media = uiState.media) {
+        when (val media = uiState.media) {
             is Media.Image -> {
                 val bitmap = media.bitmap
                 Canvas(modifier = Modifier.fillMaxSize()) {
@@ -94,8 +92,10 @@ fun PostCaptureScreen(
                 }
             }
             is Media.Video -> {
-                Text(text = "Video support pending",
-                        modifier = Modifier.align(Alignment.Center))
+                Text(
+                    text = "Video support pending",
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
             Media.None -> {
                 Text(text = "No Media Captured", modifier = Modifier.align(Alignment.Center))
@@ -140,7 +140,7 @@ fun PostCaptureScreen(
                         shareImage(context, mediaDescriptor.uri)
                     }
 
-                    if(mediaDescriptor is MediaDescriptor.Video) {
+                    if (mediaDescriptor is MediaDescriptor.Video) {
                         shareImage(context, mediaDescriptor.uri)
                     }
                 },
