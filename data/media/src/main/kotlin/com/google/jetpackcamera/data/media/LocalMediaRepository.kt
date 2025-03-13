@@ -79,12 +79,11 @@ class LocalMediaRepository
                 }
             }
 
-            return@withContext if(loadedBitmap != null) {
-                 Media.Image(loadedBitmap)
+            return@withContext if (loadedBitmap != null) {
+                Media.Image(loadedBitmap)
             } else {
-                 Media.Error
+                Media.Error
             }
-
         } catch (e: Exception) {
             e.printStackTrace()
             return@withContext Media.Error
