@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.graphics.RectF
-import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -43,10 +42,9 @@ fun ImageWell(
 ) {
     when (imageWellUiState) {
         is ImageWellUiState.LastCapture -> {
-
-            val bitmap = when(imageWellUiState.mediaDescriptor) {
+            val bitmap = when (imageWellUiState.mediaDescriptor) {
                 is MediaDescriptor.Image -> imageWellUiState.mediaDescriptor.thumbnail
-                is MediaDescriptor.Video ->  imageWellUiState.mediaDescriptor.thumbnail
+                is MediaDescriptor.Video -> imageWellUiState.mediaDescriptor.thumbnail
                 is MediaDescriptor.None -> null
             }
 

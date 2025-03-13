@@ -30,13 +30,15 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PostCaptureViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PostCaptureUiState(
-        mediaDescriptor = MediaDescriptor.None,
-        media = Media.None
-    ))
+    private val _uiState = MutableStateFlow(
+        PostCaptureUiState(
+            mediaDescriptor = MediaDescriptor.None,
+            media = Media.None
+        )
+    )
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
@@ -50,7 +52,7 @@ class PostCaptureViewModel @Inject constructor(
     }
 
     fun deleteMedia(contentResolver: ContentResolver) {
-        when(val mediaDescriptor = uiState.value.mediaDescriptor) {
+        when (val mediaDescriptor = uiState.value.mediaDescriptor) {
             is MediaDescriptor.Image -> contentResolver.delete(mediaDescriptor.uri, null, null)
             is MediaDescriptor.Video -> contentResolver.delete(mediaDescriptor.uri, null, null)
             MediaDescriptor.None -> {}
@@ -61,5 +63,5 @@ class PostCaptureViewModel @Inject constructor(
 
 data class PostCaptureUiState(
     val mediaDescriptor: MediaDescriptor,
-    val media : Media
+    val media: Media
 )
