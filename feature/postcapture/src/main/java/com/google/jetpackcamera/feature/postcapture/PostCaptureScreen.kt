@@ -17,8 +17,11 @@ package com.google.jetpackcamera.feature.postcapture
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import android.view.Display.HdrCapabilities.HDR_TYPE_HLG
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -63,7 +66,10 @@ private const val TAG = "PostCaptureScreen"
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
+fun PostCaptureScreen(
+    onRequestWindowColorMode: (Int) -> Unit = {},
+    viewModel: PostCaptureViewModel = hiltViewModel()
+) {
     Log.d(TAG, "PostCaptureScreen")
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
@@ -103,6 +109,20 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                         presentationState.videoSizeDp
                     )
                 )
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val capabilities =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            context.display.mode.supportedHdrTypes
+                        } else {
+                            context.display.hdrCapabilities?.supportedHdrTypes ?: intArrayOf()
+                        }
+
+                    if (capabilities.contains(HDR_TYPE_HLG)) {
+                        Log.d(TAG, "HLG is supported, enabling")
+                        onRequestWindowColorMode(ActivityInfo.COLOR_MODE_HDR)
+                    }
+                }
                 viewModel.playVideo()
             }
             Media.None -> {
