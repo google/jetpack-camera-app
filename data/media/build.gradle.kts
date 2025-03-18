@@ -81,6 +81,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+
+
+    // Project dependencies
+    implementation(project(":core:common"))
 }
 
 // Allow references to generated code
