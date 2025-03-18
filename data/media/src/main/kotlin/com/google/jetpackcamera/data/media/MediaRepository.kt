@@ -28,18 +28,26 @@ interface MediaRepository {
 
 /**
  * Descriptors used for [Media].
+ *
+ * Media descriptors contain a reference to a [Media] item that's not yet loaded.
  */
-sealed class MediaDescriptor {
-    data object None : MediaDescriptor()
-    class Image(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor()
-    class Video(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor()
+sealed interface MediaDescriptor {
+    data object None : MediaDescriptor
+    class Image(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
+    class Video(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
 }
 
 /**
  * Media items that are supported by [MediaRepository].
+ *
+ * [Image] will have the bitmap data loaded.
+ * [Video] is still a reference to the video file, will switch to a loaded version later on.
+ *
+ * TODO(yasith): Load the video data to the Video object.
  */
-sealed class Media {
-    data object None : Media()
-    class Image(val bitmap: Bitmap?) : Media()
-    class Video(val uri: Uri) : Media()
+sealed interface Media {
+    data object None : Media
+    data object Error : Media
+    class Image(val bitmap: Bitmap) : Media
+    class Video(val uri: Uri) : Media
 }
