@@ -16,31 +16,56 @@
 package com.google.jetpackcamera.feature.postcapture
 
 import android.content.ContentResolver
-import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.jetpackcamera.data.media.Media
+import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PostCaptureViewModel @Inject constructor() : ViewModel() {
+class PostCaptureViewModel @Inject constructor(
+    private val mediaRepository: MediaRepository
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PostCaptureUiState())
-    val uiState: StateFlow<PostCaptureUiState> = _uiState
-
-    fun setLastCapturedImageUri(imageUri: Uri?) {
-        _uiState.update { it.copy(imageUri = imageUri, isImageDeleted = false) }
+    init {
+        getLastCapture()
     }
 
-    fun deleteImage(contentResolver: ContentResolver) {
-        contentResolver.delete(uiState.value.imageUri!!, null, null)
-        _uiState.update { it.copy(imageUri = null, isImageDeleted = true) }
+    private val _uiState = MutableStateFlow(
+        PostCaptureUiState(
+            mediaDescriptor = MediaDescriptor.None,
+            media = Media.None
+        )
+    )
+
+    val uiState: StateFlow<PostCaptureUiState> = _uiState
+
+    fun getLastCapture() {
+        viewModelScope.launch {
+            val mediaDescriptor = mediaRepository.getLastCapturedMedia()
+            val media = mediaRepository.load(mediaDescriptor)
+
+            _uiState.update { it.copy(mediaDescriptor = mediaDescriptor, media = media) }
+        }
+    }
+
+    fun deleteMedia(contentResolver: ContentResolver) {
+        when (val mediaDescriptor = uiState.value.mediaDescriptor) {
+            is MediaDescriptor.Image -> contentResolver.delete(mediaDescriptor.uri, null, null)
+            is MediaDescriptor.Video -> contentResolver.delete(mediaDescriptor.uri, null, null)
+            MediaDescriptor.None -> {}
+        }
+        _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
     }
 }
 
 data class PostCaptureUiState(
-    val imageUri: Uri? = null,
-    val isImageDeleted: Boolean = false
+    val mediaDescriptor: MediaDescriptor,
+    val media: Media
 )
