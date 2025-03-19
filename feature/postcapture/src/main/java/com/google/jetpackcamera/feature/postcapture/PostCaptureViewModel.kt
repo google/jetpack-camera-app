@@ -77,6 +77,7 @@ class PostCaptureViewModel @Inject constructor(
             val mediaItem = MediaItem.fromUri(media.uri)
             player.setMediaItem(mediaItem)
             player.prepare()
+            player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE)
             player.play()
         }
     }
