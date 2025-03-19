@@ -38,7 +38,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,6 +47,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.jetpackcamera.data.media.Media
@@ -61,10 +61,6 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        viewModel.getLastCapture()
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (val media = uiState.media) {
@@ -98,10 +94,16 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                 )
             }
             Media.None -> {
-                Text(text = "No Media Captured", modifier = Modifier.align(Alignment.Center))
+                Text(
+                    text = stringResource(R.string.no_media_available),
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
             Media.Error -> {
-                Text(text = "Error loading media", modifier = Modifier.align(Alignment.Center))
+                Text(
+                    text = stringResource(R.string.error_loading_media),
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
 
