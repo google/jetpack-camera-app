@@ -37,7 +37,7 @@ import kotlin.math.min
 @Composable
 fun ImageWell(
     modifier: Modifier = Modifier,
-    imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
+    imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
     onClick: () -> Unit
 ) {
     when (imageWellUiState) {
@@ -96,14 +96,14 @@ fun ImageWell(
             }
         }
 
-        is ImageWellUiState.NoPreviousCapture -> {
+        is ImageWellUiState.Unavailable -> {
         }
     }
 }
 
 // TODO(yasith): Add support for Video
 sealed interface ImageWellUiState {
-    data object NoPreviousCapture : ImageWellUiState
+    data object Unavailable : ImageWellUiState
 
     data class LastCapture(val mediaDescriptor: MediaDescriptor) : ImageWellUiState
 }

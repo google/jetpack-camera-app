@@ -33,6 +33,10 @@ class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
+    init {
+        getLastCapture()
+    }
+
     private val _uiState = MutableStateFlow(
         PostCaptureUiState(
             mediaDescriptor = MediaDescriptor.None,
