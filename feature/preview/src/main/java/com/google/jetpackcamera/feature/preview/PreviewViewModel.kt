@@ -59,6 +59,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.LinkedList
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
@@ -79,7 +80,6 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.LinkedList
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -716,12 +716,14 @@ class PreviewViewModel @AssistedInject constructor(
             (previewUiState.value as PreviewUiState.Ready).previewMode is
                 PreviewMode.ExternalVideoCaptureMode
         ) {
-            addSnackBarData(SnackbarData(
-                cookie = "Image-ExternalVideoCaptureMode",
-                stringResource = R.string.toast_image_capture_external_unsupported,
-                withDismissAction = true,
-                testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-            ))
+            addSnackBarData(
+                SnackbarData(
+                    cookie = "Image-ExternalVideoCaptureMode",
+                    stringResource = R.string.toast_image_capture_external_unsupported,
+                    withDismissAction = true,
+                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                )
+            )
             return
         }
         Log.d(TAG, "captureImageWithUri")
