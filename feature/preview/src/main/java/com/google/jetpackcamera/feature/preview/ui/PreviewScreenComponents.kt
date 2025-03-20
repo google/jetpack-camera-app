@@ -765,24 +765,24 @@ fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    var currentUiState = remember { mutableStateOf(captureButtonUiState) }
-    var firstKeyPressed by remember { mutableStateOf<CaptureSource?>(null) }
-    var isLongPressing by remember { mutableStateOf<Boolean>(false) }
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
+    val isLongPressing = remember { mutableStateOf<Boolean>(false) }
     var longPressJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     val longPressTimeout = LocalViewConfiguration.current.longPressTimeoutMillis
     fun onLongPress() {
-        if (isLongPressing == false) {
+        if (isLongPressing.value == false) {
             when (val current = currentUiState.value) {
                 is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                     CaptureMode.STANDARD,
                     CaptureMode.VIDEO_ONLY -> {
-                        isLongPressing = true
+                        isLongPressing.value = true
                         Log.d(TAG, "Starting recording")
                         onStartRecording()
                     }
                     CaptureMode.IMAGE_ONLY -> {
-                        isLongPressing = true
+                        isLongPressing.value = true
                     }
                 }
                 else -> {}
@@ -791,8 +791,8 @@ fun CaptureButton(
     }
 
     fun onPress(captureSource: CaptureSource) {
-        if (firstKeyPressed == null) {
-            firstKeyPressed = captureSource
+        if (firstKeyPressed.value == null) {
+            firstKeyPressed.value = captureSource
             longPressJob = scope.launch {
                 delay(longPressTimeout)
                 onLongPress()
@@ -802,8 +802,8 @@ fun CaptureButton(
 
     fun onKeyUp(captureSource: CaptureSource) {
         // releasing while pressed recording
-        if (firstKeyPressed == captureSource) {
-            if (isLongPressing) {
+        if (firstKeyPressed.value == captureSource) {
+            if (isLongPressing.value) {
                 if (currentUiState.value is
                         CaptureButtonUiState.Enabled.Recording.PressedRecording
                 ) {
@@ -832,8 +832,8 @@ fun CaptureButton(
             }
             longPressJob?.cancel()
             longPressJob = null
-            isLongPressing = false
-            firstKeyPressed = null
+            isLongPressing.value = false
+            firstKeyPressed.value = null
         }
     }
 
@@ -971,10 +971,11 @@ private fun CaptureKeyHandler(
     fun keyCodeToCaptureSource(keyCode: Int): CaptureSource = when (keyCode) {
         KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
         KeyEvent.KEYCODE_VOLUME_DOWN -> CaptureSource.VOLUME_DOWN
-        else -> TODO("Keycode `$keyCode` not assigned to CaptureSource")
+        else -> TODO("Keycode not assigned to CaptureSource")
     }
 
     DisposableEffect(view) {
+        // todo call once per keydown
         var keyActionDown: Int? = null
         val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
             when (event.keyCode) {
