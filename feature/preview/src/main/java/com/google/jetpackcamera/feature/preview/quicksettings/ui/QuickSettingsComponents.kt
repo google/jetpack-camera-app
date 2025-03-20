@@ -171,7 +171,7 @@ fun QuickSetCaptureMode(
     assignedCaptureMode: CaptureMode?,
     isHighlightEnabled: Boolean = false
 ) {
-    if(captureModeUiState is CaptureModeUiState.Enabled) {
+    if (captureModeUiState is CaptureModeUiState.Enabled) {
         val captureToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
         val enum = when (captureToUse) {
             CaptureMode.STANDARD -> CameraCaptureMode.STANDARD

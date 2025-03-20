@@ -299,7 +299,11 @@ private fun ExpandedQuickSettingsUi(
                                 previewUiState.previewMode
                                     !is PreviewMode.ExternalImageCaptureMode &&
                                 (
-                                    (previewUiState.captureModeUiState as? CaptureModeUiState.Enabled)?.currentSelection !=
+                                    (
+                                        previewUiState.captureModeUiState as?
+                                            CaptureModeUiState.Enabled
+                                        )
+                                        ?.currentSelection !=
                                         CaptureMode.IMAGE_ONLY
                                     ) ==
                                 true &&

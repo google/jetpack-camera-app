@@ -221,7 +221,8 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
         .fetchSemanticsNode().let { node ->
             node.config[SemanticsProperties.ContentDescription].any { description ->
                 block(description)?.let { result ->
-                    return@checkComponentContentDescriptionState result // Return the T value if block returns non-null.
+                    // Return the T value if block returns non-null.
+                    return@checkComponentContentDescriptionState result
                 } ?: false
             }
             throw AssertionError("Unable to determine state from quick settingz")
@@ -236,7 +237,8 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
             block(node.config[SemanticsProperties.StateDescription])?.let { result ->
-                return@checkComponentStateDescriptionState result // Return the T value if block returns non-null.
+                // Return the T value if block returns non-null.
+                return@checkComponentStateDescriptionState result
             } ?: false
             throw AssertionError("Unable to determine state from component")
         }
@@ -296,7 +298,6 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
             "Concurrent camera button is not visible when expected."
         ).let { node ->
             node.config[SemanticsProperties.ContentDescription].any { description ->
-                println("hellodello $description")
                 when (description) {
                     getResString(R.string.quick_settings_description_concurrent_camera_off) -> {
                         return@let ConcurrentCameraMode.OFF
