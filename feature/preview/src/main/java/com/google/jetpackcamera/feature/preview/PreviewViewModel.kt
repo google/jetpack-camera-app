@@ -79,6 +79,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.LinkedList
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -673,19 +674,28 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun showExternalVideoCaptureUnsupportedToast() {
+    private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
             _previewUiState.update { old ->
+                val newQueue = LinkedList((old as? PreviewUiState.Ready)?.snackBarsToShow!!)
+                newQueue.add(snackBarData)
+                Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
                 (old as? PreviewUiState.Ready)?.copy(
-                    snackBarToShow = SnackbarData(
-                        cookie = "Image-ExternalVideoCaptureMode",
-                        stringResource = R.string.toast_image_capture_external_unsupported,
-                        withDismissAction = true,
-                        testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                    )
+                    snackBarsToShow = newQueue
                 ) ?: old
             }
         }
+    }
+
+    private fun showExternalVideoCaptureUnsupportedToast() {
+        addSnackBarData(
+            SnackbarData(
+                cookie = "Image-ExternalVideoCaptureMode",
+                stringResource = R.string.toast_image_capture_external_unsupported,
+                withDismissAction = true,
+                testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+            )
+        )
     }
 
     fun captureImageWithUri(
@@ -706,18 +716,12 @@ class PreviewViewModel @AssistedInject constructor(
             (previewUiState.value as PreviewUiState.Ready).previewMode is
                 PreviewMode.ExternalVideoCaptureMode
         ) {
-            viewModelScope.launch {
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        snackBarToShow = SnackbarData(
-                            cookie = "Image-ExternalVideoCaptureMode",
-                            stringResource = R.string.toast_image_capture_external_unsupported,
-                            withDismissAction = true,
-                            testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                        )
-                    ) ?: old
-                }
-            }
+            addSnackBarData(SnackbarData(
+                cookie = "Image-ExternalVideoCaptureMode",
+                stringResource = R.string.toast_image_capture_external_unsupported,
+                withDismissAction = true,
+                testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+            ))
             return
         }
         Log.d(TAG, "captureImageWithUri")
@@ -800,30 +804,21 @@ class PreviewViewModel @AssistedInject constructor(
                 testTag = IMAGE_CAPTURE_FAILURE_TAG
             )
         }.also { snackBarData ->
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    // todo: remove snackBar after postcapture screen implemented
-                    snackBarToShow = snackBarData
-                ) ?: old
-            }
+            addSnackBarData(snackBarData)
         }
     }
 
     fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    snackBarToShow = SnackbarData(
-                        cookie = cookie,
-                        stringResource = disabledReason.reasonTextResId,
-                        withDismissAction = true,
-                        testTag = disabledReason.testTag
-                    )
-                ) ?: old
-            }
-        }
+        addSnackBarData(
+            SnackbarData(
+                cookie = cookie,
+                stringResource = disabledReason.reasonTextResId,
+                withDismissAction = true,
+                testTag = disabledReason.testTag
+            )
+        )
     }
 
     fun startVideoRecording(
@@ -836,18 +831,14 @@ class PreviewViewModel @AssistedInject constructor(
                 PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
-            viewModelScope.launch {
-                _previewUiState.update { old ->
-                    (old as? PreviewUiState.Ready)?.copy(
-                        snackBarToShow = SnackbarData(
-                            cookie = "Video-ExternalImageCaptureMode",
-                            stringResource = R.string.toast_video_capture_external_unsupported,
-                            withDismissAction = true,
-                            testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                        )
-                    ) ?: old
-                }
-            }
+            addSnackBarData(
+                SnackbarData(
+                    cookie = "Video-ExternalImageCaptureMode",
+                    stringResource = R.string.toast_video_capture_external_unsupported,
+                    withDismissAction = true,
+                    testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                )
+            )
             return
         }
         Log.d(TAG, "startVideoRecording")
@@ -880,13 +871,7 @@ class PreviewViewModel @AssistedInject constructor(
                         }
                     }
 
-                    viewModelScope.launch {
-                        _previewUiState.update { old ->
-                            (old as? PreviewUiState.Ready)?.copy(
-                                snackBarToShow = snackbarToShow
-                            ) ?: old
-                        }
-                    }
+                    addSnackBarData(snackbarToShow)
                 }
                 Log.d(TAG, "cameraUseCase.startRecording success")
             } catch (exception: IllegalStateException) {
@@ -988,14 +973,17 @@ class PreviewViewModel @AssistedInject constructor(
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.snackBarToShow?.let {
-                    if (it.cookie == cookie) {
-                        // If the latest snackbar had a result, then clear snackBarToShow
-                        old.copy(snackBarToShow = null)
+                (old as? PreviewUiState.Ready)?.snackBarsToShow!!.let {
+                    val newQueue = LinkedList(it)
+                    val snackBarData = newQueue.remove()
+                    if (snackBarData != null && snackBarData.cookie == cookie) {
+                        // If the latest snackBar had a result, then clear snackBarToShow
+                        Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
+                        old.copy(snackBarsToShow = newQueue)
                     } else {
                         old
                     }
-                } ?: old
+                }
             }
         }
     }

@@ -299,10 +299,11 @@ private fun ContentScreen(
                 )
             }
 
-            if (previewUiState.snackBarToShow != null) {
+            val snackBarData = previewUiState.snackBarsToShow.peek()
+            if (snackBarData != null) {
                 TestableSnackbar(
-                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
-                    snackbarToShow = previewUiState.snackBarToShow,
+                    modifier = Modifier.testTag(snackBarData.testTag),
+                    snackbarToShow = snackBarData,
                     snackbarHostState = snackbarHostState,
                     onSnackbarResult = onSnackBarResult
                 )
