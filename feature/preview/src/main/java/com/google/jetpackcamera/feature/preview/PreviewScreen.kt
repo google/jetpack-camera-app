@@ -256,7 +256,7 @@ private fun ContentScreen(
                 modifier = Modifier,
                 previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
-                toggleIsOpen = onToggleQuickSettings,
+                toggleQuickSettings = onToggleQuickSettings,
                 currentCameraSettings = previewUiState.currentCameraSettings,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,

@@ -178,7 +178,6 @@ fun CameraControlsOverlay(
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
-                onChangeImageFormat = onChangeImageFormat,
                 onDisabledCaptureMode = onDisabledCaptureMode,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
@@ -281,7 +280,6 @@ private fun ControlsBottom(
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
-    onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onStartVideoRecording: (
@@ -333,7 +331,7 @@ private fun ControlsBottom(
                 ) {
                     CaptureModeToggleButton(
                         uiState = previewUiState.captureModeToggleUiState,
-                        onChangeImageFormat = onChangeImageFormat,
+                        onChangeCaptureMode = onSetCaptureMode,
                         onToggleWhenDisabled = onDisabledCaptureMode,
                         modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                     )
@@ -520,7 +518,7 @@ private fun CaptureButton(
 @Composable
 private fun CaptureModeToggleButton(
     uiState: CaptureModeUiState.Enabled,
-    onChangeImageFormat: (ImageOutputFormat) -> Unit,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
     onToggleWhenDisabled: (DisabledReason) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -531,6 +529,9 @@ private fun CaptureModeToggleButton(
             CaptureMode.VIDEO_ONLY -> ToggleState.Right
             CaptureMode.STANDARD -> TODO("toggle should not be visible for STANDARD mode")
         }
+    val enabled =
+        uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
+            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
     ToggleButton(
         leftIcon = if (uiState.currentSelection ==
             CaptureMode.IMAGE_ONLY
@@ -548,11 +549,11 @@ private fun CaptureModeToggleButton(
         },
         initialState = initialState,
         onToggleStateChanged = {
-            val imageFormat = when (it) {
-                ToggleState.Left -> ImageOutputFormat.JPEG_ULTRA_HDR
-                ToggleState.Right -> ImageOutputFormat.JPEG
+            val captureMode = when (it) {
+                ToggleState.Left -> CaptureMode.IMAGE_ONLY
+                ToggleState.Right -> CaptureMode.VIDEO_ONLY
             }
-            onChangeImageFormat(imageFormat)
+            onChangeCaptureMode(captureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisabledReason? =
@@ -562,13 +563,23 @@ private fun CaptureModeToggleButton(
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
         // toggle only enabled when both capture modes are available
-        enabled =
-        uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
-            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable,
+        enabled = enabled,
         leftIconDescription =
-        stringResource(id = R.string.capture_mode_image_capture_content_description),
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
         rightIconDescription =
-        stringResource(id = R.string.capture_mode_video_recording_content_description),
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
+        },
         modifier = modifier
     )
 }

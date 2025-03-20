@@ -167,66 +167,45 @@ fun FocusedQuickSetCaptureMode(
 fun QuickSetCaptureMode(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    captureModeUiState: CaptureModeUiState.Enabled,
+    captureModeUiState: CaptureModeUiState,
     assignedCaptureMode: CaptureMode?,
     isHighlightEnabled: Boolean = false
 ) {
-    val capToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
-    val enum = when (capToUse) {
-        CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
-        CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
-        CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
-    }
-
-    QuickSettingUiItem(
-        modifier = modifier,
-        enum = enum,
-        onClick = { onClick() },
-        isHighLighted =
-        isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
-    )
-}
-
-@Composable
-fun QuickSetCaptureMode(
-    modifier: Modifier = Modifier,
-    onSetCaptureMode: (CaptureMode) -> Unit,
-    captureModeUiState: CaptureModeUiState,
-    isHighlightEnabled: Boolean = false
-) {
-    if (captureModeUiState is CaptureModeUiState.Enabled) {
-        val enum = when (captureModeUiState.currentSelection) {
+    if(captureModeUiState is CaptureModeUiState.Enabled) {
+        val captureToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
+        val enum = when (captureToUse) {
             CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
             CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
         }
-        val list: List<SingleSelectableState> =
-            listOf(
-                captureModeUiState.defaultCaptureState,
-                captureModeUiState.imageOnlyCaptureState,
-                captureModeUiState.videoOnlyCaptureState
-            )
-        // only enabled if there are at least 2 supported capturemodes
-        val enabled = list.count { it is SingleSelectableState.Selectable } >= 2
-        val nextCaptureMode: CaptureMode =
-            when (captureModeUiState.currentSelection) {
-                CaptureMode.STANDARD -> CaptureMode.VIDEO_ONLY
-                CaptureMode.VIDEO_ONLY -> CaptureMode.IMAGE_ONLY
-                CaptureMode.IMAGE_ONLY -> {
-                    if (captureModeUiState.defaultCaptureState
-                            is SingleSelectableState.Selectable
-                    ) {
-                        CaptureMode.STANDARD
-                    } else {
-                        CaptureMode.VIDEO_ONLY
-                    }
-                }
-            }
+
         QuickSettingUiItem(
             modifier = modifier,
             enum = enum,
-            onClick = { onSetCaptureMode(nextCaptureMode) },
-            enabled = enabled
+            onClick = { onClick() },
+            enabled = when (assignedCaptureMode) {
+                null -> {
+                    val list: List<SingleSelectableState> =
+                        listOf(
+                            captureModeUiState.defaultCaptureState,
+                            captureModeUiState.imageOnlyCaptureState,
+                            captureModeUiState.videoOnlyCaptureState
+                        )
+                    // only enabled if there are at least 2 supported capturemodes
+                    list.count { it is SingleSelectableState.Selectable } >= 2
+                }
+
+                CaptureMode.STANDARD ->
+                    captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable
+
+                CaptureMode.VIDEO_ONLY ->
+                    captureModeUiState.videoOnlyCaptureState is SingleSelectableState.Selectable
+
+                CaptureMode.IMAGE_ONLY ->
+                    captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
+            },
+            isHighLighted =
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
         )
     }
 }

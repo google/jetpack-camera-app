@@ -172,45 +172,45 @@ enum class CameraCaptureMode : QuickSettingsEnum {
 
         override fun getImageVector() = Icons.Default.PhotoCameraFront
 
-        override fun getTextResId() = R.string.quick_settings_capture_mode_standard
+        override fun getTextResId() = R.string.quick_settings_text_capture_mode_standard
 
         override fun getDescriptionResId() =
-            R.string.quick_settings_capture_mode_standard_description
+            R.string.quick_settings_description_capture_mode_standard
     },
     VIDEO_ONLY {
         override fun getDrawableResId() = null
 
         override fun getImageVector() = Icons.Default.Videocam
 
-        override fun getTextResId() = R.string.quick_settings_capture_mode_video_only
+        override fun getTextResId() = R.string.quick_settings_text_capture_mode_video_only
 
         override fun getDescriptionResId() =
-            R.string.quick_settings_capture_mode_video_only_description
+            R.string.quick_settings_description_capture_mode_video_only
     },
     IMAGE_ONLY {
         override fun getDrawableResId() = null
 
         override fun getImageVector() = Icons.Default.CameraAlt
 
-        override fun getTextResId() = R.string.quick_settings_capture_mode_image_only
+        override fun getTextResId() = R.string.quick_settings_text_capture_mode_image_only
 
         override fun getDescriptionResId() =
-            R.string.quick_settings_capture_mode_image_only_description
+            R.string.quick_settings_description_capture_mode_image_only
     }
 }
 enum class CameraConcurrentCameraMode : QuickSettingsEnum {
     OFF {
         override fun getDrawableResId() = R.drawable.picture_in_picture_off_icon
         override fun getImageVector() = null
-        override fun getTextResId() = R.string.quick_settings_concurrent_camera_off
+        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_off
         override fun getDescriptionResId() =
-            R.string.quick_settings_concurrent_camera_off_description
+            R.string.quick_settings_description_concurrent_camera_off
     },
     DUAL {
         override fun getDrawableResId() = null
         override fun getImageVector() = Icons.Filled.PictureInPicture
-        override fun getTextResId() = R.string.quick_settings_concurrent_camera_dual
+        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_dual
         override fun getDescriptionResId() =
-            R.string.quick_settings_concurrent_camera_dual_description
+            R.string.quick_settings_description_concurrent_camera_dual
     }
 }

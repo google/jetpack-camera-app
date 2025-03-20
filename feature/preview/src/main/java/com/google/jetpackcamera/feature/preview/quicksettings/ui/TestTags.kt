@@ -25,9 +25,12 @@ package com.google.jetpackcamera.feature.preview.quicksettings.ui
 //
 // ////////////////////////////////
 
+const val QUICK_SETTINGS_DROP_DOWN = "btn_toggle_quick_settings"
+const val QUICK_SETTINGS_BACKGROUND_MAIN = "quick_settings_container"
+const val QUICK_SETTINGS_BACKGROUND_FOCUSED = "quick_settings_container_focused"
+
 const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
 const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"
-const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val QUICK_SETTINGS_HDR_BUTTON = "QuickSettingsHdrButton"
 const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlashButton"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
@@ -37,10 +40,10 @@ const val QUICK_SETTINGS_RATIO_1_1_BUTTON = "QuickSettingsRatio1:1Button"
 const val QUICK_SETTINGS_RATIO_BUTTON = "QuickSettingsRatioButton"
 
 // quick settings capture mode
-const val BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE = "btn_quicksetting_focus_capture_mode"
+const val BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE = "quick_settings_btn_focus_capture_mode"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD =
-    "btn_quicksetting_focused_capture_mode_option_standard"
+    "quick_settings_focused_capture_mode_btn_option_standard"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY =
-    "btn_quicksetting_focused_capture_mode_option_video_only"
+    "quick_settings_focused_capture_mode_btn_option_video_only"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY =
-    "btn_quicksetting_focused_capture_mode_option_image_only"
+    "quick_settings_focused_capture_mode_btn_option_image_only"

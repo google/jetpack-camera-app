@@ -229,7 +229,8 @@ class PreviewViewModel @AssistedInject constructor(
                         ),
                         captureModeToggleUiState = getCaptureToggleUiState(
                             systemConstraints,
-                            cameraAppSettings
+                            cameraAppSettings,
+                            cameraState.videoRecordingState
                         ),
                         captureModeUiState = getCaptureModeUiState(
                             systemConstraints,
@@ -544,8 +545,11 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings
-    ): CaptureModeUiState = if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
+        cameraAppSettings: CameraAppSettings,
+        videoRecordingState: VideoRecordingState
+    ): CaptureModeUiState = if (videoRecordingState !is VideoRecordingState.Inactive) {
+        CaptureModeUiState.Unavailable
+    } else if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
         cameraAppSettings.dynamicRange == DynamicRange.HLG10
     ) {
         getCaptureModeUiState(systemConstraints, cameraAppSettings)

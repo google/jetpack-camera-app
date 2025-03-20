@@ -23,7 +23,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +49,8 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_FOCUSED
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
@@ -87,7 +88,7 @@ fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
     previewUiState: PreviewUiState.Ready,
     currentCameraSettings: CameraAppSettings,
-    toggleIsOpen: () -> Unit,
+    toggleQuickSettings: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
@@ -109,7 +110,7 @@ fun QuickSettingsScreenOverlay(
     ) {
         val onBack = {
             when (focusedQuickSetting) {
-                FocusedQuickSetting.NONE -> toggleIsOpen()
+                FocusedQuickSetting.NONE -> toggleQuickSettings()
                 else -> focusedQuickSetting = FocusedQuickSetting.NONE
             }
         }
@@ -122,14 +123,18 @@ fun QuickSettingsScreenOverlay(
         Column(
             modifier =
             modifier
+                .testTag(
+                    when (focusedQuickSetting) {
+                        FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
+                        else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
+                    }
+                )
                 .fillMaxSize()
                 .background(color = Color.Black.copy(alpha = 0.7f))
                 .clickable(
                     onClick = onBack,
                     indication = null,
-                    interactionSource = remember {
-                        MutableInteractionSource()
-                    }
+                    interactionSource = null
                 ),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -280,6 +285,7 @@ private fun ExpandedQuickSettingsUi(
                     }
 
                     add {
+                        // todo(): use a UiState for this
                         QuickSetConcurrentCamera(
                             modifier =
                             Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
@@ -293,6 +299,11 @@ private fun ExpandedQuickSettingsUi(
                                 previewUiState.previewMode
                                     !is PreviewMode.ExternalImageCaptureMode &&
                                 (
+                                    (previewUiState.captureModeUiState as? CaptureModeUiState.Enabled)?.currentSelection !=
+                                        CaptureMode.IMAGE_ONLY
+                                    ) ==
+                                true &&
+                                (
                                     currentCameraSettings.dynamicRange !=
                                         DEFAULT_HDR_DYNAMIC_RANGE &&
                                         currentCameraSettings.imageFormat !=
@@ -304,12 +315,13 @@ private fun ExpandedQuickSettingsUi(
                     add {
                         QuickSetCaptureMode(
                             modifier = Modifier.testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE),
-                            onSetCaptureMode = {
+                            onClick = {
                                 setFocusedQuickSetting(
                                     FocusedQuickSetting.CAPTURE_MODE
                                 )
                             },
-                            captureModeUiState = previewUiState.captureModeUiState
+                            captureModeUiState = previewUiState.captureModeUiState,
+                            assignedCaptureMode = null
                         )
                     }
                 }

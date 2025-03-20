@@ -772,7 +772,7 @@ fun CaptureModeDropDown(
 
             Column {
                 DropDownItem(
-                    text = stringResource(R.string.capture_mode_text_standard),
+                    text = stringResource(R.string.quick_settings_text_capture_mode_standard),
                     enabled = captureModeUiState.defaultCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -782,7 +782,7 @@ fun CaptureModeDropDown(
                     onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
                 )
                 DropDownItem(
-                    text = stringResource(R.string.capture_mode_text_image_only),
+                    text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
                     enabled = captureModeUiState.imageOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -792,7 +792,7 @@ fun CaptureModeDropDown(
                     onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
                 )
                 DropDownItem(
-                    text = stringResource(R.string.capture_mode_text_video_only),
+                    text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
                     enabled = captureModeUiState.videoOnlyCaptureState
                         is SingleSelectableState.Selectable,
                     onClick = {
@@ -819,9 +819,15 @@ fun CaptureModeDropDown(
         ) {
             Text(
                 text = when (captureModeUiState.currentSelection) {
-                    CaptureMode.STANDARD -> stringResource(R.string.capture_mode_text_standard)
-                    CaptureMode.VIDEO_ONLY -> stringResource(R.string.capture_mode_text_video_only)
-                    CaptureMode.IMAGE_ONLY -> stringResource(R.string.capture_mode_text_image_only)
+                    CaptureMode.STANDARD -> stringResource(
+                        R.string.quick_settings_text_capture_mode_standard
+                    )
+                    CaptureMode.VIDEO_ONLY -> stringResource(
+                        R.string.quick_settings_text_capture_mode_image_only
+                    )
+                    CaptureMode.IMAGE_ONLY -> stringResource(
+                        R.string.quick_settings_text_capture_mode_video_only
+                    )
                 },
                 modifier = Modifier.padding(16.dp)
             )
@@ -1107,7 +1113,7 @@ fun ToggleButton(
             ) {
                 Icon(
                     painter = leftIcon,
-                    contentDescription = leftIconDescription,
+                    contentDescription = "leftIcon",
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor
@@ -1119,7 +1125,7 @@ fun ToggleButton(
                 )
                 Icon(
                     painter = rightIcon,
-                    contentDescription = rightIconDescription,
+                    contentDescription = "rightIcon",
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor
