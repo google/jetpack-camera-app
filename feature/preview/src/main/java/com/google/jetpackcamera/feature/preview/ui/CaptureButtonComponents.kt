@@ -65,12 +65,18 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.settings.model.CaptureMode
 
+// todo better names for these constants?
 private const val DEFAULT_CAPTURE_BUTTON_SIZE = 80f
-private const val LOCK_SWITCH_SIZE_RATIO = 2.75f
+private const val LOCK_SWITCH_SIZE_RATIO = 1.375f
 private const val LOCK_SWITCH_LOCK_THRESHOLD = .4F
 
 private const val LOCK_SWITCH_PRESSED_NUCLEUS_SCALE = .5f
 private const val LOCK_SWITCH_HEIGHT_SCALE = 1.4f
+
+// 1f = left, 0f = right
+private const val LOCK_SWITCH_POSITION_ON = 1f
+private const val LOCK_SWITCH_POSITION_OFF = 0f
+private const val LOCK_SWITCH_OPACITY = .37f
 
 @Composable
 fun CaptureButton(
@@ -96,15 +102,17 @@ fun CaptureButton(
     var isLongPressing by remember {
         mutableStateOf(false)
     }
-    var switchPosition by remember { mutableFloatStateOf(0f) } // 1f = left, 0f = right
-    val switchWidth = ((captureButtonSize / 2) * LOCK_SWITCH_SIZE_RATIO).dp // todo
+    var switchPosition by remember {
+        mutableFloatStateOf(LOCK_SWITCH_POSITION_OFF)
+    }
+    val switchWidth = (captureButtonSize * LOCK_SWITCH_SIZE_RATIO).dp
 
     fun shouldBeLocked(): Boolean = switchPosition > LOCK_SWITCH_LOCK_THRESHOLD
     fun toggleSwitchPosition() = if (shouldBeLocked()) {
-        switchPosition = 0f
+        switchPosition = LOCK_SWITCH_POSITION_OFF
     } else {
         switchPosition =
-            1f
+            LOCK_SWITCH_POSITION_ON
     }
 
     Box(contentAlignment = Alignment.Center) {
@@ -143,7 +151,6 @@ fun CaptureButton(
                                     CaptureMode.VIDEO_ONLY -> {
                                         onStartVideoRecording()
                                     }
-
                                     CaptureMode.IMAGE_ONLY -> {}
                                 }
                             }
@@ -159,10 +166,10 @@ fun CaptureButton(
                                 is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
                                     if (shouldBeLocked()) {
                                         onLockVideoRecording(true)
-                                        switchPosition = 0f
                                     } else {
                                         onStopVideoRecording()
                                     }
+                                    switchPosition = LOCK_SWITCH_POSITION_OFF
                                 }
 
                                 is CaptureButtonUiState.Enabled.Idle,
@@ -207,7 +214,11 @@ fun CaptureButton(
                         onDrag = { change, dragAmount ->
                             val newPosition =
                                 switchPosition - (dragAmount.x / switchWidth.toPx())
-                            switchPosition = newPosition.coerceIn(0f, 1f)
+                            switchPosition =
+                                newPosition.coerceIn(
+                                    LOCK_SWITCH_POSITION_OFF,
+                                    LOCK_SWITCH_POSITION_ON
+                                )
                             change.consume()
                         }
                     )
@@ -259,7 +270,7 @@ private fun LockSwitchCaptureButtonNucleus(
                 Canvas(
                     modifier = Modifier
                         .size(switchWidth, switchHeight)
-                        .alpha(.37f)
+                        .alpha(LOCK_SWITCH_OPACITY)
                 ) {
                     drawRoundRect(
                         color = Color.Black,
@@ -382,8 +393,9 @@ private fun CaptureButtonNucleus(
         animationSpec = tween(durationMillis = 500)
     )
 
+    // this box contains and centers everything
     Box(modifier = modifier.offset(x = offsetX), contentAlignment = Alignment.Center) {
-        // inner circle
+        // this box is the inner circle
         Box(modifier = Modifier) {
             Box(
                 contentAlignment = Alignment.Center,
