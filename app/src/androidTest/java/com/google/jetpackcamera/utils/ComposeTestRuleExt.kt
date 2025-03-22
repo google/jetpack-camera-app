@@ -17,6 +17,7 @@ package com.google.jetpackcamera.utils
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
@@ -36,6 +37,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import org.junit.AssumptionViolatedException
@@ -96,7 +98,22 @@ fun SemanticsNodeInteraction.assume(
     }
     return this
 }
+fun ComposeTestRule.pressAndDragToLockVideoRecording() {
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            down(center)
+            moveBy(delta = Offset(-400f, 0f), delayMillis = VIDEO_DURATION_MILLIS)
+            up()
+        }
 
+    try {
+        waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+        throw AssertionError("$VIDEO_CAPTURE_SUCCESS_TAG should not be displayed.")
+    } catch (e: ComposeTimeoutException) { /* do nothing. success tag should not have displayed*/ }
+}
 fun ComposeTestRule.longClickForVideoRecording() {
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
@@ -118,10 +135,12 @@ fun ComposeTestRule.tapStartLockedVideoRecording() {
     idleForVideoDuration()
 }
 
-private fun ComposeTestRule.idleForVideoDuration() {
+private fun ComposeTestRule.idleForVideoDuration(
+    videoDurationMillis: Long = VIDEO_DURATION_MILLIS
+) {
     // TODO: replace with a check for the timestamp UI of the video duration
     try {
-        waitUntil(timeoutMillis = VIDEO_DURATION_MILLIS) {
+        waitUntil(timeoutMillis = videoDurationMillis) {
             onNodeWithTag("dummyTagForLongPress").isDisplayed()
         }
     } catch (e: ComposeTimeoutException) {

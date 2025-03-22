@@ -28,6 +28,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
@@ -41,6 +42,7 @@ import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
+import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
@@ -75,6 +77,30 @@ internal class VideoRecordingDeviceTest {
         }
         deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
+
+    @Test
+    fun drag_to_lock_pressed_video_capture(): Unit =
+        runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+            mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ) {
+            val timeStamp = System.currentTimeMillis()
+            // Wait for the capture button to be displayed
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+            }
+            composeTestRule.pressAndDragToLockVideoRecording()
+
+            // stop recording
+            // fixme: this shouldnt need two clicks
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
+            }
+
+            deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        }
 
     @Test
     fun pressed_video_capture_external_intent() {
