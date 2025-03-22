@@ -318,10 +318,7 @@ private fun CaptureButton(
                     onDragStart = { },
                     onDragEnd = { },
                     onDrag = { change, dragAmount ->
-                        if (useLockSwitch &&
-                            captureButtonUiState is
-                                CaptureButtonUiState.Enabled.Recording.PressedRecording
-                        ) {
+                        if (useLockSwitch) {
                             val newPosition =
                                 switchPosition - (dragAmount.x / switchWidth.toPx())
                             switchPosition =
