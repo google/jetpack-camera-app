@@ -506,7 +506,9 @@ private fun CaptureButton(
                 }
             }
         },
-        onStopRecording = { onStopVideoRecording() },
+        onStopRecording = {
+            onStopVideoRecording()
+        },
         captureButtonUiState = captureButtonUiState,
         onLockVideoRecording = onLockVideoRecording
     )
