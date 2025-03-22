@@ -47,6 +47,7 @@ const val HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG = "HdrImageUnsupportedOnSin
 const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMultiStreamTag"
 const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
+const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 const val ZOOM_RATIO_TAG = "ZoomRatioTag"
 const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
 const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"

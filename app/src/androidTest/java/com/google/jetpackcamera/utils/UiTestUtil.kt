@@ -56,6 +56,7 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
+const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
