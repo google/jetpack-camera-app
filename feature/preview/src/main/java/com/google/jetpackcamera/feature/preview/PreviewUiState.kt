@@ -23,7 +23,6 @@ import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -38,7 +37,6 @@ sealed interface PreviewUiState {
         // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
-        val zoomRatios: Map<LensFacing, Float> = mapOf(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
 
@@ -81,18 +79,18 @@ sealed interface CaptureButtonUiState {
         }
     }
 }
+
 sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
-
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
 
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState
     data class Enabled(
-        val zoomRange: Range<Float>,
-        val currentZoomRatio: Float?,
-        val currentLinearZoom: Float?
+        val primaryZoomRange: Range<Float>,
+        val primaryZoomRatio: Float? = null,
+        val primaryLinearZoom: Float? = null
     ) : ZoomUiState
 }
 sealed interface AudioUiState {

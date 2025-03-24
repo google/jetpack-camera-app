@@ -42,7 +42,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -199,7 +199,6 @@ class PreviewViewModel @AssistedInject constructor(
                         previewMode = previewMode,
                         currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
-                        zoomRatios = cameraState.zoomRatios,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         captureModeToggleUiState = getCaptureToggleUiState(
@@ -448,11 +447,11 @@ class PreviewViewModel @AssistedInject constructor(
         lensFacing: LensFacing,
         cameraState: CameraState
     ): ZoomUiState = ZoomUiState.Enabled(
-        zoomRange =
+        primaryZoomRange =
         systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
             ?: Range<Float>(1f, 1f),
-        currentZoomRatio = cameraState.zoomRatios[lensFacing],
-        currentLinearZoom = cameraState.linearZoomScales[lensFacing]
+        primaryZoomRatio = cameraState.zoomRatios[lensFacing],
+        primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
 
     private fun getCaptureToggleUiState(
@@ -925,8 +924,8 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setZoom(newZoomState: CameraZoomState) {
-        cameraUseCase.changeZoom(newZoomState = newZoomState)
+    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+        cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {

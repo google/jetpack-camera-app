@@ -62,7 +62,7 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -142,7 +142,7 @@ fun PreviewScreen(
                 onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
-                onChangeZoomScale = viewModel::setZoom,
+                onChangeZoomScale = viewModel::changeZoomRatio,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onSetStreamConfig = viewModel::setStreamConfig,
@@ -178,7 +178,7 @@ private fun ContentScreen(
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
-    onChangeZoomScale: (CameraZoomState) -> Unit = {},
+    onChangeZoomScale: (CameraZoomRatio) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
@@ -233,7 +233,7 @@ private fun ContentScreen(
                 previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
-                onZoomChange = onChangeZoomScale,
+                onZoomRatioChange = onChangeZoomScale,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode

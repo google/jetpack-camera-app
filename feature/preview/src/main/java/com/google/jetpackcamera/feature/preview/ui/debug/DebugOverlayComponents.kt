@@ -51,7 +51,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.ZoomChange
 import kotlin.math.abs
@@ -68,7 +68,7 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
 @Composable
 fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
-    onChangeZoomScale: (CameraZoomState) -> Unit,
+    onChangeZoomScale: (CameraZoomRatio) -> Unit,
     toggleIsOpen: () -> Unit,
     previewUiState: PreviewUiState.Ready
 ) {
@@ -186,7 +186,7 @@ private fun CameraPropertiesJSONComponent(
 
 @Composable
 private fun SetZoomRatioComponent(
-    onChangeZoomRatio: (CameraZoomState.Ratio) -> Unit,
+    onChangeZoomRatio: (CameraZoomRatio) -> Unit,
     onClose: () -> Unit
 ) {
     var zoomRatioText = remember { mutableStateOf("") }
@@ -217,7 +217,9 @@ private fun SetZoomRatioComponent(
                         zoomRatioText.value.toFloat()
                     }
                     onChangeZoomRatio(
-                        CameraZoomState.Ratio(ZoomChange.Absolute(newRatio, LensToZoom.PRIMARY))
+                        CameraZoomRatio(
+                            ZoomChange.Absolute(newRatio, LensToZoom.PRIMARY)
+                        )
                     )
                 } catch (e: NumberFormatException) {
                     Log.d(TAG, "Zoom ratio should be a float")

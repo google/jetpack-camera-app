@@ -236,7 +236,7 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
                         .collectLatest { zoomState ->
-                            // TODO(): remove checks after buggy zoomState is fixed
+                            // TODO(b/405987189): remove checks after buggy zoomState is fixed
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                                 if (zoomState.zoomRatio != 1.0f ||
                                     zoomState.zoomRatio == currentTransientSettings
@@ -304,7 +304,7 @@ internal suspend fun processTransientSettingEvents(
         currentCameraState.asStateFlow()
     ) { newTransientSettings, cameraState ->
         return@combine Pair(newTransientSettings, cameraState)
-    }.collectLatest {
+    }.collect {
         val newTransientSettings = it.first
         val cameraState = it.second
 
@@ -364,11 +364,13 @@ internal suspend fun processTransientSettingEvents(
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
 
-        if (prevTransientSettings.primaryLensFacing == newTransientSettings.primaryLensFacing) {
+        // setzoomratio when the primary zoom value changes.
+        if (prevTransientSettings.primaryLensFacing == newTransientSettings.primaryLensFacing &&
+            prevTransientSettings.zoomRatios[prevTransientSettings.primaryLensFacing] !=
+            newTransientSettings.zoomRatios[newTransientSettings.primaryLensFacing]
+        ) {
             newTransientSettings.primaryLensFacing.let {
-                if (prevTransientSettings.zoomRatios[it] != newTransientSettings.zoomRatios[it]) {
-                    camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
-                }
+                camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
             }
         }
         prevTransientSettings = newTransientSettings
@@ -1066,7 +1068,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                     }
                 }
-                // todo(): remove after buggy zoomState is fixed
+                // todo(b/405987189): remove completely after buggy zoomState is fixed
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
@@ -1074,6 +1076,11 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         if (newZoomRatio != null &&
                             old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
                         ) {
+                            Log.d(
+                                TAG,
+                                "newZoomRatio: $newZoomRatio on lens ${targetCameraInfo.appLensFacing}"
+                            )
+
                             old.copy(
                                 zoomRatios = old.zoomRatios
                                     .toMutableMap()

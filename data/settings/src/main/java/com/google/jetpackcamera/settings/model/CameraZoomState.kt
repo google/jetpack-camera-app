@@ -16,22 +16,12 @@
 package com.google.jetpackcamera.settings.model
 
 /**
- * Represents an action to modify the zoom
- * @param changeType the [ZoomChange] to be performed
+ * Represents an action to modify the current zoom Ratio
+ *  * @param changeType the [ZoomChange] to be performed on the current Zoom Ratio
+ *
  */
-sealed interface CameraZoomState {
-    val changeType: ZoomChange
 
-    /**
-     * Represents an action to modify the current zoom Ratio
-     */
-    data class Ratio(override val changeType: ZoomChange) : CameraZoomState
-
-    /**
-     * Represents an action to modify the current linear zoom value
-     */
-    data class Linear(override val changeType: ZoomChange) : CameraZoomState
-}
+data class CameraZoomRatio(val changeType: ZoomChange)
 
 /**
  * Abstract placeholders

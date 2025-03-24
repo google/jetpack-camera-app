@@ -123,9 +123,10 @@ import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
+import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
@@ -423,7 +424,7 @@ fun PreviewDisplay(
     previewUiState: PreviewUiState.Ready,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
-    onZoomChange: (CameraZoomState) -> Unit,
+    onZoomRatioChange: (CameraZoomRatio) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
@@ -431,8 +432,8 @@ fun PreviewDisplay(
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomChange(
-                CameraZoomState.Ratio(
+            onZoomRatioChange(
+                CameraZoomRatio(
                     ZoomChange.Scale(pinchZoomChange)
                 )
             )
@@ -713,17 +714,11 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomRatioText(zoomRatio: Float) {
-    val contentAlpha = animateFloatAsState(
-        targetValue = 10f,
-        label = "zoomScaleAlphaAnimation",
-        animationSpec = tween()
-    )
+fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
         modifier = Modifier
-            .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_scale_text, zoomRatio)
+        text = stringResource(id = R.string.zoom_scale_text, zoomUiState.primaryZoomRatio ?: 1f)
     )
 }
 

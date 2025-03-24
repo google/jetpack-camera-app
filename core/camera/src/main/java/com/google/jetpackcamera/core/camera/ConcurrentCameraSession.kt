@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
@@ -128,23 +129,30 @@ internal suspend fun runConcurrentCameraSession(
         launch {
             primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().distinctUntilChanged()
                 .collectLatest { zoomState ->
-                    // TODO(): buggy race condition between our setZoomRatio call updating the ZoomState and camera startup
-                    if (zoomState.zoomRatio != 1.0f ||
-                        zoomState.zoomRatio == initialTransientSettings
-                            .zoomRatios[initialTransientSettings.primaryLensFacing]
-                    ) {
-                        currentCameraState.update { old ->
-                            old.copy(
-                                zoomRatios = old.zoomRatios.toMutableMap().apply {
-                                    put(primaryCamera.cameraInfo.appLensFacing, zoomState.zoomRatio)
-                                }.toMap(),
-                                linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                                    put(
-                                        primaryCamera.cameraInfo.appLensFacing,
-                                        zoomState.linearZoom
-                                    )
-                                }.toMap()
-                            )
+                    val settings = transientSettings.value
+                    // TODO(b/405987189): remove checks after buggy zoomState is fixed
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        if (zoomState.zoomRatio != 1.0f ||
+                            settings == null ||
+                            zoomState.zoomRatio ==
+                            settings.zoomRatios[primaryCamera.cameraInfo.appLensFacing]
+                        ) {
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                        put(
+                                            primaryCamera.cameraInfo.appLensFacing,
+                                            zoomState.zoomRatio
+                                        )
+                                    }.toMap(),
+                                    linearZoomScales = old.linearZoomScales.toMutableMap().apply {
+                                        put(
+                                            primaryCamera.cameraInfo.appLensFacing,
+                                            zoomState.linearZoom
+                                        )
+                                    }.toMap()
+                                )
+                            }
                         }
                     }
                 }
