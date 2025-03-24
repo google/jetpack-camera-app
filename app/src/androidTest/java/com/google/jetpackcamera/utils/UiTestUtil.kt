@@ -57,6 +57,7 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 const val APP_START_TIMEOUT_MILLIS = 10_000L
+const val SETTINGS_SCREEN_NAVIGATION_TIMEOUT_MILLIS = 5_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
