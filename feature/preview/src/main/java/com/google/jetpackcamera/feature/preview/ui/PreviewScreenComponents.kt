@@ -19,6 +19,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -83,11 +84,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -106,6 +109,8 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -116,6 +121,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
@@ -133,11 +139,13 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -742,88 +750,132 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     }
 }
 
+private enum class CaptureSource {
+    CAPTURE_BUTTON,
+    VOLUME_UP,
+    VOLUME_DOWN
+}
+
 @Composable
 fun CaptureButton(
     modifier: Modifier = Modifier,
-    onCaptureImage: () -> Unit,
-    onStartVideoRecording: () -> Unit,
-    onStopVideoRecording: () -> Unit,
+    onImageCapture: () -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = 80f
 ) {
-    val currentUiState = rememberUpdatedState(captureButtonUiState)
-    var isPressedDown by remember {
-        mutableStateOf(false)
-    }
-    var isLongPressing by remember {
-        mutableStateOf(false)
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
+    val isLongPressing = remember { mutableStateOf<Boolean>(false) }
+    var longPressJob by remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
+    val longPressTimeout = LocalViewConfiguration.current.longPressTimeoutMillis
+    fun onLongPress() {
+        if (isLongPressing.value == false) {
+            when (val current = currentUiState.value) {
+                is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                    CaptureMode.STANDARD,
+                    CaptureMode.VIDEO_ONLY -> {
+                        isLongPressing.value = true
+                        Log.d(TAG, "Starting recording")
+                        onStartRecording()
+                    }
+                    CaptureMode.IMAGE_ONLY -> {
+                        isLongPressing.value = true
+                    }
+                }
+                else -> {}
+            }
+        }
     }
 
+    fun onPress(captureSource: CaptureSource) {
+        if (firstKeyPressed.value == null) {
+            firstKeyPressed.value = captureSource
+            longPressJob = scope.launch {
+                delay(longPressTimeout)
+                onLongPress()
+            }
+        }
+    }
+
+    fun onKeyUp(captureSource: CaptureSource) {
+        // releasing while pressed recording
+        if (firstKeyPressed.value == captureSource) {
+            if (isLongPressing.value) {
+                if (currentUiState.value is
+                        CaptureButtonUiState.Enabled.Recording.PressedRecording
+                ) {
+                    Log.d(TAG, "Stopping recording")
+                    onStopRecording()
+                }
+            }
+            // on click
+            else {
+                when (val current = currentUiState.value) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
+                        CaptureMode.STANDARD,
+                        CaptureMode.IMAGE_ONLY -> onImageCapture()
+
+                        CaptureMode.VIDEO_ONLY -> {
+                            onLockVideoRecording(true)
+                            Log.d(TAG, "Starting recording")
+                            onStartRecording()
+                        }
+                    }
+
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                    CaptureButtonUiState.Unavailable -> {}
+                }
+            }
+            longPressJob?.cancel()
+            longPressJob = null
+            isLongPressing.value = false
+            firstKeyPressed.value = null
+        }
+    }
+
+    CaptureKeyHandler(
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) }
+    )
+    CaptureButton(
+        modifier = modifier,
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) },
+        captureButtonUiState = captureButtonUiState,
+        captureButtonSize = captureButtonSize
+    )
+}
+
+@Composable
+private fun CaptureButton(
+    modifier: Modifier = Modifier,
+    onPress: (CaptureSource) -> Unit,
+    onRelease: (CaptureSource) -> Unit,
+    captureButtonUiState: CaptureButtonUiState,
+    captureButtonSize: Float = 80f
+) {
+    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    var isCaptureButtonPressed by remember { mutableStateOf(false) }
     val currentColor = LocalContentColor.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onLongPress = {
-                        isLongPressing = true
-                        val uiState = currentUiState.value
-                        if (uiState is CaptureButtonUiState.Enabled.Idle) {
-                            when (uiState.captureMode) {
-                                CaptureMode.STANDARD,
-                                CaptureMode.VIDEO_ONLY -> {
-                                    onStartVideoRecording()
-                                }
-
-                                CaptureMode.IMAGE_ONLY -> {}
-                            }
-                        }
-                    },
+                    // onLongPress cannot be null, otherwise it won't detect the release if the
+                    // touch is dragged off the component
+                    onLongPress = {},
                     onPress = {
-                        isPressedDown = true
+                        isCaptureButtonPressed = true
+                        onPress(CaptureSource.CAPTURE_BUTTON)
                         awaitRelease()
-                        isPressedDown = false
-                        isLongPressing = false
-                        val uiState = currentUiState.value
-                        when (uiState) {
-                            // stop recording after button is lifted
-                            is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            is CaptureButtonUiState.Enabled.Idle,
-                            CaptureButtonUiState.Unavailable -> {
-                            }
-
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
-                        }
-                    },
-                    onTap = {
-                        val uiState = currentUiState.value
-                        when (uiState) {
-                            is CaptureButtonUiState.Enabled.Idle -> {
-                                if (!isLongPressing) {
-                                    when (uiState.captureMode) {
-                                        CaptureMode.STANDARD,
-                                        CaptureMode.IMAGE_ONLY -> onCaptureImage()
-
-                                        CaptureMode.VIDEO_ONLY -> {
-                                            onLockVideoRecording(true)
-                                            onStartVideoRecording()
-                                        }
-                                    }
-                                }
-                            }
-                            // stop if locked recording
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            CaptureButtonUiState.Unavailable,
-                            CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                            }
-                        }
+                        isCaptureButtonPressed = false
+                        onRelease(CaptureSource.CAPTURE_BUTTON)
                     }
                 )
             }
@@ -872,8 +924,9 @@ fun CaptureButton(
             modifier = Modifier
                 .size(centerShapeSize)
                 .clip(CircleShape)
+                .background(animatedColor)
                 .alpha(
-                    if (isPressedDown &&
+                    if (isCaptureButtonPressed &&
                         currentUiState.value ==
                         CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
                     ) {
@@ -900,6 +953,58 @@ fun CaptureButton(
                     cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
                 )
             }
+        }
+    }
+}
+
+/**
+ * Handler for using certain key events buttons as capture buttons.
+ */
+@Composable
+private fun CaptureKeyHandler(
+    onPress: (CaptureSource) -> Unit,
+    onRelease: (CaptureSource) -> Unit
+) {
+    val view = LocalView.current
+    val currentOnPress by rememberUpdatedState(onPress)
+    val currentOnRelease by rememberUpdatedState(onRelease)
+
+    fun keyCodeToCaptureSource(keyCode: Int): CaptureSource = when (keyCode) {
+        KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
+        KeyEvent.KEYCODE_VOLUME_DOWN -> CaptureSource.VOLUME_DOWN
+        else -> TODO("Keycode not assigned to CaptureSource")
+    }
+
+    DisposableEffect(view) {
+        // todo call once per keydown
+        var keyActionDown: Int? = null
+        val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    val captureSource = keyCodeToCaptureSource(event.keyCode)
+                    // pressed down
+                    if (event.action == KeyEvent.ACTION_DOWN && keyActionDown == null) {
+                        keyActionDown = event.keyCode
+                        currentOnPress(captureSource)
+                    }
+                    // released
+                    if (event.action == KeyEvent.ACTION_UP && keyActionDown == event.keyCode) {
+                        keyActionDown = null
+                        currentOnRelease(captureSource)
+                    }
+                    // consume the event
+                    true
+                }
+                else -> {
+                    false
+                }
+            }
+        }
+
+        ViewCompat.addOnUnhandledKeyEventListener(view, keyEventDispatcher)
+
+        onDispose {
+            ViewCompat.removeOnUnhandledKeyEventListener(view, keyEventDispatcher)
         }
     }
 }

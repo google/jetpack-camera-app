@@ -33,6 +33,7 @@ import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
@@ -242,6 +243,15 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun updateLastCapturedImageUri(uri: Uri) {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as PreviewUiState.Ready)
+                    .copy(imageWellUiState = ImageWellUiState.LastCapture(uri))
+            }
+        }
+    }
+
     private fun getElapsedTimeUiState(
         videoRecordingState: VideoRecordingState
     ): ElapsedTimeUiState = when (videoRecordingState) {
@@ -426,17 +436,13 @@ class PreviewViewModel @AssistedInject constructor(
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
 
         // display different capture button UI depending on if recording is pressed or locked
-        is VideoRecordingState.Active.Recording -> if (lockedState) {
-            CaptureButtonUiState.Enabled.Recording.LockedRecording
-        } else {
-            CaptureButtonUiState.Enabled.Recording.PressedRecording
-        }
-        // todo: how to handle pause...
-        is VideoRecordingState.Active.Paused ->
-            CaptureButtonUiState
-                .Enabled.Recording.LockedRecording
+        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
+            if (lockedState) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording
+            } else {
+                CaptureButtonUiState.Enabled.Recording.PressedRecording
+            }
 
-        // todo: how to handle starting...
         VideoRecordingState.Starting ->
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
@@ -757,6 +763,9 @@ class PreviewViewModel @AssistedInject constructor(
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
+                    savedUri?.let {
+                        updateLastCapturedImageUri(it)
+                    }
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
                 },
                 onFailure = { exception ->

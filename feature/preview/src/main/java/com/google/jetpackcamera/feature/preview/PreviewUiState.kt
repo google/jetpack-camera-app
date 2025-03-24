@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 import android.util.Range
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -56,6 +57,7 @@ sealed interface PreviewUiState {
         val audioUiState: AudioUiState = AudioUiState.Disabled,
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
+        val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
