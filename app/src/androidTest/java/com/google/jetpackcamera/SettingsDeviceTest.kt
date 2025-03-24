@@ -65,7 +65,7 @@ class SettingsDeviceTest {
         componentTestTag: String,
         dialogTestTag: String,
         componentDisabledMessage: String
-    ) = runScenarioTest<MainActivity>() {
+    ) = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
