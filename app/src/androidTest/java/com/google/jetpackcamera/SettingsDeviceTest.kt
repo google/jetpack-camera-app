@@ -46,7 +46,6 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_DURATI
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.SETTINGS_SCREEN_NAVIGATION_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runScenarioTest
 import org.junit.Rule
