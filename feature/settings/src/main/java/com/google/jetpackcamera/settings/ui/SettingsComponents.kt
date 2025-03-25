@@ -951,7 +951,10 @@ fun SingleChoiceSelector(
         modifier
             .fillMaxWidth()
             .selectable(
-                selected = selected, role = Role.RadioButton, onClick = onClick, enabled = enabled
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick,
+                enabled = enabled
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {

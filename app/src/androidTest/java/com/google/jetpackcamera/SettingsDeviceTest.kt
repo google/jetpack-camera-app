@@ -22,7 +22,10 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG
@@ -57,6 +60,9 @@ class SettingsDeviceTest {
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val uiDevice = UiDevice.getInstance(instrumentation)
+
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
@@ -87,10 +93,15 @@ class SettingsDeviceTest {
         try {
             composeTestRule.onNodeWithTag(componentTestTag)
                 .assertIsEnabled()
-                .performClick()
+            // Verify that UiAutomator object is also enabled
+            assert(uiDevice.findObject(By.res(componentTestTag)).isEnabled)
+
+            composeTestRule.onNodeWithTag(componentTestTag).performClick()
             composeTestRule.onNodeWithTag(dialogTestTag)
                 .assertExists()
         } catch (_: AssertionError) {
+            // Verify that UiAutomator object is also disabled
+            assert(!uiDevice.findObject(By.res(componentTestTag)).isEnabled)
             // The settings component is disabled. Display componentDisabledMessage
             Log.d(TAG, componentDisabledMessage)
         }
