@@ -21,6 +21,7 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -81,13 +82,9 @@ class SettingsDeviceTest {
             .assertExists()
             .performClick()
 
-        // Wait for the settings component to be displayed
-        composeTestRule.waitUntil(timeoutMillis = SETTINGS_SCREEN_NAVIGATION_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(componentTestTag)
-                .isDisplayed()
-        }
         composeTestRule.onNodeWithTag(componentTestTag)
             .assertExists()
+            .performScrollTo()
 
         // Check if the settings dialog is displayed after the component is clicked
         try {
