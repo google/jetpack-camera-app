@@ -677,17 +677,17 @@ class PreviewViewModel @AssistedInject constructor(
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
             _previewUiState.update { old ->
-                val newQueue = LinkedList((old as? PreviewUiState.Ready)?.snackBarsToShow!!)
+                val newQueue = LinkedList((old as? PreviewUiState.Ready)?.snackBarQueue!!)
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
                 (old as? PreviewUiState.Ready)?.copy(
-                    snackBarsToShow = newQueue
+                    snackBarQueue = newQueue
                 ) ?: old
             }
         }
     }
 
-    private fun showExternalVideoCaptureUnsupportedToast() {
+    private fun enqueueExternalImageCaptureUnsupportedSnackBar() {
         addSnackBarData(
             SnackbarData(
                 cookie = "Image-ExternalVideoCaptureMode",
@@ -708,7 +708,7 @@ class PreviewViewModel @AssistedInject constructor(
             (previewUiState.value as PreviewUiState.Ready).previewMode is
                 PreviewMode.ExternalVideoCaptureMode
         ) {
-            showExternalVideoCaptureUnsupportedToast()
+            enqueueExternalImageCaptureUnsupportedSnackBar()
             return
         }
 
@@ -810,7 +810,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun showSnackBarForDisabledHdrToggle(disabledReason: CaptureModeToggleUiState.DisabledReason) {
+    fun enqueueDisabledHdrToggleSnackBar(disabledReason: CaptureModeToggleUiState.DisabledReason) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         addSnackBarData(
@@ -975,13 +975,13 @@ class PreviewViewModel @AssistedInject constructor(
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.snackBarsToShow!!.let {
+                (old as? PreviewUiState.Ready)?.snackBarQueue!!.let {
                     val newQueue = LinkedList(it)
                     val snackBarData = newQueue.remove()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(snackBarsToShow = newQueue)
+                        old.copy(snackBarQueue = newQueue)
                     } else {
                         old
                     }
