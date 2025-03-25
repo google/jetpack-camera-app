@@ -400,7 +400,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .assume(isEnabled()) { "Device does not support HDR." }
                 .performClick()
         }
-        waitUntil(5_000) { isHdrEnabled() == enabled }
+        waitUntil(1000) { isHdrEnabled() == enabled }
     }
 }
 fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {

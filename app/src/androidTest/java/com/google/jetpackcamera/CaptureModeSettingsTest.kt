@@ -56,14 +56,15 @@ internal class CaptureModeSettingsTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
-    private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) {
-        waitUntil(timeoutMillis = 1000) {
-            onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
+    private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) =
+        visitQuickSettings {
+            waitUntil(timeoutMillis = 1000) {
+                onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
+            }
+            captureMode?.let {
+                assertThat(getCurrentCaptureMode()).isEqualTo(captureMode)
+            }
         }
-        captureMode?.let {
-            assertThat(getCurrentCaptureMode()).isEqualTo(captureMode)
-        }
-    }
 
     @Test
     fun can_set_capture_mode_in_quick_settings() {
@@ -141,47 +142,45 @@ internal class CaptureModeSettingsTest {
     @Test
     fun hdr_supports_image_only() {
         runScenarioTest<MainActivity> {
-            with(composeTestRule) {
-                waitForStartup()
-                setHdrEnabled(true)
-                // check that switch only supports image
-                waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                assume().that(isHdrToggleEnabled()).isFalse()
-                assume().that(getHdrToggleState()).isEqualTo(CaptureMode.IMAGE_ONLY)
+            composeTestRule.waitForStartup()
+            composeTestRule.setHdrEnabled(true)
+            // check that switch only supports image
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            assume().that(composeTestRule.isHdrToggleEnabled()).isFalse()
+            assume().that(composeTestRule.getHdrToggleState()).isEqualTo(CaptureMode.IMAGE_ONLY)
 
-                visitQuickSettings {
-                    waitForNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                    // capture mode should be image only
-                    assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.IMAGE_ONLY)
-                    // should not be able to change capture mode
-                    assertThat(isHdrToggleEnabled()).isFalse()
-                    setHdrEnabled(false)
-                    checkCaptureMode(CaptureMode.STANDARD)
-                }
+            composeTestRule.visitQuickSettings {
+                waitForNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                // capture mode should be image only
+                assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.IMAGE_ONLY)
             }
+            // should not be able to change capture mode
+            assertThat(composeTestRule.isHdrToggleEnabled()).isFalse()
+            composeTestRule.setHdrEnabled(false)
+            composeTestRule.checkCaptureMode(CaptureMode.STANDARD)
         }
     }
 
     @Test
     fun hdr_supports_video_only() {
         runScenarioTest<MainActivity> {
-            with(composeTestRule) {
-                waitForStartup()
-                setHdrEnabled(true)
-                // check that switch only supports image
-                waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                // should not be able use capture toggle
-                assume().that(isHdrToggleEnabled()).isFalse()
-                assume().that(getHdrToggleState()).isEqualTo(CaptureMode.VIDEO_ONLY)
+            composeTestRule.waitForStartup()
+            composeTestRule.setHdrEnabled(true)
+            // check that switch only supports image
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            // should not be able use capture toggle
+            assume().that(composeTestRule.isHdrToggleEnabled()).isFalse()
+            assume().that(composeTestRule.getHdrToggleState()).isEqualTo(CaptureMode.VIDEO_ONLY)
 
-                visitQuickSettings {
-                    waitForNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                    // capture mode should be image only
-                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
-                    setHdrEnabled(false)
-                    checkCaptureMode(CaptureMode.STANDARD)
-                }
+            composeTestRule.visitQuickSettings {
+                waitForNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                // capture mode should be image only
+                checkCaptureMode(CaptureMode.VIDEO_ONLY)
             }
+            assertThat(composeTestRule.isHdrToggleEnabled()).isFalse()
+
+            composeTestRule.setHdrEnabled(false)
+            composeTestRule.checkCaptureMode(CaptureMode.STANDARD)
         }
     }
 
