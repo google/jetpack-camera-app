@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.data.media
 
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -26,9 +26,9 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-class MediaModule {
+interface MediaModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideMediaRepository(): MediaRepository = LocalMediaRepository()
+    fun bindsMediaRepository(localMediaRepository: LocalMediaRepository): MediaRepository
 }
