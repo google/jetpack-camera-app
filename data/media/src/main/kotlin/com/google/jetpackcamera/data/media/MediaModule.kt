@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui
+package com.google.jetpackcamera.data.media
 
-object Routes {
-    const val PREVIEW_ROUTE = "preview"
-    const val SETTINGS_ROUTE = "settings"
-    const val PERMISSIONS_ROUTE = "permissions"
-    const val POST_CAPTURE_ROUTE = "postCapture"
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+/**
+ * Dagger [Module] for Media dependencies.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+interface MediaModule {
+
+    @Binds
+    @Singleton
+    fun bindsMediaRepository(localMediaRepository: LocalMediaRepository): MediaRepository
 }

@@ -33,6 +33,7 @@ import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
@@ -42,7 +43,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -199,7 +200,6 @@ class PreviewViewModel @AssistedInject constructor(
                         previewMode = previewMode,
                         currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
-                        zoomRatios = cameraState.zoomRatios,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         captureModeToggleUiState = getCaptureToggleUiState(
@@ -240,6 +240,15 @@ class PreviewViewModel @AssistedInject constructor(
                     )
                 }
             }.collect {}
+        }
+    }
+
+    fun updateLastCapturedImageUri(uri: Uri) {
+        viewModelScope.launch {
+            _previewUiState.update { old ->
+                (old as PreviewUiState.Ready)
+                    .copy(imageWellUiState = ImageWellUiState.LastCapture(uri))
+            }
         }
     }
 
@@ -427,17 +436,13 @@ class PreviewViewModel @AssistedInject constructor(
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
 
         // display different capture button UI depending on if recording is pressed or locked
-        is VideoRecordingState.Active.Recording -> if (lockedState) {
-            CaptureButtonUiState.Enabled.Recording.LockedRecording
-        } else {
-            CaptureButtonUiState.Enabled.Recording.PressedRecording
-        }
-        // todo: how to handle pause...
-        is VideoRecordingState.Active.Paused ->
-            CaptureButtonUiState
-                .Enabled.Recording.LockedRecording
+        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
+            if (lockedState) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording
+            } else {
+                CaptureButtonUiState.Enabled.Recording.PressedRecording
+            }
 
-        // todo: how to handle starting...
         VideoRecordingState.Starting ->
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
@@ -448,11 +453,11 @@ class PreviewViewModel @AssistedInject constructor(
         lensFacing: LensFacing,
         cameraState: CameraState
     ): ZoomUiState = ZoomUiState.Enabled(
-        zoomRange =
+        primaryZoomRange =
         systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
             ?: Range<Float>(1f, 1f),
-        currentZoomRatio = cameraState.zoomRatios[lensFacing],
-        currentLinearZoom = cameraState.linearZoomScales[lensFacing]
+        primaryZoomRatio = cameraState.zoomRatios[lensFacing],
+        primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
 
     private fun getCaptureToggleUiState(
@@ -758,6 +763,9 @@ class PreviewViewModel @AssistedInject constructor(
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
                 },
                 onSuccess = { savedUri ->
+                    savedUri?.let {
+                        updateLastCapturedImageUri(it)
+                    }
                     onImageCapture(ImageCaptureEvent.ImageSaved(savedUri), uriIndex)
                 },
                 onFailure = { exception ->
@@ -911,7 +919,6 @@ class PreviewViewModel @AssistedInject constructor(
             cameraUseCase.stopVideoRecording()
             recordingJob?.cancel()
         }
-        setLockedRecording(false)
     }
 
     /**
@@ -925,8 +932,8 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setZoom(newZoomState: CameraZoomState) {
-        cameraUseCase.changeZoom(newZoomState = newZoomState)
+    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+        cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {

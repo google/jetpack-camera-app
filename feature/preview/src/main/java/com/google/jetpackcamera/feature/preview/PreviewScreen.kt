@@ -52,6 +52,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.common.getLastImageUri
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
@@ -62,7 +63,7 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -82,6 +83,7 @@ private const val TAG = "PreviewScreen"
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToPostCapture: (uri: Uri?) -> Unit,
     previewMode: PreviewMode,
     isDebugMode: Boolean,
     modifier: Modifier = Modifier,
@@ -142,7 +144,7 @@ fun PreviewScreen(
                 onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
-                onZoomChange = viewModel::setZoom,
+                onChangeZoomRatio = viewModel::changeZoomRatio,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onSetStreamConfig = viewModel::setStreamConfig,
@@ -161,8 +163,17 @@ fun PreviewScreen(
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode
+                isDebugMode = isDebugMode,
+                onImageWellClick = { uri -> onNavigateToPostCapture(uri) }
             )
+
+            // TODO(yasith): Remove and use ImageRepository after implementing
+            LaunchedEffect(Unit) {
+                val lastCapturedImageUri = getLastImageUri(context)
+                lastCapturedImageUri?.let { uri ->
+                    viewModel.updateLastCapturedImageUri(uri)
+                }
+            }
         }
     }
 }
@@ -178,7 +189,7 @@ private fun ContentScreen(
     onClearUiScreenBrightness: (Float) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
-    onZoomChange: (CameraZoomState) -> Unit = {},
+    onChangeZoomRatio: (CameraZoomRatio) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
@@ -206,7 +217,8 @@ private fun ContentScreen(
     onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false
+    isDebugMode: Boolean = false,
+    onImageWellClick: (uri: Uri?) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -233,7 +245,7 @@ private fun ContentScreen(
                 previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
-                onZoomChange = onZoomChange,
+                onZoomRatioChange = onChangeZoomRatio,
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
@@ -260,7 +272,7 @@ private fun ContentScreen(
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
-                onSetZoom = onZoomChange,
+                onSetZoom = onChangeZoomRatio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
@@ -269,14 +281,15 @@ private fun ContentScreen(
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
-                onLockVideoRecording = onLockVideoRecording,
-                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
+                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) },
+                onImageWellClick = onImageWellClick,
+                onLockVideoRecording = onLockVideoRecording
             )
 
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
                 previewUiState = previewUiState,
-                onChangeZoomScale = onZoomChange
+                onChangeZoomScale = onChangeZoomRatio
             )
 
             // displays toast when there is a message to show

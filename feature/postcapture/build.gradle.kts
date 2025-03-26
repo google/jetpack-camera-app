@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -22,8 +21,8 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.feature.preview"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    namespace = "com.google.jetpackcamera.feature.postcapture"
+    compileSdk = 35
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -32,6 +31,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
 
     flavorDimensions += "flavor"
     productFlavors {
@@ -83,6 +83,7 @@ android {
 }
 
 dependencies {
+
     // Reflect
     implementation(libs.kotlin.reflect)
     // Compose
@@ -112,6 +113,10 @@ dependencies {
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.compose.junit)
 
+    // Hilt
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -126,24 +131,11 @@ dependencies {
     // Futures
     implementation(libs.futures.ktx)
 
-    // CameraX
-    implementation(libs.camera.core)
-    implementation(libs.camera.compose)
-
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
-
-    //Tracing
-    implementation(libs.androidx.tracing)
-
     implementation(libs.kotlinx.atomicfu)
 
     // Project dependencies
-    implementation(project(":core:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
-    implementation(project(":data:settings"))
     testImplementation(project(":core:common"))
 }
 

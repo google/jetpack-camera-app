@@ -21,29 +21,19 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -98,16 +88,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -121,25 +106,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
-import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
+import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomState
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -426,7 +411,7 @@ fun PreviewDisplay(
     previewUiState: PreviewUiState.Ready,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
-    onZoomChange: (CameraZoomState) -> Unit,
+    onZoomRatioChange: (CameraZoomRatio) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
@@ -434,8 +419,8 @@ fun PreviewDisplay(
 ) {
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomChange(
-                CameraZoomState.Ratio(
+            onZoomRatioChange(
+                CameraZoomRatio(
                     ZoomChange.Scale(pinchZoomChange)
                 )
             )
@@ -510,7 +495,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -557,7 +542,7 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                        "${stabilizationUiState.stabilizationMode}"
+                                            "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
 
@@ -572,8 +557,8 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
-                                        "${stabilizationUiState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                 )
                         }
                     }
@@ -716,17 +701,11 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomRatioText(zoomRatio: Float) {
-    val contentAlpha = animateFloatAsState(
-        targetValue = 10f,
-        label = "zoomScaleAlphaAnimation",
-        animationSpec = tween()
-    )
+fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
         modifier = Modifier
-            .alpha(contentAlpha.value)
             .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_scale_text, zoomRatio)
+        text = stringResource(id = R.string.zoom_scale_text, zoomUiState.primaryZoomRatio ?: 1f)
     )
 }
 
@@ -746,208 +725,6 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
                 modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
                 text = physicalCameraId ?: "---"
             )
-        }
-    }
-}
-
-@Composable
-fun CaptureButton(
-    modifier: Modifier = Modifier,
-    onSetZoom: (CameraZoomState) -> Unit,
-    onCaptureImage: () -> Unit,
-    onStartVideoRecording: () -> Unit,
-    onStopVideoRecording: () -> Unit,
-    onLockVideoRecording: (Boolean) -> Unit,
-    captureButtonUiState: CaptureButtonUiState,
-    captureButtonSize: Float = 80f
-) {
-    val currentUiState = rememberUpdatedState(captureButtonUiState)
-    var isPressedDown by remember {
-        mutableStateOf(false)
-    }
-    var isLongPressing by remember {
-        mutableStateOf(false)
-    }
-    var relativeDragOffset by remember { mutableStateOf(Offset.Unspecified) }
-    var globalCaptureButtonBounds = remember { mutableStateOf<Rect?>(null) }
-    var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
-    fun isDragAbove(): Boolean =
-        relativeCaptureButtonBounds?.let { it.top > relativeDragOffset.y } == true
-
-    fun isDragOutside(): Boolean = relativeCaptureButtonBounds?.let {
-        !it.contains(relativeDragOffset)
-    } == true
-
-    val currentColor = LocalContentColor.current
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .onGloballyPositioned { coordinates ->
-                val size = coordinates.size
-                relativeCaptureButtonBounds =
-                    Rect(0f, 0f, size.width.toFloat(), size.height.toFloat())
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        isLongPressing = true
-                        val uiState = currentUiState.value
-                        if (uiState is CaptureButtonUiState.Enabled.Idle) {
-                            when (uiState.captureMode) {
-                                CaptureMode.STANDARD,
-                                CaptureMode.VIDEO_ONLY -> {
-                                    onStartVideoRecording()
-                                }
-
-                                CaptureMode.IMAGE_ONLY -> {}
-                            }
-                        }
-                    },
-                    onPress = {
-                        isPressedDown = true
-                        awaitRelease()
-                        isPressedDown = false
-                        isLongPressing = false
-                        val uiState = currentUiState.value
-                        when (uiState) {
-                            // stop recording after button is lifted
-                            is CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            is CaptureButtonUiState.Enabled.Idle,
-                            CaptureButtonUiState.Unavailable -> {
-                            }
-
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {}
-                        }
-                    },
-                    onTap = {
-                        val uiState = currentUiState.value
-                        when (uiState) {
-                            is CaptureButtonUiState.Enabled.Idle -> {
-                                if (!isLongPressing) {
-                                    when (uiState.captureMode) {
-                                        CaptureMode.STANDARD,
-                                        CaptureMode.IMAGE_ONLY -> onCaptureImage()
-
-                                        CaptureMode.VIDEO_ONLY -> {
-                                            onLockVideoRecording(true)
-                                            onStartVideoRecording()
-                                        }
-                                    }
-                                }
-                            }
-                            // stop if locked recording
-                            CaptureButtonUiState.Enabled.Recording.LockedRecording -> {
-                                onStopVideoRecording()
-                            }
-
-                            CaptureButtonUiState.Unavailable,
-                            CaptureButtonUiState.Enabled.Recording.PressedRecording -> {
-                            }
-                        }
-                    }
-                )
-            }
-            .pointerInput(Unit) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = { initialOffset -> relativeDragOffset = initialOffset },
-                    onDrag = { change, offset ->
-                        if (currentUiState.value ==
-                            CaptureButtonUiState.Enabled.Recording.PressedRecording
-                        ) {
-                            relativeDragOffset =
-                                relativeDragOffset.let { Offset(it.x + offset.x, it.y + offset.y) }
-                            if (isDragAbove()) {
-                                // todo(kc): zoom should always return to the original when you drag
-                                //  back to the capture button.
-                                var zoom = 0f
-                                zoom += offset.y * -0.01f // Adjust sensitivity
-                                zoom = zoom.coerceIn(-3f, 3f) // Limit zoom range
-                                onSetZoom(
-                                    CameraZoomState.Ratio(ZoomChange.Increment(zoom))
-                                )
-                            }
-                        }
-                        Log.d(TAG, "dragging ${offset.y}")
-                    },
-                    onDragEnd = { relativeDragOffset = Offset.Unspecified }
-                )
-            }
-            .size(captureButtonSize.dp)
-            .border(4.dp, currentColor, CircleShape) // border is the white ring
-    ) {
-        // now we draw center circle
-        val centerShapeSize by animateDpAsState(
-            targetValue = when (val uiState = currentUiState.value) {
-                // inner circle fills white ring when locked
-                CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
-                // larger circle while recording, but not max size
-                CaptureButtonUiState.Enabled.Recording.PressedRecording ->
-                    (captureButtonSize * .7f).dp
-
-                CaptureButtonUiState.Unavailable -> 0.dp
-                is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                    // no inner circle will be visible on STANDARD
-                    CaptureMode.STANDARD -> 0.dp
-                    // large white circle will be visible on IMAGE_ONLY
-                    CaptureMode.IMAGE_ONLY -> (captureButtonSize * .7f).dp
-                    // small red circle will be visible on VIDEO_ONLY
-                    CaptureMode.VIDEO_ONLY -> (captureButtonSize * .35f).dp
-                }
-            },
-            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-        )
-
-        // used to fade between red/white in the center of the capture button
-        val animatedColor by animateColorAsState(
-            targetValue = when (val uiState = currentUiState.value) {
-                is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                    CaptureMode.STANDARD -> Color.White
-                    CaptureMode.IMAGE_ONLY -> Color.White
-                    CaptureMode.VIDEO_ONLY -> Color.Red
-                }
-
-                is CaptureButtonUiState.Enabled.Recording -> Color.Red
-                is CaptureButtonUiState.Unavailable -> Color.Transparent
-            },
-            animationSpec = tween(durationMillis = 500)
-        )
-        // inner circle
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(centerShapeSize)
-                .clip(CircleShape)
-                .alpha(
-                    if (isPressedDown &&
-                        currentUiState.value ==
-                        CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-                    ) {
-                        .5f // transparency to indicate click ONLY on IMAGE_ONLY
-                    } else {
-                        1f // solid alpha the rest of the time
-                    }
-                )
-                .background(animatedColor)
-        ) {}
-        // central "square" stop icon
-        AnimatedVisibility(
-            visible = currentUiState.value is
-                CaptureButtonUiState.Enabled.Recording.LockedRecording,
-            enter = scaleIn(initialScale = .5f) + fadeIn(),
-            exit = fadeOut()
-        ) {
-            val smallBoxSize = (captureButtonSize / 5f).dp
-            Canvas(modifier = Modifier) {
-                drawRoundRect(
-                    color = Color.White,
-                    topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
-                    size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
-                    cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
-                )
-            }
         }
     }
 }
@@ -1024,7 +801,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

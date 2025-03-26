@@ -44,7 +44,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CameraZoomState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -114,7 +114,7 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    private val zoomChanges = MutableStateFlow<CameraZoomState?>(null)
+    private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
 
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
@@ -571,16 +571,9 @@ constructor(
         videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
-    override fun changeZoom(newZoomState: CameraZoomState) {
-        when (newZoomState) {
-            is CameraZoomState.Ratio -> {
-                currentSettings.update { old ->
-                    old?.tryApplyNewZoomRatio(newZoomState) ?: old
-                }
-            }
-            is CameraZoomState.Linear -> {
-                TODO("need to handle linear zoom changes")
-            }
+    override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+        currentSettings.update { old ->
+            old?.tryApplyNewZoomRatio(newZoomState) ?: old
         }
     }
 
@@ -666,7 +659,7 @@ constructor(
     }
 
     private fun CameraAppSettings.tryApplyNewZoomRatio(
-        newZoomState: CameraZoomState.Ratio
+        newZoomState: CameraZoomRatio
     ): CameraAppSettings {
         val lensFacing = when (newZoomState.changeType.lensToZoom) {
             LensToZoom.PRIMARY -> cameraLensFacing
@@ -683,7 +676,8 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomChange.Absolute -> change.value
                     is ZoomChange.Scale -> (
-                        this.defaultZoomRatios[lensFacing]
+                        this.defaultZoomRatios
+                            [lensFacing]
                             ?: 1.0f
                         ) *
                         change.value
