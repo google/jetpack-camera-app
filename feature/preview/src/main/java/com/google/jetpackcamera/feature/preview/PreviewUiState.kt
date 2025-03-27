@@ -26,6 +26,8 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import java.util.LinkedList
+import java.util.Queue
 
 /**
  * Defines the current state of the [PreviewScreen].
@@ -43,7 +45,7 @@ sealed interface PreviewUiState {
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
-        val snackBarToShow: SnackbarData? = null,
+        val snackBarQueue: Queue<SnackbarData> = LinkedList(),
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
         val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
