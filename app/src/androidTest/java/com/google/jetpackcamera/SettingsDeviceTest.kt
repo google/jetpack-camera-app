@@ -36,7 +36,6 @@ import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FPS_OPTION_AUTO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
-import com.google.jetpackcamera.settings.ui.BTN_DIALOG_VIDEO_STABILIZATION_OPTION_AUTO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
@@ -44,7 +43,6 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FPS_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG
-import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runScenarioTest
