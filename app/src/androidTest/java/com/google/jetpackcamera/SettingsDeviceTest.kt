@@ -95,11 +95,14 @@ class SettingsDeviceTest {
             composeTestRule.onNodeWithTag(componentTestTag).performClick()
             composeTestRule.onNodeWithTag(dialogTestTag)
                 .assertExists()
+            uiDevice.pressBack()
         } catch (_: AssertionError) {
             // Verify that UiAutomator object is also disabled
             assert(!uiDevice.findObject(By.res(componentTestTag)).isEnabled)
             // The settings component is disabled. Display componentDisabledMessage
             Log.d(TAG, componentDisabledMessage)
+        } finally {
+            uiDevice.pressBack()
         }
     }
 
