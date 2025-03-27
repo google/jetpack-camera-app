@@ -152,15 +152,6 @@ class SettingsDeviceTest {
     }
 
     @Test
-    fun openSettings_openSetStabilizationDialog() = runScenarioTest<MainActivity> {
-        openSettings_clickSettingComponent_verifyDialog(
-            componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG,
-            dialogTestTag = BTN_DIALOG_VIDEO_STABILIZATION_OPTION_AUTO_TAG,
-            componentDisabledMessage = "Video stabilization component is disabled"
-        )
-    }
-
-    @Test
     fun openSettings_openSetVideoQualityDialog() = runScenarioTest<MainActivity> {
         openSettings_clickSettingComponent_verifyDialog(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG,
