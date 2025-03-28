@@ -103,6 +103,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -301,16 +302,16 @@ internal suspend fun processTransientSettingEvents(
     }
     combine(
         transientSettings.filterNotNull(),
-        currentCameraState.asStateFlow()
-    ) { newTransientSettings, cameraState ->
-        return@combine Pair(newTransientSettings, cameraState)
-    }.collect {
-        val newTransientSettings = it.first
-        val cameraState = it.second
+        currentCameraState.asStateFlow().transform { emit(it.videoRecordingState) }
+    ) { newTransientSettings, videoRecordingState ->
+        return@combine Pair(newTransientSettings, videoRecordingState)
+    }.collect { transientPair ->
+        val newTransientSettings = transientPair.first
+        val videoRecordingState = transientPair.second
 
         // todo(): handle torch on Auto FlashMode
         // enable torch only while recording is in progress
-        if ((cameraState.videoRecordingState !is VideoRecordingState.Inactive) &&
+        if ((videoRecordingState !is VideoRecordingState.Inactive) &&
             newTransientSettings.flashMode == FlashMode.ON &&
             !isFrontFacing
         ) {
@@ -1068,8 +1069,12 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                     }
                 }
+                val logicalCameraId = session.device.id
+
                 // todo(b/405987189): remove completely after buggy zoomState is fixed
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                    logicalCameraId == targetCameraLogicalId
+                ) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
                     currentCameraState.update { old ->
@@ -1094,7 +1099,6 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     }
                 }
 
-                val logicalCameraId = session.device.id
                 if (logicalCameraId != targetCameraLogicalId) return
                 try {
                     val physicalCameraId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

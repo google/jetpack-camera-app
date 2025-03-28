@@ -68,7 +68,7 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
 @Composable
 fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
-    onChangeZoomScale: (CameraZoomRatio) -> Unit,
+    onChangeZoomRatio: (CameraZoomRatio) -> Unit,
     toggleIsOpen: () -> Unit,
     previewUiState: PreviewUiState.Ready
 ) {
@@ -155,7 +155,7 @@ fun DebugOverlayComponent(
 
             // Set zoom ratio
             if (zoomRatioDialog.value) {
-                SetZoomRatioComponent(onChangeZoomScale) {
+                SetZoomRatioComponent(onChangeZoomRatio) {
                     zoomRatioDialog.value = false
                 }
             }

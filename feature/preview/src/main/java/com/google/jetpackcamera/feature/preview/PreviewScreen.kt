@@ -289,7 +289,7 @@ private fun ContentScreen(
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
                 previewUiState = previewUiState,
-                onChangeZoomScale = onChangeZoomRatio
+                onChangeZoomRatio = onChangeZoomRatio
             )
 
             // displays toast when there is a message to show
