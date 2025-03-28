@@ -1068,8 +1068,10 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                     }
                 }
+                val logicalCameraId = session.device.id
+
                 // todo(b/405987189): remove completely after buggy zoomState is fixed
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && logicalCameraId == targetCameraLogicalId) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
                     currentCameraState.update { old ->
@@ -1094,7 +1096,6 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     }
                 }
 
-                val logicalCameraId = session.device.id
                 if (logicalCameraId != targetCameraLogicalId) return
                 try {
                     val physicalCameraId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
