@@ -305,7 +305,7 @@ internal suspend fun processTransientSettingEvents(
         currentCameraState.asStateFlow().transform { emit(it.videoRecordingState) }
     ) { newTransientSettings, videoRecordingState ->
         return@combine Pair(newTransientSettings, videoRecordingState)
-    } .collect { transientPair ->
+    }.collect { transientPair ->
         val newTransientSettings = transientPair.first
         val videoRecordingState = transientPair.second
 
@@ -1072,7 +1072,9 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 val logicalCameraId = session.device.id
 
                 // todo(b/405987189): remove completely after buggy zoomState is fixed
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && logicalCameraId == targetCameraLogicalId) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                    logicalCameraId == targetCameraLogicalId
+                ) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
                     currentCameraState.update { old ->
