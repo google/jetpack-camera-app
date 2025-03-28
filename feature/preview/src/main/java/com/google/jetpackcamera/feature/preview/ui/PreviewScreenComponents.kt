@@ -705,7 +705,7 @@ fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
         modifier = Modifier
             .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_scale_text, zoomUiState.primaryZoomRatio ?: 1f)
+        text = stringResource(id = R.string.zoom_ratio_text, zoomUiState.primaryZoomRatio ?: 1f)
     )
 }
 
