@@ -48,7 +48,7 @@ sealed interface PreviewUiState {
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+        val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
@@ -59,7 +59,8 @@ sealed interface PreviewUiState {
         val audioUiState: AudioUiState = AudioUiState.Disabled,
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
-        val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture
+        val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
+        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable
     ) : PreviewUiState
 }
 
