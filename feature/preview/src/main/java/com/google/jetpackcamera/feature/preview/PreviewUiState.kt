@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.util.Range
 import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
@@ -39,7 +40,6 @@ sealed interface PreviewUiState {
         // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
-        val zoomScale: Float = 1f,
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
 
@@ -60,7 +60,8 @@ sealed interface PreviewUiState {
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
-        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable
+        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -83,12 +84,20 @@ sealed interface CaptureButtonUiState {
         }
     }
 }
+
 sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
-
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
 
+sealed interface ZoomUiState {
+    data object Unavailable : ZoomUiState
+    data class Enabled(
+        val primaryZoomRange: Range<Float>,
+        val primaryZoomRatio: Float? = null,
+        val primaryLinearZoom: Float? = null
+    ) : ZoomUiState
+}
 sealed interface AudioUiState {
     val amplitude: Double
 

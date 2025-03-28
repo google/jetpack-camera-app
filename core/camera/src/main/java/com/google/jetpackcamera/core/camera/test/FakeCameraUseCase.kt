@@ -24,6 +24,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -59,7 +60,7 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraUseCase.ScreenFlashEvent>(capacity = UNLIMITED)
-
+    private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
     override suspend fun initialize(
@@ -150,10 +151,8 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
     }
 
     private val _currentCameraState = MutableStateFlow(CameraState())
-    override fun setZoomScale(scale: Float) {
-        currentSettings.update { old ->
-            old.copy(zoomScale = scale)
-        }
+    override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+        zoomChanges.update { newZoomState }
     }
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 

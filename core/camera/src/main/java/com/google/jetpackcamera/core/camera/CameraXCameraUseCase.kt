@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
@@ -43,6 +44,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -51,10 +53,12 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.Illuminant
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -110,9 +114,11 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
+    private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
+
     // Could be improved by setting initial value only when camera is initialized
-    private var _currentCameraState = MutableStateFlow(CameraState())
-    override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
+    private var currentCameraState = MutableStateFlow(CameraState())
+    override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -161,6 +167,9 @@ constructor(
                                     put(dynamicRange, supportedVideoQualities)
                                 }
                             }
+                        val zoomState = camInfo.zoomState.value
+                        val supportedZoomRange: Range<Float>? =
+                            zoomState?.let { Range(it.minZoomRatio, it.maxZoomRatio) }
 
                         val supportedStabilizationModes = buildSet {
                             if (camInfo.isPreviewStabilizationSupported) {
@@ -242,6 +251,7 @@ constructor(
                                 supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
+                                supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                             )
                         )
@@ -285,8 +295,6 @@ constructor(
         Log.d(TAG, "runCamera")
 
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
-        val cameraSessionZoomScale = MutableStateFlow(1f)
-        var prevCameraSessionLensFacing: LensFacing? = null
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
@@ -295,7 +303,7 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomScale = currentCameraSettings.zoomScale
+                    zoomRatios = currentCameraSettings.defaultZoomRatios
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -353,10 +361,6 @@ constructor(
                 }
             }.distinctUntilChanged()
             .collectLatest { sessionSettings ->
-                if (transientSettings.value?.primaryLensFacing != prevCameraSessionLensFacing) {
-                    cameraSessionZoomScale.update { 1f }
-                }
-                prevCameraSessionLensFacing = transientSettings.value?.primaryLensFacing
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -366,10 +370,9 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            currentCameraState = _currentCameraState,
+                            currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings,
-                            zoomScale = cameraSessionZoomScale
+                            transientSettings = transientSettings
                         )
                     ) {
                         try {
@@ -528,6 +531,7 @@ constructor(
         shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
+        val initialRecordSettings = currentSettings.value
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
@@ -539,7 +543,20 @@ constructor(
                 shouldUseUri,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                onVideoRecord
+                onVideoRecord = onVideoRecord,
+
+                onRestoreSettings = {
+                    // restore settings to be called after video recording completes.
+                    // this resets certain settings to their values pre-recording
+                    initialRecordSettings?.let {
+                        currentSettings.update { old ->
+                            old?.copy(
+                                cameraLensFacing = initialRecordSettings.cameraLensFacing,
+                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios
+                            )
+                        }
+                    }
+                }
             )
         )
     }
@@ -556,9 +573,9 @@ constructor(
         videoCaptureControlEvents.send(VideoCaptureControlEvent.StopRecordingEvent)
     }
 
-    override fun setZoomScale(scale: Float) {
+    override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         currentSettings.update { old ->
-            old?.copy(zoomScale = scale)
+            old?.tryApplyNewZoomRatio(newZoomState) ?: old
         }
     }
 
@@ -630,6 +647,44 @@ constructor(
             )
         }
             ?: return this
+    }
+
+    private fun CameraAppSettings.tryApplyNewZoomRatio(
+        newZoomState: CameraZoomRatio
+    ): CameraAppSettings {
+        val lensFacing = when (newZoomState.changeType.lensToZoom) {
+            LensToZoom.PRIMARY -> cameraLensFacing
+            LensToZoom.SECONDARY -> {
+                val newLens = cameraLensFacing.flip()
+                check(systemConstraints.perLensConstraints[newLens] != null) {
+                    "Device does not have a secondary camera"
+                }
+                newLens
+            }
+        }
+        return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
+            val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
+                when (val change = newZoomState.changeType) {
+                    is ZoomChange.Absolute -> change.value
+                    is ZoomChange.Scale -> (
+                        this.defaultZoomRatios
+                            [lensFacing]
+                            ?: 1.0f
+                        ) *
+                        change.value
+
+                    is ZoomChange.Increment -> {
+                        (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
+                    }
+                }.coerceIn(zoomRatioRange.lower, zoomRatioRange.upper)
+            } ?: 1f
+            this@tryApplyNewZoomRatio
+                .copy(
+                    defaultZoomRatios = this.defaultZoomRatios.toMutableMap().apply {
+                        put(lensFacing, newZoomRatio)
+                    }
+                )
+        } ?: this
     }
 
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =

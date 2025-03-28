@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.util.Range
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -69,6 +70,7 @@ import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
+import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
@@ -127,7 +129,7 @@ fun CameraControlsOverlay(
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
     var firstRun by remember { mutableStateOf(true) }
-    LaunchedEffect(previewUiState.zoomScale) {
+    LaunchedEffect(previewUiState.zoomUiState) {
         if (firstRun) {
             firstRun = false
         } else {
@@ -165,7 +167,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
-                zoomLevel = previewUiState.zoomScale,
+                zoomUiState = previewUiState.zoomUiState,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
@@ -265,7 +267,7 @@ private fun ControlsBottom(
     previewUiState: PreviewUiState.Ready,
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
-    zoomLevel: Float,
+    zoomUiState: ZoomUiState,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     systemConstraints: SystemConstraints,
@@ -296,8 +298,12 @@ private fun ControlsBottom(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (showZoomLevel) {
-                    ZoomScaleText(zoomLevel)
+                AnimatedVisibility(
+                    visible = (showZoomLevel && zoomUiState is ZoomUiState.Enabled),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
                 if (previewUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
@@ -672,11 +678,14 @@ private fun Preview_ControlsBottom() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            videoRecordingState = VideoRecordingState.Inactive()
+            videoRecordingState = VideoRecordingState.Inactive(),
+            zoomUiState = ZoomUiState.Enabled(
+                primaryZoomRange = Range(1.0f, 10.0f),
+                primaryZoomRatio = 1.0f
+            )
         )
     }
 }
@@ -693,7 +702,10 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomUiState = ZoomUiState.Enabled(
+                primaryZoomRange = Range(1.0f, 10.0f),
+                primaryZoomRatio = 1.0f
+            ),
             showZoomLevel = false,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -714,7 +726,10 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomUiState = ZoomUiState.Enabled(
+                primaryZoomRange = Range(1.0f, 10.0f),
+                primaryZoomRatio = 1.0f
+            ),
             showZoomLevel = true,
             isQuickSettingsOpen = true,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
@@ -735,7 +750,10 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomUiState = ZoomUiState.Enabled(
+                primaryZoomRange = Range(1.0f, 10.0f),
+                primaryZoomRatio = 1.0f
+            ),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
@@ -762,7 +780,10 @@ private fun Preview_ControlsBottom_Recording() {
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
-            zoomLevel = 1.3f,
+            zoomUiState = ZoomUiState.Enabled(
+                primaryZoomRange = Range(1.0f, 10.0f),
+                primaryZoomRatio = 1.0f
+            ),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
