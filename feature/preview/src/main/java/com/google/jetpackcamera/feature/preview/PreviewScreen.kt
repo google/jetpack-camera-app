@@ -151,7 +151,7 @@ fun PreviewScreen(
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onChangeImageFormat = viewModel::setImageFormat,
-                onToggleWhenDisabled = viewModel::showSnackBarForDisabledHdrToggle,
+                onToggleWhenDisabled = viewModel::enqueueDisabledHdrToggleSnackBar,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
@@ -301,10 +301,11 @@ private fun ContentScreen(
                 )
             }
 
-            if (previewUiState.snackBarToShow != null) {
+            val snackBarData = previewUiState.snackBarQueue.peek()
+            if (snackBarData != null) {
                 TestableSnackbar(
-                    modifier = Modifier.testTag(previewUiState.snackBarToShow.testTag),
-                    snackbarToShow = previewUiState.snackBarToShow,
+                    modifier = Modifier.testTag(snackBarData.testTag),
+                    snackbarToShow = snackBarData,
                     snackbarHostState = snackbarHostState,
                     onSnackbarResult = onSnackBarResult
                 )
