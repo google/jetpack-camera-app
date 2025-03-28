@@ -33,7 +33,7 @@ data class CameraAppSettings(
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
-    val zoomScale: Float = 1f,
+    val defaultZoomRatios: Map<LensFacing, Float> = mapOf(),
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioEnabled: Boolean = true,

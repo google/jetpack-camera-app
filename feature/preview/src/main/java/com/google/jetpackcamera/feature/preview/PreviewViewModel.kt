@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
@@ -42,6 +43,7 @@ import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
@@ -199,7 +201,6 @@ class PreviewViewModel @AssistedInject constructor(
                         previewMode = previewMode,
                         currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
-                        zoomScale = cameraState.zoomScale,
                         videoRecordingState = cameraState.videoRecordingState,
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         captureModeToggleUiState = getCaptureToggleUiState(
@@ -231,6 +232,11 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState,
                             lockedState
+                        ),
+                        zoomUiState = getZoomUiState(
+                            systemConstraints,
+                            cameraAppSettings.cameraLensFacing,
+                            cameraState
                         )
                     )
                 }
@@ -442,6 +448,18 @@ class PreviewViewModel @AssistedInject constructor(
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
     }
+
+    private fun getZoomUiState(
+        systemConstraints: SystemConstraints,
+        lensFacing: LensFacing,
+        cameraState: CameraState
+    ): ZoomUiState = ZoomUiState.Enabled(
+        primaryZoomRange =
+        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+            ?: Range<Float>(1f, 1f),
+        primaryZoomRatio = cameraState.zoomRatios[lensFacing],
+        primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
+    )
 
     private fun getCaptureToggleUiState(
         systemConstraints: SystemConstraints,
@@ -901,8 +919,8 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setZoomScale(scale: Float) {
-        cameraUseCase.setZoomScale(scale = scale)
+    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+        cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
