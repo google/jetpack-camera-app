@@ -221,7 +221,7 @@ fun CaptureButton(
             if (isLongPressing.value) {
                 if (!isLocked &&
                     currentUiState.value is
-                        CaptureButtonUiState.Enabled.Recording.PressedRecording
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording
                 ) {
                     Log.d(TAG, "Stopping recording")
                     onStopRecording()
@@ -301,14 +301,7 @@ private fun CaptureButton(
     fun setLockSwitchPosition(offsetX: Float) {
         relativeCaptureButtonBounds?.let {
             if (useLockSwitch) {
-                // don't move lock switch while gesturing above the capture button
-                if (dragOffset.y < it.top) {
-                    switchPosition = if (shouldBeLocked()) {
-                        LOCK_SWITCH_POSITION_ON
-                    } else {
-                        LOCK_SWITCH_POSITION_OFF
-                    }
-                } else if (dragOffset.x > it.center.x) {
+                if (dragOffset.x > it.center.x) {
                     switchPosition = LOCK_SWITCH_POSITION_OFF
                 } else {
                     val newSwitchPosition =
@@ -478,7 +471,7 @@ private fun LockSwitchCaptureButtonNucleus(
             // grey cylinder offset to the left and fades in when pressed recording
             AnimatedVisibility(
                 visible = captureButtonUiState ==
-                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                        CaptureButtonUiState.Enabled.Recording.PressedRecording,
                 enter = fadeIn(),
                 exit = ExitTransition.None
             ) {
@@ -510,7 +503,7 @@ private fun LockSwitchCaptureButtonNucleus(
         // locked icon, matches cylinder offset
         AnimatedVisibility(
             visible = captureButtonUiState ==
-                CaptureButtonUiState.Enabled.Recording.PressedRecording,
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
             enter = fadeIn(),
             exit = ExitTransition.None
         ) {
@@ -632,7 +625,7 @@ private fun CaptureButtonNucleus(
         // central "square" stop icon
         AnimatedVisibility(
             visible = currentUiState.value is
-                CaptureButtonUiState.Enabled.Recording.LockedRecording,
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording,
             enter = scaleIn(initialScale = .5f) + fadeIn(),
             exit = fadeOut()
         ) {
