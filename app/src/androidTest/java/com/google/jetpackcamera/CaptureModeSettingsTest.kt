@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera
 
+import android.app.Activity
+import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isDisplayed
@@ -23,9 +25,13 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.UiDevice
+import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
@@ -35,8 +41,11 @@ import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getHdrToggleState
+import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
+import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isHdrToggleEnabled
 import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.setCaptureMode
 import com.google.jetpackcamera.utils.setConcurrentCameraMode
 import com.google.jetpackcamera.utils.setHdrEnabled
@@ -56,6 +65,9 @@ internal class CaptureModeSettingsTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
+
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val uiDevice = UiDevice.getInstance(instrumentation)
     private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) =
         visitQuickSettings {
             waitUntil(timeoutMillis = 1000) {
@@ -233,5 +245,99 @@ internal class CaptureModeSettingsTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun image_intent_disables_capture_settings() {
+        val timeStamp = System.currentTimeMillis()
+        val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitForStartup()
+                composeTestRule.visitQuickSettings {
+                    checkCaptureMode(CaptureMode.IMAGE_ONLY)
+
+                    // should not be able to change quick settings
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                        .assertExists()
+                        .assertIsNotEnabled()
+                }
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+    }
+
+    @Test
+    fun image_intent_disables_hdr_toggle() {
+        val timeStamp = System.currentTimeMillis()
+        val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitForStartup()
+                composeTestRule.visitQuickSettings {
+                    setHdrEnabled(true)
+                    checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                }
+                assertThat(composeTestRule.isHdrToggleEnabled()).isFalse()
+                assertThat(
+                    composeTestRule.getHdrToggleState()
+                ).isEqualTo(CaptureMode.IMAGE_ONLY)
+
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+    }
+
+    @Test
+    fun video_intent_disables_capture_settings() {
+        val timeStamp = System.currentTimeMillis()
+        val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitForStartup()
+                composeTestRule.visitQuickSettings {
+                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+
+                    // should not be able to change quick settings
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                        .assertExists()
+                        .assertIsNotEnabled()
+                }
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
+    }
+
+    @Test
+    fun video_intent_disables_hdr_toggle() {
+        val timeStamp = System.currentTimeMillis()
+        val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
+        val result =
+            runScenarioTestForResult<MainActivity>(
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+            ) {
+                // Wait for the capture button to be displayed
+                composeTestRule.waitForStartup()
+                composeTestRule.visitQuickSettings {
+                    setHdrEnabled(true)
+                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                }
+                assertThat(composeTestRule.isHdrToggleEnabled()).isFalse()
+                assertThat(
+                    composeTestRule.getHdrToggleState()
+                ).isEqualTo(CaptureMode.VIDEO_ONLY)
+
+                uiDevice.pressBack()
+            }
+        Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
     }
 }

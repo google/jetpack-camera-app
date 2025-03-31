@@ -24,8 +24,10 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -384,6 +386,10 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
             onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
                 .assertExists()
                 .performClick()
+
+            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                onNodeWithTag(QUICK_SETTINGS_BACKGROUND_MAIN).isNotDisplayed()
+            }
         }
     }
 }
