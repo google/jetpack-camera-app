@@ -274,7 +274,7 @@ private fun ExpandedQuickSettingsUi(
                                 onDynamicRangeClick(d)
                                 onImageOutputFormatClick(i)
                             },
-                           hdrUiState = previewUiState.hdrUiState
+                            hdrUiState = previewUiState.hdrUiState
                         )
                     }
 

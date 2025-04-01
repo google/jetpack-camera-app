@@ -206,7 +206,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
             },
             isHighLighted =
-                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
         )
     }
 }
@@ -219,13 +219,15 @@ fun QuickSetHdr(
 ) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
-            (hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT)
-        )
+            (
+                hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
+        ) {
             CameraDynamicRange.HDR
-        else
+        } else {
             CameraDynamicRange.SDR
-
+        }
 
     val newVideoDynamicRange = if (
         hdrUiState is HdrUiState.Available &&
@@ -251,9 +253,13 @@ fun QuickSetHdr(
         onClick = {
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
-        isHighLighted = (hdrUiState is HdrUiState.Available &&
-                (hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT)),
+        isHighLighted = (
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -466,18 +472,18 @@ fun QuickSettingUiItem(
     )
     Column(
         modifier =
-            modifier
-                .wrapContentSize()
-                .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-                .clickable(
-                    enabled = enabled,
-                    onClick = {
-                        buttonClicked = true
-                        onClick()
-                    },
-                    indication = null,
-                    interactionSource = null
-                ),
+        modifier
+            .wrapContentSize()
+            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
+            .clickable(
+                enabled = enabled,
+                onClick = {
+                    buttonClicked = true
+                    onClick()
+                },
+                indication = null,
+                interactionSource = null
+            ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -513,25 +519,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -555,25 +561,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(

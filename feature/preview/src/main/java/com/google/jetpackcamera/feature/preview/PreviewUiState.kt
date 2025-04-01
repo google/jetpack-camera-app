@@ -92,10 +92,12 @@ sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
-sealed interface HdrUiState{
-    data object Unavailable: HdrUiState
-    data class Available(val currentImageOutputFormat: ImageOutputFormat,
-                         val currentDynamicRange: DynamicRange): HdrUiState
+sealed interface HdrUiState {
+    data object Unavailable : HdrUiState
+    data class Available(
+        val currentImageOutputFormat: ImageOutputFormat,
+        val currentDynamicRange: DynamicRange
+    ) : HdrUiState
 }
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState

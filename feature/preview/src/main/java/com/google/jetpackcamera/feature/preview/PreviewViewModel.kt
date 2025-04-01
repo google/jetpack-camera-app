@@ -61,6 +61,10 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.LinkedList
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.memberProperties
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -78,10 +82,6 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.LinkedList
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
-import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -462,8 +462,8 @@ class PreviewViewModel @AssistedInject constructor(
         cameraState: CameraState
     ): ZoomUiState = ZoomUiState.Enabled(
         primaryZoomRange =
-            systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
-                ?: Range<Float>(1f, 1f),
+        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+            ?: Range<Float>(1f, 1f),
         primaryZoomRatio = cameraState.zoomRatios[lensFacing],
         primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
@@ -481,27 +481,38 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraConstraints
                     ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
                     ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-            )
+            ) {
                 HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            else
+            } else {
                 HdrUiState.Unavailable
+            }
 
-            is PreviewMode.ExternalVideoCaptureMode -> if (cameraConstraints?.supportedDynamicRanges?.contains(
-                    DynamicRange.HLG10
-                ) == true &&
+            is PreviewMode.ExternalVideoCaptureMode -> if (
+                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
                 cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            )
-                HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            else HdrUiState.Unavailable
+            ) {
+                HdrUiState.Available(
+                    cameraAppSettings.imageFormat,
+                    cameraAppSettings.dynamicRange
+                )
+            } else {
+                HdrUiState.Unavailable
+            }
 
             is PreviewMode.StandardMode -> if ((
-                        cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true ||
-                                cameraConstraints?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false) &&
+                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
+                        true ||
+                        cameraConstraints?.supportedImageFormatsMap?.get(
+                            cameraAppSettings.streamConfig
+                        )
+                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                    ) &&
                 cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            )
+            ) {
                 HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            else HdrUiState.Unavailable
+            } else {
+                HdrUiState.Unavailable
+            }
         }
     }
 
@@ -513,7 +524,7 @@ class PreviewViewModel @AssistedInject constructor(
             cameraAppSettings
         )
         val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
         val currentHdrDynamicRangeSupported =
             if (isHdrOn) {
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
@@ -535,13 +546,13 @@ class PreviewViewModel @AssistedInject constructor(
             currentHdrDynamicRangeSupported,
             currentHdrImageFormatSupported
         )
-        Log.d(
-            TAG,
-            "someting fishy $isHdrOn, $currentHdrImageFormatSupported, $currentHdrDynamicRangeSupported"
-        )
         // if all capture modes are supported, return capturemodeuistate
         if (supportedCaptureModes.containsAll(
-                listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+                listOf(
+                    CaptureMode.STANDARD,
+                    CaptureMode.IMAGE_ONLY,
+                    CaptureMode.VIDEO_ONLY
+                )
             )
         ) {
             return CaptureModeUiState.Enabled(currentSelection = cameraAppSettings.captureMode)
@@ -695,7 +706,9 @@ class PreviewViewModel @AssistedInject constructor(
             }
 
             CaptureMode.VIDEO_ONLY -> {
-                if (previewMode is PreviewMode.ExternalImageCaptureMode || previewMode is PreviewMode.ExternalMultipleImageCaptureMode) {
+                if (previewMode is PreviewMode.ExternalImageCaptureMode ||
+                    previewMode is PreviewMode.ExternalMultipleImageCaptureMode
+                ) {
                     return DisabledReason
                         .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
                 }
@@ -733,9 +746,9 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
-                lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                    captureModeFilter(it)
-                }
+            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                captureModeFilter(it)
+            }
     } != null
 
     fun startCamera() {
@@ -855,7 +868,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             enqueueExternalImageCaptureUnsupportedSnackBar()
             return
@@ -863,7 +876,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             addSnackBarData(
                 SnackbarData(
@@ -879,16 +892,16 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
                 (
-                        (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                                PreviewMode.ExternalMultipleImageCaptureMode
-                        )?.let {
-                        val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
-                            null
-                        } else {
-                            it.imageCaptureUris[externalUriIndex]
-                        }
-                        Pair(externalUriIndex, uri)
-                    } ?: Pair(-1, imageCaptureUri)
+                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
+                        PreviewMode.ExternalMultipleImageCaptureMode
+                    )?.let {
+                    val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
+                        null
+                    } else {
+                        it.imageCaptureUris[externalUriIndex]
+                    }
+                    Pair(externalUriIndex, uri)
+                } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
@@ -915,14 +928,14 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
-                (previewUiState.value as? PreviewUiState.Ready)
-                    ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
-                )?.let {
-                if (!it.imageCaptureUris.isNullOrEmpty()) {
-                    externalUriIndex++
-                    Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
-                }
+            (previewUiState.value as? PreviewUiState.Ready)
+                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+            )?.let {
+            if (!it.imageCaptureUris.isNullOrEmpty()) {
+                externalUriIndex++
+                Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
             }
+        }
     }
 
     private suspend fun <T> captureImageInternal(
@@ -979,7 +992,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             addSnackBarData(
@@ -1040,7 +1053,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         viewModelScope.launch {
@@ -1055,7 +1068,9 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (previewMode !is PreviewMode.ExternalImageCaptureMode && previewMode !is PreviewMode.ExternalMultipleImageCaptureMode) {
+        if (previewMode !is PreviewMode.ExternalImageCaptureMode &&
+            previewMode !is PreviewMode.ExternalMultipleImageCaptureMode
+        ) {
             viewModelScope.launch {
                 cameraUseCase.setDynamicRange(dynamicRange)
             }
