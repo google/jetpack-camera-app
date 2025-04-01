@@ -23,7 +23,9 @@ import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -61,7 +63,8 @@ sealed interface PreviewUiState {
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
         val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
-        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
+        val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -89,7 +92,11 @@ sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
-
+sealed interface HdrUiState{
+    data object Unavailable: HdrUiState
+    data class Available(val currentImageOutputFormat: ImageOutputFormat,
+                         val currentDynamicRange: DynamicRange): HdrUiState
+}
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState
     data class Enabled(

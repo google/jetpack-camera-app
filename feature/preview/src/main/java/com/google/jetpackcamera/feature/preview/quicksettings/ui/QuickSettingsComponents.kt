@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
+import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
@@ -205,7 +206,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
             },
             isHighLighted =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
+                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
         )
     }
 }
@@ -214,25 +215,21 @@ fun QuickSetCaptureMode(
 fun QuickSetHdr(
     modifier: Modifier = Modifier,
     onClick: (DynamicRange, ImageOutputFormat) -> Unit,
-    selectedDynamicRange: DynamicRange,
-    selectedImageOutputFormat: ImageOutputFormat,
-    hdrDynamicRangeSupported: Boolean,
-    hdrImageFormatSupported: Boolean,
-    enabled: Boolean
+    hdrUiState: HdrUiState
 ) {
     val enum =
-        if (selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-            selectedImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
-        ) {
+        if (hdrUiState is HdrUiState.Available &&
+            (hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT)
+        )
             CameraDynamicRange.HDR
-        } else {
+        else
             CameraDynamicRange.SDR
-        }
+
 
     val newVideoDynamicRange = if (
-        enum == CameraDynamicRange.SDR &&
-        selectedDynamicRange == DynamicRange.SDR &&
-        hdrDynamicRangeSupported
+        hdrUiState is HdrUiState.Available &&
+        enum == CameraDynamicRange.SDR
     ) {
         DEFAULT_HDR_DYNAMIC_RANGE
     } else {
@@ -240,9 +237,8 @@ fun QuickSetHdr(
     }
 
     val newImageOutputFormat = if (
-        enum == CameraDynamicRange.SDR &&
-        selectedImageOutputFormat == ImageOutputFormat.JPEG &&
-        hdrImageFormatSupported
+        hdrUiState is HdrUiState.Available &&
+        enum == CameraDynamicRange.SDR
     ) {
         DEFAULT_HDR_IMAGE_OUTPUT
     } else {
@@ -255,8 +251,10 @@ fun QuickSetHdr(
         onClick = {
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
-        isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
-        enabled = enabled
+        isHighLighted = (hdrUiState is HdrUiState.Available &&
+                (hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT)),
+        enabled = hdrUiState is HdrUiState.Available
     )
 }
 
@@ -468,18 +466,18 @@ fun QuickSettingUiItem(
     )
     Column(
         modifier =
-        modifier
-            .wrapContentSize()
-            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable(
-                enabled = enabled,
-                onClick = {
-                    buttonClicked = true
-                    onClick()
-                },
-                indication = null,
-                interactionSource = null
-            ),
+            modifier
+                .wrapContentSize()
+                .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
+                .clickable(
+                    enabled = enabled,
+                    onClick = {
+                        buttonClicked = true
+                        onClick()
+                    },
+                    indication = null,
+                    interactionSource = null
+                ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -515,25 +513,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -557,25 +555,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
 
     LazyVerticalGrid(

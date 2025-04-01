@@ -274,13 +274,7 @@ private fun ExpandedQuickSettingsUi(
                                 onDynamicRangeClick(d)
                                 onImageOutputFormatClick(i)
                             },
-                            selectedDynamicRange = currentCameraSettings.dynamicRange,
-                            selectedImageOutputFormat = currentCameraSettings.imageFormat,
-                            hdrDynamicRangeSupported =
-                            cameraConstraints?.hdrDynamicRangeSupported() == true,
-                            hdrImageFormatSupported =
-                            cameraConstraints?.hdrImageFormatSupported() == true,
-                            enabled = shouldEnable()
+                           hdrUiState = previewUiState.hdrUiState
                         )
                     }
 
