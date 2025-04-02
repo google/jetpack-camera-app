@@ -25,6 +25,7 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -32,12 +33,16 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -107,14 +112,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
+import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -729,6 +738,119 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     }
 }
 
+@Composable
+fun CaptureModeDropDown(
+    modifier: Modifier = Modifier,
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    onDisabledCaptureMode: (DisabledReason) -> Unit,
+    captureModeUiState: CaptureModeUiState.Enabled
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter =
+            fadeIn() + expandVertically(expandFrom = Alignment.Top),
+            exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
+        ) {
+            fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
+                if (selectableState is SingleSelectableState.Disabled) {
+                    { onDisabledCaptureMode(selectableState.disabledReason) }
+                } else {
+                    { TODO("Enabled should not have disabled click") }
+                }
+
+            Column {
+                DropDownItem(
+                    text = stringResource(R.string.quick_settings_text_capture_mode_standard),
+                    enabled = captureModeUiState.defaultCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.STANDARD)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
+                )
+                DropDownItem(
+                    text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
+                    enabled = captureModeUiState.imageOnlyCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.IMAGE_ONLY)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
+                )
+                DropDownItem(
+                    text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
+                    enabled = captureModeUiState.videoOnlyCaptureState
+                        is SingleSelectableState.Selectable,
+                    onClick = {
+                        onSetCaptureMode(CaptureMode.VIDEO_ONLY)
+                        isExpanded = false
+                    },
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.videoOnlyCaptureState
+                    )
+
+                )
+            }
+        }
+        // this text displays the current selection
+        Box(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    // removes the greyish background animation that appears when clicking on a clickable
+                    indication = null,
+                    onClick = { isExpanded = !isExpanded }
+                )
+                .padding(8.dp)
+        ) {
+            Text(
+                text = when (captureModeUiState.currentSelection) {
+                    CaptureMode.STANDARD -> stringResource(
+                        R.string.quick_settings_text_capture_mode_standard
+                    )
+
+                    CaptureMode.VIDEO_ONLY -> stringResource(
+                        R.string.quick_settings_text_capture_mode_image_only
+                    )
+
+                    CaptureMode.IMAGE_ONLY -> stringResource(
+                        R.string.quick_settings_text_capture_mode_video_only
+                    )
+                },
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun DropDownItem(
+    modifier: Modifier = Modifier,
+    text: String,
+    onClick: () -> Unit = {},
+    onDisabledClick: () -> Unit = {},
+    enabled: Boolean = true,
+    isSelected: Boolean = false
+) {
+    Text(
+        text = text,
+        color = if (enabled) Color.Unspecified else Color.DarkGray,
+        modifier = modifier
+            .clickable(enabled = true, onClick = if (enabled) onClick else onDisabledClick)
+            .apply {
+                if (!enabled) {
+                    alpha(.37f)
+                }
+            }
+            .padding(16.dp)
+    )
+}
+
 enum class ToggleState {
     Left,
     Right
@@ -822,7 +944,7 @@ fun ToggleButton(
             ) {
                 Icon(
                     painter = leftIcon,
-                    contentDescription = leftIconDescription,
+                    contentDescription = "leftIcon",
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor
@@ -834,7 +956,7 @@ fun ToggleButton(
                 )
                 Icon(
                     painter = rightIcon,
-                    contentDescription = rightIconDescription,
+                    contentDescription = "rightIcon",
                     modifier = Modifier.padding(iconPadding),
                     tint = if (!enabled) {
                         disableColor

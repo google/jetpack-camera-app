@@ -52,10 +52,13 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
-import com.google.jetpackcamera.feature.preview.PreviewMode
+import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraFlashMode
@@ -63,6 +66,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.CameraLensFace
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
@@ -115,46 +119,148 @@ fun FocusedQuickSetRatio(
 }
 
 @Composable
+fun FocusedQuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    captureModeUiState: CaptureModeUiState
+) {
+    val buttons: Array<@Composable () -> Unit> =
+        if (captureModeUiState is CaptureModeUiState.Enabled) {
+            arrayOf(
+                {
+                    QuickSetCaptureMode(
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+                        onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
+                        assignedCaptureMode = CaptureMode.STANDARD,
+                        captureModeUiState = captureModeUiState,
+                        isHighlightEnabled = true
+                    )
+                },
+                {
+                    QuickSetCaptureMode(
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                        onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+                        assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+                        captureModeUiState = captureModeUiState,
+                        isHighlightEnabled = true
+                    )
+                },
+                {
+                    QuickSetCaptureMode(
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                        onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+                        assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+                        captureModeUiState = captureModeUiState,
+                        isHighlightEnabled = true
+                    )
+                }
+            )
+        } else {
+            emptyArray()
+        }
+    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+}
+
+@Composable
+fun QuickSetCaptureMode(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    captureModeUiState: CaptureModeUiState,
+    assignedCaptureMode: CaptureMode?,
+    isHighlightEnabled: Boolean = false
+) {
+    if (captureModeUiState is CaptureModeUiState.Enabled) {
+        val captureToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
+        val enum = when (captureToUse) {
+            CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+            CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+            CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+        }
+
+        QuickSettingUiItem(
+            modifier = modifier,
+            enum = enum,
+            onClick = { onClick() },
+            enabled = when (assignedCaptureMode) {
+                null -> {
+                    val list: List<SingleSelectableState> =
+                        listOf(
+                            captureModeUiState.defaultCaptureState,
+                            captureModeUiState.imageOnlyCaptureState,
+                            captureModeUiState.videoOnlyCaptureState
+                        )
+                    // only enabled if there are at least 2 supported capturemodes
+                    list.count { it is SingleSelectableState.Selectable } >= 2
+                }
+
+                CaptureMode.STANDARD ->
+                    captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable
+
+                CaptureMode.VIDEO_ONLY ->
+                    captureModeUiState.videoOnlyCaptureState is SingleSelectableState.Selectable
+
+                CaptureMode.IMAGE_ONLY ->
+                    captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
+            },
+            isHighLighted =
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
+        )
+    }
+}
+
+@Composable
 fun QuickSetHdr(
     modifier: Modifier = Modifier,
-    onClick: (dynamicRange: DynamicRange, imageOutputFormat: ImageOutputFormat) -> Unit,
-    selectedDynamicRange: DynamicRange,
-    selectedImageOutputFormat: ImageOutputFormat,
-    hdrDynamicRangeSupported: Boolean,
-    previewMode: PreviewMode,
-    enabled: Boolean
+    onClick: (DynamicRange, ImageOutputFormat) -> Unit,
+    hdrUiState: HdrUiState
 ) {
     val enum =
-        if (selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-            selectedImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+        if (hdrUiState is HdrUiState.Available &&
+            (
+                hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
             CameraDynamicRange.SDR
         }
 
+    val newVideoDynamicRange = if (
+        hdrUiState is HdrUiState.Available &&
+        enum == CameraDynamicRange.SDR
+    ) {
+        DEFAULT_HDR_DYNAMIC_RANGE
+    } else {
+        DynamicRange.SDR
+    }
+
+    val newImageOutputFormat = if (
+        hdrUiState is HdrUiState.Available &&
+        enum == CameraDynamicRange.SDR
+    ) {
+        DEFAULT_HDR_IMAGE_OUTPUT
+    } else {
+        ImageOutputFormat.JPEG
+    }
+
     QuickSettingUiItem(
         modifier = modifier,
         enum = enum,
         onClick = {
-            val newDynamicRange =
-                if (selectedDynamicRange == DynamicRange.SDR && hdrDynamicRangeSupported) {
-                    DEFAULT_HDR_DYNAMIC_RANGE
-                } else {
-                    DynamicRange.SDR
-                }
-            val newImageOutputFormat =
-                if (!hdrDynamicRangeSupported ||
-                    previewMode is PreviewMode.ExternalImageCaptureMode
-                ) {
-                    DEFAULT_HDR_IMAGE_OUTPUT
-                } else {
-                    ImageOutputFormat.JPEG
-                }
-            onClick(newDynamicRange, newImageOutputFormat)
+            onClick(newVideoDynamicRange, newImageOutputFormat)
         },
-        isHighLighted = (selectedDynamicRange != DynamicRange.SDR),
-        enabled = enabled
+        isHighLighted = (
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
+        enabled = hdrUiState is HdrUiState.Available
     )
 }
 
@@ -195,6 +301,7 @@ fun QuickSetFlash(
                 enabled = false,
                 onClick = {}
             )
+
         is FlashModeUiState.Available ->
             QuickSettingUiItem(
                 modifier = modifier,
@@ -342,11 +449,11 @@ fun QuickSettingUiItem(
  */
 @Composable
 fun QuickSettingUiItem(
+    modifier: Modifier = Modifier,
     text: String,
     painter: Painter,
     accessibilityText: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
@@ -390,7 +497,9 @@ fun QuickSettingUiItem(
             Icon(
                 painter = painter,
                 contentDescription = accessibilityText,
-                modifier = Modifier.size(iconSize).scale(animatedScale)
+                modifier = Modifier
+                    .size(iconSize)
+                    .scale(animatedScale)
             )
 
             Text(text = text, textAlign = TextAlign.Center)
@@ -418,8 +527,15 @@ fun ExpandedQuickSetting(
                         )
                     ) /
                     (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
+                            (
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
                         )
                 ).toInt()
         )
@@ -453,8 +569,15 @@ fun QuickSettingsGrid(
                         )
                     ) /
                     (
-                        dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size) +
-                            (dimensionResource(id = R.dimen.quick_settings_ui_item_padding) * 2)
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
+                            (
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
                         )
                 ).toInt()
         )
@@ -509,6 +632,7 @@ fun FlashModeIndicator(
                 enum = CameraFlashMode.OFF,
                 enabled = false
             )
+
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(

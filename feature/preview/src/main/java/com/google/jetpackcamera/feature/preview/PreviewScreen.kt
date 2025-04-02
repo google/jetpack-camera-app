@@ -145,13 +145,14 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onChangeZoomRatio = viewModel::changeZoomRatio,
+                onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
                 onSetStreamConfig = viewModel::setStreamConfig,
                 onChangeDynamicRange = viewModel::setDynamicRange,
                 onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
                 onChangeImageFormat = viewModel::setImageFormat,
-                onToggleWhenDisabled = viewModel::enqueueDisabledHdrToggleSnackBar,
+                onDisabledCaptureMode = viewModel::enqueueDisabledHdrToggleSnackBar,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
@@ -187,6 +188,7 @@ private fun ContentScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onClearUiScreenBrightness: (Float) -> Unit = {},
+    onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onChangeZoomRatio: (CameraZoomRatio) -> Unit = {},
@@ -196,7 +198,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onToggleWhenDisabled: (CaptureModeToggleUiState.DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -255,7 +257,7 @@ private fun ContentScreen(
                 modifier = Modifier,
                 previewUiState = previewUiState,
                 isOpen = previewUiState.quickSettingsIsOpen,
-                toggleIsOpen = onToggleQuickSettings,
+                toggleQuickSettings = onToggleQuickSettings,
                 currentCameraSettings = previewUiState.currentCameraSettings,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
@@ -263,19 +265,21 @@ private fun ContentScreen(
                 onStreamConfigClick = onSetStreamConfig,
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
-                onConcurrentCameraModeClick = onChangeConcurrentCameraMode
+                onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
+                onCaptureModeClick = onSetCaptureMode
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
                 previewUiState = previewUiState,
                 onNavigateToSettings = onNavigateToSettings,
+                onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
-                onToggleWhenDisabled = onToggleWhenDisabled,
+                onDisabledCaptureMode = onDisabledCaptureMode,
                 onSetPause = onSetPause,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onStartVideoRecording = onStartVideoRecording,
@@ -417,7 +421,7 @@ private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
     systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
     previewMode = PreviewMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeToggleUiState.Invisible
+    captureModeToggleUiState = CaptureModeUiState.Unavailable
 )
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
