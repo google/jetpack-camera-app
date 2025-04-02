@@ -133,17 +133,17 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Share Image Button
+            // Share Media Button
             IconButton(
                 onClick = {
                     val mediaDescriptor = uiState.mediaDescriptor
 
                     if (mediaDescriptor is MediaDescriptor.Image) {
-                        shareImage(context, mediaDescriptor.uri)
+                        shareImage(context, mediaDescriptor.uri, "image/jpeg")
                     }
 
                     if (mediaDescriptor is MediaDescriptor.Video) {
-                        shareImage(context, mediaDescriptor.uri)
+                        shareImage(context, mediaDescriptor.uri, "video/mp4")
                     }
                 },
                 modifier = Modifier
@@ -164,16 +164,13 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
 }
 
 /**
- * Starts an intent to share an image
- *
- * @param context The application context
- * @param imagePath The path to the image to share
+ * Starts an intent to share media
  */
-private fun shareImage(context: Context, uri: Uri) {
+private fun shareImage(context: Context, uri: Uri, mimeType: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/jpeg"
+        type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    context.startActivity(Intent.createChooser(intent, "Share Image"))
+    context.startActivity(Intent.createChooser(intent, "Share Media"))
 }
