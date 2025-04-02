@@ -74,6 +74,7 @@ import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -112,6 +113,7 @@ fun CameraControlsOverlay(
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
+    onSetZoom: (CameraZoomRatio) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -176,6 +178,7 @@ fun CameraControlsOverlay(
                 videoRecordingState = previewUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
+                onSetZoom = onSetZoom,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
@@ -284,6 +287,7 @@ private fun ControlsBottom(
     onSetPause: (Boolean) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onDisabledCaptureMode: (DisabledReason) -> Unit = {},
+    onSetZoom: (CameraZoomRatio) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
@@ -380,6 +384,7 @@ private fun ControlsBottom(
                     previewMode = previewUiState.previewMode,
                     isQuickSettingsOpen = isQuickSettingsOpen,
                     onCaptureImageWithUri = onCaptureImageWithUri,
+                    onSetZoom = onSetZoom,
                     onToggleQuickSettings = onToggleQuickSettings,
                     onStartVideoRecording = onStartVideoRecording,
                     onStopVideoRecording = onStopVideoRecording,
@@ -420,6 +425,7 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     previewMode: PreviewMode,
     onToggleQuickSettings: () -> Unit = {},
+    onSetZoom: (CameraZoomRatio) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -439,6 +445,7 @@ private fun CaptureButton(
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
+        onSetZoom = onSetZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
