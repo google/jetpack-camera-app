@@ -293,15 +293,14 @@ private fun CaptureButton(
     val switchWidth = (captureButtonSize * LOCK_SWITCH_WIDTH_SCALE)
     val currentColor = LocalContentColor.current
 
-    var dragOffset by remember { mutableStateOf(Offset.Unspecified) }
     var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
 
     fun shouldBeLocked(): Boolean = switchPosition > MINIMUM_LOCK_THRESHOLD
 
-    fun setLockSwitchPosition(offsetX: Float) {
+    fun setLockSwitchPosition(positionX: Float, offsetX: Float) {
         relativeCaptureButtonBounds?.let {
             if (useLockSwitch) {
-                if (dragOffset.x > it.center.x) {
+                if (positionX > it.center.x) {
                     switchPosition = LOCK_SWITCH_POSITION_OFF
                 } else {
                     val newSwitchPosition =
@@ -337,9 +336,8 @@ private fun CaptureButton(
                     // onLongPress cannot be null, otherwise it won't detect the release if the
                     // touch is dragged off the component
                     onLongPress = {},
-                    onPress = { initialOffset ->
+                    onPress = {
                         isCaptureButtonPressed = true
-                        dragOffset = initialOffset
                         onPress()
                         awaitRelease()
                         isCaptureButtonPressed = false
@@ -355,33 +353,34 @@ private fun CaptureButton(
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { initialOffset -> dragOffset = initialOffset },
-                    onDragEnd = { dragOffset = Offset.Unspecified },
-                    onDragCancel = { dragOffset = Offset.Unspecified },
+                    onDragStart = {},
+                    onDragEnd = {},
+                    onDragCancel = {},
                     onDrag = { change, deltaOffset ->
+                        val newPoint = change.position
+
                         // update position of lock switch
-                        setLockSwitchPosition(deltaOffset.x)
+                        setLockSwitchPosition(newPoint.x, deltaOffset.x)
 
                         // update zoom
                         if (currentUiState.value ==
                             CaptureButtonUiState.Enabled.Recording.PressedRecording
                         ) {
-                            val newPoint = dragOffset + deltaOffset
+                            val previousPoint = change.position - deltaOffset
                             val positiveDistance =
-                                if (newPoint.y >= 0 && dragOffset.y >= 0) {
+                                if (newPoint.y >= 0 && previousPoint.y >= 0) {
                                     // 0 if both points are within bounds
                                     0f
-                                } else if (newPoint.y < 0 && dragOffset.y < 0) {
+                                } else if (newPoint.y < 0 && previousPoint.y < 0) {
                                     deltaOffset.y
                                 } else if (newPoint.y <= 0) {
                                     newPoint.y
                                 } else {
-                                    dragOffset.y
+                                    previousPoint.y
                                 }
-                            dragOffset = newPoint
 
                             if (!positiveDistance.isNaN()) {
-                                // todo(kc): should improve the tuning of this.
+                                // todo(kc): should check the tuning of this.
                                 val zoom = positiveDistance * -0.01f // Adjust sensitivity
                                 onSetZoom(
                                     CameraZoomRatio(ZoomChange.Increment(zoom))
