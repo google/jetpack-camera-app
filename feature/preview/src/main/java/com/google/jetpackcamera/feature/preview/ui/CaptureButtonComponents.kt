@@ -64,7 +64,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.tooling.preview.Preview
@@ -328,19 +328,18 @@ private fun CaptureButton(
     }
     CaptureButtonRing(
         modifier = modifier
-            .onGloballyPositioned { coordinates ->
-                val size = coordinates.size
+            .onSizeChanged {
                 relativeCaptureButtonBounds =
-                    Rect(0f, 0f, size.width.toFloat(), size.height.toFloat())
+                    Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
             }
             .pointerInput(Unit) {
                 detectTapGestures(
                     // onLongPress cannot be null, otherwise it won't detect the release if the
                     // touch is dragged off the component
                     onLongPress = {},
-                    onPress = {
+                    onPress = { initialOffset ->
                         isCaptureButtonPressed = true
-                        dragOffset = it
+                        dragOffset = initialOffset
                         onPress()
                         awaitRelease()
                         isCaptureButtonPressed = false
@@ -356,25 +355,24 @@ private fun CaptureButton(
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { initialOffset -> {} },
+                    onDragStart = { initialOffset -> dragOffset = initialOffset },
                     onDragEnd = { dragOffset = Offset.Unspecified },
                     onDragCancel = { dragOffset = Offset.Unspecified },
-                    onDrag = { change, offset ->
+                    onDrag = { change, deltaOffset ->
                         // update position of lock switch
-                        Log.d(TAG, "move y: ${offset.y}")
-                        setLockSwitchPosition(offset.x)
+                        setLockSwitchPosition(deltaOffset.x)
 
                         // update zoom
                         if (currentUiState.value ==
                             CaptureButtonUiState.Enabled.Recording.PressedRecording
                         ) {
-                            val newPoint = dragOffset + offset
+                            val newPoint = dragOffset + deltaOffset
                             val positiveDistance =
                                 if (newPoint.y >= 0 && dragOffset.y >= 0) {
                                     // 0 if both points are within bounds
                                     0f
                                 } else if (newPoint.y < 0 && dragOffset.y < 0) {
-                                    offset.y
+                                    deltaOffset.y
                                 } else if (newPoint.y <= 0) {
                                     newPoint.y
                                 } else {
@@ -384,8 +382,6 @@ private fun CaptureButton(
 
                             if (!positiveDistance.isNaN()) {
                                 // todo(kc): should improve the tuning of this.
-                                //  todo(): zoom should always return to the original when you drag
-                                //  back to 0 on the y axis
                                 val zoom = positiveDistance * -0.01f // Adjust sensitivity
                                 onSetZoom(
                                     CameraZoomRatio(ZoomChange.Increment(zoom))
