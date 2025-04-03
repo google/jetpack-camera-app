@@ -16,12 +16,16 @@
 package com.google.jetpackcamera.feature.postcapture
 
 import android.content.ContentResolver
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +34,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PostCaptureViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     init {
@@ -43,6 +48,8 @@ class PostCaptureViewModel @Inject constructor(
             media = Media.None
         )
     )
+
+    val player = ExoPlayer.Builder(context).build()
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
@@ -62,6 +69,17 @@ class PostCaptureViewModel @Inject constructor(
             MediaDescriptor.None -> {}
         }
         _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
+    }
+
+    fun playVideo() {
+        val media = uiState.value.media
+        if (media is Media.Video) {
+            val mediaItem = MediaItem.fromUri(media.uri)
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE)
+            player.play()
+        }
     }
 }
 
