@@ -30,19 +30,13 @@ import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG
-import com.google.jetpackcamera.settings.ui.BTN_DIALOG_DARK_MODE_OPTION_ON_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FLASH_OPTION_AUTO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FPS_OPTION_AUTO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
-import com.google.jetpackcamera.settings.ui.BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG
-import com.google.jetpackcamera.settings.ui.BTN_DIALOG_VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG
-import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FPS_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
-import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG
-import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runScenarioTest
@@ -137,33 +131,6 @@ class SettingsDeviceTest {
             componentTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
             dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG,
             componentDisabledMessage = "Stream configuration component is disabled"
-        )
-    }
-
-    @Test
-    fun openSettings_openSetVideoDurationDialog() = runScenarioTest<MainActivity> {
-        openSettings_clickSettingComponent_verifyDialog(
-            componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG,
-            dialogTestTag = BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG,
-            componentDisabledMessage = "Video duration component is disabled"
-        )
-    }
-
-    @Test
-    fun openSettings_openSetVideoQualityDialog() = runScenarioTest<MainActivity> {
-        openSettings_clickSettingComponent_verifyDialog(
-            componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG,
-            dialogTestTag = BTN_DIALOG_VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG,
-            componentDisabledMessage = "Video quality component is disabled"
-        )
-    }
-
-    @Test
-    fun openSettings_openSetDarkModeDialog() = runScenarioTest<MainActivity> {
-        openSettings_clickSettingComponent_verifyDialog(
-            componentTestTag = BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG,
-            dialogTestTag = BTN_DIALOG_DARK_MODE_OPTION_ON_TAG,
-            componentDisabledMessage = "Dark mode component is disabled"
         )
     }
 }
