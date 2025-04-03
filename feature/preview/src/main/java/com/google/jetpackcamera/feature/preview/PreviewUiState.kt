@@ -23,7 +23,9 @@ import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.feature.preview.ui.ToastMessage
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
+import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -48,7 +50,7 @@ sealed interface PreviewUiState {
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeToggleUiState = CaptureModeToggleUiState.Invisible,
+        val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
@@ -59,8 +61,10 @@ sealed interface PreviewUiState {
         val audioUiState: AudioUiState = AudioUiState.Disabled,
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
-        val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
-        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
+        val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
+        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
+        val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -88,7 +92,13 @@ sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
-
+sealed interface HdrUiState {
+    data object Unavailable : HdrUiState
+    data class Available(
+        val currentImageOutputFormat: ImageOutputFormat,
+        val currentDynamicRange: DynamicRange
+    ) : HdrUiState
+}
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState
     data class Enabled(

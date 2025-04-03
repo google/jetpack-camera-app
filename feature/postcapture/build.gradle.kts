@@ -117,6 +117,10 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
+    // Media3
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui.compose)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)

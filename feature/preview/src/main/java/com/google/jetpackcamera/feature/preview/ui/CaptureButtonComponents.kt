@@ -60,9 +60,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.tooling.preview.Preview
@@ -70,7 +72,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ZoomChange
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -93,6 +97,7 @@ private const val LOCK_SWITCH_POSITION_OFF = 0f
 private const val MINIMUM_LOCK_THRESHOLD = .65F
 
 private const val LOCK_SWITCH_ALPHA = .37f
+
 private enum class CaptureSource {
     CAPTURE_BUTTON,
     VOLUME_UP,
@@ -137,6 +142,7 @@ private fun CaptureKeyHandler(
                     // consume the event
                     true
                 }
+
                 else -> {
                     false
                 }
@@ -158,6 +164,7 @@ fun CaptureButton(
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
+    onSetZoom: (CameraZoomRatio) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
@@ -187,10 +194,12 @@ fun CaptureButton(
                         Log.d(TAG, "Starting recording")
                         onStartRecording()
                     }
+
                     CaptureMode.IMAGE_ONLY -> {
                         isLongPressing.value = true
                     }
                 }
+
                 else -> {}
             }
         }
@@ -234,7 +243,8 @@ fun CaptureButton(
 
                     CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
                     CaptureButtonUiState.Enabled.Recording.PressedRecording,
-                    CaptureButtonUiState.Unavailable -> {}
+                    CaptureButtonUiState.Unavailable -> {
+                    }
                 }
             }
             longPressJob?.cancel()
@@ -253,6 +263,7 @@ fun CaptureButton(
         onPress = { onPress(CaptureSource.CAPTURE_BUTTON) },
         onRelease = { onKeyUp(CaptureSource.CAPTURE_BUTTON, it) },
         onLockVideoRecording = onLockVideoRecording,
+        onSetZoom = onSetZoom,
         captureButtonUiState = captureButtonUiState,
         captureButtonSize = captureButtonSize
     )
@@ -263,6 +274,7 @@ private fun CaptureButton(
     modifier: Modifier = Modifier,
     onPress: () -> Unit,
     onRelease: (isLocked: Boolean) -> Unit,
+    onSetZoom: (CameraZoomRatio) -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     useLockSwitch: Boolean = true,
@@ -276,15 +288,37 @@ private fun CaptureButton(
     var switchPosition by remember {
         mutableFloatStateOf(LOCK_SWITCH_POSITION_OFF)
     }
-    val switchWidth = (captureButtonSize * LOCK_SWITCH_WIDTH_SCALE).dp
 
+    val currentUiState = rememberUpdatedState(captureButtonUiState)
+    val switchWidth = (captureButtonSize * LOCK_SWITCH_WIDTH_SCALE)
     val currentColor = LocalContentColor.current
 
+    var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
+
     fun shouldBeLocked(): Boolean = switchPosition > MINIMUM_LOCK_THRESHOLD
+
+    fun setLockSwitchPosition(positionX: Float, offsetX: Float) {
+        relativeCaptureButtonBounds?.let {
+            if (useLockSwitch) {
+                if (positionX > it.center.x) {
+                    switchPosition = LOCK_SWITCH_POSITION_OFF
+                } else {
+                    val newSwitchPosition =
+                        switchPosition - (offsetX / switchWidth)
+                    switchPosition =
+                        newSwitchPosition.coerceIn(
+                            LOCK_SWITCH_POSITION_OFF,
+                            LOCK_SWITCH_POSITION_ON
+                        )
+                }
+            }
+        }
+    }
+
     fun toggleSwitchPosition() = if (shouldBeLocked()) {
         switchPosition = LOCK_SWITCH_POSITION_OFF
     } else {
-        if (isCaptureButtonPressed == false) {
+        if (!isCaptureButtonPressed) {
             onLockVideoRecording(true)
         } else {
             switchPosition =
@@ -293,6 +327,10 @@ private fun CaptureButton(
     }
     CaptureButtonRing(
         modifier = modifier
+            .onSizeChanged {
+                relativeCaptureButtonBounds =
+                    Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
+            }
             .pointerInput(Unit) {
                 detectTapGestures(
                     // onLongPress cannot be null, otherwise it won't detect the release if the
@@ -315,18 +353,39 @@ private fun CaptureButton(
             }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { },
-                    onDragEnd = { },
-                    onDrag = { change, dragAmount ->
-                        if (useLockSwitch) {
-                            val newPosition =
-                                switchPosition - (dragAmount.x / switchWidth.toPx())
-                            switchPosition =
-                                newPosition.coerceIn(
-                                    LOCK_SWITCH_POSITION_OFF,
-                                    LOCK_SWITCH_POSITION_ON
+                    onDragStart = {},
+                    onDragEnd = {},
+                    onDragCancel = {},
+                    onDrag = { change, deltaOffset ->
+                        val newPoint = change.position
+
+                        // update position of lock switch
+                        setLockSwitchPosition(newPoint.x, deltaOffset.x)
+
+                        // update zoom
+                        if (currentUiState.value ==
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording
+                        ) {
+                            val previousPoint = change.position - deltaOffset
+                            val positiveDistance =
+                                if (newPoint.y >= 0 && previousPoint.y >= 0) {
+                                    // 0 if both points are within bounds
+                                    0f
+                                } else if (newPoint.y < 0 && previousPoint.y < 0) {
+                                    deltaOffset.y
+                                } else if (newPoint.y <= 0) {
+                                    newPoint.y
+                                } else {
+                                    previousPoint.y
+                                }
+
+                            if (!positiveDistance.isNaN()) {
+                                // todo(kc): should check the tuning of this.
+                                val zoom = positiveDistance * -0.01f // Adjust sensitivity
+                                onSetZoom(
+                                    CameraZoomRatio(ZoomChange.Increment(zoom))
                                 )
-                            change.consume()
+                            }
                         }
                     }
                 )
@@ -338,7 +397,7 @@ private fun CaptureButton(
             LockSwitchCaptureButtonNucleus(
                 captureButtonUiState = captureButtonUiState,
                 captureButtonSize = captureButtonSize,
-                switchWidth = switchWidth,
+                switchWidth = switchWidth.dp,
                 switchPosition = switchPosition,
                 onToggleSwitchPosition = { toggleSwitchPosition() },
                 shouldBeLocked = { shouldBeLocked() }

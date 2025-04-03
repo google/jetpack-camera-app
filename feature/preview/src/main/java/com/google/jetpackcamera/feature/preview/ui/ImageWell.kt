@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.graphics.RectF
-import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -31,22 +30,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.core.common.loadAndRotateBitmap
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import kotlin.math.min
 
 @Composable
 fun ImageWell(
     modifier: Modifier = Modifier,
-    imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
-    onClick: (uri: Uri?) -> Unit
+    imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
+    onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     when (imageWellUiState) {
         is ImageWellUiState.LastCapture -> {
-            val bitmap = loadAndRotateBitmap(context, imageWellUiState.uri, 270f)
+            val bitmap = when (imageWellUiState.mediaDescriptor) {
+                is MediaDescriptor.Image -> imageWellUiState.mediaDescriptor.thumbnail
+                is MediaDescriptor.Video -> imageWellUiState.mediaDescriptor.thumbnail
+                is MediaDescriptor.None -> null
+            }
 
             bitmap?.let {
                 Box(
@@ -55,7 +55,7 @@ fun ImageWell(
                         .padding(18.dp)
                         .border(2.dp, Color.White, RoundedCornerShape(16.dp))
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = { onClick(imageWellUiState.uri) })
+                        .clickable(onClick = onClick)
                 ) {
                     AnimatedContent(
                         targetState = bitmap
@@ -96,14 +96,14 @@ fun ImageWell(
             }
         }
 
-        is ImageWellUiState.NoPreviousCapture -> {
+        is ImageWellUiState.Unavailable -> {
         }
     }
 }
 
 // TODO(yasith): Add support for Video
 sealed interface ImageWellUiState {
-    data object NoPreviousCapture : ImageWellUiState
+    data object Unavailable : ImageWellUiState
 
-    data class LastCapture(val uri: Uri) : ImageWellUiState
+    data class LastCapture(val mediaDescriptor: MediaDescriptor) : ImageWellUiState
 }

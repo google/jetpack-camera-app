@@ -345,10 +345,10 @@ class ConcurrentCameraTest {
     private fun SemanticsNode.fetchConcurrentCameraMode(): ConcurrentCameraMode {
         config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
-                getResString(R.string.quick_settings_concurrent_camera_off_description) ->
+                getResString(R.string.quick_settings_description_concurrent_camera_off) ->
                     return ConcurrentCameraMode.OFF
 
-                getResString(R.string.quick_settings_concurrent_camera_dual_description) ->
+                getResString(R.string.quick_settings_description_concurrent_camera_dual) ->
                     return ConcurrentCameraMode.DUAL
 
                 else -> false
