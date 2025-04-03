@@ -126,7 +126,7 @@ fun CameraControlsOverlay(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
-    onImageWellClick: (uri: Uri?) -> Unit = {},
+    onImageWellClick: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
@@ -294,7 +294,7 @@ private fun ControlsBottom(
         (PreviewViewModel.VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
-    onImageWellClick: (uri: Uri?) -> Unit = {},
+    onImageWellClick: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {

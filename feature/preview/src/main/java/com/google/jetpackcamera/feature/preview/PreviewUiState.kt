@@ -61,7 +61,7 @@ sealed interface PreviewUiState {
         val audioUiState: AudioUiState = AudioUiState.Disabled,
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
-        val imageWellUiState: ImageWellUiState = ImageWellUiState.NoPreviousCapture,
+        val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
         val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
         val hdrUiState: HdrUiState = HdrUiState.Unavailable

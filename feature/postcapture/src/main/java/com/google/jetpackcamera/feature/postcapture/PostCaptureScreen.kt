@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.postcapture
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,10 +38,8 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -48,27 +47,25 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.jetpackcamera.core.common.loadAndRotateBitmap
+import com.google.jetpackcamera.data.media.Media
+import com.google.jetpackcamera.data.media.MediaDescriptor
+
+private const val TAG = "PostCaptureScreen"
 
 @Composable
-fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUri: Uri?) {
+fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
+    Log.d(TAG, "PostCaptureScreen")
+
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(imageUri) {
-        viewModel.setLastCapturedImageUri(imageUri)
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
-        uiState.imageUri?.let { uri ->
-            val bitmap = remember(uri) {
-                // TODO(yasith): Get the image rotation from the image
-                loadAndRotateBitmap(context, uri, 270f)
-            }
-
-            if (bitmap != null) {
+        when (val media = uiState.media) {
+            is Media.Image -> {
+                val bitmap = media.bitmap
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawIntoCanvas { canvas ->
                         val scale = maxOf(
@@ -90,10 +87,25 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
                     }
                 }
             }
-        } ?: Text(
-            text = "No Image Captured",
-            modifier = Modifier.align(Alignment.Center)
-        )
+            is Media.Video -> {
+                Text(
+                    text = "Video support pending",
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            Media.None -> {
+                Text(
+                    text = stringResource(R.string.no_media_available),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            Media.Error -> {
+                Text(
+                    text = stringResource(R.string.error_loading_media),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
 
         Row(
             modifier = Modifier
@@ -104,7 +116,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
         ) {
             // Delete Image Button
             IconButton(
-                onClick = { viewModel.deleteImage(context.contentResolver) },
+                onClick = { viewModel.deleteMedia(context.contentResolver) },
                 modifier = Modifier
                     .size(56.dp)
                     .shadow(10.dp, CircleShape),
@@ -121,11 +133,17 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Share Image Button
+            // Share Media Button
             IconButton(
                 onClick = {
-                    imageUri?.let {
-                        shareImage(context, it)
+                    val mediaDescriptor = uiState.mediaDescriptor
+
+                    if (mediaDescriptor is MediaDescriptor.Image) {
+                        shareImage(context, mediaDescriptor.uri, "image/jpeg")
+                    }
+
+                    if (mediaDescriptor is MediaDescriptor.Video) {
+                        shareImage(context, mediaDescriptor.uri, "video/mp4")
                     }
                 },
                 modifier = Modifier
@@ -146,16 +164,13 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel(), imageUr
 }
 
 /**
- * Starts an intent to share an image
- *
- * @param context The application context
- * @param imagePath The path to the image to share
+ * Starts an intent to share media
  */
-private fun shareImage(context: Context, uri: Uri) {
+private fun shareImage(context: Context, uri: Uri, mimeType: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/jpeg"
+        type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    context.startActivity(Intent.createChooser(intent, "Share Image"))
+    context.startActivity(Intent.createChooser(intent, "Share Media"))
 }
