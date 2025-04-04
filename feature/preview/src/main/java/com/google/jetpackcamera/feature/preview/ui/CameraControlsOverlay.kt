@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Videocam
@@ -390,27 +391,24 @@ private fun ControlsBottom(
                     onStopVideoRecording = onStopVideoRecording,
                     onLockVideoRecording = onLockVideoRecording
                 )
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+
+                Box(
+                    modifier = Modifier.weight(1f).size(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     if (videoRecordingState is VideoRecordingState.Active) {
                         AmplitudeVisualizer(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             onToggleAudio = onToggleAudio,
                             audioUiState = previewUiState.audioUiState
                         )
-                    } else {
-                        Column {
-                            if (!isQuickSettingsOpen &&
-                                previewUiState.previewMode is PreviewMode.StandardMode
-                            ) {
-                                ImageWell(
-                                    modifier = Modifier.weight(1f),
-                                    imageWellUiState = previewUiState.imageWellUiState,
-                                    onClick = onImageWellClick
-                                )
-                            }
-                        }
+                    } else if (!isQuickSettingsOpen &&
+                        previewUiState.previewMode is PreviewMode.StandardMode
+                    ) {
+                        ImageWell(
+                            imageWellUiState = previewUiState.imageWellUiState,
+                            onClick = onImageWellClick
+                        )
                     }
                 }
             }
