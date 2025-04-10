@@ -89,7 +89,7 @@
 
     <string name="stabilization_selector_auto">Auto</string>
     <string name="stabilization_selector_on">On</string>
-    <string name="stabilization_selector_high_quality">High Quality</string>\
+    <string name="stabilization_selector_high_quality">High Quality</string>
     <string name="stabilization_selector_optical">Optical</string>
     <string name="stabilization_selector_off">Off</string>
 
