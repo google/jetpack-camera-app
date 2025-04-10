@@ -69,6 +69,8 @@ import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -85,6 +87,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -110,6 +113,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
@@ -128,12 +132,15 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
+import kotlinx.coroutines.Job
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -504,7 +511,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -551,7 +558,7 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                        "${stabilizationUiState.stabilizationMode}"
+                                            "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
 
@@ -566,8 +573,8 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
-                                        "${stabilizationUiState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                 )
                         }
                     }
@@ -710,6 +717,55 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
+fun ZoomButton(
+    targetZoom: Float,
+    zoomUiState: ZoomUiState.Enabled,
+    onZoomChanged: (CameraZoomRatio) -> Unit,
+    animationDurationMillis: Int? = 500 // Adjust the duration as needed
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var zoomJob by remember { mutableStateOf<Job?>(null) }
+
+
+    Button(
+        modifier = Modifier.padding(2.dp),
+        shape = CircleShape,
+        colors = if (zoomUiState.primaryZoomRatio == targetZoom)
+            ButtonDefaults.buttonColors(containerColor = Color.Yellow)
+        else if (targetZoom == zoomUiState.primaryZoomRange.upper || targetZoom == zoomUiState.primaryZoomRange.lower)
+            ButtonDefaults.buttonColors(containerColor = Color.Magenta)
+        else
+            ButtonDefaults.buttonColors(),
+
+        onClick = {
+            zoomJob?.cancel()
+            if(animationDurationMillis != null) {
+                val animatableZoom = Animatable(initialValue = zoomUiState.primaryZoomRatio ?: 1.0f)
+                zoomJob =
+                    coroutineScope.launch {
+                        Log.d(TAG, "starting anim: ${animatableZoom.value} \n ending: $targetZoom")
+
+                        animatableZoom.animateTo(
+                            targetValue = targetZoom.coerceIn(
+                                zoomUiState.primaryZoomRange.lower,
+                                zoomUiState.primaryZoomRange.upper
+                            ),
+                            animationSpec = tween(durationMillis = animationDurationMillis)
+                        ) {
+                            onZoomChanged(CameraZoomRatio(ZoomChange.Absolute(value)))
+                        }
+                        zoomJob = null
+                    }
+            }
+            else
+                onZoomChanged(CameraZoomRatio(ZoomChange.Absolute(targetZoom)))
+        }
+    ) {
+        Text(text = "${String.format(Locale.US, "%.1f", targetZoom)}x", fontSize = 10.sp)
+    }
+}
+
+@Composable
 fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
         modifier = Modifier
@@ -751,7 +807,7 @@ fun CaptureModeDropDown(
         AnimatedVisibility(
             visible = isExpanded,
             enter =
-            fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
             fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
@@ -765,7 +821,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_standard),
                     enabled = captureModeUiState.defaultCaptureState
-                        is SingleSelectableState.Selectable,
+                            is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
@@ -775,7 +831,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
                     enabled = captureModeUiState.imageOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                            is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.IMAGE_ONLY)
                         isExpanded = false
@@ -785,7 +841,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
                     enabled = captureModeUiState.videoOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                            is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.VIDEO_ONLY)
                         isExpanded = false
@@ -923,7 +979,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
