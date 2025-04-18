@@ -49,6 +49,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -127,13 +128,19 @@ fun ComposeTestRule.waitForStartup(timeoutMillis: Long = APP_START_TIMEOUT_MILLI
 fun ComposeTestRule.waitForNodeWithTag(tag: String, timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
     waitUntil(timeoutMillis = timeoutMillis) { onNodeWithTag(tag).isDisplayed() }
 }
-private fun ComposeTestRule.idleForVideoDuration(durationMillis: Long = VIDEO_DURATION_MILLIS) {
+private fun ComposeTestRule.idleForVideoDuration(
+    durationMillis: Long = VIDEO_DURATION_MILLIS,
+    earlyExitPredicate: () -> Boolean = {
+        // If the video capture fails, there is no point to continue the recording, so stop idling
+        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
+    }
+) {
     // TODO: replace with a check for the timestamp UI of the video duration
     try {
         waitUntil(timeoutMillis = durationMillis) {
-            onNodeWithTag("dummyTagForLongPress").isDisplayed()
+            earlyExitPredicate()
         }
-    } catch (e: ComposeTimeoutException) {
+    } catch (_: ComposeTimeoutException) {
     }
 }
 
