@@ -36,8 +36,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
@@ -311,8 +314,15 @@ private fun ExpandedQuickSettingsUi(
                     }
 
                     add {
+                        val context = LocalContext.current
                         QuickSetCaptureMode(
-                            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE),
+                            modifier = Modifier
+                                .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                                .semantics {
+                                    previewUiState.captureModeUiState.stateDescription()?.let {
+                                        stateDescription = context.getString(it)
+                                    }
+                                },
                             onClick = {
                                 setFocusedQuickSetting(
                                     FocusedQuickSetting.CAPTURE_MODE
@@ -339,6 +349,14 @@ private fun ExpandedQuickSettingsUi(
                 captureModeUiState = previewUiState.captureModeUiState
             )
         }
+    }
+}
+
+private fun CaptureModeUiState.stateDescription() = (this as? CaptureModeUiState.Enabled)?.let {
+    when (currentSelection) {
+        CaptureMode.STANDARD -> R.string.quick_settings_description_capture_mode_standard
+        CaptureMode.VIDEO_ONLY -> R.string.quick_settings_description_capture_mode_video_only
+        CaptureMode.IMAGE_ONLY -> R.string.quick_settings_description_capture_mode_image_only
     }
 }
 
