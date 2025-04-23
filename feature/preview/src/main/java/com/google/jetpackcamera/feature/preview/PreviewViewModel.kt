@@ -56,15 +56,12 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
@@ -79,7 +76,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -147,15 +143,13 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             launch {
                 var oldCameraAppSettings: CameraAppSettings? = null
-                settingsRepository.defaultCameraAppSettings.transform { new ->
-                    val old = oldCameraAppSettings
-                    if (old != null) {
-                        emit(getSettingsDiff(old, new))
+                settingsRepository.defaultCameraAppSettings
+                    .collect { new ->
+                        oldCameraAppSettings?.apply {
+                            applyDiffs(new)
+                        }
+                        oldCameraAppSettings = new
                     }
-                    oldCameraAppSettings = new
-                }.collect { diffQueue ->
-                    applySettingsDiff(diffQueue)
-                }
             }
             combine(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
@@ -376,67 +370,39 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-     * Returns the difference between two [CameraAppSettings] as a mapping of <[KProperty], [Any]>.
+     * Applies an individual camera app setting with the given [settingExtractor] and
+     * [settingApplicator] if the new setting differs from the old setting.
      */
-    private fun getSettingsDiff(
-        oldCameraAppSettings: CameraAppSettings,
-        newCameraAppSettings: CameraAppSettings
-    ): Map<KProperty<Any?>, Any?> = buildMap<KProperty<Any?>, Any?> {
-        CameraAppSettings::class.memberProperties.forEach { property ->
-            if (property.get(oldCameraAppSettings) != property.get(newCameraAppSettings)) {
-                put(property, property.get(newCameraAppSettings))
-            }
+    private suspend inline fun <R> CameraAppSettings.applyDiff(
+        new: CameraAppSettings,
+        settingExtractor: CameraAppSettings.() -> R,
+        crossinline settingApplicator: suspend (R) -> Unit
+    ) {
+        val oldSetting = settingExtractor.invoke(this)
+        val newSetting = settingExtractor.invoke(new)
+        if (oldSetting != newSetting) {
+            settingApplicator(newSetting)
         }
     }
 
     /**
-     * Iterates through a queue of [Pair]<[KProperty], [Any]> and attempt to apply them to
+     * Checks whether each actionable individual setting has changed and applies them to
      * [CameraUseCase].
      */
-    private suspend fun applySettingsDiff(diffSettingsMap: Map<KProperty<Any?>, Any?>) {
-        diffSettingsMap.entries.forEach { entry ->
-            when (entry.key) {
-                CameraAppSettings::cameraLensFacing -> {
-                    cameraUseCase.setLensFacing(entry.value as LensFacing)
-                }
-
-                CameraAppSettings::flashMode -> {
-                    cameraUseCase.setFlashMode(entry.value as FlashMode)
-                }
-
-                CameraAppSettings::streamConfig -> {
-                    cameraUseCase.setStreamConfig(entry.value as StreamConfig)
-                }
-
-                CameraAppSettings::aspectRatio -> {
-                    cameraUseCase.setAspectRatio(entry.value as AspectRatio)
-                }
-
-                CameraAppSettings::stabilizationMode -> {
-                    cameraUseCase.setStabilizationMode(entry.value as StabilizationMode)
-                }
-
-                CameraAppSettings::targetFrameRate -> {
-                    cameraUseCase.setTargetFrameRate(entry.value as Int)
-                }
-
-                CameraAppSettings::maxVideoDurationMillis -> {
-                    cameraUseCase.setMaxVideoDuration(entry.value as Long)
-                }
-
-                CameraAppSettings::videoQuality -> {
-                    cameraUseCase.setVideoQuality(entry.value as VideoQuality)
-                }
-
-                CameraAppSettings::audioEnabled -> {
-                    cameraUseCase.setAudioEnabled(entry.value as Boolean)
-                }
-
-                CameraAppSettings::darkMode -> {}
-
-                else -> TODO("Unhandled CameraAppSetting $entry")
-            }
-        }
+    private suspend fun CameraAppSettings.applyDiffs(new: CameraAppSettings) {
+        applyDiff(new, CameraAppSettings::cameraLensFacing, cameraUseCase::setLensFacing)
+        applyDiff(new, CameraAppSettings::flashMode, cameraUseCase::setFlashMode)
+        applyDiff(new, CameraAppSettings::streamConfig, cameraUseCase::setStreamConfig)
+        applyDiff(new, CameraAppSettings::aspectRatio, cameraUseCase::setAspectRatio)
+        applyDiff(new, CameraAppSettings::stabilizationMode, cameraUseCase::setStabilizationMode)
+        applyDiff(new, CameraAppSettings::targetFrameRate, cameraUseCase::setTargetFrameRate)
+        applyDiff(
+            new,
+            CameraAppSettings::maxVideoDurationMillis,
+            cameraUseCase::setMaxVideoDuration
+        )
+        applyDiff(new, CameraAppSettings::videoQuality, cameraUseCase::setVideoQuality)
+        applyDiff(new, CameraAppSettings::audioEnabled, cameraUseCase::setAudioEnabled)
     }
 
     fun getCaptureButtonUiState(
