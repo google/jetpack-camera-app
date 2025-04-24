@@ -256,7 +256,7 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
             _previewUiState.update { old ->
-                (old as PreviewUiState.Ready).copy(
+                (old as? PreviewUiState.Ready)?.copy(
                     imageWellUiState = ImageWellUiState.LastCapture(
                         mediaDescriptor = lastCapturedMediaDescriptor
                     )

@@ -86,6 +86,10 @@ android {
 dependencies {
     // Reflect
     implementation(libs.kotlin.reflect)
+
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
+
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
