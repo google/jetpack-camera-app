@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.permissions
 
 import android.Manifest
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -82,19 +83,34 @@ class PermissionsViewModel @AssistedInject constructor(
 @OptIn(ExperimentalPermissionsApi::class)
 fun getRequestablePermissions(
     permissionStates: MultiplePermissionsState
-): MutableSet<PermissionEnum> {
-    val unGrantedPermissions = mutableSetOf<PermissionEnum>()
-    for (permission in permissionStates.permissions) {
-        // camera is always required
-        if (!permission.status.isGranted && permission.permission == Manifest.permission.CAMERA) {
-            unGrantedPermissions.add(PermissionEnum.CAMERA)
-        }
-        // audio is optional
-        else if ((!permission.status.shouldShowRationale && !permission.status.isGranted) &&
-            permission.permission ==
-            Manifest.permission.RECORD_AUDIO
-        ) {
-            unGrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
+): Set<PermissionEnum> {
+    val unGrantedPermissions = buildSet {
+        permissionStates.permissions.forEach { permissionState ->
+            when (permissionState.permission) {
+                //camera is always required
+                Manifest.permission.CAMERA -> {
+                    if (!permissionState.status.isGranted)
+                        add(PermissionEnum.CAMERA)
+                }
+
+                //optional permissions
+                Manifest.permission.RECORD_AUDIO -> {
+                    if (!permissionState.status.shouldShowRationale &&
+                        !permissionState.status.isGranted
+                    ){
+                        add(PermissionEnum.RECORD_AUDIO)
+                    }
+                }
+
+                Manifest.permission.READ_EXTERNAL_STORAGE -> {
+                    if (!permissionState.status.shouldShowRationale &&
+                        !permissionState.status.isGranted &&
+                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+                    ){
+                        add(PermissionEnum.READ_STORAGE)
+                    }
+                }
+            }
         }
     }
     return unGrantedPermissions

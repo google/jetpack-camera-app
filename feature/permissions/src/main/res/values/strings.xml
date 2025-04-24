@@ -15,16 +15,22 @@
   ~ limitations under the License.
   -->
 <resources>
-    <string name="camera_permission_screen_title">Enable Camera</string>
-    <string name="camera_permission_required_rationale">Please provide permission to access to the camera. It is necessary for this app to function.</string>
-    <string name="camera_permission_declined_rationale">The app requires the camera to function. To use this app, go to the app\'s settings and grant the camera permission.</string>
-
-    <string name="camera_permission_accessibility_text">An icon representing a camera</string>
     <string name="request_permission">Allow Access</string>
     <string name="navigate_to_settings">Open App Settings</string>
 
+    <string name="camera_permission_screen_title">Enable Camera</string>
+    <string name="camera_permission_required_rationale">Please provide permission to access to the camera. It is necessary for this app to function.</string>
+    <string name="camera_permission_declined_rationale">The app requires the camera to function. To use this app, go to the app\'s settings and grant the camera permission.</string>
+    <string name="camera_permission_accessibility_text">An icon representing a camera</string>
 
     <string name="microphone_permission_screen_title">Enable Audio Recording</string>
-    <string name="microphone_permission_required_rationale">Please provide permission to enable audio in video recording. Videos will be mute if this permission is revoked.</string>
+    <string name="microphone_permission_required_rationale">Please provide permission to enable audio in video recording. Videos will be mute if this permission is denied.</string>
     <string name="microphone_permission_accessibility_text">An icon representing a microphone</string>
+
+
+    <string name="read_storage_permission_screen_title">Allow App to Read External Storage</string>
+    <string name="read_storage_permission_required_rationale">Please provide permission to read external storage. You will be unable to view previously captured images or videos if this permission is denied.</string>
+    <string name="read_storage_permission_accessibility_text">An icon representing a file folder</string>
+
+
 </resources>

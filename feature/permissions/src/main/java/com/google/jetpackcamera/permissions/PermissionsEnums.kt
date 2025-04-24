@@ -19,6 +19,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
@@ -26,10 +27,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.READ_EXTERNAL_STORAGE_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 
 const val CAMERA_PERMISSION = "android.permission.CAMERA"
 const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
+
+const val READ_EXTERNAL_STORAGE_PERMISSION = "android.permission.READ_EXTERNAL_STORAGE"
+
 
 /**
  * Helper class storing a permission's relevant UI information
@@ -126,5 +131,28 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.microphone_permission_accessibility_text
+    },
+
+    READ_STORAGE{
+        override fun getPermission(): String = READ_EXTERNAL_STORAGE_PERMISSION
+
+        override fun isOptional(): Boolean = true
+
+        override fun getTestTag(): String = READ_EXTERNAL_STORAGE_PERMISSION_BUTTON
+
+        override fun getDrawableResId(): Int? = null
+
+        override fun getImageVector(): ImageVector = Icons.Outlined.Folder
+
+        override fun getPermissionTitleResId(): Int = R.string.read_storage_permission_screen_title
+
+        override fun getPermissionBodyTextResId(): Int =
+            R.string.read_storage_permission_required_rationale
+
+        override fun getRationaleBodyTextResId(): Int? = null
+
+        override fun getIconAccessibilityTextResId(): Int =
+            R.string.read_storage_permission_accessibility_text
+
     }
 }

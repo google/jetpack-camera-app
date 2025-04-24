@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
@@ -82,6 +83,7 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
+                shouldRequestReadStoragePermission = previewMode is PreviewMode.StandardMode && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
                 shouldRequestAudioPermission = previewMode is PreviewMode.StandardMode,
                 onAllPermissionsGranted = {
                     // Pop off the permissions screen

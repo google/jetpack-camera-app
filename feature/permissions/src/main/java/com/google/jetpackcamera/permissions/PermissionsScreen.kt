@@ -37,20 +37,19 @@ private const val TAG = "PermissionsScreen"
 @Composable
 fun PermissionsScreen(
     shouldRequestAudioPermission: Boolean,
+    shouldRequestReadStoragePermission:Boolean,
     onAllPermissionsGranted: () -> Unit,
     openAppSettings: () -> Unit
 ) {
     val permissionStates = rememberMultiplePermissionsState(
-        permissions = if (shouldRequestAudioPermission) {
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO
-            )
-        } else {
-            listOf(
-                Manifest.permission.CAMERA
-            )
-        }
+        permissions =
+            buildList {
+                add(Manifest.permission.CAMERA)
+                if(shouldRequestAudioPermission)
+                    add(Manifest.permission.RECORD_AUDIO)
+                if(shouldRequestReadStoragePermission)
+                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
     )
     PermissionsScreen(
         permissionStates = permissionStates,
@@ -109,7 +108,6 @@ fun PermissionsScreen(
             permissionEnum = permissionEnum,
             permissionState = currentPermissionState,
             onSkipPermission = when (permissionEnum) {
-                // todo: a prettier navigation to app settings.
                 PermissionEnum.CAMERA -> null
                 // todo: skip permission button functionality. currently need to go through the
                 // prompt to skip
