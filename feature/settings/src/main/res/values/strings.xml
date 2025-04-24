@@ -28,7 +28,7 @@
     <string name="section_title_software_info">Software Information</string>
 
     <string name="default_facing_camera_title">Default to Front Camera</string>
-    <string name="default_facing_camera_description">Default Front</string>
+    <string name="default_facing_camera_description_on">Default Front</string>
     <string name="default_facing_camera_description_off">Default Back</string>
 
     <!-- Dark mode setting strings -->
