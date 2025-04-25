@@ -20,7 +20,6 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.CreateNewFolder
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
@@ -38,8 +37,6 @@ const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
 
 const val READ_EXTERNAL_STORAGE_PERMISSION = "android.permission.READ_EXTERNAL_STORAGE"
 const val WRITE_EXTERNAL_STORAGE_PERMISSION = "android.permission.WRITE_EXTERNAL_STORAGE"
-
-
 
 /**
  * Helper class storing a permission's relevant UI information
@@ -138,7 +135,7 @@ enum class PermissionEnum : PermissionInfoProvider {
             R.string.microphone_permission_accessibility_text
     },
 
-    WRITE_STORAGE{
+    WRITE_STORAGE {
         override fun getPermission(): String = WRITE_EXTERNAL_STORAGE_PERMISSION
 
         override fun isOptional(): Boolean = true
@@ -160,7 +157,7 @@ enum class PermissionEnum : PermissionInfoProvider {
             R.string.write_storage_permission_accessibility_text
     },
 
-    READ_STORAGE{
+    READ_STORAGE {
         override fun getPermission(): String = READ_EXTERNAL_STORAGE_PERMISSION
 
         override fun isOptional(): Boolean = true
@@ -180,6 +177,5 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.read_storage_permission_accessibility_text
-
     }
 }

@@ -55,6 +55,7 @@ import androidx.tracing.Trace
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
@@ -77,8 +78,6 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.flow.transformWhile
-import com.google.accompanist.permissions.rememberPermissionState
-
 
 private const val TAG = "PreviewScreen"
 
@@ -173,11 +172,16 @@ fun PreviewScreen(
                 isDebugMode = isDebugMode,
                 onImageWellClick = onNavigateToPostCapture
             )
-            val readStoragePermission: PermissionState = rememberPermissionState(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            val readStoragePermission: PermissionState = rememberPermissionState(
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            )
 
             LaunchedEffect(Unit) {
-                if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P || readStoragePermission.status.isGranted)
-                viewModel.updateLastCapturedMedia()
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
+                    readStoragePermission.status.isGranted
+                ) {
+                    viewModel.updateLastCapturedMedia()
+                }
             }
         }
     }

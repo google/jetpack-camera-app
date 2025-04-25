@@ -37,23 +37,24 @@ private const val TAG = "PermissionsScreen"
 @Composable
 fun PermissionsScreen(
     shouldRequestAudioPermission: Boolean,
-    shouldRequestReadWriteStoragePermission:Boolean,
+    shouldRequestReadWriteStoragePermission: Boolean,
     onAllPermissionsGranted: () -> Unit,
     openAppSettings: () -> Unit
 ) {
     val permissionStates = rememberMultiplePermissionsState(
         permissions =
-            buildList {
-                add(Manifest.permission.CAMERA)
-                if(shouldRequestAudioPermission)
-                    add(Manifest.permission.RECORD_AUDIO)
-
-                // sometimes, when the write storage permission is granted, it will automatically grant the read storage permission
-                if(shouldRequestReadWriteStoragePermission) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
+        buildList {
+            add(Manifest.permission.CAMERA)
+            if (shouldRequestAudioPermission) {
+                add(Manifest.permission.RECORD_AUDIO)
             }
+
+            // sometimes, when the write storage permission is granted, it will automatically grant the read storage permission
+            if (shouldRequestReadWriteStoragePermission) {
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
     )
     PermissionsScreen(
         permissionStates = permissionStates,

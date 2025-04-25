@@ -81,23 +81,22 @@ class PermissionsViewModel @AssistedInject constructor(
  * - optional permissions that have not yet been denied by the user
  */
 @OptIn(ExperimentalPermissionsApi::class)
-fun getRequestablePermissions(
-    permissionStates: MultiplePermissionsState
-): Set<PermissionEnum> {
+fun getRequestablePermissions(permissionStates: MultiplePermissionsState): Set<PermissionEnum> {
     val unGrantedPermissions = buildSet {
         permissionStates.permissions.forEach { permissionState ->
             when (permissionState.permission) {
-                //camera is always required
+                // camera is always required
                 Manifest.permission.CAMERA -> {
-                    if (!permissionState.status.isGranted)
+                    if (!permissionState.status.isGranted) {
                         add(PermissionEnum.CAMERA)
+                    }
                 }
 
-                //optional permissions
+                // optional permissions
                 Manifest.permission.RECORD_AUDIO -> {
                     if (!permissionState.status.shouldShowRationale &&
                         !permissionState.status.isGranted
-                    ){
+                    ) {
                         add(PermissionEnum.RECORD_AUDIO)
                     }
                 }
@@ -106,7 +105,7 @@ fun getRequestablePermissions(
                     if (!permissionState.status.shouldShowRationale &&
                         !permissionState.status.isGranted &&
                         Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-                    ){
+                    ) {
                         add(PermissionEnum.READ_STORAGE)
                     }
                 }
@@ -115,7 +114,7 @@ fun getRequestablePermissions(
                     if (!permissionState.status.shouldShowRationale &&
                         !permissionState.status.isGranted &&
                         Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-                    ){
+                    ) {
                         add(PermissionEnum.WRITE_STORAGE)
                     }
                 }
