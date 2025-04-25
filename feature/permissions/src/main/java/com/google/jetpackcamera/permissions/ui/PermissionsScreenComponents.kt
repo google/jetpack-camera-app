@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.permissions.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,10 +35,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.R
@@ -61,11 +66,19 @@ import com.google.jetpackcamera.permissions.R
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
+    onDismissPermission: () -> Unit,
     permissionState: PermissionState,
     onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
 ) {
+    val permissionState = rememberPermissionState(permissionEnum.getPermission())
+
+    // LaunchedEffect will skip permission enum if already granted.
+    LaunchedEffect(permissionEnum){
+        if(permissionState.status.isGranted)
+            onDismissPermission()
+    }
     PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),

@@ -37,7 +37,7 @@ private const val TAG = "PermissionsScreen"
 @Composable
 fun PermissionsScreen(
     shouldRequestAudioPermission: Boolean,
-    shouldRequestReadStoragePermission:Boolean,
+    shouldRequestReadWriteStoragePermission:Boolean,
     onAllPermissionsGranted: () -> Unit,
     openAppSettings: () -> Unit
 ) {
@@ -47,8 +47,12 @@ fun PermissionsScreen(
                 add(Manifest.permission.CAMERA)
                 if(shouldRequestAudioPermission)
                     add(Manifest.permission.RECORD_AUDIO)
-                if(shouldRequestReadStoragePermission)
+
+                // sometimes, when the write storage permission is granted, it will automatically grant the read storage permission
+                if(shouldRequestReadWriteStoragePermission) {
+                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
             }
     )
     PermissionsScreen(
@@ -107,6 +111,7 @@ fun PermissionsScreen(
             modifier = modifier,
             permissionEnum = permissionEnum,
             permissionState = currentPermissionState,
+            onDismissPermission = { viewModel.dismissPermission() },
             onSkipPermission = when (permissionEnum) {
                 PermissionEnum.CAMERA -> null
                 // todo: skip permission button functionality. currently need to go through the

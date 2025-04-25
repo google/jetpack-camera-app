@@ -27,10 +27,13 @@
     <string name="microphone_permission_required_rationale">Please provide permission to enable audio in video recording. Videos will be mute if this permission is denied.</string>
     <string name="microphone_permission_accessibility_text">An icon representing a microphone</string>
 
-
     <string name="read_storage_permission_screen_title">Allow App to Read External Storage</string>
     <string name="read_storage_permission_required_rationale">Please provide permission to read external storage. You will be unable to view previously captured images or videos if this permission is denied.</string>
     <string name="read_storage_permission_accessibility_text">An icon representing a file folder</string>
+
+    <string name="write_storage_permission_screen_title">Allow App to Write External Storage</string>
+    <string name="write_storage_permission_required_rationale">Please provide permission to write to external storage. You will be unable to save captured mages or videos if this permission is denied.</string>
+    <string name="write_storage_permission_accessibility_text">An icon representing a file folder</string>
 
 
 </resources>

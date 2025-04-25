@@ -45,7 +45,7 @@ class PermissionsViewModel @AssistedInject constructor(
         fun create(runtimeArg: MultiplePermissionsState): PermissionsViewModel
     }
 
-    private val permissionQueue = mutableListOf<PermissionEnum>()
+    private var permissionQueue = mutableListOf<PermissionEnum>()
 
     init {
         permissionQueue.addAll(getRequestablePermissions(permissionStates))
@@ -108,6 +108,15 @@ fun getRequestablePermissions(
                         Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
                     ){
                         add(PermissionEnum.READ_STORAGE)
+                    }
+                }
+
+                Manifest.permission.WRITE_EXTERNAL_STORAGE -> {
+                    if (!permissionState.status.shouldShowRationale &&
+                        !permissionState.status.isGranted &&
+                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+                    ){
+                        add(PermissionEnum.WRITE_STORAGE)
                     }
                 }
             }
