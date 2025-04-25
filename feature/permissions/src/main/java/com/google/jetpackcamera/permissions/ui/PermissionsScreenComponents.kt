@@ -74,7 +74,7 @@ fun PermissionTemplate(
 
     // LaunchedEffect will skip permission enum if already granted.
     LaunchedEffect(permissionEnum) {
-        if (permissionState.status.isGranted) {
+        if (permissionState.status.isGranted || permissionState.status.shouldShowRationale) {
             onDismissPermission()
         }
     }
