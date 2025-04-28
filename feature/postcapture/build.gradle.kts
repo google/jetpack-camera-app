@@ -84,9 +84,6 @@ android {
 }
 
 dependencies {
-
-    // Reflect
-    implementation(libs.kotlin.reflect)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
