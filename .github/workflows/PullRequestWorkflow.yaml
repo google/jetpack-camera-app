@@ -13,6 +13,7 @@ env:
 jobs:
   fetch-runner:
     name: Fetch Runner
+    runs-on: ubuntu-latest
     steps:
       - name: Get variable
         run: echo "RUNNER=$(curl https://raw.githubusercontent.com/google/jetpack-camera-app/refs/heads/main-cfg/runs-on.cfg)" >> $GITHUB_ENV
