@@ -12,11 +12,19 @@ concurrency:
 env:
   JDK_VERSION: 17
   DISTRIBUTION: 'zulu'
+  RUNNER: 
 
 jobs:
+  fetch-runner:
+    name: Fetch Runner
+    steps:
+      - name: Get variable
+        run: echo "RUNNER=$(curl https://raw.githubusercontent.com/google/jetpack-camera-app/refs/heads/main-cfg/runs-on.cfg)" >> $GITHUB_ENV
+
   build:
     name: Build
-    runs-on: ${{ vars.RUNNER }}
+    needs: fetch-runner
+    runs-on: ${{ env.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout

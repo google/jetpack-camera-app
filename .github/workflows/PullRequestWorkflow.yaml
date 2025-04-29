@@ -11,9 +11,16 @@ env:
   DISTRIBUTION: 'zulu'
 
 jobs:
+  fetch-runner:
+    name: Fetch Runner
+    steps:
+      - name: Get variable
+        run: echo "RUNNER=$(curl https://raw.githubusercontent.com/google/jetpack-camera-app/refs/heads/main-cfg/runs-on.cfg)" >> $GITHUB_ENV
+
   build:
     name: Build
-    runs-on: ${{ vars.RUNNER }}
+    needs: fetch-runner
+    runs-on: ${{ env.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -51,7 +58,8 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ${{ vars.RUNNER }}
+    needs: fetch-runner
+    runs-on: ${{ env.RUNNER }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -83,7 +91,8 @@ jobs:
 
   android-test:
     name: Instrumentation Tests (${{ matrix.device.name }})
-    runs-on: ${{ vars.RUNNER }}
+    needs: fetch-runner
+    runs-on: ${{ env.RUNNER }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -132,7 +141,8 @@ jobs:
 
   spotless:
     name: Spotless Check
-    runs-on: ${{ vars.RUNNER }}
+    needs: fetch-runner
+    runs-on: ${{ env.RUNNER }}
     timeout-minutes: 60
     steps:
       - name: Checkout
