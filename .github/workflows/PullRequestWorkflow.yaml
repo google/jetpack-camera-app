@@ -1,6 +1,13 @@
 name: Presubmit
 
-on: [pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner (host machine) to use for all jobs in presubmit"
+        required: false
+        type: string
 
 concurrency:
   group: build-${{ github.ref }}
@@ -14,6 +21,8 @@ jobs:
   choose_runner:
     name: Choose Runner
     uses: ./.github/workflows/ChooseRunner.yaml
+    with:
+      forced_runner: ${{ inputs.runner }}
 
   build:
     name: Build
