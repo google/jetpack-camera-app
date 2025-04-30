@@ -18,7 +18,8 @@ jobs:
     outputs:
         resolved_runner: ${{ steps.resolve_runner.outputs.resolved_runner }}
     steps:
-      - id: resolve_runner
+      - name: Resolve runner from inputs, repo vars, or default
+        id: resolve_runner
         run: |
           FORCED_RUNNER=${{ inputs.forced_runner }}
           VARS_RUNNER=${{ vars.RUNNER }}
