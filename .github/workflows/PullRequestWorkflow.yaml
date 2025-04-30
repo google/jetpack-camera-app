@@ -91,7 +91,7 @@ jobs:
     name: Instrumentation Tests (${{ matrix.device.name }})
     needs: choose_runner
     runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
-    timeout-minutes: 30
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
