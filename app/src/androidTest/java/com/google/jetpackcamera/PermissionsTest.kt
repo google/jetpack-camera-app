@@ -229,7 +229,7 @@ class PermissionsTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun writeStoragePermission_granted_skipsReadPermission() {
         uiDevice.waitForIdle()
@@ -277,7 +277,7 @@ class PermissionsTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun writeStoragePermission_granted_ReadPermission_granted() {
         uiDevice.waitForIdle()
@@ -316,7 +316,7 @@ class PermissionsTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun writeStoragePermission_denied_ReadPermission_granted() {
         uiDevice.waitForIdle()
@@ -362,7 +362,6 @@ class PermissionsTest {
 
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                 .assertExists()
                 .performClick()
@@ -372,7 +371,7 @@ class PermissionsTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun writeStoragePermission_denied_ReadPermission_denied() {
         uiDevice.waitForIdle()
@@ -430,7 +429,7 @@ class PermissionsTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun writeStoragePermission_denied_skips_ReadPermission() {
         uiDevice.waitForIdle()
