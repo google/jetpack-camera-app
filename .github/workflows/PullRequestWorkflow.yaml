@@ -11,19 +11,13 @@ env:
   DISTRIBUTION: 'zulu'
 
 jobs:
-  fetch-runner:
-    name: Fetch Runner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get variable
-        run: echo "RUNNER=$(curl https://raw.githubusercontent.com/google/jetpack-camera-app/refs/heads/main-cfg/runs-on.cfg)" >> $GITHUB_ENV
-    outputs:
-      runner: ${{ env.RUNNER }}
+  choose_runner:
+    uses: ./.github/workflows/ChooseRunner.yaml
 
   build:
     name: Build
-    needs: fetch-runner
-    runs-on: ${{ needs.fetch-runner.outputs.runner }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -61,8 +55,8 @@ jobs:
 
   test:
     name: Unit Tests
-    needs: fetch-runner
-    runs-on: ${{ needs.fetch-runner.outputs.runner }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -94,8 +88,8 @@ jobs:
 
   android-test:
     name: Instrumentation Tests (${{ matrix.device.name }})
-    needs: fetch-runner
-    runs-on: ${{ needs.fetch-runner.outputs.runner }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -144,8 +138,8 @@ jobs:
 
   spotless:
     name: Spotless Check
-    needs: fetch-runner
-    runs-on: ${{ needs.fetch-runner.outputs.runner }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 60
     steps:
       - name: Checkout
