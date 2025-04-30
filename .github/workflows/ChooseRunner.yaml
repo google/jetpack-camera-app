@@ -1,0 +1,31 @@
+name: Choose Runner
+
+on:
+  workflow_call:
+    inputs:
+      forced_runner:
+        required: false
+        type: string
+    outputs:
+      chosen_runner:
+        description: "The runner chosen from inputs and repository variables"
+        value: ${{ jobs.resolve_runner.outputs.resolved_runner }}
+
+jobs:
+  resolve_runner:
+    name: Resolve Runner
+    runs-on: ubuntu-latest
+    outputs:
+        resolved_runner: ${{ steps.resolve_runner.outputs.resolved_runner }}
+    steps:
+      - name: Resolve runner from inputs, repo vars, or default
+        id: resolve_runner
+        run: |
+          FORCED_RUNNER=${{ inputs.forced_runner }}
+          if [[ "${{ github.repository_owner }}" == "google" ]]; then
+            VARS_RUNNER=${{ vars.RUNNER }}
+          fi
+          BACKUP_RUNNER="ubuntu-latest"
+          RESOLVED_RUNNER="${FORCED_RUNNER:-${VARS_RUNNER:-$BACKUP_RUNNER}}"
+          echo "Resolved runner: $RESOLVED_RUNNER"
+          echo "resolved_runner=$RESOLVED_RUNNER" >> $GITHUB_OUTPUT

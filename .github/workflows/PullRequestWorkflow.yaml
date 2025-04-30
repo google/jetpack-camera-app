@@ -11,9 +11,14 @@ env:
   DISTRIBUTION: 'zulu'
 
 jobs:
+  choose_runner:
+    name: Choose Runner
+    uses: ./.github/workflows/ChooseRunner.yaml
+
   build:
     name: Build
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -51,7 +56,8 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -83,7 +89,8 @@ jobs:
 
   android-test:
     name: Instrumentation Tests (${{ matrix.device.name }})
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -132,7 +139,8 @@ jobs:
 
   spotless:
     name: Spotless Check
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 60
     steps:
       - name: Checkout
