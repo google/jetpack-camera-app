@@ -12,6 +12,7 @@ env:
 
 jobs:
   choose_runner:
+    name: Choose Runner
     uses: ./.github/workflows/ChooseRunner.yaml
 
   build:
