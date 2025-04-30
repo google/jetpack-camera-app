@@ -22,7 +22,9 @@ jobs:
         id: resolve_runner
         run: |
           FORCED_RUNNER=${{ inputs.forced_runner }}
-          VARS_RUNNER=${{ vars.RUNNER }}
+          if [[ "${{ github.repository_owner }}" == "google" ]]; then
+            VARS_RUNNER=${{ vars.RUNNER }}
+          fi
           BACKUP_RUNNER="ubuntu-latest"
           RESOLVED_RUNNER="${FORCED_RUNNER:-${VARS_RUNNER:-$BACKUP_RUNNER}}"
           echo "Resolved runner: $RESOLVED_RUNNER"
