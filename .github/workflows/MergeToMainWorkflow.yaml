@@ -14,9 +14,14 @@ env:
   DISTRIBUTION: 'zulu'
 
 jobs:
+  choose_runner:
+    name: Choose Runner
+    uses: ./.github/workflows/ChooseRunner.yaml
+
   build:
     name: Build
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
