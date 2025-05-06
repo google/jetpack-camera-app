@@ -140,6 +140,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: ${{ matrix.device.name }}StableDebugAndroidTest
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
