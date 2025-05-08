@@ -152,9 +152,7 @@ fun ComposeTestRule.ensureTagNotAppears(
 ) {
     try {
         waitUntil(timeoutMillis = timeoutMillis) {
-            // image_only capture UI does not display the video unsupported snackbar
-            onNodeWithTag(componentTag)
-                .isDisplayed()
+            onNodeWithTag(componentTag).isDisplayed()
         }
         throw AssertionError(
             "$componentTag should not be present"

@@ -65,19 +65,20 @@ fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
     onDismissPermission: () -> Unit,
-    permissionState: PermissionState,
-    onRequestPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
 ) {
     val permissionState = rememberPermissionState(permissionEnum.getPermission())
 
     // LaunchedEffect will skip permission enum if already granted.
-    LaunchedEffect(permissionEnum) {
-        if (permissionState.status.isGranted || permissionState.status.shouldShowRationale) {
+    LaunchedEffect(permissionState.status) {
+        if (permissionState.status.isGranted ||
+            (permissionState.status.shouldShowRationale && permissionEnum.isOptional())
+        ) {
             onDismissPermission()
         }
     }
+
     PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),
@@ -85,7 +86,7 @@ fun PermissionTemplate(
             if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
             } else {
-                onRequestPermission()
+                permissionState.launchPermissionRequest()
             }
         },
         onSkipPermission = onSkipPermission,

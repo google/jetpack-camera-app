@@ -24,13 +24,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.IMAGE_WELL_TAG
 import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
-import com.google.jetpackcamera.permissions.ui.READ_EXTERNAL_STORAGE_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
@@ -40,13 +40,13 @@ import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IndividualTestGrantPermissionRule
 import com.google.jetpackcamera.utils.askEveryTimeDialog
+import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.denyPermissionDialog
 import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.grantPermissionDialog
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runScenarioTest
 import com.google.jetpackcamera.utils.waitForStartup
-import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,14 +68,8 @@ class PermissionsTest {
     val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA_PERMISSION, AUDIO_RECORD_PERMISSION),
         targetTestNames = arrayOf(
-            "writeStoragePermission_granted_skipsReadPermission",
-            "writeStoragePermission_granted_ReadPermission_granted",
-            "writeStoragePermission_denied_ReadPermission_granted",
-            "writeStoragePermission_denied_skips_ReadPermission",
-            "writeStoragePermission_granted_ReadPermission_granted",
-            "writeStoragePermission_denied_ReadPermission_granted",
-            "writeStoragePermission_denied_ReadPermission_denied"
-
+            "writeStoragePermission_granted",
+            "writeStoragePermission_denied"
         )
     )
 
@@ -88,8 +82,7 @@ class PermissionsTest {
         )
     )
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val uiDevice = UiDevice.getInstance(instrumentation)
+    private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @Test
     fun allPermissions_alreadyGranted_screenNotShown() {
@@ -231,8 +224,11 @@ class PermissionsTest {
 
     @SdkSuppress(maxSdkVersion = 28)
     @Test
-    fun writeStoragePermission_granted_skipsReadPermission() {
+    fun writeStoragePermission_granted() {
         uiDevice.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+        val timeStamp = System.currentTimeMillis()
         runScenarioTest<MainActivity> {
             // Wait for the camera permission screen to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -249,16 +245,13 @@ class PermissionsTest {
             // grant permission
             uiDevice.grantPermissionDialog()
 
-            composeTestRule
-                .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
-                .assertDoesNotExist()
-            try {
-                composeTestRule.ensureTagNotAppears(READ_EXTERNAL_STORAGE_PERMISSION_BUTTON)
-            } catch (e: AssertionError) {
-                assumeTrue("read external storage permission was not skipped", false)
+            // permission screen should close
+            composeTestRule.waitUntil(timeoutMillis = 5_000) {
+                composeTestRule
+                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
+                    .isNotDisplayed()
             }
 
-            // If we are on preview screen, then read permission was automatically granted
             composeTestRule.waitForStartup()
 
             // check for image capture success
@@ -270,60 +263,22 @@ class PermissionsTest {
             composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
             }
+
             // check for imagewell
             composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
             }
         }
+
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
     }
 
     @SdkSuppress(maxSdkVersion = 28)
     @Test
-    fun writeStoragePermission_granted_ReadPermission_granted() {
+    fun writeStoragePermission_denied() {
         uiDevice.waitForIdle()
         runScenarioTest<MainActivity> {
-            // Wait for the permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(
-                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-                ).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // grant permission
-            uiDevice.grantPermissionDialog()
-
-            try {
-                composeTestRule.ensureTagNotAppears(CAPTURE_BUTTON, timeoutMillis = 5_000)
-            } catch (e: AssertionError) {
-                assumeTrue("read external storage permission was skipped", false)
-            }
-
-            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(READ_EXTERNAL_STORAGE_PERMISSION_BUTTON).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            composeTestRule.waitForStartup()
-        }
-    }
-
-    // @Test
-    @SdkSuppress(maxSdkVersion = 28)
-    fun writeStoragePermission_denied_ReadPermission_granted() {
-        // todo: imagewell won't be present unless an image has already been captured
-
-        uiDevice.waitForIdle()
-        runScenarioTest<MainActivity> {
-            // Wait for the write permission screen to be displayed
+            // Wait for the camera permission screen to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(
                     WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
@@ -338,148 +293,23 @@ class PermissionsTest {
             // deny permission
             uiDevice.denyPermissionDialog()
 
-            try {
-                composeTestRule.ensureTagNotAppears(CAPTURE_BUTTON, timeoutMillis = 5_000)
-            } catch (e: AssertionError) {
-                assumeTrue("read external storage permission was skipped", false)
-            }
-
-            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(READ_EXTERNAL_STORAGE_PERMISSION_BUTTON).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            uiDevice.grantPermissionDialog()
-
-            composeTestRule.waitForStartup()
-
-            // check for imagewell
-            /*
-            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
-            }
-             */
-
-            // check for image capture failure
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                .assertExists()
-                .performClick()
-            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
-            }
-        }
-    }
-
-    @SdkSuppress(maxSdkVersion = 28)
-    @Test
-    fun writeStoragePermission_denied_ReadPermission_denied() {
-        uiDevice.waitForIdle()
-        runScenarioTest<MainActivity> {
-            // Wait for the write permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(
-                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-                ).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // deny permission
-            uiDevice.denyPermissionDialog()
-
-            try {
-                composeTestRule.ensureTagNotAppears(CAPTURE_BUTTON, 5_000)
-            } catch (e: AssertionError) {
-                assumeTrue("read external storage permission was skipped", false)
-            }
-
-            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(READ_EXTERNAL_STORAGE_PERMISSION_BUTTON).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            uiDevice.denyPermissionDialog()
-
-            composeTestRule.waitForStartup()
-
-            // check for imagewell
-            try {
-                composeTestRule.ensureTagNotAppears(IMAGE_WELL_TAG)
-            } catch (e: AssertionError) {
-                assumeTrue("image well should not be visible", false)
-            }
-
-            // check for image capture failure
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                .assertExists()
-                .performClick()
-            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
-            }
-        }
-    }
-
-    @SdkSuppress(maxSdkVersion = 28)
-    @Test
-    fun writeStoragePermission_denied_skips_ReadPermission() {
-        uiDevice.waitForIdle()
-        runScenarioTest<MainActivity> {
-            // Wait for the write permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(
-                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-                ).isDisplayed()
-            }
-
-            // Click button to request permission
-            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // deny permission
-            uiDevice.denyPermissionDialog()
-
-            try {
-                composeTestRule.ensureTagNotAppears(
-                    READ_EXTERNAL_STORAGE_PERMISSION_BUTTON,
-                    timeoutMillis = 5_000
-                )
-            } catch (e: AssertionError) {
-                assumeTrue("read external storage permission is displayed", false)
+            // storage permission is optional and the screen should close
+            composeTestRule.waitUntil {
+                composeTestRule
+                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
+                    .isNotDisplayed()
             }
 
             composeTestRule.waitForStartup()
 
-            // check for imagewell
-            try {
-                composeTestRule.ensureTagNotAppears(IMAGE_WELL_TAG)
-            } catch (e: AssertionError) {
-                assumeTrue("image well should not be visible", false)
-            }
-
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                .assertExists()
-                .performClick()
             composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
             }
+            // imageWell shouldn't appear
+            composeTestRule.ensureTagNotAppears(IMAGE_WELL_TAG)
         }
     }
 }

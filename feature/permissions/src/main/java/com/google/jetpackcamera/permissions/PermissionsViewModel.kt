@@ -55,12 +55,10 @@ class PermissionsViewModel @AssistedInject constructor(
         MutableStateFlow(getCurrentPermission())
     val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
 
-    private fun getCurrentPermission(): PermissionsUiState {
-        return if (permissionQueue.isEmpty()) {
-            PermissionsUiState.AllPermissionsGranted
-        } else {
-            PermissionsUiState.PermissionsNeeded(permissionQueue.first())
-        }
+    private fun getCurrentPermission(): PermissionsUiState = if (permissionQueue.isEmpty()) {
+        PermissionsUiState.AllPermissionsGranted
+    } else {
+        PermissionsUiState.PermissionsNeeded(permissionQueue.first())
     }
 
     fun dismissPermission() {
@@ -98,15 +96,6 @@ fun getRequestablePermissions(permissionStates: MultiplePermissionsState): Set<P
                         !permissionState.status.isGranted
                     ) {
                         add(PermissionEnum.RECORD_AUDIO)
-                    }
-                }
-
-                Manifest.permission.READ_EXTERNAL_STORAGE -> {
-                    if (!permissionState.status.shouldShowRationale &&
-                        !permissionState.status.isGranted &&
-                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-                    ) {
-                        add(PermissionEnum.READ_STORAGE)
                     }
                 }
 

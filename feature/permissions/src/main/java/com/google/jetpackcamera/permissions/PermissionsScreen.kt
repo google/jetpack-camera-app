@@ -17,8 +17,6 @@ package com.google.jetpackcamera.permissions
 
 import android.Manifest
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 
 private const val TAG = "PermissionsScreen"
@@ -91,27 +88,10 @@ fun PermissionsScreen(
     if (permissionsUiState is PermissionsUiState.PermissionsNeeded) {
         val permissionEnum =
             (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
-        val currentPermissionState =
-            rememberPermissionState(
-                permission = permissionEnum.getPermission()
-            )
-
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-            onResult = { permissionGranted ->
-                if (permissionGranted) {
-                    // remove from list
-                    viewModel.dismissPermission()
-                } else if (permissionEnum.isOptional()) {
-                    viewModel.dismissPermission()
-                }
-            }
-        )
 
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
-            permissionState = currentPermissionState,
             onDismissPermission = { viewModel.dismissPermission() },
             onSkipPermission = when (permissionEnum) {
                 PermissionEnum.CAMERA -> null
@@ -119,7 +99,6 @@ fun PermissionsScreen(
                 // prompt to skip
                 else -> null // permissionsViewModel::dismissPermission
             },
-            onRequestPermission = { permissionLauncher.launch(permissionEnum.getPermission()) },
             onOpenAppSettings = openAppSettings
         )
     }
