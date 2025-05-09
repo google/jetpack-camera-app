@@ -176,7 +176,7 @@ fun PreviewScreen(
                 android.Manifest.permission.READ_EXTERNAL_STORAGE
             )
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(readStoragePermission.status) {
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
                     readStoragePermission.status.isGranted
                 ) {
