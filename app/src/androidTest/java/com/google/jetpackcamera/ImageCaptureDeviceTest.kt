@@ -20,7 +20,6 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.view.KeyEvent
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -48,6 +47,7 @@ import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesFileExist
 import com.google.jetpackcamera.utils.doesMediaExist
+import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
@@ -190,18 +190,11 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performTouchInput { longClick(durationMillis = 3_000) }
 
-                try {
-                    composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                        // image_only capture UI does not display the video unsupported snackbar
-                        composeTestRule.onNodeWithTag(VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG)
-                            .isDisplayed()
-                    }
-                    throw AssertionError(
-                        "$VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG should not be present"
-                    )
-                } catch (e: ComposeTimeoutException) {
-                    /*do nothing. we want to time out */
-                }
+                composeTestRule.ensureTagNotAppears(
+                    VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
+
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)

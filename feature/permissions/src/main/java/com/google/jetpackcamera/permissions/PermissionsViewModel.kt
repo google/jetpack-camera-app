@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.permissions
 
 import android.Manifest
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -44,7 +45,7 @@ class PermissionsViewModel @AssistedInject constructor(
         fun create(runtimeArg: MultiplePermissionsState): PermissionsViewModel
     }
 
-    private val permissionQueue = mutableListOf<PermissionEnum>()
+    private var permissionQueue = mutableListOf<PermissionEnum>()
 
     init {
         permissionQueue.addAll(getRequestablePermissions(permissionStates))
@@ -54,12 +55,10 @@ class PermissionsViewModel @AssistedInject constructor(
         MutableStateFlow(getCurrentPermission())
     val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
 
-    private fun getCurrentPermission(): PermissionsUiState {
-        return if (permissionQueue.isEmpty()) {
-            PermissionsUiState.AllPermissionsGranted
-        } else {
-            PermissionsUiState.PermissionsNeeded(permissionQueue.first())
-        }
+    private fun getCurrentPermission(): PermissionsUiState = if (permissionQueue.isEmpty()) {
+        PermissionsUiState.AllPermissionsGranted
+    } else {
+        PermissionsUiState.PermissionsNeeded(permissionQueue.first())
     }
 
     fun dismissPermission() {
@@ -80,21 +79,35 @@ class PermissionsViewModel @AssistedInject constructor(
  * - optional permissions that have not yet been denied by the user
  */
 @OptIn(ExperimentalPermissionsApi::class)
-fun getRequestablePermissions(
-    permissionStates: MultiplePermissionsState
-): MutableSet<PermissionEnum> {
-    val unGrantedPermissions = mutableSetOf<PermissionEnum>()
-    for (permission in permissionStates.permissions) {
-        // camera is always required
-        if (!permission.status.isGranted && permission.permission == Manifest.permission.CAMERA) {
-            unGrantedPermissions.add(PermissionEnum.CAMERA)
-        }
-        // audio is optional
-        else if ((!permission.status.shouldShowRationale && !permission.status.isGranted) &&
-            permission.permission ==
-            Manifest.permission.RECORD_AUDIO
-        ) {
-            unGrantedPermissions.add(PermissionEnum.RECORD_AUDIO)
+fun getRequestablePermissions(permissionStates: MultiplePermissionsState): Set<PermissionEnum> {
+    val unGrantedPermissions = buildSet {
+        permissionStates.permissions.forEach { permissionState ->
+            when (permissionState.permission) {
+                // camera is always required
+                Manifest.permission.CAMERA -> {
+                    if (!permissionState.status.isGranted) {
+                        add(PermissionEnum.CAMERA)
+                    }
+                }
+
+                // optional permissions
+                Manifest.permission.RECORD_AUDIO -> {
+                    if (!permissionState.status.shouldShowRationale &&
+                        !permissionState.status.isGranted
+                    ) {
+                        add(PermissionEnum.RECORD_AUDIO)
+                    }
+                }
+
+                Manifest.permission.WRITE_EXTERNAL_STORAGE -> {
+                    if (!permissionState.status.shouldShowRationale &&
+                        !permissionState.status.isGranted &&
+                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+                    ) {
+                        add(PermissionEnum.WRITE_STORAGE)
+                    }
+                }
+            }
         }
     }
     return unGrantedPermissions

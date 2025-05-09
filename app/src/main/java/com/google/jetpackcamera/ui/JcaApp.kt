@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
@@ -82,6 +83,8 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
+                shouldRequestReadWriteStoragePermission = previewMode is PreviewMode.StandardMode &&
+                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
                 shouldRequestAudioPermission = previewMode is PreviewMode.StandardMode,
                 onAllPermissionsGranted = {
                     // Pop off the permissions screen
@@ -97,10 +100,15 @@ private fun JetpackCameraNavHost(
 
         composable(route = PREVIEW_ROUTE, enterTransition = { fadeIn() }) {
             val permissionStates = rememberMultiplePermissionsState(
-                permissions = listOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO
-                )
+                permissions =
+                buildList {
+                    add(Manifest.permission.CAMERA)
+                    add(Manifest.permission.RECORD_AUDIO)
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                        add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
+                }
             )
             // Automatically navigate to permissions screen when camera permission revoked
             LaunchedEffect(key1 = permissionStates.permissions[0].status) {

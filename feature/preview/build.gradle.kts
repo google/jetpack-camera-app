@@ -84,6 +84,9 @@ android {
 }
 
 dependencies {
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
+
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

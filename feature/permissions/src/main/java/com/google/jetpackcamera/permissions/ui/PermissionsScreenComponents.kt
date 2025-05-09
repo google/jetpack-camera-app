@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +47,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.R
@@ -61,11 +64,21 @@ import com.google.jetpackcamera.permissions.R
 fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
-    permissionState: PermissionState,
-    onRequestPermission: () -> Unit,
+    onDismissPermission: () -> Unit,
     onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
 ) {
+    val permissionState = rememberPermissionState(permissionEnum.getPermission())
+
+    // LaunchedEffect will skip permission enum if already granted.
+    LaunchedEffect(permissionState.status) {
+        if (permissionState.status.isGranted ||
+            (permissionState.status.shouldShowRationale && permissionEnum.isOptional())
+        ) {
+            onDismissPermission()
+        }
+    }
+
     PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),
@@ -73,7 +86,7 @@ fun PermissionTemplate(
             if (permissionState.status.shouldShowRationale) {
                 onOpenAppSettings()
             } else {
-                onRequestPermission()
+                permissionState.launchPermissionRequest()
             }
         },
         onSkipPermission = onSkipPermission,

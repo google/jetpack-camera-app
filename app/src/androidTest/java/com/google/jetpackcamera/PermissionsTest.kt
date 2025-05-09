@@ -24,18 +24,29 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.feature.preview.ui.IMAGE_WELL_TAG
+import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IndividualTestGrantPermissionRule
 import com.google.jetpackcamera.utils.askEveryTimeDialog
+import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.denyPermissionDialog
+import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.grantPermissionDialog
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.waitForStartup
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,8 +61,15 @@ class PermissionsTest {
     @get:Rule
     val allPermissionsRule = IndividualTestGrantPermissionRule(
         permissions = APP_REQUIRED_PERMISSIONS.toTypedArray(),
+        targetTestNames = arrayOf("allPermissions_alreadyGranted_screenNotShown")
+    )
+
+    @get:Rule
+    val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
+        permissions = arrayOf(CAMERA_PERMISSION, AUDIO_RECORD_PERMISSION),
         targetTestNames = arrayOf(
-            "allPermissions_alreadyGranted_screenNotShown"
+            "writeStoragePermission_granted",
+            "writeStoragePermission_denied"
         )
     )
 
@@ -64,8 +82,7 @@ class PermissionsTest {
         )
     )
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val uiDevice = UiDevice.getInstance(instrumentation)
+    private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @Test
     fun allPermissions_alreadyGranted_screenNotShown() {
@@ -202,6 +219,97 @@ class PermissionsTest {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isNotDisplayed()
             }
+        }
+    }
+
+    @SdkSuppress(maxSdkVersion = 28)
+    @Test
+    fun writeStoragePermission_granted() {
+        uiDevice.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+        val timeStamp = System.currentTimeMillis()
+        runScenarioTest<MainActivity> {
+            // Wait for the camera permission screen to be displayed
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(
+                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
+                ).isDisplayed()
+            }
+
+            // Click button to request permission
+            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // grant permission
+            uiDevice.grantPermissionDialog()
+
+            // permission screen should close
+            composeTestRule.waitUntil(timeoutMillis = 5_000) {
+                composeTestRule
+                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
+                    .isNotDisplayed()
+            }
+
+            composeTestRule.waitForStartup()
+
+            // check for image capture success
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                .assertExists()
+                .performClick()
+            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+            }
+
+            // check for imagewell
+            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
+            }
+        }
+
+        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+    }
+
+    @SdkSuppress(maxSdkVersion = 28)
+    @Test
+    fun writeStoragePermission_denied() {
+        uiDevice.waitForIdle()
+        runScenarioTest<MainActivity> {
+            // Wait for the camera permission screen to be displayed
+            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(
+                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
+                ).isDisplayed()
+            }
+
+            // Click button to request permission
+            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // deny permission
+            uiDevice.denyPermissionDialog()
+
+            // storage permission is optional and the screen should close
+            composeTestRule.waitUntil {
+                composeTestRule
+                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
+                    .isNotDisplayed()
+            }
+
+            composeTestRule.waitForStartup()
+
+            // check for image capture failure
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
+            }
+            // imageWell shouldn't appear
+            composeTestRule.ensureTagNotAppears(IMAGE_WELL_TAG)
         }
     }
 }
