@@ -273,7 +273,6 @@ constructor(
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
-                .tryApplyCaptureModeConstraints()
         if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
