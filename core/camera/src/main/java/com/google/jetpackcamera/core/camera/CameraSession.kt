@@ -33,6 +33,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -66,6 +67,8 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
+import com.google.android.gms.cameralowlight.LowLightBoost
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -116,6 +119,8 @@ private val QUALITY_RANGE_MAP = mapOf(
 )
 
 context(CameraSessionContext)
+@ExperimentalCamera2Interop
+@RequiresApi(Build.VERSION_CODES.R)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -154,11 +159,25 @@ internal suspend fun runSingleCameraSession(
 
     transientSettings
         .filterNotNull()
-        .distinctUntilChanged { old, new -> old.primaryLensFacing == new.primaryLensFacing }
+        .distinctUntilChanged { old, new ->
+            (old.primaryLensFacing == new.primaryLensFacing &&
+                    !((old.flashMode == FlashMode.LOW_LIGHT_BOOST) xor (new.flashMode == FlashMode.LOW_LIGHT_BOOST)))
+        }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
+            val camera2Info = Camera2CameraInfo.from(cameraProvider.getCameraInfo(currentCameraSelector))
+            val cameraId = camera2Info.cameraId
+            val lowLightBoostClient = LowLightBoost.getClient(context)
+            val cameraEffects = mutableListOf<CameraEffect>()
+            // TODO: check whether to use AE mode or the LLB effect here
+            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, this@coroutineScope))
+            }
+            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
+                cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
+            }
             val useCaseGroup = createUseCaseGroup(
                 cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
                 videoCaptureUseCase = videoCaptureUseCase,
@@ -168,10 +187,7 @@ internal suspend fun runSingleCameraSession(
                 dynamicRange = sessionSettings.dynamicRange,
                 imageFormat = sessionSettings.imageFormat,
                 captureMode = sessionSettings.captureMode,
-                effect = when (sessionSettings.streamConfig) {
-                    StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
-                    StreamConfig.MULTI_STREAM -> null
-                }
+                effects = cameraEffects
             ).apply {
                 getImageCapture()?.let(onImageCaptureCreated)
             }
@@ -337,15 +353,17 @@ internal suspend fun processTransientSettingEvents(
         ) {
             when (newTransientSettings.flashMode) {
                 FlashMode.LOW_LIGHT_BOOST -> {
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
-
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
+                    // TODO: check whether to use AE mode or not (in the case of Google LLB preference)
+//                    val captureRequestOptions = CaptureRequestOptions.Builder()
+//                        .setCaptureRequestOption(
+//                            CaptureRequest.CONTROL_AE_MODE,
+//                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+//                        )
+//                        .build()
+//
+//                    Camera2CameraControl.from(camera.cameraControl)
+//                        .addCaptureRequestOptions(captureRequestOptions)
+                    useCaseGroup
                 }
                 else -> {
                     Camera2CameraControl.from(camera.cameraControl)
@@ -412,7 +430,7 @@ internal fun createUseCaseGroup(
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
-    effect: CameraEffect? = null
+    effects: List<CameraEffect>? = null
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
@@ -454,7 +472,7 @@ internal fun createUseCaseGroup(
         imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
         videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
 
-        effect?.let { addEffect(it) }
+        effects?.let { effect -> effect.forEach { addEffect(it) } }
     }.build()
 }
 

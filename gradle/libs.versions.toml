@@ -1,6 +1,7 @@
 [versions]
 # Used directly in build.gradle.kts files
 compileSdk = "35"
+desugar_jdk_libs = "2.1.5"
 orchestrator = "1.5.1"
 minSdk = "21"
 targetSdk = "35"
@@ -14,7 +15,7 @@ accompanist = "0.37.2"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "2.1.20"
-androidGradlePlugin = "8.11.0-alpha03"
+androidGradlePlugin = "8.8.0"
 protobufPlugin = "0.9.5"
 
 androidxActivityCompose = "1.10.1"
@@ -45,6 +46,10 @@ mockitoCore = "5.17.0"
 protobuf = "4.30.2"
 robolectric = "4.14.1"
 truth = "1.4.4"
+playServices = "18.7.0"
+playServicesCoroutines = "1.10.2"
+playServicesTasks = "18.3.0"
+cameraLowLightBoost = "16.0.0-beta01"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
@@ -82,12 +87,17 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 dagger-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 futures-ktx = { module = "androidx.concurrent:concurrent-futures-ktx", version.ref = "androidxConcurrentFutures" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "kotlinxAtomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+play-services-base = { module = "com.google.android.gms:play-services-base", version.ref = "playServices"}
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines"}
+play-services-camera-low-light-boost = { module = "com.google.android.gms:play-services-camera-low-light-boost", version.ref = "cameraLowLightBoost"}
+play-services-tasks = { module = "com.google.android.gms:play-services-tasks", version.ref = "playServicesTasks"}
 
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }

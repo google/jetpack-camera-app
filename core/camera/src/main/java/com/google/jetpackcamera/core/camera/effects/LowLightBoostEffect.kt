@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.google.jetpackcamera.core.camera.effects
 
 import androidx.camera.core.CameraEffect
-import com.google.jetpackcamera.core.camera.effects.processors.CopyingSurfaceProcessor
+import com.google.android.gms.cameralowlight.LowLightBoostClient
+import com.google.jetpackcamera.core.camera.effects.processors.LowLightBoostSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
 
 private const val TARGETS =
-    CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE
+    CameraEffect.PREVIEW or CameraEffect.IMAGE_CAPTURE or CameraEffect.VIDEO_CAPTURE
 
 /**
- * [CameraEffect] that applies a no-op effect.
- *
- * Essentially copying the camera input to the targets,
- * Preview, VideoCapture and ImageCapture.
- *
- * Used as a workaround to force the above 3 use cases to use a single camera stream.
+ * [CameraEffect] that applies a Google Low Light Boost.
  */
-class SingleSurfaceForcingEffect(coroutineScope: CoroutineScope) : CameraEffect(
+class LowLightBoostEffect(cameraId: String, lowLightBoostClient: LowLightBoostClient, coroutineScope: CoroutineScope) : CameraEffect(
     TARGETS,
     Runnable::run,
-    CopyingSurfaceProcessor(coroutineScope),
+    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, coroutineScope),
     {}
 )
