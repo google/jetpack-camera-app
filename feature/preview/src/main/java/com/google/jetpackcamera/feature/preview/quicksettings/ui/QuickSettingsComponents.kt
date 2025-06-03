@@ -53,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
-import com.google.jetpackcamera.feature.preview.FlashModeUiState
 import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
@@ -75,6 +74,8 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -659,8 +660,17 @@ fun QuickSettingsIndicators(
     }
 }
 
-private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = availableFlashModes.run {
-    get((indexOf(selectedFlashMode) + 1) % size)
+
+private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode {
+    // Filter out only the selectable flash modes to cycle through them.
+    val selectableModes = this.availableFlashModes
+        .filterIsInstance<UiSingleSelectableState.Selectable<FlashMode>>()
+        .map { it.value } // Extract the FlashMode items
+
+    val currentIndex = selectableModes.indexOf(this.selectedFlashMode)
+    val nextIndex = (currentIndex + 1) % selectableModes.size
+
+    return selectableModes[nextIndex]
 }
 
 private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {

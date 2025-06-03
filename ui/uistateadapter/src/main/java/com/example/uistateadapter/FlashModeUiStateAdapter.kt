@@ -16,94 +16,111 @@
 
 package com.example.uistateadapter
 
-import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LowLightBoostState
+import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.FlashModeUiState.Available
+import com.google.jetpackcamera.ui.uistate.FlashModeUiState.Unavailable
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import dagger.hilt.android.scopes.ViewModelScoped
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@ViewModelScoped
-class FlashModeUiStateAdapter @Inject constructor(
-    private val cameraUseCase: CameraUseCase,
-    private val constraintsRepository: ConstraintsRepository,
-    private val externalScope: CoroutineScope,
-) : UiStateAdapter<FlashModeUiState> {
 
-    private val _uiStates = MutableStateFlow<FlashModeUiState>(FlashModeUiState.Unavailable)
-    private val uiStates = _uiStates.asStateFlow()
+object FlashModeUiStateAdapter {
 
-    init {
-        externalScope.launch {
-            combine(
-                cameraUseCase.getCurrentSettings().filterNotNull(),
-                constraintsRepository.systemConstraints.filterNotNull(),
-            ) { cameraAppSettings, systemConstraints ->
-                val selectedFlashMode = cameraAppSettings.flashMode
-                val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
-                    ?.supportedFlashModes
-                    ?: setOf(FlashMode.OFF)
+    private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
+        FlashMode.OFF,
+        FlashMode.ON,
+        FlashMode.AUTO,
+        FlashMode.LOW_LIGHT_BOOST
+    )
 
-                _uiStates.update {
-                    FlashModeUiState.createFrom(
-                        selectedFlashMode = selectedFlashMode,
-                        supportedFlashModes = supportedFlashModes
-                    )
-                }
-            }.collect { }
+    fun getUiState(
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints
+    ): FlashModeUiState {
+        val selectedFlashMode = cameraAppSettings.flashMode
+        val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
+            ?.supportedFlashModes
+            ?: setOf(FlashMode.OFF)
+        return createFrom(
+            selectedFlashMode = selectedFlashMode,
+            supportedFlashModes = supportedFlashModes
+        )
+    }
+
+    private fun createFrom(
+        selectedFlashMode: FlashMode,
+        supportedFlashModes: Set<FlashMode>
+    ): FlashModeUiState {
+        // Ensure we at least support one flash mode
+        check(supportedFlashModes.isNotEmpty()) {
+            "No flash modes supported. Should at least support OFF."
+        }
+
+        // Convert available flash modes to list we support in the UI in our desired order
+        val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
+            it in supportedFlashModes
+        }.map { supportedFlashMode ->
+            UiSingleSelectableState.Selectable(supportedFlashMode)
+        }
+
+        return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
+            // If we only support OFF, then return "Unavailable".
+            Unavailable
+        } else {
+            Available(
+                selectedFlashMode = selectedFlashMode,
+                availableFlashModes = availableModes,
+                isActive = false
+            )
         }
     }
 
+    fun FlashModeUiState.updateFrom(
+        currentCameraSettings: CameraAppSettings,
+        currentConstraints: SystemConstraints,
+        cameraState: CameraState
+    ): FlashModeUiState {
+        val currentFlashMode = currentCameraSettings.flashMode
+        val currentSupportedFlashModes =
+            currentConstraints.forCurrentLens(currentCameraSettings)?.supportedFlashModes
+        return when (this) {
+            is Unavailable -> {
+                // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
+                createFrom(
+                    selectedFlashMode = currentFlashMode,
+                    supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
+                )
+            }
 
-    override fun getUiStates(): StateFlow<FlashModeUiState> = uiStates
-
-    fun update(
-        flashMode: FlashMode,
-        supportedFlashModes: Set<FlashMode>?,
-        lowLightBoostState: LowLightBoostState
-    ) {
-        _uiStates.update { oldUiState ->
-            when (oldUiState) {
-                is FlashModeUiState.Available -> {
-                    val oldFlashModesSet = oldUiState.availableFlashModes
-                        .filterIsInstance<UiSingleSelectableState.Selectable<FlashMode>>()
-                        .map { it.value }.toSet()
-
-                    if (oldFlashModesSet != supportedFlashModes) {
-                        // Supported flash modes have changed, generate a new FlashModeUiState
-                        FlashModeUiState.createFrom(
-                            selectedFlashMode = flashMode,
-                            supportedFlashModes = supportedFlashModes ?: setOf(FlashMode.OFF)
-                        )
-                    } else if (oldUiState.selectedFlashMode != flashMode) {
-                        oldUiState.copy(selectedFlashMode = flashMode)
-                    } else {
-                        if (flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                            oldUiState.copy(
-                                isActive = lowLightBoostState == LowLightBoostState.ACTIVE
-                            )
-                        } else {
-                            oldUiState
-                        }
+            is Available -> {
+                val previousFlashMode = this.selectedFlashMode
+                val previousAvailableFlashModes = this.availableFlashModes
+                val currentAvailableFlashModes =
+                    previousAvailableFlashModes.map { supportedFlashMode ->
+                        UiSingleSelectableState.Selectable(supportedFlashMode)
                     }
-                }
-
-                is FlashModeUiState.Unavailable -> {
-                    FlashModeUiState.createFrom(
-                        selectedFlashMode = flashMode,
-                        supportedFlashModes = supportedFlashModes ?: setOf(FlashMode.OFF)
+                if (previousAvailableFlashModes != currentAvailableFlashModes) {
+                    // Supported flash modes have changed, generate a new FlashModeUiState
+                    createFrom(
+                        selectedFlashMode = currentFlashMode,
+                        supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
                     )
+                } else if (previousFlashMode != currentFlashMode) {
+                    // Only the selected flash mode has changed, just update the flash mode
+                    copy(selectedFlashMode = currentFlashMode)
+                } else {
+                    if (currentFlashMode == FlashMode.LOW_LIGHT_BOOST) {
+                        copy(
+                            isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
+                        )
+                    } else {
+                        // Nothing has changed
+                        this
+                    }
                 }
             }
         }

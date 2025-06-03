@@ -41,45 +41,4 @@ sealed interface FlashModeUiState: UiState {
             }
         }
     }
-
-    companion object {
-        private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
-            FlashMode.OFF,
-            FlashMode.ON,
-            FlashMode.AUTO,
-            FlashMode.LOW_LIGHT_BOOST
-        )
-
-        /**
-         * Creates a FlashModeUiState from a selected flash mode and a set of supported flash modes
-         * that may not include flash modes supported by the UI.
-         */
-        fun createFrom(
-            selectedFlashMode: FlashMode,
-            supportedFlashModes: Set<FlashMode>
-        ): FlashModeUiState {
-            // Ensure we at least support one flash mode
-            check(supportedFlashModes.isNotEmpty()) {
-                "No flash modes supported. Should at least support OFF."
-            }
-
-            // Convert available flash modes to list we support in the UI in our desired order
-            val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
-                it in supportedFlashModes
-            }.map { supportedFlashMode ->
-                UiSingleSelectableState.Selectable(supportedFlashMode)
-            }
-
-            return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
-                // If we only support OFF, then return "Unavailable".
-                Unavailable
-            } else {
-                Available(
-                    selectedFlashMode = selectedFlashMode,
-                    availableFlashModes = availableModes,
-                    isActive = false
-                )
-            }
-        }
-    }
 }
