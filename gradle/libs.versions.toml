@@ -15,7 +15,7 @@ accompanist = "0.37.3"
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 
 kotlinPlugin = "2.1.21"
-androidGradlePlugin = "8.10.1"
+androidGradlePlugin = "8.10.0"
 protobufPlugin = "0.9.5"
 
 androidxActivityCompose = "1.10.1"
@@ -46,7 +46,6 @@ mockitoCore = "5.17.0"
 protobuf = "4.31.0"
 robolectric = "4.14.1"
 truth = "1.4.4"
-material = "1.10.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
@@ -95,7 +94,6 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
