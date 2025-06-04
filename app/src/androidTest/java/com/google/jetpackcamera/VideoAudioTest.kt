@@ -28,8 +28,8 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.ui.AMPLITUDE_HOT_TAG
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistate.AMPLITUDE_HOT_TAG
+import com.google.jetpackcamera.ui.uistate.CAPTURE_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runScenarioTest

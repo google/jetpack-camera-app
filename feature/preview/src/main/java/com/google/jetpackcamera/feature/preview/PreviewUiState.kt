@@ -31,6 +31,7 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.FlipLensUiState
 import java.util.LinkedList
 import java.util.Queue
 
@@ -46,6 +47,7 @@ sealed interface PreviewUiState {
         val systemConstraints: SystemConstraints = SystemConstraints(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
+        val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,

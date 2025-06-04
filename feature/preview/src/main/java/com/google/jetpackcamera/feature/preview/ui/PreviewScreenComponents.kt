@@ -130,6 +130,7 @@ import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.ui.uistate.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.uistate.AMPLITUDE_NONE_TAG
 import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.PREVIEW_DISPLAY
@@ -662,44 +663,46 @@ fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifi
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
-    lensFacing: LensFacing,
+    flipLensUiState: FlipLensUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var rotation by remember { mutableFloatStateOf(0f) }
-    val animatedRotation = remember { Animatable(0f) }
-    var initialLaunch by remember { mutableStateOf(false) }
+    if (flipLensUiState is FlipLensUiState.Available) {
+        var rotation by remember { mutableFloatStateOf(0f) }
+        val animatedRotation = remember { Animatable(0f) }
+        var initialLaunch by remember { mutableStateOf(false) }
 
-    // spin animate whenever lensfacing changes
-    LaunchedEffect(lensFacing) {
-        if (initialLaunch) {
-            // full 360
-            rotation -= 180f
-            animatedRotation.animateTo(
-                targetValue = rotation,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessVeryLow
+        // spin animate whenever lensfacing changes
+        LaunchedEffect(flipLensUiState.selectedLensFacing) {
+            if (initialLaunch) {
+                // full 360
+                rotation -= 180f
+                animatedRotation.animateTo(
+                    targetValue = rotation,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessVeryLow
+                    )
                 )
+            }
+            // dont rotate on the initial launch
+            else {
+                initialLaunch = true
+            }
+        }
+        IconButton(
+            modifier = modifier.size(40.dp),
+            onClick = onClick,
+            enabled = enabledCondition
+        ) {
+            Icon(
+                imageVector = Icons.Filled.FlipCameraAndroid,
+                contentDescription = stringResource(id = R.string.flip_camera_content_description),
+                modifier = Modifier
+                    .size(72.dp)
+                    .rotate(animatedRotation.value)
             )
         }
-        // dont rotate on the initial launch
-        else {
-            initialLaunch = true
-        }
-    }
-    IconButton(
-        modifier = modifier.size(40.dp),
-        onClick = onClick,
-        enabled = enabledCondition
-    ) {
-        Icon(
-            imageVector = Icons.Filled.FlipCameraAndroid,
-            contentDescription = stringResource(id = R.string.flip_camera_content_description),
-            modifier = Modifier
-                .size(72.dp)
-                .rotate(animatedRotation.value)
-        )
     }
 }
 

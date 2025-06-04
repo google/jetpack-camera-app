@@ -377,7 +377,7 @@ private fun ControlsBottom(
                             FlipCameraButton(
                                 modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                                 onClick = onFlipCamera,
-                                lensFacing = previewUiState.currentCameraSettings.cameraLensFacing,
+                                flipLensUiState = previewUiState.flipLensUiState,
                                 // enable only when phone has front and rear camera
                                 enabledCondition = systemConstraints.availableLenses.size > 1
                             )

@@ -25,7 +25,9 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState.Unavailable
+import com.google.jetpackcamera.ui.uistate.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState.*
 
 
 object FlashModeUiStateAdapter {
@@ -61,11 +63,11 @@ object FlashModeUiStateAdapter {
         }
 
         // Convert available flash modes to list we support in the UI in our desired order
-        val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
-            it in supportedFlashModes
-        }.map { supportedFlashMode ->
-            UiSingleSelectableState.Selectable(supportedFlashMode)
-        }
+        val availableModes =
+            Utils.getSelectableListFromValues(
+                supportedFlashModes,
+                ORDERED_UI_SUPPORTED_FLASH_MODES
+            )
 
         return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
             // If we only support OFF, then return "Unavailable".
@@ -101,7 +103,7 @@ object FlashModeUiStateAdapter {
                 val previousAvailableFlashModes = this.availableFlashModes
                 val currentAvailableFlashModes =
                     previousAvailableFlashModes.map { supportedFlashMode ->
-                        UiSingleSelectableState.Selectable(supportedFlashMode)
+                        Selectable(supportedFlashMode)
                     }
                 if (previousAvailableFlashModes != currentAvailableFlashModes) {
                     // Supported flash modes have changed, generate a new FlashModeUiState
@@ -123,6 +125,8 @@ object FlashModeUiStateAdapter {
                     }
                 }
             }
+
+            is FlipLensUiState.Available -> TODO()
         }
     }
 }

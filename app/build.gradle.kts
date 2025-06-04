@@ -165,6 +165,9 @@ dependencies {
     // Permissions Screen
     implementation(project(":feature:permissions"))
 
+    // Ui State
+    implementation(project(":ui:uistate"))
+
     // benchmark
     implementation(libs.androidx.profileinstaller)
 }

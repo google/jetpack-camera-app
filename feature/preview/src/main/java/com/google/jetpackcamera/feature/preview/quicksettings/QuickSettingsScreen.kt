@@ -217,7 +217,7 @@ private fun ExpandedQuickSettingsUi(
                         QuickFlipCamera(
                             modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
                             setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
-                            currentLensFacing = currentCameraSettings.cameraLensFacing
+                            flipLensUiState = previewUiState.flipLensUiState
                         )
                     }
 

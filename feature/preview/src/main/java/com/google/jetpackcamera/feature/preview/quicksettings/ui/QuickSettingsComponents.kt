@@ -75,6 +75,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
 import kotlin.math.min
 
@@ -316,19 +317,21 @@ fun QuickSetFlash(
 @Composable
 fun QuickFlipCamera(
     setLensFacing: (LensFacing) -> Unit,
-    currentLensFacing: LensFacing,
+    flipLensUiState: FlipLensUiState,
     modifier: Modifier = Modifier
 ) {
-    val enum =
-        when (currentLensFacing) {
-            LensFacing.FRONT -> CameraLensFace.FRONT
-            LensFacing.BACK -> CameraLensFace.BACK
-        }
-    QuickSettingUiItem(
-        modifier = modifier,
-        enum = enum,
-        onClick = { setLensFacing(currentLensFacing.flip()) }
-    )
+    if (flipLensUiState is FlipLensUiState.Available) {
+        val enum =
+            when (flipLensUiState.selectedLensFacing) {
+                LensFacing.FRONT -> CameraLensFace.FRONT
+                LensFacing.BACK -> CameraLensFace.BACK
+            }
+        QuickSettingUiItem(
+            modifier = modifier,
+            enum = enum,
+            onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
+        )
+    }
 }
 
 @Composable
