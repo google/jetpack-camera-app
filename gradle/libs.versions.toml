@@ -15,7 +15,7 @@ accompanist = "0.37.3"
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 
 kotlinPlugin = "2.1.21"
-androidGradlePlugin = "8.10.0"
+androidGradlePlugin = "8.10.1"
 protobufPlugin = "0.9.5"
 
 androidxActivityCompose = "1.10.1"
