@@ -2,7 +2,8 @@ package com.google.jetpackcamera.ui.uistate
 
 sealed interface UiSingleSelectableState<T> {
     data class Selectable<T>(val value: T) : UiSingleSelectableState<T>
-    data class Disabled<T>(val disabledReason: ReasonDisplayable) : UiSingleSelectableState<T>
+    data class Disabled<T>(val value: T, val disabledReason: ReasonDisplayable) :
+        UiSingleSelectableState<T>
 }
 
 interface ReasonDisplayable {

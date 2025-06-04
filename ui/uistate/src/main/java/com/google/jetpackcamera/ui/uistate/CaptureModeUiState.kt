@@ -17,8 +17,6 @@
 package com.google.jetpackcamera.ui.uistate
 
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.ui.uistate.FlashModeUiState.Companion.ORDERED_UI_SUPPORTED_FLASH_MODES
 
 sealed interface CaptureModeUiState: UiState {
     data object Unavailable : CaptureModeUiState
@@ -42,31 +40,6 @@ sealed interface CaptureModeUiState: UiState {
             }
         }
     }
-
-//    companion object {
-//        private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
-//            CaptureMode.STANDARD,
-//            CaptureMode.IMAGE_ONLY,
-//            CaptureMode.VIDEO_ONLY
-//        )
-//
-//        fun createFrom(
-//            selectedCaptureMode: CaptureMode,
-//            supportedCaptureModes: Set<CaptureMode>
-//        ): CaptureMode {
-//            // Ensure we at least support one flash mode
-//            check(supportedCaptureModes.isNotEmpty()) {
-//                "No capture modes supported. Should at least support OFF."
-//            }
-//
-//            // Convert available flash modes to list we support in the UI in our desired order
-//            val availableModes = ORDERED_UI_SUPPORTED_CAPTURE_MODES.filter {
-//                it in supportedCaptureModes
-//            }.map { supportedCaptureMode ->
-//                UiSingleSelectableState.Selectable(supportedCaptureMode)
-//            }
-//        }
-//    }
 }
 
 enum class DisabledReason(

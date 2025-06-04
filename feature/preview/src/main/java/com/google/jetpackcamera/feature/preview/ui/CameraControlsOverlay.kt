@@ -57,9 +57,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.uistateadapter.CaptureModeUiStateAdapter.findSelectableStateFor
+import com.example.uistateadapter.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
 import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
@@ -83,7 +84,16 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistate.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.uistate.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.VIDEO_QUALITY_TAG
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -109,7 +119,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (ReasonDisplayable) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
@@ -287,7 +297,7 @@ private fun ControlsBottom(
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
-    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (ReasonDisplayable) -> Unit = {},
     onSetZoom: (CameraZoomRatio) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
@@ -334,11 +344,13 @@ private fun ControlsBottom(
         Column {
             if (!isQuickSettingsOpen &&
                 previewUiState.captureModeToggleUiState
-                    is CaptureModeUiState.Enabled
+                    is CaptureModeUiState.Available
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines
                 Box(
-                    Modifier.align(Alignment.End).padding(end = 12.dp)
+                    Modifier
+                        .align(Alignment.End)
+                        .padding(end = 12.dp)
                 ) {
                     CaptureModeToggleButton(
                         uiState = previewUiState.captureModeToggleUiState,
@@ -393,7 +405,9 @@ private fun ControlsBottom(
                 )
 
                 Box(
-                    modifier = Modifier.weight(1f).size(120.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .size(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (videoRecordingState is VideoRecordingState.Active) {
@@ -528,30 +542,30 @@ private fun CaptureButton(
 
 @Composable
 private fun CaptureModeToggleButton(
-    uiState: CaptureModeUiState.Enabled,
+    uiState: CaptureModeUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (DisabledReason) -> Unit,
+    onToggleWhenDisabled: (ReasonDisplayable) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val initialState =
-        when (uiState.currentSelection) {
+        when (uiState.selectedCaptureMode) {
             CaptureMode.IMAGE_ONLY -> ToggleState.Left
             CaptureMode.VIDEO_ONLY -> ToggleState.Right
             CaptureMode.STANDARD -> TODO("toggle should not be visible for STANDARD mode")
         }
     val enabled =
-        uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
-            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
+        uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
+            uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
     ToggleButton(
-        leftIcon = if (uiState.currentSelection ==
+        leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
             rememberVectorPainter(image = Icons.Filled.CameraAlt)
         } else {
             rememberVectorPainter(image = Icons.Outlined.CameraAlt)
         },
-        rightIcon = if (uiState.currentSelection ==
+        rightIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.VIDEO_ONLY
         ) {
             rememberVectorPainter(image = Icons.Filled.Videocam)
@@ -567,9 +581,9 @@ private fun CaptureModeToggleButton(
             onChangeCaptureMode(captureMode)
         },
         onToggleWhenDisabled = {
-            val disabledReason: DisabledReason? =
-                (uiState.videoOnlyCaptureState as? SingleSelectableState.Disabled)?.disabledReason
-                    ?: (uiState.imageOnlyCaptureState as? SingleSelectableState.Disabled)
+            val disabledReason: ReasonDisplayable? =
+                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as? UiSingleSelectableState.Disabled<CaptureMode>)?.disabledReason
+                    ?: (uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY) as? UiSingleSelectableState.Disabled<CaptureMode>)
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
@@ -623,7 +637,10 @@ private fun Preview_ControlsTop_FlashModeOn() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.ON,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                availableFlashModes = listOf(
+                    UiSingleSelectableState.Selectable(FlashMode.OFF),
+                    UiSingleSelectableState.Selectable(FlashMode.ON)
+                ),
                 isActive = false
             )
         )
@@ -638,7 +655,11 @@ private fun Preview_ControlsTop_FlashModeAuto() {
             isQuickSettingsOpen = false,
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.AUTO,
-                availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
+                availableFlashModes = listOf(
+                    UiSingleSelectableState.Selectable(FlashMode.OFF),
+                    UiSingleSelectableState.Selectable(FlashMode.ON),
+                    UiSingleSelectableState.Selectable(FlashMode.AUTO),
+                ),
                 isActive = false
             )
         )

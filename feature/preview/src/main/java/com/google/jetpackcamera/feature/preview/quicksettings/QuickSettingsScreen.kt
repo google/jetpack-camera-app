@@ -43,7 +43,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
@@ -81,7 +80,9 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
 
 /**
  * The UI component for quick settings.
@@ -298,9 +299,9 @@ private fun ExpandedQuickSettingsUi(
                                 (
                                     (
                                         previewUiState.captureModeUiState as?
-                                            CaptureModeUiState.Enabled
+                                            CaptureModeUiState.Available
                                         )
-                                        ?.currentSelection !=
+                                        ?.selectedCaptureMode !=
                                         CaptureMode.IMAGE_ONLY
                                     ) ==
                                 true &&
@@ -352,8 +353,8 @@ private fun ExpandedQuickSettingsUi(
     }
 }
 
-private fun CaptureModeUiState.stateDescription() = (this as? CaptureModeUiState.Enabled)?.let {
-    when (currentSelection) {
+private fun CaptureModeUiState.stateDescription() = (this as? CaptureModeUiState.Available)?.let {
+    when (selectedCaptureMode) {
         CaptureMode.STANDARD -> R.string.quick_settings_description_capture_mode_standard
         CaptureMode.VIDEO_ONLY -> R.string.quick_settings_description_capture_mode_video_only
         CaptureMode.IMAGE_ONLY -> R.string.quick_settings_description_capture_mode_image_only
@@ -373,7 +374,10 @@ fun ExpandedQuickSettingsUiPreview() {
                 // captureModeToggleUiState = CaptureModeToggleUiState.Invisible,
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(FlashMode.OFF, FlashMode.ON),
+                    availableFlashModes = listOf(
+                        UiSingleSelectableState.Selectable(FlashMode.OFF),
+                        UiSingleSelectableState.Selectable(FlashMode.ON)
+                    ),
                     isActive = false
                 ),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE

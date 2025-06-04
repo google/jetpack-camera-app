@@ -29,6 +29,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
 import java.util.LinkedList
 import java.util.Queue

@@ -110,14 +110,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.uistateadapter.CaptureModeUiStateAdapter.findSelectableStateFor
+import com.example.uistateadapter.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.AudioUiState
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
-import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
 import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
@@ -128,6 +127,15 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.ui.uistate.AMPLITUDE_HOT_TAG
+import com.google.jetpackcamera.ui.uistate.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.LOGICAL_CAMERA_ID_TAG
+import com.google.jetpackcamera.ui.uistate.PHYSICAL_CAMERA_ID_TAG
+import com.google.jetpackcamera.ui.uistate.PREVIEW_DISPLAY
+import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.ZOOM_RATIO_TAG
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -504,7 +512,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -742,8 +750,8 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (DisabledReason) -> Unit,
-    captureModeUiState: CaptureModeUiState.Enabled
+    onDisabledCaptureMode: (ReasonDisplayable) -> Unit,
+    captureModeUiState: CaptureModeUiState.Available
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -754,8 +762,8 @@ fun CaptureModeDropDown(
             fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
-            fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
-                if (selectableState is SingleSelectableState.Disabled) {
+            fun onDisabledClick(selectableState: UiSingleSelectableState<CaptureMode>?): () -> Unit =
+                if (selectableState is UiSingleSelectableState.Disabled) {
                     { onDisabledCaptureMode(selectableState.disabledReason) }
                 } else {
                     { TODO("Enabled should not have disabled click") }
@@ -764,34 +772,35 @@ fun CaptureModeDropDown(
             Column {
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_standard),
-                    enabled = captureModeUiState.defaultCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD),
                     onClick = {
                         onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
                     },
-                    onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.findSelectableStateFor(CaptureMode.STANDARD)
+                    )
                 )
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
-                    enabled = captureModeUiState.imageOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY),
                     onClick = {
                         onSetCaptureMode(CaptureMode.IMAGE_ONLY)
                         isExpanded = false
                     },
-                    onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                    )
                 )
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
-                    enabled = captureModeUiState.videoOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY),
                     onClick = {
                         onSetCaptureMode(CaptureMode.VIDEO_ONLY)
                         isExpanded = false
                     },
                     onDisabledClick = onDisabledClick(
-                        captureModeUiState.videoOnlyCaptureState
+                        captureModeUiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
                     )
 
                 )
@@ -809,7 +818,7 @@ fun CaptureModeDropDown(
                 .padding(8.dp)
         ) {
             Text(
-                text = when (captureModeUiState.currentSelection) {
+                text = when (captureModeUiState.selectedCaptureMode) {
                     CaptureMode.STANDARD -> stringResource(
                         R.string.quick_settings_text_capture_mode_standard
                     )
@@ -923,7 +932,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

@@ -52,10 +52,9 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
+import com.example.uistateadapter.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
@@ -74,6 +73,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
 import kotlin.math.min
@@ -126,7 +126,7 @@ fun FocusedQuickSetCaptureMode(
     captureModeUiState: CaptureModeUiState
 ) {
     val buttons: Array<@Composable () -> Unit> =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
+        if (captureModeUiState is CaptureModeUiState.Available) {
             arrayOf(
                 {
                     QuickSetCaptureMode(
@@ -173,8 +173,8 @@ fun QuickSetCaptureMode(
     assignedCaptureMode: CaptureMode?,
     isHighlightEnabled: Boolean = false
 ) {
-    if (captureModeUiState is CaptureModeUiState.Enabled) {
-        val captureToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
+    if (captureModeUiState is CaptureModeUiState.Available) {
+        val captureToUse = assignedCaptureMode ?: captureModeUiState.selectedCaptureMode
         val enum = when (captureToUse) {
             CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
@@ -187,27 +187,23 @@ fun QuickSetCaptureMode(
             onClick = { onClick() },
             enabled = when (assignedCaptureMode) {
                 null -> {
-                    val list: List<SingleSelectableState> =
-                        listOf(
-                            captureModeUiState.defaultCaptureState,
-                            captureModeUiState.imageOnlyCaptureState,
-                            captureModeUiState.videoOnlyCaptureState
-                        )
                     // only enabled if there are at least 2 supported capturemodes
-                    list.count { it is SingleSelectableState.Selectable } >= 2
+                    captureModeUiState.availableCaptureModes.count {
+                        it is UiSingleSelectableState.Selectable
+                    } >= 2
                 }
 
                 CaptureMode.STANDARD ->
-                    captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD)
 
                 CaptureMode.VIDEO_ONLY ->
-                    captureModeUiState.videoOnlyCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY)
 
                 CaptureMode.IMAGE_ONLY ->
-                    captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
