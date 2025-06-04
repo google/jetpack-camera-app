@@ -34,6 +34,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.feature.preview.R
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
@@ -42,9 +43,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
@@ -56,6 +55,7 @@ import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTest
 import com.google.jetpackcamera.utils.stateDescriptionMatches
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -233,39 +233,36 @@ class ConcurrentCameraTest {
     @Test
     fun concurrentCameraMode_whenEnabled_disablesOtherSettings() =
         runConcurrentCameraScenarioTest<MainActivity> {
-            with(composeTestRule) {
-                onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                    .assertExists()
-                    .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                    // Enable concurrent camera
-                    .performClick()
-                    .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+            runBlocking {
+                with(composeTestRule) {
+                    onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
+                        .assertExists()
+                        .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
+                        // Enable concurrent camera
+                        .performClick()
+                        .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
 
-                // Assert the capture mode button is disabled
-                onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
-                    .assertExists()
-                    .assert(isNotEnabled())
+                    // Assert the capture mode button is disabled
+                    onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
+                        .assertExists()
+                        .assert(isNotEnabled())
 
-                // Assert the HDR button is disabled
-                onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
-                    .assertExists()
-                    .assert(isNotEnabled())
+                    // Assert the HDR button is disabled
+                    onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
+                        .assertExists()
+                        .assert(isNotEnabled())
 
-                // Exit quick settings
-                onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                    .assertExists()
-                    .performClick()
-
-                onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                    .assertExists()
-                    .assert(
-                        stateDescriptionMatches(
-                            getResString(R.string.capture_mode_video_recording_content_description)
+                    // Assert the capture mode is disabled and set to video-only
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                        .assert(
+                            stateDescriptionMatches(
+                                getResString(
+                                    R.string.quick_settings_description_capture_mode_video_only
+                                )
+                            )
                         )
-                    ).performClick()
-
-                waitUntil {
-                    onNodeWithTag(IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG).isDisplayed()
                 }
             }
         }

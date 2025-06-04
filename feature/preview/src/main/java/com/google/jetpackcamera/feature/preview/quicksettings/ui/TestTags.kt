@@ -25,7 +25,7 @@ package com.google.jetpackcamera.feature.preview.quicksettings.ui
 //
 // ////////////////////////////////
 
-const val QUICK_SETTINGS_DROP_DOWN = "btn_toggle_quick_settings"
+const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val QUICK_SETTINGS_BACKGROUND_MAIN = "quick_settings_container"
 const val QUICK_SETTINGS_BACKGROUND_FOCUSED = "quick_settings_container_focused"
 
