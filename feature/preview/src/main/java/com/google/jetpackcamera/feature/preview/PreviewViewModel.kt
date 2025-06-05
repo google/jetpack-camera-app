@@ -195,7 +195,10 @@ class PreviewViewModel @AssistedInject constructor(
                         currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
                         videoRecordingState = cameraState.videoRecordingState,
-                        flipLensUiState = FlipLensUiStateAdapter.getUiState(cameraAppSettings),
+                        flipLensUiState = FlipLensUiStateAdapter.getUiState(
+                            cameraAppSettings,
+                            systemConstraints
+                        ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,

@@ -18,6 +18,7 @@ package com.example.uistateadapter
 
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.FlipLensUiState
 
 object FlipLensUiStateAdapter {
@@ -27,10 +28,12 @@ object FlipLensUiStateAdapter {
 
     )
 
-    fun getUiState(cameraAppSettings: CameraAppSettings): FlipLensUiState {
+    fun getUiState(
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints): FlipLensUiState {
         return createFrom(
             cameraAppSettings.cameraLensFacing,
-            ORDERED_UI_SUPPORTED_LENS_FACINGS.toSet()
+            systemConstraints.availableLenses.toSet()
         )
     }
 
