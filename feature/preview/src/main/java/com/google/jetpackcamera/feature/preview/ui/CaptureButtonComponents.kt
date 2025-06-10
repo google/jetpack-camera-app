@@ -74,7 +74,7 @@ import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.settings.model.ZoomStrategy
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -383,7 +383,7 @@ private fun CaptureButton(
                                 // todo(kc): should check the tuning of this.
                                 val zoom = positiveDistance * -0.01f // Adjust sensitivity
                                 onSetZoom(
-                                    CameraZoomRatio(ZoomChange.Increment(zoom))
+                                    CameraZoomRatio(ZoomStrategy.Increment(zoom))
                                 )
                             }
                         }

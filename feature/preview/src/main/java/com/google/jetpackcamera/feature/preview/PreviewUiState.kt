@@ -64,6 +64,7 @@ sealed interface PreviewUiState {
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
         val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
+        val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
         val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : PreviewUiState
 }
@@ -98,6 +99,14 @@ sealed interface HdrUiState {
         val currentImageOutputFormat: ImageOutputFormat,
         val currentDynamicRange: DynamicRange
     ) : HdrUiState
+}
+
+sealed interface ZoomControlUiState {
+    data object Unavailable: ZoomControlUiState
+    data class Enabled(
+        val zoomLevels: List<Float>,
+        val primaryZoomRatio: Float? = null
+    ): ZoomControlUiState
 }
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState

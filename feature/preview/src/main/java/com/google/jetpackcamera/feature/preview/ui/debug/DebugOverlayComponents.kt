@@ -53,7 +53,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PRO
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
-import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.settings.model.ZoomStrategy
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
@@ -218,7 +218,7 @@ private fun SetZoomRatioComponent(
                     }
                     onChangeZoomRatio(
                         CameraZoomRatio(
-                            ZoomChange.Absolute(newRatio, LensToZoom.PRIMARY)
+                            ZoomStrategy.Absolute(newRatio, LensToZoom.PRIMARY)
                         )
                     )
                 } catch (e: NumberFormatException) {

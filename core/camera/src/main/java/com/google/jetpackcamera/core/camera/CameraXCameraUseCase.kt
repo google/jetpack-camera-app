@@ -58,7 +58,7 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.settings.model.ZoomStrategy
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -665,15 +665,15 @@ constructor(
         return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
             val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
                 when (val change = newZoomState.changeType) {
-                    is ZoomChange.Absolute -> change.value
-                    is ZoomChange.Scale -> (
+                    is ZoomStrategy.Absolute -> change.value
+                    is ZoomStrategy.Scale -> (
                         this.defaultZoomRatios
                             [lensFacing]
                             ?: 1.0f
                         ) *
                         change.value
 
-                    is ZoomChange.Increment -> {
+                    is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
                     }
                 }.coerceIn(zoomRatioRange.lower, zoomRatioRange.upper)

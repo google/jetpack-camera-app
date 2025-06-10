@@ -47,8 +47,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -77,12 +79,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -123,6 +125,7 @@ import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
+import com.google.jetpackcamera.feature.preview.ZoomControlUiState
 import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -131,7 +134,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.settings.model.ZoomStrategy
 import kotlinx.coroutines.Job
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
@@ -140,7 +143,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import java.math.RoundingMode
 import java.util.Locale
+import java.text.DecimalFormat
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -437,7 +442,7 @@ fun PreviewDisplay(
         onTransformation = { pinchZoomChange, _, _ ->
             onZoomRatioChange(
                 CameraZoomRatio(
-                    ZoomChange.Scale(pinchZoomChange)
+                    ZoomStrategy.Scale(pinchZoomChange)
                 )
             )
         }
@@ -644,20 +649,6 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     }
 }
 
-/**
- * A temporary button that can be added to preview for quick testing purposes
- */
-@Composable
-fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
-    SuggestionChip(
-        onClick = { onClick() },
-        modifier = modifier,
-        label = {
-            Text(text = text)
-        }
-    )
-}
-
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
@@ -716,52 +707,106 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
     }
 }
 
+/**
+ * A Composable that displays a horizontally scrolling row of circular buttons.
+ * Each button corresponds to a float value from the provided list and is formatted
+ * according to specific rules.
+ *
+ * @param values The list of ascending float values to display.
+ * @param modifier The modifier to be applied to the row.
+ * @param buttonSize The size of each circular button.
+ * @param spacing The padding space between each button.
+ * @param onChangeZoom A callback that is invoked when a button is clicked, providing the float value.
+ */
+@Composable
+fun ZoomButtonRow(
+    modifier: Modifier = Modifier,
+    zoomControlUiState: ZoomControlUiState.Enabled,
+    buttonSize: Dp = 48.dp,
+    spacing: Dp = 8.dp,
+    onChangeZoom: (Float) -> Unit
+) {
+
+    val selectedOptionIndex: Int by remember(zoomControlUiState)
+    {
+        // -1 if no index is found
+        derivedStateOf {
+            if ((zoomControlUiState.primaryZoomRatio?:1f) >= 1f)
+                zoomControlUiState.zoomLevels.indexOfLast { zoomLevel -> (zoomControlUiState.primaryZoomRatio?:1f) >= zoomLevel }
+            else
+                0
+        }
+    }
+    Box(
+        modifier = modifier
+            .background(
+                color = Color.Black.copy(alpha = 0.32f),
+                shape = RoundedCornerShape(buttonSize)
+            )
+            .padding(8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = spacing / 2)
+                .height(intrinsicSize = IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(spacing),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
+                // Determine the text to display based on the rules
+
+
+                // Create the circular button
+                ZoomButton(
+                    targetZoom = value,
+                    currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio?:1f) },
+                    isSelected = selectedOptionIndex == index,
+                    onChangeZoom = onChangeZoom
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun ZoomButton(
+    modifier: Modifier = Modifier,
+    buttonSize: Dp = 55.dp,
     targetZoom: Float,
-    zoomUiState: ZoomUiState.Enabled,
-    onZoomChanged: (CameraZoomRatio) -> Unit,
-    animationDurationMillis: Int? = 500 // Adjust the duration as needed
+    currentZoomRatio: () -> Float,
+    isSelected: Boolean = false,
+    onChangeZoom: (Float) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    var zoomJob by remember { mutableStateOf<Job?>(null) }
+    val formatter = DecimalFormat("#.#")
+    formatter.minimumIntegerDigits = 0
 
-
-    Button(
-        modifier = Modifier.padding(2.dp),
-        shape = CircleShape,
-        colors = if (zoomUiState.primaryZoomRatio == targetZoom)
-            ButtonDefaults.buttonColors(containerColor = Color.Yellow)
-        else if (targetZoom == zoomUiState.primaryZoomRange.upper || targetZoom == zoomUiState.primaryZoomRange.lower)
-            ButtonDefaults.buttonColors(containerColor = Color.Magenta)
-        else
-            ButtonDefaults.buttonColors(),
-
-        onClick = {
-            zoomJob?.cancel()
-            if(animationDurationMillis != null) {
-                val animatableZoom = Animatable(initialValue = zoomUiState.primaryZoomRatio ?: 1.0f)
-                zoomJob =
-                    coroutineScope.launch {
-                        Log.d(TAG, "starting anim: ${animatableZoom.value} \n ending: $targetZoom")
-
-                        animatableZoom.animateTo(
-                            targetValue = targetZoom.coerceIn(
-                                zoomUiState.primaryZoomRange.lower,
-                                zoomUiState.primaryZoomRange.upper
-                            ),
-                            animationSpec = tween(durationMillis = animationDurationMillis)
-                        ) {
-                            onZoomChanged(CameraZoomRatio(ZoomChange.Absolute(value)))
-                        }
-                        zoomJob = null
-                    }
-            }
+    val displayText by remember(isSelected, currentZoomRatio) {
+        derivedStateOf {
+            if (!isSelected)
+                formatter.format(targetZoom)
             else
-                onZoomChanged(CameraZoomRatio(ZoomChange.Absolute(targetZoom)))
+                "${formatter.format(currentZoomRatio())}x"
         }
-    ) {
-        Text(text = "${String.format(Locale.US, "%.1f", targetZoom)}x", fontSize = 10.sp)
+    }
+    Box(contentAlignment = Alignment.Center) {
+        Button(
+            onClick = { onChangeZoom(targetZoom) },
+            modifier = modifier
+                .height(buttonSize)
+                .defaultMinSize(minWidth = buttonSize),
+            shape = CircleShape,
+            colors = if (isSelected)
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            else ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = .16f))
+        ) {
+            Text(
+                text = displayText,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -1076,6 +1121,82 @@ private fun Preview_ToggleButton_Disabled() {
             rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
             initialState = ToggleState.Right,
             enabled = false
+        )
+    }
+}
+
+/**
+ * A preview function to display the CircularButtonRow.
+ * It provides a sample list that covers all the specified formatting rules.
+ */
+@Preview(showBackground = true)
+@Composable
+fun CircularButtonPreview() {
+    Box(
+        Modifier
+            .padding(16.dp)
+            .background(Color.DarkGray)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row {
+            ZoomButton(
+                targetZoom = 1f,
+                onChangeZoom = {},
+                isSelected = false,
+                currentZoomRatio = { -> 2f }
+            )
+
+            ZoomButton(
+                targetZoom = 3f,
+                onChangeZoom = {},
+                currentZoomRatio = { -> 3.3f },
+                isSelected = true,
+            )
+        }
+    }
+}
+
+/**
+ * A preview function to display the CircularButtonRow.
+ * It provides a sample list that covers all the specified formatting rules.
+ */
+@Preview(showBackground = true)
+@Composable
+fun CircularButtonRowPreview() {
+    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f)
+    Box(
+        Modifier
+            .background(Color.DarkGray),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomButtonRow(
+            zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = 1f),
+            onChangeZoom = {
+                // In a real app, you would handle the click event here.
+                // For the preview, we can just print it.
+                println("Clicked value: $it")
+            }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CircularButtonRowPreview2() {
+    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f)
+    Box(
+        Modifier
+            .background(Color.DarkGray),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomButtonRow(
+            zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = .6f),
+            onChangeZoom = {
+                // In a real app, you would handle the click event here.
+                // For the preview, we can just print it.
+                println("Clicked value: $it")
+            }
         )
     }
 }
