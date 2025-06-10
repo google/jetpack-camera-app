@@ -26,10 +26,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
+import com.example.uistateadapter.AspectRatioUiStateAdapter
 import com.example.uistateadapter.CaptureModeUiStateAdapter
 import com.example.uistateadapter.FlashModeUiStateAdapter
 import com.example.uistateadapter.FlashModeUiStateAdapter.updateFrom
 import com.example.uistateadapter.FlipLensUiStateAdapter
+import com.example.uistateadapter.StreamConfigsUiStateAdapter
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.camera.VideoRecordingState
@@ -198,6 +200,12 @@ class PreviewViewModel @AssistedInject constructor(
                         flipLensUiState = FlipLensUiStateAdapter.getUiState(
                             cameraAppSettings,
                             systemConstraints
+                        ),
+                        aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(
+                            cameraAppSettings
+                        ),
+                        streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(
+                            cameraAppSettings
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,

@@ -29,9 +29,11 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.StreamConfigUiState
 import java.util.LinkedList
 import java.util.Queue
 
@@ -48,6 +50,8 @@ sealed interface PreviewUiState {
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsIsOpen: Boolean = false,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
+        val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
+        val streamConfigUiState: StreamConfigUiState = StreamConfigUiState.Unavailable,
 
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,

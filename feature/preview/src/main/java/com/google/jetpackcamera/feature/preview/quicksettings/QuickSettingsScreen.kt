@@ -80,6 +80,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.ui.uistate.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
@@ -221,17 +222,19 @@ private fun ExpandedQuickSettingsUi(
                         )
                     }
 
-                    add {
-                        QuickSetRatio(
-                            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
-                            onClick = {
-                                setFocusedQuickSetting(
-                                    FocusedQuickSetting.ASPECT_RATIO
-                                )
-                            },
-                            ratio = currentCameraSettings.aspectRatio,
-                            currentRatio = currentCameraSettings.aspectRatio
-                        )
+                    if (previewUiState.aspectRatioUiState is AspectRatioUiState.Available) {
+                        add {
+                            QuickSetRatio(
+                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                                onClick = {
+                                    setFocusedQuickSetting(
+                                        FocusedQuickSetting.ASPECT_RATIO
+                                    )
+                                },
+                                aspectRatioUiState = previewUiState.aspectRatioUiState,
+                                ratio = previewUiState.aspectRatioUiState.selectedAspectRatio
+                            )
+                        }
                     }
 
                     add {
@@ -240,13 +243,7 @@ private fun ExpandedQuickSettingsUi(
                                 QUICK_SETTINGS_STREAM_CONFIG_BUTTON
                             ),
                             setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
-                            currentStreamConfig = currentCameraSettings.streamConfig,
-                            enabled = !(
-                                currentCameraSettings.concurrentCameraMode ==
-                                    ConcurrentCameraMode.DUAL ||
-                                    currentCameraSettings.imageFormat ==
-                                    ImageOutputFormat.JPEG_ULTRA_HDR
-                                )
+                            streamConfigUiState = previewUiState.streamConfigUiState,
                         )
                     }
 
@@ -340,7 +337,7 @@ private fun ExpandedQuickSettingsUi(
         AnimatedVisibility(visible = focusedQuickSetting == FocusedQuickSetting.ASPECT_RATIO) {
             FocusedQuickSetRatio(
                 setRatio = onAspectRatioClick,
-                currentRatio = currentCameraSettings.aspectRatio
+                aspectRatioUiState = previewUiState.aspectRatioUiState
             )
         }
 
