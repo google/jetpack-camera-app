@@ -722,7 +722,7 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 fun ZoomButtonRow(
     modifier: Modifier = Modifier,
     zoomControlUiState: ZoomControlUiState.Enabled,
-    buttonSize: Dp = 48.dp,
+    buttonSize: Dp = 55.dp,
     spacing: Dp = 8.dp,
     onChangeZoom: (Float) -> Unit
 ) {
@@ -747,7 +747,7 @@ fun ZoomButtonRow(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = spacing / 2)
+            //    .padding(horizontal = spacing)
                 .height(intrinsicSize = IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically
@@ -777,6 +777,7 @@ fun ZoomButton(
     isSelected: Boolean = false,
     onChangeZoom: (Float) -> Unit,
 ) {
+    val selectedFormat = DecimalFormat("#.0")
     val formatter = DecimalFormat("#.#")
     formatter.minimumIntegerDigits = 0
 
@@ -785,10 +786,11 @@ fun ZoomButton(
             if (!isSelected)
                 formatter.format(targetZoom)
             else
-                "${formatter.format(currentZoomRatio())}x"
+                "${selectedFormat.format(currentZoomRatio())}x"
         }
     }
-    Box(contentAlignment = Alignment.Center) {
+    
+    Box(modifier = Modifier.width(buttonSize*1.5f) ,contentAlignment = Alignment.Center) {
         Button(
             onClick = { onChangeZoom(targetZoom) },
             modifier = modifier
@@ -810,6 +812,7 @@ fun ZoomButton(
     }
 }
 
+//TODO(kc): cycle out old zoom ratio text component
 @Composable
 fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
@@ -1184,7 +1187,7 @@ fun CircularButtonRowPreview() {
 @Preview(showBackground = true)
 @Composable
 fun CircularButtonRowPreview2() {
-    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f)
+    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f, 25.0f)
     Box(
         Modifier
             .background(Color.DarkGray),
