@@ -26,6 +26,7 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -731,8 +732,10 @@ fun ZoomButtonRow(
     {
         // -1 if no index is found
         derivedStateOf {
-            if ((zoomControlUiState.primaryZoomRatio?:1f) >= 1f)
-                zoomControlUiState.zoomLevels.indexOfLast { zoomLevel -> (zoomControlUiState.primaryZoomRatio?:1f) >= zoomLevel }
+            if ((zoomControlUiState.primaryZoomRatio ?: 1f) >= 1f)
+                zoomControlUiState.zoomLevels.indexOfLast { zoomLevel ->
+                    (zoomControlUiState.primaryZoomRatio ?: 1f) >= zoomLevel
+                }
             else
                 0
         }
@@ -747,7 +750,7 @@ fun ZoomButtonRow(
     ) {
         Row(
             modifier = Modifier
-            //    .padding(horizontal = spacing)
+                //    .padding(horizontal = spacing)
                 .height(intrinsicSize = IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically
@@ -759,7 +762,7 @@ fun ZoomButtonRow(
                 // Create the circular button
                 ZoomButton(
                     targetZoom = value,
-                    currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio?:1f) },
+                    currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio ?: 1f) },
                     isSelected = selectedOptionIndex == index,
                     onChangeZoom = onChangeZoom
                 )
@@ -789,8 +792,11 @@ fun ZoomButton(
                 "${selectedFormat.format(currentZoomRatio())}x"
         }
     }
-    
-    Box(modifier = Modifier.width(buttonSize*1.5f) ,contentAlignment = Alignment.Center) {
+
+    Box(
+        modifier = Modifier.width(buttonSize * 1.5f),
+        contentAlignment = Alignment.Center
+    ) {
         Button(
             onClick = { onChangeZoom(targetZoom) },
             modifier = modifier
@@ -805,6 +811,7 @@ fun ZoomButton(
             else ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = .16f))
         ) {
             Text(
+                modifier = Modifier.animateContentSize(),
                 text = displayText,
                 textAlign = TextAlign.Center
             )
