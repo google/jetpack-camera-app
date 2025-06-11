@@ -166,7 +166,7 @@ dependencies {
     implementation(project(":feature:permissions"))
 
     // Ui State
-    implementation(project(":ui:uistate"))
+    implementation(project(":ui:uistate:viewfinder"))
 
     // benchmark
     implementation(libs.androidx.profileinstaller)

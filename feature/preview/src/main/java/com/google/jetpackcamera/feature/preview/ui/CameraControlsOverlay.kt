@@ -57,8 +57,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.uistateadapter.CaptureModeUiStateAdapter.findSelectableStateFor
-import com.example.uistateadapter.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
@@ -82,16 +80,18 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.ui.uistate.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.uistate.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.uistate.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.VIDEO_QUALITY_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {

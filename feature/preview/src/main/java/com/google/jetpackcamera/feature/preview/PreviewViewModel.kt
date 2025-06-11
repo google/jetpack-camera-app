@@ -26,25 +26,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
-import com.example.uistateadapter.AspectRatioUiStateAdapter
-import com.example.uistateadapter.CaptureModeUiStateAdapter
-import com.example.uistateadapter.FlashModeUiStateAdapter
-import com.example.uistateadapter.FlashModeUiStateAdapter.updateFrom
-import com.example.uistateadapter.FlipLensUiStateAdapter
-import com.example.uistateadapter.StreamConfigsUiStateAdapter
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
-import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
-import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -62,8 +55,17 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
-import com.google.jetpackcamera.ui.uistate.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ConcurrentCameraUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter.updateFrom
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlipLensUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.HdrUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StreamConfigsUiStateAdapter
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -166,6 +168,11 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
+                val captureModeUiState = CaptureModeUiStateAdapter.getCaptureModeUiState(
+                    systemConstraints,
+                    cameraAppSettings,
+                    previewMode.convertForUiState()
+                )
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.NotReady -> {
@@ -207,6 +214,12 @@ class PreviewViewModel @AssistedInject constructor(
                         streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(
                             cameraAppSettings
                         ),
+                        concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
+                            cameraAppSettings,
+                            systemConstraints,
+                            previewMode.convertForUiState(),
+                            captureModeUiState
+                        ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
@@ -245,12 +258,12 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState,
                             previewMode.convertForUiState()
                         ),
-                        captureModeUiState = CaptureModeUiStateAdapter.getCaptureModeUiState(
-                            systemConstraints,
+                        captureModeUiState = captureModeUiState,
+                        hdrUiState = HdrUiStateAdapter.getUiState(
                             cameraAppSettings,
+                            systemConstraints,
                             previewMode.convertForUiState()
-                        ),
-                        hdrUiState = getHdrUiState(systemConstraints, cameraAppSettings)
+                        )
                     )
                 }
             }.collect {}
@@ -337,12 +350,16 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun PreviewMode.convertForUiState() = when (this) {
         is PreviewMode.ExternalImageCaptureMode ->
-            CaptureModeUiStateAdapter.PreviewMode.EXTERNAL_IMAGE_CAPTURE
+            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_IMAGE_CAPTURE
+
         is PreviewMode.ExternalMultipleImageCaptureMode ->
-            CaptureModeUiStateAdapter.PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE
+            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE
+
         is PreviewMode.ExternalVideoCaptureMode ->
-            CaptureModeUiStateAdapter.PreviewMode.EXTERNAL_VIDEO_CAPTURE
-        is PreviewMode.StandardMode -> CaptureModeUiStateAdapter.PreviewMode.STANDARD
+            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_VIDEO_CAPTURE
+
+        is PreviewMode.StandardMode ->
+            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.STANDARD
     }
 
     /**
@@ -415,54 +432,6 @@ class PreviewViewModel @AssistedInject constructor(
         primaryZoomRatio = cameraState.zoomRatios[lensFacing],
         primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
-
-    private fun getHdrUiState(
-        systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings
-    ): HdrUiState {
-        val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
-            cameraAppSettings
-        )
-        return when (previewMode) {
-            is PreviewMode.ExternalImageCaptureMode,
-            is PreviewMode.ExternalMultipleImageCaptureMode -> if (
-                cameraConstraints
-                    ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-            ) {
-                HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            } else {
-                HdrUiState.Unavailable
-            }
-
-            is PreviewMode.ExternalVideoCaptureMode -> if (
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
-                cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            ) {
-                HdrUiState.Available(
-                    cameraAppSettings.imageFormat,
-                    cameraAppSettings.dynamicRange
-                )
-            } else {
-                HdrUiState.Unavailable
-            }
-
-            is PreviewMode.StandardMode -> if ((
-                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                        true ||
-                        cameraConstraints?.supportedImageFormatsMap?.get(
-                            cameraAppSettings.streamConfig
-                        )
-                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                    ) &&
-                cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            ) {
-                HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            } else {
-                HdrUiState.Unavailable
-            }
-        }
-    }
 
     fun startCamera() {
         Log.d(TAG, "startCamera")

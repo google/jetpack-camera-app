@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.uistateadapter"
+    namespace = "com.google.jetpackcamera.ui.uistateadapter"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -112,8 +112,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation(project(":core:camera"))
-    implementation(project(":data:settings"))
     implementation(project(":ui:uistate"))
 }
 

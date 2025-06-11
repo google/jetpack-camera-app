@@ -30,10 +30,10 @@ import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-import com.google.jetpackcamera.ui.uistate.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.IMAGE_WELL_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_WELL_TAG
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS

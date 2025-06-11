@@ -52,8 +52,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.uistateadapter.CaptureModeUiStateAdapter.isCaptureModeSelectable
-import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
@@ -73,12 +71,15 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.ui.uistate.AspectRatioUiState
-import com.google.jetpackcamera.ui.uistate.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -222,8 +223,8 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                 )
         ) {
             CameraDynamicRange.HDR
@@ -258,8 +259,8 @@ fun QuickSetHdr(
         isHighLighted = (
             hdrUiState is HdrUiState.Available &&
                 (
-                    hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                     )
             ),
         enabled = hdrUiState is HdrUiState.Available
@@ -369,26 +370,27 @@ fun QuickSetStreamConfig(
 @Composable
 fun QuickSetConcurrentCamera(
     setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
-    currentConcurrentCameraMode: ConcurrentCameraMode,
+    concurrentCameraUiState: ConcurrentCameraUiState,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
 ) {
-    val enum: CameraConcurrentCameraMode =
-        when (currentConcurrentCameraMode) {
-            ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
-            ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
-        }
-    QuickSettingUiItem(
-        modifier = modifier,
-        enum = enum,
-        onClick = {
-            when (currentConcurrentCameraMode) {
-                ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-                ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
+    if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
+        val enum: CameraConcurrentCameraMode =
+            when (concurrentCameraUiState.selectedConcurrentCameraMode) {
+                ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
+                ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
             }
-        },
-        enabled = enabled
-    )
+        QuickSettingUiItem(
+            modifier = modifier,
+            enum = enum,
+            onClick = {
+                when (concurrentCameraUiState.selectedConcurrentCameraMode) {
+                    ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+                    ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
+                }
+            },
+            enabled = concurrentCameraUiState.isEnabled
+        )
+    }
 }
 
 /**

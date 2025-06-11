@@ -16,5 +16,5 @@
 
 package com.google.jetpackcamera.ui.uistate
 
-sealed interface UiState {
+interface UiState {
 }
