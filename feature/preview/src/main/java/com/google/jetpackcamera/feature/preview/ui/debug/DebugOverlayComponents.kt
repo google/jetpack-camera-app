@@ -68,7 +68,7 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
 @Composable
 fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
-    onChangeZoomRatio: (CameraZoomRatio) -> Unit,
+    onChangeZoomRatio: (Float) -> Unit,
     toggleIsOpen: () -> Unit,
     previewUiState: PreviewUiState.Ready
 ) {
@@ -186,7 +186,7 @@ private fun CameraPropertiesJSONComponent(
 
 @Composable
 private fun SetZoomRatioComponent(
-    onChangeZoomRatio: (CameraZoomRatio) -> Unit,
+    onChangeZoomRatio: (Float) -> Unit,
     onClose: () -> Unit
 ) {
     var zoomRatioText = remember { mutableStateOf("") }
@@ -216,11 +216,7 @@ private fun SetZoomRatioComponent(
                     } else {
                         zoomRatioText.value.toFloat()
                     }
-                    onChangeZoomRatio(
-                        CameraZoomRatio(
-                            ZoomStrategy.Absolute(newRatio, LensToZoom.PRIMARY)
-                        )
-                    )
+                    onChangeZoomRatio(newRatio)
                 } catch (e: NumberFormatException) {
                     Log.d(TAG, "Zoom ratio should be a float")
                 }

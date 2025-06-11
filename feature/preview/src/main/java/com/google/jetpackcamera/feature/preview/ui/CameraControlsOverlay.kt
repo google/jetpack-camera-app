@@ -123,7 +123,8 @@ fun CameraControlsOverlay(
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onAnimateZoom: (Float) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -189,7 +190,8 @@ fun CameraControlsOverlay(
                 videoRecordingState = previewUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
-                onSetZoom = onSetZoom,
+                onAnimateZoom = onAnimateZoom,
+                onIncrementZoom = onIncrementZoom,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
@@ -299,7 +301,8 @@ private fun ControlsBottom(
     onSetPause: (Boolean) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onDisabledCaptureMode: (DisabledReason) -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onAnimateZoom: (Float) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
@@ -326,28 +329,8 @@ private fun ControlsBottom(
                     var zoomJob by remember { mutableStateOf<Job?>(null) }
                     zoomJob?.cancel()
 
-                    ZoomButtonRow(zoomControlUiState = zoomControlUiState, onChangeZoom = { f ->
-                        onSetZoom(CameraZoomRatio(ZoomStrategy.Absolute(f)))
-                        /* val animatableZoom =
-                            Animatable(initialValue = zoomControlUiState.primaryZoomRatio ?: 1.0f)
-                        zoomJob =
-                            coroutineScope.launch {
-                                Log.d(
-                                    "WIP ZOOMBUTTON",
-                                    "starting anim: ${animatableZoom.value} \n ending: $f"
-                                )
-
-                                animatableZoom.animateTo(
-                                    targetValue = f.coerceIn(
-                                        zoomUiState.primaryZoomRange.lower,
-                                        zoomUiState.primaryZoomRange.upper
-                                    ),
-                                    animationSpec = tween(durationMillis = 500)
-                                ) {
-                                    onSetZoom(CameraZoomRatio(ZoomStrategy.Absolute(value)))
-                                }
-                                zoomJob = null
-                            }*/
+                    ZoomButtonRow(zoomControlUiState = zoomControlUiState, onChangeZoom = { targetZoom ->
+                        onAnimateZoom(targetZoom)
                     })
                 }
 
@@ -428,11 +411,11 @@ private fun ControlsBottom(
                     previewMode = previewUiState.previewMode,
                     isQuickSettingsOpen = isQuickSettingsOpen,
                     onCaptureImageWithUri = onCaptureImageWithUri,
-                    onSetZoom = onSetZoom,
+                    onIncrementZoom = onIncrementZoom,
                     onToggleQuickSettings = onToggleQuickSettings,
                     onStartVideoRecording = onStartVideoRecording,
                     onStopVideoRecording = onStopVideoRecording,
-                    onLockVideoRecording = onLockVideoRecording
+                    onLockVideoRecording = onLockVideoRecording,
                 )
 
                 Box(
@@ -468,7 +451,7 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     previewMode: PreviewMode,
     onToggleQuickSettings: () -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -488,7 +471,7 @@ private fun CaptureButton(
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
-        onSetZoom = onSetZoom,
+        onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
