@@ -35,6 +35,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
 import java.util.LinkedList
 import java.util.Queue
 
@@ -45,16 +46,11 @@ sealed interface PreviewUiState {
     data object NotReady : PreviewUiState
 
     data class Ready(
-        // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-        val quickSettingsIsOpen: Boolean = false,
+        val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
-        val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
-        val streamConfigUiState: StreamConfigUiState = StreamConfigUiState.Unavailable,
-        val concurrentCameraUiState: ConcurrentCameraUiState = ConcurrentCameraUiState.Unavailable,
-
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),
@@ -72,9 +68,7 @@ sealed interface PreviewUiState {
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
-        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
-        val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : PreviewUiState
 }
 

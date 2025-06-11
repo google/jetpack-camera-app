@@ -42,7 +42,6 @@ import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -54,10 +53,12 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ConcurrentCameraUiStateAdapter
@@ -173,14 +174,13 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraAppSettings,
                     previewMode.convertForUiState()
                 )
+                val flipLensUiState = FlipLensUiStateAdapter.getUiState(
+                    cameraAppSettings,
+                    systemConstraints
+                )
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.NotReady -> {
-                            // Generate initial FlashModeUiState
-                            val supportedFlashModes =
-                                systemConstraints.forCurrentLens(cameraAppSettings)
-                                    ?.supportedFlashModes
-                                    ?: setOf(FlashMode.OFF)
                             flashModeUiState = FlashModeUiStateAdapter.getUiState(cameraAppSettings, systemConstraints)
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
@@ -204,21 +204,13 @@ class PreviewViewModel @AssistedInject constructor(
                         currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
                         systemConstraints = systemConstraints,
                         videoRecordingState = cameraState.videoRecordingState,
-                        flipLensUiState = FlipLensUiStateAdapter.getUiState(
+                        flipLensUiState = flipLensUiState,
+                        quickSettingsUiState = getQuickSettingsUiState(
+                            captureModeUiState,
+                            flashModeUiState,
+                            flipLensUiState,
                             cameraAppSettings,
                             systemConstraints
-                        ),
-                        aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(
-                            cameraAppSettings
-                        ),
-                        streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(
-                            cameraAppSettings
-                        ),
-                        concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
-                            cameraAppSettings,
-                            systemConstraints,
-                            previewMode.convertForUiState(),
-                            captureModeUiState
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
@@ -258,16 +250,37 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState,
                             previewMode.convertForUiState()
                         ),
-                        captureModeUiState = captureModeUiState,
-                        hdrUiState = HdrUiStateAdapter.getUiState(
-                            cameraAppSettings,
-                            systemConstraints,
-                            previewMode.convertForUiState()
-                        )
                     )
                 }
             }.collect {}
         }
+    }
+
+    private fun getQuickSettingsUiState(
+        captureModeUiState: CaptureModeUiState,
+        flashModeUiState: FlashModeUiState,
+        flipLensUiState: FlipLensUiState,
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints
+    ): QuickSettingsUiState {
+        return QuickSettingsUiState.Available(
+            aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings),
+            captureModeUiState = captureModeUiState,
+            concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
+                cameraAppSettings,
+                systemConstraints,
+                previewMode.convertForUiState(),
+                captureModeUiState
+            ),
+            flashModeUiState = flashModeUiState,
+            flipLensUiState = flipLensUiState,
+            hdrUiState = HdrUiStateAdapter.getUiState(
+                cameraAppSettings,
+                systemConstraints,
+                previewMode.convertForUiState()
+            ),
+            streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(cameraAppSettings),
+        )
     }
 
     fun updateLastCapturedMedia() {
@@ -783,7 +796,16 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
-                    quickSettingsIsOpen = !old.quickSettingsIsOpen
+                    quickSettingsUiState = QuickSettingsUiState.Available(
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).aspectRatioUiState,
+                        old.quickSettingsUiState.captureModeUiState,
+                        old.quickSettingsUiState.concurrentCameraUiState,
+                        old.quickSettingsUiState.flashModeUiState,
+                        old.quickSettingsUiState.flipLensUiState,
+                        old.quickSettingsUiState.hdrUiState,
+                        old.quickSettingsUiState.streamConfigUiState,
+                        !old.quickSettingsUiState.quickSettingsIsOpen
+                    ),
                 ) ?: old
             }
         }

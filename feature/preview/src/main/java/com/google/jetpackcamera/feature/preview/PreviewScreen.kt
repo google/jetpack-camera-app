@@ -265,8 +265,7 @@ private fun ContentScreen(
 
             QuickSettingsScreenOverlay(
                 modifier = Modifier,
-                previewUiState = previewUiState,
-                isOpen = previewUiState.quickSettingsIsOpen,
+                quickSettingsUiState = previewUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
