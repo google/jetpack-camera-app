@@ -105,7 +105,9 @@ sealed interface ZoomControlUiState {
     data object Unavailable: ZoomControlUiState
     data class Enabled(
         val zoomLevels: List<Float>,
-        val primaryZoomRatio: Float? = null
+        val primaryZoomRatio: Float? = null,
+        val primarySettingZoomRatio:Float? = null,
+        val animatingToValue: Float? = null
     ): ZoomControlUiState
 }
 sealed interface ZoomUiState {

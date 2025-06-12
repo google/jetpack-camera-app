@@ -30,7 +30,11 @@ class ZoomState(
     initialZoomLevel: Float,
     val zoomRange: Range<Float>,
     val onChangeZoomLevel: (CameraZoomRatio) -> Unit,
+    val onAnimateStateChanged: (Float?) -> Unit,
 ) {
+    init {
+        onAnimateStateChanged(null)
+    }
     private var functionalZoom = initialZoomLevel
 
     private val mutatorMutex = MutatorMutex()
@@ -38,6 +42,7 @@ class ZoomState(
     private suspend fun mutateZoom(block: suspend () -> Unit) {
         mutatorMutex.mutate {
             try {
+                onAnimateStateChanged(null)
                 block()
             } finally {
 
@@ -87,22 +92,27 @@ class ZoomState(
         animationSpec: AnimationSpec<Float> = tween(durationMillis = 500),
         lensToZoom: LensToZoom
     ) {
-        mutateZoom {
-            Animatable(initialValue = functionalZoom).animateTo(
-                targetValue = targetZoomLevel,
-                animationSpec = animationSpec,
-            ) {
-                // this is called every animation frame
-                functionalZoom = value.coerceIn(zoomRange.toClosedRange())
-                onChangeZoomLevel(
-                    CameraZoomRatio(
-                        ZoomStrategy.Absolute(
-                            functionalZoom,
-                            lensToZoom
+        mutatorMutex.mutate {
+            try {
+                onAnimateStateChanged(targetZoomLevel)
+
+                Animatable(initialValue = functionalZoom).animateTo(
+                    targetValue = targetZoomLevel,
+                    animationSpec = animationSpec,
+                ) {
+                    // this is called every animation frame
+                    functionalZoom = value.coerceIn(zoomRange.toClosedRange())
+                    onChangeZoomLevel(
+                        CameraZoomRatio(
+                            ZoomStrategy.Absolute(
+                                functionalZoom,
+                                lensToZoom
+                            )
                         )
                     )
-                )
+                }
             }
+           finally {}
         }
     }
 }

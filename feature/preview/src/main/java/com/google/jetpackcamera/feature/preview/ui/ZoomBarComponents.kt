@@ -16,6 +16,7 @@
 
 package com.google.jetpackcamera.feature.preview.ui
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -69,16 +70,19 @@ fun ZoomButtonRow(
 
     val selectedOptionIndex: Int by remember(zoomControlUiState)
     {
+        val checkValue = zoomControlUiState.animatingToValue?: zoomControlUiState.primaryZoomRatio?: 1f
+        Log.d("checkvalue", "checking... $checkValue")
         // -1 if no index is found
         derivedStateOf {
-            if ((zoomControlUiState.primaryZoomRatio ?: 1f) >= 1f)
-                zoomControlUiState.zoomLevels.indexOfLast { zoomLevel ->
-                    (zoomControlUiState.primaryZoomRatio ?: 1f) >= zoomLevel
+            if (checkValue >= 1f)
+                zoomControlUiState.zoomLevels.indexOfLast { zoomLevelOption ->
+                    checkValue >= zoomLevelOption
                 }
             else
                 0
         }
     }
+
     Box(
         modifier = modifier
             .background(
@@ -95,10 +99,6 @@ fun ZoomButtonRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
-                // Determine the text to display based on the rules
-
-
-                // Create the circular button
                 ZoomButton(
                     targetZoom = value,
                     currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio ?: 1f) },
@@ -111,7 +111,7 @@ fun ZoomButtonRow(
 }
 
 @Composable
-fun ZoomButton(
+private fun ZoomButton(
     modifier: Modifier = Modifier,
     buttonSize: Dp = 55.dp,
     targetZoom: Float,
@@ -133,7 +133,7 @@ fun ZoomButton(
     }
 
     Box(
-        modifier = Modifier.width(buttonSize * 1.5f),
+        modifier = Modifier.width(buttonSize * 1.45f),
         contentAlignment = Alignment.Center
     ) {
         Button(
