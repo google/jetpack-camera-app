@@ -45,20 +45,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.ZoomControlUiState
+import java.math.RoundingMode
 import java.text.DecimalFormat
 
 
-/**
- * A Composable that displays a horizontally scrolling row of circular buttons.
- * Each button corresponds to a float value from the provided list and is formatted
- * according to specific rules.
- *
- * @param values The list of ascending float values to display.
- * @param modifier The modifier to be applied to the row.
- * @param buttonSize The size of each circular button.
- * @param spacing The padding space between each button.
- * @param onChangeZoom A callback that is invoked when a button is clicked, providing the float value.
- */
 @Composable
 fun ZoomButtonRow(
     modifier: Modifier = Modifier,
@@ -70,11 +60,14 @@ fun ZoomButtonRow(
 
     val selectedOptionIndex: Int by remember(zoomControlUiState)
     {
-        val checkValue = zoomControlUiState.animatingToValue?: zoomControlUiState.primaryZoomRatio?: 1f
+        // if animating towards a value, then that option will be selected
+        // otherwise, select the closest option that is less than the current zoom ratio
+        val checkValue =
+            zoomControlUiState.animatingToValue ?: zoomControlUiState.primaryZoomRatio ?: 1f
         Log.d("checkvalue", "checking... $checkValue")
-        // -1 if no index is found
         derivedStateOf {
             if (checkValue >= 1f)
+            // -1 if no index is found
                 zoomControlUiState.zoomLevels.indexOfLast { zoomLevelOption ->
                     checkValue >= zoomLevelOption
                 }
@@ -122,7 +115,10 @@ private fun ZoomButton(
     val selectedFormat = DecimalFormat("#.0")
     val formatter = DecimalFormat("#.#")
     formatter.minimumIntegerDigits = 0
-
+    if (targetZoom >= 1)
+        formatter.roundingMode = RoundingMode.DOWN
+    else
+        formatter.roundingMode = RoundingMode.UP
     val displayText by remember(isSelected, currentZoomRatio) {
         derivedStateOf {
             if (!isSelected)
@@ -158,11 +154,6 @@ private fun ZoomButton(
     }
 }
 
-
-/**
- * A preview function to display the CircularButtonRow.
- * It provides a sample list that covers all the specified formatting rules.
- */
 @Preview(showBackground = true)
 @Composable
 fun ZoomButtonPreview() {
@@ -191,10 +182,6 @@ fun ZoomButtonPreview() {
     }
 }
 
-/**
- * A preview function to display the CircularButtonRow.
- * It provides a sample list that covers all the specified formatting rules.
- */
 @Preview(showBackground = true)
 @Composable
 fun ZoomBarPreviewOneSelected() {
