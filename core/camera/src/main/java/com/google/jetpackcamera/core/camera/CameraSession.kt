@@ -70,6 +70,7 @@ import androidx.lifecycle.asFlow
 import com.google.android.gms.cameralowlight.LowLightBoost
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -121,10 +122,7 @@ private val QUALITY_RANGE_MAP = mapOf(
     SD to Range.create(241, 719)
 )
 
-class LowLightBoostSessionContainer {
-    var lowLightBoostSession: LowLightBoostSession? = null
-}
-val lowLightBoostSessionContainer = LowLightBoostSessionContainer()
+lateinit var lowLightBoostSessionContainer: LowLightBoostSessionContainer
 
 context(CameraSessionContext)
 @ExperimentalCamera2Interop
@@ -137,6 +135,8 @@ internal suspend fun runSingleCameraSession(
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
+
+    lowLightBoostSessionContainer = LowLightBoostSessionContainer()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
@@ -187,7 +187,12 @@ internal suspend fun runSingleCameraSession(
                         sessionSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)) {
                 val lowLightBoostClient = LowLightBoost.getClient(context)
                 cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, lowLightBoostSessionContainer, this@coroutineScope))
-            } else if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
+            } else {
+                lowLightBoostSessionContainer.lowLightBoostSession?.release()
+                lowLightBoostSessionContainer.lowLightBoostSession = null
+
+            }
+            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM && cameraEffects.isEmpty()) {
                 cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
             }
             val useCaseGroup = createUseCaseGroup(

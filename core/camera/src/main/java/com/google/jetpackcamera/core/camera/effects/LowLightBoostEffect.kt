@@ -21,7 +21,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect
 import com.google.android.gms.cameralowlight.LowLightBoostClient
-import com.google.jetpackcamera.core.camera.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.processors.LowLightBoostSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
 

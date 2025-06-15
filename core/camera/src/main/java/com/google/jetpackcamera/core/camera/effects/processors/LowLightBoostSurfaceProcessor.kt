@@ -33,7 +33,7 @@ import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.LowLightBoostOptions
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.common.api.Status
-import com.google.jetpackcamera.core.camera.LowLightBoostSessionContainer
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
 import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
 import kotlinx.coroutines.CoroutineScope
@@ -88,10 +88,12 @@ class LowLightBoostSurfaceProcessor(
     private fun createLowLightBoostCallback(): LowLightBoostCallback =
         object : LowLightBoostCallback {
             override fun onSessionDestroyed() {
+                Log.d(TAG, "LLB session destroyed")
                 releaseLowLightBoostSession()
             }
 
             override fun onSessionDisconnected(status: Status) {
+                Log.d(TAG, "LLB session disconnected: $status")
                 releaseLowLightBoostSession()
             }
         }
@@ -151,9 +153,10 @@ class LowLightBoostSurfaceProcessor(
 
                     Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
 
-                    // 4. Fulfill the CameraX SurfaceRequest with LLB's input surface
+                    // Fulfill the CameraX SurfaceRequest with LLB's input surface
                     currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
                         Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
+                        llbInputSurface.release()
                         when (result.resultCode) {
                             SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
                                 Log.i(TAG, "CameraX is using LLB input surface.")
