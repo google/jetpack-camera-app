@@ -24,6 +24,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -54,6 +55,11 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
         currentCameraSettings =
             currentCameraSettings.copy(streamConfig = streamConfig)
+    }
+
+    override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        currentCameraSettings =
+            currentCameraSettings.copy(lowLightBoostPriority = lowLightBoostPriority)
     }
 
     override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {

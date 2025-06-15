@@ -403,6 +403,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
         applyDiff(new, CameraAppSettings::videoQuality, cameraUseCase::setVideoQuality)
         applyDiff(new, CameraAppSettings::audioEnabled, cameraUseCase::setAudioEnabled)
+        applyDiff(new, CameraAppSettings::lowLightBoostPriority, cameraUseCase::setLowLightBoostPriority)
     }
 
     fun getCaptureButtonUiState(

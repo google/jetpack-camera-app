@@ -41,6 +41,7 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -48,6 +49,7 @@ import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.LowLightBoostPrioritySetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
 import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
 import com.google.jetpackcamera.settings.ui.SectionHeader
@@ -85,7 +87,8 @@ fun SettingsScreen(
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode,
-        setVideoQuality = viewModel::setVideoQuality
+        setVideoQuality = viewModel::setVideoQuality,
+        setLowLightBoostPriority = viewModel::setLowLightBoostPriority
     )
     val permissionStates = rememberMultiplePermissionsState(
         permissions =
@@ -113,7 +116,8 @@ private fun SettingsScreen(
     setAudio: (Boolean) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {},
-    setVideoQuality: (VideoQuality) -> Unit = {}
+    setVideoQuality: (VideoQuality) -> Unit = {},
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
@@ -148,7 +152,8 @@ private fun SettingsScreen(
                     setAudio = setAudio,
                     setMaxVideoDuration = setMaxVideoDuration,
                     setDarkMode = setDarkMode,
-                    setVideoQuality = setVideoQuality
+                    setVideoQuality = setVideoQuality,
+                    setLowLightBoostPriority = setLowLightBoostPriority
                 )
             }
         }
@@ -164,6 +169,7 @@ fun SettingsList(
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
     setCaptureMode: (StreamConfig) -> Unit = {},
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setVideoQuality: (VideoQuality) -> Unit = {},
@@ -195,6 +201,11 @@ fun SettingsList(
     StreamConfigSetting(
         streamConfigUiState = uiState.streamConfigUiState,
         setStreamConfig = setCaptureMode
+    )
+
+    LowLightBoostPrioritySetting(
+        lowLightBoostPriorityUiState = uiState.lowLightBoostPriorityUiState,
+        setLowLightBoostPriority = setLowLightBoostPriority
     )
 
     SectionHeader(title = stringResource(R.string.section_title_recording_settings))

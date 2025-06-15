@@ -36,6 +36,7 @@ import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -88,7 +89,10 @@ class SettingsViewModel @Inject constructor(
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
-                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
+                lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
+                    updatedSettings.lowLightBoostPriority
+                )
             )
         }.stateIn(
             scope = viewModelScope,
@@ -642,6 +646,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateStreamConfig(streamConfig)
             Log.d(TAG, "set default capture mode: $streamConfig")
+        }
+    }
+
+    fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        viewModelScope.launch {
+            settingsRepository.updateLowLightBoostPriority(lowLightBoostPriority)
+            Log.d(TAG, "set low light boost priority: $lowLightBoostPriority")
         }
     }
 

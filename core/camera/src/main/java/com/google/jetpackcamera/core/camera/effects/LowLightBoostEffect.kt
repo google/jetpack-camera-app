@@ -16,8 +16,12 @@
 
 package com.google.jetpackcamera.core.camera.effects
 
+import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect
 import com.google.android.gms.cameralowlight.LowLightBoostClient
+import com.google.jetpackcamera.core.camera.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.processors.LowLightBoostSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
 
@@ -25,11 +29,15 @@ private const val TARGETS =
     CameraEffect.PREVIEW or CameraEffect.IMAGE_CAPTURE or CameraEffect.VIDEO_CAPTURE
 
 /**
- * [CameraEffect] that applies a Google Low Light Boost.
+ * [CameraEffect] that applies Google Low Light Boost.
  */
-class LowLightBoostEffect(cameraId: String, lowLightBoostClient: LowLightBoostClient, coroutineScope: CoroutineScope) : CameraEffect(
+@SuppressLint("RestrictedApi")
+@RequiresApi(Build.VERSION_CODES.R)
+class LowLightBoostEffect(cameraId: String, lowLightBoostClient: LowLightBoostClient, sessionContainer: LowLightBoostSessionContainer, coroutineScope: CoroutineScope) : CameraEffect(
     TARGETS,
+    OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
+    TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
     Runnable::run,
-    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, coroutineScope),
+    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, sessionContainer, coroutineScope),
     {}
 )

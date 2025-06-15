@@ -17,6 +17,10 @@
 package com.google.jetpackcamera.core.camera.effects.processors
 
 import android.annotation.SuppressLint
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.TotalCaptureResult
+import android.opengl.Matrix
 import android.os.Build
 import android.util.Log
 import android.view.Surface
@@ -29,6 +33,7 @@ import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.LowLightBoostOptions
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.common.api.Status
+import com.google.jetpackcamera.core.camera.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
 import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +46,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.Executors
 
+private const val TAG = "LowLightBoostProcessor"
+
 /**
  * This is a [SurfaceProcessor] that passes an input surface to Google Low Light Boost.
  */
@@ -48,6 +55,7 @@ import java.util.concurrent.Executors
 class LowLightBoostSurfaceProcessor(
     private val cameraId: String,
     private val lowLightBoostClient: LowLightBoostClient,
+    private val sessionContainer: LowLightBoostSessionContainer,
     private val coroutineScope: CoroutineScope
 ) : SurfaceProcessor {
 
@@ -80,11 +88,11 @@ class LowLightBoostSurfaceProcessor(
     private fun createLowLightBoostCallback(): LowLightBoostCallback =
         object : LowLightBoostCallback {
             override fun onSessionDestroyed() {
-                lowLightBoostSession = null
+                releaseLowLightBoostSession()
             }
 
             override fun onSessionDisconnected(status: Status) {
-                lowLightBoostSession = null
+                releaseLowLightBoostSession()
             }
         }
 
@@ -104,7 +112,7 @@ class LowLightBoostSurfaceProcessor(
 
         // Clean up when the request is released (e.g., camera is closed)
         request.addRequestCancellationListener(glExecutor) { // Replace context if not available
-            Log.d("LowLightBoostProcessor", "InputSurfaceRequest cancelled: $request")
+            Log.d(TAG, "InputSurfaceRequest cancelled: $request")
             inputSurfaceRequestScope?.cancel("SurfaceRequest cancelled by CameraX.")
             inputSurfaceRequestScope = null
             releaseLowLightBoostSession()
@@ -117,8 +125,8 @@ class LowLightBoostSurfaceProcessor(
 
             coroutineScope.launch { // Launch in your processor's scope
                 try{
-                    // 1. Create LowLightBoostOptions with the OUTPUT surface for LLB
-                    //    and dimensions from the INPUT SurfaceRequest.
+                    // Create LowLightBoostOptions with the output surface for LLB
+                    // and dimensions from the input SurfaceRequest.
                     val llbOptions = LowLightBoostOptions(
                         outputSurfaceForLlb, // This is where LLB writes its output
                         cameraId,
@@ -127,35 +135,28 @@ class LowLightBoostSurfaceProcessor(
                         true
                     )
 
-                    // 2. Create the LowLightBoostSession
+                    if (lowLightBoostSession != null) {
+                        releaseLowLightBoostSession()
+                    }
+
                     lowLightBoostSession = lowLightBoostClient
                         .createSession(llbOptions, createLowLightBoostCallback())
                         .await()
 
-                    // 3. Get the INPUT surface FROM the LowLightBoostSession
-                    //    (The surface CameraX should render TO for LLB processing)
-                    //    The exact method name might differ, e.g., getProcessingSurface, getInputSurface
+                    sessionContainer.lowLightBoostSession = lowLightBoostSession
+
+                    // Get the input surface from the LowLightBoostSession
                     val llbInputSurface = lowLightBoostSession?.getCameraSurface()
                         ?: throw IllegalStateException("LowLightBoostSession did not provide an input surface.")
 
-
-                    Log.d(
-                        "LowLightBoostProcessor",
-                        "LLB Session created. Providing LLB input surface to CameraX."
-                    )
+                    Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
 
                     // 4. Fulfill the CameraX SurfaceRequest with LLB's input surface
                     currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
-                        Log.d(
-                            "LowLightBoostProcessor",
-                            "CameraX SurfaceRequest result: ${result.resultCode}"
-                        )
+                        Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
                         when (result.resultCode) {
                             SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
-                                Log.i(
-                                    "LowLightBoostProcessor",
-                                    "CameraX is using LLB input surface."
-                                )
+                                Log.i(TAG, "CameraX is using LLB input surface.")
                             }
 
                             SurfaceRequest.Result.RESULT_REQUEST_CANCELLED -> {
@@ -163,10 +164,7 @@ class LowLightBoostSurfaceProcessor(
                             }
 
                             else -> {
-                                Log.e(
-                                    "LowLightBoostProcessor",
-                                    "SurfaceRequest failed: ${result.resultCode}"
-                                )
+                                Log.e(TAG, "SurfaceRequest failed: ${result.resultCode}")
                                 // Potentially release LLB session if CameraX won't use the surface
                                 releaseLowLightBoostSession()
                             }
@@ -174,11 +172,7 @@ class LowLightBoostSurfaceProcessor(
                     }
 
                 } catch (e: Exception) {
-                    Log.e(
-                        "LowLightBoostProcessor",
-                        "Failed to create LowLightBoostSession or provide surface",
-                        e
-                    )
+                    Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
                     // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
                     currentInputRequest.willNotProvideSurface()
                     releaseLowLightBoostSession()
@@ -188,7 +182,7 @@ class LowLightBoostSurfaceProcessor(
     }
 
     override fun onOutputSurface(surfaceOutput: SurfaceOutput) {
-        Log.d("LowLightBoostProcessor", "New OutputSurface received: $surfaceOutput, resolution: ${surfaceOutput.size}")
+        Log.d(TAG, "New OutputSurface received: $surfaceOutput, resolution: ${surfaceOutput.size}")
         val newScope = SurfaceOutputScope(surfaceOutput)
         outputSurfaceFlow.update { old ->
             old?.cancel("New SurfaceOutput received.")
@@ -198,6 +192,7 @@ class LowLightBoostSurfaceProcessor(
 
     @SuppressLint("NewApi")
     fun releaseLowLightBoostSession() {
+        Log.d(TAG, "Releasing LLB session")
         lowLightBoostSession?.release()
         lowLightBoostSession = null
     }

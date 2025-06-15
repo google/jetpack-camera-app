@@ -68,6 +68,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.android.gms.cameralowlight.LowLightBoost
+import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -77,6 +78,8 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostAvailability
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
@@ -117,6 +120,11 @@ private val QUALITY_RANGE_MAP = mapOf(
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
+
+class LowLightBoostSessionContainer {
+    var lowLightBoostSession: LowLightBoostSession? = null
+}
+val lowLightBoostSessionContainer = LowLightBoostSessionContainer()
 
 context(CameraSessionContext)
 @ExperimentalCamera2Interop
@@ -167,15 +175,19 @@ internal suspend fun runSingleCameraSession(
             cameraProvider.unbindAll()
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
-            val camera2Info = Camera2CameraInfo.from(cameraProvider.getCameraInfo(currentCameraSelector))
+            val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+            val camera2Info = Camera2CameraInfo.from(cameraInfo)
             val cameraId = camera2Info.cameraId
-            val lowLightBoostClient = LowLightBoost.getClient(context)
+            val lowLightBoostAvailability = cameraInfo.getLowLightBoostAvailablity(context)
+
             val cameraEffects = mutableListOf<CameraEffect>()
-            // TODO: check whether to use AE mode or the LLB effect here
-            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, this@coroutineScope))
-            }
-            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
+            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST &&
+                (lowLightBoostAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                        lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        sessionSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)) {
+                val lowLightBoostClient = LowLightBoost.getClient(context)
+                cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, lowLightBoostSessionContainer, this@coroutineScope))
+            } else if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
                 cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
             }
             val useCaseGroup = createUseCaseGroup(
@@ -1064,6 +1076,10 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    lowLightBoostSessionContainer.lowLightBoostSession?.processCaptureResult(result)
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
