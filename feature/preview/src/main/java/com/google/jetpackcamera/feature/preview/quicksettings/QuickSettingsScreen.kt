@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview.quicksettings
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -97,6 +98,7 @@ fun QuickSettingsScreenOverlay(
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
     onCaptureModeClick: (CaptureMode) -> Unit,
 ) {
+    Log.d("DJTEST", "QSUiState: "+quickSettingsUiState)
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
         var focusedQuickSetting by remember {
             mutableStateOf(FocusedQuickSetting.NONE)

@@ -178,10 +178,12 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraAppSettings,
                     systemConstraints
                 )
+                var quickSettingsIsOpen: Boolean
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.NotReady -> {
                             flashModeUiState = FlashModeUiStateAdapter.getUiState(cameraAppSettings, systemConstraints)
+                            quickSettingsIsOpen = false
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
                             PreviewUiState.Ready()
@@ -193,6 +195,15 @@ class PreviewViewModel @AssistedInject constructor(
                                 currentConstraints = systemConstraints,
                                 cameraState = cameraState
                             )
+                            quickSettingsIsOpen = when (old.quickSettingsUiState) {
+                                is QuickSettingsUiState.Available -> {
+                                    old.quickSettingsUiState.quickSettingsIsOpen
+                                }
+
+                                is QuickSettingsUiState.Unavailable -> {
+                                    false
+                                }
+                            }
 
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
@@ -210,7 +221,8 @@ class PreviewViewModel @AssistedInject constructor(
                             flashModeUiState,
                             flipLensUiState,
                             cameraAppSettings,
-                            systemConstraints
+                            systemConstraints,
+                            quickSettingsIsOpen
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
@@ -261,7 +273,8 @@ class PreviewViewModel @AssistedInject constructor(
         flashModeUiState: FlashModeUiState,
         flipLensUiState: FlipLensUiState,
         cameraAppSettings: CameraAppSettings,
-        systemConstraints: SystemConstraints
+        systemConstraints: SystemConstraints,
+        quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
         return QuickSettingsUiState.Available(
             aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings),
@@ -280,6 +293,7 @@ class PreviewViewModel @AssistedInject constructor(
                 previewMode.convertForUiState()
             ),
             streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(cameraAppSettings),
+            quickSettingsIsOpen = quickSettingsIsOpen
         )
     }
 
