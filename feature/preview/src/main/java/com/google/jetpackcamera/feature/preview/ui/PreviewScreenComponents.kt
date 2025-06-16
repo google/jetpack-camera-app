@@ -126,16 +126,16 @@ import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZOOM_RATIO_TAG
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -764,8 +764,8 @@ fun CaptureModeDropDown(
             fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
-            fun onDisabledClick(selectableState: UiSingleSelectableState<CaptureMode>?): () -> Unit =
-                if (selectableState is UiSingleSelectableState.Disabled) {
+            fun onDisabledClick(selectableState: SingleSelectableUiState<CaptureMode>?): () -> Unit =
+                if (selectableState is SingleSelectableUiState.Disabled) {
                     { onDisabledCaptureMode(selectableState.disabledReason) }
                 } else {
                     { TODO("Enabled should not have disabled click") }

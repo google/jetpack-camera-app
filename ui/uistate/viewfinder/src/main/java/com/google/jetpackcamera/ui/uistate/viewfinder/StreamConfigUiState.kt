@@ -17,27 +17,26 @@
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
-sealed interface StreamConfigUiState: UiState {
+sealed interface StreamConfigUiState {
     data object Unavailable : StreamConfigUiState
 
     data class Available(
         val selectedStreamConfig: StreamConfig,
-        val availableStreamConfigs: List<UiSingleSelectableState<StreamConfig>>,
+        val availableStreamConfigs: List<SingleSelectableUiState<StreamConfig>>,
         val isActive: Boolean
     ) : StreamConfigUiState {
         init {
             val isSelectedModePresentAndSelectable = availableStreamConfigs.any { state ->
-                state is UiSingleSelectableState.Selectable && state.value == selectedStreamConfig
+                state is SingleSelectableUiState.SelectableUi && state.value == selectedStreamConfig
             }
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected stream config $selectedStreamConfig is not among the available and selectable configs. " +
                         "Available configs: ${
                             availableStreamConfigs.mapNotNull {
-                                if (it is UiSingleSelectableState.Selectable) it.value else null
+                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
                         }"
             }

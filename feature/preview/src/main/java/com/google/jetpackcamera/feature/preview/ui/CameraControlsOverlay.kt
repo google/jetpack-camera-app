@@ -83,16 +83,16 @@ import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.viewfinder.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -581,8 +581,8 @@ private fun CaptureModeToggleButton(
         },
         onToggleWhenDisabled = {
             val disabledReason: ReasonDisplayable? =
-                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as? UiSingleSelectableState.Disabled<CaptureMode>)?.disabledReason
-                    ?: (uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY) as? UiSingleSelectableState.Disabled<CaptureMode>)
+                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as? SingleSelectableUiState.Disabled<CaptureMode>)?.disabledReason
+                    ?: (uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY) as? SingleSelectableUiState.Disabled<CaptureMode>)
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
@@ -637,8 +637,8 @@ private fun Preview_ControlsTop_FlashModeOn() {
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.ON,
                 availableFlashModes = listOf(
-                    UiSingleSelectableState.Selectable(FlashMode.OFF),
-                    UiSingleSelectableState.Selectable(FlashMode.ON)
+                    SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                    SingleSelectableUiState.SelectableUi(FlashMode.ON)
                 ),
                 isActive = false
             )
@@ -655,9 +655,9 @@ private fun Preview_ControlsTop_FlashModeAuto() {
             flashModeUiState = FlashModeUiState.Available(
                 selectedFlashMode = FlashMode.AUTO,
                 availableFlashModes = listOf(
-                    UiSingleSelectableState.Selectable(FlashMode.OFF),
-                    UiSingleSelectableState.Selectable(FlashMode.ON),
-                    UiSingleSelectableState.Selectable(FlashMode.AUTO),
+                    SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                    SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                    SingleSelectableUiState.SelectableUi(FlashMode.AUTO),
                 ),
                 isActive = false
             )

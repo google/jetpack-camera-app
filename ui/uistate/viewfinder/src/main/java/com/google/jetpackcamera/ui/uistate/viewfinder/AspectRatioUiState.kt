@@ -17,26 +17,25 @@
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
-sealed interface AspectRatioUiState: UiState {
+sealed interface AspectRatioUiState {
     data object Unavailable : AspectRatioUiState
 
     data class Available(
         val selectedAspectRatio: AspectRatio,
-        val availableAspectRatios: List<UiSingleSelectableState<AspectRatio>>,
+        val availableAspectRatios: List<SingleSelectableUiState<AspectRatio>>,
     ) : AspectRatioUiState {
         init {
             val isSelectedModePresentAndSelectable = availableAspectRatios.any { state ->
-                state is UiSingleSelectableState.Selectable && state.value == selectedAspectRatio
+                state is SingleSelectableUiState.SelectableUi && state.value == selectedAspectRatio
             }
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected ratio $selectedAspectRatio is not among the available and selectable ratios. " +
                         "Available ratios: ${
                             availableAspectRatios.mapNotNull {
-                                if (it is UiSingleSelectableState.Selectable) it.value else null
+                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
                         }"
             }

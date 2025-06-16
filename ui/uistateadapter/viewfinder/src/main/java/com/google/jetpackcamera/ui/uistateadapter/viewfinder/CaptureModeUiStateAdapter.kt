@@ -30,7 +30,7 @@ import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.DisabledReason
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
 object CaptureModeUiStateAdapter {
     private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
@@ -93,7 +93,7 @@ object CaptureModeUiStateAdapter {
                 availableCaptureModes = ORDERED_UI_SUPPORTED_CAPTURE_MODES.filter {
                     it in supportedCaptureModes
                 }.map { supportedCaptureMode ->
-                    UiSingleSelectableState.Selectable(supportedCaptureMode)
+                    SingleSelectableUiState.SelectableUi(supportedCaptureMode)
                 }
             )
         }
@@ -116,12 +116,12 @@ object CaptureModeUiStateAdapter {
                 return CaptureModeUiState.Available(
                     selectedCaptureMode = cameraAppSettings.captureMode,
                     availableCaptureModes = listOf(
-                        UiSingleSelectableState.Selectable(CaptureMode.IMAGE_ONLY),
-                        UiSingleSelectableState.Disabled(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.Disabled(
                             CaptureMode.VIDEO_ONLY,
                             disabledReason = disabledReason
                         ),
-                        UiSingleSelectableState.Disabled(
+                        SingleSelectableUiState.Disabled(
                             CaptureMode.STANDARD,
                             disabledReason = disabledReason
                         )
@@ -142,12 +142,12 @@ object CaptureModeUiStateAdapter {
                 return CaptureModeUiState.Available(
                     selectedCaptureMode = cameraAppSettings.captureMode,
                     availableCaptureModes = listOf(
-                        UiSingleSelectableState.Selectable(CaptureMode.VIDEO_ONLY),
-                        UiSingleSelectableState.Disabled(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.Disabled(
                             CaptureMode.IMAGE_ONLY,
                             disabledReason = disabledReason
                         ),
-                        UiSingleSelectableState.Disabled(
+                        SingleSelectableUiState.Disabled(
                             CaptureMode.STANDARD,
                             disabledReason = disabledReason
                         )
@@ -157,9 +157,9 @@ object CaptureModeUiStateAdapter {
                 return CaptureModeUiState.Available(
                     selectedCaptureMode = cameraAppSettings.captureMode,
                     availableCaptureModes = listOf(
-                        UiSingleSelectableState.Selectable(CaptureMode.VIDEO_ONLY),
-                        UiSingleSelectableState.Selectable(CaptureMode.IMAGE_ONLY),
-                        UiSingleSelectableState.Disabled(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.Disabled(
                             CaptureMode.STANDARD,
                             disabledReason = DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
                         )
@@ -295,28 +295,4 @@ object CaptureModeUiStateAdapter {
                     captureModeFilter(it)
                 }
     } != null
-
-    fun CaptureModeUiState.isCaptureModeSelectable(captureMode: CaptureMode): Boolean {
-        return when (this) {
-            is CaptureModeUiState.Available -> {
-                availableCaptureModes.any {
-                    it is UiSingleSelectableState.Selectable && it.value == captureMode
-                }
-            }
-
-            CaptureModeUiState.Unavailable -> false
-        }
-    }
-
-    fun CaptureModeUiState.findSelectableStateFor(
-        targetCaptureMode: CaptureMode
-    ): UiSingleSelectableState<CaptureMode>? {
-        if (this is CaptureModeUiState.Available) {
-            return this.availableCaptureModes.firstOrNull { state ->
-                (state is UiSingleSelectableState.Selectable && state.value == targetCaptureMode) ||
-                        (state is UiSingleSelectableState.Disabled && state.value == targetCaptureMode)
-            }
-        }
-        return null
-    }
 }

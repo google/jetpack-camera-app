@@ -73,7 +73,7 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
@@ -320,17 +320,17 @@ fun ExpandedQuickSettingsUiPreview() {
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
                     availableAspectRatios = listOf(
-                        UiSingleSelectableState.Selectable(AspectRatio.NINE_SIXTEEN),
-                        UiSingleSelectableState.Selectable(AspectRatio.THREE_FOUR),
-                        UiSingleSelectableState.Selectable(AspectRatio.ONE_ONE)
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
                     )
                 ),
                 captureModeUiState = CaptureModeUiState.Available(
                     selectedCaptureMode = CaptureMode.STANDARD,
                     availableCaptureModes = listOf(
-                        UiSingleSelectableState.Selectable(CaptureMode.STANDARD),
-                        UiSingleSelectableState.Selectable(CaptureMode.VIDEO_ONLY),
-                        UiSingleSelectableState.Selectable(CaptureMode.IMAGE_ONLY)
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
                     )
                 ),
                 concurrentCameraUiState = ConcurrentCameraUiState.Available(
@@ -340,24 +340,24 @@ fun ExpandedQuickSettingsUiPreview() {
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(
-                        UiSingleSelectableState.Selectable(FlashMode.OFF),
-                        UiSingleSelectableState.Selectable(FlashMode.ON),
-                        UiSingleSelectableState.Selectable(FlashMode.AUTO)
+                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
                     isActive = true),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
                     availableLensFacings = listOf(
-                        UiSingleSelectableState.Selectable(LensFacing.BACK),
-                        UiSingleSelectableState.Selectable(LensFacing.FRONT)
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                     )
                 ),
                 hdrUiState = HdrUiState.Unavailable,
                 streamConfigUiState = StreamConfigUiState.Available(
                     selectedStreamConfig = StreamConfig.MULTI_STREAM,
                     availableStreamConfigs = listOf(
-                        UiSingleSelectableState.Selectable(StreamConfig.SINGLE_STREAM),
-                        UiSingleSelectableState.Selectable(StreamConfig.MULTI_STREAM)
+                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
+                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
                     ),
                     isActive = false
                 ),
@@ -386,17 +386,17 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
                     availableAspectRatios = listOf(
-                        UiSingleSelectableState.Selectable(AspectRatio.NINE_SIXTEEN),
-                        UiSingleSelectableState.Selectable(AspectRatio.THREE_FOUR),
-                        UiSingleSelectableState.Selectable(AspectRatio.ONE_ONE)
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
                     )
                 ),
                 captureModeUiState = CaptureModeUiState.Available(
                     selectedCaptureMode = CaptureMode.STANDARD,
                     availableCaptureModes = listOf(
-                        UiSingleSelectableState.Selectable(CaptureMode.STANDARD),
-                        UiSingleSelectableState.Selectable(CaptureMode.VIDEO_ONLY),
-                        UiSingleSelectableState.Selectable(CaptureMode.IMAGE_ONLY)
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
                     )
                 ),
                 concurrentCameraUiState = ConcurrentCameraUiState.Available(
@@ -406,16 +406,16 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(
-                        UiSingleSelectableState.Selectable(FlashMode.OFF),
-                        UiSingleSelectableState.Selectable(FlashMode.ON),
-                        UiSingleSelectableState.Selectable(FlashMode.AUTO)
+                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
                     isActive = true),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
                     availableLensFacings = listOf(
-                        UiSingleSelectableState.Selectable(LensFacing.BACK),
-                        UiSingleSelectableState.Selectable(LensFacing.FRONT)
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                     )
                 ),
                 hdrUiState = HdrUiState.Available(
@@ -425,8 +425,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 streamConfigUiState = StreamConfigUiState.Available(
                     selectedStreamConfig = StreamConfig.MULTI_STREAM,
                     availableStreamConfigs = listOf(
-                        UiSingleSelectableState.Selectable(StreamConfig.SINGLE_STREAM),
-                        UiSingleSelectableState.Selectable(StreamConfig.MULTI_STREAM)
+                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
+                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
                     ),
                     isActive = false
                 ),

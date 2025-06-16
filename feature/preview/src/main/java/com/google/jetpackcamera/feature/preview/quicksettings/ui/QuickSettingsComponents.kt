@@ -74,12 +74,12 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.isCaptureModeSelectable
 import kotlin.math.min
 
 // completed components ready to go into preview screen
@@ -195,7 +195,7 @@ fun QuickSetCaptureMode(
                 null -> {
                     // only enabled if there are at least 2 supported capturemodes
                     captureModeUiState.availableCaptureModes.count {
-                        it is UiSingleSelectableState.Selectable
+                        it is SingleSelectableUiState.SelectableUi
                     } >= 2
                 }
 
@@ -672,7 +672,7 @@ fun QuickSettingsIndicators(
 private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode {
     // Filter out only the selectable flash modes to cycle through them.
     val selectableModes = this.availableFlashModes
-        .filterIsInstance<UiSingleSelectableState.Selectable<FlashMode>>()
+        .filterIsInstance<SingleSelectableUiState.SelectableUi<FlashMode>>()
         .map { it.value } // Extract the FlashMode items
 
     val currentIndex = selectableModes.indexOf(this.selectedFlashMode)

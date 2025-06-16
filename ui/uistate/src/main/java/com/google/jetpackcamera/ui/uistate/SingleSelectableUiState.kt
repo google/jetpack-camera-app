@@ -16,5 +16,18 @@
 
 package com.google.jetpackcamera.ui.uistate
 
-interface UiState {
+import android.content.Context
+
+sealed interface SingleSelectableUiState<T> {
+    data class SelectableUi<T>(val value: T) : SingleSelectableUiState<T>
+    data class Disabled<T>(val value: T, val disabledReason: ReasonDisplayable) :
+        SingleSelectableUiState<T>
+}
+
+interface ReasonDisplayable {
+    val testTag: String
+    val reasonTextResId: Int
+    fun getDisplayMessage(context: Context): String {
+        return context.getString(reasonTextResId)
+    }
 }

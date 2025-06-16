@@ -16,7 +16,7 @@
 
 package com.example.uistateadapter
 
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
 object Utils {
 
@@ -25,11 +25,11 @@ object Utils {
     fun <T> getSelectableListFromValues(
         valueSet: Set<T>,
         filteringList: List<T>
-    ): List<UiSingleSelectableState<T>> {
+    ): List<SingleSelectableUiState<T>> {
         return filteringList.filter {
             it in valueSet
         }.map { value ->
-            UiSingleSelectableState.Selectable(value)
+            SingleSelectableUiState.SelectableUi(value)
         }
     }
 }

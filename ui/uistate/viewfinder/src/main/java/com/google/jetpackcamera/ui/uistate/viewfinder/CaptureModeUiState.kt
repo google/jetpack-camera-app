@@ -18,30 +18,53 @@ package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
-sealed interface CaptureModeUiState: UiState {
+sealed interface CaptureModeUiState {
     data object Unavailable : CaptureModeUiState
 
     data class Available(
         val selectedCaptureMode: CaptureMode,
-        val availableCaptureModes: List<UiSingleSelectableState<CaptureMode>>,
+        val availableCaptureModes: List<SingleSelectableUiState<CaptureMode>>,
     ) : CaptureModeUiState {
         init {
             val isSelectedModePresentAndSelectable = availableCaptureModes.any { state ->
-                state is UiSingleSelectableState.Selectable && state.value == selectedCaptureMode
+                state is SingleSelectableUiState.SelectableUi && state.value == selectedCaptureMode
             }
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected capture mode $selectedCaptureMode is not among the available and selectable capture modes. " +
                         "Available modes: ${
                             availableCaptureModes.mapNotNull {
-                                if (it is UiSingleSelectableState.Selectable) it.value else null
+                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
                         }"
             }
         }
+    }
+
+    fun CaptureModeUiState.isCaptureModeSelectable(captureMode: CaptureMode): Boolean {
+        return when (this) {
+            is Available -> {
+                availableCaptureModes.any {
+                    it is SingleSelectableUiState.SelectableUi && it.value == captureMode
+                }
+            }
+
+            Unavailable -> false
+        }
+    }
+
+    fun CaptureModeUiState.findSelectableStateFor(
+        targetCaptureMode: CaptureMode
+    ): SingleSelectableUiState<CaptureMode>? {
+        if (this is CaptureModeUiState.Available) {
+            return this.availableCaptureModes.firstOrNull { state ->
+                (state is SingleSelectableUiState.SelectableUi && state.value == targetCaptureMode) ||
+                        (state is SingleSelectableUiState.Disabled && state.value == targetCaptureMode)
+            }
+        }
+        return null
     }
 }
 

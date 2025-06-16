@@ -17,27 +17,26 @@
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
-sealed interface FlashModeUiState: UiState {
+sealed interface FlashModeUiState {
     data object Unavailable : FlashModeUiState
 
     data class Available(
         val selectedFlashMode: FlashMode,
-        val availableFlashModes: List<UiSingleSelectableState<FlashMode>>,
+        val availableFlashModes: List<SingleSelectableUiState<FlashMode>>,
         val isActive: Boolean
     ) : FlashModeUiState {
         init {
             val isSelectedModePresentAndSelectable = availableFlashModes.any { state ->
-                state is UiSingleSelectableState.Selectable && state.value == selectedFlashMode
+                state is SingleSelectableUiState.SelectableUi && state.value == selectedFlashMode
             }
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected flash mode $selectedFlashMode is not among the available and selectable flash modes. " +
                         "Available modes: ${
                             availableFlashModes.mapNotNull {
-                                if (it is UiSingleSelectableState.Selectable) it.value else null
+                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
                         }"
             }

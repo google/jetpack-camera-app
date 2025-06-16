@@ -17,26 +17,25 @@
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
-sealed interface FlipLensUiState: UiState {
+sealed interface FlipLensUiState {
     data object Unavailable : FlipLensUiState
 
     data class Available(
         val selectedLensFacing: LensFacing,
-        val availableLensFacings: List<UiSingleSelectableState<LensFacing>>,
+        val availableLensFacings: List<SingleSelectableUiState<LensFacing>>,
     ) : FlipLensUiState {
         init {
             val isSelectedModePresentAndSelectable = availableLensFacings.any { state ->
-                state is UiSingleSelectableState.Selectable && state.value == selectedLensFacing
+                state is SingleSelectableUiState.SelectableUi && state.value == selectedLensFacing
             }
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected lens $selectedLensFacing is not among the available and selectable lenses. " +
                         "Available modes: ${
                             availableLensFacings.mapNotNull {
-                                if (it is UiSingleSelectableState.Selectable) it.value else null
+                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
                         }"
             }

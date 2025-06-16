@@ -18,10 +18,8 @@ package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.ui.uistate.UiSingleSelectableState
-import com.google.jetpackcamera.ui.uistate.UiState
 
-sealed interface HdrUiState : UiState {
+sealed interface HdrUiState {
     data object Unavailable : HdrUiState
 
     data class Available(

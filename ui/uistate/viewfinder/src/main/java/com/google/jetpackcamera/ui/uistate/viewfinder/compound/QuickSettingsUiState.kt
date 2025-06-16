@@ -16,7 +16,6 @@
 
 package com.google.jetpackcamera.ui.uistate.viewfinder.compound
 
-import com.google.jetpackcamera.ui.uistate.UiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
@@ -25,7 +24,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
 
-sealed interface QuickSettingsUiState: UiState {
+sealed interface QuickSettingsUiState {
     data object Unavailable : QuickSettingsUiState
 
     data class Available(
