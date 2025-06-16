@@ -163,7 +163,8 @@ internal suspend fun runConcurrentCameraSession(
             primaryCamera,
             useCaseGroup,
             initialTransientSettings,
-            transientSettings
+            transientSettings,
+            null
         )
     }
 }

@@ -307,7 +307,8 @@ internal suspend fun runSingleCameraSession(
                     camera,
                     useCaseGroup,
                     currentTransientSettings,
-                    transientSettings
+                    transientSettings,
+                    sessionSettings
                 )
             }
         }
@@ -319,7 +320,8 @@ internal suspend fun processTransientSettingEvents(
     camera: Camera,
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
-    transientSettings: StateFlow<TransientSessionSettings?>
+    transientSettings: StateFlow<TransientSessionSettings?>,
+    sessionSettings: PerpetualSessionSettings.SingleCamera?
 ) {
     // Immediately Apply camera zoom from current settings when opening a new camera
     camera.cameraControl.setZoomRatio(
@@ -365,22 +367,27 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-            prevTransientSettings.flashMode != newTransientSettings.flashMode
-        ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             when (newTransientSettings.flashMode) {
                 FlashMode.LOW_LIGHT_BOOST -> {
-                    // TODO: check whether to use AE mode or not (in the case of Google LLB preference)
-//                    val captureRequestOptions = CaptureRequestOptions.Builder()
-//                        .setCaptureRequestOption(
-//                            CaptureRequest.CONTROL_AE_MODE,
-//                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-//                        )
-//                        .build()
-//
-//                    Camera2CameraControl.from(camera.cameraControl)
-//                        .addCaptureRequestOptions(captureRequestOptions)
-                    useCaseGroup
+
+                    val lowLightBoostAvailability = camera.cameraInfo.getLowLightBoostAvailablity(context)
+
+                    if (lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
+                                lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                sessionSettings?.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE
+                            )) {
+                        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+                        val captureRequestOptions = CaptureRequestOptions.Builder()
+                            .setCaptureRequestOption(
+                                CaptureRequest.CONTROL_AE_MODE,
+                                CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                            )
+                            .build()
+
+                        Camera2CameraControl.from(camera.cameraControl)
+                            .addCaptureRequestOptions(captureRequestOptions)
+                    }
                 }
                 else -> {
                     Camera2CameraControl.from(camera.cameraControl)
