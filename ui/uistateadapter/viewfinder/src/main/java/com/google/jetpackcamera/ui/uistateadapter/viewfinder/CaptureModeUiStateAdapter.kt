@@ -208,7 +208,8 @@ object CaptureModeUiStateAdapter {
         concurrentCameraMode: ConcurrentCameraMode,
         previewMode: PreviewMode
     ): DisabledReason {
-        Log.d("DJTEST", "captureMode: $disabledCaptureMode, previewMode: $previewMode, concurrentCameraMode: $concurrentCameraMode, hdrSupported: $hdrImageFormatSupported")
+        Log.d("DJTEST", "captureMode: $disabledCaptureMode, previewMode: $previewMode, concurrentCameraMode: $concurrentCameraMode, hdrImageFormatSupported: $hdrImageFormatSupported, hdrDynamicRangeSupported: $hdrDynamicRangeSupported, currentLensFacing: $currentLensFacing," +
+                " currentStreamConfig: $currentStreamConfig")
         when (disabledCaptureMode) {
             CaptureMode.IMAGE_ONLY -> {
                 if (previewMode == PreviewMode.EXTERNAL_VIDEO_CAPTURE) {
