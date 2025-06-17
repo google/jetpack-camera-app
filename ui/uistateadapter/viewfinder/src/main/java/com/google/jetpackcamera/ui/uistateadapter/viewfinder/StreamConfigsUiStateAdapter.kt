@@ -61,8 +61,10 @@ object StreamConfigsUiStateAdapter {
             StreamConfigUiState.Available(
                 selectedStreamConfig = selectedStreamConfig,
                 availableStreamConfigs = availableStreamConfigs,
-                isActive = !(concurrentCameraMode == ConcurrentCameraMode.DUAL ||
-                        imageOutputFormat == ImageOutputFormat.JPEG_ULTRA_HDR)
+                isActive = !(
+                    concurrentCameraMode == ConcurrentCameraMode.DUAL ||
+                        imageOutputFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+                    )
             )
         }
     }
