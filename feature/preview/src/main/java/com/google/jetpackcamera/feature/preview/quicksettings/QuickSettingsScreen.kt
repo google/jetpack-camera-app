@@ -96,9 +96,9 @@ fun QuickSettingsScreenOverlay(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onCaptureModeClick: (CaptureMode) -> Unit,
+    onCaptureModeClick: (CaptureMode) -> Unit
 ) {
-    Log.d("DJTEST", "QSUiState: "+quickSettingsUiState)
+    Log.d("DJTEST", "QSUiState: " + quickSettingsUiState)
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
         var focusedQuickSetting by remember {
             mutableStateOf(FocusedQuickSetting.NONE)
@@ -123,20 +123,20 @@ fun QuickSettingsScreenOverlay(
             BackHandler(onBack = onBack)
             Column(
                 modifier =
-                    modifier
-                        .testTag(
-                            when (focusedQuickSetting) {
-                                FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
-                                else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
-                            }
-                        )
-                        .fillMaxSize()
-                        .background(color = Color.Black.copy(alpha = 0.7f))
-                        .clickable(
-                            onClick = onBack,
-                            indication = null,
-                            interactionSource = null
-                        ),
+                modifier
+                    .testTag(
+                        when (focusedQuickSetting) {
+                            FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
+                            else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
+                        }
+                    )
+                    .fillMaxSize()
+                    .background(color = Color.Black.copy(alpha = 0.7f))
+                    .clickable(
+                        onClick = onBack,
+                        indication = null,
+                        interactionSource = null
+                    ),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -227,8 +227,10 @@ private fun ExpandedQuickSettingsUi(
                                     )
                                 },
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
-                                ratio = (quickSettingsUiState.aspectRatioUiState
-                                        as AspectRatioUiState.Available).selectedAspectRatio
+                                ratio = (
+                                    quickSettingsUiState.aspectRatioUiState
+                                        as AspectRatioUiState.Available
+                                    ).selectedAspectRatio
                             )
                         }
                     }
@@ -239,7 +241,7 @@ private fun ExpandedQuickSettingsUi(
                                 QUICK_SETTINGS_STREAM_CONFIG_BUTTON
                             ),
                             setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
-                            streamConfigUiState = quickSettingsUiState.streamConfigUiState,
+                            streamConfigUiState = quickSettingsUiState.streamConfigUiState
                         )
                     }
 
@@ -347,7 +349,8 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    isActive = true),
+                    isActive = true
+                ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
                     availableLensFacings = listOf(
@@ -413,7 +416,8 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    isActive = true),
+                    isActive = true
+                ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
                     availableLensFacings = listOf(
@@ -423,7 +427,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 ),
                 hdrUiState = HdrUiState.Available(
                     selectedDynamicRange = DynamicRange.HLG10,
-                    selectedImageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+                    selectedImageFormat = ImageOutputFormat.JPEG_ULTRA_HDR
                 ),
                 streamConfigUiState = StreamConfigUiState.Available(
                     selectedStreamConfig = StreamConfig.MULTI_STREAM,
@@ -448,5 +452,3 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
         )
     }
 }
-
-

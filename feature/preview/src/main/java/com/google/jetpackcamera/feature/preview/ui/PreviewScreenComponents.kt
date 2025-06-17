@@ -512,7 +512,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -764,12 +764,13 @@ fun CaptureModeDropDown(
             fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
-            fun onDisabledClick(selectableState: SingleSelectableUiState<CaptureMode>?): () -> Unit =
-                if (selectableState is SingleSelectableUiState.Disabled) {
-                    { onDisabledCaptureMode(selectableState.disabledReason) }
-                } else {
-                    { TODO("Enabled should not have disabled click") }
-                }
+            fun onDisabledClick(
+                selectableState: SingleSelectableUiState<CaptureMode>?
+            ): () -> Unit = if (selectableState is SingleSelectableUiState.Disabled) {
+                { onDisabledCaptureMode(selectableState.disabledReason) }
+            } else {
+                { TODO("Enabled should not have disabled click") }
+            }
 
             Column {
                 DropDownItem(
@@ -934,7 +935,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

@@ -161,8 +161,10 @@ fun CameraControlsOverlay(
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen =
-                        (previewUiState.quickSettingsUiState
-                                as QuickSettingsUiState.Available).quickSettingsIsOpen,
+                    (
+                        previewUiState.quickSettingsUiState
+                            as QuickSettingsUiState.Available
+                        ).quickSettingsIsOpen,
                     isDebugMode = previewUiState.debugUiState.isDebugMode,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
@@ -186,8 +188,10 @@ fun CameraControlsOverlay(
                 logicalCameraId = previewUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen =
-                    (previewUiState.quickSettingsUiState
-                            as QuickSettingsUiState.Available).quickSettingsIsOpen,
+                (
+                    previewUiState.quickSettingsUiState
+                        as QuickSettingsUiState.Available
+                    ).quickSettingsIsOpen,
                 systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
@@ -585,10 +589,14 @@ private fun CaptureModeToggleButton(
         },
         onToggleWhenDisabled = {
             val disabledReason: ReasonDisplayable? =
-                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>)?.disabledReason
-                    ?: (uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>)
+                (
+                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                        SingleSelectableUiState.Disabled<CaptureMode>
+                    )?.disabledReason
+                    ?: (
+                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                            as? SingleSelectableUiState.Disabled<CaptureMode>
+                        )
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
@@ -663,7 +671,7 @@ private fun Preview_ControlsTop_FlashModeAuto() {
                 availableFlashModes = listOf(
                     SingleSelectableUiState.SelectableUi(FlashMode.OFF),
                     SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                    SingleSelectableUiState.SelectableUi(FlashMode.AUTO),
+                    SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                 ),
                 isActive = false
             )

@@ -74,7 +74,6 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
 import kotlin.time.Duration.Companion.seconds
-
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -268,7 +267,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState,
                             previewMode.convertForUiState()
-                        ),
+                        )
                     )
                 }
             }.collect {}
@@ -828,7 +827,7 @@ class PreviewViewModel @AssistedInject constructor(
                         old.quickSettingsUiState.hdrUiState,
                         old.quickSettingsUiState.streamConfigUiState,
                         !old.quickSettingsUiState.quickSettingsIsOpen
-                    ),
+                    )
                 ) ?: old
             }
         }

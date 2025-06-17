@@ -345,7 +345,7 @@ fun QuickFlipCamera(
 fun QuickSetStreamConfig(
     setStreamConfig: (StreamConfig) -> Unit,
     streamConfigUiState: StreamConfigUiState,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     if (streamConfigUiState is StreamConfigUiState.Available) {
         val enum: CameraStreamConfig =
@@ -371,7 +371,7 @@ fun QuickSetStreamConfig(
 fun QuickSetConcurrentCamera(
     setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
     concurrentCameraUiState: ConcurrentCameraUiState,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
         val enum: CameraConcurrentCameraMode =
@@ -667,7 +667,6 @@ fun QuickSettingsIndicators(
         )
     }
 }
-
 
 private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode {
     // Filter out only the selectable flash modes to cycle through them.
