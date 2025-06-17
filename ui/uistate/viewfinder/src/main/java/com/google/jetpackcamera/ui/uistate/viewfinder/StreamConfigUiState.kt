@@ -33,8 +33,8 @@ sealed interface StreamConfigUiState {
             }
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected stream config $selectedStreamConfig is not among the available and selectable configs. " +
-                        "Available configs: ${
+                "Selected stream config $selectedStreamConfig is not among the available and" +
+                        "selectable configs. Available configs: ${
                             availableStreamConfigs.mapNotNull {
                                 if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }

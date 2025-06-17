@@ -23,10 +23,10 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState.Unavailable
-import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState.*
 
 
 object FlashModeUiStateAdapter {
@@ -102,7 +102,7 @@ object FlashModeUiStateAdapter {
                 val previousAvailableFlashModes = this.availableFlashModes
                 val currentAvailableFlashModes =
                     previousAvailableFlashModes.map { supportedFlashMode ->
-                        SelectableUi(supportedFlashMode)
+                        SingleSelectableUiState.SelectableUi(supportedFlashMode)
                     }
                 if (previousAvailableFlashModes != currentAvailableFlashModes) {
                     // Supported flash modes have changed, generate a new FlashModeUiState

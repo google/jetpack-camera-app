@@ -32,8 +32,8 @@ sealed interface FlipLensUiState {
             }
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected lens $selectedLensFacing is not among the available and selectable lenses. " +
-                        "Available modes: ${
+                "Selected lens $selectedLensFacing is not among the available and selectable " +
+                        "lenses. Available modes: ${
                             availableLensFacings.mapNotNull {
                                 if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }

@@ -32,8 +32,8 @@ sealed interface AspectRatioUiState {
             }
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected ratio $selectedAspectRatio is not among the available and selectable ratios. " +
-                        "Available ratios: ${
+                "Selected ratio $selectedAspectRatio is not among the available and selectable " +
+                        "ratios. Available ratios: ${
                             availableAspectRatios.mapNotNull {
                                 if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }

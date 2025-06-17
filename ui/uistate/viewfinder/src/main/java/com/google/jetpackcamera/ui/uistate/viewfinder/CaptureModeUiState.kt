@@ -33,8 +33,8 @@ sealed interface CaptureModeUiState {
             }
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected capture mode $selectedCaptureMode is not among the available and selectable capture modes. " +
-                        "Available modes: ${
+                "Selected capture mode $selectedCaptureMode is not among the available and " +
+                        "selectable capture modes. Available modes: ${
                             availableCaptureModes.mapNotNull {
                                 if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }

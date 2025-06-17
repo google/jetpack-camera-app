@@ -33,8 +33,8 @@ sealed interface FlashModeUiState {
             }
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected flash mode $selectedFlashMode is not among the available and selectable flash modes. " +
-                        "Available modes: ${
+                "Selected flash mode $selectedFlashMode is not among the available and selectable" +
+                        "flash modes. Available modes: ${
                             availableFlashModes.mapNotNull {
                                 if (it is SingleSelectableUiState.SelectableUi) it.value else null
                             }
