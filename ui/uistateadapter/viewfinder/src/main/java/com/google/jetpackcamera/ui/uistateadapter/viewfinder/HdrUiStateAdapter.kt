@@ -58,13 +58,13 @@ object HdrUiStateAdapter {
             }
 
             PreviewMode.STANDARD -> if ((
-                        cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                                true ||
-                                cameraConstraints?.supportedImageFormatsMap?.get(
-                                    cameraAppSettings.streamConfig
-                                )
-                                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                        ) &&
+                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
+                        true ||
+                        cameraConstraints?.supportedImageFormatsMap?.get(
+                            cameraAppSettings.streamConfig
+                        )
+                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                    ) &&
                 cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
             ) {
                 HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)

@@ -39,12 +39,13 @@ object ConcurrentCameraUiStateAdapter {
                             CaptureModeUiState.Available
                         )
                         ?.selectedCaptureMode !=
-                            CaptureMode.IMAGE_ONLY
-                        ) && (
-                        cameraAppSettings.dynamicRange !=
-                            DEFAULT_HDR_DYNAMIC_RANGE &&
-                            cameraAppSettings.imageFormat !=
-                            DEFAULT_HDR_IMAGE_OUTPUT)
+                        CaptureMode.IMAGE_ONLY
+                    ) && (
+                    cameraAppSettings.dynamicRange !=
+                        DEFAULT_HDR_DYNAMIC_RANGE &&
+                        cameraAppSettings.imageFormat !=
+                        DEFAULT_HDR_IMAGE_OUTPUT
+                    )
         )
     }
 }
