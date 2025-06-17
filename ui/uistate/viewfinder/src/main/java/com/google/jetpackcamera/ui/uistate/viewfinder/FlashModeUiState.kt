@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -34,11 +33,11 @@ sealed interface FlashModeUiState {
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected flash mode $selectedFlashMode is not among the available and selectable" +
-                        "flash modes. Available modes: ${
-                            availableFlashModes.mapNotNull {
-                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                            }
-                        }"
+                    "flash modes. Available modes: ${
+                        availableFlashModes.mapNotNull {
+                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
+                        }
+                    }"
             }
         }
     }

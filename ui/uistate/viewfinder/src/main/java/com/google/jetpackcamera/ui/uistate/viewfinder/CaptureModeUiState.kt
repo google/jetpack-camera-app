@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -25,7 +24,7 @@ sealed interface CaptureModeUiState {
 
     data class Available(
         val selectedCaptureMode: CaptureMode,
-        val availableCaptureModes: List<SingleSelectableUiState<CaptureMode>>,
+        val availableCaptureModes: List<SingleSelectableUiState<CaptureMode>>
     ) : CaptureModeUiState {
         init {
             val isSelectedModePresentAndSelectable = availableCaptureModes.any { state ->
@@ -34,11 +33,11 @@ sealed interface CaptureModeUiState {
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected capture mode $selectedCaptureMode is not among the available and " +
-                        "selectable capture modes. Available modes: ${
-                            availableCaptureModes.mapNotNull {
-                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                            }
-                        }"
+                    "selectable capture modes. Available modes: ${
+                        availableCaptureModes.mapNotNull {
+                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
+                        }
+                    }"
             }
         }
     }

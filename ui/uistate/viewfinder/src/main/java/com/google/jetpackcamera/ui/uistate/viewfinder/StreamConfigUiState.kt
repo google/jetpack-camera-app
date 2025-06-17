@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.StreamConfig
@@ -34,11 +33,11 @@ sealed interface StreamConfigUiState {
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected stream config $selectedStreamConfig is not among the available and" +
-                        "selectable configs. Available configs: ${
-                            availableStreamConfigs.mapNotNull {
-                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                            }
-                        }"
+                    "selectable configs. Available configs: ${
+                        availableStreamConfigs.mapNotNull {
+                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
+                        }
+                    }"
             }
         }
     }

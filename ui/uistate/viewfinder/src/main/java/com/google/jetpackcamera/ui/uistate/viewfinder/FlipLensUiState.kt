@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -33,11 +32,11 @@ sealed interface FlipLensUiState {
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected lens $selectedLensFacing is not among the available and selectable " +
-                        "lenses. Available modes: ${
-                            availableLensFacings.mapNotNull {
-                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                            }
-                        }"
+                    "lenses. Available modes: ${
+                        availableLensFacings.mapNotNull {
+                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
+                        }
+                    }"
             }
         }
     }

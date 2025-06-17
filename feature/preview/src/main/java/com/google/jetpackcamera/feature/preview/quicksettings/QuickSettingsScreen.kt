@@ -227,7 +227,8 @@ private fun ExpandedQuickSettingsUi(
                                     )
                                 },
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
-                                ratio = (quickSettingsUiState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
+                                ratio = (quickSettingsUiState.aspectRatioUiState
+                                        as AspectRatioUiState.Available).selectedAspectRatio
                             )
                         }
                     }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -24,7 +23,7 @@ sealed interface AspectRatioUiState {
 
     data class Available(
         val selectedAspectRatio: AspectRatio,
-        val availableAspectRatios: List<SingleSelectableUiState<AspectRatio>>,
+        val availableAspectRatios: List<SingleSelectableUiState<AspectRatio>>
     ) : AspectRatioUiState {
         init {
             val isSelectedModePresentAndSelectable = availableAspectRatios.any { state ->
@@ -33,11 +32,11 @@ sealed interface AspectRatioUiState {
 
             check(isSelectedModePresentAndSelectable) {
                 "Selected ratio $selectedAspectRatio is not among the available and selectable " +
-                        "ratios. Available ratios: ${
-                            availableAspectRatios.mapNotNull {
-                                if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                            }
-                        }"
+                    "ratios. Available ratios: ${
+                        availableAspectRatios.mapNotNull {
+                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
+                        }
+                    }"
             }
         }
     }
