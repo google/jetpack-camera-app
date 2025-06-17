@@ -73,12 +73,19 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_RATIO_3_4_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_RATIO_9_16_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
 import kotlin.math.min
 
