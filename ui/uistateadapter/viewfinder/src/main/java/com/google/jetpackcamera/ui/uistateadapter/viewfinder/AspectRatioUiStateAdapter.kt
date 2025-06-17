@@ -55,7 +55,7 @@ object AspectRatioUiStateAdapter {
         } else {
             AspectRatioUiState.Available(
                 selectedAspectRatio = selectedAspectRatio,
-                availableAspectRatios = availableAspectRatios,
+                availableAspectRatios = availableAspectRatios
             )
         }
     }

@@ -30,7 +30,8 @@ object FlipLensUiStateAdapter {
 
     fun getUiState(
         cameraAppSettings: CameraAppSettings,
-        systemConstraints: SystemConstraints): FlipLensUiState {
+        systemConstraints: SystemConstraints
+    ): FlipLensUiState {
         return createFrom(
             cameraAppSettings.cameraLensFacing,
             systemConstraints.availableLenses.toSet()

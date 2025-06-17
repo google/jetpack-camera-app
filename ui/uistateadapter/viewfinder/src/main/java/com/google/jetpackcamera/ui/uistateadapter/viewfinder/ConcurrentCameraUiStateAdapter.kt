@@ -24,10 +24,12 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
 
 object ConcurrentCameraUiStateAdapter {
-    fun getUiState(cameraAppSettings: CameraAppSettings,
-                   systemConstraints: SystemConstraints,
-                   previewMode: PreviewMode,
-                   captureModeUiState: CaptureModeUiState): ConcurrentCameraUiState {
+    fun getUiState(
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints,
+        previewMode: PreviewMode,
+        captureModeUiState: CaptureModeUiState
+    ): ConcurrentCameraUiState {
         return ConcurrentCameraUiState.Available(
             selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
             isEnabled = systemConstraints.concurrentCamerasSupported &&

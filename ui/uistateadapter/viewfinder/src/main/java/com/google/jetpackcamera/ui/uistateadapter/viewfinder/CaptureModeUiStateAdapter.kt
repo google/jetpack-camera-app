@@ -27,9 +27,9 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.DisabledReason
-import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
 object CaptureModeUiStateAdapter {
     private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
@@ -62,7 +62,7 @@ object CaptureModeUiStateAdapter {
             cameraAppSettings
         )
         val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
         val currentHdrDynamicRangeSupported =
             if (isHdrOn) {
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
@@ -173,7 +173,7 @@ object CaptureModeUiStateAdapter {
         isHdrOn: Boolean,
         currentHdrDynamicRangeSupported: Boolean,
         currentHdrImageFormatSupported: Boolean,
-        previewMode: PreviewMode,
+        previewMode: PreviewMode
     ): List<CaptureMode> = if (
         previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE &&
         previewMode != PreviewMode.EXTERNAL_VIDEO_CAPTURE &&
@@ -290,8 +290,8 @@ object CaptureModeUiStateAdapter {
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
-                lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                    captureModeFilter(it)
-                }
+            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                captureModeFilter(it)
+            }
     } != null
 }
