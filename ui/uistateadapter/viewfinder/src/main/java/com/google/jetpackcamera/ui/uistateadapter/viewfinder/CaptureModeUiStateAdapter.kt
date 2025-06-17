@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.viewfinder
 
-import android.util.Log
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -208,8 +207,6 @@ object CaptureModeUiStateAdapter {
         concurrentCameraMode: ConcurrentCameraMode,
         previewMode: PreviewMode
     ): DisabledReason {
-        Log.d("DJTEST", "captureMode: $disabledCaptureMode, previewMode: $previewMode, concurrentCameraMode: $concurrentCameraMode, hdrImageFormatSupported: $hdrImageFormatSupported, hdrDynamicRangeSupported: $hdrDynamicRangeSupported, currentLensFacing: $currentLensFacing," +
-                " currentStreamConfig: $currentStreamConfig")
         when (disabledCaptureMode) {
             CaptureMode.IMAGE_ONLY -> {
                 if (previewMode == PreviewMode.EXTERNAL_VIDEO_CAPTURE) {
