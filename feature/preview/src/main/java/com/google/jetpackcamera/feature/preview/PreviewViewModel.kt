@@ -61,6 +61,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.getCaptureToggleUiState
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ConcurrentCameraUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter.updateFrom
@@ -182,7 +183,10 @@ class PreviewViewModel @AssistedInject constructor(
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.NotReady -> {
-                            flashModeUiState = FlashModeUiStateAdapter.getUiState(cameraAppSettings, systemConstraints)
+                            flashModeUiState = FlashModeUiStateAdapter.getUiState(
+                                cameraAppSettings,
+                                systemConstraints
+                            )
                             quickSettingsIsOpen = false
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
@@ -245,7 +249,9 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.audioEnabled,
                             cameraState.videoRecordingState
                         ),
-                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState),
+                        elapsedTimeUiState = getElapsedTimeUiState(
+                            cameraState.videoRecordingState
+                        ),
                         captureButtonUiState = getCaptureButtonUiState(
                             cameraAppSettings,
                             cameraState,
@@ -256,7 +262,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.cameraLensFacing,
                             cameraState
                         ),
-                        captureModeToggleUiState = CaptureModeUiStateAdapter.getCaptureToggleUiState(
+                        captureModeToggleUiState = getCaptureToggleUiState(
                             systemConstraints,
                             cameraAppSettings,
                             cameraState,
@@ -380,7 +386,8 @@ class PreviewViewModel @AssistedInject constructor(
             com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_IMAGE_CAPTURE
 
         is PreviewMode.ExternalMultipleImageCaptureMode ->
-            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE
+            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode
+                .EXTERNAL_MULTIPLE_IMAGE_CAPTURE
 
         is PreviewMode.ExternalVideoCaptureMode ->
             com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_VIDEO_CAPTURE

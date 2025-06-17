@@ -60,8 +60,10 @@ sealed interface CaptureModeUiState {
     ): SingleSelectableUiState<CaptureMode>? {
         if (this is CaptureModeUiState.Available) {
             return this.availableCaptureModes.firstOrNull { state ->
-                (state is SingleSelectableUiState.SelectableUi && state.value == targetCaptureMode) ||
-                        (state is SingleSelectableUiState.Disabled && state.value == targetCaptureMode)
+                (state is SingleSelectableUiState.SelectableUi &&
+                        state.value == targetCaptureMode) ||
+                        (state is SingleSelectableUiState.Disabled &&
+                                state.value == targetCaptureMode)
             }
         }
         return null
