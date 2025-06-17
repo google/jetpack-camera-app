@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
@@ -45,6 +46,7 @@ sealed interface PreviewUiState {
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
+        val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),

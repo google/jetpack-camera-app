@@ -90,6 +90,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavail
 import com.google.jetpackcamera.ui.uistate.viewfinder.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
@@ -183,6 +184,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 previewUiState = previewUiState,
+                flipLensUiState = previewUiState.flipLensUiState,
                 zoomUiState = previewUiState.zoomUiState,
                 physicalCameraId = previewUiState.currentPhysicalCameraId,
                 logicalCameraId = previewUiState.currentLogicalCameraId,
@@ -192,7 +194,6 @@ fun CameraControlsOverlay(
                     previewUiState.quickSettingsUiState
                         as QuickSettingsUiState.Available
                     ).quickSettingsIsOpen,
-                systemConstraints = previewUiState.systemConstraints,
                 videoRecordingState = previewUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
@@ -286,12 +287,12 @@ private fun ControlsTop(
 private fun ControlsBottom(
     modifier: Modifier = Modifier,
     previewUiState: PreviewUiState.Ready,
+    flipLensUiState: FlipLensUiState,
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
     zoomUiState: ZoomUiState,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
-    systemConstraints: SystemConstraints,
     videoRecordingState: VideoRecordingState,
     onFlipCamera: () -> Unit = {},
     onCaptureImageWithUri: (
@@ -386,9 +387,11 @@ private fun ControlsBottom(
                             FlipCameraButton(
                                 modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                                 onClick = onFlipCamera,
-                                flipLensUiState = previewUiState.flipLensUiState,
+                                flipLensUiState = flipLensUiState,
                                 // enable only when phone has front and rear camera
-                                enabledCondition = systemConstraints.availableLenses.size > 1
+                                enabledCondition =
+                                    flipLensUiState is FlipLensUiState.Available &&
+                                            flipLensUiState.availableLensFacings.size > 1
                             )
                         } else if (videoRecordingState is VideoRecordingState.Active
                         ) {
@@ -711,15 +714,19 @@ private fun Preview_ControlsBottom() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
+            flipLensUiState = FlipLensUiState.Available(
+                LensFacing.FRONT, listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK)
+                )
+            ),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.Inactive(),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
@@ -735,7 +742,6 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
@@ -745,9 +751,14 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
+            flipLensUiState = FlipLensUiState.Available(
+                LensFacing.FRONT, listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK)
+                )
+            ),
             showZoomLevel = false,
             isQuickSettingsOpen = false,
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.Inactive()
         )
     }
@@ -759,7 +770,6 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
@@ -769,9 +779,14 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
+            flipLensUiState = FlipLensUiState.Available(
+                LensFacing.FRONT, listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK)
+                )
+            ),
             showZoomLevel = true,
             isQuickSettingsOpen = true,
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.Inactive()
         )
     }
@@ -783,11 +798,15 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+            ),
+            flipLensUiState = FlipLensUiState.Available(
+                LensFacing.FRONT, listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                )
             ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
@@ -795,13 +814,6 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
             ),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
-                availableLenses = listOf(LensFacing.FRONT),
-                perLensConstraints = mapOf(
-                    LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
-                )
-            ),
             videoRecordingState = VideoRecordingState.Inactive()
         )
     }
@@ -819,13 +831,18 @@ private fun Preview_ControlsBottom_Recording() {
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
+            flipLensUiState = FlipLensUiState.Available(
+                LensFacing.FRONT, listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK)
+                )
+            ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
             showZoomLevel = true,
             isQuickSettingsOpen = false,
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
             videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000)
         )
     }

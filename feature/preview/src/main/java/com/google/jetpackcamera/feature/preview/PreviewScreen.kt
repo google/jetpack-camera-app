@@ -79,6 +79,7 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
@@ -236,11 +237,11 @@ private fun ContentScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
-        val lensFacing by rememberUpdatedState(
-            previewUiState.currentCameraSettings.cameraLensFacing
-        )
-
-        val onFlipCamera = { onSetLensFacing(lensFacing.flip()) }
+        val onFlipCamera = {
+            if (previewUiState.flipLensUiState is FlipLensUiState.Available) {
+                onSetLensFacing(previewUiState.flipLensUiState.selectedLensFacing.flip())
+            }
+        }
 
         val isAudioEnabled = remember(previewUiState) {
             previewUiState.currentCameraSettings.audioEnabled
@@ -258,7 +259,6 @@ private fun ContentScreen(
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
                 onZoomRatioChange = onChangeZoomRatio,
-                aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
             )

@@ -49,6 +49,7 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
@@ -179,6 +180,7 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraAppSettings,
                     systemConstraints
                 )
+                val aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings)
                 var quickSettingsIsOpen: Boolean
                 _previewUiState.update { old ->
                     when (old) {
@@ -220,12 +222,14 @@ class PreviewViewModel @AssistedInject constructor(
                         systemConstraints = systemConstraints,
                         videoRecordingState = cameraState.videoRecordingState,
                         flipLensUiState = flipLensUiState,
+                        aspectRatioUiState = aspectRatioUiState,
                         quickSettingsUiState = getQuickSettingsUiState(
                             captureModeUiState,
                             flashModeUiState,
                             flipLensUiState,
                             cameraAppSettings,
                             systemConstraints,
+                            aspectRatioUiState,
                             quickSettingsIsOpen
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
@@ -280,10 +284,11 @@ class PreviewViewModel @AssistedInject constructor(
         flipLensUiState: FlipLensUiState,
         cameraAppSettings: CameraAppSettings,
         systemConstraints: SystemConstraints,
+        aspectRatioUiState: AspectRatioUiState,
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
         return QuickSettingsUiState.Available(
-            aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings),
+            aspectRatioUiState = aspectRatioUiState,
             captureModeUiState = captureModeUiState,
             concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
                 cameraAppSettings,

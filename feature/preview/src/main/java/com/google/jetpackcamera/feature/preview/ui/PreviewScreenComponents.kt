@@ -128,6 +128,7 @@ import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
@@ -430,7 +431,6 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onZoomRatioChange: (CameraZoomRatio) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
-    aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
 ) {
@@ -444,6 +444,8 @@ fun PreviewDisplay(
         }
     )
 
+    check(previewUiState.aspectRatioUiState is AspectRatioUiState.Available)
+
     surfaceRequest?.let {
         BoxWithConstraints(
             modifier
@@ -452,6 +454,7 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
+            val aspectRatio = previewUiState.aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
