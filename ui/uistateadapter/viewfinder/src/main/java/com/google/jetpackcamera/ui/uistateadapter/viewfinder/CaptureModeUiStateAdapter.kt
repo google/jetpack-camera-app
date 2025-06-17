@@ -190,7 +190,7 @@ object CaptureModeUiStateAdapter {
         }
     } else if (
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-        previewMode == PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE ||
+        previewMode == PreviewMode.EXTERNAL_IMAGE_CAPTURE ||
         cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
     ) {
         listOf(CaptureMode.IMAGE_ONLY)
