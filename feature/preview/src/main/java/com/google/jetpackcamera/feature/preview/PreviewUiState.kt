@@ -68,7 +68,7 @@ sealed interface PreviewUiState {
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
-        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
+        val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
     ) : PreviewUiState
 }
 
