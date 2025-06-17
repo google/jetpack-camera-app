@@ -57,12 +57,16 @@ sealed interface CaptureModeUiState {
     fun CaptureModeUiState.findSelectableStateFor(
         targetCaptureMode: CaptureMode
     ): SingleSelectableUiState<CaptureMode>? {
-        if (this is CaptureModeUiState.Available) {
+        if (this is Available) {
             return this.availableCaptureModes.firstOrNull { state ->
-                (state is SingleSelectableUiState.SelectableUi &&
-                        state.value == targetCaptureMode) ||
-                        (state is SingleSelectableUiState.Disabled &&
-                                state.value == targetCaptureMode)
+                (
+                    state is SingleSelectableUiState.SelectableUi &&
+                        state.value == targetCaptureMode
+                    ) ||
+                    (
+                        state is SingleSelectableUiState.Disabled &&
+                            state.value == targetCaptureMode
+                        )
             }
         }
         return null

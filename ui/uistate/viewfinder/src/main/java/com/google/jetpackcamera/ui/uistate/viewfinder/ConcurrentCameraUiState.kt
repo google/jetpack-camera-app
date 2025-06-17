@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 
-
 sealed interface ConcurrentCameraUiState {
     data object Unavailable : ConcurrentCameraUiState
 
