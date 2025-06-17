@@ -33,15 +33,18 @@ object ConcurrentCameraUiStateAdapter {
         return ConcurrentCameraUiState.Available(
             selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
             isEnabled = systemConstraints.concurrentCamerasSupported &&
-                    previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE && ((
-                    captureModeUiState as?
+                previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE && (
+                    (
+                        captureModeUiState as?
                             CaptureModeUiState.Available
-                    )
-                ?.selectedCaptureMode !=
-                    CaptureMode.IMAGE_ONLY) && (cameraAppSettings.dynamicRange !=
-                    DEFAULT_HDR_DYNAMIC_RANGE &&
-                    cameraAppSettings.imageFormat !=
-                    DEFAULT_HDR_IMAGE_OUTPUT)
+                        )
+                        ?.selectedCaptureMode !=
+                            CaptureMode.IMAGE_ONLY
+                        ) && (
+                        cameraAppSettings.dynamicRange !=
+                            DEFAULT_HDR_DYNAMIC_RANGE &&
+                            cameraAppSettings.imageFormat !=
+                            DEFAULT_HDR_IMAGE_OUTPUT)
         )
     }
 }

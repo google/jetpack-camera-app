@@ -59,7 +59,7 @@ object FlipLensUiStateAdapter {
         } else {
             FlipLensUiState.Available(
                 selectedLensFacing = selectedLensFacing,
-                availableLensFacings = availableLensFacings,
+                availableLensFacings = availableLensFacings
             )
         }
     }

@@ -27,7 +27,6 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState.Unavailable
 
-
 object FlashModeUiStateAdapter {
 
     private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
