@@ -818,7 +818,8 @@ class PreviewViewModel @AssistedInject constructor(
             _previewUiState.update { old ->
                 (old as? PreviewUiState.Ready)?.copy(
                     quickSettingsUiState = QuickSettingsUiState.Available(
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).aspectRatioUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available)
+                            .aspectRatioUiState,
                         old.quickSettingsUiState.captureModeUiState,
                         old.quickSettingsUiState.concurrentCameraUiState,
                         old.quickSettingsUiState.flashModeUiState,

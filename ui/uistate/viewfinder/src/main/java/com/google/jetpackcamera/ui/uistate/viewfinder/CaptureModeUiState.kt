@@ -71,8 +71,10 @@ sealed interface CaptureModeUiState {
 }
 
 enum class DisabledReason(
-    override val testTag: String, // 'override' is required
-    override val reasonTextResId: Int // 'override' is required
+    // 'override' is required
+    override val testTag: String,
+    // 'override' is required
+    override val reasonTextResId: Int
 ) : ReasonDisplayable {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
