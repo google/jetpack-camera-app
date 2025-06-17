@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Range
@@ -30,7 +29,7 @@ class ZoomState(
     initialZoomLevel: Float,
     val zoomRange: Range<Float>,
     val onChangeZoomLevel: (CameraZoomRatio) -> Unit,
-    val onAnimateStateChanged: (Float?) -> Unit,
+    val onAnimateStateChanged: (Float?) -> Unit
 ) {
     init {
         onAnimateStateChanged(null)
@@ -45,7 +44,6 @@ class ZoomState(
                 onAnimateStateChanged(null)
                 block()
             } finally {
-
             }
         }
     }
@@ -74,7 +72,6 @@ class ZoomState(
         absoluteZoom(scalingFactor * functionalZoom, lensToZoom)
     }
 
-
     /**
      * Increment the current zoom level.
      */
@@ -98,7 +95,7 @@ class ZoomState(
 
                 Animatable(initialValue = functionalZoom).animateTo(
                     targetValue = targetZoomLevel,
-                    animationSpec = animationSpec,
+                    animationSpec = animationSpec
                 ) {
                     // this is called every animation frame
                     functionalZoom = value.coerceIn(zoomRange.toClosedRange())
@@ -111,8 +108,7 @@ class ZoomState(
                         )
                     )
                 }
-            }
-           finally {}
+            } finally {}
         }
     }
 }

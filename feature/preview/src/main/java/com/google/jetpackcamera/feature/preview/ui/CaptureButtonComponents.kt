@@ -72,7 +72,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

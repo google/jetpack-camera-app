@@ -21,11 +21,11 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -47,10 +47,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -71,8 +69,6 @@ import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -84,7 +80,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -123,24 +118,19 @@ import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.StabilizationUiState
-import com.google.jetpackcamera.feature.preview.ZoomControlUiState
 import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomStrategy
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import java.text.DecimalFormat
-import kotlin.time.Duration.Companion.nanoseconds
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -507,7 +497,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -554,7 +544,7 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                        "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
 
@@ -569,8 +559,8 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                        "${stabilizationUiState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
                                 )
                         }
                     }
@@ -698,7 +688,7 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-//TODO(kc): cycle out old zoom ratio text component
+// TODO(kc): cycle out old zoom ratio text component
 @Composable
 fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(
@@ -741,7 +731,7 @@ fun CaptureModeDropDown(
         AnimatedVisibility(
             visible = isExpanded,
             enter =
-                fadeIn() + expandVertically(expandFrom = Alignment.Top),
+            fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
             fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
@@ -755,7 +745,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_standard),
                     enabled = captureModeUiState.defaultCaptureState
-                            is SingleSelectableState.Selectable,
+                        is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
@@ -765,7 +755,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
                     enabled = captureModeUiState.imageOnlyCaptureState
-                            is SingleSelectableState.Selectable,
+                        is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.IMAGE_ONLY)
                         isExpanded = false
@@ -775,7 +765,7 @@ fun CaptureModeDropDown(
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
                     enabled = captureModeUiState.videoOnlyCaptureState
-                            is SingleSelectableState.Selectable,
+                        is SingleSelectableState.Selectable,
                     onClick = {
                         onSetCaptureMode(CaptureMode.VIDEO_ONLY)
                         isExpanded = false
@@ -913,7 +903,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

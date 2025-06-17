@@ -442,20 +442,26 @@ class PreviewViewModel @AssistedInject constructor(
         cameraState: CameraState
     ): ZoomControlUiState.Enabled {
         val zoomRange =
-            systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]?.supportedZoomRange ?: Range(1f, 1f)
+            systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+                ?.supportedZoomRange
+                ?: Range(1f, 1f)
         val zoomLevels: List<Float> = buildList {
-            if (zoomRange.lower < 1f)
+            if (zoomRange.lower < 1f) {
                 add(zoomRange.lower)
+            }
             add(1f)
-            if (zoomRange.contains(2f))
+            if (zoomRange.contains(2f)) {
                 add(2f)
-            if (zoomRange.contains(5f))
+            }
+            if (zoomRange.contains(5f)) {
                 add(5f)
+            }
         }
         return ZoomControlUiState.Enabled(
             zoomLevels = zoomLevels,
             primaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
-            primarySettingZoomRatio = cameraAppSettings.defaultZoomRatios[cameraAppSettings.cameraLensFacing],
+            primarySettingZoomRatio = cameraAppSettings
+                .defaultZoomRatios[cameraAppSettings.cameraLensFacing],
             animatingToValue = animateZoomState
         )
     }
@@ -466,8 +472,8 @@ class PreviewViewModel @AssistedInject constructor(
         cameraState: CameraState
     ): ZoomUiState = ZoomUiState.Enabled(
         primaryZoomRange =
-            systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
-                ?: Range<Float>(1f, 1f),
+        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+            ?: Range<Float>(1f, 1f),
         primaryZoomRatio = cameraState.zoomRatios[lensFacing],
         primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
@@ -504,13 +510,13 @@ class PreviewViewModel @AssistedInject constructor(
             }
 
             is PreviewMode.StandardMode -> if ((
-                        cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                                true ||
-                                cameraConstraints?.supportedImageFormatsMap?.get(
-                                    cameraAppSettings.streamConfig
-                                )
-                                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                        ) &&
+                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
+                        true ||
+                        cameraConstraints?.supportedImageFormatsMap?.get(
+                            cameraAppSettings.streamConfig
+                        )
+                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                    ) &&
                 cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
             ) {
                 HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
@@ -528,7 +534,7 @@ class PreviewViewModel @AssistedInject constructor(
             cameraAppSettings
         )
         val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-                cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
         val currentHdrDynamicRangeSupported =
             if (isHdrOn) {
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
@@ -750,9 +756,9 @@ class PreviewViewModel @AssistedInject constructor(
         lensFilter: (LensFacing) -> Boolean
     ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
         lensFilter(lensConstraints.key) &&
-                lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                    captureModeFilter(it)
-                }
+            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                captureModeFilter(it)
+            }
     } != null
 
     fun startCamera() {
@@ -872,7 +878,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             enqueueExternalImageCaptureUnsupportedSnackBar()
             return
@@ -880,7 +886,7 @@ class PreviewViewModel @AssistedInject constructor(
 
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalVideoCaptureMode
+                PreviewMode.ExternalVideoCaptureMode
         ) {
             addSnackBarData(
                 SnackbarData(
@@ -896,16 +902,16 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
                 (
-                        (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                                PreviewMode.ExternalMultipleImageCaptureMode
-                        )?.let {
-                        val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
-                            null
-                        } else {
-                            it.imageCaptureUris[externalUriIndex]
-                        }
-                        Pair(externalUriIndex, uri)
-                    } ?: Pair(-1, imageCaptureUri)
+                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
+                        PreviewMode.ExternalMultipleImageCaptureMode
+                    )?.let {
+                    val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
+                        null
+                    } else {
+                        it.imageCaptureUris[externalUriIndex]
+                    }
+                    Pair(externalUriIndex, uri)
+                } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
@@ -930,14 +936,14 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
-                (previewUiState.value as? PreviewUiState.Ready)
-                    ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
-                )?.let {
-                if (!it.imageCaptureUris.isNullOrEmpty()) {
-                    externalUriIndex++
-                    Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
-                }
+            (previewUiState.value as? PreviewUiState.Ready)
+                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+            )?.let {
+            if (!it.imageCaptureUris.isNullOrEmpty()) {
+                externalUriIndex++
+                Log.d(TAG, "Uri index for multiple image capture at $externalUriIndex")
             }
+        }
     }
 
     private suspend fun <T> captureImageInternal(
@@ -994,7 +1000,7 @@ class PreviewViewModel @AssistedInject constructor(
     ) {
         if (previewUiState.value is PreviewUiState.Ready &&
             (previewUiState.value as PreviewUiState.Ready).previewMode is
-                    PreviewMode.ExternalImageCaptureMode
+                PreviewMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             addSnackBarData(
@@ -1056,7 +1062,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     /**
-    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         viewModelScope.launch {
@@ -1066,11 +1072,12 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setZoomAnimationState(targetValue:Float?){
+    fun setZoomAnimationState(targetValue: Float?) {
         viewModelScope.launch {
             isAnimatingZoomState.update { targetValue }
         }
     }
+
     fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }

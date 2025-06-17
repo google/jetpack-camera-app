@@ -98,17 +98,17 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-    { factory -> factory.create(previewMode, isDebugMode) }
+        { factory -> factory.create(previewMode, isDebugMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -144,19 +144,23 @@ fun PreviewScreen(
             }
             val scope = rememberCoroutineScope()
             val zoomState = remember(
-                currentUiState.currentCameraSettings.cameraLensFacing,
+                currentUiState.currentCameraSettings.cameraLensFacing
             ) {
                 ZoomState(
-                    //todo(kc) value straight from the camera will be 1.0... need to pull from setitngs
-                    initialZoomLevel = (currentUiState.zoomControlUiState as? ZoomControlUiState.Enabled)?.primaryZoomRatio
+                    // todo(kc) value straight from the camera will be 1.0... need to pull from settings
+                    initialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )?.primaryZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
                     onChangeZoomLevel = viewModel::changeZoomRatio,
-                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)?.primaryZoomRange
+                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                        ?.primaryZoomRange
                         ?: Range(
                             1f,
                             1f
-                        ),
+                        )
                 )
             }
 

@@ -17,10 +17,8 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.util.Log
 import android.util.Range
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,14 +40,12 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +76,6 @@ import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -89,11 +84,8 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomStrategy
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
     private var _showZoomLevel = mutableStateOf(alwaysDisplay)
@@ -200,7 +192,7 @@ fun CameraControlsOverlay(
                 onStartVideoRecording = onStartVideoRecording,
                 onStopVideoRecording = onStopVideoRecording,
                 onImageWellClick = onImageWellClick,
-                onLockVideoRecording = onLockVideoRecording,
+                onLockVideoRecording = onLockVideoRecording
             )
         }
     }
@@ -322,16 +314,21 @@ private fun ControlsBottom(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
+                    // todo(kc): remove zoomRatioText and update tests
                     ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
-                //todo(kc): wip zoom component
-                if (zoomControlUiState is ZoomControlUiState.Enabled && zoomUiState is ZoomUiState.Enabled) {
+                if (zoomControlUiState is ZoomControlUiState.Enabled &&
+                    zoomUiState is ZoomUiState.Enabled
+                ) {
                     var zoomJob by remember { mutableStateOf<Job?>(null) }
                     zoomJob?.cancel()
 
-                    ZoomButtonRow(zoomControlUiState = zoomControlUiState, onChangeZoom = { targetZoom ->
-                        onAnimateZoom(targetZoom)
-                    })
+                    ZoomButtonRow(
+                        zoomControlUiState = zoomControlUiState,
+                        onChangeZoom = { targetZoom ->
+                            onAnimateZoom(targetZoom)
+                        }
+                    )
                 }
 
                 if (previewUiState.debugUiState.isDebugMode) {
@@ -340,9 +337,9 @@ private fun ControlsBottom(
                 if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
                     AnimatedVisibility(
                         visible = (
-                                previewUiState.videoRecordingState is
-                                        VideoRecordingState.Active
-                                ),
+                            previewUiState.videoRecordingState is
+                                VideoRecordingState.Active
+                            ),
                         enter = fadeIn(),
                         exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
                     ) {
@@ -358,7 +355,7 @@ private fun ControlsBottom(
         Column {
             if (!isQuickSettingsOpen &&
                 previewUiState.captureModeToggleUiState
-                        is CaptureModeUiState.Enabled
+                    is CaptureModeUiState.Enabled
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines
                 Box(
@@ -415,7 +412,7 @@ private fun ControlsBottom(
                     onToggleQuickSettings = onToggleQuickSettings,
                     onStartVideoRecording = onStartVideoRecording,
                     onStopVideoRecording = onStopVideoRecording,
-                    onLockVideoRecording = onLockVideoRecording,
+                    onLockVideoRecording = onLockVideoRecording
                 )
 
                 Box(
@@ -503,7 +500,7 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                        ignoreUri,
+                                    ignoreUri,
                                 previewMode.onImageCapture
                             )
                         }
@@ -570,7 +567,7 @@ private fun CaptureModeToggleButton(
         }
     val enabled =
         uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
-                uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
+            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
     ToggleButton(
         leftIcon = if (uiState.currentSelection ==
             CaptureMode.IMAGE_ONLY
@@ -604,21 +601,21 @@ private fun CaptureModeToggleButton(
         // toggle only enabled when both capture modes are available
         enabled = enabled,
         leftIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_image_capture_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_image_capture_content_description_disabled
-                )
-            },
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
         rightIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_video_recording_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_video_recording_content_description_disabled
-                )
-            },
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
+        },
         modifier = modifier
     )
 }
@@ -812,7 +809,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()

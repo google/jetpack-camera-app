@@ -102,13 +102,13 @@ sealed interface HdrUiState {
 }
 
 sealed interface ZoomControlUiState {
-    data object Unavailable: ZoomControlUiState
+    data object Unavailable : ZoomControlUiState
     data class Enabled(
         val zoomLevels: List<Float>,
         val primaryZoomRatio: Float? = null,
-        val primarySettingZoomRatio:Float? = null,
+        val primarySettingZoomRatio: Float? = null,
         val animatingToValue: Float? = null
-    ): ZoomControlUiState
+    ) : ZoomControlUiState
 }
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState

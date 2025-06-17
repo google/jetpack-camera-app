@@ -13,32 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -49,12 +42,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
-
 
 @Composable
 fun ZoomButtonRow(
@@ -64,22 +55,20 @@ fun ZoomButtonRow(
     spacing: Dp = 8.dp,
     onChangeZoom: (Float) -> Unit
 ) {
-
-    val selectedOptionIndex: Int by remember(zoomControlUiState)
-    {
+    val selectedOptionIndex: Int by remember(zoomControlUiState) {
         // if animating towards a value, then that option will be selected
         // otherwise, select the closest option that is less than the current zoom ratio
         val checkValue =
             zoomControlUiState.animatingToValue ?: zoomControlUiState.primaryZoomRatio ?: 1f
-        Log.d("checkvalue", "checking... $checkValue")
         derivedStateOf {
-            if (checkValue >= 1f)
-            // -1 if no index is found
+            if (checkValue >= 1f) {
+                // -1 if no index is found
                 zoomControlUiState.zoomLevels.indexOfLast { zoomLevelOption ->
                     checkValue >= zoomLevelOption
                 }
-            else
+            } else {
                 0
+            }
         }
     }
 
@@ -122,42 +111,47 @@ private fun ZoomButton(
     targetZoom: Float,
     currentZoomRatio: () -> Float,
     isSelected: Boolean = false,
-    onChangeZoom: (Float) -> Unit,
+    onChangeZoom: (Float) -> Unit
 ) {
     val selectedFormat = DecimalFormat("#.0")
     val formatter = DecimalFormat("#.#")
     formatter.minimumIntegerDigits = 0
-    if (targetZoom >= 1)
+    if (targetZoom >= 1) {
         formatter.roundingMode = RoundingMode.DOWN
-    else
+    } else {
         formatter.roundingMode = RoundingMode.UP
+    }
     val displayText by remember(isSelected, currentZoomRatio) {
         derivedStateOf {
-            if (!isSelected)
+            if (!isSelected) {
                 formatter.format(targetZoom)
-            else
+            } else {
                 "${selectedFormat.format(currentZoomRatio())}x"
+            }
         }
     }
     ToggleButton(
         checked = isSelected,
         onCheckedChange = { if (it) onChangeZoom(targetZoom) },
         modifier = modifier.heightIn(buttonSize),
-        shapes = ToggleButtonDefaults.shapes().copy(shape = CircleShape, checkedShape = CircleShape),
-        colors = if (isSelected)
+        shapes = ToggleButtonDefaults.shapes()
+            .copy(shape = CircleShape, checkedShape = CircleShape),
+        colors = if (isSelected) {
             ToggleButtonDefaults.toggleButtonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
-        else ToggleButtonDefaults.toggleButtonColors(
-            containerColor = Color.White.copy(alpha = .16f),
-            contentColor = Color.White
-        )
+        } else {
+            ToggleButtonDefaults.toggleButtonColors(
+                containerColor = Color.White.copy(alpha = .16f),
+                contentColor = Color.White
+            )
+        }
     ) {
         Text(
             modifier = Modifier.animateContentSize(),
             text = displayText,
-            //style = MaterialTheme.typography.labelSmall,
+            // style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center
         )
     }
@@ -185,7 +179,7 @@ fun ZoomButtonPreview() {
                 targetZoom = 3f,
                 onChangeZoom = {},
                 currentZoomRatio = { -> 3.3f },
-                isSelected = true,
+                isSelected = true
             )
         }
     }
