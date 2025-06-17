@@ -25,14 +25,20 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -43,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.ZoomControlUiState
 import java.math.RoundingMode
@@ -80,9 +87,8 @@ fun ZoomButtonRow(
         modifier = modifier
             .background(
                 color = Color.Black.copy(alpha = 0.32f),
-                shape = RoundedCornerShape(buttonSize)
+                shape = CircleShape
             )
-            .padding(8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -92,21 +98,27 @@ fun ZoomButtonRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
-                ZoomButton(
-                    targetZoom = value,
-                    currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio ?: 1f) },
-                    isSelected = selectedOptionIndex == index,
-                    onChangeZoom = onChangeZoom
-                )
+                Box(
+                    modifier = Modifier.width(buttonSize + spacing),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ZoomButton(
+                        targetZoom = value,
+                        currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio ?: 1f) },
+                        isSelected = selectedOptionIndex == index,
+                        onChangeZoom = onChangeZoom
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ZoomButton(
     modifier: Modifier = Modifier,
-    buttonSize: Dp = 55.dp,
+    buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     targetZoom: Float,
     currentZoomRatio: () -> Float,
     isSelected: Boolean = false,
@@ -127,30 +139,27 @@ private fun ZoomButton(
                 "${selectedFormat.format(currentZoomRatio())}x"
         }
     }
-
-    Box(
-        modifier = Modifier.width(buttonSize * 1.45f),
-        contentAlignment = Alignment.Center
-    ) {
-        Button(
-            onClick = { onChangeZoom(targetZoom) },
-            modifier = modifier
-                .height(buttonSize)
-                .defaultMinSize(minWidth = buttonSize),
-            shape = CircleShape,
-            colors = if (isSelected)
-                ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            else ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = .16f))
-        ) {
-            Text(
-                modifier = Modifier.animateContentSize(),
-                text = displayText,
-                textAlign = TextAlign.Center
+    ToggleButton(
+        checked = isSelected,
+        onCheckedChange = { if (it) onChangeZoom(targetZoom) },
+        modifier = modifier.heightIn(buttonSize),
+        shapes = ToggleButtonDefaults.shapes().copy(shape = CircleShape, checkedShape = CircleShape),
+        colors = if (isSelected)
+            ToggleButtonDefaults.toggleButtonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
-        }
+        else ToggleButtonDefaults.toggleButtonColors(
+            containerColor = Color.White.copy(alpha = .16f),
+            contentColor = Color.White
+        )
+    ) {
+        Text(
+            modifier = Modifier.animateContentSize(),
+            text = displayText,
+            //style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
