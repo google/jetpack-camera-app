@@ -23,6 +23,6 @@ sealed interface HdrUiState {
 
     data class Available(
         val selectedImageFormat: ImageOutputFormat,
-        val selectedDynamicRange: DynamicRange,
+        val selectedDynamicRange: DynamicRange
     ) : HdrUiState
 }

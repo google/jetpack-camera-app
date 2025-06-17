@@ -23,7 +23,7 @@ sealed interface FlipLensUiState {
 
     data class Available(
         val selectedLensFacing: LensFacing,
-        val availableLensFacings: List<SingleSelectableUiState<LensFacing>>,
+        val availableLensFacings: List<SingleSelectableUiState<LensFacing>>
     ) : FlipLensUiState {
         init {
             val isSelectedModePresentAndSelectable = availableLensFacings.any { state ->

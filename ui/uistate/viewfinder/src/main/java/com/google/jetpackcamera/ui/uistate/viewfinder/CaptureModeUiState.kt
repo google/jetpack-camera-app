@@ -118,5 +118,5 @@ enum class DisabledReason(
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
         HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG,
         R.string.toast_hdr_simultaneous_image_video_unsupported
-    );
+    )
 }
