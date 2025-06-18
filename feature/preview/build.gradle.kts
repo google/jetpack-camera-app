@@ -147,6 +147,9 @@ dependencies {
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
     testImplementation(project(":core:common"))
+    implementation(project(":ui:uistate"))
+    implementation(project(":ui:uistate:viewfinder"))
+    implementation(project(":ui:uistateadapter:viewfinder"))
 }
 
 // Allow references to generated code
