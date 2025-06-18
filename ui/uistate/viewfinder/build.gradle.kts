@@ -130,6 +130,7 @@ dependencies {
 
     implementation(project(":data:settings"))
     implementation(project(":ui:uistate"))
+    implementation(project(":data:media"))
 }
 
 // Allow references to generated code

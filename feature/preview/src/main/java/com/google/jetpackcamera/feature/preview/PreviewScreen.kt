@@ -39,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +61,6 @@ import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
-import com.google.jetpackcamera.feature.preview.ui.TestableToast
 import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
@@ -70,14 +68,14 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import kotlinx.coroutines.flow.transformWhile
@@ -169,7 +167,6 @@ fun PreviewScreen(
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onLockVideoRecording = viewModel::setLockedRecording,
-                onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
                 isDebugMode = isDebugMode,
@@ -227,7 +224,6 @@ private fun ContentScreen(
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
-    onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
     isDebugMode: Boolean = false,
@@ -244,7 +240,7 @@ private fun ContentScreen(
         }
 
         val isAudioEnabled = remember(previewUiState) {
-            previewUiState.currentCameraSettings.audioEnabled
+            previewUiState.audioUiState is AudioUiState.Enabled.On
         }
         val onToggleAudio = remember(isAudioEnabled) {
             {
@@ -300,18 +296,9 @@ private fun ContentScreen(
 
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
-                previewUiState = previewUiState,
+                debugUiState = previewUiState.debugUiState,
                 onChangeZoomRatio = onChangeZoomRatio
             )
-
-            // displays toast when there is a message to show
-            if (previewUiState.toastMessageToShow != null) {
-                TestableToast(
-                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
-                    toastMessage = previewUiState.toastMessageToShow,
-                    onToastShown = onToastShown
-                )
-            }
 
             val snackBarData = previewUiState.snackBarQueue.peek()
             if (snackBarData != null) {
@@ -426,9 +413,7 @@ private fun ContentScreen_Locked_Recording() {
 }
 
 private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
-    currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
     videoRecordingState = VideoRecordingState.Inactive(),
-    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
     previewMode = PreviewMode.StandardMode {},
     captureModeToggleUiState = CaptureModeUiState.Unavailable
 )

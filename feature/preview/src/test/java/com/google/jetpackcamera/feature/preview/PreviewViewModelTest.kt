@@ -24,6 +24,8 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.test.FakeSettingsRepository
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -109,7 +111,11 @@ class PreviewViewModelTest {
         advanceUntilIdle()
 
         assertIsReady(previewViewModel.previewUiState.value).also {
-            assertThat(it.currentCameraSettings.flashMode).isEqualTo(FlashMode.AUTO)
+            assertThat(it.flashModeUiState is FlashModeUiState.Available).isTrue()
+            assertThat(
+                (it.flashModeUiState as FlashModeUiState.Available)
+                    .selectedFlashMode
+            ).isEqualTo(FlashMode.AUTO)
         }
     }
 
@@ -118,14 +124,22 @@ class PreviewViewModelTest {
         // initial default value should be back
         previewViewModel.startCamera()
         assertIsReady(previewViewModel.previewUiState.value).also {
-            assertThat(it.currentCameraSettings.cameraLensFacing).isEqualTo(LensFacing.BACK)
+            assertThat(it.flipLensUiState is FlipLensUiState.Available).isTrue()
+            assertThat(
+                (it.flipLensUiState as FlipLensUiState.Available)
+                    .selectedLensFacing
+            ).isEqualTo(LensFacing.BACK)
         }
         previewViewModel.setLensFacing(LensFacing.FRONT)
 
         advanceUntilIdle()
         // ui state and camera should both be true now
         assertIsReady(previewViewModel.previewUiState.value).also {
-            assertThat(it.currentCameraSettings.cameraLensFacing).isEqualTo(LensFacing.FRONT)
+            assertThat(it.flipLensUiState is FlipLensUiState.Available).isTrue()
+            assertThat(
+                (it.flipLensUiState as FlipLensUiState.Available)
+                    .selectedLensFacing
+            ).isEqualTo(LensFacing.FRONT)
         }
         assertThat(cameraUseCase.isLensFacingFront).isTrue()
     }

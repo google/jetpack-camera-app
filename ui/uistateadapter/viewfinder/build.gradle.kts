@@ -133,6 +133,7 @@ dependencies {
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistate:viewfinder"))
+    implementation(project(":data:media"))
 }
 
 // Allow references to generated code

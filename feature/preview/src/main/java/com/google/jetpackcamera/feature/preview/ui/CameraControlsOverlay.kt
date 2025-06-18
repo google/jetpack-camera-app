@@ -58,16 +58,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
-import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
-import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewMode
 import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.StabilizationUiState
-import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
@@ -77,22 +72,24 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.viewfinder.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
 import kotlinx.coroutines.delay
 
@@ -186,8 +183,8 @@ fun CameraControlsOverlay(
                 previewUiState = previewUiState,
                 flipLensUiState = previewUiState.flipLensUiState,
                 zoomUiState = previewUiState.zoomUiState,
-                physicalCameraId = previewUiState.currentPhysicalCameraId,
-                logicalCameraId = previewUiState.currentLogicalCameraId,
+                physicalCameraId = previewUiState.debugUiState.currentPhysicalCameraId,
+                logicalCameraId = previewUiState.debugUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen =
                 (
@@ -390,8 +387,8 @@ private fun ControlsBottom(
                                 flipLensUiState = flipLensUiState,
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
-                                    flipLensUiState is FlipLensUiState.Available &&
-                                            flipLensUiState.availableLensFacings.size > 1
+                                flipLensUiState is FlipLensUiState.Available &&
+                                    flipLensUiState.availableLensFacings.size > 1
                             )
                         } else if (videoRecordingState is VideoRecordingState.Active
                         ) {
@@ -717,10 +714,11 @@ private fun Preview_ControlsBottom() {
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
-                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             flipLensUiState = FlipLensUiState.Available(
-                LensFacing.FRONT, listOf(
+                LensFacing.FRONT,
+                listOf(
                     SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
                     SingleSelectableUiState.SelectableUi(LensFacing.BACK)
                 )
@@ -745,14 +743,15 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
-                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
             flipLensUiState = FlipLensUiState.Available(
-                LensFacing.FRONT, listOf(
+                LensFacing.FRONT,
+                listOf(
                     SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
                     SingleSelectableUiState.SelectableUi(LensFacing.BACK)
                 )
@@ -773,14 +772,15 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
-                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
             flipLensUiState = FlipLensUiState.Available(
-                LensFacing.FRONT, listOf(
+                LensFacing.FRONT,
+                listOf(
                     SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
                     SingleSelectableUiState.SelectableUi(LensFacing.BACK)
                 )
@@ -801,11 +801,12 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
-                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             flipLensUiState = FlipLensUiState.Available(
-                LensFacing.FRONT, listOf(
-                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                LensFacing.FRONT,
+                listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                 )
             ),
             zoomUiState = ZoomUiState.Enabled(
@@ -825,14 +826,14 @@ private fun Preview_ControlsBottom_Recording() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             previewUiState = PreviewUiState.Ready(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
                 previewMode = PreviewMode.StandardMode {},
                 captureModeToggleUiState = CaptureModeUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
-                captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             flipLensUiState = FlipLensUiState.Available(
-                LensFacing.FRONT, listOf(
+                LensFacing.FRONT,
+                listOf(
                     SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
                     SingleSelectableUiState.SelectableUi(LensFacing.BACK)
                 )
