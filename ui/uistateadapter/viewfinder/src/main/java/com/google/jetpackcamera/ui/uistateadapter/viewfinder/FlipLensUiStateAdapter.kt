@@ -53,14 +53,10 @@ object FlipLensUiStateAdapter {
                 ORDERED_UI_SUPPORTED_LENS_FACINGS
             )
 
-        return if (availableLensFacings.size <= 1) {
-            // If we only support one lens, then return "Unavailable".
-            FlipLensUiState.Unavailable
-        } else {
-            FlipLensUiState.Available(
-                selectedLensFacing = selectedLensFacing,
-                availableLensFacings = availableLensFacings
-            )
-        }
+        return FlipLensUiState.Available(
+            selectedLensFacing = selectedLensFacing,
+            availableLensFacings = availableLensFacings
+        )
+
     }
 }
