@@ -57,6 +57,5 @@ object FlipLensUiStateAdapter {
             selectedLensFacing = selectedLensFacing,
             availableLensFacings = availableLensFacings
         )
-
     }
 }
