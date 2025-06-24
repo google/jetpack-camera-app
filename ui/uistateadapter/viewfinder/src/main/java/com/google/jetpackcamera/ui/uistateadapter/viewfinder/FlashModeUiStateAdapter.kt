@@ -40,20 +40,17 @@ object FlashModeUiStateAdapter {
         cameraAppSettings: CameraAppSettings,
         systemConstraints: SystemConstraints
     ): FlashModeUiState {
+        return FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
+    }
+
+    fun FlashModeUiState.Companion.from(
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints
+    ): FlashModeUiState {
         val selectedFlashMode = cameraAppSettings.flashMode
         val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
             ?.supportedFlashModes
             ?: setOf(FlashMode.OFF)
-        return createFrom(
-            selectedFlashMode = selectedFlashMode,
-            supportedFlashModes = supportedFlashModes
-        )
-    }
-
-    private fun createFrom(
-        selectedFlashMode: FlashMode,
-        supportedFlashModes: Set<FlashMode>
-    ): FlashModeUiState {
         // Ensure we at least support one flash mode
         check(supportedFlashModes.isNotEmpty()) {
             "No flash modes supported. Should at least support OFF."
@@ -79,20 +76,14 @@ object FlashModeUiStateAdapter {
     }
 
     fun FlashModeUiState.updateFrom(
-        currentCameraSettings: CameraAppSettings,
-        currentConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints,
         cameraState: CameraState
     ): FlashModeUiState {
-        val currentFlashMode = currentCameraSettings.flashMode
-        val currentSupportedFlashModes =
-            currentConstraints.forCurrentLens(currentCameraSettings)?.supportedFlashModes
         return when (this) {
             is Unavailable -> {
                 // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
-                createFrom(
-                    selectedFlashMode = currentFlashMode,
-                    supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
-                )
+                FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
             }
 
             is Available -> {
@@ -104,15 +95,12 @@ object FlashModeUiStateAdapter {
                     }
                 if (previousAvailableFlashModes != currentAvailableFlashModes) {
                     // Supported flash modes have changed, generate a new FlashModeUiState
-                    createFrom(
-                        selectedFlashMode = currentFlashMode,
-                        supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
-                    )
-                } else if (previousFlashMode != currentFlashMode) {
+                    FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
+                } else if (previousFlashMode != cameraAppSettings.flashMode) {
                     // Only the selected flash mode has changed, just update the flash mode
-                    copy(selectedFlashMode = currentFlashMode)
+                    copy(selectedFlashMode = cameraAppSettings.flashMode)
                 } else {
-                    if (currentFlashMode == FlashMode.LOW_LIGHT_BOOST) {
+                    if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                         copy(
                             isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
                         )
