@@ -93,8 +93,6 @@ class SettingsDeviceTest {
             assert(!uiDevice.findObject(By.res(componentTestTag)).isEnabled)
             // The settings component is disabled. Display componentDisabledMessage
             Log.d(TAG, componentDisabledMessage)
-        } finally {
-            uiDevice.pressBack()
         }
     }
 
