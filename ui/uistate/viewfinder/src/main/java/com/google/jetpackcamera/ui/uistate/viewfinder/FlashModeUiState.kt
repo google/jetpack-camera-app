@@ -41,4 +41,6 @@ sealed interface FlashModeUiState {
             }
         }
     }
+
+    companion object
 }

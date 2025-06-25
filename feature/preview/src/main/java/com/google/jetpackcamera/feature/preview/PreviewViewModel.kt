@@ -197,8 +197,8 @@ class PreviewViewModel @AssistedInject constructor(
 
                         is PreviewUiState.Ready -> {
                             flashModeUiState = old.flashModeUiState.updateFrom(
-                                currentCameraSettings = cameraAppSettings,
-                                currentConstraints = systemConstraints,
+                                cameraAppSettings = cameraAppSettings,
+                                systemConstraints = systemConstraints,
                                 cameraState = cameraState
                             )
                             quickSettingsIsOpen = when (old.quickSettingsUiState) {
