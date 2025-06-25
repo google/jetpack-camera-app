@@ -52,6 +52,8 @@ const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 const val ZOOM_RATIO_TAG = "ZoomRatioTag"
+
+const val ZOOM_CONTROL_TAG = "ZoomControlTag"
 const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
 const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"

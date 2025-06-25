@@ -17,7 +17,7 @@ package com.google.jetpackcamera.settings.model
 
 /**
  * Represents an action to modify the current zoom Ratio
- *  * @param changeType the [ZoomStrategy] to be performed on the current Zoom Ratio
+ *  @param changeType the [ZoomStrategy] to be performed on the current Zoom Ratio
  */
 
 data class CameraZoomRatio(val changeType: ZoomStrategy)

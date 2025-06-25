@@ -147,7 +147,6 @@ fun PreviewScreen(
                 currentUiState.currentCameraSettings.cameraLensFacing
             ) {
                 ZoomState(
-                    // todo(kc) value straight from the camera will be 1.0... need to pull from settings
                     initialZoomLevel = (
                         currentUiState.zoomControlUiState as?
                             ZoomControlUiState.Enabled
@@ -157,10 +156,7 @@ fun PreviewScreen(
                     onChangeZoomLevel = viewModel::changeZoomRatio,
                     zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
                         ?.primaryZoomRange
-                        ?: Range(
-                            1f,
-                            1f
-                        )
+                        ?: Range(1f, 1f)
                 )
             }
 

@@ -688,7 +688,7 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-// TODO(kc): cycle out old zoom ratio text component
+// TODO(b/427733634): only display this component while in debug mode
 @Composable
 fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
     Text(

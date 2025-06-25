@@ -34,17 +34,15 @@ class ZoomState(
     init {
         onAnimateStateChanged(null)
     }
+
     private var functionalZoom = initialZoomLevel
 
     private val mutatorMutex = MutatorMutex()
 
     private suspend fun mutateZoom(block: suspend () -> Unit) {
         mutatorMutex.mutate {
-            try {
-                onAnimateStateChanged(null)
-                block()
-            } finally {
-            }
+            onAnimateStateChanged(null)
+            block()
         }
     }
 
@@ -108,7 +106,8 @@ class ZoomState(
                         )
                     )
                 }
-            } finally {}
+            } finally {
+            }
         }
     }
 }

@@ -84,7 +84,6 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -314,15 +313,12 @@ private fun ControlsBottom(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    // todo(kc): remove zoomRatioText and update tests
+                    // todo(b/427733634): remove zoomRatioText and update tests
                     ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
                 if (zoomControlUiState is ZoomControlUiState.Enabled &&
                     zoomUiState is ZoomUiState.Enabled
                 ) {
-                    var zoomJob by remember { mutableStateOf<Job?>(null) }
-                    zoomJob?.cancel()
-
                     ZoomButtonRow(
                         zoomControlUiState = zoomControlUiState,
                         onChangeZoom = { targetZoom ->

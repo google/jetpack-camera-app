@@ -19,7 +19,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -39,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -47,12 +47,13 @@ import com.google.jetpackcamera.feature.preview.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ZoomButtonRow(
     modifier: Modifier = Modifier,
     zoomControlUiState: ZoomControlUiState.Enabled,
-    buttonSize: Dp = 55.dp,
-    spacing: Dp = 8.dp,
+    buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
+    spacing: Dp = 16.dp,
     onChangeZoom: (Float) -> Unit
 ) {
     val selectedOptionIndex: Int by remember(zoomControlUiState) {
@@ -78,12 +79,14 @@ fun ZoomButtonRow(
                 color = Color.Black.copy(alpha = 0.32f),
                 shape = CircleShape
             )
+        //  .padding(horizontal = 8.dp)
     ) {
         Row(
             modifier = Modifier
-                //    .padding(horizontal = spacing)
-                .height(intrinsicSize = IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(spacing),
+                .padding(horizontal = spacing, vertical = spacing/2)
+                .testTag("")
+                .height(buttonSize),
+           // horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically
         ) {
             zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
@@ -108,6 +111,7 @@ fun ZoomButtonRow(
 private fun ZoomButton(
     modifier: Modifier = Modifier,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
+    // font: FontFamily = Roboto, todo Roboto font
     targetZoom: Float,
     currentZoomRatio: () -> Float,
     isSelected: Boolean = false,
@@ -134,12 +138,12 @@ private fun ZoomButton(
         checked = isSelected,
         onCheckedChange = { if (it) onChangeZoom(targetZoom) },
         modifier = modifier.heightIn(buttonSize),
-        shapes = ToggleButtonDefaults.shapes()
-            .copy(shape = CircleShape, checkedShape = CircleShape),
+        shapes = ToggleButtonDefaults.shapesFor(buttonSize),
+        contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
         colors = if (isSelected) {
             ToggleButtonDefaults.toggleButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = MaterialTheme.colorScheme.primaryFixed,
+                contentColor = MaterialTheme.colorScheme.onPrimaryFixed
             )
         } else {
             ToggleButtonDefaults.toggleButtonColors(
@@ -151,7 +155,7 @@ private fun ZoomButton(
         Text(
             modifier = Modifier.animateContentSize(),
             text = displayText,
-            // style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center
         )
     }
