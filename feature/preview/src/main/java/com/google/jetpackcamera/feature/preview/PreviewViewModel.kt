@@ -19,56 +19,72 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
-import android.util.Range
-import android.util.Size
 import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
-import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
-import com.google.jetpackcamera.feature.preview.ui.SnackbarData
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoostState
-import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AudioUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureButtonUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.getCaptureToggleUiState
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ConcurrentCameraUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.DebugUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.DebugUiStateAdapter.toggleDebugOverlay
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ElapsedTimeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter.updateFrom
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlipLensUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.HdrUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ImageWellUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.SnackBarUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StabilizationUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StreamConfigsUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ZoomUiStateAdapter
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,19 +104,19 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  */
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
-    @Assisted val previewMode: PreviewMode,
+    @Assisted val externalCaptureMode: ExternalCaptureMode,
     @Assisted val isDebugMode: Boolean,
     private val cameraUseCase: CameraUseCase,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
-    private val _previewUiState: MutableStateFlow<PreviewUiState> =
-        MutableStateFlow(PreviewUiState.NotReady)
+    private val _viewFinderUiState: MutableStateFlow<ViewFinderUiState> =
+        MutableStateFlow(ViewFinderUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    val previewUiState: StateFlow<PreviewUiState> =
-        _previewUiState.asStateFlow()
+    val viewFinderUiState: StateFlow<ViewFinderUiState> =
+        _viewFinderUiState.asStateFlow()
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
@@ -122,7 +138,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
-                .applyPreviewMode(previewMode),
+                .applyExternalCaptureMode(externalCaptureMode),
             isDebugMode = isDebugMode
         ) { cameraPropertiesJSON = it }
     }
@@ -130,8 +146,10 @@ class PreviewViewModel @AssistedInject constructor(
     /**
      * updates the capture mode based on the preview mode
      */
-    private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
-        val captureMode = previewMode.toCaptureMode()
+    private fun CameraAppSettings.applyExternalCaptureMode(
+        externalCaptureMode: ExternalCaptureMode
+    ): CameraAppSettings {
+        val captureMode = externalCaptureMode.toCaptureMode()
         return if (captureMode == this.captureMode) {
             this
         } else {
@@ -159,34 +177,46 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
-                _previewUiState.update { old ->
+                val captureModeUiState = CaptureModeUiStateAdapter.getCaptureModeUiState(
+                    systemConstraints,
+                    cameraAppSettings,
+                    externalCaptureMode
+                )
+                val flipLensUiState = FlipLensUiStateAdapter.getUiState(
+                    cameraAppSettings,
+                    systemConstraints
+                )
+                val aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings)
+                var quickSettingsIsOpen: Boolean
+                _viewFinderUiState.update { old ->
                     when (old) {
-                        is PreviewUiState.NotReady -> {
-                            // Generate initial FlashModeUiState
-                            val supportedFlashModes =
-                                systemConstraints.forCurrentLens(cameraAppSettings)
-                                    ?.supportedFlashModes
-                                    ?: setOf(FlashMode.OFF)
-                            flashModeUiState = FlashModeUiState.createFrom(
-                                selectedFlashMode = cameraAppSettings.flashMode,
-                                supportedFlashModes = supportedFlashModes
+                        is ViewFinderUiState.NotReady -> {
+                            flashModeUiState = FlashModeUiStateAdapter.getUiState(
+                                cameraAppSettings,
+                                systemConstraints
                             )
+                            quickSettingsIsOpen = false
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
-                            PreviewUiState.Ready()
+                            ViewFinderUiState.Ready()
                         }
 
-                        is PreviewUiState.Ready -> {
-                            val previousCameraSettings = old.currentCameraSettings
-                            val previousConstraints = old.systemConstraints
-
+                        is ViewFinderUiState.Ready -> {
                             flashModeUiState = old.flashModeUiState.updateFrom(
-                                currentCameraSettings = cameraAppSettings,
-                                previousCameraSettings = previousCameraSettings,
-                                currentConstraints = systemConstraints,
-                                previousConstraints = previousConstraints,
+                                cameraAppSettings = cameraAppSettings,
+                                systemConstraints = systemConstraints,
                                 cameraState = cameraState
                             )
+                            quickSettingsIsOpen = when (old.quickSettingsUiState) {
+                                is QuickSettingsUiState.Available -> {
+                                    (old.quickSettingsUiState as QuickSettingsUiState.Available)
+                                        .quickSettingsIsOpen
+                                }
+
+                                is QuickSettingsUiState.Unavailable -> {
+                                    false
+                                }
+                            }
 
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
@@ -194,38 +224,42 @@ class PreviewViewModel @AssistedInject constructor(
                         }
                     }.copy(
                         // Update or initialize PreviewUiState.Ready
-                        previewMode = previewMode,
-                        currentCameraSettings = cameraAppSettings.applyPreviewMode(previewMode),
-                        systemConstraints = systemConstraints,
+                        externalCaptureMode = externalCaptureMode,
                         videoRecordingState = cameraState.videoRecordingState,
-                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-                        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-                        debugUiState = DebugUiState(
-                            cameraPropertiesJSON = cameraPropertiesJSON,
-                            videoResolution = Size(
-                                cameraState.videoQualityInfo.width,
-                                cameraState.videoQualityInfo.height
-                            ),
-                            isDebugMode = isDebugMode
+                        flipLensUiState = flipLensUiState,
+                        aspectRatioUiState = aspectRatioUiState,
+                        quickSettingsUiState = getQuickSettingsUiState(
+                            captureModeUiState,
+                            flashModeUiState,
+                            flipLensUiState,
+                            cameraAppSettings,
+                            systemConstraints,
+                            aspectRatioUiState,
+                            quickSettingsIsOpen
                         ),
-                        stabilizationUiState = stabilizationUiStateFrom(
+                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
+                        debugUiState = DebugUiStateAdapter.getUiState(
+                            cameraPropertiesJSON,
+                            cameraState,
+                            isDebugMode
+                        ),
+                        stabilizationUiState = StabilizationUiStateAdapter.getUiState(
                             cameraAppSettings,
                             cameraState
                         ),
                         flashModeUiState = flashModeUiState,
                         videoQuality = cameraState.videoQualityInfo.quality,
-                        audioUiState = getAudioUiState(
-                            cameraAppSettings.audioEnabled,
-                            cameraState.videoRecordingState
+                        audioUiState = AudioUiStateAdapter.getUiState(
+                            cameraAppSettings,
+                            cameraState
                         ),
-                        elapsedTimeUiState = getElapsedTimeUiState(cameraState.videoRecordingState),
-                        captureButtonUiState = getCaptureButtonUiState(
+                        elapsedTimeUiState = ElapsedTimeUiStateAdapter.getUiState(cameraState),
+                        captureButtonUiState = CaptureButtonUiStateAdapter.getUiState(
                             cameraAppSettings,
                             cameraState,
                             lockedState
                         ),
-                        zoomUiState = getZoomUiState(
+                        zoomUiState = ZoomUiStateAdapter.getUiState(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
                             cameraState
@@ -233,140 +267,62 @@ class PreviewViewModel @AssistedInject constructor(
                         captureModeToggleUiState = getCaptureToggleUiState(
                             systemConstraints,
                             cameraAppSettings,
-                            cameraState.videoRecordingState
-                        ),
-                        captureModeUiState = getCaptureModeUiState(
-                            systemConstraints,
-                            cameraAppSettings
-                        ),
-                        hdrUiState = getHdrUiState(systemConstraints, cameraAppSettings)
+                            cameraState,
+                            externalCaptureMode
+                        )
                     )
                 }
             }.collect {}
         }
     }
 
+    private fun getQuickSettingsUiState(
+        captureModeUiState: CaptureModeUiState,
+        flashModeUiState: FlashModeUiState,
+        flipLensUiState: FlipLensUiState,
+        cameraAppSettings: CameraAppSettings,
+        systemConstraints: SystemConstraints,
+        aspectRatioUiState: AspectRatioUiState,
+        quickSettingsIsOpen: Boolean
+    ): QuickSettingsUiState {
+        return QuickSettingsUiState.Available(
+            aspectRatioUiState = aspectRatioUiState,
+            captureModeUiState = captureModeUiState,
+            concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
+                cameraAppSettings,
+                systemConstraints,
+                externalCaptureMode,
+                captureModeUiState
+            ),
+            flashModeUiState = flashModeUiState,
+            flipLensUiState = flipLensUiState,
+            hdrUiState = HdrUiStateAdapter.getUiState(
+                cameraAppSettings,
+                systemConstraints,
+                externalCaptureMode
+            ),
+            streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(cameraAppSettings),
+            quickSettingsIsOpen = quickSettingsIsOpen
+        )
+    }
+
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    imageWellUiState = ImageWellUiState.LastCapture(
-                        mediaDescriptor = lastCapturedMediaDescriptor
-                    )
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
+                    imageWellUiState =
+                    ImageWellUiStateAdapter.getUiState(lastCapturedMediaDescriptor)
                 ) ?: old
             }
         }
     }
 
-    private fun getElapsedTimeUiState(
-        videoRecordingState: VideoRecordingState
-    ): ElapsedTimeUiState = when (videoRecordingState) {
-        is VideoRecordingState.Active ->
-            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
-
-        is VideoRecordingState.Inactive ->
-            ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
-
-        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
-    }
-
-    /**
-     * Updates the FlashModeUiState based on the changes in flash mode or constraints
-     */
-    private fun FlashModeUiState.updateFrom(
-        currentCameraSettings: CameraAppSettings,
-        previousCameraSettings: CameraAppSettings,
-        currentConstraints: SystemConstraints,
-        previousConstraints: SystemConstraints,
-        cameraState: CameraState
-    ): FlashModeUiState {
-        val currentFlashMode = currentCameraSettings.flashMode
-        val currentSupportedFlashModes =
-            currentConstraints.forCurrentLens(currentCameraSettings)?.supportedFlashModes
-        return when (this) {
-            is FlashModeUiState.Unavailable -> {
-                // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
-                FlashModeUiState.createFrom(
-                    selectedFlashMode = currentFlashMode,
-                    supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
-                )
-            }
-
-            is FlashModeUiState.Available -> {
-                val previousFlashMode = previousCameraSettings.flashMode
-                val previousSupportedFlashModes =
-                    previousConstraints.forCurrentLens(previousCameraSettings)?.supportedFlashModes
-                if (previousSupportedFlashModes != currentSupportedFlashModes) {
-                    // Supported flash modes have changed, generate a new FlashModeUiState
-                    FlashModeUiState.createFrom(
-                        selectedFlashMode = currentFlashMode,
-                        supportedFlashModes = currentSupportedFlashModes ?: setOf(FlashMode.OFF)
-                    )
-                } else if (previousFlashMode != currentFlashMode) {
-                    // Only the selected flash mode has changed, just update the flash mode
-                    copy(selectedFlashMode = currentFlashMode)
-                } else {
-                    if (currentFlashMode == FlashMode.LOW_LIGHT_BOOST) {
-                        copy(
-                            isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
-                        )
-                    } else {
-                        // Nothing has changed
-                        this
-                    }
-                }
-            }
-        }
-    }
-
-    private fun getAudioUiState(
-        isAudioEnabled: Boolean,
-        videoRecordingState: VideoRecordingState
-    ): AudioUiState = if (isAudioEnabled) {
-        if (videoRecordingState is VideoRecordingState.Active) {
-            AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-        } else {
-            AudioUiState.Enabled.On(0.0)
-        }
-    } else {
-        AudioUiState.Enabled.Mute
-    }
-
-    private fun stabilizationUiStateFrom(
-        cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState
-    ): StabilizationUiState {
-        val expectedMode = cameraAppSettings.stabilizationMode
-        val actualMode = cameraState.stabilizationMode
-        check(actualMode != StabilizationMode.AUTO) {
-            "CameraState should never resolve to AUTO stabilization mode"
-        }
-        return when (expectedMode) {
-            StabilizationMode.OFF -> StabilizationUiState.Disabled
-            StabilizationMode.AUTO -> {
-                if (actualMode !in setOf(StabilizationMode.ON, StabilizationMode.OPTICAL)) {
-                    StabilizationUiState.Disabled
-                } else {
-                    StabilizationUiState.Auto(actualMode)
-                }
-            }
-
-            StabilizationMode.ON,
-            StabilizationMode.HIGH_QUALITY,
-            StabilizationMode.OPTICAL ->
-                StabilizationUiState.Specific(
-                    stabilizationMode = expectedMode,
-                    active = expectedMode == actualMode
-                )
-        }
-    }
-
-    private fun PreviewMode.toCaptureMode() = when (this) {
-        is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
-        is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
-        is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CaptureMode.STANDARD
+    private fun ExternalCaptureMode.toCaptureMode() = when (this) {
+        is ExternalCaptureMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is ExternalCaptureMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
+        is ExternalCaptureMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
@@ -405,324 +361,6 @@ class PreviewViewModel @AssistedInject constructor(
         applyDiff(new, CameraAppSettings::audioEnabled, cameraUseCase::setAudioEnabled)
     }
 
-    fun getCaptureButtonUiState(
-        cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState,
-        lockedState: Boolean
-    ): CaptureButtonUiState = when (cameraState.videoRecordingState) {
-        // if not currently recording, check capturemode to determine idle capture button UI
-        is VideoRecordingState.Inactive ->
-            CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
-
-        // display different capture button UI depending on if recording is pressed or locked
-        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
-            if (lockedState) {
-                CaptureButtonUiState.Enabled.Recording.LockedRecording
-            } else {
-                CaptureButtonUiState.Enabled.Recording.PressedRecording
-            }
-
-        VideoRecordingState.Starting ->
-            CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
-    }
-
-    private fun getZoomUiState(
-        systemConstraints: SystemConstraints,
-        lensFacing: LensFacing,
-        cameraState: CameraState
-    ): ZoomUiState = ZoomUiState.Enabled(
-        primaryZoomRange =
-        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
-            ?: Range<Float>(1f, 1f),
-        primaryZoomRatio = cameraState.zoomRatios[lensFacing],
-        primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
-    )
-
-    private fun getHdrUiState(
-        systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings
-    ): HdrUiState {
-        val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
-            cameraAppSettings
-        )
-        return when (previewMode) {
-            is PreviewMode.ExternalImageCaptureMode,
-            is PreviewMode.ExternalMultipleImageCaptureMode -> if (
-                cameraConstraints
-                    ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-            ) {
-                HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            } else {
-                HdrUiState.Unavailable
-            }
-
-            is PreviewMode.ExternalVideoCaptureMode -> if (
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
-                cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            ) {
-                HdrUiState.Available(
-                    cameraAppSettings.imageFormat,
-                    cameraAppSettings.dynamicRange
-                )
-            } else {
-                HdrUiState.Unavailable
-            }
-
-            is PreviewMode.StandardMode -> if ((
-                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                        true ||
-                        cameraConstraints?.supportedImageFormatsMap?.get(
-                            cameraAppSettings.streamConfig
-                        )
-                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                    ) &&
-                cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
-            ) {
-                HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-            } else {
-                HdrUiState.Unavailable
-            }
-        }
-    }
-
-    private fun getCaptureModeUiState(
-        systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings
-    ): CaptureModeUiState {
-        val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
-            cameraAppSettings
-        )
-        val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-        val currentHdrDynamicRangeSupported =
-            if (isHdrOn) {
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
-            } else {
-                true
-            }
-
-        val currentHdrImageFormatSupported =
-            if (isHdrOn) {
-                cameraConstraints?.supportedImageFormatsMap?.get(
-                    cameraAppSettings.streamConfig
-                )?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
-            } else {
-                true
-            }
-        val supportedCaptureModes = getSupportedCaptureModes(
-            cameraAppSettings,
-            isHdrOn,
-            currentHdrDynamicRangeSupported,
-            currentHdrImageFormatSupported
-        )
-        // if all capture modes are supported, return capturemodeuistate
-        if (supportedCaptureModes.containsAll(
-                listOf(
-                    CaptureMode.STANDARD,
-                    CaptureMode.IMAGE_ONLY,
-                    CaptureMode.VIDEO_ONLY
-                )
-            )
-        ) {
-            return CaptureModeUiState.Enabled(currentSelection = cameraAppSettings.captureMode)
-        }
-        // if all capture modes are not supported, give disabledReason
-        // if image or video is not supported, default will also be disabled
-        else {
-            lateinit var defaultCaptureState: SingleSelectableState.Disabled
-            lateinit var imageCaptureState: SingleSelectableState
-            lateinit var videoCaptureState: SingleSelectableState
-            if (!supportedCaptureModes.contains(CaptureMode.VIDEO_ONLY)) {
-                val disabledReason =
-                    getCaptureModeDisabledReason(
-                        disabledCaptureMode = CaptureMode.VIDEO_ONLY,
-                        hdrDynamicRangeSupported = currentHdrDynamicRangeSupported,
-                        hdrImageFormatSupported = currentHdrImageFormatSupported,
-                        systemConstraints = systemConstraints,
-                        cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.streamConfig,
-                        cameraAppSettings.concurrentCameraMode
-                    )
-
-                imageCaptureState = SingleSelectableState.Selectable
-                videoCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
-                defaultCaptureState =
-                    SingleSelectableState.Disabled(disabledReason = disabledReason)
-            } else if (!supportedCaptureModes.contains(CaptureMode.IMAGE_ONLY)) {
-                val disabledReason =
-                    getCaptureModeDisabledReason(
-                        disabledCaptureMode = CaptureMode.IMAGE_ONLY,
-                        currentHdrDynamicRangeSupported,
-                        currentHdrImageFormatSupported,
-                        systemConstraints,
-                        cameraAppSettings.cameraLensFacing,
-                        cameraAppSettings.streamConfig,
-                        cameraAppSettings.concurrentCameraMode
-                    )
-
-                videoCaptureState = SingleSelectableState.Selectable
-                imageCaptureState = SingleSelectableState.Disabled(disabledReason = disabledReason)
-                defaultCaptureState =
-                    SingleSelectableState.Disabled(disabledReason = disabledReason)
-            } else {
-                videoCaptureState = SingleSelectableState.Selectable
-                imageCaptureState = SingleSelectableState.Selectable
-                defaultCaptureState =
-                    SingleSelectableState.Disabled(
-                        disabledReason = DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
-                    )
-            }
-            return CaptureModeUiState.Enabled(
-                currentSelection = cameraAppSettings.captureMode,
-                videoOnlyCaptureState = videoCaptureState,
-                imageOnlyCaptureState = imageCaptureState,
-                defaultCaptureState = defaultCaptureState
-            )
-        }
-    }
-
-    fun getCaptureToggleUiState(
-        systemConstraints: SystemConstraints,
-        cameraAppSettings: CameraAppSettings,
-        videoRecordingState: VideoRecordingState
-    ): CaptureModeUiState = if (videoRecordingState !is VideoRecordingState.Inactive) {
-        CaptureModeUiState.Unavailable
-    } else if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-        cameraAppSettings.dynamicRange == DynamicRange.HLG10
-    ) {
-        getCaptureModeUiState(systemConstraints, cameraAppSettings)
-    } else {
-        CaptureModeUiState.Unavailable
-    }
-
-    private fun getSupportedCaptureModes(
-        cameraAppSettings: CameraAppSettings,
-        isHdrOn: Boolean,
-        currentHdrDynamicRangeSupported: Boolean,
-        currentHdrImageFormatSupported: Boolean
-    ): List<CaptureMode> = if (
-        previewMode !is PreviewMode.ExternalImageCaptureMode &&
-        previewMode !is PreviewMode.ExternalVideoCaptureMode &&
-        currentHdrDynamicRangeSupported &&
-        currentHdrImageFormatSupported &&
-        cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
-    ) {
-        // do not allow both use cases to be bound if hdr is on
-        if (isHdrOn) {
-            listOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
-        } else {
-            listOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
-        }
-    } else if (
-        cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-        previewMode is PreviewMode.ExternalImageCaptureMode ||
-        cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-    ) {
-        listOf(CaptureMode.IMAGE_ONLY)
-    } else {
-        listOf(CaptureMode.VIDEO_ONLY)
-    }
-
-    private fun getCaptureModeDisabledReason(
-        disabledCaptureMode: CaptureMode,
-        hdrDynamicRangeSupported: Boolean,
-        hdrImageFormatSupported: Boolean,
-        systemConstraints: SystemConstraints,
-        currentLensFacing: LensFacing,
-        currentStreamConfig: StreamConfig,
-        concurrentCameraMode: ConcurrentCameraMode
-    ): DisabledReason {
-        when (disabledCaptureMode) {
-            CaptureMode.IMAGE_ONLY -> {
-                if (previewMode is PreviewMode.ExternalVideoCaptureMode) {
-                    return DisabledReason
-                        .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
-                }
-
-                if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                    return DisabledReason
-                        .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
-                }
-
-                if (!hdrImageFormatSupported) {
-                    // First check if Ultra HDR image is supported on other capture modes
-                    if (systemConstraints
-                            .perLensConstraints[currentLensFacing]
-                            ?.supportedImageFormatsMap
-                            ?.anySupportsUltraHdr { it != currentStreamConfig } == true
-                    ) {
-                        return when (currentStreamConfig) {
-                            StreamConfig.MULTI_STREAM ->
-                                DisabledReason
-                                    .HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
-
-                            StreamConfig.SINGLE_STREAM ->
-                                DisabledReason
-                                    .HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
-                        }
-                    }
-
-                    // Check if any other lens supports HDR image
-                    if (systemConstraints.anySupportsUltraHdr { it != currentLensFacing }) {
-                        return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
-                    }
-
-                    // No lenses support HDR image on device
-                    return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
-                }
-
-                throw RuntimeException("Unknown DisabledReason for capture mode.")
-            }
-
-            CaptureMode.VIDEO_ONLY -> {
-                if (previewMode is PreviewMode.ExternalImageCaptureMode ||
-                    previewMode is PreviewMode.ExternalMultipleImageCaptureMode
-                ) {
-                    return DisabledReason
-                        .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
-                }
-
-                if (!hdrDynamicRangeSupported) {
-                    if (systemConstraints.anySupportsHdrDynamicRange { it != currentLensFacing }) {
-                        return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
-                    }
-                    return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
-                }
-
-                throw RuntimeException("Unknown DisabledReason for video mode.")
-            }
-
-            CaptureMode.STANDARD -> {
-                TODO()
-            }
-        }
-    }
-
-    private fun SystemConstraints.anySupportsHdrDynamicRange(
-        lensFilter: (LensFacing) -> Boolean
-    ): Boolean = perLensConstraints.asSequence().firstOrNull {
-        lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
-    } != null
-
-    private fun Map<StreamConfig, Set<ImageOutputFormat>>.anySupportsUltraHdr(
-        captureModeFilter: (StreamConfig) -> Boolean
-    ): Boolean = asSequence().firstOrNull {
-        captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
-    } != null
-
-    private fun SystemConstraints.anySupportsUltraHdr(
-        captureModeFilter: (StreamConfig) -> Boolean = { true },
-        lensFilter: (LensFacing) -> Boolean
-    ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
-        lensFilter(lensConstraints.key) &&
-            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                captureModeFilter(it)
-            }
-    } != null
-
     fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
@@ -731,9 +369,9 @@ class PreviewViewModel @AssistedInject constructor(
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
                     traceFirstFramePreview(cookie = 1) {
-                        _previewUiState.transformWhile {
+                        _viewFinderUiState.transformWhile {
                             var continueCollecting = true
-                            (it as? PreviewUiState.Ready)?.let { uiState ->
+                            (it as? ViewFinderUiState.Ready)?.let { uiState ->
                                 if (uiState.sessionFirstFrameTimestamp > startTraceTimestamp) {
                                     emit(Unit)
                                     continueCollecting = false
@@ -810,13 +448,16 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                val newQueue = LinkedList((old as? PreviewUiState.Ready)?.snackBarQueue!!)
+            _viewFinderUiState.update { old ->
+                val newQueue = LinkedList(
+                    (old as? ViewFinderUiState.Ready)
+                        ?.snackBarUiState?.snackBarQueue!!
+                )
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                (old as? PreviewUiState.Ready)?.copy(
-                    snackBarQueue = newQueue
-                ) ?: old
+                old.copy(
+                    snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue)
+                )
             }
         }
     }
@@ -838,17 +479,17 @@ class PreviewViewModel @AssistedInject constructor(
         ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent, Int) -> Unit
     ) {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalVideoCaptureMode
         ) {
             enqueueExternalImageCaptureUnsupportedSnackBar()
             return
         }
 
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalVideoCaptureMode
         ) {
             addSnackBarData(
                 SnackbarData(
@@ -864,22 +505,25 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
                 (
-                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                        PreviewMode.ExternalMultipleImageCaptureMode
+                    (viewFinderUiState.value as? ViewFinderUiState.Ready)?.externalCaptureMode as?
+                        ExternalCaptureMode.ExternalMultipleImageCaptureMode
                     )?.let {
                     val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
                         null
                     } else {
-                        it.imageCaptureUris[externalUriIndex]
+                        it.imageCaptureUris!![externalUriIndex]
                     }
                     Pair(externalUriIndex, uri)
                 } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
-                        _previewUiState.update { old ->
-                            (old as? PreviewUiState.Ready)?.copy(
-                                lastBlinkTimeStamp = System.currentTimeMillis()
+                        _viewFinderUiState.update { old ->
+                            (old as? ViewFinderUiState.Ready)?.copy(
+                                previewDisplayUiState = PreviewDisplayUiState(
+                                    lastBlinkTimeStamp = System.currentTimeMillis(),
+                                    aspectRatioUiState = old.aspectRatioUiState
+                                )
                             ) ?: old
                         }
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
@@ -898,8 +542,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
-            (previewUiState.value as? PreviewUiState.Ready)
-                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+            (viewFinderUiState.value as? ViewFinderUiState.Ready)
+                ?.externalCaptureMode as? ExternalCaptureMode.ExternalMultipleImageCaptureMode
             )?.let {
             if (!it.imageCaptureUris.isNullOrEmpty()) {
                 externalUriIndex++
@@ -942,7 +586,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisabledReason) {
+    fun enqueueDisabledHdrToggleSnackBar(disabledReason: ReasonDisplayable) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         addSnackBarData(
@@ -960,9 +604,9 @@ class PreviewViewModel @AssistedInject constructor(
         shouldUseUri: Boolean,
         onVideoCapture: (VideoCaptureEvent) -> Unit
     ) {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             addSnackBarData(
@@ -1039,8 +683,8 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            previewMode !is PreviewMode.ExternalMultipleImageCaptureMode
+        if (externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
+            externalCaptureMode !is ExternalCaptureMode.ExternalMultipleImageCaptureMode
         ) {
             viewModelScope.launch {
                 cameraUseCase.setDynamicRange(dynamicRange)
@@ -1055,7 +699,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun setImageFormat(imageFormat: ImageOutputFormat) {
-        if (previewMode !is PreviewMode.ExternalVideoCaptureMode) {
+        if (externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode) {
             viewModelScope.launch {
                 cameraUseCase.setImageFormat(imageFormat)
             }
@@ -1071,9 +715,42 @@ class PreviewViewModel @AssistedInject constructor(
     // modify ui values
     fun toggleQuickSettings() {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    quickSettingsIsOpen = !old.quickSettingsIsOpen
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
+                    quickSettingsUiState = QuickSettingsUiState.Available(
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).aspectRatioUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).captureModeUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).concurrentCameraUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).flashModeUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).flipLensUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).hdrUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).streamConfigUiState,
+                        !(
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).quickSettingsIsOpen
+                    )
                 ) ?: old
             }
         }
@@ -1081,14 +758,9 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun toggleDebugOverlay() {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    debugUiState = DebugUiState(
-                        old.debugUiState.cameraPropertiesJSON,
-                        old.debugUiState.videoResolution,
-                        old.debugUiState.isDebugMode,
-                        !old.debugUiState.isDebugOverlayOpen
-                    )
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
+                    debugUiState = old.debugUiState.toggleDebugOverlay()
                 ) ?: old
             }
         }
@@ -1101,31 +773,18 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    /**
-     * Sets current value of [PreviewUiState.Ready.toastMessageToShow] to null.
-     */
-    fun onToastShown() {
-        viewModelScope.launch {
-            // keeps the composable up on screen longer to be detected by UiAutomator
-            delay(2.seconds)
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    toastMessageToShow = null
-                ) ?: old
-            }
-        }
-    }
-
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.snackBarQueue!!.let {
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.snackBarUiState?.snackBarQueue!!.let {
                     val newQueue = LinkedList(it)
                     val snackBarData = newQueue.remove()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(snackBarQueue = newQueue)
+                        old.copy(
+                            snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue)
+                        )
                     } else {
                         old
                     }
@@ -1142,7 +801,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(previewMode: PreviewMode, isDebugMode: Boolean): PreviewViewModel
+        fun create(externalCaptureMode: ExternalCaptureMode, isDebugMode: Boolean): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {
