@@ -79,6 +79,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import kotlinx.coroutines.flow.transformWhile
 
@@ -104,7 +105,7 @@ fun PreviewScreen(
 
     val viewFinderUiState: ViewFinderUiState by viewModel.viewFinderUiState.collectAsState()
 
-    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+    val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
@@ -193,7 +194,7 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     viewFinderUiState: ViewFinderUiState.Ready,
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
@@ -349,7 +350,7 @@ private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -361,7 +362,7 @@ private fun ContentScreen_Standard_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -375,7 +376,7 @@ private fun ContentScreen_ImageOnly_Idle() {
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -389,7 +390,7 @@ private fun ContentScreen_VideoOnly_Idle() {
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -401,7 +402,7 @@ private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -413,7 +414,7 @@ private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             viewFinderUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
