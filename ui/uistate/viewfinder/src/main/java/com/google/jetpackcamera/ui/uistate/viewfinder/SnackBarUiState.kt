@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
 
-enum class PreviewMode {
-    STANDARD,
-    EXTERNAL_VIDEO_CAPTURE,
-    EXTERNAL_IMAGE_CAPTURE,
-    EXTERNAL_MULTIPLE_IMAGE_CAPTURE
-}
+package com.google.jetpackcamera.ui.uistate.viewfinder
+
+import androidx.compose.material3.SnackbarDuration
+import java.util.LinkedList
+import java.util.Queue
+
+data class SnackBarUiState(
+    val snackBarQueue: Queue<SnackbarData> = LinkedList(),
+)
+
+data class SnackbarData(
+    val cookie: String,
+    val stringResource: Int,
+    val duration: SnackbarDuration = SnackbarDuration.Short,
+    val actionLabelRes: Int? = null,
+    val withDismissAction: Boolean = false,
+    val testTag: String = ""
+)

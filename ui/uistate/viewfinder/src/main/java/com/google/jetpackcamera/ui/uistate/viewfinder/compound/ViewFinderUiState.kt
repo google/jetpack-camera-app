@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+
+package com.google.jetpackcamera.ui.uistate.viewfinder.compound
 
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.ui.SnackbarData
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
@@ -27,26 +28,26 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
-import java.util.LinkedList
-import java.util.Queue
 
 /**
- * Defines the current state of the [PreviewScreen].
+ * Defines the current state of the [com.google.jetpackcamera.feature.preview.PreviewScreen].
  */
-sealed interface PreviewUiState {
-    data object NotReady : PreviewUiState
+sealed interface ViewFinderUiState {
+    data object NotReady : ViewFinderUiState
 
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
         val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
-        val snackBarQueue: Queue<SnackbarData> = LinkedList(),
+        val snackBarUiState: SnackBarUiState = SnackBarUiState(),
+        val previewDisplayUiState: PreviewDisplayUiState = PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
         val lastBlinkTimeStamp: Long = 0,
-        val previewMode: PreviewMode = PreviewMode.StandardMode {},
+        val externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.StandardMode {},
         val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val debugUiState: DebugUiState = DebugUiState(),
@@ -58,5 +59,5 @@ sealed interface PreviewUiState {
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable
-    ) : PreviewUiState
+    ) : ViewFinderUiState
 }

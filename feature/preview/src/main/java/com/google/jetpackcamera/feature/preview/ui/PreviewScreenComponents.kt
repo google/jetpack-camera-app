@@ -111,7 +111,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.PreviewUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
@@ -133,9 +133,11 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.PREVIEW_DISPLAY
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
 import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -360,7 +362,7 @@ fun TestableSnackbar(
                         actionLabel = if (snackbarToShow.actionLabelRes == null) {
                             null
                         } else {
-                            context.getString(snackbarToShow.actionLabelRes)
+                            context.getString(snackbarToShow.actionLabelRes!!)
                         }
                     )
                 when (result) {
@@ -425,7 +427,7 @@ fun DetectWindowColorModeChanges(
  */
 @Composable
 fun PreviewDisplay(
-    previewUiState: PreviewUiState.Ready,
+    previewDisplayUiState: PreviewDisplayUiState,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomRatioChange: (CameraZoomRatio) -> Unit,
@@ -443,7 +445,7 @@ fun PreviewDisplay(
         }
     )
 
-    check(previewUiState.aspectRatioUiState is AspectRatioUiState.Available)
+    check(previewDisplayUiState.aspectRatioUiState is AspectRatioUiState.Available)
 
     surfaceRequest?.let {
         BoxWithConstraints(
@@ -453,7 +455,7 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            val aspectRatio = previewUiState.aspectRatioUiState.selectedAspectRatio
+            val aspectRatio = (previewDisplayUiState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -470,8 +472,8 @@ fun PreviewDisplay(
                 label = ""
             )
 
-            LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
-                if (previewUiState.lastBlinkTimeStamp != 0L) {
+            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
                     imageVisible = false
                     delay(BLINK_TIME)
                     imageVisible = true

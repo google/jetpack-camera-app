@@ -27,7 +27,6 @@ import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
-import com.google.jetpackcamera.feature.preview.ui.SnackbarData
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.AspectRatio
@@ -37,6 +36,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -50,9 +50,12 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AudioUiStateAdapter
@@ -68,6 +71,7 @@ import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAda
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlipLensUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.HdrUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ImageWellUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.viewfinder.SnackBarUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StabilizationUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StreamConfigsUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ZoomUiStateAdapter
@@ -100,19 +104,19 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  */
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
-    @Assisted val previewMode: PreviewMode,
+    @Assisted val externalCaptureMode: ExternalCaptureMode,
     @Assisted val isDebugMode: Boolean,
     private val cameraUseCase: CameraUseCase,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
-    private val _previewUiState: MutableStateFlow<PreviewUiState> =
-        MutableStateFlow(PreviewUiState.NotReady)
+    private val _viewFinderUiState: MutableStateFlow<ViewFinderUiState> =
+        MutableStateFlow(ViewFinderUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    val previewUiState: StateFlow<PreviewUiState> =
-        _previewUiState.asStateFlow()
+    val viewFinderUiState: StateFlow<ViewFinderUiState> =
+        _viewFinderUiState.asStateFlow()
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
@@ -134,7 +138,7 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
-                .applyPreviewMode(previewMode),
+                .applyExternalCaptureMode(externalCaptureMode),
             isDebugMode = isDebugMode
         ) { cameraPropertiesJSON = it }
     }
@@ -142,8 +146,8 @@ class PreviewViewModel @AssistedInject constructor(
     /**
      * updates the capture mode based on the preview mode
      */
-    private fun CameraAppSettings.applyPreviewMode(previewMode: PreviewMode): CameraAppSettings {
-        val captureMode = previewMode.toCaptureMode()
+    private fun CameraAppSettings.applyExternalCaptureMode(externalCaptureMode: ExternalCaptureMode): CameraAppSettings {
+        val captureMode = externalCaptureMode.toCaptureMode()
         return if (captureMode == this.captureMode) {
             this
         } else {
@@ -174,7 +178,7 @@ class PreviewViewModel @AssistedInject constructor(
                 val captureModeUiState = CaptureModeUiStateAdapter.getCaptureModeUiState(
                     systemConstraints,
                     cameraAppSettings,
-                    previewMode.convertForUiState()
+                    externalCaptureMode
                 )
                 val flipLensUiState = FlipLensUiStateAdapter.getUiState(
                     cameraAppSettings,
@@ -182,9 +186,9 @@ class PreviewViewModel @AssistedInject constructor(
                 )
                 val aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings)
                 var quickSettingsIsOpen: Boolean
-                _previewUiState.update { old ->
+                _viewFinderUiState.update { old ->
                     when (old) {
-                        is PreviewUiState.NotReady -> {
+                        is ViewFinderUiState.NotReady -> {
                             flashModeUiState = FlashModeUiStateAdapter.getUiState(
                                 cameraAppSettings,
                                 systemConstraints
@@ -192,10 +196,10 @@ class PreviewViewModel @AssistedInject constructor(
                             quickSettingsIsOpen = false
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
-                            PreviewUiState.Ready()
+                            ViewFinderUiState.Ready()
                         }
 
-                        is PreviewUiState.Ready -> {
+                        is ViewFinderUiState.Ready -> {
                             flashModeUiState = old.flashModeUiState.updateFrom(
                                 cameraAppSettings = cameraAppSettings,
                                 systemConstraints = systemConstraints,
@@ -203,7 +207,7 @@ class PreviewViewModel @AssistedInject constructor(
                             )
                             quickSettingsIsOpen = when (old.quickSettingsUiState) {
                                 is QuickSettingsUiState.Available -> {
-                                    old.quickSettingsUiState.quickSettingsIsOpen
+                                    (old.quickSettingsUiState as QuickSettingsUiState.Available).quickSettingsIsOpen
                                 }
 
                                 is QuickSettingsUiState.Unavailable -> {
@@ -217,7 +221,7 @@ class PreviewViewModel @AssistedInject constructor(
                         }
                     }.copy(
                         // Update or initialize PreviewUiState.Ready
-                        previewMode = previewMode,
+                        externalCaptureMode = externalCaptureMode,
                         videoRecordingState = cameraState.videoRecordingState,
                         flipLensUiState = flipLensUiState,
                         aspectRatioUiState = aspectRatioUiState,
@@ -261,7 +265,7 @@ class PreviewViewModel @AssistedInject constructor(
                             systemConstraints,
                             cameraAppSettings,
                             cameraState,
-                            previewMode.convertForUiState()
+                            externalCaptureMode
                         )
                     )
                 }
@@ -284,7 +288,7 @@ class PreviewViewModel @AssistedInject constructor(
             concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
                 cameraAppSettings,
                 systemConstraints,
-                previewMode.convertForUiState(),
+                externalCaptureMode,
                 captureModeUiState
             ),
             flashModeUiState = flashModeUiState,
@@ -292,7 +296,7 @@ class PreviewViewModel @AssistedInject constructor(
             hdrUiState = HdrUiStateAdapter.getUiState(
                 cameraAppSettings,
                 systemConstraints,
-                previewMode.convertForUiState()
+                externalCaptureMode
             ),
             streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(cameraAppSettings),
             quickSettingsIsOpen = quickSettingsIsOpen
@@ -302,8 +306,8 @@ class PreviewViewModel @AssistedInject constructor(
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
                     imageWellUiState =
                     ImageWellUiStateAdapter.getUiState(lastCapturedMediaDescriptor)
                 ) ?: old
@@ -311,26 +315,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    private fun PreviewMode.toCaptureMode() = when (this) {
-        is PreviewMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
-        is PreviewMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
-        is PreviewMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
-        is PreviewMode.StandardMode -> CaptureMode.STANDARD
-    }
-
-    private fun PreviewMode.convertForUiState() = when (this) {
-        is PreviewMode.ExternalImageCaptureMode ->
-            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_IMAGE_CAPTURE
-
-        is PreviewMode.ExternalMultipleImageCaptureMode ->
-            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode
-                .EXTERNAL_MULTIPLE_IMAGE_CAPTURE
-
-        is PreviewMode.ExternalVideoCaptureMode ->
-            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.EXTERNAL_VIDEO_CAPTURE
-
-        is PreviewMode.StandardMode ->
-            com.google.jetpackcamera.ui.uistateadapter.viewfinder.PreviewMode.STANDARD
+    private fun ExternalCaptureMode.toCaptureMode() = when (this) {
+        is ExternalCaptureMode.ExternalImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> CaptureMode.IMAGE_ONLY
+        is ExternalCaptureMode.ExternalVideoCaptureMode -> CaptureMode.VIDEO_ONLY
+        is ExternalCaptureMode.StandardMode -> CaptureMode.STANDARD
     }
 
     /**
@@ -377,9 +366,9 @@ class PreviewViewModel @AssistedInject constructor(
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
                     traceFirstFramePreview(cookie = 1) {
-                        _previewUiState.transformWhile {
+                        _viewFinderUiState.transformWhile {
                             var continueCollecting = true
-                            (it as? PreviewUiState.Ready)?.let { uiState ->
+                            (it as? ViewFinderUiState.Ready)?.let { uiState ->
                                 if (uiState.sessionFirstFrameTimestamp > startTraceTimestamp) {
                                     emit(Unit)
                                     continueCollecting = false
@@ -456,13 +445,13 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                val newQueue = LinkedList((old as? PreviewUiState.Ready)?.snackBarQueue!!)
+            _viewFinderUiState.update { old ->
+                val newQueue = LinkedList((old as? ViewFinderUiState.Ready)?.snackBarUiState?.snackBarQueue!!)
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                (old as? PreviewUiState.Ready)?.copy(
-                    snackBarQueue = newQueue
-                ) ?: old
+                old.copy(
+                    snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue)
+                )
             }
         }
     }
@@ -484,17 +473,17 @@ class PreviewViewModel @AssistedInject constructor(
         ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent, Int) -> Unit
     ) {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalVideoCaptureMode
         ) {
             enqueueExternalImageCaptureUnsupportedSnackBar()
             return
         }
 
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalVideoCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalVideoCaptureMode
         ) {
             addSnackBarData(
                 SnackbarData(
@@ -510,22 +499,22 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val (uriIndex: Int, finalImageUri: Uri?) =
                 (
-                    (previewUiState.value as? PreviewUiState.Ready)?.previewMode as?
-                        PreviewMode.ExternalMultipleImageCaptureMode
+                    (viewFinderUiState.value as? ViewFinderUiState.Ready)?.externalCaptureMode as?
+                        ExternalCaptureMode.ExternalMultipleImageCaptureMode
                     )?.let {
                     val uri = if (ignoreUri || it.imageCaptureUris.isNullOrEmpty()) {
                         null
                     } else {
-                        it.imageCaptureUris[externalUriIndex]
+                        it.imageCaptureUris!![externalUriIndex]
                     }
                     Pair(externalUriIndex, uri)
                 } ?: Pair(-1, imageCaptureUri)
             captureImageInternal(
                 doTakePicture = {
                     cameraUseCase.takePicture({
-                        _previewUiState.update { old ->
-                            (old as? PreviewUiState.Ready)?.copy(
-                                lastBlinkTimeStamp = System.currentTimeMillis()
+                        _viewFinderUiState.update { old ->
+                            (old as? ViewFinderUiState.Ready)?.copy(
+                                previewDisplayUiState = PreviewDisplayUiState(lastBlinkTimeStamp = System.currentTimeMillis(), aspectRatioUiState = old.aspectRatioUiState),
                             ) ?: old
                         }
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
@@ -544,8 +533,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     private fun incrementExternalMultipleImageCaptureModeUriIndexIfNeeded() {
         (
-            (previewUiState.value as? PreviewUiState.Ready)
-                ?.previewMode as? PreviewMode.ExternalMultipleImageCaptureMode
+            (viewFinderUiState.value as? ViewFinderUiState.Ready)
+                ?.externalCaptureMode as? ExternalCaptureMode.ExternalMultipleImageCaptureMode
             )?.let {
             if (!it.imageCaptureUris.isNullOrEmpty()) {
                 externalUriIndex++
@@ -606,9 +595,9 @@ class PreviewViewModel @AssistedInject constructor(
         shouldUseUri: Boolean,
         onVideoCapture: (VideoCaptureEvent) -> Unit
     ) {
-        if (previewUiState.value is PreviewUiState.Ready &&
-            (previewUiState.value as PreviewUiState.Ready).previewMode is
-                PreviewMode.ExternalImageCaptureMode
+        if (viewFinderUiState.value is ViewFinderUiState.Ready &&
+            (viewFinderUiState.value as ViewFinderUiState.Ready).externalCaptureMode is
+                ExternalCaptureMode.ExternalImageCaptureMode
         ) {
             Log.d(TAG, "externalVideoRecording")
             addSnackBarData(
@@ -685,8 +674,8 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (previewMode !is PreviewMode.ExternalImageCaptureMode &&
-            previewMode !is PreviewMode.ExternalMultipleImageCaptureMode
+        if (externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
+            externalCaptureMode !is ExternalCaptureMode.ExternalMultipleImageCaptureMode
         ) {
             viewModelScope.launch {
                 cameraUseCase.setDynamicRange(dynamicRange)
@@ -701,7 +690,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun setImageFormat(imageFormat: ImageOutputFormat) {
-        if (previewMode !is PreviewMode.ExternalVideoCaptureMode) {
+        if (externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode) {
             viewModelScope.launch {
                 cameraUseCase.setImageFormat(imageFormat)
             }
@@ -717,18 +706,18 @@ class PreviewViewModel @AssistedInject constructor(
     // modify ui values
     fun toggleQuickSettings() {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
                     quickSettingsUiState = QuickSettingsUiState.Available(
                         (old.quickSettingsUiState as QuickSettingsUiState.Available)
                             .aspectRatioUiState,
-                        old.quickSettingsUiState.captureModeUiState,
-                        old.quickSettingsUiState.concurrentCameraUiState,
-                        old.quickSettingsUiState.flashModeUiState,
-                        old.quickSettingsUiState.flipLensUiState,
-                        old.quickSettingsUiState.hdrUiState,
-                        old.quickSettingsUiState.streamConfigUiState,
-                        !old.quickSettingsUiState.quickSettingsIsOpen
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).captureModeUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).concurrentCameraUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).flashModeUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).flipLensUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).hdrUiState,
+                        (old.quickSettingsUiState as QuickSettingsUiState.Available).streamConfigUiState,
+                        !(old.quickSettingsUiState as QuickSettingsUiState.Available).quickSettingsIsOpen
                     )
                 ) ?: old
             }
@@ -737,8 +726,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun toggleDebugOverlay() {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.copy(
                     debugUiState = old.debugUiState.toggleDebugOverlay()
                 ) ?: old
             }
@@ -754,14 +743,14 @@ class PreviewViewModel @AssistedInject constructor(
 
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.snackBarQueue!!.let {
+            _viewFinderUiState.update { old ->
+                (old as? ViewFinderUiState.Ready)?.snackBarUiState?.snackBarQueue!!.let {
                     val newQueue = LinkedList(it)
                     val snackBarData = newQueue.remove()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(snackBarQueue = newQueue)
+                        old.copy(snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue))
                     } else {
                         old
                     }
@@ -778,7 +767,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(previewMode: PreviewMode, isDebugMode: Boolean): PreviewViewModel
+        fun create(externalCaptureMode: ExternalCaptureMode, isDebugMode: Boolean): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {

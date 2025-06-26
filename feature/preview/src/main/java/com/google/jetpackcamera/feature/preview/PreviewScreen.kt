@@ -69,6 +69,7 @@ import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -78,6 +79,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
@@ -90,17 +92,17 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    previewMode: PreviewMode,
+    externalCaptureMode: ExternalCaptureMode,
     isDebugMode: Boolean,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode, isDebugMode) }
+        { factory -> factory.create(externalCaptureMode, isDebugMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+    val viewFinderUiState: ViewFinderUiState by viewModel.viewFinderUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
@@ -117,10 +119,10 @@ fun PreviewScreen(
 
     if (Trace.isEnabled()) {
         LaunchedEffect(onFirstFrameCaptureCompleted) {
-            snapshotFlow { previewUiState }
+            snapshotFlow { viewFinderUiState }
                 .transformWhile {
                     var continueCollecting = true
-                    (it as? PreviewUiState.Ready)?.let { ready ->
+                    (it as? ViewFinderUiState.Ready)?.let { ready ->
                         if (ready.sessionFirstFrameTimestamp > 0) {
                             emit(Unit)
                             continueCollecting = false
@@ -133,9 +135,9 @@ fun PreviewScreen(
         }
     }
 
-    when (val currentUiState = previewUiState) {
-        is PreviewUiState.NotReady -> LoadingScreen()
-        is PreviewUiState.Ready -> {
+    when (val currentUiState = viewFinderUiState) {
+        is ViewFinderUiState.NotReady -> LoadingScreen()
+        is ViewFinderUiState.Ready -> {
             val context = LocalContext.current
             LaunchedEffect(Unit) {
                 debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
@@ -143,7 +145,7 @@ fun PreviewScreen(
 
             ContentScreen(
                 modifier = modifier,
-                previewUiState = currentUiState,
+                viewFinderUiState = currentUiState,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
@@ -190,7 +192,7 @@ fun PreviewScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
-    previewUiState: PreviewUiState.Ready,
+    viewFinderUiState: ViewFinderUiState.Ready,
     screenFlashUiState: ScreenFlash.ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -234,13 +236,13 @@ private fun ContentScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
         val onFlipCamera = {
-            if (previewUiState.flipLensUiState is FlipLensUiState.Available) {
-                onSetLensFacing(previewUiState.flipLensUiState.selectedLensFacing.flip())
+            if (viewFinderUiState.flipLensUiState is FlipLensUiState.Available) {
+                onSetLensFacing((viewFinderUiState.flipLensUiState as FlipLensUiState.Available).selectedLensFacing.flip())
             }
         }
 
-        val isAudioEnabled = remember(previewUiState) {
-            previewUiState.audioUiState is AudioUiState.Enabled.On
+        val isAudioEnabled = remember(viewFinderUiState) {
+            viewFinderUiState.audioUiState is AudioUiState.Enabled.On
         }
         val onToggleAudio = remember(isAudioEnabled) {
             {
@@ -251,7 +253,7 @@ private fun ContentScreen(
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
-                previewUiState = previewUiState,
+                previewDisplayUiState = viewFinderUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
                 onZoomRatioChange = onChangeZoomRatio,
@@ -261,7 +263,7 @@ private fun ContentScreen(
 
             QuickSettingsScreenOverlay(
                 modifier = Modifier,
-                quickSettingsUiState = previewUiState.quickSettingsUiState,
+                quickSettingsUiState = viewFinderUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
@@ -274,7 +276,7 @@ private fun ContentScreen(
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
-                previewUiState = previewUiState,
+                viewFinderUiState = viewFinderUiState,
                 onNavigateToSettings = onNavigateToSettings,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
@@ -296,11 +298,11 @@ private fun ContentScreen(
 
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
-                debugUiState = previewUiState.debugUiState,
+                debugUiState = viewFinderUiState.debugUiState,
                 onChangeZoomRatio = onChangeZoomRatio
             )
 
-            val snackBarData = previewUiState.snackBarQueue.peek()
+            val snackBarData = viewFinderUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
                     modifier = Modifier.testTag(snackBarData.testTag),
@@ -341,7 +343,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY,
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -353,7 +355,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_Standard_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -365,7 +367,7 @@ private fun ContentScreen_Standard_Idle() {
 private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
@@ -379,7 +381,7 @@ private fun ContentScreen_ImageOnly_Idle() {
 private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
@@ -393,7 +395,7 @@ private fun ContentScreen_VideoOnly_Idle() {
 private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -405,16 +407,16 @@ private fun ContentScreen_Standard_Recording() {
 private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
+            viewFinderUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
             screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
 }
 
-private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
+private val FAKE_PREVIEW_UI_STATE_READY = ViewFinderUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
-    previewMode = PreviewMode.StandardMode {},
+    externalCaptureMode = ExternalCaptureMode.StandardMode {},
     captureModeToggleUiState = CaptureModeUiState.Unavailable
 )
 

@@ -19,6 +19,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -28,14 +29,14 @@ object HdrUiStateAdapter {
     fun getUiState(
         cameraAppSettings: CameraAppSettings,
         systemConstraints: SystemConstraints,
-        previewMode: PreviewMode
+        externalCaptureMode: ExternalCaptureMode
     ): HdrUiState {
         val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
             cameraAppSettings
         )
-        return when (previewMode) {
-            PreviewMode.EXTERNAL_IMAGE_CAPTURE,
-            PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE -> if (
+        return when (externalCaptureMode) {
+            is ExternalCaptureMode.ExternalImageCaptureMode,
+            is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> if (
                 cameraConstraints
                     ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
                     ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
@@ -45,7 +46,7 @@ object HdrUiStateAdapter {
                 HdrUiState.Unavailable
             }
 
-            PreviewMode.EXTERNAL_VIDEO_CAPTURE -> if (
+            is ExternalCaptureMode.ExternalVideoCaptureMode -> if (
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
                 cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
             ) {
@@ -57,7 +58,7 @@ object HdrUiStateAdapter {
                 HdrUiState.Unavailable
             }
 
-            PreviewMode.STANDARD -> if ((
+            is ExternalCaptureMode.StandardMode -> if ((
                     cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
                         true ||
                         cameraConstraints?.supportedImageFormatsMap?.get(

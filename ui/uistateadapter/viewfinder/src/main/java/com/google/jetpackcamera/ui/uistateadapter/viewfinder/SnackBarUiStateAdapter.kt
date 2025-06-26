@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
 
-import androidx.compose.material3.SnackbarDuration
+package com.google.jetpackcamera.ui.uistateadapter.viewfinder
 
-data class SnackbarData(
-    val cookie: String,
-    val stringResource: Int,
-    val duration: SnackbarDuration = SnackbarDuration.Short,
-    val actionLabelRes: Int? = null,
-    val withDismissAction: Boolean = false,
-    val testTag: String = ""
-)
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
+import java.util.Queue
+
+object SnackBarUiStateAdapter {
+    fun getUiState(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
+        return SnackBarUiState(snackBarQueue)
+    }
+}

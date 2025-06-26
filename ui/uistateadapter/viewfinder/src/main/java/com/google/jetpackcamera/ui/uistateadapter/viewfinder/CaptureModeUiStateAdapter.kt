@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
@@ -42,13 +43,13 @@ object CaptureModeUiStateAdapter {
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
-        previewMode: PreviewMode
+        externalCaptureMode: ExternalCaptureMode
     ): CaptureModeUiState = if (cameraState.videoRecordingState !is VideoRecordingState.Inactive) {
         CaptureModeUiState.Unavailable
     } else if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
         cameraAppSettings.dynamicRange == DynamicRange.HLG10
     ) {
-        getCaptureModeUiState(systemConstraints, cameraAppSettings, previewMode)
+        getCaptureModeUiState(systemConstraints, cameraAppSettings, externalCaptureMode)
     } else {
         CaptureModeUiState.Unavailable
     }
@@ -56,7 +57,7 @@ object CaptureModeUiStateAdapter {
     fun getCaptureModeUiState(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings,
-        previewMode: PreviewMode
+        externalCaptureMode: ExternalCaptureMode
     ): CaptureModeUiState {
         val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
             cameraAppSettings
@@ -83,7 +84,7 @@ object CaptureModeUiStateAdapter {
             isHdrOn,
             currentHdrDynamicRangeSupported,
             currentHdrImageFormatSupported,
-            previewMode
+            externalCaptureMode
         )
         // if all capture modes are supported, return capturemodeuistate
         if (supportedCaptureModes.containsAll(ORDERED_UI_SUPPORTED_CAPTURE_MODES)) {
@@ -109,7 +110,7 @@ object CaptureModeUiStateAdapter {
                         cameraAppSettings.cameraLensFacing,
                         cameraAppSettings.streamConfig,
                         cameraAppSettings.concurrentCameraMode,
-                        previewMode = previewMode
+                        externalCaptureMode = externalCaptureMode
                     )
 
                 return CaptureModeUiState.Available(
@@ -136,7 +137,7 @@ object CaptureModeUiStateAdapter {
                         cameraAppSettings.cameraLensFacing,
                         cameraAppSettings.streamConfig,
                         cameraAppSettings.concurrentCameraMode,
-                        previewMode = previewMode
+                        externalCaptureMode = externalCaptureMode
                     )
                 return CaptureModeUiState.Available(
                     selectedCaptureMode = cameraAppSettings.captureMode,
@@ -173,10 +174,10 @@ object CaptureModeUiStateAdapter {
         isHdrOn: Boolean,
         currentHdrDynamicRangeSupported: Boolean,
         currentHdrImageFormatSupported: Boolean,
-        previewMode: PreviewMode
+        externalCaptureMode: ExternalCaptureMode
     ): List<CaptureMode> = if (
-        previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE &&
-        previewMode != PreviewMode.EXTERNAL_VIDEO_CAPTURE &&
+        externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
+        externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode &&
         currentHdrDynamicRangeSupported &&
         currentHdrImageFormatSupported &&
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
@@ -189,7 +190,7 @@ object CaptureModeUiStateAdapter {
         }
     } else if (
         cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-        previewMode == PreviewMode.EXTERNAL_IMAGE_CAPTURE ||
+        externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
         cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
     ) {
         listOf(CaptureMode.IMAGE_ONLY)
@@ -205,11 +206,11 @@ object CaptureModeUiStateAdapter {
         currentLensFacing: LensFacing,
         currentStreamConfig: StreamConfig,
         concurrentCameraMode: ConcurrentCameraMode,
-        previewMode: PreviewMode
+        externalCaptureMode: ExternalCaptureMode
     ): DisabledReason {
         when (disabledCaptureMode) {
             CaptureMode.IMAGE_ONLY -> {
-                if (previewMode == PreviewMode.EXTERNAL_VIDEO_CAPTURE) {
+                if (externalCaptureMode is ExternalCaptureMode.ExternalVideoCaptureMode) {
                     return DisabledReason
                         .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
                 }
@@ -250,8 +251,8 @@ object CaptureModeUiStateAdapter {
             }
 
             CaptureMode.VIDEO_ONLY -> {
-                if (previewMode == PreviewMode.EXTERNAL_IMAGE_CAPTURE ||
-                    previewMode == PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE
+                if (externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
+                    externalCaptureMode is ExternalCaptureMode.ExternalMultipleImageCaptureMode
                 ) {
                     return DisabledReason
                         .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
