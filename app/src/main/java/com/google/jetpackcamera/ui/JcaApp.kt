@@ -35,11 +35,11 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
@@ -83,9 +83,11 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
-                shouldRequestReadWriteStoragePermission = externalCaptureMode is ExternalCaptureMode.StandardMode &&
+                shouldRequestReadWriteStoragePermission = externalCaptureMode is
+                    ExternalCaptureMode.StandardMode &&
                     Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
-                shouldRequestAudioPermission = externalCaptureMode is ExternalCaptureMode.StandardMode,
+                shouldRequestAudioPermission = externalCaptureMode
+                    is ExternalCaptureMode.StandardMode,
                 onAllPermissionsGranted = {
                     // Pop off the permissions screen
                     navController.navigate(PREVIEW_ROUTE) {

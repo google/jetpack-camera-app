@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder.compound
 
 import com.google.jetpackcamera.core.camera.VideoRecordingState
@@ -28,7 +27,6 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
@@ -45,7 +43,8 @@ sealed interface ViewFinderUiState {
         val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
         val snackBarUiState: SnackBarUiState = SnackBarUiState(),
-        val previewDisplayUiState: PreviewDisplayUiState = PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
+        val previewDisplayUiState: PreviewDisplayUiState =
+            PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
         val lastBlinkTimeStamp: Long = 0,
         val externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.StandardMode {},
         val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,

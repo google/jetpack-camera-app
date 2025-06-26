@@ -59,8 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
@@ -68,6 +66,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSett
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -91,6 +90,7 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {
@@ -339,7 +339,8 @@ private fun ControlsBottom(
                     ) {
                         ElapsedTimeText(
                             modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                            elapsedTimeUiState = viewFinderUiState.elapsedTimeUiState as ElapsedTimeUiState.Enabled
+                            elapsedTimeUiState = viewFinderUiState.elapsedTimeUiState
+                                as ElapsedTimeUiState.Enabled
                         )
                     }
                 }
@@ -358,7 +359,8 @@ private fun ControlsBottom(
                         .padding(end = 12.dp)
                 ) {
                     CaptureModeToggleButton(
-                        uiState = viewFinderUiState.captureModeToggleUiState as CaptureModeUiState.Available,
+                        uiState = viewFinderUiState.captureModeToggleUiState
+                            as CaptureModeUiState.Available,
                         onChangeCaptureMode = onSetCaptureMode,
                         onToggleWhenDisabled = onDisabledCaptureMode,
                         modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -437,39 +439,35 @@ private fun ControlsBottom(
     }
 }
 
-private fun getImageCaptureEventForExternalCaptureMode(captureEvent: PreviewViewModel.ImageCaptureEvent): ExternalCaptureMode.ImageCaptureEvent {
+private fun getImageCaptureEventForExternalCaptureMode(
+    captureEvent: PreviewViewModel.ImageCaptureEvent
+): ExternalCaptureMode.ImageCaptureEvent {
     return when (captureEvent) {
-        is PreviewViewModel.ImageCaptureEvent.ImageSaved -> ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
-            captureEvent.savedUri
-        )
+        is PreviewViewModel.ImageCaptureEvent.ImageSaved ->
+            ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
+                captureEvent.savedUri
+            )
 
-        is PreviewViewModel.ImageCaptureEvent.ImageCaptureError -> ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
-            captureEvent.exception
-        )
+        is PreviewViewModel.ImageCaptureEvent.ImageCaptureError ->
+            ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
+                captureEvent.exception
+            )
     }
 }
 
-private fun getImageCaptureEventFromExternalCaptureMode(captureEvent: ExternalCaptureMode.ImageCaptureEvent): PreviewViewModel.ImageCaptureEvent {
+private fun getVideoCaptureEventForExternalCaptureMode(
+    captureEvent: PreviewViewModel.VideoCaptureEvent
+): ExternalCaptureMode.VideoCaptureEvent {
     return when (captureEvent) {
-        is ExternalCaptureMode.ImageCaptureEvent.ImageSaved -> PreviewViewModel.ImageCaptureEvent.ImageSaved(
-            captureEvent.savedUri
-        )
+        is PreviewViewModel.VideoCaptureEvent.VideoSaved ->
+            ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
+                captureEvent.savedUri
+            )
 
-        is ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError -> PreviewViewModel.ImageCaptureEvent.ImageCaptureError(
-            captureEvent.exception
-        )
-    }
-}
-
-private fun getVideoCaptureEventForExternalCaptureMode(captureEvent: PreviewViewModel.VideoCaptureEvent): ExternalCaptureMode.VideoCaptureEvent {
-    return when (captureEvent) {
-        is PreviewViewModel.VideoCaptureEvent.VideoSaved -> ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
-            captureEvent.savedUri
-        )
-
-        is PreviewViewModel.VideoCaptureEvent.VideoCaptureError -> ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
-            captureEvent.error
-        )
+        is PreviewViewModel.VideoCaptureEvent.VideoCaptureError ->
+            ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
+                captureEvent.error
+            )
     }
 }
 
@@ -511,7 +509,9 @@ private fun CaptureButton(
                                 null,
                                 true
                             ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(getImageCaptureEventForExternalCaptureMode(event))
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event)
+                                )
                             }
                         }
 
@@ -521,7 +521,9 @@ private fun CaptureButton(
                                 externalCaptureMode.imageCaptureUri,
                                 false
                             ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(getImageCaptureEventForExternalCaptureMode(event))
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event)
+                                )
                             }
                         }
 
@@ -532,9 +534,12 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri,
+                                    ignoreUri
                             ) { event: PreviewViewModel.ImageCaptureEvent, i: Int ->
-                                externalCaptureMode.onImageCapture(getImageCaptureEventForExternalCaptureMode(event), i)
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event),
+                                    i
+                                )
                             }
                         }
 
@@ -562,10 +567,12 @@ private fun CaptureButton(
                     is ExternalCaptureMode.ExternalVideoCaptureMode -> {
                         onStartVideoRecording(
                             externalCaptureMode.videoCaptureUri,
-                            true,
+                            true
 
                         ) { event: PreviewViewModel.VideoCaptureEvent ->
-                            externalCaptureMode.onVideoCapture(getVideoCaptureEventForExternalCaptureMode(event))
+                            externalCaptureMode.onVideoCapture(
+                                getVideoCaptureEventForExternalCaptureMode(event)
+                            )
                         }
                     }
 

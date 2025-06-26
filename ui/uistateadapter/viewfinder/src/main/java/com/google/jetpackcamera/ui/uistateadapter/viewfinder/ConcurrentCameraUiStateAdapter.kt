@@ -34,7 +34,7 @@ object ConcurrentCameraUiStateAdapter {
         return ConcurrentCameraUiState.Available(
             selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
             isEnabled = systemConstraints.concurrentCamerasSupported &&
-                    externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
+                externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
                     (
                         captureModeUiState as?
                             CaptureModeUiState.Available

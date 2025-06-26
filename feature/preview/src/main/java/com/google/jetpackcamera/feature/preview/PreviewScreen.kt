@@ -237,7 +237,12 @@ private fun ContentScreen(
     ) {
         val onFlipCamera = {
             if (viewFinderUiState.flipLensUiState is FlipLensUiState.Available) {
-                onSetLensFacing((viewFinderUiState.flipLensUiState as FlipLensUiState.Available).selectedLensFacing.flip())
+                onSetLensFacing(
+                    (
+                        viewFinderUiState.flipLensUiState as FlipLensUiState.Available
+                        )
+                        .selectedLensFacing.flip()
+                )
             }
         }
 

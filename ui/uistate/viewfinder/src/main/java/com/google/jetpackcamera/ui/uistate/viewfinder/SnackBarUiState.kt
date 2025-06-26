@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.viewfinder
 
 import androidx.compose.material3.SnackbarDuration
@@ -21,7 +20,7 @@ import java.util.LinkedList
 import java.util.Queue
 
 data class SnackBarUiState(
-    val snackBarQueue: Queue<SnackbarData> = LinkedList(),
+    val snackBarQueue: Queue<SnackbarData> = LinkedList()
 )
 
 data class SnackbarData(

@@ -50,13 +50,13 @@ import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AudioUiStateAdapter
 import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureButtonUiStateAdapter
@@ -146,7 +146,9 @@ class PreviewViewModel @AssistedInject constructor(
     /**
      * updates the capture mode based on the preview mode
      */
-    private fun CameraAppSettings.applyExternalCaptureMode(externalCaptureMode: ExternalCaptureMode): CameraAppSettings {
+    private fun CameraAppSettings.applyExternalCaptureMode(
+        externalCaptureMode: ExternalCaptureMode
+    ): CameraAppSettings {
         val captureMode = externalCaptureMode.toCaptureMode()
         return if (captureMode == this.captureMode) {
             this
@@ -207,7 +209,8 @@ class PreviewViewModel @AssistedInject constructor(
                             )
                             quickSettingsIsOpen = when (old.quickSettingsUiState) {
                                 is QuickSettingsUiState.Available -> {
-                                    (old.quickSettingsUiState as QuickSettingsUiState.Available).quickSettingsIsOpen
+                                    (old.quickSettingsUiState as QuickSettingsUiState.Available)
+                                        .quickSettingsIsOpen
                                 }
 
                                 is QuickSettingsUiState.Unavailable -> {
@@ -446,7 +449,10 @@ class PreviewViewModel @AssistedInject constructor(
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
             _viewFinderUiState.update { old ->
-                val newQueue = LinkedList((old as? ViewFinderUiState.Ready)?.snackBarUiState?.snackBarQueue!!)
+                val newQueue = LinkedList(
+                    (old as? ViewFinderUiState.Ready)
+                        ?.snackBarUiState?.snackBarQueue!!
+                )
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
                 old.copy(
@@ -514,7 +520,10 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraUseCase.takePicture({
                         _viewFinderUiState.update { old ->
                             (old as? ViewFinderUiState.Ready)?.copy(
-                                previewDisplayUiState = PreviewDisplayUiState(lastBlinkTimeStamp = System.currentTimeMillis(), aspectRatioUiState = old.aspectRatioUiState),
+                                previewDisplayUiState = PreviewDisplayUiState(
+                                    lastBlinkTimeStamp = System.currentTimeMillis(),
+                                    aspectRatioUiState = old.aspectRatioUiState
+                                )
                             ) ?: old
                         }
                     }, contentResolver, finalImageUri, ignoreUri).savedUri
@@ -709,15 +718,38 @@ class PreviewViewModel @AssistedInject constructor(
             _viewFinderUiState.update { old ->
                 (old as? ViewFinderUiState.Ready)?.copy(
                     quickSettingsUiState = QuickSettingsUiState.Available(
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available)
-                            .aspectRatioUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).captureModeUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).concurrentCameraUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).flashModeUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).flipLensUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).hdrUiState,
-                        (old.quickSettingsUiState as QuickSettingsUiState.Available).streamConfigUiState,
-                        !(old.quickSettingsUiState as QuickSettingsUiState.Available).quickSettingsIsOpen
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).aspectRatioUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).captureModeUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).concurrentCameraUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).flashModeUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).flipLensUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).hdrUiState,
+                        (
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).streamConfigUiState,
+                        !(
+                            old.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                            ).quickSettingsIsOpen
                     )
                 ) ?: old
             }
@@ -750,7 +782,9 @@ class PreviewViewModel @AssistedInject constructor(
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue))
+                        old.copy(
+                            snackBarUiState = SnackBarUiStateAdapter.getUiState(newQueue)
+                        )
                     } else {
                         old
                     }
