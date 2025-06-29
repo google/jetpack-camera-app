@@ -29,7 +29,9 @@ tasks.register<Copy>("installGitHooks") {
     println("Installing git hooks")
     from(rootProject.rootDir.resolve("hooks/pre-commit"))
     into(rootProject.rootDir.resolve(".git/hooks"))
-    fileMode = 7 * 64 + 7 * 8 + 5 // 0775 in decimal
+    filePermissions {
+        unix("0775")
+    }
 }
 
 gradle.taskGraph.whenReady {
