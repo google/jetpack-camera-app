@@ -4,7 +4,6 @@ compileSdk = "35"
 orchestrator = "1.5.1"
 minSdk = "21"
 targetSdk = "35"
-composeCompiler = "1.5.14"
 
 # Used below in dependency definitions
 # Compose and Accompanist versions are linked
