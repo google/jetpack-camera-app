@@ -26,10 +26,10 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import java.util.LinkedList
 import java.util.Queue
 

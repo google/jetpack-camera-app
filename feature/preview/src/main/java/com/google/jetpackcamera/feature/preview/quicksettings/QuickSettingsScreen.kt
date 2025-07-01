@@ -62,24 +62,24 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.ConcurrentCameraUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.HdrUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_BACKGROUND_FOCUSED
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_BACKGROUND_MAIN
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_FLASH_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.StreamConfigUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
  * The UI component for quick settings.

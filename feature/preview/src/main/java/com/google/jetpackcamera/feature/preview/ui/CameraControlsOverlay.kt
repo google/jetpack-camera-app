@@ -80,19 +80,19 @@ import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState.Unavailable.isCaptureModeSelectable
-import com.google.jetpackcamera.ui.uistate.viewfinder.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_QUALITY_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.delay
 
 class ZoomLevelDisplayState(private val alwaysDisplay: Boolean = false) {

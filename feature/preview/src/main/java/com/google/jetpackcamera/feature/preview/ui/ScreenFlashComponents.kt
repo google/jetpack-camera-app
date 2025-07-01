@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.google.jetpackcamera.feature.preview.ScreenFlash
-import com.google.jetpackcamera.ui.uistate.viewfinder.SCREEN_FLASH_OVERLAY
+import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
 
 private const val TAG = "ScreenFlashComponents"
 
