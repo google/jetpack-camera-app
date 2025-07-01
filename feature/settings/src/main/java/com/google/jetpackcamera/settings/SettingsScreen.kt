@@ -94,7 +94,8 @@ fun SettingsScreen(
         permissions =
         listOf(
             Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE
         )
     )
 

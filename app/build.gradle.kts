@@ -37,7 +37,6 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
-
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
@@ -141,7 +140,6 @@ dependencies {
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.truth)
     androidTestUtil(libs.androidx.orchestrator)
-
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

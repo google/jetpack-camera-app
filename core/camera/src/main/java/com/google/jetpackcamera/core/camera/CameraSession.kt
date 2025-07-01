@@ -802,7 +802,6 @@ private suspend fun startVideoRecordingInternal(
 
     pendingRecord.apply {
         if (isAudioGranted) {
-            Log.d(TAG, "INITIAL AUDIO $isInitialAudioEnabled")
             withAudioEnabled(isInitialAudioEnabled)
         }
     }
