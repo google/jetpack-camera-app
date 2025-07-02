@@ -146,11 +146,13 @@ fun PreviewScreen(
             val zoomState = remember(
                 currentUiState.currentCameraSettings.cameraLensFacing
             ) {
+                // the initialZoomLevel must be fetched from the settings, not the cameraState.
+                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
                 ZoomState(
                     initialZoomLevel = (
                         currentUiState.zoomControlUiState as?
                             ZoomControlUiState.Enabled
-                        )?.primaryZoomRatio
+                        )?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
                     onChangeZoomLevel = viewModel::changeZoomRatio,

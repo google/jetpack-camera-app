@@ -309,11 +309,11 @@ private fun ControlsBottom(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AnimatedVisibility(
-                    visible = (showZoomLevel && zoomUiState is ZoomUiState.Enabled),
+                    visible = (previewUiState.debugUiState.isDebugMode && showZoomLevel &&
+                            zoomUiState is ZoomUiState.Enabled),
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    // todo(b/427733634): remove zoomRatioText and update tests
                     ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
                 if (zoomControlUiState is ZoomControlUiState.Enabled &&
@@ -333,9 +333,9 @@ private fun ControlsBottom(
                 if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
                     AnimatedVisibility(
                         visible = (
-                            previewUiState.videoRecordingState is
-                                VideoRecordingState.Active
-                            ),
+                                previewUiState.videoRecordingState is
+                                        VideoRecordingState.Active
+                                ),
                         enter = fadeIn(),
                         exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
                     ) {
@@ -351,7 +351,7 @@ private fun ControlsBottom(
         Column {
             if (!isQuickSettingsOpen &&
                 previewUiState.captureModeToggleUiState
-                    is CaptureModeUiState.Enabled
+                        is CaptureModeUiState.Enabled
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines
                 Box(
@@ -496,7 +496,7 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 previewMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri,
+                                        ignoreUri,
                                 previewMode.onImageCapture
                             )
                         }
@@ -563,7 +563,7 @@ private fun CaptureModeToggleButton(
         }
     val enabled =
         uiState.videoOnlyCaptureState == SingleSelectableState.Selectable &&
-            uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
+                uiState.imageOnlyCaptureState == SingleSelectableState.Selectable
     ToggleButton(
         leftIcon = if (uiState.currentSelection ==
             CaptureMode.IMAGE_ONLY
@@ -597,21 +597,21 @@ private fun CaptureModeToggleButton(
         // toggle only enabled when both capture modes are available
         enabled = enabled,
         leftIconDescription =
-        if (enabled) {
-            stringResource(id = R.string.capture_mode_image_capture_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_image_capture_content_description_disabled
-            )
-        },
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_image_capture_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_image_capture_content_description_disabled
+                )
+            },
         rightIconDescription =
-        if (enabled) {
-            stringResource(id = R.string.capture_mode_video_recording_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_video_recording_content_description_disabled
-            )
-        },
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_video_recording_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_video_recording_content_description_disabled
+                )
+            },
         modifier = modifier
     )
 }
@@ -805,7 +805,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
                 )
             ),
             videoRecordingState = VideoRecordingState.Inactive()

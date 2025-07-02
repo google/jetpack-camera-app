@@ -459,6 +459,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
         return ZoomControlUiState.Enabled(
             zoomLevels = zoomLevels,
+            initialZoomRatio = cameraAppSettings.defaultZoomRatios[cameraAppSettings.cameraLensFacing],
             primaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
             primarySettingZoomRatio = cameraAppSettings
                 .defaultZoomRatios[cameraAppSettings.cameraLensFacing],

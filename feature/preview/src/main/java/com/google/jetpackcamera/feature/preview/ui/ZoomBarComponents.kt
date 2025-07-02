@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview.ui
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
@@ -59,6 +58,13 @@ fun ZoomButtonRow(
     val selectedOptionIndex: Int by remember(zoomControlUiState) {
         // if animating towards a value, then that option will be selected
         // otherwise, select the closest option that is less than the current zoom ratio
+
+        // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
+        // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
+        // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
+        // when cameraState is in this intermediate state.
+
+
         val checkValue =
             zoomControlUiState.animatingToValue ?: zoomControlUiState.primaryZoomRatio ?: 1f
         derivedStateOf {
@@ -79,19 +85,17 @@ fun ZoomButtonRow(
                 color = Color.Black.copy(alpha = 0.32f),
                 shape = CircleShape
             )
-        //  .padding(horizontal = 8.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = spacing, vertical = spacing/2)
+                .padding(horizontal = spacing / 2, vertical = spacing / 2)
                 .testTag("")
                 .height(buttonSize),
-           // horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically
         ) {
             zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
                 Box(
-                    modifier = Modifier.width(buttonSize + spacing),
+                    modifier = Modifier.width(buttonSize + spacing + 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     ZoomButton(
@@ -136,7 +140,7 @@ private fun ZoomButton(
     }
     ToggleButton(
         checked = isSelected,
-        onCheckedChange = { if (it) onChangeZoom(targetZoom) },
+        onCheckedChange = { onChangeZoom(targetZoom) },
         modifier = modifier.heightIn(buttonSize),
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
