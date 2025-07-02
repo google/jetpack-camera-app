@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 
-object AudioUiStateAdapter {
-    fun getUiState(cameraAppSettings: CameraAppSettings, cameraState: CameraState): AudioUiState =
+    fun AudioUiState.Companion.from(cameraAppSettings: CameraAppSettings, cameraState: CameraState): AudioUiState =
         if (cameraAppSettings.audioEnabled) {
             val videoRecordingState = cameraState.videoRecordingState
             if (videoRecordingState is VideoRecordingState.Active) {
@@ -32,4 +31,3 @@ object AudioUiStateAdapter {
         } else {
             AudioUiState.Enabled.Mute
         }
-}

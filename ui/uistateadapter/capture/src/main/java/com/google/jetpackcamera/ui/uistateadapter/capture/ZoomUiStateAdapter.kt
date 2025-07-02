@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Range
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.ui.uistate.viewfinder.ZoomUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
-object ZoomUiStateAdapter {
-    fun getUiState(
+    fun ZoomUiState.Companion.from(
         systemConstraints: SystemConstraints,
         lensFacing: LensFacing,
         cameraState: CameraState
@@ -33,4 +32,3 @@ object ZoomUiStateAdapter {
         primaryZoomRatio = cameraState.zoomRatios[lensFacing],
         primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
-}

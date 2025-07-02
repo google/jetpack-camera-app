@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.viewfinder
+package com.google.jetpackcamera.ui.uistate.capture
 
 import android.util.Range
 
@@ -24,4 +24,6 @@ sealed interface ZoomUiState {
         val primaryZoomRatio: Float? = null,
         val primaryLinearZoom: Float? = null
     ) : ZoomUiState
+
+    companion object
 }

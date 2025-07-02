@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.viewfinder
+package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
@@ -22,4 +22,6 @@ sealed interface ImageWellUiState {
     data object Unavailable : ImageWellUiState
 
     data class LastCapture(val mediaDescriptor: MediaDescriptor) : ImageWellUiState
+
+    companion object
 }

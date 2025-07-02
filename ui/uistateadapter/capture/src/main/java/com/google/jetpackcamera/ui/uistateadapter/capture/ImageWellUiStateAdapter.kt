@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.ui.uistate.viewfinder.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
-object ImageWellUiStateAdapter {
-    fun getUiState(mediaDescriptor: MediaDescriptor): ImageWellUiState {
+    fun ImageWellUiState.Companion.from(mediaDescriptor: MediaDescriptor): ImageWellUiState {
         return ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
     }
-}

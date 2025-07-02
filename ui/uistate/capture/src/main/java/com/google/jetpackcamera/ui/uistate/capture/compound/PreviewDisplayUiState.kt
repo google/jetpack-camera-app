@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.viewfinder.compound
+package com.google.jetpackcamera.ui.uistate.capture.compound
 
-import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 
 data class PreviewDisplayUiState(
     val lastBlinkTimeStamp: Long = 0,

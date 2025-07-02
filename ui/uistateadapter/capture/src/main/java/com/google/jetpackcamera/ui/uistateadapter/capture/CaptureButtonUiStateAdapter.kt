@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 
-object CaptureButtonUiStateAdapter {
-    fun getUiState(
+    fun CaptureButtonUiState.Companion.from(
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
         lockedState: Boolean
@@ -43,4 +42,3 @@ object CaptureButtonUiStateAdapter {
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
     }
-}

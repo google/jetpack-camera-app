@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.ui.uistate.viewfinder.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

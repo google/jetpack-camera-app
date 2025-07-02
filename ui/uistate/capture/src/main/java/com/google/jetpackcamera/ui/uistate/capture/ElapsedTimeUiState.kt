@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-<<<<<<<< HEAD:ui/uistate/capture/src/main/java/com/google/jetpackcamera/ui/uistate/capture/ElapsedTimeUiState.kt
-package com.google.jetpackcamera.ui.uistate.viewfinder
-========
-package com.google.jetpackcamera.ui.uistateadapter.capture
->>>>>>>> david/quickSettingsUiState:ui/uistateadapter/capture/src/main/java/com/google/jetpackcamera/ui/uistateadapter/capture/PreviewMode.kt
+package com.google.jetpackcamera.ui.uistate.capture
 
 sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
+
+    companion object
 }

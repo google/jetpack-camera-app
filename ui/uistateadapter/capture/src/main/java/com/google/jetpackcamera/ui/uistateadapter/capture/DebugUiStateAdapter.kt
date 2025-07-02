@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.ui.uistate.viewfinder.DebugUiState
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-object DebugUiStateAdapter {
-    fun getUiState(
+    fun DebugUiState.Companion.from(
         cameraPropertiesJSON: String,
         cameraState: CameraState,
         isDebugMode: Boolean
@@ -40,4 +39,3 @@ object DebugUiStateAdapter {
 
     fun DebugUiState.toggleDebugOverlay(): DebugUiState =
         copy(isDebugOverlayOpen = !isDebugOverlayOpen)
-}

@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.ui.uistate.viewfinder.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 
-object ElapsedTimeUiStateAdapter {
-    fun getUiState(cameraState: CameraState): ElapsedTimeUiState {
+    fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiState {
         val videoRecordingState = cameraState.videoRecordingState
         return when (videoRecordingState) {
             is VideoRecordingState.Active ->
@@ -32,4 +31,3 @@ object ElapsedTimeUiStateAdapter {
             VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
         }
     }
-}

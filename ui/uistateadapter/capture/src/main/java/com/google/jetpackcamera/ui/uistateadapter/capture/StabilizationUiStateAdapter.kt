@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.ui.uistate.viewfinder.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
-object StabilizationUiStateAdapter {
-    fun getUiState(
+    fun StabilizationUiState.Companion.from(
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState
     ): StabilizationUiState {
@@ -49,4 +48,3 @@ object StabilizationUiStateAdapter {
                 )
         }
     }
-}

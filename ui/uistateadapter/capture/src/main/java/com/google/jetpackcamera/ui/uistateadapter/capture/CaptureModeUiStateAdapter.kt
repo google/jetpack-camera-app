@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
@@ -41,13 +42,13 @@ fun CaptureModeUiState.Companion.getCaptureToggleUiState(
     systemConstraints: SystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
-    previewMode: PreviewMode
+    externalCaptureMode: ExternalCaptureMode
 ): CaptureModeUiState = if (cameraState.videoRecordingState !is VideoRecordingState.Inactive) {
     CaptureModeUiState.Unavailable
 } else if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
     cameraAppSettings.dynamicRange == DynamicRange.HLG10
 ) {
-    getCaptureModeUiState(systemConstraints, cameraAppSettings, previewMode)
+    getCaptureModeUiState(systemConstraints, cameraAppSettings, externalCaptureMode)
 } else {
     CaptureModeUiState.Unavailable
 }
@@ -55,13 +56,13 @@ fun CaptureModeUiState.Companion.getCaptureToggleUiState(
 fun CaptureModeUiState.Companion.getCaptureModeUiState(
     systemConstraints: SystemConstraints,
     cameraAppSettings: CameraAppSettings,
-    previewMode: PreviewMode
+    externalCaptureMode: ExternalCaptureMode
 ): CaptureModeUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
     val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-        cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
     val currentHdrDynamicRangeSupported =
         if (isHdrOn) {
             cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
@@ -82,7 +83,7 @@ fun CaptureModeUiState.Companion.getCaptureModeUiState(
         isHdrOn,
         currentHdrDynamicRangeSupported,
         currentHdrImageFormatSupported,
-        previewMode
+        externalCaptureMode
     )
     // if all capture modes are supported, return capturemodeuistate
     if (supportedCaptureModes.containsAll(ORDERED_UI_SUPPORTED_CAPTURE_MODES)) {
@@ -108,7 +109,7 @@ fun CaptureModeUiState.Companion.getCaptureModeUiState(
                     cameraAppSettings.cameraLensFacing,
                     cameraAppSettings.streamConfig,
                     cameraAppSettings.concurrentCameraMode,
-                    previewMode = previewMode
+                    externalCaptureMode = externalCaptureMode
                 )
 
             return CaptureModeUiState.Available(
@@ -135,7 +136,7 @@ fun CaptureModeUiState.Companion.getCaptureModeUiState(
                     cameraAppSettings.cameraLensFacing,
                     cameraAppSettings.streamConfig,
                     cameraAppSettings.concurrentCameraMode,
-                    previewMode = previewMode
+                    externalCaptureMode = externalCaptureMode
                 )
             return CaptureModeUiState.Available(
                 selectedCaptureMode = cameraAppSettings.captureMode,
@@ -172,10 +173,10 @@ private fun getSupportedCaptureModes(
     isHdrOn: Boolean,
     currentHdrDynamicRangeSupported: Boolean,
     currentHdrImageFormatSupported: Boolean,
-    previewMode: PreviewMode
+    externalCaptureMode: ExternalCaptureMode
 ): List<CaptureMode> = if (
-    previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE &&
-    previewMode != PreviewMode.EXTERNAL_VIDEO_CAPTURE &&
+    externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
+    externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode &&
     currentHdrDynamicRangeSupported &&
     currentHdrImageFormatSupported &&
     cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
@@ -188,7 +189,7 @@ private fun getSupportedCaptureModes(
     }
 } else if (
     cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-    previewMode == PreviewMode.EXTERNAL_IMAGE_CAPTURE ||
+    externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
     cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
 ) {
     listOf(CaptureMode.IMAGE_ONLY)
@@ -204,11 +205,11 @@ private fun getCaptureModeDisabledReason(
     currentLensFacing: LensFacing,
     currentStreamConfig: StreamConfig,
     concurrentCameraMode: ConcurrentCameraMode,
-    previewMode: PreviewMode
+    externalCaptureMode: ExternalCaptureMode
 ): DisabledReason {
     when (disabledCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            if (previewMode == PreviewMode.EXTERNAL_VIDEO_CAPTURE) {
+            if (externalCaptureMode is ExternalCaptureMode.ExternalVideoCaptureMode) {
                 return DisabledReason
                     .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
             }
@@ -249,8 +250,8 @@ private fun getCaptureModeDisabledReason(
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            if (previewMode == PreviewMode.EXTERNAL_IMAGE_CAPTURE ||
-                previewMode == PreviewMode.EXTERNAL_MULTIPLE_IMAGE_CAPTURE
+            if (externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
+                externalCaptureMode is ExternalCaptureMode.ExternalMultipleImageCaptureMode
             ) {
                 return DisabledReason
                     .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
@@ -289,7 +290,7 @@ private fun SystemConstraints.anySupportsUltraHdr(
     lensFilter: (LensFacing) -> Boolean
 ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
     lensFilter(lensConstraints.key) &&
-        lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-            captureModeFilter(it)
-        }
+            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+                captureModeFilter(it)
+            }
 } != null

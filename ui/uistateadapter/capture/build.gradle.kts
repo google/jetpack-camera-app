@@ -108,6 +108,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(project(":data:settings"))
+    implementation(project(":data:media"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistateadapter"))

@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.viewfinder
+package com.google.jetpackcamera.ui.uistate.capture
 
 data class ScreenFlashUiState(
     val enabled: Boolean = false,
     val onChangeComplete: () -> Unit = {},
     // restored during CLEAR_UI event
     val screenBrightnessToRestore: Float? = null
-)
+) {
+    companion object
+}

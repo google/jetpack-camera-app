@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.viewfinder
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.google.jetpackcamera.ui.uistate.viewfinder.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
+import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import java.util.Queue
 
-object SnackBarUiStateAdapter {
-    fun getUiState(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
+    fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
         return SnackBarUiState(snackBarQueue)
     }
-}

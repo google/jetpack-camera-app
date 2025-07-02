@@ -128,11 +128,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    implementation(project(":data:media"))
     implementation(project(":data:settings"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistateadapter"))
-    implementation(project(":ui:uistate:viewfinder"))
 }
 
 // Allow references to generated code

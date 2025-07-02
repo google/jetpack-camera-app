@@ -29,4 +29,6 @@ sealed interface AudioUiState {
     data object Disabled : AudioUiState {
         override val amplitude = 0.0
     }
+
+    companion object
 }
