@@ -67,6 +67,9 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
 
+    // Compose - Material Design 3
+    implementation(libs.compose.material3)
+
     implementation(project(":ui:uistate"))
 }
 
