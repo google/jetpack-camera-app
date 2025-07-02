@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.os.Build
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -26,6 +27,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG
@@ -183,6 +185,8 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
             dialogTestTag = BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG,
             componentDisabledMessage = "Aspect ratio component is disabled"
         ) {
+            assumeHalStableOnSelectAspectRatio()
+
             selectFirstNonSelected(
                 listOf(
                     BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG,
@@ -191,6 +195,12 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
                 )
             )
         }
+    }
+
+    private fun assumeHalStableOnSelectAspectRatio() {
+        // The GMD emulators on API 28, switching the aspect ratio fails and puts the emulator in
+        // a bad state. Skip on these devices.
+        assume().that(Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28).isFalse()
     }
 
     @Test
