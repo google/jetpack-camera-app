@@ -66,6 +66,9 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+
+    // Compose - Material Design 3
+    implementation(libs.compose.material3)
 }
 
 // Allow references to generated code
