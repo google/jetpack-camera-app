@@ -20,14 +20,16 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 
-    fun AudioUiState.Companion.from(cameraAppSettings: CameraAppSettings, cameraState: CameraState): AudioUiState =
-        if (cameraAppSettings.audioEnabled) {
-            val videoRecordingState = cameraState.videoRecordingState
-            if (videoRecordingState is VideoRecordingState.Active) {
-                AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
-            } else {
-                AudioUiState.Enabled.On(0.0)
-            }
-        } else {
-            AudioUiState.Enabled.Mute
-        }
+fun AudioUiState.Companion.from(
+    cameraAppSettings: CameraAppSettings,
+    cameraState: CameraState
+): AudioUiState = if (cameraAppSettings.audioEnabled) {
+    val videoRecordingState = cameraState.videoRecordingState
+    if (videoRecordingState is VideoRecordingState.Active) {
+        AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
+    } else {
+        AudioUiState.Enabled.On(0.0)
+    }
+} else {
+    AudioUiState.Enabled.Mute
+}

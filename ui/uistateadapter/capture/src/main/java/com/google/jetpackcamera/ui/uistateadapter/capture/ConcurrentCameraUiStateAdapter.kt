@@ -33,18 +33,18 @@ fun ConcurrentCameraUiState.Companion.from(
     return ConcurrentCameraUiState.Available(
         selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
         isEnabled = systemConstraints.concurrentCamerasSupported &&
-                externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
+            externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
                 (
-                        captureModeUiState as?
-                                CaptureModeUiState.Available
-                        )
+                    captureModeUiState as?
+                        CaptureModeUiState.Available
+                    )
                     ?.selectedCaptureMode !=
-                        CaptureMode.IMAGE_ONLY
+                    CaptureMode.IMAGE_ONLY
                 ) && (
                 cameraAppSettings.dynamicRange !=
-                        DEFAULT_HDR_DYNAMIC_RANGE &&
-                        cameraAppSettings.imageFormat !=
-                        DEFAULT_HDR_IMAGE_OUTPUT
+                    DEFAULT_HDR_DYNAMIC_RANGE &&
+                    cameraAppSettings.imageFormat !=
+                    DEFAULT_HDR_IMAGE_OUTPUT
                 )
     )
 }

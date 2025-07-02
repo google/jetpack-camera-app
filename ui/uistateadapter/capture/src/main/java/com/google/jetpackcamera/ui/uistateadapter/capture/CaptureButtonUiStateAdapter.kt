@@ -20,25 +20,25 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 
-    fun CaptureButtonUiState.Companion.from(
-        cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState,
-        lockedState: Boolean
-    ): CaptureButtonUiState = when (cameraState.videoRecordingState) {
-        // if not currently recording, check capturemode to determine idle capture button UI
-        is VideoRecordingState.Inactive ->
-            CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+fun CaptureButtonUiState.Companion.from(
+    cameraAppSettings: CameraAppSettings,
+    cameraState: CameraState,
+    lockedState: Boolean
+): CaptureButtonUiState = when (cameraState.videoRecordingState) {
+    // if not currently recording, check capturemode to determine idle capture button UI
+    is VideoRecordingState.Inactive ->
+        CaptureButtonUiState
+            .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
 
-        // display different capture button UI depending on if recording is pressed or locked
-        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
-            if (lockedState) {
-                CaptureButtonUiState.Enabled.Recording.LockedRecording
-            } else {
-                CaptureButtonUiState.Enabled.Recording.PressedRecording
-            }
+    // display different capture button UI depending on if recording is pressed or locked
+    is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
+        if (lockedState) {
+            CaptureButtonUiState.Enabled.Recording.LockedRecording
+        } else {
+            CaptureButtonUiState.Enabled.Recording.PressedRecording
+        }
 
-        VideoRecordingState.Starting ->
-            CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
-    }
+    VideoRecordingState.Starting ->
+        CaptureButtonUiState
+            .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+}

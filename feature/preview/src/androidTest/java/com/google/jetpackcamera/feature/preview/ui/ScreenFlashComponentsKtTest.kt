@@ -29,7 +29,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.jetpackcamera.ui.uistate.viewfinder.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before

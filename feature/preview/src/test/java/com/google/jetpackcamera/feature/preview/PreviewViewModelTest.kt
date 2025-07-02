@@ -25,9 +25,9 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.test.FakeSettingsRepository
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -69,7 +69,7 @@ class PreviewViewModelTest {
     fun getPreviewUiState() = runTest(StandardTestDispatcher()) {
         advanceUntilIdle()
         val uiState = previewViewModel.viewFinderUiState.value
-        assertThat(uiState).isInstanceOf(ViewFinderUiState.Ready::class.java)
+        assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
     }
 
     @Test
@@ -153,9 +153,9 @@ class PreviewViewModelTest {
     }
 }
 
-private fun assertIsReady(viewFinderUiState: ViewFinderUiState): ViewFinderUiState.Ready =
+private fun assertIsReady(viewFinderUiState: CaptureUiState): CaptureUiState.Ready =
     when (viewFinderUiState) {
-        is ViewFinderUiState.Ready -> viewFinderUiState
+        is CaptureUiState.Ready -> viewFinderUiState
         else -> throw AssertionError(
             "PreviewUiState expected to be Ready, but was ${viewFinderUiState::class}"
         )

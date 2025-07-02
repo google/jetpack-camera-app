@@ -19,15 +19,15 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 
-    fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiState {
-        val videoRecordingState = cameraState.videoRecordingState
-        return when (videoRecordingState) {
-            is VideoRecordingState.Active ->
-                ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
+fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiState {
+    val videoRecordingState = cameraState.videoRecordingState
+    return when (videoRecordingState) {
+        is VideoRecordingState.Active ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
 
-            is VideoRecordingState.Inactive ->
-                ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
+        is VideoRecordingState.Inactive ->
+            ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
 
-            VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
-        }
+        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
     }
+}

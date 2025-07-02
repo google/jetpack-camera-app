@@ -20,31 +20,31 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
-    fun StabilizationUiState.Companion.from(
-        cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState
-    ): StabilizationUiState {
-        val expectedMode = cameraAppSettings.stabilizationMode
-        val actualMode = cameraState.stabilizationMode
-        check(actualMode != StabilizationMode.AUTO) {
-            "CameraState should never resolve to AUTO stabilization mode"
-        }
-        return when (expectedMode) {
-            StabilizationMode.OFF -> StabilizationUiState.Disabled
-            StabilizationMode.AUTO -> {
-                if (actualMode !in setOf(StabilizationMode.ON, StabilizationMode.OPTICAL)) {
-                    StabilizationUiState.Disabled
-                } else {
-                    StabilizationUiState.Auto(actualMode)
-                }
-            }
-
-            StabilizationMode.ON,
-            StabilizationMode.HIGH_QUALITY,
-            StabilizationMode.OPTICAL ->
-                StabilizationUiState.Specific(
-                    stabilizationMode = expectedMode,
-                    active = expectedMode == actualMode
-                )
-        }
+fun StabilizationUiState.Companion.from(
+    cameraAppSettings: CameraAppSettings,
+    cameraState: CameraState
+): StabilizationUiState {
+    val expectedMode = cameraAppSettings.stabilizationMode
+    val actualMode = cameraState.stabilizationMode
+    check(actualMode != StabilizationMode.AUTO) {
+        "CameraState should never resolve to AUTO stabilization mode"
     }
+    return when (expectedMode) {
+        StabilizationMode.OFF -> StabilizationUiState.Disabled
+        StabilizationMode.AUTO -> {
+            if (actualMode !in setOf(StabilizationMode.ON, StabilizationMode.OPTICAL)) {
+                StabilizationUiState.Disabled
+            } else {
+                StabilizationUiState.Auto(actualMode)
+            }
+        }
+
+        StabilizationMode.ON,
+        StabilizationMode.HIGH_QUALITY,
+        StabilizationMode.OPTICAL ->
+            StabilizationUiState.Specific(
+                stabilizationMode = expectedMode,
+                active = expectedMode == actualMode
+            )
+    }
+}

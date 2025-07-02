@@ -21,14 +21,14 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
-    fun ZoomUiState.Companion.from(
-        systemConstraints: SystemConstraints,
-        lensFacing: LensFacing,
-        cameraState: CameraState
-    ): ZoomUiState = ZoomUiState.Enabled(
-        primaryZoomRange =
-        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
-            ?: Range<Float>(1f, 1f),
-        primaryZoomRatio = cameraState.zoomRatios[lensFacing],
-        primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
-    )
+fun ZoomUiState.Companion.from(
+    systemConstraints: SystemConstraints,
+    lensFacing: LensFacing,
+    cameraState: CameraState
+): ZoomUiState = ZoomUiState.Enabled(
+    primaryZoomRange =
+    systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+        ?: Range<Float>(1f, 1f),
+    primaryZoomRatio = cameraState.zoomRatios[lensFacing],
+    primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
+)

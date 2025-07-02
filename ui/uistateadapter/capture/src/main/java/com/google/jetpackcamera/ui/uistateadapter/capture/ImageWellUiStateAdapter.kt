@@ -18,6 +18,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
-    fun ImageWellUiState.Companion.from(mediaDescriptor: MediaDescriptor): ImageWellUiState {
-        return ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
-    }
+fun ImageWellUiState.Companion.from(mediaDescriptor: MediaDescriptor): ImageWellUiState {
+    return ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
+}

@@ -125,8 +125,6 @@ import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -134,12 +132,8 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailabl
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
-import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
-import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds

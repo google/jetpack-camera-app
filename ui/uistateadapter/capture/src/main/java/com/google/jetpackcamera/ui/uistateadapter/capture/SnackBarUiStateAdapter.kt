@@ -19,6 +19,6 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import java.util.Queue
 
-    fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
-        return SnackBarUiState(snackBarQueue)
-    }
+fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
+    return SnackBarUiState(snackBarQueue)
+}

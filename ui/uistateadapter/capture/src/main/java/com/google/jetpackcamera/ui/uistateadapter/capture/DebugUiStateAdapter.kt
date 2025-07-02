@@ -19,23 +19,22 @@ import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-    fun DebugUiState.Companion.from(
-        cameraPropertiesJSON: String,
-        cameraState: CameraState,
-        isDebugMode: Boolean
-    ): DebugUiState {
-        return DebugUiState(
-            cameraPropertiesJSON = cameraPropertiesJSON,
-            isDebugMode = isDebugMode,
-            isDebugOverlayOpen = false,
-            videoResolution = Size(
-                cameraState.videoQualityInfo.width,
-                cameraState.videoQualityInfo.height
-            ),
-            currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-            currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
-        )
-    }
+fun DebugUiState.Companion.from(
+    cameraPropertiesJSON: String,
+    cameraState: CameraState,
+    isDebugMode: Boolean
+): DebugUiState {
+    return DebugUiState(
+        cameraPropertiesJSON = cameraPropertiesJSON,
+        isDebugMode = isDebugMode,
+        isDebugOverlayOpen = false,
+        videoResolution = Size(
+            cameraState.videoQualityInfo.width,
+            cameraState.videoQualityInfo.height
+        ),
+        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+    )
+}
 
-    fun DebugUiState.toggleDebugOverlay(): DebugUiState =
-        copy(isDebugOverlayOpen = !isDebugOverlayOpen)
+fun DebugUiState.toggleDebugOverlay(): DebugUiState = copy(isDebugOverlayOpen = !isDebugOverlayOpen)

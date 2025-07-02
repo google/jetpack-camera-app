@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.ZoomChange
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
@@ -54,6 +53,7 @@ import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RAT
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
