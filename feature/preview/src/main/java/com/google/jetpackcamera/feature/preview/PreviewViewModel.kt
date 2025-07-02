@@ -42,39 +42,26 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.viewfinder.AspectRatioUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.SnackbarData
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.PreviewDisplayUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AspectRatioUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.AudioUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureButtonUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.CaptureModeUiStateAdapter.getCaptureToggleUiState
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ConcurrentCameraUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.DebugUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.DebugUiStateAdapter.toggleDebugOverlay
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ElapsedTimeUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlashModeUiStateAdapter.updateFrom
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.FlipLensUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.HdrUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ImageWellUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.SnackBarUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StabilizationUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.StreamConfigsUiStateAdapter
-import com.google.jetpackcamera.ui.uistateadapter.viewfinder.ZoomUiStateAdapter
+import com.google.jetpackcamera.ui.uistateadapter.capture.from
+import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureModeUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureToggleUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -177,21 +164,21 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
-                val captureModeUiState = CaptureModeUiStateAdapter.getCaptureModeUiState(
+                val captureModeUiState = CaptureModeUiState.Companion.getCaptureModeUiState(
                     systemConstraints,
                     cameraAppSettings,
                     externalCaptureMode
                 )
-                val flipLensUiState = FlipLensUiStateAdapter.getUiState(
+                val flipLensUiState = FlipLensUiState.Companion.from(
                     cameraAppSettings,
                     systemConstraints
                 )
-                val aspectRatioUiState = AspectRatioUiStateAdapter.getUiState(cameraAppSettings)
+                val aspectRatioUiState = AspectRatioUiState.Companion.from(cameraAppSettings)
                 var quickSettingsIsOpen: Boolean
                 _viewFinderUiState.update { old ->
                     when (old) {
                         is ViewFinderUiState.NotReady -> {
-                            flashModeUiState = FlashModeUiStateAdapter.getUiState(
+                            flashModeUiState = FlashModeUiState.Companion.from(
                                 cameraAppSettings,
                                 systemConstraints
                             )
@@ -264,12 +251,13 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.cameraLensFacing,
                             cameraState
                         ),
-                        captureModeToggleUiState = getCaptureToggleUiState(
-                            systemConstraints,
-                            cameraAppSettings,
-                            cameraState,
-                            externalCaptureMode
-                        )
+                        captureModeToggleUiState = CaptureModeUiState.Companion
+                            .getCaptureToggleUiState(
+                                systemConstraints,
+                                cameraAppSettings,
+                                cameraState,
+                                externalCaptureMode
+                            )
                     )
                 }
             }.collect {}
@@ -288,7 +276,7 @@ class PreviewViewModel @AssistedInject constructor(
         return QuickSettingsUiState.Available(
             aspectRatioUiState = aspectRatioUiState,
             captureModeUiState = captureModeUiState,
-            concurrentCameraUiState = ConcurrentCameraUiStateAdapter.getUiState(
+            concurrentCameraUiState = ConcurrentCameraUiState.Companion.from(
                 cameraAppSettings,
                 systemConstraints,
                 externalCaptureMode,
@@ -296,12 +284,12 @@ class PreviewViewModel @AssistedInject constructor(
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
-            hdrUiState = HdrUiStateAdapter.getUiState(
+            hdrUiState = HdrUiState.Companion.from(
                 cameraAppSettings,
                 systemConstraints,
                 externalCaptureMode
             ),
-            streamConfigUiState = StreamConfigsUiStateAdapter.getUiState(cameraAppSettings),
+            streamConfigUiState = StreamConfigUiState.Companion.from(cameraAppSettings),
             quickSettingsIsOpen = quickSettingsIsOpen
         )
     }

@@ -30,11 +30,11 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.SCREEN_FLASH_OVERLAY
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS

@@ -41,20 +41,20 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-import com.google.jetpackcamera.ui.uistate.viewfinder.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_BACKGROUND_FOCUSED
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_BACKGROUND_MAIN
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_FLASH_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.uistate.viewfinder.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import org.junit.AssumptionViolatedException
 
 /**

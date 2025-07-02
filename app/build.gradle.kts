@@ -138,6 +138,7 @@ dependencies {
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":ui:components:capture"))
     androidTestUtil(libs.androidx.orchestrator)
 
     implementation(libs.androidx.core.ktx)
@@ -164,10 +165,6 @@ dependencies {
 
     // Permissions Screen
     implementation(project(":feature:permissions"))
-
-    // Ui State
-    implementation(project(":ui:uistate:viewfinder"))
-
     // benchmark
     implementation(libs.androidx.profileinstaller)
 }

@@ -33,8 +33,8 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.ui.uistate.viewfinder.IMAGE_WELL_TAG
 import com.google.jetpackcamera.ui.uistate.viewfinder.ImageWellUiState
+import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
 import kotlin.math.min
 
 @Composable

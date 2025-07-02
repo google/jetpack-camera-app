@@ -75,12 +75,12 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
-import com.google.jetpackcamera.ui.uistate.viewfinder.AudioUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.ScreenFlashUiState
-import com.google.jetpackcamera.ui.uistate.viewfinder.compound.ViewFinderUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.ViewFinderUiState
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"

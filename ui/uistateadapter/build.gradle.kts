@@ -57,27 +57,6 @@ android {
         kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        unitTests {
-            isReturnDefaultValues = true
-            isIncludeAndroidResources = true
-        }
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
-
     kotlinOptions {
         freeCompilerArgs += "-Xcontext-receivers"
     }
