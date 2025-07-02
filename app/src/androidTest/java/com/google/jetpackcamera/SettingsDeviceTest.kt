@@ -96,11 +96,11 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private inline fun openSettings_clickSettingComponent_applyAction(
+    private fun openSettings_clickSettingComponent_applyAction(
         componentTestTag: String,
         dialogTestTag: String,
         componentDisabledMessage: String,
-        crossinline action: ComposeTestRule.() -> Unit
+        action: ComposeTestRule.() -> Unit
     ): Unit = runScenarioTest<MainActivity> {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
