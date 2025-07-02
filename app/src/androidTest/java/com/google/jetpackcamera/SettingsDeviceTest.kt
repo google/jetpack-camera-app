@@ -17,8 +17,8 @@ package com.google.jetpackcamera
 
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotSelected
-import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -122,7 +122,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     private fun ComposeTestRule.selectFirstNonSelected(settingOptions: List<String>) {
         // Select first non-selected option
         val selected = settingOptions.firstOrNull {
-            onNode(hasTestTag(it) and isSelectable() and isNotSelected()).run {
+            onNode(hasTestTag(it) and isEnabled() and isNotSelected()).run {
                 if (isDisplayed()) {
                     performClick()
                     waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
