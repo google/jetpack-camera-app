@@ -395,101 +395,101 @@ fun PreviewDisplay(
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
 ) {
-    val transformableState = rememberTransformableState(
-        onTransformation = { pinchZoomChange, _, _ ->
-            onZoomRatioChange(
-                CameraZoomRatio(
-                    ZoomChange.Scale(pinchZoomChange)
+    if (previewDisplayUiState.aspectRatioUiState is AspectRatioUiState.Available) {
+        val transformableState = rememberTransformableState(
+            onTransformation = { pinchZoomChange, _, _ ->
+                onZoomRatioChange(
+                    CameraZoomRatio(
+                        ZoomChange.Scale(pinchZoomChange)
+                    )
                 )
-            )
-        }
-    )
-
-    check(previewDisplayUiState.aspectRatioUiState is AspectRatioUiState.Available)
-
-    surfaceRequest?.let {
-        BoxWithConstraints(
-            modifier
-                .testTag(PREVIEW_DISPLAY)
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.Center
-        ) {
-            val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            var imageVisible by remember { mutableStateOf(true) }
-
-            val imageAlpha: Float by animateFloatAsState(
-                targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                ),
-                label = ""
-            )
-
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-                    imageVisible = false
-                    delay(BLINK_TIME)
-                    imageVisible = true
-                }
             }
+        )
 
-            Box(
-                modifier = Modifier
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
+        surfaceRequest?.let {
+            BoxWithConstraints(
+                modifier
+                    .testTag(PREVIEW_DISPLAY)
+                    .fillMaxSize()
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
             ) {
-                val implementationMode = when {
-                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                    else -> ImplementationMode.EMBEDDED
+                val aspectRatio = (
+                    previewDisplayUiState.aspectRatioUiState as
+                        AspectRatioUiState.Available
+                    ).selectedAspectRatio
+                val maxAspectRatio: Float = maxWidth / maxHeight
+                val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+                val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+                val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+                val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+                var imageVisible by remember { mutableStateOf(true) }
+
+                val imageAlpha: Float by animateFloatAsState(
+                    targetValue = if (imageVisible) 1f else 0f,
+                    animationSpec = tween(
+                        durationMillis = (BLINK_TIME / 2).toInt(),
+                        easing = LinearEasing
+                    ),
+                    label = ""
+                )
+
+                LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+                    if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+                        imageVisible = false
+                        delay(BLINK_TIME)
+                        imageVisible = true
+                    }
                 }
 
-                DetectWindowColorModeChanges(
-                    surfaceRequest = surfaceRequest,
-                    implementationMode = implementationMode,
-                    onRequestWindowColorMode = onRequestWindowColorMode
-                )
-
-                val coordinateTransformer = remember { MutableCoordinateTransformer() }
-                CameraXViewfinder(
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = { offset ->
-                                    // double tap to flip camera
-                                    Log.d(TAG, "onDoubleTap $offset")
-                                    onFlipCamera()
-                                },
-                                onTap = {
-                                    with(coordinateTransformer) {
-                                        val surfaceCoords = it.transform()
-                                        Log.d(
-                                            "TAG",
-                                            "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
-                                        )
-                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                        .width(width)
+                        .height(height)
+                        .transformable(state = transformableState)
+                        .alpha(imageAlpha)
+                        .clip(RoundedCornerShape(16.dp))
+                ) {
+                    val implementationMode = when {
+                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                        else -> ImplementationMode.EMBEDDED
+                    }
+
+                    DetectWindowColorModeChanges(
+                        surfaceRequest = surfaceRequest,
+                        implementationMode = implementationMode,
+                        onRequestWindowColorMode = onRequestWindowColorMode
+                    )
+
+                    val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                    CameraXViewfinder(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = { offset ->
+                                        // double tap to flip camera
+                                        Log.d(TAG, "onDoubleTap $offset")
+                                        onFlipCamera()
+                                    },
+                                    onTap = {
+                                        with(coordinateTransformer) {
+                                            val surfaceCoords = it.transform()
+                                            Log.d(
+                                                "TAG",
+                                                "onTapToFocus: " +
+                                                    "input{$it} -> surface{$surfaceCoords}"
+                                            )
+                                            onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                                        }
                                     }
-                                }
-                            )
-                        },
-                    surfaceRequest = it,
-                    implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer
-                )
+                                )
+                            },
+                        surfaceRequest = it,
+                        implementationMode = implementationMode,
+                        coordinateTransformer = coordinateTransformer
+                    )
+                }
             }
         }
     }
