@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.quicksettings
+package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes

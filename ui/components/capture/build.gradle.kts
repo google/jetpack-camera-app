@@ -67,9 +67,42 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
 
+    // Compose - Material Design 3
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+
+    // Compose - Android Studio Preview support
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
+
+    // Compose - Integration with ViewModels with Navigation and Hilt
+    implementation(libs.hilt.navigation.compose)
+
+    // Compose - Testing
+    androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
+    // noinspection TestManifestGradleConfiguration: required for release build unit tests
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.test.monitor)
+    implementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+
     implementation(project(":ui:uistate"))
-    implementation(project(":data:media"))
+    implementation(project(":ui:uistate:capture"))
     implementation(project(":core:camera"))
+    implementation(project(":core:common"))
+    implementation(project(":data:media"))
+    implementation(project(":data:settings"))
+    testImplementation(project(":core:common"))
 }
 
 // Allow references to generated code
