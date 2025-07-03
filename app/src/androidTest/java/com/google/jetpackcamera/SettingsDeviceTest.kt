@@ -72,7 +72,7 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABIL
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.selectLensFacing
 import com.google.jetpackcamera.utils.visitSettingDialog
 import com.google.jetpackcamera.utils.visitSettingsScreen
@@ -101,7 +101,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
         dialogTestTag: String,
         componentDisabledMessage: String,
         action: ComposeTestRule.() -> Unit
-    ): Unit = runScenarioTest<MainActivity> {
+    ): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -143,7 +143,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setFlashMode() = runScenarioTest<MainActivity> {
+    fun openSettings_setFlashMode() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_FLASH_TAG,
             dialogTestTag = BTN_DIALOG_FLASH_OPTION_AUTO_TAG,
@@ -161,7 +161,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setFrameRate() = runScenarioTest<MainActivity> {
+    fun openSettings_setFrameRate() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_FPS_TAG,
             dialogTestTag = BTN_DIALOG_FPS_OPTION_AUTO_TAG,
@@ -179,7 +179,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setAspectRatio() = runScenarioTest<MainActivity> {
+    fun openSettings_setAspectRatio() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG,
             dialogTestTag = BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG,
@@ -204,7 +204,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setStreamConfig() = runScenarioTest<MainActivity> {
+    fun openSettings_setStreamConfig() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
             dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG,
@@ -220,7 +220,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setVideoStabilization() = runScenarioTest<MainActivity> {
+    fun openSettings_setVideoStabilization() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG,
             dialogTestTag = BTN_DIALOG_VIDEO_STABILIZATION_OPTION_AUTO_TAG,
@@ -239,7 +239,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setMaxVideoDuration() = runScenarioTest<MainActivity> {
+    fun openSettings_setMaxVideoDuration() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG,
             dialogTestTag = BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG,
@@ -258,7 +258,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setVideoQuality() = runScenarioTest<MainActivity> {
+    fun openSettings_setVideoQuality() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG,
             dialogTestTag = BTN_DIALOG_VIDEO_QUALITY_OPTION_UNSPECIFIED_TAG,
@@ -277,7 +277,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     }
 
     @Test
-    fun openSettings_setDarkMode() = runScenarioTest<MainActivity> {
+    fun openSettings_setDarkMode() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG,
             dialogTestTag = BTN_DIALOG_DARK_MODE_OPTION_ON_TAG,

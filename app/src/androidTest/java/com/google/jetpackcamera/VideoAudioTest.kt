@@ -32,7 +32,7 @@ import com.google.jetpackcamera.feature.preview.ui.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +57,7 @@ class VideoAudioTest {
 
     @Test
     fun audioIncomingWhenEnabled() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             // check audio visualizer composable for muted/unmuted icon.
             // icon will only be unmuted if audio is nonzero
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {

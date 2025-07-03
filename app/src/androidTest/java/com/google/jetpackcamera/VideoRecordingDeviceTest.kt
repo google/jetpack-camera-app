@@ -28,7 +28,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
-import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
@@ -43,8 +42,8 @@ import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
-import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
-import com.google.jetpackcamera.utils.runScenarioTestForResult
+import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import org.junit.Rule
 import org.junit.Test
@@ -63,7 +62,7 @@ internal class VideoRecordingDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun pressed_video_capture(): Unit = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun pressed_video_capture(): Unit = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
     ) {
         val timeStamp = System.currentTimeMillis()
@@ -80,7 +79,7 @@ internal class VideoRecordingDeviceTest {
 
     @Test
     fun drag_to_lock_pressed_video_capture(): Unit =
-        runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         ) {
             val timeStamp = System.currentTimeMillis()
@@ -107,7 +106,7 @@ internal class VideoRecordingDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -126,7 +125,7 @@ internal class VideoRecordingDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -149,7 +148,7 @@ internal class VideoRecordingDeviceTest {
     fun video_capture_external_illegal_uri() {
         val uri = Uri.parse("asdfasdf")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed

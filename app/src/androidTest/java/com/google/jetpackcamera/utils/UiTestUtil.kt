@@ -23,6 +23,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -36,6 +37,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.MainActivity
 import java.io.File
 import java.net.URLConnection
 import java.util.concurrent.TimeoutException
@@ -56,6 +58,17 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
+val compatMainActivityExtras: Bundle?
+    get() = if (Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28) {
+        // The GMD API 28 emulator's PackageInfo reports it has front and back cameras, but
+        // GMD is only configured for a back camera. This causes CameraX to take a long time
+        // to initialize. Set the device to use single lens mode to work around this issue.
+        Bundle().apply {
+            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
+        }
+    } else {
+        null
+    }
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
@@ -70,13 +83,13 @@ const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
 
-inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
+inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     fileObserverContext: CoroutineContext = Dispatchers.IO,
-    crossinline block: ActivityScenario<T>.() -> Unit
+    crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
     val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -95,7 +108,7 @@ inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
 
     var succeeded = false
     try {
-        runScenarioTest(block = block)
+        runMainActivityScenarioTest(block = block)
         succeeded = true
     } finally {
         withContext(NonCancellable) {
@@ -134,18 +147,46 @@ inline fun <reified T : Activity> runMediaStoreAutoDeleteScenarioTest(
     }
 }
 
+inline fun runMainActivityScenarioTest(
+    crossinline block: ActivityScenario<MainActivity>.() -> Unit
+) = runScenarioTest<MainActivity>(compatMainActivityExtras, block)
+
 inline fun <reified T : Activity> runScenarioTest(
+    activityExtras: Bundle? = null,
     crossinline block: ActivityScenario<T>.() -> Unit
 ) {
-    ActivityScenario.launch(T::class.java).use { scenario ->
-        scenario.apply(block)
+    val intent = activityExtras?.let {
+        Intent.makeMainActivity(
+            ComponentName(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                T::class.java
+            )
+        ).putExtras(it)
+    }
+
+    if (intent != null) {
+        ActivityScenario.launch<T>(intent).use { scenario ->
+            scenario.apply(block)
+        }
+    } else {
+        ActivityScenario.launch(T::class.java).use { scenario ->
+            scenario.apply(block)
+        }
     }
 }
 
+inline fun runMainActivityScenarioTestForResult(
+    intent: Intent,
+    crossinline block: ActivityScenario<MainActivity>.() -> Unit
+): Instrumentation.ActivityResult =
+    runScenarioTestForResult<MainActivity>(intent, compatMainActivityExtras, block)
+
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
+    activityExtras: Bundle? = null,
     crossinline block: ActivityScenario<T>.() -> Unit
 ): Instrumentation.ActivityResult {
+    activityExtras?.let { intent.putExtras(it) }
     ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
         return runBlocking { scenario.pollResult() }
