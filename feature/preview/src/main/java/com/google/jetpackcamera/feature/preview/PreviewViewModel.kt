@@ -169,12 +169,12 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
-                val captureModeUiState = CaptureModeUiState.Companion.getCaptureModeUiState(
+                val captureModeUiState = CaptureModeUiState.getCaptureModeUiState(
                     systemConstraints,
                     cameraAppSettings,
                     previewMode.convertForUiState()
                 )
-                val flipLensUiState = FlipLensUiState.Companion.from(
+                val flipLensUiState = FlipLensUiState.from(
                     cameraAppSettings,
                     systemConstraints
                 )
@@ -182,7 +182,7 @@ class PreviewViewModel @AssistedInject constructor(
                 _previewUiState.update { old ->
                     when (old) {
                         is PreviewUiState.NotReady -> {
-                            flashModeUiState = FlashModeUiState.Companion.from(
+                            flashModeUiState = FlashModeUiState.from(
                                 cameraAppSettings,
                                 systemConstraints
                             )
@@ -261,13 +261,12 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.cameraLensFacing,
                             cameraState
                         ),
-                        captureModeToggleUiState = CaptureModeUiState.Companion
-                            .getCaptureToggleUiState(
-                                systemConstraints,
-                                cameraAppSettings,
-                                cameraState,
-                                previewMode.convertForUiState()
-                            )
+                        captureModeToggleUiState = CaptureModeUiState.getCaptureToggleUiState(
+                            systemConstraints,
+                            cameraAppSettings,
+                            cameraState,
+                            previewMode.convertForUiState()
+                        )
                     )
                 }
             }.collect {}
@@ -283,9 +282,9 @@ class PreviewViewModel @AssistedInject constructor(
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
         return QuickSettingsUiState.Available(
-            aspectRatioUiState = AspectRatioUiState.Companion.from(cameraAppSettings),
+            aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings),
             captureModeUiState = captureModeUiState,
-            concurrentCameraUiState = ConcurrentCameraUiState.Companion.from(
+            concurrentCameraUiState = ConcurrentCameraUiState.from(
                 cameraAppSettings,
                 systemConstraints,
                 previewMode.convertForUiState(),
@@ -298,7 +297,7 @@ class PreviewViewModel @AssistedInject constructor(
                 systemConstraints,
                 previewMode.convertForUiState()
             ),
-            streamConfigUiState = StreamConfigUiState.Companion.from(cameraAppSettings),
+            streamConfigUiState = StreamConfigUiState.from(cameraAppSettings),
             quickSettingsIsOpen = quickSettingsIsOpen
         )
     }

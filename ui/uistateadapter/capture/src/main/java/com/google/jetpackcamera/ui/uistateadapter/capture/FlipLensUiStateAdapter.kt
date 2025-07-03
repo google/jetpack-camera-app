@@ -31,9 +31,16 @@ fun FlipLensUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: SystemConstraints
 ): FlipLensUiState {
-    return createFrom(
-        cameraAppSettings.cameraLensFacing,
-        systemConstraints.availableLenses.toSet()
+    val supportedLensFacings = systemConstraints.availableLenses.toSet()
+    val availableLensFacings =
+        Utils.getSelectableListFromValues(
+            supportedLensFacings,
+            ORDERED_UI_SUPPORTED_LENS_FACINGS
+        )
+
+    return FlipLensUiState.Available(
+        selectedLensFacing = cameraAppSettings.cameraLensFacing,
+        availableLensFacings = availableLensFacings
     )
 }
 
