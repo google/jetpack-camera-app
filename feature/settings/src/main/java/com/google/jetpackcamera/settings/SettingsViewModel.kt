@@ -596,6 +596,10 @@ class SettingsViewModel @Inject constructor(
 // ////////////////////////////////////////////////////////////
 //
 // Settings Repository functions
+// ------------------------------------------------------------
+// Note: These do not update the running camera state. Each
+// setting should be applied individually (via diff) in
+// PreviewViewModel.
 //
 // ////////////////////////////////////////////////////////////
 

@@ -176,25 +176,30 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
     )
 )
 
+/**
+ * @return - true if all eligible files were successfully deleted. False otherwise
+ */
 fun deleteFilesInDirAfterTimestamp(
     directoryPath: String,
     instrumentation: Instrumentation,
     timeStamp: Long
 ): Boolean {
-    var hasDeletedFile = false
+    val fileStatus = mutableMapOf<String, Boolean>()
     for (file in File(directoryPath).listFiles() ?: emptyArray()) {
         if (file.lastModified() >= timeStamp) {
-            file.delete()
+            fileStatus.put(file.name, file.delete())
             if (file.exists()) {
-                file.canonicalFile.delete()
+                fileStatus.put(file.name, file.canonicalFile.delete())
                 if (file.exists()) {
-                    instrumentation.targetContext.applicationContext.deleteFile(file.name)
+                    fileStatus.put(
+                        file.name,
+                        instrumentation.targetContext.applicationContext.deleteFile(file.name)
+                    )
                 }
             }
-            hasDeletedFile = true
         }
     }
-    return hasDeletedFile
+    return fileStatus.keys.all { fileStatus[it] ?: false }
 }
 
 fun doesFileExist(uri: Uri): Boolean = uri.path?.let { File(it) }?.exists() == true

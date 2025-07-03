@@ -132,9 +132,11 @@ fun ComposeTestRule.waitForStartup(timeoutMillis: Long = APP_START_TIMEOUT_MILLI
         onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
     }
 }
+
 fun ComposeTestRule.waitForNodeWithTag(tag: String, timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
     waitUntil(timeoutMillis = timeoutMillis) { onNodeWithTag(tag).isDisplayed() }
 }
+
 private fun ComposeTestRule.idleForVideoDuration(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     earlyExitPredicate: () -> Boolean = {
@@ -148,6 +150,22 @@ private fun ComposeTestRule.idleForVideoDuration(
             earlyExitPredicate()
         }
     } catch (_: ComposeTimeoutException) {
+    }
+}
+
+fun ComposeTestRule.ensureTagNotAppears(
+    componentTag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    try {
+        waitUntil(timeoutMillis = timeoutMillis) {
+            onNodeWithTag(componentTag).isDisplayed()
+        }
+        throw AssertionError(
+            "$componentTag should not be present"
+        )
+    } catch (e: ComposeTimeoutException) {
+        /* Do nothing. we want to time out here. */
     }
 }
 
@@ -165,12 +183,7 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording() {
             moveBy(delta = Offset(-400f, 0f), delayMillis = VIDEO_DURATION_MILLIS)
             up()
         }
-    try {
-        waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
-        }
-        throw AssertionError("$VIDEO_CAPTURE_SUCCESS_TAG should not be displayed.")
-    } catch (e: ComposeTimeoutException) { /* do nothing. success tag should not have displayed*/ }
+    ensureTagNotAppears(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
 }
 
 fun ComposeTestRule.longClickForVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
@@ -232,11 +245,13 @@ fun ComposeTestRule.getHdrToggleState(): CaptureMode =
                 R.string.capture_mode_image_capture_content_description_disabled
             ) ->
                 CaptureMode.IMAGE_ONLY
+
             getResString(R.string.capture_mode_video_recording_content_description),
             getResString(
                 R.string.capture_mode_video_recording_content_description_disabled
             ) ->
                 CaptureMode.VIDEO_ONLY
+
             else -> null
         }
     }
@@ -277,16 +292,22 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
             throw AssertionError("Unable to determine state from component")
         }
 }
+
 fun ComposeTestRule.isHdrEnabled(): Boolean =
     checkComponentContentDescriptionState<Boolean>(QUICK_SETTINGS_HDR_BUTTON) { description ->
         when (description) {
             getResString(R.string.quick_settings_dynamic_range_hdr_description) -> {
                 return@checkComponentContentDescriptionState true
-            } getResString(R.string.quick_settings_dynamic_range_sdr_description) -> {
+            }
+
+            getResString(R.string.quick_settings_dynamic_range_sdr_description) -> {
                 return@checkComponentContentDescriptionState false
-            } else -> null
+            }
+
+            else -> null
         }
     }
+
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
         "Flip camera button is not visible when expected."
@@ -295,8 +316,10 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
             when (description) {
                 getResString(R.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
+
                 getResString(R.string.quick_settings_back_camera_description) ->
                     return@let LensFacing.BACK
+
                 else -> false
             }
         }
@@ -312,18 +335,23 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
             when (description) {
                 getResString(R.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
+
                 getResString(R.string.quick_settings_flash_on_description) ->
                     return@let FlashMode.ON
+
                 getResString(R.string.quick_settings_flash_auto_description) ->
                     return@let FlashMode.AUTO
+
                 getResString(R.string.quick_settings_flash_llb_description) ->
                     return@let FlashMode.LOW_LIGHT_BOOST
+
                 else -> false
             }
         }
         throw AssertionError("Unable to determine flash mode from quick settings")
     }
 }
+
 fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
         .assertExists()
@@ -334,10 +362,13 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
                 when (description) {
                     getResString(R.string.quick_settings_description_concurrent_camera_off) -> {
                         return@let ConcurrentCameraMode.OFF
-                    } getResString(
+                    }
+
+                    getResString(
                         R.string.quick_settings_description_concurrent_camera_dual
                     ) ->
                         return@let ConcurrentCameraMode.DUAL
+
                     else -> false
                 }
             }
@@ -346,6 +377,7 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
             )
         }
 }
+
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     waitUntil(timeoutMillis = 1000) {
         onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
@@ -358,10 +390,13 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
             when (description) {
                 getResString(R.string.quick_settings_description_capture_mode_standard) ->
                     return@let CaptureMode.STANDARD
+
                 getResString(R.string.quick_settings_description_capture_mode_image_only) ->
                     return@let CaptureMode.IMAGE_ONLY
+
                 getResString(R.string.quick_settings_description_capture_mode_video_only) ->
                     return@let CaptureMode.VIDEO_ONLY
+
                 else -> false
             }
         }
@@ -500,7 +535,7 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
 /**
  * Navigates to quick settings if not already there and perform action from provided block.
  * This will return from quick settings if not already there, or remain on quick settings if there.
-*/
+ */
 inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
     var needReturnFromQuickSettings = false
     onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
@@ -562,6 +597,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
         waitUntil(1000) { isHdrEnabled() == enabled }
     }
 }
+
 fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
     visitQuickSettings {
         waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
@@ -575,6 +611,7 @@ fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode
         waitUntil(1_000) { getConcurrentState() == concurrentMode }
     }
 }
+
 fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
         waitUntil(timeoutMillis = 1000) {

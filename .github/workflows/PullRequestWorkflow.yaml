@@ -1,6 +1,13 @@
 name: Presubmit
 
-on: [pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner (host machine) to use for all jobs in presubmit"
+        required: false
+        type: string
 
 concurrency:
   group: build-${{ github.ref }}
@@ -11,9 +18,16 @@ env:
   DISTRIBUTION: 'zulu'
 
 jobs:
+  choose_runner:
+    name: Choose Runner
+    uses: ./.github/workflows/ChooseRunner.yaml
+    with:
+      forced_runner: ${{ inputs.runner }}
+
   build:
     name: Build
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -31,6 +45,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Build stable debug gradle target
         run: ./gradlew assembleStableDebug --parallel --build-cache
@@ -51,7 +67,8 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -69,6 +86,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
         continue-on-error: true
 
       - name: Run local tests
@@ -83,8 +102,9 @@ jobs:
 
   android-test:
     name: Instrumentation Tests (${{ matrix.device.name }})
-    runs-on: ${{ vars.RUNNER }}
-    timeout-minutes: 30
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -120,6 +140,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: ${{ matrix.device.name }}StableDebugAndroidTest
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
@@ -132,7 +153,8 @@ jobs:
 
   spotless:
     name: Spotless Check
-    runs-on: ${{ vars.RUNNER }}
+    needs: choose_runner
+    runs-on: ${{ needs.choose_runner.outputs.chosen_runner }}
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -152,6 +174,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Spotless Check
         run: ./gradlew spotlessCheck --init-script gradle/init.gradle.kts --parallel --build-cache
