@@ -18,19 +18,24 @@ package com.google.jetpackcamera.core.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import androidx.annotation.OptIn
+import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
+import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
@@ -47,6 +52,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -63,6 +69,7 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
+import java.lang.IllegalStateException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -114,8 +121,6 @@ constructor(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
-
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
@@ -126,10 +131,13 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        isDebugMode: Boolean,
+        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
-        cameraProvider = ProcessCameraProvider.awaitInstance(application)
+        cameraProvider = configureAndGetCameraProvider(
+            context = application,
+            singleLensMode = debugSettings.singleLensMode
+        )
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -273,7 +281,7 @@ constructor(
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
-        if (isDebugMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
@@ -608,7 +616,7 @@ constructor(
         defaultCaptureMode: CaptureMode? = null
     ): CameraAppSettings {
         Log.d(TAG, "applying capture mode constraints")
-        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             val newCaptureMode =
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
@@ -641,11 +649,10 @@ constructor(
                 }
 
             Log.d(TAG, "new capture mode $newCaptureMode")
-            return this@tryApplyCaptureModeConstraints.copy(
+            this@tryApplyCaptureModeConstraints.copy(
                 captureMode = newCaptureMode
             )
-        }
-            ?: return this
+        } ?: this
     }
 
     private fun CameraAppSettings.tryApplyNewZoomRatio(
@@ -914,6 +921,26 @@ constructor(
     }
 
     companion object {
+        @OptIn(markerClass = [ExperimentalCameraProviderConfiguration::class])
+        private suspend fun configureAndGetCameraProvider(
+            context: Context,
+            singleLensMode: LensFacing? = null
+        ): ProcessCameraProvider {
+            singleLensMode?.let {
+                try {
+                    Log.d(TAG, "Configuring camera provider for single lens mode: $it")
+                    ProcessCameraProvider.configureInstance(
+                        CameraXConfig.Builder.fromConfig(
+                            Camera2Config.defaultConfig()
+                        ).setAvailableCamerasLimiter(it.toCameraSelector()).build()
+                    )
+                } catch (_: IllegalStateException) {
+                    // No-op. CameraX is already configured.
+                    Log.d(TAG, "CameraX camera provider already configured")
+                }
+            }
+            return ProcessCameraProvider.awaitInstance(context)
+        }
         private val FIXED_FRAME_RATES = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
     }
 }

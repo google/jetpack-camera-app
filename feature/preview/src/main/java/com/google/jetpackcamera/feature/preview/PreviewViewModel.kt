@@ -47,6 +47,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -89,7 +90,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
     @Assisted val previewMode: PreviewMode,
-    @Assisted val isDebugMode: Boolean,
+    @Assisted val debugSettings: DebugSettings,
     private val cameraUseCase: CameraUseCase,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
@@ -123,7 +124,7 @@ class PreviewViewModel @AssistedInject constructor(
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
                 .applyPreviewMode(previewMode),
-            isDebugMode = isDebugMode
+            debugSettings = debugSettings
         ) { cameraPropertiesJSON = it }
     }
 
@@ -207,7 +208,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 cameraState.videoQualityInfo.width,
                                 cameraState.videoQualityInfo.height
                             ),
-                            isDebugMode = isDebugMode
+                            isDebugMode = debugSettings.isDebugModeEnabled
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
@@ -1142,7 +1143,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(previewMode: PreviewMode, isDebugMode: Boolean): PreviewViewModel
+        fun create(previewMode: PreviewMode, debugSettings: DebugSettings): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {

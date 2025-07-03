@@ -71,6 +71,7 @@ import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
@@ -90,12 +91,12 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     previewMode: PreviewMode,
-    isDebugMode: Boolean,
+    debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode, isDebugMode) }
+        { factory -> factory.create(previewMode, debugSettings) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -169,7 +170,7 @@ fun PreviewScreen(
                 onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode,
+                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(

@@ -36,7 +36,7 @@ import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getCurrentLensFacing
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -139,7 +139,7 @@ class SwitchCameraTest {
 inline fun runFlipCameraTest(
     composeTestRule: ComposeTestRule,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest {
+) = runMainActivityScenarioTest {
     // Wait for the preview display to be visible
     composeTestRule.waitUntil(APP_START_TIMEOUT_MILLIS) {
         composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).isDisplayed()

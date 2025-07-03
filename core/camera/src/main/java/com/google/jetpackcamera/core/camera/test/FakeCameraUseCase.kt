@@ -27,6 +27,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -65,7 +66,7 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        isDebugMode: Boolean,
+        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         initialized = true
