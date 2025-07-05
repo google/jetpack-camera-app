@@ -31,6 +31,9 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority.Companion.fromProto
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -70,6 +73,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
                     else -> StreamConfig.MULTI_STREAM
                 },
+                lowLightBoostPriority = LowLightBoostPriority.fromProto(it.lowLightBoostPriority),
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
@@ -191,6 +195,14 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setVideoQuality(videoQuality.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setLowLightBoostPriority(lowLightBoostPriority.toProto())
                 .build()
         }
     }

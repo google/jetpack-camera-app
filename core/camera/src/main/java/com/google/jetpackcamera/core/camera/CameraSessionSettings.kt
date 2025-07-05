@@ -23,6 +23,7 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -45,7 +46,8 @@ internal sealed interface PerpetualSessionSettings {
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
         val videoQuality: VideoQuality,
-        val imageFormat: ImageOutputFormat
+        val imageFormat: ImageOutputFormat,
+        val lowLightBoostPriority: LowLightBoostPriority
     ) : PerpetualSessionSettings
 
     /**

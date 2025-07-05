@@ -61,6 +61,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -167,6 +168,9 @@ dependencies {
 
     // benchmark
     implementation(libs.androidx.profileinstaller)
+
+    // Desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code

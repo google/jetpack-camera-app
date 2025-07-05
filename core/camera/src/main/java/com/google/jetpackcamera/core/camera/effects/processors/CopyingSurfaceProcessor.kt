@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects
+package com.google.jetpackcamera.core.camera.effects.processors
 
 import android.graphics.SurfaceTexture
 import android.opengl.EGL14
 import android.opengl.EGLConfig
 import android.opengl.EGLExt
 import android.opengl.EGLSurface
-import android.util.Size
 import android.view.Surface
 import androidx.camera.core.SurfaceOutput
 import androidx.camera.core.SurfaceProcessor
@@ -28,19 +27,16 @@ import androidx.camera.core.SurfaceRequest
 import androidx.graphics.opengl.GLRenderer
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.graphics.opengl.egl.EGLSpec
+import com.google.jetpackcamera.core.camera.effects.RenderCallbacks
+import com.google.jetpackcamera.core.camera.effects.ShaderCopy
+import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
+import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
 import com.google.jetpackcamera.core.common.RefCounted
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNot
@@ -266,96 +262,5 @@ class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor
             old?.cancel("New SurfaceOutput received.")
             newScope
         }
-    }
-}
-
-interface RenderCallbacks {
-    val glThreadName: String
-    val provideEGLSpec: () -> EGLSpec
-    val initConfig: EGLManager.() -> EGLConfig
-    val initRenderer: () -> Unit
-    val createSurfaceTexture: (width: Int, height: Int) -> SurfaceTexture
-    val createOutputSurface: (
-        eglSpec: EGLSpec,
-        config: EGLConfig,
-        surface: Surface,
-        width: Int,
-        height: Int
-    ) -> EGLSurface
-    val drawFrame: (outputWidth: Int, outputHeight: Int, surfaceTransform: FloatArray) -> Unit
-}
-
-private class SurfaceOutputScope(val surfaceOutput: SurfaceOutput) {
-    private val surfaceLifecycleJob = SupervisorJob()
-    private val refCountedSurface = RefCounted<Surface>(onRelease = {
-        surfaceOutput.close()
-    }).apply {
-        // Ensure we don't release until after `initialize` has completed by deferring
-        // the release.
-        val deferredRelease = CompletableDeferred<Unit>()
-        initialize(
-            surfaceOutput.getSurface(Runnable::run) {
-                deferredRelease.complete(Unit)
-            }
-        )
-        CoroutineScope(Dispatchers.Unconfined).launch {
-            deferredRelease.await()
-            surfaceLifecycleJob.cancel("SurfaceOutput close requested.")
-            this@apply.release()
-        }
-    }
-
-    suspend fun <R> withSurfaceOutput(
-        block: suspend CoroutineScope.(
-            surface: RefCounted<Surface>,
-            surfaceSize: Size,
-            updateTransformMatrix: (updated: FloatArray, original: FloatArray) -> Unit
-        ) -> R
-    ): R {
-        return CoroutineScope(coroutineContext + Job(surfaceLifecycleJob)).async(
-            start = CoroutineStart.UNDISPATCHED
-        ) {
-            ensureActive()
-            block(
-                refCountedSurface,
-                surfaceOutput.size,
-                surfaceOutput::updateTransformMatrix
-            )
-        }.await()
-    }
-
-    fun cancel(message: String? = null) {
-        message?.apply { surfaceLifecycleJob.cancel(message) } ?: surfaceLifecycleJob.cancel()
-    }
-}
-
-private class SurfaceRequestScope(private val surfaceRequest: SurfaceRequest) {
-    private val requestLifecycleJob = SupervisorJob()
-
-    init {
-        surfaceRequest.addRequestCancellationListener(Runnable::run) {
-            requestLifecycleJob.cancel("SurfaceRequest cancelled.")
-        }
-    }
-
-    suspend fun <R> withSurfaceRequest(
-        block: suspend CoroutineScope.(
-            surfaceRequest: SurfaceRequest
-        ) -> R
-    ): R {
-        return CoroutineScope(coroutineContext + Job(requestLifecycleJob)).async(
-            start = CoroutineStart.UNDISPATCHED
-        ) {
-            ensureActive()
-            block(surfaceRequest)
-        }.await()
-    }
-
-    fun cancel(message: String? = null) {
-        message?.apply { requestLifecycleJob.cancel(message) } ?: requestLifecycleJob.cancel()
-        // Attempt to tell frame producer we will not provide a surface. This may fail (silently)
-        // if surface was already provided or the producer has cancelled the request, in which
-        // case we don't have to do anything.
-        surfaceRequest.willNotProvideSurface()
     }
 }

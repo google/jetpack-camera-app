@@ -65,6 +65,7 @@ import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
@@ -83,6 +84,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_A
 import com.google.jetpackcamera.settings.model.DarkMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -371,6 +373,58 @@ fun StreamConfigSetting(
                         StreamConfig.SINGLE_STREAM,
                     enabled = true,
                     onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun LowLightBoostPrioritySetting(
+    lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_LOW_LIGHT_BOOST_PRIORITY_TAG),
+        title = stringResource(R.string.low_light_boost_priority_title),
+        leadingIcon = null,
+        enabled = true,
+        description =
+            if (lowLightBoostPriorityUiState is LowLightBoostPriorityUiState.Enabled) {
+                when (lowLightBoostPriorityUiState.currentLowLightBoostPriority) {
+                    LowLightBoostPriority.PRIORITIZE_AE_MODE -> stringResource(
+                        id = R.string.low_light_boost_priority_description_ae_mode
+                    )
+
+                    LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES -> stringResource(
+                        id = R.string.low_light_boost_priority_description_google_play_services
+                    )
+                }
+            } else {
+                TODO("low light boost priority currently has no disabled criteria")
+            },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_AE_MODE_TAG
+                    ),
+                    text = stringResource(id = R.string.low_light_boost_priority_selector_ae_mode),
+                    selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
+                            LowLightBoostPriority.PRIORITIZE_AE_MODE,
+                    enabled = true,
+                    onClick = { setLowLightBoostPriority(LowLightBoostPriority.PRIORITIZE_AE_MODE) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_GOOGLE_PLAY_SERVICES_TAG
+                    ),
+                    text = stringResource(id = R.string.low_light_boost_priority_selector_google_play_services),
+                    selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
+                            LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES,
+                    enabled = true,
+                    onClick = { setLowLightBoostPriority(LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES) }
                 )
             }
         }

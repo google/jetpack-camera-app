@@ -33,6 +33,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -66,6 +67,10 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
+import com.google.android.gms.cameralowlight.LowLightBoost
+import com.google.android.gms.cameralowlight.LowLightBoostSession
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -74,6 +79,8 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LowLightBoostAvailability
+import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
@@ -115,7 +122,11 @@ private val QUALITY_RANGE_MAP = mapOf(
     SD to Range.create(241, 719)
 )
 
+lateinit var lowLightBoostSessionContainer: LowLightBoostSessionContainer
+
 context(CameraSessionContext)
+@ExperimentalCamera2Interop
+@RequiresApi(Build.VERSION_CODES.R)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -124,6 +135,8 @@ internal suspend fun runSingleCameraSession(
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
+
+    lowLightBoostSessionContainer = LowLightBoostSessionContainer()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
@@ -154,11 +167,34 @@ internal suspend fun runSingleCameraSession(
 
     transientSettings
         .filterNotNull()
-        .distinctUntilChanged { old, new -> old.primaryLensFacing == new.primaryLensFacing }
+        .distinctUntilChanged { old, new ->
+            (old.primaryLensFacing == new.primaryLensFacing &&
+                    !((old.flashMode == FlashMode.LOW_LIGHT_BOOST) xor (new.flashMode == FlashMode.LOW_LIGHT_BOOST)))
+        }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
+            val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+            val camera2Info = Camera2CameraInfo.from(cameraInfo)
+            val cameraId = camera2Info.cameraId
+            val lowLightBoostAvailability = cameraInfo.getLowLightBoostAvailablity(context)
+
+            val cameraEffects = mutableListOf<CameraEffect>()
+            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST &&
+                (lowLightBoostAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                        lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        sessionSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)) {
+                val lowLightBoostClient = LowLightBoost.getClient(context)
+                cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, lowLightBoostSessionContainer, this@coroutineScope))
+            } else {
+                lowLightBoostSessionContainer.lowLightBoostSession?.release()
+                lowLightBoostSessionContainer.lowLightBoostSession = null
+
+            }
+            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM && cameraEffects.isEmpty()) {
+                cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
+            }
             val useCaseGroup = createUseCaseGroup(
                 cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
                 videoCaptureUseCase = videoCaptureUseCase,
@@ -168,10 +204,7 @@ internal suspend fun runSingleCameraSession(
                 dynamicRange = sessionSettings.dynamicRange,
                 imageFormat = sessionSettings.imageFormat,
                 captureMode = sessionSettings.captureMode,
-                effect = when (sessionSettings.streamConfig) {
-                    StreamConfig.SINGLE_STREAM -> SingleSurfaceForcingEffect(this@coroutineScope)
-                    StreamConfig.MULTI_STREAM -> null
-                }
+                effects = cameraEffects
             ).apply {
                 getImageCapture()?.let(onImageCaptureCreated)
             }
@@ -274,7 +307,8 @@ internal suspend fun runSingleCameraSession(
                     camera,
                     useCaseGroup,
                     currentTransientSettings,
-                    transientSettings
+                    transientSettings,
+                    sessionSettings
                 )
             }
         }
@@ -286,7 +320,8 @@ internal suspend fun processTransientSettingEvents(
     camera: Camera,
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
-    transientSettings: StateFlow<TransientSessionSettings?>
+    transientSettings: StateFlow<TransientSessionSettings?>,
+    sessionSettings: PerpetualSessionSettings.SingleCamera?
 ) {
     // Immediately Apply camera zoom from current settings when opening a new camera
     camera.cameraControl.setZoomRatio(
@@ -332,20 +367,27 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-            prevTransientSettings.flashMode != newTransientSettings.flashMode
-        ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             when (newTransientSettings.flashMode) {
                 FlashMode.LOW_LIGHT_BOOST -> {
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
 
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
+                    val lowLightBoostAvailability = camera.cameraInfo.getLowLightBoostAvailablity(context)
+
+                    if (lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
+                                lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                sessionSettings?.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE
+                            )) {
+                        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+                        val captureRequestOptions = CaptureRequestOptions.Builder()
+                            .setCaptureRequestOption(
+                                CaptureRequest.CONTROL_AE_MODE,
+                                CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                            )
+                            .build()
+
+                        Camera2CameraControl.from(camera.cameraControl)
+                            .addCaptureRequestOptions(captureRequestOptions)
+                    }
                 }
                 else -> {
                     Camera2CameraControl.from(camera.cameraControl)
@@ -412,7 +454,7 @@ internal fun createUseCaseGroup(
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
-    effect: CameraEffect? = null
+    effects: List<CameraEffect>? = null
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
@@ -454,7 +496,7 @@ internal fun createUseCaseGroup(
         imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
         videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
 
-        effect?.let { addEffect(it) }
+        effects?.let { effect -> effect.forEach { addEffect(it) } }
     }.build()
 }
 
@@ -1045,6 +1087,10 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 result: TotalCaptureResult
             ) {
                 super.onCaptureCompleted(session, request, result)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    lowLightBoostSessionContainer.lowLightBoostSession?.processCaptureResult(result)
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
