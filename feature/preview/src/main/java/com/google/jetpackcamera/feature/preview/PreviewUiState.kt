@@ -26,7 +26,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
@@ -50,7 +50,8 @@ sealed interface PreviewUiState {
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
+        val captureModeToggleUiState: CaptureModeToggleUiState =
+            CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,

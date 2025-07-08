@@ -54,8 +54,9 @@ import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -64,8 +65,6 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
-import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureModeUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureToggleUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -169,7 +168,7 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
 
                 var flashModeUiState: FlashModeUiState
-                val captureModeUiState = CaptureModeUiState.getCaptureModeUiState(
+                val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
                     cameraAppSettings,
                     previewMode.convertForUiState()
@@ -261,7 +260,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings.cameraLensFacing,
                             cameraState
                         ),
-                        captureModeToggleUiState = CaptureModeUiState.getCaptureToggleUiState(
+                        captureModeToggleUiState = CaptureModeToggleUiState.from(
                             systemConstraints,
                             cameraAppSettings,
                             cameraState,
@@ -685,7 +684,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun enqueueDisabledHdrToggleSnackBar(disabledReason: ReasonDisplayable) {
+    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         addSnackBarData(

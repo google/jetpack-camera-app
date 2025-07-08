@@ -19,11 +19,11 @@ import android.content.Context
 
 sealed interface SingleSelectableUiState<T> {
     data class SelectableUi<T>(val value: T) : SingleSelectableUiState<T>
-    data class Disabled<T>(val value: T, val disabledReason: ReasonDisplayable) :
+    data class Disabled<T>(val value: T, val disabledReason: DisableRationale) :
         SingleSelectableUiState<T>
 }
 
-interface ReasonDisplayable {
+interface DisableRationale {
     val testTag: String
     val reasonTextResId: Int
     fun getDisplayMessage(context: Context): String {
