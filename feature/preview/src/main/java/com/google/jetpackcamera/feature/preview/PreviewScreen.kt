@@ -20,6 +20,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -67,7 +69,6 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -76,9 +77,11 @@ import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -140,6 +143,25 @@ fun PreviewScreen(
             LaunchedEffect(Unit) {
                 debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
             }
+            val scope = rememberCoroutineScope()
+            val zoomState = remember(
+                currentUiState.currentCameraSettings.cameraLensFacing
+            ) {
+                // the initialZoomLevel must be fetched from the settings, not the cameraState.
+                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
+                ZoomState(
+                    initialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )?.initialZoomRatio
+                        ?: 1f,
+                    onAnimateStateChanged = viewModel::setZoomAnimationState,
+                    onChangeZoomLevel = viewModel::changeZoomRatio,
+                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                        ?.primaryZoomRange
+                        ?: Range(1f, 1f)
+                )
+            }
 
             ContentScreen(
                 modifier = modifier,
@@ -150,7 +172,39 @@ fun PreviewScreen(
                 onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
-                onChangeZoomRatio = viewModel::changeZoomRatio,
+                onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.absoluteZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
+                onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.scaleZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
+                onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.animatedZoom(
+                            targetZoomLevel = zoomRatio,
+                            lensToZoom = lensToZoom
+                        )
+                    }
+                },
+                onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.incrementZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
+
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
@@ -200,7 +254,10 @@ private fun ContentScreen(
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
-    onChangeZoomRatio: (CameraZoomRatio) -> Unit = {},
+    onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onAnimateZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
@@ -249,14 +306,13 @@ private fun ContentScreen(
                 onSetAudioEnabled(!isAudioEnabled)
             }
         }
-
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
                 previewUiState = previewUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
-                onZoomRatioChange = onChangeZoomRatio,
+                onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
@@ -285,7 +341,8 @@ private fun ContentScreen(
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
-                onSetZoom = onChangeZoomRatio,
+                onAnimateZoom = { targetZoom -> onAnimateZoom(targetZoom, LensToZoom.PRIMARY) },
+                onIncrementZoom = { targetZoom -> onIncrementZoom(targetZoom, LensToZoom.PRIMARY) },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
@@ -302,7 +359,7 @@ private fun ContentScreen(
             DebugOverlayComponent(
                 toggleIsOpen = onToggleDebugOverlay,
                 previewUiState = previewUiState,
-                onChangeZoomRatio = onChangeZoomRatio
+                onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
             )
 
             // displays toast when there is a message to show

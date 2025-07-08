@@ -99,7 +99,7 @@ class PreviewViewModel @AssistedInject constructor(
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
-
+    private val isAnimatingZoomState: MutableStateFlow<Float?> = MutableStateFlow(null)
     val previewUiState: StateFlow<PreviewUiState> =
         _previewUiState.asStateFlow()
 
@@ -156,8 +156,9 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState(),
-                lockedRecordingState.filterNotNull().distinctUntilChanged()
-            ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
+                lockedRecordingState.filterNotNull().distinctUntilChanged(),
+                isAnimatingZoomState
+            ) { cameraAppSettings, systemConstraints, cameraState, lockedState, animateZoomState ->
 
                 var flashModeUiState: FlashModeUiState
                 _previewUiState.update { old ->
@@ -229,6 +230,12 @@ class PreviewViewModel @AssistedInject constructor(
                         zoomUiState = getZoomUiState(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
+                            cameraState
+                        ),
+                        zoomControlUiState = getZoomComponentUiState(
+                            animateZoomState,
+                            systemConstraints,
+                            cameraAppSettings,
                             cameraState
                         ),
                         captureModeToggleUiState = getCaptureToggleUiState(
@@ -427,6 +434,41 @@ class PreviewViewModel @AssistedInject constructor(
         VideoRecordingState.Starting ->
             CaptureButtonUiState
                 .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+    }
+
+    private fun getZoomComponentUiState(
+        animateZoomState: Float?,
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState
+    ): ZoomControlUiState {
+        val zoomRange =
+            systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+                ?.supportedZoomRange
+                ?: Range(1f, 1f)
+
+        if (zoomRange.upper == zoomRange.lower)
+            return ZoomControlUiState.Disabled
+        val zoomLevels: List<Float> = buildList {
+            if (zoomRange.lower < 1f) {
+                add(zoomRange.lower)
+            }
+            add(1f)
+            if (zoomRange.contains(2f)) {
+                add(2f)
+            }
+            if (zoomRange.contains(5f)) {
+                add(5f)
+            }
+        }
+        return ZoomControlUiState.Enabled(
+            zoomLevels = zoomLevels,
+            initialZoomRatio = cameraAppSettings.defaultZoomRatios[cameraAppSettings.cameraLensFacing],
+            primaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
+            primarySettingZoomRatio = cameraAppSettings
+                .defaultZoomRatios[cameraAppSettings.cameraLensFacing],
+            animatingToValue = animateZoomState
+        )
     }
 
     private fun getZoomUiState(
@@ -1032,6 +1074,12 @@ class PreviewViewModel @AssistedInject constructor(
             lockedRecordingState.update {
                 isLocked
             }
+        }
+    }
+
+    fun setZoomAnimationState(targetValue: Float?) {
+        viewModelScope.launch {
+            isAnimatingZoomState.update { targetValue }
         }
     }
 
