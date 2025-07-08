@@ -17,12 +17,36 @@ package com.google.jetpackcamera.ui.uistate
 
 import android.content.Context
 
+/**
+ * Represents the UI state for an item that can be selected, but might also be
+ * disabled for specific reasons.
+ *
+ * This sealed interface is used to model UI elements where an option (of type [T])
+ * can either be actively selectable or presented as disabled with a rationale.
+ *
+ * @param T The type of the value that can be selected or is disabled.
+ */
 sealed interface SingleSelectableUiState<T> {
+    /**
+     * Represents an item that is currently available for selection.
+     * @property value The underlying value of the selectable item.
+     */
     data class SelectableUi<T>(val value: T) : SingleSelectableUiState<T>
+
+    /**
+     * Represents an item that is currently disabled and cannot be selected.
+     * Includes a reason why the item is disabled.
+     * @property value The underlying value of the item, even though it's disabled.
+     * @property disabledReason The rationale explaining why this item is disabled.
+     */
     data class Disabled<T>(val value: T, val disabledReason: DisableRationale) :
         SingleSelectableUiState<T>
 }
 
+/**
+ * Defines the reason why a [SingleSelectableUiState.Disabled] item is not available.
+ * Provides a way to get a human-readable message and a test tag for UI testing.
+ */
 interface DisableRationale {
     val testTag: String
     val reasonTextResId: Int

@@ -280,6 +280,7 @@ class PreviewViewModel @AssistedInject constructor(
         systemConstraints: SystemConstraints,
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
+        val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
         return QuickSettingsUiState.Available(
             aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings),
             captureModeUiState = captureModeUiState,
@@ -287,7 +288,8 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraAppSettings,
                 systemConstraints,
                 previewMode.convertForUiState(),
-                captureModeUiState
+                captureModeUiState,
+                streamConfigUiState
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
@@ -296,7 +298,7 @@ class PreviewViewModel @AssistedInject constructor(
                 systemConstraints,
                 previewMode.convertForUiState()
             ),
-            streamConfigUiState = StreamConfigUiState.from(cameraAppSettings),
+            streamConfigUiState = streamConfigUiState,
             quickSettingsIsOpen = quickSettingsIsOpen
         )
     }
