@@ -81,6 +81,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+// This test class is run on both the front and back lenses with the Parameterized test runner.
+// Parameters are provided by the data() function in the companion object.
 @RunWith(Parameterized::class)
 class SettingsDeviceTest(private val lensFacing: LensFacing) {
     companion object {
