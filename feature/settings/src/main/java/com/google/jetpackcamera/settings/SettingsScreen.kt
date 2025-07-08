@@ -32,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
 import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
+import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
@@ -124,6 +126,7 @@ private fun SettingsScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             SettingsPageHeader(
+                modifier = Modifier.testTag(SETTINGS_TITLE),
                 title = stringResource(id = R.string.settings_title),
                 navBack = onNavigateBack,
                 scrollBehavior = scrollBehavior
