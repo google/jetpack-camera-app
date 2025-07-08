@@ -440,11 +440,14 @@ class PreviewViewModel @AssistedInject constructor(
         systemConstraints: SystemConstraints,
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState
-    ): ZoomControlUiState.Enabled {
+    ): ZoomControlUiState {
         val zoomRange =
             systemConstraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
                 ?.supportedZoomRange
                 ?: Range(1f, 1f)
+
+        if (zoomRange.upper == zoomRange.lower)
+            return ZoomControlUiState.Disabled
         val zoomLevels: List<Float> = buildList {
             if (zoomRange.lower < 1f) {
                 add(zoomRange.lower)

@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,28 +50,29 @@ import java.text.DecimalFormat
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ZoomButtonRow(
+    onChangeZoom: (Float) -> Unit,
     modifier: Modifier = Modifier,
     zoomControlUiState: ZoomControlUiState.Enabled,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     spacing: Dp = 16.dp,
-    onChangeZoom: (Float) -> Unit
 ) {
-    val selectedOptionIndex: Int by remember(zoomControlUiState) {
-        // if animating towards a value, then that option will be selected
-        // otherwise, select the closest option that is less than the current zoom ratio
-
+    val currentZoomState by rememberUpdatedState(zoomControlUiState)
+    val selectedOptionIndex: Int by remember {
         // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
         // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
         // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
         // when cameraState is in this intermediate state.
 
 
-        val checkValue =
-            zoomControlUiState.animatingToValue ?: zoomControlUiState.primaryZoomRatio ?: 1f
         derivedStateOf {
+            // if animating towards a value, then that option will be selected
+            // otherwise, select the closest option that is less than the current zoom ratio
+
+            val checkValue =
+                currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
             if (checkValue >= 1f) {
                 // -1 if no index is found
-                zoomControlUiState.zoomLevels.indexOfLast { zoomLevelOption ->
+                currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
                     checkValue >= zoomLevelOption
                 }
             } else {
@@ -79,32 +81,28 @@ fun ZoomButtonRow(
         }
     }
 
-    Box(
-        modifier = modifier
+    Row(
+        modifier = Modifier
             .background(
                 color = Color.Black.copy(alpha = 0.32f),
                 shape = CircleShape
             )
+            .padding(horizontal = spacing / 2, vertical = spacing / 2)
+            .testTag("")
+            .height(buttonSize),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = spacing / 2, vertical = spacing / 2)
-                .testTag("")
-                .height(buttonSize),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
-                Box(
-                    modifier = Modifier.width(buttonSize + spacing + 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ZoomButton(
-                        targetZoom = value,
-                        currentZoomRatio = { -> (zoomControlUiState.primaryZoomRatio ?: 1f) },
-                        isSelected = selectedOptionIndex == index,
-                        onChangeZoom = onChangeZoom
-                    )
-                }
+        zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
+            Box(
+                modifier = Modifier.width(buttonSize + spacing + 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                ZoomButton(
+                    targetZoom = value,
+                    zoomRatio = zoomControlUiState.primaryZoomRatio ?: 1f,
+                    isSelected = selectedOptionIndex == index,
+                    onChangeZoom = onChangeZoom
+                )
             }
         }
     }
@@ -115,26 +113,28 @@ fun ZoomButtonRow(
 private fun ZoomButton(
     modifier: Modifier = Modifier,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
-    // font: FontFamily = Roboto, todo Roboto font
     targetZoom: Float,
-    currentZoomRatio: () -> Float,
+    zoomRatio: Float,
     isSelected: Boolean = false,
     onChangeZoom: (Float) -> Unit
 ) {
-    val selectedFormat = DecimalFormat("#.0")
-    val formatter = DecimalFormat("#.#")
-    formatter.minimumIntegerDigits = 0
-    if (targetZoom >= 1) {
-        formatter.roundingMode = RoundingMode.DOWN
-    } else {
-        formatter.roundingMode = RoundingMode.UP
+    val selectedFormat = remember { DecimalFormat("#.0") }
+    val formatter = remember(targetZoom) {
+        DecimalFormat("#.#").apply {
+            minimumIntegerDigits = 0
+            roundingMode = if (targetZoom >= 1) {
+                RoundingMode.DOWN
+            } else {
+                RoundingMode.UP
+            }
+        }
     }
-    val displayText by remember(isSelected, currentZoomRatio) {
+    val displayText by remember(isSelected, zoomRatio) {
         derivedStateOf {
             if (!isSelected) {
                 formatter.format(targetZoom)
             } else {
-                "${selectedFormat.format(currentZoomRatio())}x"
+                "${selectedFormat.format(zoomRatio)}x"
             }
         }
     }
@@ -180,13 +180,13 @@ fun ZoomButtonPreview() {
                 targetZoom = 1f,
                 onChangeZoom = {},
                 isSelected = false,
-                currentZoomRatio = { -> 2f }
+                zoomRatio = 2f
             )
 
             ZoomButton(
                 targetZoom = 3f,
                 onChangeZoom = {},
-                currentZoomRatio = { -> 3.3f },
+                zoomRatio = 3.3f ,
                 isSelected = true
             )
         }
@@ -205,8 +205,6 @@ fun ZoomBarPreviewOneSelected() {
         ZoomButtonRow(
             zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = 1f),
             onChangeZoom = {
-                // In a real app, you would handle the click event here.
-                // For the preview, we can just print it.
                 println("Clicked value: $it")
             }
         )
@@ -225,8 +223,7 @@ fun ZoomBarPreviewFractionSelected() {
         ZoomButtonRow(
             zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = .6f),
             onChangeZoom = {
-                // In a real app, you would handle the click event here.
-                // For the preview, we can just print it.
+
                 println("Clicked value: $it")
             }
         )

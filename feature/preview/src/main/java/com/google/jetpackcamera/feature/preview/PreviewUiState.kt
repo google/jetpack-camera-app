@@ -103,6 +103,7 @@ sealed interface HdrUiState {
 
 sealed interface ZoomControlUiState {
     data object Unavailable : ZoomControlUiState
+    data object Disabled: ZoomControlUiState
     data class Enabled(
         val zoomLevels: List<Float>,
         val initialZoomRatio: Float? = null,
