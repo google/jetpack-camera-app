@@ -42,7 +42,7 @@ import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
-import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import org.junit.Rule
@@ -62,7 +62,7 @@ internal class VideoRecordingDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun pressed_video_capture(): Unit = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun pressed_video_capture(): Unit = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
     ) {
         val timeStamp = System.currentTimeMillis()
@@ -79,7 +79,7 @@ internal class VideoRecordingDeviceTest {
 
     @Test
     fun drag_to_lock_pressed_video_capture(): Unit =
-        runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         ) {
             val timeStamp = System.currentTimeMillis()

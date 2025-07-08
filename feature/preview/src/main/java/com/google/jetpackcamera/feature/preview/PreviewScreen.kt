@@ -68,19 +68,23 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
@@ -95,11 +99,12 @@ fun PreviewScreen(
     onNavigateToPostCapture: () -> Unit,
     externalCaptureMode: ExternalCaptureMode,
     isDebugMode: Boolean,
+    debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(externalCaptureMode, isDebugMode) }
+        { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -172,7 +177,7 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode,
+                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
@@ -209,7 +214,7 @@ private fun ContentScreen(
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onDisabledCaptureMode: (ReasonDisplayable) -> Unit = {},
+    onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -423,7 +428,7 @@ private fun ContentScreen_Locked_Recording() {
 private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
     externalCaptureMode = ExternalCaptureMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeUiState.Unavailable
+    captureModeToggleUiState = CaptureModeToggleUiState.Unavailable
 )
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(

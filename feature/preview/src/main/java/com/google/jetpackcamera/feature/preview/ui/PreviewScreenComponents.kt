@@ -123,7 +123,7 @@ import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
-import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -719,7 +719,7 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (ReasonDisplayable) -> Unit,
+    onDisabledCaptureMode: (DisableRationale) -> Unit,
     captureModeUiState: CaptureModeUiState.Available
 ) {
     var isExpanded by remember { mutableStateOf(false) }

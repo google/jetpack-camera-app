@@ -78,13 +78,14 @@ import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
-import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -116,7 +117,7 @@ fun CameraControlsOverlay(
     onFlipCamera: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onDisabledCaptureMode: (ReasonDisplayable) -> Unit = {},
+    onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
@@ -302,7 +303,7 @@ private fun ControlsBottom(
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
-    onDisabledCaptureMode: (ReasonDisplayable) -> Unit = {},
+    onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onSetZoom: (CameraZoomRatio) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
@@ -349,8 +350,8 @@ private fun ControlsBottom(
 
         Column {
             if (!isQuickSettingsOpen &&
-                captureUiState.captureModeToggleUiState
-                    is CaptureModeUiState.Available
+                    captureUiState.captureModeToggleUiState
+                    is CaptureModeToggleUiState.Available
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines
                 Box(
@@ -360,7 +361,7 @@ private fun ControlsBottom(
                 ) {
                     CaptureModeToggleButton(
                         uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeUiState.Available,
+                            as CaptureModeToggleUiState.Available,
                         onChangeCaptureMode = onSetCaptureMode,
                         onToggleWhenDisabled = onDisabledCaptureMode,
                         modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -595,9 +596,9 @@ private fun CaptureButton(
 
 @Composable
 private fun CaptureModeToggleButton(
-    uiState: CaptureModeUiState.Available,
+    uiState: CaptureModeToggleUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (ReasonDisplayable) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
@@ -634,7 +635,7 @@ private fun CaptureModeToggleButton(
             onChangeCaptureMode(captureMode)
         },
         onToggleWhenDisabled = {
-            val disabledReason: ReasonDisplayable? =
+            val disabledReason: DisableRationale? =
                 (
                     uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
                         SingleSelectableUiState.Disabled<CaptureMode>
@@ -758,7 +759,7 @@ private fun Preview_ControlsBottom() {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
                 externalCaptureMode = ExternalCaptureMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeUiState.Unavailable,
+                captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
@@ -787,7 +788,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
                 externalCaptureMode = ExternalCaptureMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeUiState.Unavailable,
+                captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
@@ -816,7 +817,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
                 externalCaptureMode = ExternalCaptureMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeUiState.Unavailable,
+                captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
@@ -845,7 +846,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
                 externalCaptureMode = ExternalCaptureMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeUiState.Unavailable,
+                captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
@@ -873,7 +874,7 @@ private fun Preview_ControlsBottom_Recording() {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
                 externalCaptureMode = ExternalCaptureMode.StandardMode {},
-                captureModeToggleUiState = CaptureModeUiState.Unavailable,
+                captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),

@@ -19,8 +19,11 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
 object Utils {
 
-    /** Given a set of values and a filtering list, return a list that only contains the values that
-     *  are selectable. */
+    /**
+     *  @param supportedValues a [Set] of options that are selectable in the current device configuration
+     *  @param sortedValues a [List] of sorted options that always contains [supportedValues].
+     *  @return a new List of [SingleSelectableUiState.SelectableUi] that contains all [supportedValues] ordered in accordance to [sortedValues]
+     *  */
     fun <T> getSelectableListFromValues(
         valueSet: Set<T>,
         filteringList: List<T>
