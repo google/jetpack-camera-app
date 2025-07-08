@@ -195,9 +195,9 @@ fun DefaultCameraFacing(
             .semantics {
                 stateDescription = when (lensUiState.currentLensFacing) {
                     LensFacing.FRONT ->
-                        context.getString(R.string.default_facing_camera_description_on)
+                        context.getString(R.string.default_facing_camera_description_front)
                     LensFacing.BACK ->
-                        context.getString(R.string.default_facing_camera_description_off)
+                        context.getString(R.string.default_facing_camera_description_back)
                 }
             },
         title = stringResource(id = R.string.default_facing_camera_title),

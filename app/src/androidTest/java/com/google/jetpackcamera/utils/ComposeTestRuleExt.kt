@@ -54,6 +54,7 @@ import com.google.jetpackcamera.feature.preview.ui.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -468,10 +469,10 @@ fun SettingsScreenScope.selectLensFacing(lensFacing: LensFacing) {
 
             val expectedContentDescription = when (lensFacing) {
                 LensFacing.FRONT -> getResString(
-                    com.google.jetpackcamera.settings.R.string.default_facing_camera_description_on
+                    SettingsR.string.default_facing_camera_description_front
                 )
                 LensFacing.BACK -> getResString(
-                    com.google.jetpackcamera.settings.R.string.default_facing_camera_description_off
+                    SettingsR.string.default_facing_camera_description_back
                 )
             }
             if (!hasStateDescription(expectedContentDescription).matches(fetchSemanticsNode())) {
