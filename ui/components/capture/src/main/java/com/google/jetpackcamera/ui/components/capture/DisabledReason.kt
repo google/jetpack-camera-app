@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture
 
-import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG
-import com.google.jetpackcamera.feature.preview.ui.HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 
-sealed interface CaptureModeUiState {
-    data object Unavailable : CaptureModeUiState
-    data class Enabled(
-        val currentSelection: CaptureMode,
-        val defaultCaptureState: SingleSelectableState = SingleSelectableState.Selectable,
-        val videoOnlyCaptureState: SingleSelectableState = SingleSelectableState.Selectable,
-        val imageOnlyCaptureState: SingleSelectableState = SingleSelectableState.Selectable
-    ) : CaptureModeUiState
-}
-
-enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
+enum class DisabledReason(
+    // 'override' is required
+    override val testTag: String,
+    // 'override' is required
+    override val reasonTextResId: Int
+) : DisableRationale {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_video_capture_external_unsupported
@@ -45,7 +30,6 @@ enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
     IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED(
         IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_image_capture_external_unsupported
-
     ),
     IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA(
         IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG,
@@ -79,10 +63,4 @@ enum class DisabledReason(val testTag: String, val reasonTextResId: Int) {
         HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG,
         R.string.toast_hdr_simultaneous_image_video_unsupported
     )
-}
-
-/** State for the individual options on Popup dialog settings */
-sealed interface SingleSelectableState {
-    data object Selectable : SingleSelectableState
-    data class Disabled(val disabledReason: DisabledReason) : SingleSelectableState
 }
