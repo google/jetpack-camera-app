@@ -223,7 +223,7 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (CameraZoomRatio) -> Unit, onC
                             ZoomChange.Absolute(newRatio, LensToZoom.PRIMARY)
                         )
                     )
-                } catch (e: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                     Log.d(TAG, "Zoom ratio should be a float")
                 }
                 onClose()

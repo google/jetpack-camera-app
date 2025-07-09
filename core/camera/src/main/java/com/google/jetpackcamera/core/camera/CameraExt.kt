@@ -62,8 +62,8 @@ fun CXDynamicRange.toSupportedAppDynamicRange(): DynamicRange? {
 
 fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
     return when (this) {
-        com.google.jetpackcamera.settings.model.DynamicRange.SDR -> CXDynamicRange.SDR
-        com.google.jetpackcamera.settings.model.DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
+        DynamicRange.SDR -> CXDynamicRange.SDR
+        DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
     }
 }
 
