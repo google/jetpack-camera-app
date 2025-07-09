@@ -22,7 +22,6 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState

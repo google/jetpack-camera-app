@@ -39,8 +39,8 @@ import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.DebugSettings
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE

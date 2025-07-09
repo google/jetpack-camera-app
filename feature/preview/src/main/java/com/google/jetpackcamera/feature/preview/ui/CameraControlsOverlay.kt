@@ -81,11 +81,10 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -350,7 +349,7 @@ private fun ControlsBottom(
 
         Column {
             if (!isQuickSettingsOpen &&
-                    captureUiState.captureModeToggleUiState
+                captureUiState.captureModeToggleUiState
                     is CaptureModeToggleUiState.Available
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines

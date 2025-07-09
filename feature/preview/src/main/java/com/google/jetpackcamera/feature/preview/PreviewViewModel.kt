@@ -41,7 +41,6 @@ import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -291,7 +290,7 @@ class PreviewViewModel @AssistedInject constructor(
             concurrentCameraUiState = ConcurrentCameraUiState.from(
                 cameraAppSettings,
                 systemConstraints,
-                    externalCaptureMode,
+                externalCaptureMode,
                 captureModeUiState,
                 streamConfigUiState
             ),
@@ -802,7 +801,10 @@ class PreviewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(externalCaptureMode: ExternalCaptureMode, debugSettings: DebugSettings): PreviewViewModel
+        fun create(
+            externalCaptureMode: ExternalCaptureMode,
+            debugSettings: DebugSettings
+        ): PreviewViewModel
     }
 
     sealed interface ImageCaptureEvent {

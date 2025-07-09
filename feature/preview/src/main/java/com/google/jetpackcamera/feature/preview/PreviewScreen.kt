@@ -68,7 +68,6 @@ import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
@@ -76,15 +75,13 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import com.google.jetpackcamera.ui.uistate.DisableRationale
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
