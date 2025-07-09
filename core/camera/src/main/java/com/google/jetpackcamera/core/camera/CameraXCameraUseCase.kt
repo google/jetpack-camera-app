@@ -52,7 +52,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -63,6 +62,7 @@ import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -131,9 +131,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = configureAndGetCameraProvider(
             context = application,
             singleLensMode = debugSettings.singleLensMode
@@ -243,6 +243,12 @@ constructor(
                             }
                         }
 
+                        val supportedTestPatterns = if (debugSettings.isDebugModeEnabled) {
+                            camInfo.availableTestPatterns
+                        } else {
+                            setOf(TestPattern.Off)
+                        }
+
                         put(
                             lensFacing,
                             CameraConstraints(
@@ -260,7 +266,8 @@ constructor(
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
-                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
+                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
+                                supportedTestPatterns = supportedTestPatterns
                             )
                         )
                     }
@@ -281,6 +288,7 @@ constructor(
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
+                .tryApplyTestPatternConstraints()
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -310,7 +318,8 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomRatios = currentCameraSettings.defaultZoomRatios
+                    zoomRatios = currentCameraSettings.defaultZoomRatios,
+                    testPattern = currentCameraSettings.debugSettings.testPattern
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -586,6 +595,15 @@ constructor(
         }
     }
 
+    override fun setTestPattern(newTestPattern: TestPattern) {
+        currentSettings.update { oldCameraSettings ->
+            oldCameraSettings?.debugSettings?.copy(testPattern = newTestPattern)
+                ?.let { newDebugSettings ->
+                    oldCameraSettings.copy(debugSettings = newDebugSettings)
+                } ?: oldCameraSettings
+        }
+    }
+
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
@@ -595,6 +613,7 @@ constructor(
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
                     ?.tryApplyCaptureModeConstraints()
+                    ?.tryApplyTestPatternConstraints()
             } else {
                 old
             }
@@ -815,6 +834,24 @@ constructor(
                 )
             }
         } ?: this
+
+    private fun CameraAppSettings.tryApplyTestPatternConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            with(constraints.supportedTestPatterns) {
+                val newTestPattern = if (contains(debugSettings.testPattern)) {
+                    debugSettings.testPattern
+                } else {
+                    TestPattern.Off
+                }
+                if (newTestPattern != debugSettings.testPattern) {
+                    this@tryApplyTestPatternConstraints.copy(
+                        debugSettings = debugSettings.copy(testPattern = newTestPattern)
+                    )
+                } else {
+                    null
+                }
+            }
+        } ?: this@tryApplyTestPatternConstraints
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))

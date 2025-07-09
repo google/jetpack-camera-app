@@ -123,8 +123,8 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
-                .applyPreviewMode(previewMode),
-            debugSettings = debugSettings
+                .applyPreviewMode(previewMode)
+                .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
     }
 

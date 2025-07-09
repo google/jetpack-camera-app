@@ -33,6 +33,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +49,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings = DebugSettings(),
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
@@ -89,6 +89,8 @@ interface CameraUseCase {
     suspend fun stopVideoRecording()
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio)
+
+    fun setTestPattern(newTestPattern: TestPattern)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 
