@@ -41,6 +41,7 @@ import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -251,8 +252,8 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState
                         ),
-                        elapsedTimeUiState = ElapsedTimeUiState.Companion.from(cameraState),
-                        captureButtonUiState = CaptureButtonUiState.Companion.from(
+                        elapsedTimeUiState = ElapsedTimeUiState.from(cameraState),
+                        captureButtonUiState = CaptureButtonUiState.from(
                             cameraAppSettings,
                             cameraState,
                             lockedState
