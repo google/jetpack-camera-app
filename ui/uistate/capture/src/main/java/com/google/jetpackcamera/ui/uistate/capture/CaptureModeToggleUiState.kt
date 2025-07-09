@@ -22,20 +22,16 @@ sealed interface CaptureModeToggleUiState {
     data object Unavailable : CaptureModeToggleUiState
     data class Available(
         val selectedCaptureMode: CaptureMode,
-        val availableCaptureModes: List<SingleSelectableUiState<CaptureMode>>
+        val imageOnlyUiState: SingleSelectableUiState<CaptureMode>,
+        val videoOnlyUiState: SingleSelectableUiState<CaptureMode>
     ) : CaptureModeToggleUiState {
         init {
-            val isSelectedModePresentAndSelectable = availableCaptureModes.any { state ->
-                state is SingleSelectableUiState.SelectableUi && state.value == selectedCaptureMode
-            }
+            val isSelectedModePresentAndSelectable =
+                selectedCaptureMode == CaptureMode.IMAGE_ONLY ||
+                    selectedCaptureMode == CaptureMode.VIDEO_ONLY
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected capture mode $selectedCaptureMode is not among the available and " +
-                    "selectable capture modes. Available modes: ${
-                        availableCaptureModes.mapNotNull {
-                            if (it is SingleSelectableUiState.SelectableUi) it.value else null
-                        }
-                    }"
+                "Selected capture mode $selectedCaptureMode is not among video or image only }"
             }
         }
     }
@@ -43,9 +39,8 @@ sealed interface CaptureModeToggleUiState {
     fun CaptureModeToggleUiState.isCaptureModeSelectable(captureMode: CaptureMode): Boolean {
         return when (this) {
             is Available -> {
-                availableCaptureModes.any {
-                    it is SingleSelectableUiState.SelectableUi && it.value == captureMode
-                }
+                captureMode == CaptureMode.IMAGE_ONLY ||
+                    captureMode == CaptureMode.VIDEO_ONLY
             }
 
             Unavailable -> false
@@ -56,15 +51,10 @@ sealed interface CaptureModeToggleUiState {
         targetCaptureMode: CaptureMode
     ): SingleSelectableUiState<CaptureMode>? {
         if (this is Available) {
-            return this.availableCaptureModes.firstOrNull { state ->
-                (
-                    state is SingleSelectableUiState.SelectableUi &&
-                        state.value == targetCaptureMode
-                    ) ||
-                    (
-                        state is SingleSelectableUiState.Disabled &&
-                            state.value == targetCaptureMode
-                        )
+            return if (targetCaptureMode == CaptureMode.IMAGE_ONLY) {
+                imageOnlyUiState
+            } else {
+                videoOnlyUiState
             }
         }
         return null
