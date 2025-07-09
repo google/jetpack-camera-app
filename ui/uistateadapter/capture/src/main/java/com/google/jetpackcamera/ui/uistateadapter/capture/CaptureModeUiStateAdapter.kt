@@ -54,22 +54,9 @@ fun CaptureModeToggleUiState.Companion.from(
             cameraAppSettings,
             previewMode
         )
-        // Find the IMAGE_ONLY and VIDEO_ONLY states
-        val imageOnlyState = availableCaptureModes.first { item ->
-            when (item) {
-                is SingleSelectableUiState.SelectableUi -> item.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> item.value == CaptureMode.IMAGE_ONLY
-            }
-        }
-        val videoOnlyState = availableCaptureModes.first { item ->
-            when (item) {
-                is SingleSelectableUiState.SelectableUi -> item.value == CaptureMode.VIDEO_ONLY
-                is SingleSelectableUiState.Disabled -> item.value == CaptureMode.VIDEO_ONLY
-            }
-        }
         CaptureModeToggleUiState.Available(
             selectedCaptureMode = cameraAppSettings.captureMode,
-            availableCaptureModes = Pair(imageOnlyState, videoOnlyState)
+            availableCaptureModes = availableCaptureModes
         )
     } else {
         CaptureModeToggleUiState.Unavailable
