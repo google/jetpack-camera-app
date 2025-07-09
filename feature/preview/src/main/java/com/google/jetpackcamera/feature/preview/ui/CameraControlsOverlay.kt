@@ -61,6 +61,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.CaptureButtonUiState
 import com.google.jetpackcamera.feature.preview.CaptureModeUiState
 import com.google.jetpackcamera.feature.preview.DEFAULT_CAPTURE_BUTTON_STATE
+import com.google.jetpackcamera.feature.preview.DebugUiState
 import com.google.jetpackcamera.feature.preview.DisabledReason
 import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
 import com.google.jetpackcamera.feature.preview.FlashModeUiState
@@ -147,12 +148,14 @@ fun CameraControlsOverlay(
                 .fillMaxSize()
         ) {
             if (previewUiState.videoRecordingState is VideoRecordingState.Inactive) {
+                val showDebugButton = previewUiState.debugUiState is DebugUiState.Enabled &&
+                    previewUiState.debugUiState !is DebugUiState.Open
                 ControlsTop(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen = previewUiState.quickSettingsIsOpen,
-                    isDebugMode = previewUiState.debugUiState.isDebugMode,
+                    showDebugButton = showDebugButton,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings,
@@ -198,7 +201,7 @@ fun CameraControlsOverlay(
 private fun ControlsTop(
     isQuickSettingsOpen: Boolean,
     modifier: Modifier = Modifier,
-    isDebugMode: Boolean = false,
+    showDebugButton: Boolean = false,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
@@ -259,7 +262,11 @@ private fun ControlsTop(
                 VideoQualityIcon(videoQuality, Modifier.testTag(VIDEO_QUALITY_TAG))
             }
         }
-        if (isDebugMode) {
+        AnimatedVisibility(
+            showDebugButton,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
         }
     }
@@ -310,7 +317,7 @@ private fun ControlsBottom(
                 ) {
                     ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
-                if (previewUiState.debugUiState.isDebugMode) {
+                if (previewUiState.debugUiState is DebugUiState.Enabled) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
                 }
                 if (previewUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {

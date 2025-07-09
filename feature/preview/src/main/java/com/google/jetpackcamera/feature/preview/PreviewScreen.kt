@@ -21,6 +21,10 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -299,11 +303,21 @@ private fun ContentScreen(
                 onLockVideoRecording = onLockVideoRecording
             )
 
-            DebugOverlayComponent(
-                toggleIsOpen = onToggleDebugOverlay,
-                previewUiState = previewUiState,
-                onChangeZoomRatio = onChangeZoomRatio
-            )
+            AnimatedContent(
+                targetState = previewUiState.debugUiState,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut() using null
+                },
+                contentKey = { it is DebugUiState.Open }
+            ) {
+                if (it is DebugUiState.Open) {
+                    DebugOverlayComponent(
+                        toggleIsOpen = onToggleDebugOverlay,
+                        debugUiState = it,
+                        onChangeZoomRatio = onChangeZoomRatio
+                    )
+                }
+            }
 
             // displays toast when there is a message to show
             if (previewUiState.toastMessageToShow != null) {

@@ -74,7 +74,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
@@ -98,7 +97,8 @@ class PreviewViewModel @AssistedInject constructor(
 ) : ViewModel() {
     private val _previewUiState: MutableStateFlow<PreviewUiState> =
         MutableStateFlow(PreviewUiState.NotReady)
-    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
+        MutableStateFlow(TrackedPreviewUiState())
 
     val previewUiState: StateFlow<PreviewUiState> =
         _previewUiState.asStateFlow()
@@ -156,8 +156,8 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState(),
-                lockedRecordingState.filterNotNull().distinctUntilChanged()
-            ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
+                trackedPreviewUiState
+            ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
                 _previewUiState.update { old ->
@@ -202,13 +202,11 @@ class PreviewViewModel @AssistedInject constructor(
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
                         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-                        debugUiState = DebugUiState(
-                            cameraPropertiesJSON = cameraPropertiesJSON,
-                            videoResolution = Size(
-                                cameraState.videoQualityInfo.width,
-                                cameraState.videoQualityInfo.height
-                            ),
-                            isDebugMode = debugSettings.isDebugModeEnabled
+                        debugUiState = getDebugUiState(
+                            systemConstraints,
+                            cameraAppSettings,
+                            cameraState,
+                            trackedUiState.isDebugOverlayOpen
                         ),
                         stabilizationUiState = stabilizationUiStateFrom(
                             cameraAppSettings,
@@ -224,7 +222,7 @@ class PreviewViewModel @AssistedInject constructor(
                         captureButtonUiState = getCaptureButtonUiState(
                             cameraAppSettings,
                             cameraState,
-                            lockedState
+                            trackedUiState.recordingIsLocked
                         ),
                         zoomUiState = getZoomUiState(
                             systemConstraints,
@@ -240,7 +238,8 @@ class PreviewViewModel @AssistedInject constructor(
                             systemConstraints,
                             cameraAppSettings
                         ),
-                        hdrUiState = getHdrUiState(systemConstraints, cameraAppSettings)
+                        hdrUiState = getHdrUiState(systemConstraints, cameraAppSettings),
+                        quickSettingsIsOpen = trackedUiState.quickSettingsIsOpen
                     )
                 }
             }.collect {}
@@ -440,6 +439,27 @@ class PreviewViewModel @AssistedInject constructor(
         primaryZoomRatio = cameraState.zoomRatios[lensFacing],
         primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
     )
+
+    private fun getDebugUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState,
+        isDebugOverlayOpen: Boolean
+    ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
+        if (isDebugOverlayOpen) {
+            DebugUiState.Open(
+                cameraPropertiesJSON = cameraPropertiesJSON,
+                videoResolution = Size(
+                    cameraState.videoQualityInfo.width,
+                    cameraState.videoQualityInfo.height
+                )
+            )
+        } else {
+            DebugUiState.Closed
+        }
+    } else {
+        DebugUiState.Disabled
+    }
 
     private fun getHdrUiState(
         systemConstraints: SystemConstraints,
@@ -1028,10 +1048,8 @@ class PreviewViewModel @AssistedInject constructor(
      "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
-        viewModelScope.launch {
-            lockedRecordingState.update {
-                isLocked
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(recordingIsLocked = isLocked)
         }
     }
 
@@ -1069,29 +1087,15 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    // modify ui values
     fun toggleQuickSettings() {
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    quickSettingsIsOpen = !old.quickSettingsIsOpen
-                ) ?: old
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(quickSettingsIsOpen = !old.quickSettingsIsOpen)
         }
     }
 
     fun toggleDebugOverlay() {
-        viewModelScope.launch {
-            _previewUiState.update { old ->
-                (old as? PreviewUiState.Ready)?.copy(
-                    debugUiState = DebugUiState(
-                        old.debugUiState.cameraPropertiesJSON,
-                        old.debugUiState.videoResolution,
-                        old.debugUiState.isDebugMode,
-                        !old.debugUiState.isDebugOverlayOpen
-                    )
-                ) ?: old
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
         }
     }
 
@@ -1157,4 +1161,19 @@ class PreviewViewModel @AssistedInject constructor(
 
         data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
     }
+
+    /**
+     * Data class to track UI-specific states within the PreviewViewModel.
+     *
+     * This state is managed by the ViewModel and can be thought of as UI configuration
+     * or interaction states that might otherwise have been handled by Compose's
+     * `remember` if not hoisted to the ViewModel for broader logic integration
+     * or persistence. It is then transformed into the `PreviewUiState` that the UI
+     * directly observes.
+     */
+    data class TrackedPreviewUiState(
+        val quickSettingsIsOpen: Boolean = false,
+        val isDebugOverlayOpen: Boolean = false,
+        val recordingIsLocked: Boolean = false
+    )
 }

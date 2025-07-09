@@ -17,16 +17,19 @@ package com.google.jetpackcamera.feature.preview.ui.debug
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -34,16 +37,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.feature.preview.PreviewUiState
+import com.google.jetpackcamera.feature.preview.DebugUiState
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
@@ -70,133 +74,131 @@ fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (CameraZoomRatio) -> Unit,
     toggleIsOpen: () -> Unit,
-    previewUiState: PreviewUiState.Ready
+    debugUiState: DebugUiState.Open
 ) {
-    val isOpen = previewUiState.debugUiState.isDebugMode &&
-        previewUiState.debugUiState.isDebugOverlayOpen
-    val backgroundColor =
-        animateColorAsState(
-            targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
-            label = "backgroundColorAnimation"
-        )
+    var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
+    val backgroundColor = Color.Black.copy(
+        alpha =
+        when (selectedDialog) {
+            SelectedDialog.None -> 0.7f
+            else -> 0.9f
+        }
+    )
 
-    val contentAlpha =
-        animateFloatAsState(
-            targetValue = if (isOpen) 1f else 0f,
-            label = "contentAlphaAnimation",
-            animationSpec = tween()
-        )
+    BackHandler(onBack = { toggleIsOpen() })
 
-    val zoomRatioDialog = remember { mutableStateOf(false) }
-    val cameraPropertiesJSONDialog = remember { mutableStateOf(false) }
-
-    if (isOpen) {
-        BackHandler(onBack = { toggleIsOpen() })
-
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(color = backgroundColor.value)
-                .alpha(alpha = contentAlpha.value)
-                .clickable(onClick = { toggleIsOpen() })
-        ) {
-            // Buttons
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                TextButton(
-                    modifier = Modifier.testTag(
-                        DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
-                    ),
-                    onClick = {
-                        cameraPropertiesJSONDialog.value = true
-                    }
-                ) {
-                    Text(text = "Show Camera Properties JSON")
-                }
-
-                Row {
-                    Text("Video resolution: ")
-                    val videoResText = if (previewUiState.debugUiState.videoResolution == null) {
-                        "null"
-                    } else {
-                        val size = previewUiState.debugUiState.videoResolution
-                        abs(size.height).toString() + "x" + abs(size.width).toString()
-                    }
-                    Text(
-                        modifier = Modifier.testTag(
-                            DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
-                        ),
-                        text = videoResText
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(color = backgroundColor)
+            .safeContentPadding()
+    ) {
+        AnimatedContent(
+            targetState = selectedDialog,
+            transitionSpec = { fadeIn() togetherWith fadeOut() using null }
+        ) { dialog ->
+            when (dialog) {
+                SelectedDialog.None ->
+                    MainDebugOverlay(
+                        debugUiState,
+                        onMoveToComponent = { selectedDialog = it },
+                        onClose = { toggleIsOpen() }
                     )
-                }
 
-                TextButton(
-                    modifier = Modifier.testTag(
-                        DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
-                    ),
-                    onClick = {
-                        zoomRatioDialog.value = true
+                SelectedDialog.CameraJSON ->
+                    CameraPropertiesJSONDialog(debugUiState.cameraPropertiesJSON) {
+                        selectedDialog = SelectedDialog.None
                     }
-                ) {
-                    Text(text = "Set Zoom Ratio")
-                }
-            }
 
-            // Openable contents
-            // Show Camera properties
-            if (cameraPropertiesJSONDialog.value) {
-                CameraPropertiesJSONComponent(previewUiState) {
-                    cameraPropertiesJSONDialog.value = false
-                }
-            }
-
-            // Set zoom ratio
-            if (zoomRatioDialog.value) {
-                SetZoomRatioComponent(onChangeZoomRatio) {
-                    zoomRatioDialog.value = false
-                }
+                SelectedDialog.SetZoom ->
+                    SetZoomRatioDialog(onChangeZoomRatio) {
+                        selectedDialog = SelectedDialog.None
+                    }
             }
         }
     }
 }
 
 @Composable
-private fun CameraPropertiesJSONComponent(
-    previewUiState: PreviewUiState.Ready,
+private fun MainDebugOverlay(
+    debugUiState: DebugUiState.Open,
+    onMoveToComponent: (SelectedDialog) -> Unit,
     onClose: () -> Unit
 ) {
+    // Buttons
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .noIndicationClickable(onClick = onClose),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TextButton(
+            modifier = Modifier.testTag(
+                DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
+            ),
+            onClick = {
+                onMoveToComponent(SelectedDialog.CameraJSON)
+            }
+        ) {
+            Text(text = "Show Camera Properties JSON")
+        }
+
+        Row {
+            Text("Video resolution: ")
+            val videoResText = if (debugUiState.videoResolution == null) {
+                "null"
+            } else {
+                val size = debugUiState.videoResolution
+                abs(size.height).toString() + "x" + abs(size.width).toString()
+            }
+            Text(
+                modifier = Modifier.testTag(
+                    DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+                ),
+                text = videoResText
+            )
+        }
+
+        TextButton(
+            modifier = Modifier.testTag(
+                DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+            ),
+            onClick = {
+                onMoveToComponent(SelectedDialog.SetZoom)
+            }
+        ) {
+            Text(text = "Set Zoom Ratio")
+        }
+    }
+}
+
+@Composable
+private fun CameraPropertiesJSONDialog(cameraPropertiesJSON: String, onClose: () -> Unit) {
     BackHandler(onBack = { onClose() })
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(state = scrollState)
-            .background(color = Color.Black)
+            .noIndicationClickable(onClick = onClose)
     ) {
         Text(
             modifier = Modifier.testTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG),
-            text = previewUiState.debugUiState.cameraPropertiesJSON,
+            text = cameraPropertiesJSON,
             fontSize = 10.sp
         )
     }
 }
 
 @Composable
-private fun SetZoomRatioComponent(
-    onChangeZoomRatio: (CameraZoomRatio) -> Unit,
-    onClose: () -> Unit
-) {
-    var zoomRatioText = remember { mutableStateOf("") }
+private fun SetZoomRatioDialog(onChangeZoomRatio: (CameraZoomRatio) -> Unit, onClose: () -> Unit) {
+    val zoomRatioText = remember { mutableStateOf("") }
     BackHandler(onBack = { onClose() })
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(state = scrollState)
-            .background(color = Color.Black)
     ) {
         Text(text = "Enter and confirm zoom ratio (Absolute not relative)")
         TextField(
@@ -230,4 +232,17 @@ private fun SetZoomRatioComponent(
             Text(text = "Set")
         }
     }
+}
+
+@Composable
+private fun Modifier.noIndicationClickable(onClick: () -> Unit): Modifier = this.clickable(
+    interactionSource = remember { MutableInteractionSource() },
+    indication = null,
+    onClick = onClick
+)
+
+private enum class SelectedDialog {
+    None,
+    CameraJSON,
+    SetZoom
 }

@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Range
-import android.util.Size
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.ui.ImageWellUiState
 import com.google.jetpackcamera.feature.preview.ui.SnackbarData
@@ -54,7 +53,7 @@ sealed interface PreviewUiState {
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
-        val debugUiState: DebugUiState = DebugUiState(),
+        val debugUiState: DebugUiState = DebugUiState.Disabled,
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
@@ -68,12 +67,6 @@ sealed interface PreviewUiState {
     ) : PreviewUiState
 }
 
-data class DebugUiState(
-    val cameraPropertiesJSON: String = "",
-    val videoResolution: Size? = null,
-    val isDebugMode: Boolean = false,
-    val isDebugOverlayOpen: Boolean = false
-)
 val DEFAULT_CAPTURE_BUTTON_STATE = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
 
 sealed interface CaptureButtonUiState {
