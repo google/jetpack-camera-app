@@ -39,8 +39,14 @@ sealed interface CaptureModeToggleUiState {
     fun CaptureModeToggleUiState.isCaptureModeSelectable(captureMode: CaptureMode): Boolean {
         return when (this) {
             is Available -> {
-                captureMode == CaptureMode.IMAGE_ONLY ||
-                    captureMode == CaptureMode.VIDEO_ONLY
+                (
+                    captureMode == CaptureMode.IMAGE_ONLY &&
+                        imageOnlyUiState is SingleSelectableUiState.SelectableUi
+                    ) ||
+                    (
+                        captureMode == CaptureMode.VIDEO_ONLY &&
+                            videoOnlyUiState is SingleSelectableUiState.SelectableUi
+                        )
             }
 
             Unavailable -> false
