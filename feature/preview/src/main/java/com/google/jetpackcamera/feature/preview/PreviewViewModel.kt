@@ -71,8 +71,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
-import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureModeUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.getCaptureToggleUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.toggleDebugOverlay
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.assisted.Assisted

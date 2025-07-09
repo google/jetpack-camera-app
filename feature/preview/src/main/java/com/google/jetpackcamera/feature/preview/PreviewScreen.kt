@@ -98,7 +98,6 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     externalCaptureMode: ExternalCaptureMode,
-    isDebugMode: Boolean,
     debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
