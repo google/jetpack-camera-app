@@ -70,7 +70,8 @@ fun CaptureModeToggleUiState.Companion.from(
         }
         CaptureModeToggleUiState.Available(
             selectedCaptureMode = cameraAppSettings.captureMode,
-            availableCaptureModes = Pair(imageOnlyState, videoOnlyState)
+            imageOnlyUiState = imageOnlyState,
+            videoOnlyUiState = videoOnlyState
         )
     } else {
         CaptureModeToggleUiState.Unavailable
