@@ -104,7 +104,7 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val captureUiState: CaptureUiState by viewModel.viewFinderUiState.collectAsState()
+    val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
