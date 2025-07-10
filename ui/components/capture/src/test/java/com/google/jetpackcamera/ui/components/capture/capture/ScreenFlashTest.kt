@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture.capture
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
-import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
+import com.google.jetpackcamera.ui.components.capture.capture.rules.MainDispatcherRule
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList

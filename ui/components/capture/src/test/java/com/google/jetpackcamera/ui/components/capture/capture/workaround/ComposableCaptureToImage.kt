@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 @file:SuppressLint("UseSdkSuppress")
 
-package com.google.jetpackcamera.feature.preview.workaround
+package com.google.jetpackcamera.ui.components.capture.capture.workaround
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
  * Workaround captureToImage method.
  *
  * Once composable + robolectric graphics bugs are fixed, this can be replaced with the actual
- * [androidx.compose.ui.test.SemanticsNodeInteraction.captureToImage]. Alternative is to use
+ * [SemanticsNodeInteraction.captureToImage]. Alternative is to use
  * instrumentations tests, but they are not run at github workflows.
  *
  * See [robolectric issue 8071](https://github.com/robolectric/robolectric/issues/8071) for details.

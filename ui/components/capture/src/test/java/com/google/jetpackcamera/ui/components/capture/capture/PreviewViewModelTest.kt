@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture.capture
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat

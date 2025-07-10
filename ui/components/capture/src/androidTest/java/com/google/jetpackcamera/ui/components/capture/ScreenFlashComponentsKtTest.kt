@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+
+package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +30,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -109,7 +109,7 @@ class ScreenFlashComponentsKtTest {
             2
         )
         overlayPixels.forEach {
-            assertEquals(Color.White.toArgb(), it)
+            Assert.assertEquals(Color.Companion.White.toArgb(), it)
         }
     }
 }
