@@ -915,7 +915,6 @@ private suspend fun runVideoRecording(
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {}
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -966,7 +965,6 @@ private suspend fun runVideoRecording(
                 }
             }
         }
-        onRestoreSettings()
     }
 }
 
@@ -1018,7 +1016,6 @@ internal suspend fun processVideoControlEvents(
                     videoCaptureControlEvents,
                     event.shouldUseUri,
                     event.onVideoRecord,
-                    event.onRestoreSettings
                 )
             }
 

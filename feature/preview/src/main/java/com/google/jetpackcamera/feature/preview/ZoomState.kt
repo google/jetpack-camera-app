@@ -19,6 +19,7 @@ import android.util.Range
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.core.util.toClosedRange
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
@@ -27,7 +28,7 @@ import com.google.jetpackcamera.settings.model.ZoomStrategy
 
 class ZoomState(
     initialZoomLevel: Float,
-    val zoomRange: Range<Float>,
+    zoomRange: Range<Float>,
     val onChangeZoomLevel: (CameraZoomRatio) -> Unit,
     val onAnimateStateChanged: (Float?) -> Unit
 ) {
@@ -36,6 +37,9 @@ class ZoomState(
     }
 
     private var functionalZoom = initialZoomLevel
+
+    private var functionalZoomRange = zoomRange
+
 
     private val mutatorMutex = MutatorMutex()
 
@@ -51,11 +55,12 @@ class ZoomState(
      */
     suspend fun absoluteZoom(targetZoomLevel: Float, lensToZoom: LensToZoom) {
         mutateZoom {
-            functionalZoom = targetZoomLevel.coerceIn(zoomRange.toClosedRange())
+            if (lensToZoom == LensToZoom.PRIMARY)
+                functionalZoom = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
             onChangeZoomLevel(
                 CameraZoomRatio(
                     ZoomStrategy.Absolute(
-                        functionalZoom,
+                        targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange()),
                         lensToZoom = lensToZoom
                     )
                 )
@@ -88,26 +93,31 @@ class ZoomState(
         lensToZoom: LensToZoom
     ) {
         mutatorMutex.mutate {
-            try {
-                onAnimateStateChanged(targetZoomLevel)
+            onAnimateStateChanged(targetZoomLevel)
 
-                Animatable(initialValue = functionalZoom).animateTo(
-                    targetValue = targetZoomLevel,
-                    animationSpec = animationSpec
-                ) {
-                    // this is called every animation frame
-                    functionalZoom = value.coerceIn(zoomRange.toClosedRange())
-                    onChangeZoomLevel(
-                        CameraZoomRatio(
-                            ZoomStrategy.Absolute(
-                                functionalZoom,
-                                lensToZoom
-                            )
+            Animatable(initialValue = functionalZoom).animateTo(
+                targetValue = targetZoomLevel,
+                animationSpec = animationSpec
+            ) {
+                // this is called every animation frame
+                functionalZoom = value.coerceIn(functionalZoomRange.toClosedRange())
+                onChangeZoomLevel(
+                    CameraZoomRatio(
+                        ZoomStrategy.Absolute(
+                            functionalZoom,
+                            lensToZoom
                         )
                     )
-                }
-            } finally {
+                )
             }
+
+        }
+    }
+
+    suspend fun onChangeLens(newInitialZoomLevel: Float, newZoomRange: Range<Float>) {
+        mutatorMutex.mutate(MutatePriority.PreventUserInput) {
+            functionalZoom = newInitialZoomLevel
+            functionalZoomRange = newZoomRange
         }
     }
 }

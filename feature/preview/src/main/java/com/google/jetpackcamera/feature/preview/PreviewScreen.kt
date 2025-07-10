@@ -39,9 +39,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +71,7 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -98,17 +101,17 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode, isDebugMode) }
+    { factory -> factory.create(previewMode, isDebugMode) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
     val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlash.ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+            by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+            by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -138,21 +141,19 @@ fun PreviewScreen(
     when (val currentUiState = previewUiState) {
         is PreviewUiState.NotReady -> LoadingScreen()
         is PreviewUiState.Ready -> {
+            var preRecordingSettings by remember { mutableStateOf<CameraAppSettings?>(null) }
             val context = LocalContext.current
             LaunchedEffect(Unit) {
                 debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
             }
             val scope = rememberCoroutineScope()
-            val zoomState = remember(
-                currentUiState.currentCameraSettings.cameraLensFacing
-            ) {
+            val zoomState = remember {
                 // the initialZoomLevel must be fetched from the settings, not the cameraState.
                 // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
+
                 ZoomState(
-                    initialZoomLevel = (
-                        currentUiState.zoomControlUiState as?
-                            ZoomControlUiState.Enabled
-                        )?.initialZoomRatio
+                    initialZoomLevel = (currentUiState.zoomControlUiState as? ZoomControlUiState.Enabled)
+                        ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
                     onChangeZoomLevel = viewModel::changeZoomRatio,
@@ -160,6 +161,50 @@ fun PreviewScreen(
                         ?.primaryZoomRange
                         ?: Range(1f, 1f)
                 )
+            }
+
+            LaunchedEffect(currentUiState.currentCameraSettings.cameraLensFacing) {
+                zoomState.onChangeLens(
+                    newInitialZoomLevel = (currentUiState.zoomControlUiState as? ZoomControlUiState.Enabled)
+                        ?.initialZoomRatio
+                        ?: 1f,
+                    newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                        ?.primaryZoomRange
+                        ?: Range(1f, 1f)
+                )
+            }
+            // handle reset certain values after video recording is complete
+            LaunchedEffect(currentUiState.videoRecordingState) {
+                with(currentUiState.videoRecordingState) {
+                    when (this) {
+                        VideoRecordingState.Starting -> {
+                            preRecordingSettings = currentUiState.currentCameraSettings
+                        }
+
+                        is VideoRecordingState.Inactive -> {
+                            preRecordingSettings?.let {
+                                val oldPrimaryLensFacing = it.cameraLensFacing
+                                val oldZoomRatios = it.defaultZoomRatios
+                                Log.d(TAG, "reset pre recording settings")
+                                viewModel.setLensFacing(oldPrimaryLensFacing)
+                                zoomState.apply {
+                                    absoluteZoom(
+                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
+                                        lensToZoom = LensToZoom.PRIMARY
+                                    )
+                                    absoluteZoom(
+                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()]
+                                            ?: 1f,
+                                        lensToZoom = LensToZoom.SECONDARY
+                                    )
+                                }
+                            }
+                            preRecordingSettings = null
+                        }
+
+                        is VideoRecordingState.Active -> {}
+                    }
+                }
             }
 
             ContentScreen(
@@ -340,8 +385,8 @@ private fun ContentScreen(
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
-                onAnimateZoom = { targetZoom -> onAnimateZoom(targetZoom, LensToZoom.PRIMARY) },
-                onIncrementZoom = { targetZoom -> onIncrementZoom(targetZoom, LensToZoom.PRIMARY) },
+                onAnimateZoom = { onAnimateZoom(it, LensToZoom.PRIMARY) },
+                onIncrementZoom = { onIncrementZoom(it, LensToZoom.PRIMARY) },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,

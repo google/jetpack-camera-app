@@ -26,6 +26,7 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
@@ -75,6 +76,7 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
+
 val DEFAULT_CAPTURE_BUTTON_STATE = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
 
 sealed interface CaptureButtonUiState {
@@ -93,6 +95,7 @@ sealed interface ElapsedTimeUiState {
     data object Unavailable : ElapsedTimeUiState
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
+
 sealed interface HdrUiState {
     data object Unavailable : HdrUiState
     data class Available(
@@ -103,15 +106,17 @@ sealed interface HdrUiState {
 
 sealed interface ZoomControlUiState {
     data object Unavailable : ZoomControlUiState
-    data object Disabled: ZoomControlUiState
+    data object Disabled : ZoomControlUiState
     data class Enabled(
         val zoomLevels: List<Float>,
+        val primaryLensFacing: LensFacing,
         val initialZoomRatio: Float? = null,
         val primaryZoomRatio: Float? = null,
         val primarySettingZoomRatio: Float? = null,
         val animatingToValue: Float? = null
     ) : ZoomControlUiState
 }
+
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState
     data class Enabled(
@@ -120,6 +125,7 @@ sealed interface ZoomUiState {
         val primaryLinearZoom: Float? = null
     ) : ZoomUiState
 }
+
 sealed interface AudioUiState {
     val amplitude: Double
 
@@ -171,7 +177,7 @@ sealed class FlashModeUiState {
         init {
             check(selectedFlashMode in availableFlashModes) {
                 "Selected flash mode of $selectedFlashMode not in available modes: " +
-                    "$availableFlashModes"
+                        "$availableFlashModes"
             }
         }
     }

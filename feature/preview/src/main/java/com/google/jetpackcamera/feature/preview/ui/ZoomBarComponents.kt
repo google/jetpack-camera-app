@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.feature.preview.ZoomControlUiState
+import com.google.jetpackcamera.settings.model.LensFacing
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
@@ -57,7 +58,7 @@ fun ZoomButtonRow(
     spacing: Dp = 16.dp,
 ) {
     val currentZoomState by rememberUpdatedState(zoomControlUiState)
-    val selectedOptionIndex: Int by remember {
+    val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
         // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
         // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
         // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
@@ -186,7 +187,7 @@ fun ZoomButtonPreview() {
             ZoomButton(
                 targetZoom = 3f,
                 onChangeZoom = {},
-                zoomRatio = 3.3f ,
+                zoomRatio = 3.3f,
                 isSelected = true
             )
         }
@@ -203,7 +204,11 @@ fun ZoomBarPreviewOneSelected() {
         contentAlignment = Alignment.Center
     ) {
         ZoomButtonRow(
-            zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = 1f),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                sampleValues,
+                primaryLensFacing = LensFacing.FRONT,
+                primaryZoomRatio = 1f
+            ),
             onChangeZoom = {
                 println("Clicked value: $it")
             }
@@ -221,7 +226,11 @@ fun ZoomBarPreviewFractionSelected() {
         contentAlignment = Alignment.Center
     ) {
         ZoomButtonRow(
-            zoomControlUiState = ZoomControlUiState.Enabled(sampleValues, primaryZoomRatio = .6f),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                sampleValues,
+                primaryLensFacing = LensFacing.FRONT,
+                primaryZoomRatio = .6f
+            ),
             onChangeZoom = {
 
                 println("Clicked value: $it")

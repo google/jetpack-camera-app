@@ -404,7 +404,9 @@ private fun ControlsBottom(
                     previewMode = previewUiState.previewMode,
                     isQuickSettingsOpen = isQuickSettingsOpen,
                     onCaptureImageWithUri = onCaptureImageWithUri,
-                    onIncrementZoom = onIncrementZoom,
+                    onIncrementZoom = { targetZoom ->
+                        onIncrementZoom(targetZoom)
+                    },
                     onToggleQuickSettings = onToggleQuickSettings,
                     onStartVideoRecording = onStartVideoRecording,
                     onStopVideoRecording = onStopVideoRecording,
@@ -710,6 +712,7 @@ private fun Preview_ControlsBottom() {
             videoRecordingState = VideoRecordingState.Inactive(),
             zoomControlUiState = ZoomControlUiState.Enabled(
                 listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
                 primaryZoomRatio = 1f
             ),
             zoomUiState = ZoomUiState.Enabled(
@@ -733,7 +736,8 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f),
+                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+
                 primaryZoomRatio = 1f
             ),
             zoomUiState = ZoomUiState.Enabled(
@@ -761,7 +765,8 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f),
+                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+
                 primaryZoomRatio = 1f
             ),
 
@@ -790,7 +795,8 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 captureButtonUiState = DEFAULT_CAPTURE_BUTTON_STATE
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f),
+                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+
                 primaryZoomRatio = 1f
             ),
 
@@ -827,6 +833,7 @@ private fun Preview_ControlsBottom_Recording() {
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
                 listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
                 primaryZoomRatio = 1f
             ),
 
