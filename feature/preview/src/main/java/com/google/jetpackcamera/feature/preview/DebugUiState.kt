@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Size
+import com.google.jetpackcamera.settings.model.TestPattern
 
 sealed interface DebugUiState {
     data object Disabled : DebugUiState
@@ -26,6 +27,8 @@ sealed interface DebugUiState {
 
     data class Open(
         val cameraPropertiesJSON: String = "",
-        val videoResolution: Size? = null
+        val videoResolution: Size? = null,
+        val selectedTestPattern: TestPattern = TestPattern.Off,
+        val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
     ) : Enabled
 }

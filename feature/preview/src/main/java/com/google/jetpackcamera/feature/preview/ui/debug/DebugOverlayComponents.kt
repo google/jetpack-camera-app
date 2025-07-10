@@ -29,10 +29,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -57,6 +61,7 @@ import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PRO
 import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.ZoomChange
 import kotlin.math.abs
 
@@ -73,6 +78,7 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
 fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (CameraZoomRatio) -> Unit,
+    onSetTestPattern: (TestPattern) -> Unit,
     toggleIsOpen: () -> Unit,
     debugUiState: DebugUiState.Open
 ) {
@@ -80,7 +86,8 @@ fun DebugOverlayComponent(
     val backgroundColor = Color.Black.copy(
         alpha =
         when (selectedDialog) {
-            SelectedDialog.None -> 0.7f
+            SelectedDialog.None,
+            SelectedDialog.SetTestPattern -> 0.7f
             else -> 0.9f
         }
     )
@@ -114,6 +121,14 @@ fun DebugOverlayComponent(
                     SetZoomRatioDialog(onChangeZoomRatio) {
                         selectedDialog = SelectedDialog.None
                     }
+
+                SelectedDialog.SetTestPattern ->
+                    SetTestPatternDialog(
+                        onSetTestPattern = onSetTestPattern,
+                        selectedTestPattern = debugUiState.selectedTestPattern,
+                        availableTestPatterns = debugUiState.availableTestPatterns,
+                        onClose = { selectedDialog = SelectedDialog.None }
+                    )
             }
         }
     }
@@ -168,6 +183,15 @@ private fun MainDebugOverlay(
             }
         ) {
             Text(text = "Set Zoom Ratio")
+        }
+
+        TextButton(
+            enabled = debugUiState.availableTestPatterns.size > 1,
+            onClick = {
+                onMoveToComponent(SelectedDialog.SetTestPattern)
+            }
+        ) {
+            Text(text = "Set Test Pattern")
         }
     }
 }
@@ -235,6 +259,49 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (CameraZoomRatio) -> Unit, onC
 }
 
 @Composable
+private fun SetTestPatternDialog(
+    onSetTestPattern: (TestPattern) -> Unit,
+    selectedTestPattern: TestPattern,
+    availableTestPatterns: Set<TestPattern>,
+    onClose: () -> Unit
+) {
+    BackHandler(onBack = { onClose() })
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Text(text = "Select test pattern")
+        val sortedTestPatterns = remember(availableTestPatterns) {
+            availableTestPatterns.sortedBy { if (it == TestPattern.Off) "" else it.toString() }
+        }
+        LazyColumn {
+            items(sortedTestPatterns) { testPattern ->
+                FilledIconToggleButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = testPattern == selectedTestPattern,
+                    onCheckedChange = { selected ->
+                        if (selected) {
+                            onSetTestPattern(testPattern)
+                        }
+                    }
+                ) {
+                    Text("$testPattern")
+                }
+            }
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End
+        ) {
+            TextButton(
+                onClick = { onClose() }
+            ) {
+                Text(text = "Close")
+            }
+        }
+    }
+}
+
+@Composable
 private fun Modifier.noIndicationClickable(onClick: () -> Unit): Modifier = this.clickable(
     interactionSource = remember { MutableInteractionSource() },
     indication = null,
@@ -244,5 +311,6 @@ private fun Modifier.noIndicationClickable(onClick: () -> Unit): Modifier = this
 private enum class SelectedDialog {
     None,
     CameraJSON,
-    SetZoom
+    SetZoom,
+    SetTestPattern
 }

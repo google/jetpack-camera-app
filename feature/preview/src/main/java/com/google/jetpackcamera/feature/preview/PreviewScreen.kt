@@ -82,6 +82,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.TestPattern
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
@@ -155,6 +156,7 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onChangeZoomRatio = viewModel::changeZoomRatio,
+                onSetTestPattern = viewModel::setTestPattern,
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
@@ -205,6 +207,7 @@ private fun ContentScreen(
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onChangeZoomRatio: (CameraZoomRatio) -> Unit = {},
+    onSetTestPattern: (TestPattern) -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
@@ -314,7 +317,8 @@ private fun ContentScreen(
                     DebugOverlayComponent(
                         toggleIsOpen = onToggleDebugOverlay,
                         debugUiState = it,
-                        onChangeZoomRatio = onChangeZoomRatio
+                        onChangeZoomRatio = onChangeZoomRatio,
+                        onSetTestPattern = onSetTestPattern
                     )
                 }
             }

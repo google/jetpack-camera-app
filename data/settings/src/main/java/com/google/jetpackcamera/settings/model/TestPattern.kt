@@ -34,32 +34,42 @@ sealed interface TestPattern {
      * No test pattern is applied; the sensor's normal output is used.
      * @see CaptureRequest.SENSOR_TEST_PATTERN_MODE_OFF
      */
-    object Off : TestPattern
+    object Off : TestPattern {
+        override fun toString(): String = "Off"
+    }
 
     /**
      * Displays color bars.
      * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS
      */
-    object ColorBars : TestPattern
+    object ColorBars : TestPattern {
+        override fun toString(): String = "ColorBars"
+    }
 
     /**
      * Displays color bars that fade to gray.
      * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY
      */
-    object ColorBarsFadeToGray : TestPattern
+    object ColorBarsFadeToGray : TestPattern {
+        override fun toString(): String = "ColorBarsFadeToGray"
+    }
 
     /**
      * Displays a PN9 sequence.
      * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9
      */
-    object PN9 : TestPattern
+    object PN9 : TestPattern {
+        override fun toString(): String = "PN9"
+    }
 
     /**
      * Displays a custom test pattern. The specifics of this pattern are
      * implementation-dependent.
      * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1
      */
-    object Custom1 : TestPattern
+    object Custom1 : TestPattern {
+        override fun toString(): String = "Custom1"
+    }
 
     /**
      * Displays a solid color as the test pattern.
@@ -79,6 +89,20 @@ sealed interface TestPattern {
         val greenOdd: UInt,
         val blue: UInt
     ) : TestPattern {
+        override fun toString(): String {
+            val color = when (this) {
+                BLACK -> "Black"
+                WHITE -> "White"
+                RED -> "Red"
+                GREEN -> "Green"
+                BLUE -> "Blue"
+                GRAY -> "Gray"
+                DARK_GRAY -> "Dark Gray"
+                else -> "r=%x, g_even=%x, g_odd=%x, b=%x".format(red, greenEven, greenOdd, blue)
+            }
+            return "SolidColor($color)"
+        }
+
         companion object {
             /** A solid red test pattern. */
             val RED = SolidColor(
@@ -134,6 +158,17 @@ sealed interface TestPattern {
                 greenEven = UInt.MAX_VALUE / 4u,
                 greenOdd = UInt.MAX_VALUE / 4u,
                 blue = UInt.MAX_VALUE / 4u
+            )
+
+            /** A list of all predefined solid color test patterns. */
+            val PREDEFINED_COLORS: List<SolidColor> = listOf(
+                RED,
+                GREEN,
+                BLUE,
+                WHITE,
+                BLACK,
+                GRAY,
+                DARK_GRAY
             )
         }
     }

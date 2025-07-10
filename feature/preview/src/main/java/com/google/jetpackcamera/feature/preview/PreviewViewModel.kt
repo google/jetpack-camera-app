@@ -57,6 +57,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -447,12 +448,26 @@ class PreviewViewModel @AssistedInject constructor(
         isDebugOverlayOpen: Boolean
     ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
         if (isDebugOverlayOpen) {
+            val availableTestPatterns = buildSet {
+                systemConstraints.forCurrentLens(cameraAppSettings)?.supportedTestPatterns
+                    ?.forEach {
+                        if (it is TestPattern.SolidColor) {
+                            addAll(TestPattern.SolidColor.PREDEFINED_COLORS)
+                        } else {
+                            add(it)
+                        }
+                    }
+            }
+
             DebugUiState.Open(
                 cameraPropertiesJSON = cameraPropertiesJSON,
                 videoResolution = Size(
                     cameraState.videoQualityInfo.width,
                     cameraState.videoQualityInfo.height
-                )
+                ),
+                selectedTestPattern =
+                cameraAppSettings.debugSettings?.testPattern ?: TestPattern.Off,
+                availableTestPatterns = availableTestPatterns
             )
         } else {
             DebugUiState.Closed
@@ -1054,7 +1069,15 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio) {
-        cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
+        viewModelScope.launch {
+            cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
+        }
+    }
+
+    fun setTestPattern(newTestPattern: TestPattern) {
+        viewModelScope.launch {
+            cameraUseCase.setTestPattern(newTestPattern = newTestPattern)
+        }
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
