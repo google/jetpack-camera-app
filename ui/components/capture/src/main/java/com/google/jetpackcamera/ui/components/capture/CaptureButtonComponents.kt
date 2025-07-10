@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Log
 import android.view.KeyEvent

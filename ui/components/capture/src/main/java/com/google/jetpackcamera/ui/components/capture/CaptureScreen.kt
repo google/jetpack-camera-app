@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
@@ -48,7 +49,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -57,24 +57,19 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScreenOverlay
-import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
-import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
-import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
-import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
-import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DebugSettings
+import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -82,6 +77,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.transformWhile
 
 private const val TAG = "PreviewScreen"
@@ -91,26 +87,24 @@ private const val TAG = "PreviewScreen"
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun PreviewScreen(
+fun CaptureScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    externalCaptureMode: ExternalCaptureMode,
     debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
-    viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(externalCaptureMode, debugSettings) }
+    viewModel: CaptureViewModel
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    val captureUiState: CaptureUiState by viewModel.getCaptureUiState().collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.getScreenFlashUiState().collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+        by viewModel.getSurfaceRequest().collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -151,7 +145,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onChangeZoomRatio = viewModel::changeZoomRatio,
@@ -177,7 +171,7 @@ fun PreviewScreen(
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE
             )
 
             LaunchedEffect(readStoragePermission.status) {
@@ -219,12 +213,12 @@ private fun ContentScreen(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
@@ -438,3 +432,44 @@ private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )
+
+interface CaptureViewModel {
+    fun startCamera()
+    fun stopCamera()
+    fun setLensFacing(newLensFacing: LensFacing)
+    fun setFlash(flashMode: FlashMode)
+    fun setAspectRatio(aspectRatio: AspectRatio)
+    fun setStreamConfig(streamConfig: StreamConfig)
+    fun setAudioEnabled(shouldEnableAudio: Boolean)
+    fun setPaused(shouldBePaused: Boolean)
+    fun tapToFocus(x: Float, y: Float)
+    fun changeZoomRatio(zoomRatio: CameraZoomRatio)
+    fun setDynamicRange(dynamicRange: DynamicRange)
+    fun setCaptureMode(captureMode: CaptureMode)
+    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
+    fun setImageFormat(imageOutputFormat: ImageOutputFormat)
+    fun enqueueDisabledHdrToggleSnackBar(disableRationale: DisableRationale)
+    fun toggleQuickSettings()
+
+    fun toggleDebugOverlay()
+    fun captureImageWithUri(
+        contentResolver: ContentResolver,
+        imageCaptureUri: Uri?,
+        ignoreUri: Boolean = false,
+        onImageCapture: (ImageCaptureEvent, Int) -> Unit
+    )
+    fun startVideoRecording(
+        videoCaptureUri: Uri?,
+        shouldUseUri: Boolean,
+        onVideoCapture: (VideoCaptureEvent) -> Unit
+    )
+    fun stopVideoRecording()
+    fun setLockedRecording(isLocked: Boolean)
+    fun setDisplayRotation(deviceRotation: DeviceRotation)
+    fun updateLastCapturedMedia()
+    fun onSnackBarResult(cookie: String)
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
+    fun getCaptureUiState(): StateFlow<CaptureUiState>
+    fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState>
+    fun setClearUiScreenBrightness(brightness: Float)
+}

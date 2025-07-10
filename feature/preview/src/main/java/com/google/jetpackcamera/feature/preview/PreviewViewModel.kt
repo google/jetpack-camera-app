@@ -43,12 +43,17 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.CaptureViewModel
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -62,6 +67,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -98,7 +104,7 @@ private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
- * [ViewModel] for [PreviewScreen].
+ * [ViewModel] for [com.google.jetpackcamera.ui.components.capture.CaptureScreen].
  */
 @HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
 class PreviewViewModel @AssistedInject constructor(
@@ -108,15 +114,15 @@ class PreviewViewModel @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
-) : ViewModel() {
+) : ViewModel(), CaptureViewModel {
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    val captureUiState: StateFlow<CaptureUiState> =
+    private val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
 
-    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
+    private val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
     private var runningCameraJob: Job? = null
 
@@ -126,7 +132,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var cameraPropertiesJSON = ""
 
-    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+    private val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
@@ -307,7 +313,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    fun updateLastCapturedMedia() {
+    override fun updateLastCapturedMedia() {
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
             _captureUiState.update { old ->
@@ -362,7 +368,7 @@ class PreviewViewModel @AssistedInject constructor(
         applyDiff(new, CameraAppSettings::audioEnabled, cameraUseCase::setAudioEnabled)
     }
 
-    fun startCamera() {
+    override fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
@@ -390,7 +396,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun stopCamera() {
+    override fun stopCamera() {
         Log.d(TAG, "stopCamera")
         runningCameraJob?.apply {
             if (isActive) {
@@ -399,34 +405,34 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setFlash(flashMode: FlashMode) {
+    override fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setFlashMode(flashMode)
         }
     }
 
-    fun setAspectRatio(aspectRatio: AspectRatio) {
+    override fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             cameraUseCase.setAspectRatio(aspectRatio)
         }
     }
 
-    fun setStreamConfig(streamConfig: StreamConfig) {
+    override fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             cameraUseCase.setStreamConfig(streamConfig)
         }
     }
 
     /** Sets the camera to a designated lens facing */
-    fun setLensFacing(newLensFacing: LensFacing) {
+    override fun setLensFacing(newLensFacing: LensFacing) {
         viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setLensFacing(newLensFacing)
         }
     }
 
-    fun setAudioEnabled(shouldEnableAudio: Boolean) {
+    override fun setAudioEnabled(shouldEnableAudio: Boolean) {
         viewModelScope.launch {
             cameraUseCase.setAudioEnabled(shouldEnableAudio)
         }
@@ -437,7 +443,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    fun setPaused(shouldBePaused: Boolean) {
+    override fun setPaused(shouldBePaused: Boolean) {
         viewModelScope.launch {
             if (shouldBePaused) {
                 cameraUseCase.pauseVideoRecording()
@@ -474,10 +480,10 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    fun captureImageWithUri(
+    override fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
-        ignoreUri: Boolean = false,
+        ignoreUri: Boolean,
         onImageCapture: (ImageCaptureEvent, Int) -> Unit
     ) {
         if (captureUiState.value is CaptureUiState.Ready &&
@@ -587,7 +593,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
+    override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         addSnackBarData(
@@ -600,7 +606,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    fun startVideoRecording(
+    override fun startVideoRecording(
         videoCaptureUri: Uri?,
         shouldUseUri: Boolean,
         onVideoCapture: (VideoCaptureEvent) -> Unit
@@ -660,7 +666,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun stopVideoRecording() {
+    override fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
         viewModelScope.launch {
             cameraUseCase.stopVideoRecording()
@@ -671,7 +677,7 @@ class PreviewViewModel @AssistedInject constructor(
     /**
      "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
-    fun setLockedRecording(isLocked: Boolean) {
+    override fun setLockedRecording(isLocked: Boolean) {
         viewModelScope.launch {
             lockedRecordingState.update {
                 isLocked
@@ -679,11 +685,11 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+    override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
-    fun setDynamicRange(dynamicRange: DynamicRange) {
+    override fun setDynamicRange(dynamicRange: DynamicRange) {
         if (externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
             externalCaptureMode !is ExternalCaptureMode.ExternalMultipleImageCaptureMode
         ) {
@@ -693,13 +699,13 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         viewModelScope.launch {
             cameraUseCase.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 
-    fun setImageFormat(imageFormat: ImageOutputFormat) {
+    override fun setImageFormat(imageFormat: ImageOutputFormat) {
         if (externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode) {
             viewModelScope.launch {
                 cameraUseCase.setImageFormat(imageFormat)
@@ -707,14 +713,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setCaptureMode(captureMode: CaptureMode) {
+    override fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
             cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
     // modify ui values
-    fun toggleQuickSettings() {
+    override fun toggleQuickSettings() {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
@@ -757,7 +763,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun toggleDebugOverlay() {
+    override fun toggleDebugOverlay() {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
@@ -767,14 +773,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun tapToFocus(x: Float, y: Float) {
+    override fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus")
         viewModelScope.launch {
             cameraUseCase.tapToFocus(x, y)
         }
     }
 
-    fun onSnackBarResult(cookie: String) {
+    override fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.snackBarUiState?.snackBarQueue!!.let {
@@ -794,7 +800,16 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    fun setDisplayRotation(deviceRotation: DeviceRotation) {
+    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = surfaceRequest
+
+    override fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
+
+    override fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState>  = screenFlash.screenFlashUiState
+    override fun setClearUiScreenBrightness(brightness: Float) {
+        screenFlash.setClearUiScreenBrightness(brightness)
+    }
+
+    override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
             cameraUseCase.setDeviceRotation(deviceRotation)
         }
@@ -808,15 +823,4 @@ class PreviewViewModel @AssistedInject constructor(
         ): PreviewViewModel
     }
 
-    sealed interface ImageCaptureEvent {
-        data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
-
-        data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
-    }
-
-    sealed interface VideoCaptureEvent {
-        data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
-
-        data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.quicksettings.ui
 
-// completed components ready to go into preview screen
+package com.google.jetpackcamera.ui.components.capture
 
-// subcomponents used to build completed components
+import android.net.Uri
 
+sealed interface ImageCaptureEvent {
+    data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
+
+    data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
+}
+
+sealed interface VideoCaptureEvent {
+    data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
+
+    data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
+}

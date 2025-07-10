@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.ui.components.capture
 
 import android.app.Activity
 import android.util.Log
@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"

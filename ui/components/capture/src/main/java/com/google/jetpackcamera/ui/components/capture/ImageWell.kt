@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.ui.components.capture
 
 import android.graphics.RectF
 import androidx.compose.animation.AnimatedContent
@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import kotlin.math.min
 

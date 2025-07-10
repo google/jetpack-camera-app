@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,17 +43,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
-import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickFlipCamera
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetCaptureMode
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetConcurrentCamera
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetStreamConfig
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -71,6 +60,17 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FocusedQuickSetCaptureMode
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FocusedQuickSetRatio
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetCaptureMode
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetRatio
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState

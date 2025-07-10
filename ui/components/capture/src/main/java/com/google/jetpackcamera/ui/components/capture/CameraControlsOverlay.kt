@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
 import android.net.Uri
@@ -58,12 +58,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
-import com.google.jetpackcamera.feature.preview.PreviewViewModel
-import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
@@ -72,12 +69,6 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -126,12 +117,12 @@ fun CameraControlsOverlay(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onImageWellClick: () -> Unit = {},
@@ -296,7 +287,7 @@ private fun ControlsBottom(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
@@ -307,7 +298,7 @@ private fun ControlsBottom(
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onImageWellClick: () -> Unit = {},
@@ -440,15 +431,15 @@ private fun ControlsBottom(
 }
 
 private fun getImageCaptureEventForExternalCaptureMode(
-    captureEvent: PreviewViewModel.ImageCaptureEvent
+    captureEvent: ImageCaptureEvent
 ): ExternalCaptureMode.ImageCaptureEvent {
     return when (captureEvent) {
-        is PreviewViewModel.ImageCaptureEvent.ImageSaved ->
+        is ImageCaptureEvent.ImageSaved ->
             ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
                 captureEvent.savedUri
             )
 
-        is PreviewViewModel.ImageCaptureEvent.ImageCaptureError ->
+        is ImageCaptureEvent.ImageCaptureError ->
             ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
                 captureEvent.exception
             )
@@ -456,15 +447,15 @@ private fun getImageCaptureEventForExternalCaptureMode(
 }
 
 private fun getVideoCaptureEventForExternalCaptureMode(
-    captureEvent: PreviewViewModel.VideoCaptureEvent
+    captureEvent: VideoCaptureEvent
 ): ExternalCaptureMode.VideoCaptureEvent {
     return when (captureEvent) {
-        is PreviewViewModel.VideoCaptureEvent.VideoSaved ->
+        is VideoCaptureEvent.VideoSaved ->
             ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
                 captureEvent.savedUri
             )
 
-        is PreviewViewModel.VideoCaptureEvent.VideoCaptureError ->
+        is VideoCaptureEvent.VideoCaptureError ->
             ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
                 captureEvent.error
             )
@@ -483,12 +474,12 @@ private fun CaptureButton(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
@@ -508,7 +499,7 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 true
-                            ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            ) { event: ImageCaptureEvent, _: Int ->
                                 externalCaptureMode.onImageCapture(
                                     getImageCaptureEventForExternalCaptureMode(event)
                                 )
@@ -520,7 +511,7 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 externalCaptureMode.imageCaptureUri,
                                 false
-                            ) { event: PreviewViewModel.ImageCaptureEvent, _: Int ->
+                            ) { event: ImageCaptureEvent, _: Int ->
                                 externalCaptureMode.onImageCapture(
                                     getImageCaptureEventForExternalCaptureMode(event)
                                 )
@@ -535,7 +526,7 @@ private fun CaptureButton(
                                 null,
                                 externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
                                     ignoreUri
-                            ) { event: PreviewViewModel.ImageCaptureEvent, i: Int ->
+                            ) { event: ImageCaptureEvent, i: Int ->
                                 externalCaptureMode.onImageCapture(
                                     getImageCaptureEventForExternalCaptureMode(event),
                                     i
@@ -548,7 +539,7 @@ private fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 false
-                            ) { _: PreviewViewModel.ImageCaptureEvent, _: Int -> }
+                            ) { _: ImageCaptureEvent, _: Int -> }
                         }
                     }
                 }
@@ -569,7 +560,7 @@ private fun CaptureButton(
                             externalCaptureMode.videoCaptureUri,
                             true
 
-                        ) { event: PreviewViewModel.VideoCaptureEvent ->
+                        ) { event: VideoCaptureEvent ->
                             externalCaptureMode.onVideoCapture(
                                 getVideoCaptureEventForExternalCaptureMode(event)
                             )

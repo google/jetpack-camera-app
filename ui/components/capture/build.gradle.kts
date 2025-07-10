@@ -67,6 +67,9 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
 
+    // Accompanist - Permissions
+    implementation(libs.accompanist.permissions)
+
     // Compose - Material Design 3
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
@@ -77,6 +80,10 @@ dependencies {
 
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.hilt.navigation.compose)
+
+    // CameraX
+    implementation(libs.camera.core)
+    implementation(libs.camera.compose)
 
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)

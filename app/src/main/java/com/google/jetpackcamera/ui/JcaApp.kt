@@ -26,6 +26,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,7 +36,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
-import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
@@ -45,6 +46,7 @@ import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
+import com.google.jetpackcamera.ui.components.capture.CaptureScreen
 
 @Composable
 fun JcaApp(
@@ -54,7 +56,9 @@ fun JcaApp(
     modifier: Modifier = Modifier,
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
-    onFirstFrameCaptureCompleted: () -> Unit
+    onFirstFrameCaptureCompleted: () -> Unit,
+    captureViewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
+    { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     JetpackCameraNavHost(
         externalCaptureMode = externalCaptureMode,
@@ -62,7 +66,8 @@ fun JcaApp(
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        modifier = modifier
+        modifier = modifier,
+        captureViewModel = captureViewModel
     )
 }
 
@@ -75,7 +80,8 @@ private fun JetpackCameraNavHost(
     onOpenAppSettings: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    captureViewModel: PreviewViewModel
 ) {
     NavHost(
         navController = navController,
@@ -124,13 +130,13 @@ private fun JetpackCameraNavHost(
                     }
                 }
             }
-            PreviewScreen(
+            CaptureScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-                externalCaptureMode = externalCaptureMode,
-                debugSettings = debugSettings
+                debugSettings = debugSettings,
+                viewModel = captureViewModel
             )
         }
         composable(

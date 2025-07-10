@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui
+package com.google.jetpackcamera.ui.components.capture
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -110,19 +110,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
+import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
-import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
-import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState

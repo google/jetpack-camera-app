@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview.ui.theme
+package com.google.jetpackcamera.ui.components.capture.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
