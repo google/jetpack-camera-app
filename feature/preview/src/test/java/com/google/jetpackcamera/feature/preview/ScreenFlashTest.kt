@@ -23,6 +23,7 @@ import com.google.jetpackcamera.feature.preview.rules.MainDispatcherRule
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -62,7 +63,7 @@ class ScreenFlashTest {
 
     @Test
     fun captureScreenFlashImage_screenFlashUiStateChangedInCorrectSequence() = runCameraTest {
-        val states = mutableListOf<ScreenFlash.ScreenFlashUiState>()
+        val states = mutableListOf<ScreenFlashUiState>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             screenFlash.screenFlashUiState.toList(states)
         }
@@ -107,7 +108,7 @@ class ScreenFlashTest {
         screenFlash.screenFlashUiState.value.onChangeComplete()
 
         advanceUntilIdle()
-        assertThat(ScreenFlash.ScreenFlashUiState())
+        assertThat(ScreenFlashUiState())
             .isEqualTo(screenFlash.screenFlashUiState.value)
     }
 
