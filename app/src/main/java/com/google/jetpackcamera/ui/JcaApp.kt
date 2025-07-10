@@ -39,6 +39,7 @@ import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
@@ -51,13 +52,13 @@ fun JcaApp(
     /*TODO(b/306236646): remove after still capture*/
     externalCaptureMode: ExternalCaptureMode,
     modifier: Modifier = Modifier,
-    isDebugMode: Boolean,
+    debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit
 ) {
     JetpackCameraNavHost(
         externalCaptureMode = externalCaptureMode,
-        isDebugMode = isDebugMode,
+        debugSettings = debugSettings,
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
@@ -70,7 +71,7 @@ fun JcaApp(
 private fun JetpackCameraNavHost(
     modifier: Modifier = Modifier,
     externalCaptureMode: ExternalCaptureMode,
-    isDebugMode: Boolean,
+    debugSettings: DebugSettings,
     onOpenAppSettings: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
@@ -129,7 +130,7 @@ private fun JetpackCameraNavHost(
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 externalCaptureMode = externalCaptureMode,
-                isDebugMode = isDebugMode
+                debugSettings = debugSettings
             )
         }
         composable(

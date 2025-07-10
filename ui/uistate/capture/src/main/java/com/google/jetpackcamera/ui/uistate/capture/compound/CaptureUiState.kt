@@ -21,7 +21,7 @@ import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -47,7 +47,8 @@ sealed interface CaptureUiState {
             PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
         val lastBlinkTimeStamp: Long = 0,
         val externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
+        val captureModeToggleUiState: CaptureModeToggleUiState =
+            CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val debugUiState: DebugUiState = DebugUiState(),
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,

@@ -60,7 +60,9 @@ import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
 import com.google.jetpackcamera.settings.model.DarkMode
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
+import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -70,7 +72,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
-private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
 
 /**
  * Activity for the JetpackCameraApp.
@@ -137,7 +138,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 externalCaptureMode = getPreviewMode(),
-                                isDebugMode = isDebugMode,
+                                debugSettings = debugSettings,
                                 openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
@@ -161,8 +162,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val isDebugMode: Boolean
-        get() = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false
+    private val debugSettings: DebugSettings
+        get() = DebugSettings(
+            isDebugModeEnabled = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false,
+            singleLensMode = intent?.getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)
+                ?.let {
+                    when (it.lowercase()) {
+                        "back" -> LensFacing.BACK
+                        "front" -> LensFacing.FRONT
+                        else -> {
+                            Log.e(
+                                TAG,
+                                "Invalid debug single lens mode argument: \"$it\". Valid values are \"FRONT\" or \"BACK\""
+                            )
+                            null
+                        }
+                    }
+                }
+        )
 
     private fun getStandardMode(): ExternalCaptureMode.StandardMode {
         return ExternalCaptureMode.StandardMode { event ->
@@ -257,6 +274,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } ?: getStandardMode()
+    }
+
+    companion object {
+        private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
+        const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
     }
 }
 

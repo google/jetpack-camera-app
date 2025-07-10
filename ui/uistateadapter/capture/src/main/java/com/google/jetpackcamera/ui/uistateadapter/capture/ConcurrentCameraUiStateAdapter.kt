@@ -20,15 +20,18 @@ import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
+import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 
 fun ConcurrentCameraUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: SystemConstraints,
     externalCaptureMode: ExternalCaptureMode,
-    captureModeUiState: CaptureModeUiState
+    captureModeUiState: CaptureModeUiState,
+    streamConfigUiState: StreamConfigUiState
 ): ConcurrentCameraUiState {
     return ConcurrentCameraUiState.Available(
         selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
@@ -45,6 +48,9 @@ fun ConcurrentCameraUiState.Companion.from(
                     DEFAULT_HDR_DYNAMIC_RANGE &&
                     cameraAppSettings.imageFormat !=
                     DEFAULT_HDR_IMAGE_OUTPUT
+                ) && !(
+                streamConfigUiState is StreamConfigUiState.Available &&
+                    streamConfigUiState.selectedStreamConfig == StreamConfig.SINGLE_STREAM
                 )
     )
 }

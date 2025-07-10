@@ -15,14 +15,14 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import com.google.jetpackcamera.ui.uistate.ReasonDisplayable
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 
 enum class DisabledReason(
     // 'override' is required
     override val testTag: String,
     // 'override' is required
     override val reasonTextResId: Int
-) : ReasonDisplayable {
+) : DisableRationale {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_video_capture_external_unsupported

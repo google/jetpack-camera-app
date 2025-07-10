@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.uistateadapter.viewfinder"
+    namespace = "com.google.jetpackcamera.ui.uistate.capture"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {

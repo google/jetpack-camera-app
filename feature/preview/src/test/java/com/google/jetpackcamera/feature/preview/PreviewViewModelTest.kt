@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
@@ -57,7 +58,7 @@ class PreviewViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
             ExternalCaptureMode.StandardMode {},
-            false,
+            DebugSettings(isDebugModeEnabled = false),
             cameraUseCase = cameraUseCase,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
@@ -69,7 +70,7 @@ class PreviewViewModelTest {
     @Test
     fun getPreviewUiState() = runTest(StandardTestDispatcher()) {
         advanceUntilIdle()
-        val uiState = previewViewModel.viewFinderUiState.value
+        val uiState = previewViewModel.captureUiState.value
         assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
     }
 
@@ -113,7 +114,7 @@ class PreviewViewModelTest {
         previewViewModel.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
 
-        assertIsReady(previewViewModel.viewFinderUiState.value).also {
+        assertIsReady(previewViewModel.captureUiState.value).also {
             assertThat(it.flashModeUiState is FlashModeUiState.Available).isTrue()
             assertThat(
                 (it.flashModeUiState as FlashModeUiState.Available)
@@ -126,7 +127,7 @@ class PreviewViewModelTest {
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
         previewViewModel.startCamera()
-        assertIsReady(previewViewModel.viewFinderUiState.value).also {
+        assertIsReady(previewViewModel.captureUiState.value).also {
             assertThat(it.flipLensUiState is FlipLensUiState.Available).isTrue()
             assertThat(
                 (it.flipLensUiState as FlipLensUiState.Available)
@@ -137,7 +138,7 @@ class PreviewViewModelTest {
 
         advanceUntilIdle()
         // ui state and camera should both be true now
-        assertIsReady(previewViewModel.viewFinderUiState.value).also {
+        assertIsReady(previewViewModel.captureUiState.value).also {
             assertThat(it.flipLensUiState is FlipLensUiState.Available).isTrue()
             assertThat(
                 (it.flipLensUiState as FlipLensUiState.Available)
