@@ -27,7 +27,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
