@@ -24,6 +24,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
@@ -32,29 +33,36 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_FOCUSED
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_MAIN
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLASH_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
+import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
+import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import org.junit.AssumptionViolatedException
 
 /**
@@ -394,6 +402,128 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
             }
         }
         throw (AssertionError("unable to determine capture mode from quick settings"))
+    }
+}
+
+// ////////////////////////////
+//
+// Settings Interactions
+//
+// ////////////////////////////
+
+/**
+ * Interface to ensure settings screen utility functions are only called from SettingsScreenScope
+ */
+interface SettingsScreenScope : ComposeTestRule
+
+/**
+ * Navigates to quick settings if not already there and perform action from provided block.
+ * This will return from quick settings if not already there, or remain on quick settings if there.
+ */
+inline fun <T> ComposeTestRule.visitSettingsScreen(
+    crossinline block: SettingsScreenScope.() -> T
+): T {
+    var needReturnFromSettings = false
+    onNodeWithTag(SETTINGS_BUTTON).apply {
+        if (isDisplayed()) {
+            performClick()
+            needReturnFromSettings = true
+        }
+    }
+
+    onNodeWithTag(SETTINGS_TITLE).assertExists(
+        "Settings can only be entered from PreviewScreen or Settings screen"
+    )
+
+    try {
+        with(object : SettingsScreenScope, ComposeTestRule by this {}) {
+            return block()
+        }
+    } finally {
+        if (needReturnFromSettings) {
+            onNodeWithTag(BACK_BUTTON)
+                .assertExists()
+                .performClick()
+
+            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                onNodeWithTag(SETTINGS_TITLE).isNotDisplayed()
+            }
+        }
+    }
+}
+
+/**
+ * Selects the supplied lens facing from the settings screen
+ */
+fun SettingsScreenScope.selectLensFacing(lensFacing: LensFacing) {
+    onNodeWithTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
+        .assertExists()
+        .apply {
+            if (!isDisplayed()) {
+                performScrollTo()
+
+                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                    isDisplayed()
+                }
+            }
+
+            val expectedContentDescription = when (lensFacing) {
+                LensFacing.FRONT -> getResString(
+                    SettingsR.string.default_facing_camera_description_front
+                )
+                LensFacing.BACK -> getResString(
+                    SettingsR.string.default_facing_camera_description_back
+                )
+            }
+            if (!hasStateDescription(expectedContentDescription).matches(fetchSemanticsNode())) {
+                assume(isEnabled()) { "$lensFacing is not selectable" }
+                performClick()
+            }
+
+            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                hasStateDescription(expectedContentDescription).matches(fetchSemanticsNode())
+            }
+        }
+}
+
+/**
+ * Navigates to a dialog from the Settings Screen
+ */
+inline fun <T> SettingsScreenScope.visitSettingDialog(
+    settingTestTag: String,
+    dialogTestTag: String,
+    disabledMessage: String? = null,
+    crossinline block: ComposeTestRule.() -> T
+): T {
+    onNodeWithTag(settingTestTag)
+        .assertExists()
+        .apply {
+            if (!isDisplayed()) {
+                performScrollTo()
+
+                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                    isDisplayed()
+                }
+            }
+
+            assume(isEnabled()) { disabledMessage ?: "Setting $settingTestTag is not enabled" }
+            performClick()
+        }
+
+    onNodeWithTag(dialogTestTag).assertExists(
+        "Opening setting with tag $settingTestTag did not cause dialog with tag $dialogTestTag to open"
+    )
+
+    try {
+        return block()
+    } finally {
+        onNodeWithTag(CLOSE_BUTTON)
+            .assertExists()
+            .performClick()
+
+        waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+            onNodeWithTag(dialogTestTag).isNotDisplayed()
+        }
     }
 }
 

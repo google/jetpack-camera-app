@@ -25,15 +25,15 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_WELL_TAG
 import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
@@ -45,7 +45,7 @@ import com.google.jetpackcamera.utils.denyPermissionDialog
 import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.grantPermissionDialog
 import com.google.jetpackcamera.utils.onNodeWithText
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForStartup
 import org.junit.Rule
 import org.junit.Test
@@ -86,7 +86,7 @@ class PermissionsTest {
 
     @Test
     fun allPermissions_alreadyGranted_screenNotShown() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
             }
@@ -94,7 +94,7 @@ class PermissionsTest {
     }
 
     @Test
-    fun cameraPermission_granted_closesPage() = runScenarioTest<MainActivity> {
+    fun cameraPermission_granted_closesPage() = runMainActivityScenarioTest {
         // Wait for the camera permission screen to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
@@ -117,7 +117,7 @@ class PermissionsTest {
     @Test
     fun cameraPermission_askEveryTime_closesPage() {
         uiDevice.waitForIdle()
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
@@ -140,7 +140,7 @@ class PermissionsTest {
     fun cameraPermission_declined_staysOnScreen() {
         // required permissions should persist on screen
         // Wait for the permission screen to be displayed
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
             }
@@ -177,7 +177,7 @@ class PermissionsTest {
     @Test
     fun recordAudioPermission_granted_closesPage() {
         // optional permissions should close the screen after declining
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
             }
@@ -201,7 +201,7 @@ class PermissionsTest {
     @Test
     fun recordAudioPermission_denied_closesPage() {
         // optional permissions should close the screen after declining
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
             }
@@ -229,7 +229,7 @@ class PermissionsTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
 
         val timeStamp = System.currentTimeMillis()
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(
@@ -277,7 +277,7 @@ class PermissionsTest {
     @Test
     fun writeStoragePermission_denied() {
         uiDevice.waitForIdle()
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
             composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(

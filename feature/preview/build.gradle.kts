@@ -144,6 +144,10 @@ dependencies {
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
     testImplementation(project(":core:common"))
+    implementation(project(":ui:components:capture"))
+    implementation(project(":ui:uistate"))
+    implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:uistateadapter:capture"))
 }
 
 // Allow references to generated code

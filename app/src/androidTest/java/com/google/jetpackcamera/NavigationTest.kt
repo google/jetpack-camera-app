@@ -24,19 +24,19 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.SETTINGS_BUTTON
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +54,7 @@ class NavigationTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun backAfterReturnFromSettings_doesNotReturnToSettings() = runScenarioTest<MainActivity> {
+    fun backAfterReturnFromSettings_doesNotReturnToSettings() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -85,7 +85,7 @@ class NavigationTest {
     // Test to ensure we haven't regressed to the cause of
     // https://github.com/google/jetpack-camera-app/pull/28
     @Test
-    fun returnFromSettings_afterFlipCamera_returnsToPreview() = runScenarioTest<MainActivity> {
+    fun returnFromSettings_afterFlipCamera_returnsToPreview() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -112,7 +112,7 @@ class NavigationTest {
     }
 
     @Test
-    fun backFromQuickSettings_returnToPreview() = runScenarioTest<MainActivity> {
+    fun backFromQuickSettings_returnToPreview() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -136,7 +136,7 @@ class NavigationTest {
     }
 
     @Test
-    fun backFromQuickSettingsExpended_returnToQuickSettings() = runScenarioTest<MainActivity> {
+    fun backFromQuickSettingsExpended_returnToQuickSettings() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
