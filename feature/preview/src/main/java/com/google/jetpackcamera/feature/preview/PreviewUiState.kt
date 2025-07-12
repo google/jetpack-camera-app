@@ -30,6 +30,10 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import java.util.LinkedList
 import java.util.Queue
 
@@ -40,18 +44,18 @@ sealed interface PreviewUiState {
     data object NotReady : PreviewUiState
 
     data class Ready(
-        // "quick" settings
         val currentCameraSettings: CameraAppSettings = CameraAppSettings(),
         val systemConstraints: SystemConstraints = SystemConstraints(),
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-        val quickSettingsIsOpen: Boolean = false,
-
+        val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
+        val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
         // todo: remove after implementing post capture screen
         val toastMessageToShow: ToastMessage? = null,
         val snackBarQueue: Queue<SnackbarData> = LinkedList(),
         val lastBlinkTimeStamp: Long = 0,
         val previewMode: PreviewMode = PreviewMode.StandardMode {},
-        val captureModeToggleUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
+        val captureModeToggleUiState: CaptureModeToggleUiState =
+            CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val currentPhysicalCameraId: String? = null,
         val currentLogicalCameraId: String? = null,
@@ -63,10 +67,8 @@ sealed interface PreviewUiState {
         val elapsedTimeUiState: ElapsedTimeUiState = ElapsedTimeUiState.Unavailable,
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
-        val captureModeUiState: CaptureModeUiState = CaptureModeUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
         val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
-        val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : PreviewUiState
 }
 
@@ -76,7 +78,6 @@ data class DebugUiState(
     val isDebugMode: Boolean = false,
     val isDebugOverlayOpen: Boolean = false
 )
-
 val DEFAULT_CAPTURE_BUTTON_STATE = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
 
 sealed interface CaptureButtonUiState {
@@ -96,14 +97,6 @@ sealed interface ElapsedTimeUiState {
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 }
 
-sealed interface HdrUiState {
-    data object Unavailable : HdrUiState
-    data class Available(
-        val currentImageOutputFormat: ImageOutputFormat,
-        val currentDynamicRange: DynamicRange
-    ) : HdrUiState
-}
-
 sealed interface ZoomControlUiState {
     data object Unavailable : ZoomControlUiState
     data object Disabled : ZoomControlUiState
@@ -116,7 +109,6 @@ sealed interface ZoomControlUiState {
         val animatingToValue: Float? = null
     ) : ZoomControlUiState
 }
-
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState
     data class Enabled(
@@ -163,61 +155,5 @@ sealed interface StabilizationUiState {
 
     data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
-    }
-}
-
-sealed class FlashModeUiState {
-    data object Unavailable : FlashModeUiState()
-
-    data class Available(
-        val selectedFlashMode: FlashMode,
-        val availableFlashModes: List<FlashMode>,
-        val isActive: Boolean
-    ) : FlashModeUiState() {
-        init {
-            check(selectedFlashMode in availableFlashModes) {
-                "Selected flash mode of $selectedFlashMode not in available modes: " +
-                        "$availableFlashModes"
-            }
-        }
-    }
-
-    companion object {
-        private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
-            FlashMode.OFF,
-            FlashMode.ON,
-            FlashMode.AUTO,
-            FlashMode.LOW_LIGHT_BOOST
-        )
-
-        /**
-         * Creates a FlashModeUiState from a selected flash mode and a set of supported flash modes
-         * that may not include flash modes supported by the UI.
-         */
-        fun createFrom(
-            selectedFlashMode: FlashMode,
-            supportedFlashModes: Set<FlashMode>
-        ): FlashModeUiState {
-            // Ensure we at least support one flash mode
-            check(supportedFlashModes.isNotEmpty()) {
-                "No flash modes supported. Should at least support OFF."
-            }
-
-            // Convert available flash modes to list we support in the UI in our desired order
-            val availableModes = ORDERED_UI_SUPPORTED_FLASH_MODES.filter {
-                it in supportedFlashModes
-            }
-
-            return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
-                // If we only support OFF, then return "Unavailable".
-                Unavailable
-            } else {
-                Available(
-                    selectedFlashMode = selectedFlashMode,
-                    availableFlashModes = availableModes,
-                    isActive = false
-                )
-            }
-        }
     }
 }

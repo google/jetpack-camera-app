@@ -32,20 +32,20 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getHdrToggleState
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isHdrToggleEnabled
-import com.google.jetpackcamera.utils.runScenarioTest
-import com.google.jetpackcamera.utils.runScenarioTestForResult
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.setCaptureMode
 import com.google.jetpackcamera.utils.setConcurrentCameraMode
 import com.google.jetpackcamera.utils.setHdrEnabled
@@ -80,7 +80,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun can_set_capture_mode_in_quick_settings() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
             composeTestRule.visitQuickSettings {
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
@@ -97,7 +97,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun concurrent_only_supports_video_capture_mode() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
             composeTestRule.visitQuickSettings {
                 // verify concurrent is supported. if not supported, skip test
@@ -123,7 +123,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun image_only_disables_concurrent_camera() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
             composeTestRule.visitQuickSettings {
                 // verify concurrent is supported. if not supported, skip test
@@ -153,7 +153,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_image_only() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
             composeTestRule.setHdrEnabled(true)
             // check that switch only supports image
@@ -175,7 +175,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_video_only() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
             composeTestRule.setHdrEnabled(true)
             // check that switch only supports image
@@ -198,7 +198,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_image_and_video() {
-        runScenarioTest<MainActivity> {
+        runMainActivityScenarioTest {
             with(composeTestRule) {
                 composeTestRule.waitForStartup()
 
@@ -252,7 +252,7 @@ internal class CaptureModeSettingsTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -275,7 +275,7 @@ internal class CaptureModeSettingsTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -299,7 +299,7 @@ internal class CaptureModeSettingsTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -322,7 +322,7 @@ internal class CaptureModeSettingsTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed

@@ -28,15 +28,15 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +72,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun background_foreground() = runScenarioTest<MainActivity> {
+    fun background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -82,7 +82,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun flipCamera_then_background_foreground() = runScenarioTest<MainActivity> {
+    fun flipCamera_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -107,7 +107,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun setAspectRatio_then_background_foreground() = runScenarioTest<MainActivity> {
+    fun setAspectRatio_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -142,7 +142,7 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun toggleCaptureMode_then_background_foreground() = runScenarioTest<MainActivity> {
+    fun toggleCaptureMode_then_background_foreground() = runMainActivityScenarioTest {
         // Skip this test on devices that don't support single stream
         assumeSupportsSingleStream()
 
