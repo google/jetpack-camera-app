@@ -333,7 +333,7 @@ fun QuickSetFlash(
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
                     flashModeUiState.isActive
                 ),
-                isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
+                isHighLighted = flashModeUiState.selectedFlashMode != FlashMode.OFF,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -511,6 +511,7 @@ fun QuickSettingCarouselButton(
                     shape = RoundedCornerShape(percent = 30)
                 ),
 
+            //fixme(kc): the colors of disabled buttons here appear invisible when light mode is enabled
             colors = ToggleButtonDefaults.toggleButtonColors(
                 containerColor = Color.White.copy(alpha = 0.16F),
                 contentColor = MaterialTheme.colorScheme.secondaryFixed,
