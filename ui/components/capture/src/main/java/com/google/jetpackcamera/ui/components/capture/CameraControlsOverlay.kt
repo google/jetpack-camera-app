@@ -407,7 +407,7 @@ private fun ControlsBottom(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .size(120.dp),
+                        .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (videoRecordingState is VideoRecordingState.Active) {

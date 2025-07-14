@@ -32,7 +32,9 @@ import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
 /**
- * Defines the current state of the [com.google.jetpackcamera.feature.preview.PreviewScreen].
+ * Defines the current UI state for the camera capture screen.
+ * This state object encapsulates various sub-states related to camera controls,
+ * settings, and display elements, providing a comprehensive view of the UI.
  */
 sealed interface CaptureUiState {
     data object NotReady : CaptureUiState
