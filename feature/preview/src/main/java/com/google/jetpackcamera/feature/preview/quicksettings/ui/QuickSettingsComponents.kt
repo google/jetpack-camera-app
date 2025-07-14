@@ -207,7 +207,7 @@ fun QuickSetCaptureMode(
             CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
         }
 
-        QuickSettingUiItem(
+        QuickSettingCarouselButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
@@ -303,7 +303,7 @@ fun QuickSetRatio(
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
                 else -> CameraAspectRatio.ONE_ONE
             }
-        QuickSettingUiItem(
+        QuickSettingCarouselButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
