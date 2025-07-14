@@ -32,14 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import com.google.jetpackcamera.feature.preview.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"
 
 @Composable
 fun ScreenFlashScreen(
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    screenFlashUiState: ScreenFlashUiState,
     onInitialBrightnessCalculated: (Float) -> Unit
 ) {
     ScreenFlashOverlay(screenFlashUiState)
@@ -57,10 +57,7 @@ fun ScreenFlashScreen(
 }
 
 @Composable
-fun ScreenFlashOverlay(
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
-    modifier: Modifier = Modifier
-) {
+fun ScreenFlashOverlay(screenFlashUiState: ScreenFlashUiState, modifier: Modifier = Modifier) {
     // Update overlay transparency gradually
     val alpha by animateFloatAsState(
         targetValue = if (screenFlashUiState.enabled) 1f else 0f,
