@@ -52,7 +52,6 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.M3QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_FOCUSED
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
@@ -134,7 +133,7 @@ fun QuickSettingsScreenOverlay(
                     }
                 )
                 .fillMaxSize()
-                .background(color = Color.Black.copy(alpha = 0.2f))
+                .background(color = Color.Black.copy(alpha = 0.7f))
                 .clickable(
                     onClick = onBack,
                     indication = null,

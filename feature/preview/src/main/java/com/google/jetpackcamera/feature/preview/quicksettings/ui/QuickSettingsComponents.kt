@@ -302,33 +302,6 @@ fun QuickSetRatio(
 }
 
 @Composable
-fun M3QuickSetFlash(
-    modifier: Modifier = Modifier,
-    onClick: (FlashMode) -> Unit,
-    flashModeUiState: FlashModeUiState
-) {
-    when (flashModeUiState) {
-        is FlashModeUiState.Unavailable -> {
-            QuickSettingCarouselButton(
-                modifier = modifier,
-                onClick = { },
-                enum = CameraFlashMode.OFF,
-                enabled = false
-            )
-        }
-
-        is FlashModeUiState.Available -> {
-            QuickSettingCarouselButton(
-                modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(flashModeUiState.isActive),
-                isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
-                onClick = { onClick(flashModeUiState.getNextFlashMode()) },
-            )
-        }
-    }
-}
-
-@Composable
 fun QuickSetFlash(
     modifier: Modifier = Modifier,
     onClick: (FlashMode) -> Unit,
@@ -519,15 +492,17 @@ fun QuickSettingCarouselButton(
             // 1. Size updated to width 48.dp and height 56.dp
             modifier = modifier.size(width = 96.dp, height = 112.dp),
             shapes = ToggleButtonDefaults.shapes()
-                .copy(checkedShape = CircleShape, shape = RoundedCornerShape(percent = 30)),
+                .copy(
+                    checkedShape = RoundedCornerShape(percent = 50),
+                    shape = RoundedCornerShape(percent = 30)
+                ),
 
-            colors =
-                ToggleButtonDefaults.toggleButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    checkedContainerColor = MaterialTheme.colorScheme.primaryFixedDim,
-                    checkedContentColor = MaterialTheme.colorScheme.onPrimaryFixed
-                )
+            colors = ToggleButtonDefaults.toggleButtonColors(
+                containerColor = Color.White.copy(alpha = 0.16F),
+                contentColor = MaterialTheme.colorScheme.secondaryFixed,
+                checkedContainerColor = MaterialTheme.colorScheme.primaryFixedDim,
+                checkedContentColor = MaterialTheme.colorScheme.onPrimaryFixed
+            )
         ) {
 
             Icon(
@@ -541,6 +516,7 @@ fun QuickSettingCarouselButton(
         Spacer(Modifier.height(4.dp))
         Text(
             text = text,
+            color = Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
