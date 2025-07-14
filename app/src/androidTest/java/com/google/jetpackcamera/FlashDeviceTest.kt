@@ -28,13 +28,13 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.SCREEN_FLASH_OVERLAY
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
@@ -43,8 +43,8 @@ import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.longClickForVideoRecording
-import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
-import com.google.jetpackcamera.utils.runScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setFlashMode
 import org.junit.Before
 import org.junit.Rule
@@ -69,7 +69,7 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_flash_on() = runScenarioTest<MainActivity> {
+    fun set_flash_on() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -79,7 +79,7 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_flash_auto() = runScenarioTest<MainActivity> {
+    fun set_flash_auto() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -89,7 +89,7 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_flash_off() = runScenarioTest<MainActivity> {
+    fun set_flash_off() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -99,7 +99,7 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_flash_low_light_boost() = runScenarioTest<MainActivity> {
+    fun set_flash_low_light_boost() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -115,7 +115,7 @@ internal class FlashDeviceTest {
     }
 
     @Test
-    fun set_flash_and_capture_successfully() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun set_flash_and_capture_successfully() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         filePrefix = "JCA"
     ) {
@@ -148,7 +148,7 @@ internal class FlashDeviceTest {
 
     @Test
     fun set_screen_flash_and_capture_with_screen_change_overlay_shown() =
-        runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             filePrefix = "JCA"
         ) {
@@ -190,7 +190,7 @@ internal class FlashDeviceTest {
         set_flash_and_capture_video_successfully(LensFacing.FRONT)
 
     private fun set_flash_and_capture_video_successfully(targetLensFacing: LensFacing) =
-        runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         ) {
             // Wait for the capture button to be displayed

@@ -65,11 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
-import com.google.jetpackcamera.feature.preview.FlashModeUiState
-import com.google.jetpackcamera.feature.preview.HdrUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.SingleSelectableState
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.CameraConcurrentCameraMode
@@ -88,48 +84,65 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
-
 
 // completed components ready to go into preview screen
 
 @Composable
 fun FocusedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
-    currentRatio: AspectRatio,
+    aspectRatioUiState: AspectRatioUiState,
     modifier: Modifier = Modifier
 ) {
-    val buttons: Array<@Composable () -> Unit> =
-        arrayOf(
-            {
-                QuickSetRatio(
-                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-                    onClick = { setRatio(AspectRatio.THREE_FOUR) },
-                    ratio = AspectRatio.THREE_FOUR,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            },
-            {
-                QuickSetRatio(
-                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-                    onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
-                    ratio = AspectRatio.NINE_SIXTEEN,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            },
-            {
-                QuickSetRatio(
-                    modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                    onClick = { setRatio(AspectRatio.ONE_ONE) },
-                    ratio = AspectRatio.ONE_ONE,
-                    currentRatio = currentRatio,
-                    isHighlightEnabled = true
-                )
-            }
-        )
-    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+    if (aspectRatioUiState is AspectRatioUiState.Available) {
+        val buttons: Array<@Composable () -> Unit> =
+            arrayOf(
+                {
+                    QuickSetRatio(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
+                        onClick = { setRatio(AspectRatio.THREE_FOUR) },
+                        ratio = AspectRatio.THREE_FOUR,
+                        aspectRatioUiState = aspectRatioUiState,
+                        isHighlightEnabled = true
+                    )
+                },
+                {
+                    QuickSetRatio(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
+                        onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
+                        ratio = AspectRatio.NINE_SIXTEEN,
+                        aspectRatioUiState = aspectRatioUiState,
+                        isHighlightEnabled = true
+                    )
+                },
+                {
+                    QuickSetRatio(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+                        onClick = { setRatio(AspectRatio.ONE_ONE) },
+                        ratio = AspectRatio.ONE_ONE,
+                        aspectRatioUiState = aspectRatioUiState,
+                        isHighlightEnabled = true
+                    )
+                }
+            )
+        ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+    }
 }
 
 @Composable
@@ -139,7 +152,7 @@ fun FocusedQuickSetCaptureMode(
     captureModeUiState: CaptureModeUiState
 ) {
     val buttons: Array<@Composable () -> Unit> =
-        if (captureModeUiState is CaptureModeUiState.Enabled) {
+        if (captureModeUiState is CaptureModeUiState.Available) {
             arrayOf(
                 {
                     QuickSetCaptureMode(
@@ -186,8 +199,8 @@ fun QuickSetCaptureMode(
     assignedCaptureMode: CaptureMode?,
     isHighlightEnabled: Boolean = false
 ) {
-    if (captureModeUiState is CaptureModeUiState.Enabled) {
-        val captureToUse = assignedCaptureMode ?: captureModeUiState.currentSelection
+    if (captureModeUiState is CaptureModeUiState.Available) {
+        val captureToUse = assignedCaptureMode ?: captureModeUiState.selectedCaptureMode
         val enum = when (captureToUse) {
             CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
@@ -200,27 +213,23 @@ fun QuickSetCaptureMode(
             onClick = { onClick() },
             enabled = when (assignedCaptureMode) {
                 null -> {
-                    val list: List<SingleSelectableState> =
-                        listOf(
-                            captureModeUiState.defaultCaptureState,
-                            captureModeUiState.imageOnlyCaptureState,
-                            captureModeUiState.videoOnlyCaptureState
-                        )
                     // only enabled if there are at least 2 supported capturemodes
-                    list.count { it is SingleSelectableState.Selectable } >= 2
+                    captureModeUiState.availableCaptureModes.count {
+                        it is SingleSelectableUiState.SelectableUi
+                    } >= 2
                 }
 
                 CaptureMode.STANDARD ->
-                    captureModeUiState.defaultCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD)
 
                 CaptureMode.VIDEO_ONLY ->
-                    captureModeUiState.videoOnlyCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY)
 
                 CaptureMode.IMAGE_ONLY ->
-                    captureModeUiState.imageOnlyCaptureState is SingleSelectableState.Selectable
+                    captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.currentSelection)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -234,9 +243,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -268,12 +277,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-                hdrUiState is HdrUiState.Available &&
-                        (
-                                hdrUiState.currentDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                                        hdrUiState.currentImageOutputFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                                )
-                ),
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -282,23 +291,25 @@ fun QuickSetHdr(
 fun QuickSetRatio(
     onClick: () -> Unit,
     ratio: AspectRatio,
-    currentRatio: AspectRatio,
+    aspectRatioUiState: AspectRatioUiState,
     modifier: Modifier = Modifier,
     isHighlightEnabled: Boolean = false
 ) {
-    val enum =
-        when (ratio) {
-            AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-            AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-            AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-            else -> CameraAspectRatio.ONE_ONE
-        }
-    QuickSettingUiItem(
-        modifier = modifier,
-        enum = enum,
-        onClick = { onClick() },
-        isHighLighted = isHighlightEnabled && (ratio == currentRatio)
-    )
+    if (aspectRatioUiState is AspectRatioUiState.Available) {
+        val enum =
+            when (ratio) {
+                AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+                else -> CameraAspectRatio.ONE_ONE
+            }
+        QuickSettingUiItem(
+            modifier = modifier,
+            enum = enum,
+            onClick = { onClick() },
+            isHighLighted = isHighlightEnabled && (ratio == aspectRatioUiState.selectedAspectRatio)
+        )
+    }
 }
 
 @Composable
@@ -333,70 +344,73 @@ fun QuickSetFlash(
 @Composable
 fun QuickFlipCamera(
     setLensFacing: (LensFacing) -> Unit,
-    currentLensFacing: LensFacing,
+    flipLensUiState: FlipLensUiState,
     modifier: Modifier = Modifier
 ) {
-    val enum =
-        when (currentLensFacing) {
-            LensFacing.FRONT -> CameraLensFace.FRONT
-            LensFacing.BACK -> CameraLensFace.BACK
-        }
-    QuickSettingCarouselButton(
-        modifier = modifier,
-        enum = enum,
-        onClick = { setLensFacing(currentLensFacing.flip()) }
-    )
+    if (flipLensUiState is FlipLensUiState.Available) {
+        val enum =
+            when (flipLensUiState.selectedLensFacing) {
+                LensFacing.FRONT -> CameraLensFace.FRONT
+                LensFacing.BACK -> CameraLensFace.BACK
+            }
+        QuickSettingCarouselButton(
+            modifier = modifier,
+            enum = enum,
+            onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
+        )
+    }
 }
 
 @Composable
 fun QuickSetStreamConfig(
     setStreamConfig: (StreamConfig) -> Unit,
-    currentStreamConfig: StreamConfig,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    streamConfigUiState: StreamConfigUiState,
+    modifier: Modifier = Modifier
 ) {
-    val enum: CameraStreamConfig =
-        when (currentStreamConfig) {
-            StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
-            StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
-        }
-    QuickSettingCarouselButton(
-        modifier = modifier,
-        enum = enum,
-        onClick = {
-            when (currentStreamConfig) {
-                StreamConfig.MULTI_STREAM -> setStreamConfig(StreamConfig.SINGLE_STREAM)
-                StreamConfig.SINGLE_STREAM -> setStreamConfig(StreamConfig.MULTI_STREAM)
+    if (streamConfigUiState is StreamConfigUiState.Available) {
+        val enum: CameraStreamConfig =
+            when (streamConfigUiState.selectedStreamConfig) {
+                StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
+                StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
             }
-        },
-        enabled = enabled
-    )
+        QuickSettingCarouselButton(
+            modifier = modifier,
+            enum = enum,
+            onClick = {
+                when (streamConfigUiState.selectedStreamConfig) {
+                    StreamConfig.MULTI_STREAM -> setStreamConfig(StreamConfig.SINGLE_STREAM)
+                    StreamConfig.SINGLE_STREAM -> setStreamConfig(StreamConfig.MULTI_STREAM)
+                }
+            },
+            enabled = streamConfigUiState.isActive
+        )
+    }
 }
 
 @Composable
 fun QuickSetConcurrentCamera(
     setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
-    currentConcurrentCameraMode: ConcurrentCameraMode,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    concurrentCameraUiState: ConcurrentCameraUiState,
+    modifier: Modifier = Modifier
 ) {
-    val enum: CameraConcurrentCameraMode =
-        when (currentConcurrentCameraMode) {
-            ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
-            ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
-        }
-    QuickSettingCarouselButton(
-        modifier = modifier,
-        enum = enum,
-        onClick = {
-            when (currentConcurrentCameraMode) {
-                ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-                ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
+    if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
+        val enum: CameraConcurrentCameraMode =
+            when (concurrentCameraUiState.selectedConcurrentCameraMode) {
+                ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
+                ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
             }
-        },
-        isHighLighted = currentConcurrentCameraMode == ConcurrentCameraMode.DUAL,
-        enabled = enabled
-    )
+        QuickSettingCarouselButton(
+            modifier = modifier,
+            enum = enum,
+            onClick = {
+                when (concurrentCameraUiState.selectedConcurrentCameraMode) {
+                    ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+                    ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
+                }
+            },
+            enabled = concurrentCameraUiState.isEnabled
+        )
+    }
 }
 
 /**
@@ -757,8 +771,16 @@ fun QuickSettingsIndicators(
     }
 }
 
-private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode = availableFlashModes.run {
-    get((indexOf(selectedFlashMode) + 1) % size)
+private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode {
+    // Filter out only the selectable flash modes to cycle through them.
+    val selectableModes = this.availableFlashModes
+        .filterIsInstance<SingleSelectableUiState.SelectableUi<FlashMode>>()
+        .map { it.value } // Extract the FlashMode items
+
+    val currentIndex = selectableModes.indexOf(this.selectedFlashMode)
+    val nextIndex = (currentIndex + 1) % selectableModes.size
+
+    return selectableModes[nextIndex]
 }
 
 private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
