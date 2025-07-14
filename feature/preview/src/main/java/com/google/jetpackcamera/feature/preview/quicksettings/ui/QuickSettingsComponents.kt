@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
@@ -469,7 +468,7 @@ fun QuickSettingCarouselButton(
         onClick = { onClick() },
         isHighlighted = isHighLighted,
         enabled = enabled,
-        painter = enum.getPainter(),
+        painter = enum.getPainter()
     )
 }
 
@@ -490,9 +489,9 @@ fun QuickSettingCarouselButton(
     painter: Painter,
     modifier: Modifier = Modifier,
     isHighlighted: Boolean = false,
-    enabled: Boolean = true, //todo: handle hidden disabled or visible disabled
+    enabled: Boolean = true // todo: handle hidden disabled or visible disabled
 ) {
-    //todo(kc): better sizing
+    // todo(kc): better sizing
     val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
 
     Column(
@@ -511,7 +510,7 @@ fun QuickSettingCarouselButton(
                     shape = RoundedCornerShape(percent = 30)
                 ),
 
-            //fixme(kc): the colors of disabled buttons here appear invisible when light mode is enabled
+            // fixme(kc): the colors of disabled buttons here appear invisible when light mode is enabled
             colors = ToggleButtonDefaults.toggleButtonColors(
                 containerColor = Color.White.copy(alpha = 0.16F),
                 contentColor = MaterialTheme.colorScheme.secondaryFixed,
@@ -519,13 +518,11 @@ fun QuickSettingCarouselButton(
                 checkedContentColor = MaterialTheme.colorScheme.onPrimaryFixed
             )
         ) {
-
             Icon(
                 modifier = Modifier.size(iconSize),
                 painter = painter,
                 contentDescription = accessibilityText
             )
-
         }
 
         Spacer(Modifier.height(4.dp))
@@ -585,18 +582,18 @@ fun QuickSettingUiItem(
     )
     Column(
         modifier =
-            modifier
-                .wrapContentSize()
-                .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-                .clickable(
-                    enabled = enabled,
-                    onClick = {
-                        buttonClicked = true
-                        onClick()
-                    },
-                    indication = null,
-                    interactionSource = null
-                ),
+        modifier
+            .wrapContentSize()
+            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
+            .clickable(
+                enabled = enabled,
+                onClick = {
+                    buttonClicked = true
+                    onClick()
+                },
+                indication = null,
+                interactionSource = null
+            ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -632,25 +629,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -674,25 +671,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(
