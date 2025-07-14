@@ -58,7 +58,7 @@ fun JcaApp(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     captureViewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-    { factory -> factory.create(externalCaptureMode, debugSettings) }
+        { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     JetpackCameraNavHost(
         externalCaptureMode = externalCaptureMode,

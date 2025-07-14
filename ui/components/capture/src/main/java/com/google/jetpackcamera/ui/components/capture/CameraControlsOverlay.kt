@@ -58,9 +58,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsIndicators
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
-import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
@@ -69,6 +66,9 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsIndicators
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState

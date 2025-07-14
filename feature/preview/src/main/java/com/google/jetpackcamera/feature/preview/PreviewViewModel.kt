@@ -43,12 +43,12 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.CaptureViewModel
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
@@ -802,7 +802,8 @@ class PreviewViewModel @AssistedInject constructor(
 
     override fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
 
-    override fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState>  = screenFlash.screenFlashUiState
+    override fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState> =
+        screenFlash.screenFlashUiState
     override fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
@@ -820,5 +821,4 @@ class PreviewViewModel @AssistedInject constructor(
             debugSettings: DebugSettings
         ): PreviewViewModel
     }
-
 }
