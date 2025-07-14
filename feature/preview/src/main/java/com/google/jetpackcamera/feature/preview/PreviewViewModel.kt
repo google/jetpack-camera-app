@@ -242,13 +242,13 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState,
                             debugSettings.isDebugModeEnabled
                         ),
-                        stabilizationUiState = StabilizationUiState.Companion.from(
+                        stabilizationUiState = StabilizationUiState.from(
                             cameraAppSettings,
                             cameraState
                         ),
                         flashModeUiState = flashModeUiState,
                         videoQuality = cameraState.videoQualityInfo.quality,
-                        audioUiState = AudioUiState.Companion.from(
+                        audioUiState = AudioUiState.from(
                             cameraAppSettings,
                             cameraState
                         ),
@@ -258,7 +258,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState,
                             lockedState
                         ),
-                        zoomUiState = ZoomUiState.Companion.from(
+                        zoomUiState = ZoomUiState.from(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
                             cameraState
@@ -297,7 +297,7 @@ class PreviewViewModel @AssistedInject constructor(
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
-            hdrUiState = HdrUiState.Companion.from(
+            hdrUiState = HdrUiState.from(
                 cameraAppSettings,
                 systemConstraints,
                 externalCaptureMode
@@ -313,7 +313,7 @@ class PreviewViewModel @AssistedInject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
                     imageWellUiState =
-                    ImageWellUiState.Companion.from(lastCapturedMediaDescriptor)
+                    ImageWellUiState.from(lastCapturedMediaDescriptor)
                 ) ?: old
             }
         }
@@ -450,14 +450,12 @@ class PreviewViewModel @AssistedInject constructor(
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
             _captureUiState.update { old ->
-                val newQueue = LinkedList(
-                    (old as? CaptureUiState.Ready)
-                        ?.snackBarUiState?.snackBarQueue!!
-                )
+                if (old !is CaptureUiState.Ready) return@update old
+                val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
                 old.copy(
-                    snackBarUiState = SnackBarUiState.Companion.from(newQueue)
+                    snackBarUiState = SnackBarUiState.from(newQueue)
                 )
             }
         }
@@ -777,19 +775,19 @@ class PreviewViewModel @AssistedInject constructor(
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.snackBarUiState?.snackBarQueue!!.let {
-                    val newQueue = LinkedList(it)
+                (old as? CaptureUiState.Ready)?.let { readyState ->
+                    val newQueue = LinkedList(readyState.snackBarUiState.snackBarQueue)
                     val snackBarData = newQueue.remove()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(
-                            snackBarUiState = SnackBarUiState.Companion.from(newQueue)
+                        readyState.copy(
+                            snackBarUiState = SnackBarUiState.from(newQueue)
                         )
                     } else {
-                        old
+                        readyState
                     }
-                }
+                } ?: old
             }
         }
     }
