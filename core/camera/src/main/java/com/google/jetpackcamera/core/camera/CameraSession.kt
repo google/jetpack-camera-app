@@ -27,7 +27,6 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
@@ -67,6 +66,7 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -723,9 +723,7 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
-                // Save to the DCIM/Camera directory
-                put(MediaStore.Images.Media.RELATIVE_PATH,
-                    Environment.DIRECTORY_DCIM + File.separator + "Camera")
+                put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(

@@ -21,7 +21,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -39,8 +38,9 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.common.DefaultDispatcher
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -474,9 +474,7 @@ constructor(
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            // Save to the DCIM/Camera directory
-            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH,
-                Environment.DIRECTORY_DCIM + File.separator + "Camera")
+            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -531,7 +529,7 @@ constructor(
         eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         eligibleContentValues.put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            Environment.DIRECTORY_DCIM + File.separator + "Camera"
+            getDefaultMediaSaveLocation()
         )
         return eligibleContentValues
     }
