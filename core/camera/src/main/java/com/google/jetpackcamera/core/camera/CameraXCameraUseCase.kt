@@ -474,6 +474,9 @@ constructor(
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            // Save to the DCIM/Camera directory
+            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH,
+                Environment.DIRECTORY_DCIM + File.separator + "Camera")
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -528,7 +531,7 @@ constructor(
         eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         eligibleContentValues.put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            Environment.DIRECTORY_PICTURES
+            Environment.DIRECTORY_DCIM + File.separator + "Camera"
         )
         return eligibleContentValues
     }

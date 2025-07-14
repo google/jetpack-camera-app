@@ -27,6 +27,7 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
@@ -722,6 +723,9 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                // Save to the DCIM/Camera directory
+                put(MediaStore.Images.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_DCIM + File.separator + "Camera")
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(
