@@ -685,15 +685,11 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio) {
-        viewModelScope.launch {
-            cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
-        }
+        cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
     fun setTestPattern(newTestPattern: TestPattern) {
-        viewModelScope.launch {
-            cameraUseCase.setTestPattern(newTestPattern = newTestPattern)
-        }
+        cameraUseCase.setTestPattern(newTestPattern = newTestPattern)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
