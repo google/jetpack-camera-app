@@ -837,21 +837,12 @@ constructor(
 
     private fun CameraAppSettings.tryApplyTestPatternConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedTestPatterns) {
-                val newTestPattern = if (contains(debugSettings.testPattern)) {
-                    debugSettings.testPattern
-                } else {
-                    TestPattern.Off
-                }
-                if (newTestPattern != debugSettings.testPattern) {
-                    this@tryApplyTestPatternConstraints.copy(
-                        debugSettings = debugSettings.copy(testPattern = newTestPattern)
-                    )
-                } else {
-                    null
-                }
+            if (debugSettings.testPattern in constraints.supportedTestPatterns) {
+                this
+            } else {
+                copy(debugSettings = debugSettings.copy(testPattern = TestPattern.Off))
             }
-        } ?: this@tryApplyTestPatternConstraints
+        } ?: this
 
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
