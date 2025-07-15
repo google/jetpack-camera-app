@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.uistate.capture
 
-import android.util.Size
-import com.google.jetpackcamera.settings.model.TestPattern
+import com.google.jetpackcamera.settings.model.CaptureMode
 
-sealed interface DebugUiState {
-    data object Disabled : DebugUiState
+sealed interface CaptureButtonUiState {
+    data object Unavailable : CaptureButtonUiState
+    sealed interface Enabled : CaptureButtonUiState {
+        data class Idle(val captureMode: CaptureMode) : Enabled
 
-    sealed interface Enabled : DebugUiState
+        sealed interface Recording : Enabled {
+            data object PressedRecording : Recording
+            data object LockedRecording : Recording
+        }
+    }
 
-    data object Closed : Enabled
-
-    data class Open(
-        val cameraPropertiesJSON: String = "",
-        val videoResolution: Size? = null,
-        val selectedTestPattern: TestPattern = TestPattern.Off,
-        val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
-    ) : Enabled
+    companion object
 }

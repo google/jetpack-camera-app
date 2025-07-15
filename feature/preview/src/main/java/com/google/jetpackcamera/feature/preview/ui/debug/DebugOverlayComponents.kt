@@ -51,18 +51,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.feature.preview.DebugUiState
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
@@ -160,10 +160,10 @@ private fun MainDebugOverlay(
 
         Row {
             Text("Video resolution: ")
-            val videoResText = if (debugUiState.videoResolution == null) {
+            val size = debugUiState.videoResolution
+            val videoResText = if (size == null) {
                 "null"
             } else {
-                val size = debugUiState.videoResolution
                 abs(size.height).toString() + "x" + abs(size.width).toString()
             }
             Text(

@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import kotlin.math.min
 
 @Composable
@@ -44,8 +46,16 @@ fun ImageWell(
     when (imageWellUiState) {
         is ImageWellUiState.LastCapture -> {
             val bitmap = when (imageWellUiState.mediaDescriptor) {
-                is MediaDescriptor.Image -> imageWellUiState.mediaDescriptor.thumbnail
-                is MediaDescriptor.Video -> imageWellUiState.mediaDescriptor.thumbnail
+                is MediaDescriptor.Image -> (
+                    imageWellUiState.mediaDescriptor
+                        as MediaDescriptor.Image
+                    ).thumbnail
+
+                is MediaDescriptor.Video -> (
+                    imageWellUiState.mediaDescriptor
+                        as MediaDescriptor.Video
+                    ).thumbnail
+
                 is MediaDescriptor.None -> null
             }
 
@@ -101,11 +111,4 @@ fun ImageWell(
         is ImageWellUiState.Unavailable -> {
         }
     }
-}
-
-// TODO(yasith): Add support for Video
-sealed interface ImageWellUiState {
-    data object Unavailable : ImageWellUiState
-
-    data class LastCapture(val mediaDescriptor: MediaDescriptor) : ImageWellUiState
 }

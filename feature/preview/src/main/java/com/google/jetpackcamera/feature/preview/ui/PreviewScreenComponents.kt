@@ -19,7 +19,6 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -111,23 +110,32 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.AudioUiState
-import com.google.jetpackcamera.feature.preview.CaptureModeUiState
-import com.google.jetpackcamera.feature.preview.DisabledReason
-import com.google.jetpackcamera.feature.preview.ElapsedTimeUiState
-import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.feature.preview.SingleSelectableState
-import com.google.jetpackcamera.feature.preview.StabilizationUiState
-import com.google.jetpackcamera.feature.preview.ZoomUiState
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
-import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
+import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
+import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
+import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
+import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
+import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -288,44 +296,6 @@ fun AmplitudeVisualizer(
     }
 }
 
-/**
- * An invisible box that will display a [Toast] with specifications set by a [ToastMessage].
- *
- * @param toastMessage the specifications for the [Toast].
- * @param onToastShown called once the Toast has been displayed.
- *
- */
-@Composable
-fun TestableToast(
-    toastMessage: ToastMessage,
-    onToastShown: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        // box seems to need to have some size to be detected by UiAutomator
-        modifier = modifier
-            .size(20.dp)
-            .testTag(toastMessage.testTag)
-    ) {
-        val context = LocalContext.current
-        LaunchedEffect(toastMessage) {
-            if (toastMessage.shouldShowToast) {
-                Toast.makeText(
-                    context,
-                    context.getText(toastMessage.stringResource),
-                    toastMessage.toastLength
-                ).show()
-            }
-
-            onToastShown()
-        }
-        Log.d(
-            TAG,
-            "Toast Displayed with message: ${stringResource(id = toastMessage.stringResource)}"
-        )
-    }
-}
-
 @Composable
 fun TestableSnackbar(
     modifier: Modifier = Modifier,
@@ -352,7 +322,7 @@ fun TestableSnackbar(
                         actionLabel = if (snackbarToShow.actionLabelRes == null) {
                             null
                         } else {
-                            context.getString(snackbarToShow.actionLabelRes)
+                            context.getString(snackbarToShow.actionLabelRes!!)
                         }
                     )
                 when (result) {
@@ -417,15 +387,17 @@ fun DetectWindowColorModeChanges(
  */
 @Composable
 fun PreviewDisplay(
-    previewUiState: PreviewUiState.Ready,
+    previewDisplayUiState: PreviewDisplayUiState,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
     onZoomRatioChange: (CameraZoomRatio) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
-    aspectRatio: AspectRatio,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
 ) {
+    if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
+        return
+    }
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
             onZoomRatioChange(
@@ -444,6 +416,10 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
+            val aspectRatio = (
+                previewDisplayUiState.aspectRatioUiState as
+                    AspectRatioUiState.Available
+                ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -460,8 +436,8 @@ fun PreviewDisplay(
                 label = ""
             )
 
-            LaunchedEffect(previewUiState.lastBlinkTimeStamp) {
-                if (previewUiState.lastBlinkTimeStamp != 0L) {
+            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
                     imageVisible = false
                     delay(BLINK_TIME)
                     imageVisible = true
@@ -654,44 +630,46 @@ fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifi
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
-    lensFacing: LensFacing,
+    flipLensUiState: FlipLensUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var rotation by remember { mutableFloatStateOf(0f) }
-    val animatedRotation = remember { Animatable(0f) }
-    var initialLaunch by remember { mutableStateOf(false) }
+    if (flipLensUiState is FlipLensUiState.Available) {
+        var rotation by remember { mutableFloatStateOf(0f) }
+        val animatedRotation = remember { Animatable(0f) }
+        var initialLaunch by remember { mutableStateOf(false) }
 
-    // spin animate whenever lensfacing changes
-    LaunchedEffect(lensFacing) {
-        if (initialLaunch) {
-            // full 360
-            rotation -= 180f
-            animatedRotation.animateTo(
-                targetValue = rotation,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessVeryLow
+        // spin animate whenever lensfacing changes
+        LaunchedEffect(flipLensUiState.selectedLensFacing) {
+            if (initialLaunch) {
+                // full 360
+                rotation -= 180f
+                animatedRotation.animateTo(
+                    targetValue = rotation,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessVeryLow
+                    )
                 )
+            }
+            // dont rotate on the initial launch
+            else {
+                initialLaunch = true
+            }
+        }
+        IconButton(
+            modifier = modifier.size(40.dp),
+            onClick = onClick,
+            enabled = enabledCondition
+        ) {
+            Icon(
+                imageVector = Icons.Filled.FlipCameraAndroid,
+                contentDescription = stringResource(id = R.string.flip_camera_content_description),
+                modifier = Modifier
+                    .size(72.dp)
+                    .rotate(animatedRotation.value)
             )
         }
-        // dont rotate on the initial launch
-        else {
-            initialLaunch = true
-        }
-    }
-    IconButton(
-        modifier = modifier.size(40.dp),
-        onClick = onClick,
-        enabled = enabledCondition
-    ) {
-        Icon(
-            imageVector = Icons.Filled.FlipCameraAndroid,
-            contentDescription = stringResource(id = R.string.flip_camera_content_description),
-            modifier = Modifier
-                .size(72.dp)
-                .rotate(animatedRotation.value)
-        )
     }
 }
 
@@ -742,8 +720,8 @@ fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (DisabledReason) -> Unit,
-    captureModeUiState: CaptureModeUiState.Enabled
+    onDisabledCaptureMode: (DisableRationale) -> Unit,
+    captureModeUiState: CaptureModeUiState.Available
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -754,44 +732,46 @@ fun CaptureModeDropDown(
             fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
-            fun onDisabledClick(selectableState: SingleSelectableState): () -> Unit =
-                if (selectableState is SingleSelectableState.Disabled) {
-                    { onDisabledCaptureMode(selectableState.disabledReason) }
-                } else {
-                    { TODO("Enabled should not have disabled click") }
-                }
+            fun onDisabledClick(
+                selectableState: SingleSelectableUiState<CaptureMode>?
+            ): () -> Unit = if (selectableState is SingleSelectableUiState.Disabled) {
+                { onDisabledCaptureMode(selectableState.disabledReason) }
+            } else {
+                { TODO("Enabled should not have disabled click") }
+            }
 
             Column {
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_standard),
-                    enabled = captureModeUiState.defaultCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD),
                     onClick = {
                         onSetCaptureMode(CaptureMode.STANDARD)
                         isExpanded = false
                     },
-                    onDisabledClick = onDisabledClick(captureModeUiState.defaultCaptureState)
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.findSelectableStateFor(CaptureMode.STANDARD)
+                    )
                 )
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
-                    enabled = captureModeUiState.imageOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY),
                     onClick = {
                         onSetCaptureMode(CaptureMode.IMAGE_ONLY)
                         isExpanded = false
                     },
-                    onDisabledClick = onDisabledClick(captureModeUiState.imageOnlyCaptureState)
+                    onDisabledClick = onDisabledClick(
+                        captureModeUiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                    )
                 )
                 DropDownItem(
                     text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
-                    enabled = captureModeUiState.videoOnlyCaptureState
-                        is SingleSelectableState.Selectable,
+                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY),
                     onClick = {
                         onSetCaptureMode(CaptureMode.VIDEO_ONLY)
                         isExpanded = false
                     },
                     onDisabledClick = onDisabledClick(
-                        captureModeUiState.videoOnlyCaptureState
+                        captureModeUiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
                     )
 
                 )
@@ -809,7 +789,7 @@ fun CaptureModeDropDown(
                 .padding(8.dp)
         ) {
             Text(
-                text = when (captureModeUiState.currentSelection) {
+                text = when (captureModeUiState.selectedCaptureMode) {
                     CaptureMode.STANDARD -> stringResource(
                         R.string.quick_settings_text_capture_mode_standard
                     )
