@@ -395,8 +395,9 @@ private fun updateCamera2RequestOptions(
         needsUpdate = true
     }
 
-    if (prevTransientSettings?.testPattern != newTransientSettings.testPattern) {
-        val (mode: Int?, data: IntArray?) = when (newTransientSettings.testPattern) {
+    val newTestPattern = newTransientSettings.testPattern
+    if (prevTransientSettings?.testPattern != newTestPattern) {
+        val (mode: Int?, data: IntArray?) = when (newTestPattern) {
             TestPattern.Off -> Pair(null, null)
             TestPattern.ColorBars -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS, null)
             TestPattern.ColorBarsFadeToGray -> Pair(
@@ -409,10 +410,10 @@ private fun updateCamera2RequestOptions(
                 Pair(
                     CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR,
                     intArrayOf(
-                        newTransientSettings.testPattern.red.toInt(),
-                        newTransientSettings.testPattern.greenEven.toInt(),
-                        newTransientSettings.testPattern.greenOdd.toInt(),
-                        newTransientSettings.testPattern.blue.toInt()
+                        newTestPattern.red.toInt(),
+                        newTestPattern.greenEven.toInt(),
+                        newTestPattern.greenOdd.toInt(),
+                        newTestPattern.blue.toInt()
                     )
                 )
             }

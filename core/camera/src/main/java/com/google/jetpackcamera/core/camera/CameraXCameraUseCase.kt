@@ -596,11 +596,8 @@ constructor(
     }
 
     override fun setTestPattern(newTestPattern: TestPattern) {
-        currentSettings.update { oldCameraSettings ->
-            oldCameraSettings?.debugSettings?.copy(testPattern = newTestPattern)
-                ?.let { newDebugSettings ->
-                    oldCameraSettings.copy(debugSettings = newDebugSettings)
-                } ?: oldCameraSettings
+        currentSettings.update { old ->
+            old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
         }
     }
 
