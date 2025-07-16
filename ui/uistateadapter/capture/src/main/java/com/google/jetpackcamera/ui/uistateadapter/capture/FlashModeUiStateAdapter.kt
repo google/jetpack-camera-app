@@ -54,7 +54,9 @@ fun FlashModeUiState.Companion.from(
             ORDERED_UI_SUPPORTED_FLASH_MODES
         )
 
-    return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
+    return if (availableModes.isEmpty() ||
+        availableModes == listOf(SingleSelectableUiState.SelectableUi(FlashMode.OFF))
+    ) {
         // If we only support OFF, then return "Unavailable".
         Unavailable
     } else {
