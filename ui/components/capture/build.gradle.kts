@@ -53,9 +53,6 @@ android {
         buildConfig = true
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
 
     kotlinOptions {
         freeCompilerArgs += "-Xcontext-receivers"
@@ -71,6 +68,8 @@ dependencies {
     implementation(libs.compose.material3)
 
     implementation(project(":ui:uistate"))
+    implementation(project(":data:media"))
+    implementation(project(":core:camera"))
 }
 
 // Allow references to generated code
