@@ -646,14 +646,15 @@ constructor(
     ): CameraAppSettings {
         val lensFacing = when (newZoomState.changeType.lensToZoom) {
             LensToZoom.PRIMARY -> cameraLensFacing
+
             LensToZoom.SECONDARY -> {
-                val newLens = cameraLensFacing.flip()
-                check(systemConstraints.perLensConstraints[newLens] != null) {
-                    "Device does not have a secondary camera"
-                }
-                newLens
+               cameraLensFacing.flip()
             }
         }
+        // no-op if lens doesn't exist
+        if (systemConstraints.perLensConstraints[lensFacing] == null)
+            return this
+
         return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
             val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
                 when (val change = newZoomState.changeType) {
