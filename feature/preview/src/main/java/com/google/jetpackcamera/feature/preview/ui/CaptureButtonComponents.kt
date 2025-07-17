@@ -380,7 +380,6 @@ private fun CaptureButton(
                             if (!positiveDistance.isNaN()) {
                                 // todo(kc): should check the tuning of this.
                                 val zoom = positiveDistance * -0.01f // Adjust sensitivity
-                                println("INCREMENT $zoom")
                                 onDragZoom(zoom)
                             }
                         }
