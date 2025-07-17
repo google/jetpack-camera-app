@@ -489,7 +489,7 @@ class PreviewViewModel @AssistedInject constructor(
     fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
-        ignoreUri: Boolean,
+        ignoreUri: Boolean = false,
         onImageCapture: (ImageCaptureEvent, Int) -> Unit
     ) {
         if (captureUiState.value is CaptureUiState.Ready &&
