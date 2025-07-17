@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Videocam
@@ -83,6 +82,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -155,6 +155,8 @@ fun CameraControlsOverlay(
                 .fillMaxSize()
         ) {
             if (captureUiState.videoRecordingState is VideoRecordingState.Inactive) {
+                val showDebugButton = captureUiState.debugUiState is DebugUiState.Enabled &&
+                    captureUiState.debugUiState !is DebugUiState.Open
                 ControlsTop(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -164,7 +166,7 @@ fun CameraControlsOverlay(
                         captureUiState.quickSettingsUiState
                             as QuickSettingsUiState.Available
                         ).quickSettingsIsOpen,
-                    isDebugMode = captureUiState.debugUiState.isDebugMode,
+                    showDebugButton = showDebugButton,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
                     onToggleQuickSettings = onToggleQuickSettings,
@@ -185,8 +187,6 @@ fun CameraControlsOverlay(
                 zoomControlUiState = captureUiState.zoomControlUiState,
                 flipLensUiState = captureUiState.flipLensUiState,
                 zoomUiState = captureUiState.zoomUiState,
-                physicalCameraId = captureUiState.debugUiState.currentPhysicalCameraId,
-                logicalCameraId = captureUiState.debugUiState.currentLogicalCameraId,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen =
                 (
@@ -216,7 +216,7 @@ fun CameraControlsOverlay(
 private fun ControlsTop(
     isQuickSettingsOpen: Boolean,
     modifier: Modifier = Modifier,
-    isDebugMode: Boolean = false,
+    showDebugButton: Boolean = false,
     onNavigateToSettings: () -> Unit = {},
     onChangeFlash: (FlashMode) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
@@ -277,7 +277,11 @@ private fun ControlsTop(
                 VideoQualityIcon(videoQuality, Modifier.testTag(VIDEO_QUALITY_TAG))
             }
         }
-        if (isDebugMode) {
+        AnimatedVisibility(
+            showDebugButton,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
         }
     }
@@ -288,8 +292,6 @@ private fun ControlsBottom(
     modifier: Modifier = Modifier,
     captureUiState: CaptureUiState.Ready,
     flipLensUiState: FlipLensUiState,
-    physicalCameraId: String? = null,
-    logicalCameraId: String? = null,
     zoomUiState: ZoomUiState,
     zoomControlUiState: ZoomControlUiState,
     showZoomLevel: Boolean,
@@ -325,7 +327,7 @@ private fun ControlsBottom(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AnimatedVisibility(
                     visible = (
-                        captureUiState.debugUiState.isDebugMode && showZoomLevel &&
+                        captureUiState.debugUiState is DebugUiState.Enabled && showZoomLevel &&
                             zoomUiState is ZoomUiState.Enabled
                         ),
                     enter = fadeIn(),
@@ -333,8 +335,12 @@ private fun ControlsBottom(
                 ) {
                     ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
                 }
-                if (captureUiState.debugUiState.isDebugMode) {
-                    CurrentCameraIdText(physicalCameraId, logicalCameraId)
+                val debugUiState = captureUiState.debugUiState
+                if (debugUiState is DebugUiState.Enabled) {
+                    CurrentCameraIdText(
+                        debugUiState.currentPhysicalCameraId,
+                        debugUiState.currentLogicalCameraId
+                    )
                 }
                 if (zoomControlUiState is ZoomControlUiState.Enabled &&
                     zoomUiState is ZoomUiState.Enabled

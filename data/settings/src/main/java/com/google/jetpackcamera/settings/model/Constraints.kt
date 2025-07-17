@@ -36,7 +36,8 @@ data class CameraConstraints(
     val supportedIlluminants: Set<Illuminant>,
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
-    val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>
+    val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
+    val supportedTestPatterns: Set<TestPattern>
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
@@ -72,7 +73,8 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                         supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
                         supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
                         supportedZoomRange = Range(.5f, 10f),
-                        unsupportedStabilizationFpsMap = emptyMap()
+                        unsupportedStabilizationFpsMap = emptyMap(),
+                        supportedTestPatterns = setOf(TestPattern.Off)
                     )
                 )
             }
