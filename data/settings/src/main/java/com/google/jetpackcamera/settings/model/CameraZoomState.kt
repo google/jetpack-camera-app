@@ -17,11 +17,10 @@ package com.google.jetpackcamera.settings.model
 
 /**
  * Represents an action to modify the current zoom Ratio
- *  * @param changeType the [ZoomChange] to be performed on the current Zoom Ratio
- *
+ *  @param changeType the [ZoomStrategy] to be performed on the current Zoom Ratio
  */
 
-data class CameraZoomRatio(val changeType: ZoomChange)
+data class CameraZoomRatio(val changeType: ZoomStrategy)
 
 /**
  * Abstract placeholders
@@ -47,7 +46,7 @@ enum class LensToZoom {
 /**
  * Represents the different types of actions to modify the current zoom state
  */
-sealed interface ZoomChange {
+sealed interface ZoomStrategy {
     val value: Float
     val lensToZoom: LensToZoom
 
@@ -57,7 +56,7 @@ sealed interface ZoomChange {
     data class Absolute(
         override val value: Float,
         override val lensToZoom: LensToZoom = LensToZoom.PRIMARY
-    ) : ZoomChange
+    ) : ZoomStrategy
 
     /**
      * Use Scale to multiply current zoom ratio or linear state by the value
@@ -65,7 +64,7 @@ sealed interface ZoomChange {
     data class Scale(
         override val value: Float,
         override val lensToZoom: LensToZoom = LensToZoom.PRIMARY
-    ) : ZoomChange
+    ) : ZoomStrategy
 
     /**
      * Use Increment to add the value to the current zoom ratio or linear state
@@ -73,5 +72,5 @@ sealed interface ZoomChange {
     data class Increment(
         override val value: Float,
         override val lensToZoom: LensToZoom = LensToZoom.PRIMARY
-    ) : ZoomChange
+    ) : ZoomStrategy
 }

@@ -71,9 +71,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -164,7 +162,7 @@ fun CaptureButton(
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
-    onSetZoom: (CameraZoomRatio) -> Unit,
+    onIncrementZoom: (Float) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
@@ -263,7 +261,7 @@ fun CaptureButton(
         onPress = { onPress(CaptureSource.CAPTURE_BUTTON) },
         onRelease = { onKeyUp(CaptureSource.CAPTURE_BUTTON, it) },
         onLockVideoRecording = onLockVideoRecording,
-        onSetZoom = onSetZoom,
+        onDragZoom = onIncrementZoom,
         captureButtonUiState = captureButtonUiState,
         captureButtonSize = captureButtonSize
     )
@@ -274,7 +272,7 @@ private fun CaptureButton(
     modifier: Modifier = Modifier,
     onPress: () -> Unit,
     onRelease: (isLocked: Boolean) -> Unit,
-    onSetZoom: (CameraZoomRatio) -> Unit,
+    onDragZoom: (Float) -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     useLockSwitch: Boolean = true,
@@ -382,9 +380,7 @@ private fun CaptureButton(
                             if (!positiveDistance.isNaN()) {
                                 // todo(kc): should check the tuning of this.
                                 val zoom = positiveDistance * -0.01f // Adjust sensitivity
-                                onSetZoom(
-                                    CameraZoomRatio(ZoomChange.Increment(zoom))
-                                )
+                                onDragZoom(zoom)
                             }
                         }
                     }

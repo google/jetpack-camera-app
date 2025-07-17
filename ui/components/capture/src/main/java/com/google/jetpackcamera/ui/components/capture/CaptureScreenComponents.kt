@@ -74,7 +74,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -110,12 +109,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
+import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -383,7 +383,7 @@ fun PreviewDisplay(
     previewDisplayUiState: PreviewDisplayUiState,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
-    onZoomRatioChange: (CameraZoomRatio) -> Unit,
+    onScaleZoom: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
@@ -393,11 +393,7 @@ fun PreviewDisplay(
     }
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomRatioChange(
-                CameraZoomRatio(
-                    ZoomChange.Scale(pinchZoomChange)
-                )
-            )
+            onScaleZoom(pinchZoomChange)
         }
     )
 
@@ -604,20 +600,6 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
             )
         }
     }
-}
-
-/**
- * A temporary button that can be added to preview for quick testing purposes
- */
-@Composable
-fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
-    SuggestionChip(
-        onClick = { onClick() },
-        modifier = modifier,
-        label = {
-            Text(text = text)
-        }
-    )
 }
 
 @Composable

@@ -72,6 +72,7 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
@@ -118,6 +119,7 @@ class PreviewViewModel @AssistedInject constructor(
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val isAnimatingZoomState: MutableStateFlow<Float?> = MutableStateFlow(null)
 
     private val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
@@ -177,8 +179,9 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState(),
-                lockedRecordingState.filterNotNull().distinctUntilChanged()
-            ) { cameraAppSettings, systemConstraints, cameraState, lockedState ->
+                lockedRecordingState.filterNotNull().distinctUntilChanged(),
+                isAnimatingZoomState
+            ) { cameraAppSettings, systemConstraints, cameraState, lockedState, animateZoomState ->
 
                 var flashModeUiState: FlashModeUiState
                 val captureModeUiState = CaptureModeUiState.from(
@@ -267,6 +270,12 @@ class PreviewViewModel @AssistedInject constructor(
                         zoomUiState = ZoomUiState.from(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
+                            cameraState
+                        ),
+                        zoomControlUiState = ZoomControlUiState.from(
+                            animateZoomState,
+                            systemConstraints,
+                            cameraAppSettings,
                             cameraState
                         ),
                         captureModeToggleUiState = CaptureModeToggleUiState.from(
@@ -680,6 +689,12 @@ class PreviewViewModel @AssistedInject constructor(
             lockedRecordingState.update {
                 isLocked
             }
+        }
+    }
+
+    override fun setZoomAnimationState(targetValue: Float?) {
+        viewModelScope.launch {
+            isAnimatingZoomState.update { targetValue }
         }
     }
 
