@@ -38,7 +38,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -60,6 +59,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
@@ -221,14 +221,14 @@ fun ComposeTestRule.tapStartLockedVideoRecording() {
 fun ComposeTestRule.isHdrToggleEnabled(): Boolean =
     checkComponentStateDescriptionState<Boolean>(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
         when (description) {
-            getResString(R.string.capture_mode_image_capture_content_description),
-            getResString(R.string.capture_mode_video_recording_content_description) ->
+            getResString(CaptureR.string.capture_mode_image_capture_content_description),
+            getResString(CaptureR.string.capture_mode_video_recording_content_description) ->
                 return@checkComponentStateDescriptionState true
 
             getResString(
-                R.string.capture_mode_image_capture_content_description_disabled
+                CaptureR.string.capture_mode_image_capture_content_description_disabled
             ), getResString(
-                R.string.capture_mode_video_recording_content_description_disabled
+                CaptureR.string.capture_mode_video_recording_content_description_disabled
             ) -> return@checkComponentStateDescriptionState false
 
             else -> false
@@ -241,15 +241,15 @@ fun ComposeTestRule.isHdrToggleEnabled(): Boolean =
 fun ComposeTestRule.getHdrToggleState(): CaptureMode =
     checkComponentStateDescriptionState(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
         when (description) {
-            getResString(R.string.capture_mode_image_capture_content_description),
+            getResString(CaptureR.string.capture_mode_image_capture_content_description),
             getResString(
-                R.string.capture_mode_image_capture_content_description_disabled
+                CaptureR.string.capture_mode_image_capture_content_description_disabled
             ) ->
                 CaptureMode.IMAGE_ONLY
 
-            getResString(R.string.capture_mode_video_recording_content_description),
+            getResString(CaptureR.string.capture_mode_video_recording_content_description),
             getResString(
-                R.string.capture_mode_video_recording_content_description_disabled
+                CaptureR.string.capture_mode_video_recording_content_description_disabled
             ) ->
                 CaptureMode.VIDEO_ONLY
 
@@ -297,11 +297,11 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
 fun ComposeTestRule.isHdrEnabled(): Boolean =
     checkComponentContentDescriptionState<Boolean>(QUICK_SETTINGS_HDR_BUTTON) { description ->
         when (description) {
-            getResString(R.string.quick_settings_dynamic_range_hdr_description) -> {
+            getResString(CaptureR.string.quick_settings_dynamic_range_hdr_description) -> {
                 return@checkComponentContentDescriptionState true
             }
 
-            getResString(R.string.quick_settings_dynamic_range_sdr_description) -> {
+            getResString(CaptureR.string.quick_settings_dynamic_range_sdr_description) -> {
                 return@checkComponentContentDescriptionState false
             }
 
@@ -315,10 +315,10 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     ).let { node ->
         node.config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
-                getResString(R.string.quick_settings_front_camera_description) ->
+                getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
 
-                getResString(R.string.quick_settings_back_camera_description) ->
+                getResString(CaptureR.string.quick_settings_back_camera_description) ->
                     return@let LensFacing.BACK
 
                 else -> false
@@ -334,16 +334,16 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     ).let { node ->
         node.config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
-                getResString(R.string.quick_settings_flash_off_description) ->
+                getResString(CaptureR.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
 
-                getResString(R.string.quick_settings_flash_on_description) ->
+                getResString(CaptureR.string.quick_settings_flash_on_description) ->
                     return@let FlashMode.ON
 
-                getResString(R.string.quick_settings_flash_auto_description) ->
+                getResString(CaptureR.string.quick_settings_flash_auto_description) ->
                     return@let FlashMode.AUTO
 
-                getResString(R.string.quick_settings_flash_llb_description) ->
+                getResString(CaptureR.string.quick_settings_flash_llb_description) ->
                     return@let FlashMode.LOW_LIGHT_BOOST
 
                 else -> false
@@ -361,12 +361,14 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
         ).let { node ->
             node.config[SemanticsProperties.ContentDescription].any { description ->
                 when (description) {
-                    getResString(R.string.quick_settings_description_concurrent_camera_off) -> {
+                    getResString(
+                        CaptureR.string.quick_settings_description_concurrent_camera_off
+                    ) -> {
                         return@let ConcurrentCameraMode.OFF
                     }
 
                     getResString(
-                        R.string.quick_settings_description_concurrent_camera_dual
+                        CaptureR.string.quick_settings_description_concurrent_camera_dual
                     ) ->
                         return@let ConcurrentCameraMode.DUAL
 
@@ -389,13 +391,13 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
         node.config[SemanticsProperties.ContentDescription].any { description ->
             // check description is one of the capture modes
             when (description) {
-                getResString(R.string.quick_settings_description_capture_mode_standard) ->
+                getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->
                     return@let CaptureMode.STANDARD
 
-                getResString(R.string.quick_settings_description_capture_mode_image_only) ->
+                getResString(CaptureR.string.quick_settings_description_capture_mode_image_only) ->
                     return@let CaptureMode.IMAGE_ONLY
 
-                getResString(R.string.quick_settings_description_capture_mode_video_only) ->
+                getResString(CaptureR.string.quick_settings_description_capture_mode_video_only) ->
                     return@let CaptureMode.VIDEO_ONLY
 
                 else -> false
@@ -539,14 +541,16 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
  */
 inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
     var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_closed_description).apply {
+    onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
         if (isDisplayed()) {
             performClick()
             needReturnFromQuickSettings = true
         }
     }
 
-    onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description).assertExists(
+    onNodeWithContentDescription(
+        CaptureR.string.quick_settings_dropdown_open_description
+    ).assertExists(
         "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
     )
 
@@ -554,7 +558,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
         return block()
     } finally {
         if (needReturnFromQuickSettings) {
-            onNodeWithContentDescription(R.string.quick_settings_dropdown_open_description)
+            onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_open_description)
                 .assertExists()
                 .performClick()
 

@@ -128,6 +128,9 @@ dependencies {
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
 
+    // Compose - Integration with ViewModels with Navigation and Hilt
+    implementation(libs.hilt.navigation.compose)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -164,6 +167,8 @@ dependencies {
     implementation(project(":feature:permissions"))
     // benchmark
     implementation(libs.androidx.profileinstaller)
+    // capture components
+    implementation(project(":ui:components:capture"))
 }
 
 // Allow references to generated code
