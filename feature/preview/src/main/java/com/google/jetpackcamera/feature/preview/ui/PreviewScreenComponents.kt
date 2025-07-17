@@ -720,9 +720,9 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
 }
 
 @Composable
-fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
+fun ZoomRatioText(modifier: Modifier = Modifier, zoomUiState: ZoomUiState.Enabled) {
     Text(
-        modifier = Modifier
+        modifier = modifier
             .testTag(ZOOM_RATIO_TAG),
         text = stringResource(id = R.string.zoom_ratio_text, zoomUiState.primaryZoomRatio ?: 1f)
     )

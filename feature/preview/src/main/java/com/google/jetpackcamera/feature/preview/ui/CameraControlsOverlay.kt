@@ -140,14 +140,7 @@ fun CameraControlsOverlay(
     onLockVideoRecording: (Boolean) -> Unit
 ) {
     // Show the current zoom level for a short period of time, only when the level changes.
-    var firstRun by remember { mutableStateOf(true) }
-    LaunchedEffect(previewUiState.zoomUiState) {
-        if (firstRun) {
-            firstRun = false
-        } else {
-            zoomLevelDisplayState.showZoomLevel()
-        }
-    }
+
 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         Box(
@@ -316,7 +309,7 @@ private fun ControlsBottom(
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        CompositionLocalProvider(
+        /*CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -346,7 +339,7 @@ private fun ControlsBottom(
                     }
                 }
             }
-        }
+        }*/
 
         Column {
             if (!isQuickSettingsOpen &&
@@ -438,7 +431,7 @@ private fun ControlsBottom(
 }
 
 @Composable
-private fun CaptureButton(
+fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
@@ -548,7 +541,7 @@ private fun CaptureButton(
 }
 
 @Composable
-private fun CaptureModeToggleButton(
+fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
     onToggleWhenDisabled: (DisableRationale) -> Unit,
