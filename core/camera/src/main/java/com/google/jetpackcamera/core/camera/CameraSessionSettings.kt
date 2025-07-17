@@ -77,3 +77,9 @@ internal data class TransientSessionSettings(
     val zoomRatios: Map<LensFacing, Float>,
     val testPattern: TestPattern
 )
+
+data class InitialRecordingSettings(
+    val isAudioEnabled: Boolean,
+    val lensFacing: LensFacing,
+    val zoomRatios: Map<LensFacing, Float>
+)

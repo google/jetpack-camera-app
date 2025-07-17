@@ -806,11 +806,12 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
+    initialRecordingSettings: InitialRecordingSettings,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
-        old.copy(videoRecordingState = VideoRecordingState.Starting)
+        old.copy(videoRecordingState = VideoRecordingState.Starting(initialRecordingSettings))
     }
 
     // ok. there is a difference between MUTING and ENABLING audio
@@ -979,8 +980,7 @@ private suspend fun runVideoRecording(
     videoCaptureUri: Uri?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {}
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -998,7 +998,12 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord
+            onVideoRecord = onVideoRecord,
+            initialRecordingSettings = InitialRecordingSettings(
+                isAudioEnabled = currentSettings.isAudioEnabled,
+                lensFacing = currentSettings.primaryLensFacing,
+                zoomRatios = currentSettings.zoomRatios
+            )
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -1031,7 +1036,6 @@ private suspend fun runVideoRecording(
                 }
             }
         }
-        onRestoreSettings()
     }
 }
 
@@ -1082,8 +1086,7 @@ internal suspend fun processVideoControlEvents(
                     event.videoCaptureUri,
                     videoCaptureControlEvents,
                     event.shouldUseUri,
-                    event.onVideoRecord,
-                    event.onRestoreSettings
+                    event.onVideoRecord
                 )
             }
 

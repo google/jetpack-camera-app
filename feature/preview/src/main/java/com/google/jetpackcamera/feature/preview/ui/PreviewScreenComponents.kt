@@ -74,7 +74,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,11 +111,9 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.ui.theme.PreviewPreviewTheme
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomChange
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
 import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
@@ -390,7 +387,7 @@ fun PreviewDisplay(
     previewDisplayUiState: PreviewDisplayUiState,
     onTapToFocus: (x: Float, y: Float) -> Unit,
     onFlipCamera: () -> Unit,
-    onZoomRatioChange: (CameraZoomRatio) -> Unit,
+    onScaleZoom: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier
@@ -400,11 +397,7 @@ fun PreviewDisplay(
     }
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
-            onZoomRatioChange(
-                CameraZoomRatio(
-                    ZoomChange.Scale(pinchZoomChange)
-                )
-            )
+            onScaleZoom(pinchZoomChange)
         }
     )
 
@@ -611,20 +604,6 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
             )
         }
     }
-}
-
-/**
- * A temporary button that can be added to preview for quick testing purposes
- */
-@Composable
-fun TestingButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
-    SuggestionChip(
-        onClick = { onClick() },
-        modifier = modifier,
-        label = {
-            Text(text = text)
-        }
-    )
 }
 
 @Composable

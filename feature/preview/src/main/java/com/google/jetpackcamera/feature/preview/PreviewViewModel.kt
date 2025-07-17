@@ -68,6 +68,7 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
@@ -113,6 +114,7 @@ class PreviewViewModel @AssistedInject constructor(
         MutableStateFlow(CaptureUiState.NotReady)
     private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
         MutableStateFlow(TrackedPreviewUiState())
+    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
@@ -250,6 +252,12 @@ class PreviewViewModel @AssistedInject constructor(
                         zoomUiState = ZoomUiState.from(
                             systemConstraints,
                             cameraAppSettings.cameraLensFacing,
+                            cameraState
+                        ),
+                        zoomControlUiState = ZoomControlUiState.from(
+                            trackedUiState.zoomAnimationTarget,
+                            systemConstraints,
+                            cameraAppSettings,
                             cameraState
                         ),
                         captureModeToggleUiState = CaptureModeToggleUiState.from(
@@ -684,6 +692,12 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun setZoomAnimationState(targetValue: Float?) {
+        trackedPreviewUiState.update { old ->
+            old.copy(zoomAnimationTarget = targetValue)
+        }
+    }
+
     fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
@@ -799,6 +813,7 @@ class PreviewViewModel @AssistedInject constructor(
     data class TrackedPreviewUiState(
         val isQuickSettingsOpen: Boolean = false,
         val isDebugOverlayOpen: Boolean = false,
-        val isRecordingLocked: Boolean = false
+        val isRecordingLocked: Boolean = false,
+        val zoomAnimationTarget: Float? = null
     )
 }
