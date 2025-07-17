@@ -19,6 +19,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -28,14 +29,14 @@ import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 fun ConcurrentCameraUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: SystemConstraints,
-    previewMode: PreviewMode,
+    externalCaptureMode: ExternalCaptureMode,
     captureModeUiState: CaptureModeUiState,
     streamConfigUiState: StreamConfigUiState
 ): ConcurrentCameraUiState {
     return ConcurrentCameraUiState.Available(
         selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
         isEnabled = systemConstraints.concurrentCamerasSupported &&
-            previewMode != PreviewMode.EXTERNAL_IMAGE_CAPTURE && (
+            externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
                 (
                     captureModeUiState as?
                         CaptureModeUiState.Available

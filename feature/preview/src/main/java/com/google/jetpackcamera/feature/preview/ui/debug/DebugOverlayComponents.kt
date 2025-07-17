@@ -43,7 +43,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.feature.preview.PreviewUiState
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
@@ -51,6 +50,7 @@ import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RAT
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
@@ -67,10 +67,9 @@ fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     toggleIsOpen: () -> Unit,
-    previewUiState: PreviewUiState.Ready
+    debugUiState: DebugUiState
 ) {
-    val isOpen = previewUiState.debugUiState.isDebugMode &&
-        previewUiState.debugUiState.isDebugOverlayOpen
+    val isOpen = debugUiState.isDebugMode && debugUiState.isDebugOverlayOpen
     val backgroundColor =
         animateColorAsState(
             targetValue = Color.Black.copy(alpha = if (isOpen) 0.7f else 0f),
@@ -116,11 +115,11 @@ fun DebugOverlayComponent(
 
                 Row {
                     Text("Video resolution: ")
-                    val videoResText = if (previewUiState.debugUiState.videoResolution == null) {
+                    val videoResText = if (debugUiState.videoResolution == null) {
                         "null"
                     } else {
-                        val size = previewUiState.debugUiState.videoResolution
-                        abs(size.height).toString() + "x" + abs(size.width).toString()
+                        val size = debugUiState.videoResolution
+                        abs(size?.height ?: 0).toString() + "x" + abs(size?.width ?: 0).toString()
                     }
                     Text(
                         modifier = Modifier.testTag(
@@ -145,7 +144,7 @@ fun DebugOverlayComponent(
             // Openable contents
             // Show Camera properties
             if (cameraPropertiesJSONDialog.value) {
-                CameraPropertiesJSONComponent(previewUiState) {
+                CameraPropertiesJSONComponent(debugUiState.cameraPropertiesJSON) {
                     cameraPropertiesJSONDialog.value = false
                 }
             }
@@ -161,10 +160,7 @@ fun DebugOverlayComponent(
 }
 
 @Composable
-private fun CameraPropertiesJSONComponent(
-    previewUiState: PreviewUiState.Ready,
-    onClose: () -> Unit
-) {
+private fun CameraPropertiesJSONComponent(cameraPropertiesJSON: String, onClose: () -> Unit) {
     BackHandler(onBack = { onClose() })
     val scrollState = rememberScrollState()
     Column(
@@ -175,7 +171,7 @@ private fun CameraPropertiesJSONComponent(
     ) {
         Text(
             modifier = Modifier.testTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG),
-            text = previewUiState.debugUiState.cameraPropertiesJSON,
+            text = cameraPropertiesJSON,
             fontSize = 10.sp
         )
     }
