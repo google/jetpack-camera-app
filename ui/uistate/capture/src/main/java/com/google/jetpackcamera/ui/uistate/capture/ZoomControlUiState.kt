@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.settings.model.LensFacing

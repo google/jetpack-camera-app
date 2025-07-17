@@ -62,6 +62,6 @@ sealed interface CaptureUiState {
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
-        val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
+        val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable
     ) : CaptureUiState
 }

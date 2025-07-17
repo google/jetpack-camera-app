@@ -16,8 +16,6 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import android.util.Range
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.LensFacing
 
 sealed interface ZoomUiState {
     data object Unavailable : ZoomUiState

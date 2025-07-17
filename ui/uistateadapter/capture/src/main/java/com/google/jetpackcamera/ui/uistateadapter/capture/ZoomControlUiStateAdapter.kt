@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Range
@@ -21,7 +20,6 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
-
 
 fun ZoomControlUiState.Companion.from(
     animateZoomState: Float?,
@@ -34,8 +32,9 @@ fun ZoomControlUiState.Companion.from(
             ?.supportedZoomRange
             ?: Range(1f, 1f)
 
-    if (zoomRange.upper == zoomRange.lower)
+    if (zoomRange.upper == zoomRange.lower) {
         return ZoomControlUiState.Disabled
+    }
     val zoomLevels: List<Float> = buildList {
         if (zoomRange.lower < 1f) {
             add(zoomRange.lower)

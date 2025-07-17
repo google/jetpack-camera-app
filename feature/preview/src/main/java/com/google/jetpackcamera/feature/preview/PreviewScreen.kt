@@ -80,13 +80,13 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.coroutines.flow.transformWhile
@@ -118,7 +118,7 @@ fun PreviewScreen(
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -148,8 +148,11 @@ fun PreviewScreen(
     when (val currentUiState = captureUiState) {
         is CaptureUiState.NotReady -> LoadingScreen()
         is CaptureUiState.Ready -> {
-
-            var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
+            var initialRecordingSettings by remember {
+                mutableStateOf<InitialRecordingSettings?>(
+                    null
+                )
+            }
 
             val context = LocalContext.current
             LaunchedEffect(Unit) {
@@ -161,7 +164,10 @@ fun PreviewScreen(
                 // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
 
                 ZoomState(
-                    initialZoomLevel = (currentUiState.zoomControlUiState as? ZoomControlUiState.Enabled)
+                    initialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -172,9 +178,15 @@ fun PreviewScreen(
                 )
             }
 
-            LaunchedEffect((currentUiState.flipLensUiState as? FlipLensUiState.Available)?.selectedLensFacing ) {
+            LaunchedEffect(
+                (currentUiState.flipLensUiState as? FlipLensUiState.Available)
+                    ?.selectedLensFacing
+            ) {
                 zoomState.onChangeLens(
-                    newInitialZoomLevel = (currentUiState.zoomControlUiState as? ZoomControlUiState.Enabled)
+                    newInitialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -182,7 +194,7 @@ fun PreviewScreen(
                         ?: Range(1f, 1f)
                 )
             }
-            //todo(kc) handle reset certain values after video recording is complete
+            // todo(kc) handle reset certain values after video recording is complete
             LaunchedEffect(currentUiState.videoRecordingState) {
                 with(currentUiState.videoRecordingState) {
                     when (this) {
@@ -212,6 +224,7 @@ fun PreviewScreen(
                             }
                             initialRecordingSettings = null
                         }
+
                         is VideoRecordingState.Active -> {}
                     }
                 }

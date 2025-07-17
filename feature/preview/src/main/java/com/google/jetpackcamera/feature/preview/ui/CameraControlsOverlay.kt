@@ -61,7 +61,6 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.MultipleEventsCutter
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.feature.preview.R
-import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
@@ -88,6 +87,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
@@ -324,8 +324,10 @@ private fun ControlsBottom(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AnimatedVisibility(
-                    visible = (captureUiState.debugUiState.isDebugMode && showZoomLevel &&
-                            zoomUiState is ZoomUiState.Enabled),
+                    visible = (
+                        captureUiState.debugUiState.isDebugMode && showZoomLevel &&
+                            zoomUiState is ZoomUiState.Enabled
+                        ),
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
@@ -667,21 +669,21 @@ private fun CaptureModeToggleButton(
         // toggle only enabled when both capture modes are available
         enabled = enabled,
         leftIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_image_capture_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_image_capture_content_description_disabled
-                )
-            },
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
         rightIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_video_recording_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_video_recording_content_description_disabled
-                )
-            },
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
+        },
         modifier = modifier
     )
 }
@@ -815,7 +817,8 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
 
                 primaryZoomRatio = 1f
             ),
@@ -849,7 +852,8 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
 
                 primaryZoomRatio = 1f
             ),
@@ -890,7 +894,8 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                 )
             ),
             zoomControlUiState = ZoomControlUiState.Enabled(
-                listOf(1f, 2f, 5f), primaryLensFacing = LensFacing.FRONT,
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
 
                 primaryZoomRatio = 1f
             ),

@@ -228,11 +228,11 @@ constructor(
                         val supportedFlashModes = buildSet {
                             add(FlashMode.OFF)
                             if ((
-                                        setOf(
-                                            Illuminant.FLASH_UNIT,
-                                            Illuminant.SCREEN
-                                        ) intersect supportedIlluminants
-                                        ).isNotEmpty()
+                                    setOf(
+                                        Illuminant.FLASH_UNIT,
+                                        Illuminant.SCREEN
+                                    ) intersect supportedIlluminants
+                                    ).isNotEmpty()
                             ) {
                                 add(FlashMode.ON)
                                 add(FlashMode.AUTO)
@@ -422,7 +422,7 @@ constructor(
                 sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
                     .first {
                         it in supportedStabilizationModes &&
-                                targetFrameRate !in it.unsupportedFpsSet
+                            targetFrameRate !in it.unsupportedFpsSet
                     }
             } else {
                 requestedStabilizationMode
@@ -549,7 +549,7 @@ constructor(
                 shouldUseUri,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                onVideoRecord = onVideoRecord,
+                onVideoRecord = onVideoRecord
             )
         )
     }
@@ -659,11 +659,11 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomStrategy.Absolute -> change.value
                     is ZoomStrategy.Scale -> (
-                            this.defaultZoomRatios
-                                [lensFacing]
-                                ?: 1.0f
-                            ) *
-                            change.value
+                        this.defaultZoomRatios
+                            [lensFacing]
+                            ?: 1.0f
+                        ) *
+                        change.value
 
                     is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
@@ -818,7 +818,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase?.screenFlash != null
+            imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

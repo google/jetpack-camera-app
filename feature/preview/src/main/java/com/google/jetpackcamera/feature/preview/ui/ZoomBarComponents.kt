@@ -43,8 +43,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
@@ -55,7 +55,7 @@ fun ZoomButtonRow(
     modifier: Modifier = Modifier,
     zoomControlUiState: ZoomControlUiState.Enabled,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
-    spacing: Dp = 16.dp,
+    spacing: Dp = 16.dp
 ) {
     val currentZoomState by rememberUpdatedState(zoomControlUiState)
     val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
@@ -63,7 +63,6 @@ fun ZoomButtonRow(
         // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
         // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
         // when cameraState is in this intermediate state.
-
 
         derivedStateOf {
             // if animating towards a value, then that option will be selected
@@ -232,7 +231,6 @@ fun ZoomBarPreviewFractionSelected() {
                 primaryZoomRatio = .6f
             ),
             onChangeZoom = {
-
                 println("Clicked value: $it")
             }
         )

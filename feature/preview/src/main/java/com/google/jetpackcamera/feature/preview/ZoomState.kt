@@ -40,7 +40,6 @@ class ZoomState(
 
     private var functionalZoomRange = zoomRange
 
-
     private val mutatorMutex = MutatorMutex()
 
     private suspend fun mutateZoom(block: suspend () -> Unit) {
@@ -55,8 +54,9 @@ class ZoomState(
      */
     suspend fun absoluteZoom(targetZoomLevel: Float, lensToZoom: LensToZoom) {
         mutateZoom {
-            if (lensToZoom == LensToZoom.PRIMARY)
+            if (lensToZoom == LensToZoom.PRIMARY) {
                 functionalZoom = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
+            }
             onChangeZoomLevel(
                 CameraZoomRatio(
                     ZoomStrategy.Absolute(
@@ -110,7 +110,6 @@ class ZoomState(
                     )
                 )
             }
-
         }
     }
 

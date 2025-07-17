@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Range
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
@@ -25,11 +24,11 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 fun ZoomUiState.Companion.from(
     systemConstraints: SystemConstraints,
     lensFacing: LensFacing,
-    cameraState: CameraState,
+    cameraState: CameraState
 ): ZoomUiState = ZoomUiState.Enabled(
     primaryZoomRange =
-        systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
-            ?: Range<Float>(1f, 1f),
+    systemConstraints.perLensConstraints[lensFacing]?.supportedZoomRange
+        ?: Range<Float>(1f, 1f),
     primaryZoomRatio = cameraState.zoomRatios[lensFacing],
-    primaryLinearZoom = cameraState.linearZoomScales[lensFacing],
+    primaryLinearZoom = cameraState.linearZoomScales[lensFacing]
 )
