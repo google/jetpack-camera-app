@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Range
 import androidx.compose.animation.core.Animatable
@@ -25,6 +25,7 @@ import androidx.core.util.toClosedRange
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.ZoomStrategy
+import kotlin.ranges.coerceIn
 
 class ZoomState(
     initialZoomLevel: Float,

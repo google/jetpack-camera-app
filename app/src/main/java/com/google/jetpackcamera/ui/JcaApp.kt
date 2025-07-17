@@ -36,6 +36,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
+import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.PreviewViewModel
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
@@ -46,7 +47,6 @@ import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
-import com.google.jetpackcamera.ui.components.capture.CaptureScreen
 
 @Composable
 fun JcaApp(
@@ -130,7 +130,7 @@ private fun JetpackCameraNavHost(
                     }
                 }
             }
-            CaptureScreen(
+            PreviewScreen(
                 onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
                 onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
                 onRequestWindowColorMode = onRequestWindowColorMode,

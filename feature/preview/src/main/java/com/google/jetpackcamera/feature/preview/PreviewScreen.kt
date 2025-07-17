@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
+package com.google.jetpackcamera.feature.preview
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -62,6 +62,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DebugSettings
@@ -73,6 +74,16 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ZoomLevelDisplayState
+import com.google.jetpackcamera.ui.components.capture.ZoomState
+import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -95,7 +106,7 @@ private const val TAG = "PreviewScreen"
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CaptureScreen(
+fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     debugSettings: DebugSettings,
@@ -563,6 +574,7 @@ interface CaptureViewModel {
     fun setAudioEnabled(shouldEnableAudio: Boolean)
     fun setPaused(shouldBePaused: Boolean)
     fun tapToFocus(x: Float, y: Float)
+    fun setZoomAnimationState(targetValue: Float?)
     fun changeZoomRatio(zoomRatio: CameraZoomRatio)
     fun setDynamicRange(dynamicRange: DynamicRange)
     fun setCaptureMode(captureMode: CaptureMode)
