@@ -31,14 +31,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.google.jetpackcamera.feature.preview.PreviewUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 
 //layouts are only concerned with placement. nothing else. no state handling
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    previewUiState: PreviewUiState.Ready, // Keep this if layout depends on state
     snackbarHostState: SnackbarHostState,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
@@ -53,7 +52,7 @@ fun PreviewLayout(
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (modifier: Modifier) -> Unit,
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
-    snackBar: @Composable (snackbarData: SnackbarData, modifier: Modifier) -> Unit,
+    snackBar: @Composable (modifier: Modifier) -> Unit,
 ) {
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -67,10 +66,8 @@ fun PreviewLayout(
                 toggleCaptureModeSwitch = captureModeToggle
             )
             // controls overlay
-            val snackBarData = previewUiState.snackBarQueue.peek()
-            if (snackBarData != null) {
-                snackBar(snackBarData, Modifier)
-            }
+                snackBar(Modifier)
+
             quickSettingsOverlay(Modifier)
             screenFlashOverlay(Modifier)
         }
@@ -99,6 +96,15 @@ private fun VerticalMaterialControls(
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     flipCameraButton(Modifier)
                 }
+            }
+
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    toggleSettingsButton(Modifier)
+                }
+               // toggleCaptureModeSwitch(Modifier)
+                Spacer(Modifier.weight(1f))
+
             }
             // bottom controls row
         }
