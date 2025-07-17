@@ -741,11 +741,12 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
+    initialRecordingSettings: InitialRecordingSettings,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
-        old.copy(videoRecordingState = VideoRecordingState.Starting)
+        old.copy(videoRecordingState = VideoRecordingState.Starting(initialRecordingSettings))
     }
 
     // ok. there is a difference between MUTING and ENABLING audio
@@ -932,7 +933,12 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord
+            onVideoRecord = onVideoRecord,
+            initialRecordingSettings = InitialRecordingSettings(
+                isAudioEnabled = currentSettings.isAudioEnabled,
+                lensFacing = currentSettings.primaryLensFacing,
+                zoomRatios = currentSettings.zoomRatios
+            )
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON

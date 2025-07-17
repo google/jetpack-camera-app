@@ -42,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -60,6 +59,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
@@ -70,7 +70,6 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DebugSettings
@@ -150,7 +149,7 @@ fun PreviewScreen(
         is CaptureUiState.NotReady -> LoadingScreen()
         is CaptureUiState.Ready -> {
 
-            var preRecordingSettings by remember { mutableStateOf<CameraAppSettings?>(null) }
+            var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
 
             val context = LocalContext.current
             LaunchedEffect(Unit) {
@@ -184,18 +183,20 @@ fun PreviewScreen(
                 )
             }
             //todo(kc) handle reset certain values after video recording is complete
-            /*LaunchedEffect(currentUiState.videoRecordingState) {
+            LaunchedEffect(currentUiState.videoRecordingState) {
                 with(currentUiState.videoRecordingState) {
                     when (this) {
-                        VideoRecordingState.Starting -> {
-                            preRecordingSettings = viewModel.currentCameraSettings
+                        is VideoRecordingState.Starting -> {
+                            initialRecordingSettings = this.initialRecordingSettings
                         }
 
                         is VideoRecordingState.Inactive -> {
-                            preRecordingSettings?.let {
-                                val oldPrimaryLensFacing = it.cameraLensFacing
-                                val oldZoomRatios = it.defaultZoomRatios
+                            initialRecordingSettings?.let {
+                                val oldPrimaryLensFacing = it.lensFacing
+                                val oldZoomRatios = it.zoomRatios
+                                val oldAudioEnabled = it.isAudioEnabled
                                 Log.d(TAG, "reset pre recording settings")
+                                viewModel.setAudioEnabled(oldAudioEnabled)
                                 viewModel.setLensFacing(oldPrimaryLensFacing)
                                 zoomState.apply {
                                     absoluteZoom(
@@ -209,13 +210,12 @@ fun PreviewScreen(
                                     )
                                 }
                             }
-                            preRecordingSettings = null
+                            initialRecordingSettings = null
                         }
-
                         is VideoRecordingState.Active -> {}
                     }
                 }
-            }*/
+            }
 
             ContentScreen(
                 modifier = modifier,
