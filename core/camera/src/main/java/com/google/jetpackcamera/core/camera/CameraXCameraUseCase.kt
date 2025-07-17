@@ -648,12 +648,13 @@ constructor(
             LensToZoom.PRIMARY -> cameraLensFacing
 
             LensToZoom.SECONDARY -> {
-               cameraLensFacing.flip()
+                cameraLensFacing.flip()
             }
         }
         // no-op if lens doesn't exist
-        if (systemConstraints.perLensConstraints[lensFacing] == null)
+        if (systemConstraints.perLensConstraints[lensFacing] == null) {
             return this
+        }
 
         return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
             val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
