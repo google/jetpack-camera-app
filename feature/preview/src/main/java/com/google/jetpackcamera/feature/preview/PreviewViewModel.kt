@@ -114,7 +114,7 @@ class PreviewViewModel @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
-) : ViewModel(), CaptureViewModel {
+) : ViewModel() {
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -321,7 +321,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    override fun updateLastCapturedMedia() {
+    fun updateLastCapturedMedia() {
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
             _captureUiState.update { old ->
@@ -376,7 +376,7 @@ class PreviewViewModel @AssistedInject constructor(
         applyDiff(new, CameraAppSettings::audioEnabled, cameraUseCase::setAudioEnabled)
     }
 
-    override fun startCamera() {
+    fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
         runningCameraJob = viewModelScope.launch {
@@ -404,7 +404,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun stopCamera() {
+    fun stopCamera() {
         Log.d(TAG, "stopCamera")
         runningCameraJob?.apply {
             if (isActive) {
@@ -413,34 +413,34 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun setFlash(flashMode: FlashMode) {
+    fun setFlash(flashMode: FlashMode) {
         viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setFlashMode(flashMode)
         }
     }
 
-    override fun setAspectRatio(aspectRatio: AspectRatio) {
+    fun setAspectRatio(aspectRatio: AspectRatio) {
         viewModelScope.launch {
             cameraUseCase.setAspectRatio(aspectRatio)
         }
     }
 
-    override fun setStreamConfig(streamConfig: StreamConfig) {
+    fun setStreamConfig(streamConfig: StreamConfig) {
         viewModelScope.launch {
             cameraUseCase.setStreamConfig(streamConfig)
         }
     }
 
     /** Sets the camera to a designated lens facing */
-    override fun setLensFacing(newLensFacing: LensFacing) {
+    fun setLensFacing(newLensFacing: LensFacing) {
         viewModelScope.launch {
             // apply to cameraUseCase
             cameraUseCase.setLensFacing(newLensFacing)
         }
     }
 
-    override fun setAudioEnabled(shouldEnableAudio: Boolean) {
+    fun setAudioEnabled(shouldEnableAudio: Boolean) {
         viewModelScope.launch {
             cameraUseCase.setAudioEnabled(shouldEnableAudio)
         }
@@ -451,7 +451,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    override fun setPaused(shouldBePaused: Boolean) {
+    fun setPaused(shouldBePaused: Boolean) {
         viewModelScope.launch {
             if (shouldBePaused) {
                 cameraUseCase.pauseVideoRecording()
@@ -486,7 +486,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    override fun captureImageWithUri(
+    fun captureImageWithUri(
         contentResolver: ContentResolver,
         imageCaptureUri: Uri?,
         ignoreUri: Boolean,
@@ -599,7 +599,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
+    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "DisabledHdrToggle-$cookieInt"
         addSnackBarData(
@@ -612,7 +612,7 @@ class PreviewViewModel @AssistedInject constructor(
         )
     }
 
-    override fun startVideoRecording(
+    fun startVideoRecording(
         videoCaptureUri: Uri?,
         shouldUseUri: Boolean,
         onVideoCapture: (VideoCaptureEvent) -> Unit
@@ -672,7 +672,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun stopVideoRecording() {
+    fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
         viewModelScope.launch {
             cameraUseCase.stopVideoRecording()
@@ -683,7 +683,7 @@ class PreviewViewModel @AssistedInject constructor(
     /**
      "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
-    override fun setLockedRecording(isLocked: Boolean) {
+    fun setLockedRecording(isLocked: Boolean) {
         viewModelScope.launch {
             lockedRecordingState.update {
                 isLocked
@@ -691,17 +691,17 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun setZoomAnimationState(targetValue: Float?) {
+    fun setZoomAnimationState(targetValue: Float?) {
         viewModelScope.launch {
             isAnimatingZoomState.update { targetValue }
         }
     }
 
-    override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
+    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
     }
 
-    override fun setDynamicRange(dynamicRange: DynamicRange) {
+    fun setDynamicRange(dynamicRange: DynamicRange) {
         if (externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
             externalCaptureMode !is ExternalCaptureMode.ExternalMultipleImageCaptureMode
         ) {
@@ -711,13 +711,13 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         viewModelScope.launch {
             cameraUseCase.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 
-    override fun setImageFormat(imageFormat: ImageOutputFormat) {
+    fun setImageFormat(imageFormat: ImageOutputFormat) {
         if (externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode) {
             viewModelScope.launch {
                 cameraUseCase.setImageFormat(imageFormat)
@@ -725,14 +725,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun setCaptureMode(captureMode: CaptureMode) {
+    fun setCaptureMode(captureMode: CaptureMode) {
         viewModelScope.launch {
             cameraUseCase.setCaptureMode(captureMode)
         }
     }
 
     // modify ui values
-    override fun toggleQuickSettings() {
+    fun toggleQuickSettings() {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
@@ -775,7 +775,7 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun toggleDebugOverlay() {
+    fun toggleDebugOverlay() {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
@@ -785,14 +785,14 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun tapToFocus(x: Float, y: Float) {
+    fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus")
         viewModelScope.launch {
             cameraUseCase.tapToFocus(x, y)
         }
     }
 
-    override fun onSnackBarResult(cookie: String) {
+    fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.let { readyState ->
@@ -812,17 +812,16 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = surfaceRequest
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = surfaceRequest
 
-    override fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
+    fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
 
-    override fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState> =
-        screenFlash.screenFlashUiState
-    override fun setClearUiScreenBrightness(brightness: Float) {
+    fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState> = screenFlash.screenFlashUiState
+    fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
 
-    override fun setDisplayRotation(deviceRotation: DeviceRotation) {
+    fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
             cameraUseCase.setDeviceRotation(deviceRotation)
         }

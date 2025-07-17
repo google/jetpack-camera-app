@@ -57,7 +57,7 @@ fun JcaApp(
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
-    captureViewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
+    previewViewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
         { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     JetpackCameraNavHost(
@@ -67,7 +67,7 @@ fun JcaApp(
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
         modifier = modifier,
-        captureViewModel = captureViewModel
+        previewViewModel = previewViewModel
     )
 }
 
@@ -81,7 +81,7 @@ private fun JetpackCameraNavHost(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     navController: NavHostController = rememberNavController(),
-    captureViewModel: PreviewViewModel
+    previewViewModel: PreviewViewModel
 ) {
     NavHost(
         navController = navController,
@@ -136,7 +136,7 @@ private fun JetpackCameraNavHost(
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 debugSettings = debugSettings,
-                viewModel = captureViewModel
+                viewModel = previewViewModel
             )
         }
         composable(

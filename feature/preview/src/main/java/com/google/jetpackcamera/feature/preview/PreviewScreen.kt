@@ -62,11 +62,9 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -95,7 +93,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -113,7 +110,7 @@ fun PreviewScreen(
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
-    viewModel: CaptureViewModel
+    viewModel: PreviewViewModel
 ) {
     Log.d(TAG, "PreviewScreen")
 
@@ -563,45 +560,3 @@ private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )
-
-interface CaptureViewModel {
-    fun startCamera()
-    fun stopCamera()
-    fun setLensFacing(newLensFacing: LensFacing)
-    fun setFlash(flashMode: FlashMode)
-    fun setAspectRatio(aspectRatio: AspectRatio)
-    fun setStreamConfig(streamConfig: StreamConfig)
-    fun setAudioEnabled(shouldEnableAudio: Boolean)
-    fun setPaused(shouldBePaused: Boolean)
-    fun tapToFocus(x: Float, y: Float)
-    fun setZoomAnimationState(targetValue: Float?)
-    fun changeZoomRatio(zoomRatio: CameraZoomRatio)
-    fun setDynamicRange(dynamicRange: DynamicRange)
-    fun setCaptureMode(captureMode: CaptureMode)
-    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
-    fun setImageFormat(imageOutputFormat: ImageOutputFormat)
-    fun enqueueDisabledHdrToggleSnackBar(disableRationale: DisableRationale)
-    fun toggleQuickSettings()
-
-    fun toggleDebugOverlay()
-    fun captureImageWithUri(
-        contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        ignoreUri: Boolean = false,
-        onImageCapture: (ImageCaptureEvent, Int) -> Unit
-    )
-    fun startVideoRecording(
-        videoCaptureUri: Uri?,
-        shouldUseUri: Boolean,
-        onVideoCapture: (VideoCaptureEvent) -> Unit
-    )
-    fun stopVideoRecording()
-    fun setLockedRecording(isLocked: Boolean)
-    fun setDisplayRotation(deviceRotation: DeviceRotation)
-    fun updateLastCapturedMedia()
-    fun onSnackBarResult(cookie: String)
-    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
-    fun getCaptureUiState(): StateFlow<CaptureUiState>
-    fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState>
-    fun setClearUiScreenBrightness(brightness: Float)
-}
