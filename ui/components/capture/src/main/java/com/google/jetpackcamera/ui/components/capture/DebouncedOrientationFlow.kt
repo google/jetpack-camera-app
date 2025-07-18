@@ -18,7 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 import android.content.Context
 import android.view.OrientationEventListener
 import android.view.OrientationEventListener.ORIENTATION_UNKNOWN
-import com.google.jetpackcamera.settings.model.DeviceRotation
+import com.google.jetpackcamera.model.DeviceRotation
 import kotlin.math.abs
 import kotlin.math.min
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED

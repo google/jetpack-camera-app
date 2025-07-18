@@ -154,8 +154,9 @@ dependencies {
     // Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Access Settings data
+    // Access settings & model data
     implementation(project(":data:settings"))
+    implementation(project(":data:model"))
 
     // Camera Preview
     implementation(project(":feature:preview"))

@@ -25,11 +25,11 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

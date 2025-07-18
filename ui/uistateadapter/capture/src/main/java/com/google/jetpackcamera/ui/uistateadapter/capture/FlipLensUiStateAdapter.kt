@@ -17,7 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 

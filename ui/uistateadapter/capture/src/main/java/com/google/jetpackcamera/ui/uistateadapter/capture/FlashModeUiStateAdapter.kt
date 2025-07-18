@@ -18,8 +18,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.LowLightBoostState
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState

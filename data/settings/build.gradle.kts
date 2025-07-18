@@ -81,12 +81,13 @@ dependencies {
     implementation(libs.protobuf.kotlin.lite)
 
     // Testing
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+
+    // Access Model data
+    implementation(project(":data:model"))
 }
 
 protobuf {

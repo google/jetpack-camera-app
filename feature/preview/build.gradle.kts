@@ -143,6 +143,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":data:model"))
     testImplementation(project(":core:common"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:uistate"))

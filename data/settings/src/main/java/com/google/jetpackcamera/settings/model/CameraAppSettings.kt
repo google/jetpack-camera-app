@@ -15,10 +15,21 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.VideoQuality
+
 const val TARGET_FPS_AUTO = 0
 const val UNLIMITED_VIDEO_DURATION = 0L
-val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
-val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
 
 /**
  * Data layer representation for settings.
