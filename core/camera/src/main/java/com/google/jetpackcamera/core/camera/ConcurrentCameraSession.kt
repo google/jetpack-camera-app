@@ -21,11 +21,11 @@ import android.util.Log
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged

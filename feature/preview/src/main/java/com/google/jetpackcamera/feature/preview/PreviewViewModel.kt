@@ -29,26 +29,30 @@ import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -62,6 +66,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -115,10 +120,10 @@ class PreviewViewModel @AssistedInject constructor(
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
     private val isAnimatingZoomState: MutableStateFlow<Float?> = MutableStateFlow(null)
 
-    val captureUiState: StateFlow<CaptureUiState> =
+    private val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
 
-    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
+    private val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
     private var runningCameraJob: Job? = null
 
@@ -128,7 +133,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var cameraPropertiesJSON = ""
 
-    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+    private val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
@@ -807,6 +812,15 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
+    fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = surfaceRequest
+
+    fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
+
+    fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState> = screenFlash.screenFlashUiState
+    fun setClearUiScreenBrightness(brightness: Float) {
+        screenFlash.setClearUiScreenBrightness(brightness)
+    }
+
     fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
             cameraUseCase.setDeviceRotation(deviceRotation)
@@ -819,17 +833,5 @@ class PreviewViewModel @AssistedInject constructor(
             externalCaptureMode: ExternalCaptureMode,
             debugSettings: DebugSettings
         ): PreviewViewModel
-    }
-
-    sealed interface ImageCaptureEvent {
-        data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
-
-        data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
-    }
-
-    sealed interface VideoCaptureEvent {
-        data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
-
-        data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
     }
 }

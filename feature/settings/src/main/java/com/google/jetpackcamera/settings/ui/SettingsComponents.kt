@@ -78,17 +78,17 @@ import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.VideoQualityUiState
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
-import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
