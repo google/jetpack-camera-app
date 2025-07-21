@@ -66,7 +66,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -120,10 +119,10 @@ class PreviewViewModel @AssistedInject constructor(
     private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
     private val isAnimatingZoomState: MutableStateFlow<Float?> = MutableStateFlow(null)
 
-    private val captureUiState: StateFlow<CaptureUiState> =
+    val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
 
-    private val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
+    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraUseCase.getSurfaceRequest()
 
     private var runningCameraJob: Job? = null
 
@@ -133,7 +132,7 @@ class PreviewViewModel @AssistedInject constructor(
 
     private var cameraPropertiesJSON = ""
 
-    private val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
+    val screenFlash = ScreenFlash(cameraUseCase, viewModelScope)
 
     private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
@@ -811,12 +810,6 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
-
-    fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = surfaceRequest
-
-    fun getCaptureUiState(): StateFlow<CaptureUiState> = captureUiState
-
-    fun getScreenFlashUiState(): StateFlow<ScreenFlashUiState> = screenFlash.screenFlashUiState
     fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
