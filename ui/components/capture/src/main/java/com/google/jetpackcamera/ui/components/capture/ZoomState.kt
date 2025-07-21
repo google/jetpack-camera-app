@@ -25,7 +25,6 @@ import androidx.core.util.toClosedRange
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.ZoomStrategy
-import kotlin.ranges.coerceIn
 
 class ZoomState(
     initialZoomLevel: Float,

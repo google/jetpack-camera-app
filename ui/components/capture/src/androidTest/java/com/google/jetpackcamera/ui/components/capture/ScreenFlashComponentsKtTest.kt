@@ -108,7 +108,7 @@ class ScreenFlashComponentsKtTest {
             2
         )
         overlayPixels.forEach {
-            Assert.assertEquals(Color.Companion.White.toArgb(), it)
+            Assert.assertEquals(Color.White.toArgb(), it)
         }
     }
 }

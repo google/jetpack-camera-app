@@ -128,9 +128,6 @@ dependencies {
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
 
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
-
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
