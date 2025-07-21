@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
 fun StabilizationUiState.Companion.from(

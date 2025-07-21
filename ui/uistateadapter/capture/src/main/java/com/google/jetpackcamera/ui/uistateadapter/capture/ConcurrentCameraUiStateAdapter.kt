@@ -15,12 +15,12 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState

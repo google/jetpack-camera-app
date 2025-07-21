@@ -16,12 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
-import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
-import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -35,6 +29,12 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
+import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
+import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
+import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
+import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
