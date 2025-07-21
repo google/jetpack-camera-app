@@ -33,9 +33,9 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.Illuminant
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.LensFacing
 import java.io.File
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
