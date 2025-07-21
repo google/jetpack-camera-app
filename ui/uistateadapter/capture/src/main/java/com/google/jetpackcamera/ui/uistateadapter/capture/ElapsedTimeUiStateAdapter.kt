@@ -28,6 +28,6 @@ fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiSt
         is VideoRecordingState.Inactive ->
             ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)
 
-        VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
+        is VideoRecordingState.Starting -> ElapsedTimeUiState.Enabled(0L)
     }
 }

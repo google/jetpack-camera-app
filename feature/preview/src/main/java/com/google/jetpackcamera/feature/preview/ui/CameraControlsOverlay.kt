@@ -64,7 +64,6 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -88,6 +87,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
@@ -121,7 +121,8 @@ fun CameraControlsOverlay(
     onToggleDebugOverlay: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onAnimateZoom: (Float) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -181,6 +182,7 @@ fun CameraControlsOverlay(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
                 captureUiState = captureUiState,
+                zoomControlUiState = captureUiState.zoomControlUiState,
                 flipLensUiState = captureUiState.flipLensUiState,
                 zoomUiState = captureUiState.zoomUiState,
                 physicalCameraId = captureUiState.debugUiState.currentPhysicalCameraId,
@@ -194,7 +196,8 @@ fun CameraControlsOverlay(
                 videoRecordingState = captureUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
-                onSetZoom = onSetZoom,
+                onAnimateZoom = onAnimateZoom,
+                onIncrementZoom = onIncrementZoom,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
@@ -288,6 +291,7 @@ private fun ControlsBottom(
     physicalCameraId: String? = null,
     logicalCameraId: String? = null,
     zoomUiState: ZoomUiState,
+    zoomControlUiState: ZoomControlUiState,
     showZoomLevel: Boolean,
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
@@ -303,7 +307,8 @@ private fun ControlsBottom(
     onSetPause: (Boolean) -> Unit = {},
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onDisabledCaptureMode: (DisableRationale) -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onAnimateZoom: (Float) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onStartVideoRecording: (
         Uri?,
         Boolean,
@@ -319,7 +324,10 @@ private fun ControlsBottom(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AnimatedVisibility(
-                    visible = (showZoomLevel && zoomUiState is ZoomUiState.Enabled),
+                    visible = (
+                        captureUiState.debugUiState.isDebugMode && showZoomLevel &&
+                            zoomUiState is ZoomUiState.Enabled
+                        ),
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
@@ -327,6 +335,16 @@ private fun ControlsBottom(
                 }
                 if (captureUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
+                }
+                if (zoomControlUiState is ZoomControlUiState.Enabled &&
+                    zoomUiState is ZoomUiState.Enabled
+                ) {
+                    ZoomButtonRow(
+                        zoomControlUiState = zoomControlUiState,
+                        onChangeZoom = { targetZoom ->
+                            onAnimateZoom(targetZoom)
+                        }
+                    )
                 }
                 if (captureUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
                     AnimatedVisibility(
@@ -406,7 +424,9 @@ private fun ControlsBottom(
                     externalCaptureMode = captureUiState.externalCaptureMode,
                     isQuickSettingsOpen = isQuickSettingsOpen,
                     onCaptureImageWithUri = onCaptureImageWithUri,
-                    onSetZoom = onSetZoom,
+                    onIncrementZoom = { targetZoom ->
+                        onIncrementZoom(targetZoom)
+                    },
                     onToggleQuickSettings = onToggleQuickSettings,
                     onStartVideoRecording = onStartVideoRecording,
                     onStopVideoRecording = onStopVideoRecording,
@@ -478,7 +498,7 @@ private fun CaptureButton(
     isQuickSettingsOpen: Boolean,
     externalCaptureMode: ExternalCaptureMode,
     onToggleQuickSettings: () -> Unit = {},
-    onSetZoom: (CameraZoomRatio) -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
     onCaptureImageWithUri: (
         ContentResolver,
         Uri?,
@@ -498,7 +518,7 @@ private fun CaptureButton(
 
     CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
-        onSetZoom = onSetZoom,
+        onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
@@ -772,6 +792,11 @@ private fun Preview_ControlsBottom() {
             showZoomLevel = true,
             isQuickSettingsOpen = false,
             videoRecordingState = VideoRecordingState.Inactive(),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
+                primaryZoomRatio = 1f
+            ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
@@ -790,6 +815,12 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
+            ),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
+
+                primaryZoomRatio = 1f
             ),
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
@@ -820,6 +851,13 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             ),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
+
+                primaryZoomRatio = 1f
+            ),
+
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
@@ -855,7 +893,15 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
                     SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                 )
             ),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
+
+                primaryZoomRatio = 1f
+            ),
+
             zoomUiState = ZoomUiState.Enabled(
+
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
             ),
@@ -884,6 +930,12 @@ private fun Preview_ControlsBottom_Recording() {
                     SingleSelectableUiState.SelectableUi(LensFacing.BACK)
                 )
             ),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                listOf(1f, 2f, 5f),
+                primaryLensFacing = LensFacing.FRONT,
+                primaryZoomRatio = 1f
+            ),
+
             zoomUiState = ZoomUiState.Enabled(
                 primaryZoomRange = Range(1.0f, 10.0f),
                 primaryZoomRatio = 1.0f
