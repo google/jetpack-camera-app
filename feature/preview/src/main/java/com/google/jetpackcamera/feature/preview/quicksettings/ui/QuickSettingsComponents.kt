@@ -24,6 +24,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,15 +33,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -116,7 +122,7 @@ fun FocusedQuickSetRatio(
                     QuickSetRatio(
                         modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
                         onClick = { setRatio(AspectRatio.THREE_FOUR) },
-                        ratio = AspectRatio.THREE_FOUR,
+                        assignedRatio = AspectRatio.THREE_FOUR,
                         aspectRatioUiState = aspectRatioUiState,
                         isHighlightEnabled = true
                     )
@@ -125,7 +131,7 @@ fun FocusedQuickSetRatio(
                     QuickSetRatio(
                         modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
                         onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
-                        ratio = AspectRatio.NINE_SIXTEEN,
+                        assignedRatio = AspectRatio.NINE_SIXTEEN,
                         aspectRatioUiState = aspectRatioUiState,
                         isHighlightEnabled = true
                     )
@@ -134,13 +140,39 @@ fun FocusedQuickSetRatio(
                     QuickSetRatio(
                         modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
                         onClick = { setRatio(AspectRatio.ONE_ONE) },
-                        ratio = AspectRatio.ONE_ONE,
+                        assignedRatio = AspectRatio.ONE_ONE,
                         aspectRatioUiState = aspectRatioUiState,
                         isHighlightEnabled = true
                     )
                 }
             )
         ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+    }
+}
+
+
+@Composable
+fun QuickSetRatio(
+    onClick: () -> Unit,
+    assignedRatio: AspectRatio,
+    aspectRatioUiState: AspectRatioUiState,
+    modifier: Modifier = Modifier,
+    isHighlightEnabled: Boolean = false
+) {
+    if (aspectRatioUiState is AspectRatioUiState.Available) {
+        val enum =
+            when (assignedRatio) {
+                AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+                else -> CameraAspectRatio.ONE_ONE
+            }
+        QuickSettingCarouselButton(
+            modifier = modifier,
+            enum = enum,
+            onClick = { onClick() },
+            isHighLighted = isHighlightEnabled && (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+        )
     }
 }
 
@@ -228,7 +260,38 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+        )
+    }
+}
+
+
+@Composable
+fun QuickSetCaptureMode(
+    setCaptureMode: (captureMode: CaptureMode) -> Unit,
+    captureModeUiState: CaptureModeUiState,
+    modifier: Modifier = Modifier,
+    isHighlightEnabled: Boolean = false
+) {
+    if (captureModeUiState is CaptureModeUiState.Available) {
+        val enum =
+            when (captureModeUiState.selectedCaptureMode) {
+                CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+                CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+                CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+            }
+
+        QuickSettingCarouselButton(
+            modifier = modifier,
+            enum = enum,
+            isHighLighted = isHighlightEnabled,
+            onClick = {
+                setCaptureMode(
+                    captureModeUiState.availableCaptureModes.getNextSelectableItem(
+                        captureModeUiState.selectedCaptureMode
+                    )
+                )
+            }
         )
     }
 }
@@ -242,9 +305,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                )
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -288,25 +351,30 @@ fun QuickSetHdr(
 
 @Composable
 fun QuickSetRatio(
-    onClick: () -> Unit,
-    ratio: AspectRatio,
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
     aspectRatioUiState: AspectRatioUiState,
     modifier: Modifier = Modifier,
     isHighlightEnabled: Boolean = false
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
         val enum =
-            when (ratio) {
+            when (aspectRatioUiState.selectedAspectRatio) {
                 AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                 AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                else -> CameraAspectRatio.ONE_ONE
             }
+
         QuickSettingCarouselButton(
             modifier = modifier,
             enum = enum,
-            onClick = { onClick() },
-            isHighLighted = isHighlightEnabled && (ratio == aspectRatioUiState.selectedAspectRatio)
+            isHighLighted = isHighlightEnabled,
+            onClick = {
+                setRatio(
+                    aspectRatioUiState.availableAspectRatios.getNextSelectableItem(
+                        aspectRatioUiState.selectedAspectRatio
+                    )
+                )
+            }
         )
     }
 }
@@ -334,7 +402,11 @@ fun QuickSetFlash(
                 ),
                 isHighLighted = flashModeUiState.selectedFlashMode != FlashMode.OFF,
                 onClick = {
-                    onClick(flashModeUiState.getNextFlashMode())
+                    onClick(
+                        flashModeUiState.availableFlashModes.getNextSelectableItem(
+                            flashModeUiState.selectedFlashMode
+                        )
+                    )
                 }
             )
     }
@@ -451,7 +523,11 @@ fun ToggleQuickSettingsButton(
     }
 }
 
+//////////////////////////////////////////////////////
+//
 // subcomponents used to build completed components
+//
+//////////////////////////////////////////////////////
 
 @Composable
 fun QuickSettingCarouselButton(
@@ -470,6 +546,55 @@ fun QuickSettingCarouselButton(
         enabled = enabled,
         painter = enum.getPainter()
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickSettingsBottomSheet(
+    modifier: Modifier,
+    onDismiss: () -> Unit,
+    sheetState: SheetState,
+    vararg quickSettingButtons: @Composable () -> Unit,
+) {
+
+    ModalBottomSheet(
+        modifier = modifier,
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        QuickSettingsBottomSheetRow(
+            modifier = Modifier,
+            quickSettingButtons = quickSettingButtons
+        )
+
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+/**
+ * A horizontally scrollable row of quick setting buttons for a bottom sheet.
+ * This row will only enable scrolling if its content overflows the screen width.
+ *
+ * @param buttons A list of data representing each QuickSettingCarouselButton.
+ * @param modifier The Modifier to be applied to this composable.
+ */
+@Composable
+private fun QuickSettingsBottomSheetRow(
+    modifier: Modifier = Modifier,
+    vararg quickSettingButtons: @Composable () -> Unit,
+) {
+
+    // LazyRow is inherently scrollable if content exceeds bounds.
+    // It handles the "overflow to the right" behavior by default.
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp), // Space between buttons
+        contentPadding = PaddingValues(horizontal = 16.dp) // Padding around the content
+    ) {
+        itemsIndexed(quickSettingButtons.toList()) { index, quickSetting ->
+            quickSetting()
+        }
+    }
 }
 
 /**
@@ -582,18 +707,18 @@ fun QuickSettingUiItem(
     )
     Column(
         modifier =
-        modifier
-            .wrapContentSize()
-            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable(
-                enabled = enabled,
-                onClick = {
-                    buttonClicked = true
-                    onClick()
-                },
-                indication = null,
-                interactionSource = null
-            ),
+            modifier
+                .wrapContentSize()
+                .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
+                .clickable(
+                    enabled = enabled,
+                    onClick = {
+                        buttonClicked = true
+                        onClick()
+                    },
+                    indication = null,
+                    interactionSource = null
+                ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -629,25 +754,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -671,25 +796,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
 
     LazyVerticalGrid(
@@ -749,7 +874,11 @@ fun FlashModeIndicator(
                     flashModeUiState.isActive
                 ),
                 onClick = {
-                    onClick(flashModeUiState.getNextFlashMode())
+                    onClick(
+                        flashModeUiState.availableFlashModes.getNextSelectableItem(
+                            flashModeUiState.selectedFlashMode
+                        )
+                    )
                 }
             )
     }
@@ -769,13 +898,16 @@ fun QuickSettingsIndicators(
     }
 }
 
-private fun FlashModeUiState.Available.getNextFlashMode(): FlashMode {
-    // Filter out only the selectable flash modes to cycle through them.
-    val selectableModes = this.availableFlashModes
-        .filterIsInstance<SingleSelectableUiState.SelectableUi<FlashMode>>()
-        .map { it.value } // Extract the FlashMode items
+private fun <T> List<SingleSelectableUiState<T>>.getNextSelectableItem(
+    selectedItem: T
+): T {
 
-    val currentIndex = selectableModes.indexOf(this.selectedFlashMode)
+    // Filter out only the selectable modes to cycle through them.
+    val selectableModes = this
+        .filterIsInstance<SingleSelectableUiState.SelectableUi<T>>()
+        .map { it.value } // 'this' is already the list
+
+    val currentIndex = selectableModes.indexOf(selectedItem) // selectedItem is passed directly
     val nextIndex = (currentIndex + 1) % selectableModes.size
 
     return selectableModes[nextIndex]

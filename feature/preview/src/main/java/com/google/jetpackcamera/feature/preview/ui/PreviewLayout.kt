@@ -25,13 +25,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 
 //layouts are only concerned with placement. nothing else. no state handling
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -62,13 +63,14 @@ fun PreviewLayout(
             VerticalMaterialControls(
                 captureButton = captureButton,
                 flipCameraButton = flipCameraButton,
-                toggleSettingsButton = settingsButton,
-                toggleCaptureModeSwitch = captureModeToggle
+                toggleQuickSettings = quickSettingsButton,
+                toggleCaptureModeSwitch = captureModeToggle,
+                bottomSheetQuickSettings = quickSettingsOverlay
             )
             // controls overlay
                 snackBar(Modifier)
 
-            quickSettingsOverlay(Modifier)
+            //quickSettingsOverlay(Modifier)
             screenFlashOverlay(Modifier)
         }
     }
@@ -79,35 +81,39 @@ private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
     captureButton: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
-    toggleSettingsButton: @Composable (Modifier) -> Unit,
+    toggleQuickSettings: @Composable (Modifier) -> Unit,
+    bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
     toggleCaptureModeSwitch: @Composable (Modifier) -> Unit,
     ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Spacer(Modifier.weight(2F))
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(Modifier.weight(2F))
 
-        // todo zoom controls
+            // todo zoom controls
 
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.SpaceBetween) {
-            //capture button row
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.SpaceBetween) {
+                //capture button row
 
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.weight(1f))
-                captureButton(Modifier)
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    flipCameraButton(Modifier)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.weight(1f))
+                    captureButton(Modifier)
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        flipCameraButton(Modifier)
+                    }
                 }
-            }
 
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    toggleSettingsButton(Modifier)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        toggleQuickSettings(Modifier)
+                    }
+                    // toggleCaptureModeSwitch(Modifier)
+                    Spacer(Modifier.weight(1f))
+
                 }
-               // toggleCaptureModeSwitch(Modifier)
-                Spacer(Modifier.weight(1f))
-
+                // bottom controls row
             }
-            // bottom controls row
         }
+        bottomSheetQuickSettings(Modifier)
     }
 }
 

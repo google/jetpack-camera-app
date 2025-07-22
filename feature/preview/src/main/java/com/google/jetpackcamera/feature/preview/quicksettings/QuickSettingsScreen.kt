@@ -28,11 +28,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +57,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetStreamConfig
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsBottomSheet
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSettingsGrid
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -80,10 +85,124 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlinx.coroutines.launch
+
 
 /**
- * The UI component for quick settings.
+ * The UI bottom sheet component for quick settings
  */
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+fun QuickSettingsBottomSheet(
+    modifier: Modifier = Modifier,
+    quickSettingsUiState: QuickSettingsUiState,
+    toggleQuickSettings: () -> Unit,
+    onLensFaceClick: (lensFace: LensFacing) -> Unit,
+    onFlashModeClick: (flashMode: FlashMode) -> Unit,
+    onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
+    onStreamConfigClick: (streamConfig: StreamConfig) -> Unit,
+    onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
+    onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
+    onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
+    onCaptureModeClick: (CaptureMode) -> Unit
+) {
+    if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        val displayedQuickSettings: List<@Composable () -> Unit> =
+            buildList {
+                add {
+                    QuickSetFlash(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
+                        onClick = { f: FlashMode -> onFlashModeClick(f) },
+                        flashModeUiState = quickSettingsUiState.flashModeUiState
+                    )
+                }
+
+                add {
+                    val context = LocalContext.current
+                    QuickSetCaptureMode(
+                        modifier = Modifier
+                            .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                            .semantics {
+                                quickSettingsUiState.captureModeUiState.stateDescription()
+                                    ?.let {
+                                        stateDescription = context.getString(it)
+                                    }
+                            },
+                        setCaptureMode = {
+                            onCaptureModeClick(it)
+                        },
+                        captureModeUiState = quickSettingsUiState.captureModeUiState,
+                    )
+                }
+
+                add {
+                    QuickFlipCamera(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                        setLensFacing = { l: LensFacing -> onLensFaceClick(l) },
+                        flipLensUiState = quickSettingsUiState.flipLensUiState
+                    )
+                }
+
+                add {
+                    QuickSetRatio(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                        setRatio = { onAspectRatioClick(it) },
+                        isHighlightEnabled = true,
+                        aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
+                    )
+                }
+
+                add {
+                    QuickSetStreamConfig(
+                        modifier = Modifier.testTag(
+                            QUICK_SETTINGS_STREAM_CONFIG_BUTTON
+                        ),
+                        setStreamConfig = { c: StreamConfig -> onStreamConfigClick(c) },
+                        streamConfigUiState = quickSettingsUiState.streamConfigUiState
+                    )
+                }
+
+                add {
+                    QuickSetHdr(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                        onClick = { d: DynamicRange, i: ImageOutputFormat ->
+                            onDynamicRangeClick(d)
+                            onImageOutputFormatClick(i)
+                        },
+                        hdrUiState = quickSettingsUiState.hdrUiState
+                    )
+                }
+
+                add {
+                    // todo(): use a UiState for this
+                    QuickSetConcurrentCamera(
+                        modifier =
+                            Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                        setConcurrentCameraMode = { c: ConcurrentCameraMode ->
+                            onConcurrentCameraModeClick(c)
+                        },
+                        concurrentCameraUiState = quickSettingsUiState.concurrentCameraUiState
+                    )
+                }
+            }
+
+        val sheetState = rememberModalBottomSheetState()
+
+        if(quickSettingsUiState.quickSettingsIsOpen) {
+            QuickSettingsBottomSheet(
+                modifier = modifier,
+                onDismiss = toggleQuickSettings,
+                sheetState = sheetState,
+                *displayedQuickSettings.toTypedArray()
+            )
+        }
+    }
+}
+
+/**
+ * The UI fullscreen component for quick settings.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickSettingsScreenOverlay(
     modifier: Modifier = Modifier,
@@ -104,6 +223,7 @@ fun QuickSettingsScreenOverlay(
             mutableStateOf(FocusedQuickSetting.NONE)
         }
 
+
         AnimatedVisibility(
             visible = quickSettingsUiState.quickSettingsIsOpen,
             enter = slideInVertically(initialOffsetY = { -it / 8 }) + fadeIn(),
@@ -123,20 +243,20 @@ fun QuickSettingsScreenOverlay(
             BackHandler(onBack = onBack)
             Column(
                 modifier =
-                modifier
-                    .testTag(
-                        when (focusedQuickSetting) {
-                            FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
-                            else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
-                        }
-                    )
-                    .fillMaxSize()
-                    .background(color = Color.Black.copy(alpha = 0.7f))
-                    .clickable(
-                        onClick = onBack,
-                        indication = null,
-                        interactionSource = null
-                    ),
+                    modifier
+                        .testTag(
+                            when (focusedQuickSetting) {
+                                FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
+                                else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
+                            }
+                        )
+                        .fillMaxSize()
+                        .background(color = Color.Black.copy(alpha = 0.7f))
+                        .clickable(
+                            onClick = onBack,
+                            indication = null,
+                            interactionSource = null
+                        ),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -189,12 +309,12 @@ private fun ExpandedQuickSettingsUi(
 ) {
     Column(
         modifier =
-        modifier
-            .padding(
-                horizontal = dimensionResource(
-                    id = R.dimen.quick_settings_ui_horizontal_padding
+            modifier
+                .padding(
+                    horizontal = dimensionResource(
+                        id = R.dimen.quick_settings_ui_horizontal_padding
+                    )
                 )
-            )
     ) {
         // if no setting is chosen, display the grid of settings
         // to change the order of display just move these lines of code above or below each other
@@ -227,10 +347,10 @@ private fun ExpandedQuickSettingsUi(
                                     )
                                 },
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
-                                ratio = (
-                                    quickSettingsUiState.aspectRatioUiState
-                                        as AspectRatioUiState.Available
-                                    ).selectedAspectRatio
+                                assignedRatio = (
+                                        quickSettingsUiState.aspectRatioUiState
+                                                as AspectRatioUiState.Available
+                                        ).selectedAspectRatio
                             )
                         }
                     }
@@ -260,7 +380,7 @@ private fun ExpandedQuickSettingsUi(
                         // todo(): use a UiState for this
                         QuickSetConcurrentCamera(
                             modifier =
-                            Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                             setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                 onConcurrentCameraModeClick(c)
                             },
@@ -452,3 +572,4 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
         )
     }
 }
+
