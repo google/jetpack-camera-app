@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
@@ -61,14 +62,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
-import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
-import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
-import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
-import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
-import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -80,6 +73,18 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ZoomLevelDisplayState
+import com.google.jetpackcamera.ui.components.capture.ZoomState
+import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -236,7 +241,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
@@ -294,7 +299,7 @@ fun PreviewScreen(
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE
             )
 
             LaunchedEffect(readStoragePermission.status) {
@@ -339,12 +344,12 @@ private fun ContentScreen(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
