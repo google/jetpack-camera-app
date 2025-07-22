@@ -17,22 +17,44 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
 //layouts are only concerned with placement. nothing else. no state handling
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -58,17 +80,19 @@ fun PreviewLayout(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             viewfinder(Modifier)
             VerticalMaterialControls(
                 captureButton = captureButton,
                 flipCameraButton = flipCameraButton,
                 toggleQuickSettings = quickSettingsButton,
                 toggleCaptureModeSwitch = captureModeToggle,
-                bottomSheetQuickSettings = quickSettingsOverlay
+                bottomSheetQuickSettings = quickSettingsOverlay,
+                zoomControls = zoomLevelDisplay,
+                openSettingsButton = settingsButton,
             )
             // controls overlay
-                snackBar(Modifier)
+            snackBar(Modifier)
 
             //quickSettingsOverlay(Modifier)
             screenFlashOverlay(Modifier)
@@ -80,41 +104,100 @@ fun PreviewLayout(
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
     captureButton: @Composable (Modifier) -> Unit,
+    zoomControls: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
+    openSettingsButton: @Composable (Modifier) -> Unit,
     toggleQuickSettings: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
     toggleCaptureModeSwitch: @Composable (Modifier) -> Unit,
-    ) {
+) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(Modifier.weight(2F))
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
 
-            // todo zoom controls
+            Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                // zoom controls row
+                zoomControls(Modifier)
 
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.SpaceBetween) {
-                //capture button row
 
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Spacer(Modifier.weight(1f))
-                    captureButton(Modifier)
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        flipCameraButton(Modifier)
+                // capture button row
+                Column {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Row that holds flip camera, capture button, and audio
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            // animation fades in/out this component based on quick settings
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(120.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                //todo leftCaptureButton item
+                            }
+                        }
+                        captureButton(Modifier)
+
+                        // right capturebutton item
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            flipCameraButton(Modifier)
+                        }
                     }
                 }
 
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        toggleQuickSettings(Modifier)
-                    }
-                    // toggleCaptureModeSwitch(Modifier)
-                    Spacer(Modifier.weight(1f))
-
-                }
                 // bottom controls row
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max)
+                        .padding(vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Row that holds flip camera, capture button, and audio
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+
+                        // left toggle switch item
+                        Box(
+                            modifier = Modifier
+                                .weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            toggleQuickSettings(Modifier)
+                        }
+                    }
+
+                    // capturemode toggle switch
+                    Box(
+                        modifier = Modifier
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        toggleCaptureModeSwitch(Modifier)
+                    }
+
+                    // right toggle switch item
+                    Box(
+                        modifier = Modifier
+                            .weight(1f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        openSettingsButton(Modifier)
+                    }
+                }
             }
         }
         bottomSheetQuickSettings(Modifier)
     }
+
+
 }
 
 @Composable

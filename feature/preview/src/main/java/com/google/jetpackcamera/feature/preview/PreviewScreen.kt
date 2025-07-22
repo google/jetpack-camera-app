@@ -38,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,7 +65,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsBottomSheet
-import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.feature.preview.ui.AmplitudeVisualizer
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
@@ -78,6 +76,7 @@ import com.google.jetpackcamera.feature.preview.ui.PreviewLayout
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
 import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
 import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
+import com.google.jetpackcamera.feature.preview.ui.ZoomButtonRow
 import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.ZoomRatioText
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
@@ -106,7 +105,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.PreviewMode
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -436,24 +434,33 @@ private fun ContentScreen(
             )
         },
         zoomLevelDisplay = {
-            val zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
-            var firstRun by remember { mutableStateOf(true) }
-            LaunchedEffect(captureUiState.zoomUiState) {
-                if (firstRun) {
-                    firstRun = false
-                } else {
-                    zoomLevelDisplayState.showZoomLevel()
+            if (isDebugMode) {
+                val zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
+                var firstRun by remember { mutableStateOf(true) }
+                LaunchedEffect(captureUiState.zoomUiState) {
+                    if (firstRun) {
+                        firstRun = false
+                    } else {
+                        zoomLevelDisplayState.showZoomLevel()
+                    }
                 }
-            }
 
-            AnimatedVisibility(
-                visible = (zoomLevelDisplayState.showZoomLevel && captureUiState.zoomUiState is ZoomUiState.Enabled),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                ZoomRatioText(
-                    modifier = it,
-                    zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
+                AnimatedVisibility(
+                    visible = (zoomLevelDisplayState.showZoomLevel && captureUiState.zoomUiState is ZoomUiState.Enabled),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    ZoomRatioText(
+                        modifier = it,
+                        zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
+                    )
+                }
+            } else {
+                ZoomButtonRow(
+                    zoomControlUiState = captureUiState.zoomControlUiState,
+                    onChangeZoom = { targetZoom ->
+                        onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
+                    }
                 )
             }
         },

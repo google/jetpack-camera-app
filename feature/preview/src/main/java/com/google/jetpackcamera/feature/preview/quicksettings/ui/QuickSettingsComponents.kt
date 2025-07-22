@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -285,6 +286,9 @@ fun QuickSetCaptureMode(
             modifier = modifier,
             enum = enum,
             isHighLighted = isHighlightEnabled,
+            enabled = captureModeUiState.availableCaptureModes.count {
+                it is SingleSelectableUiState.SelectableUi
+            } >= 2,
             onClick = {
                 setCaptureMode(
                     captureModeUiState.availableCaptureModes.getNextSelectableItem(
@@ -292,6 +296,7 @@ fun QuickSetCaptureMode(
                     )
                 )
             }
+
         )
     }
 }
@@ -479,6 +484,7 @@ fun QuickSetConcurrentCamera(
                     ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
                 }
             },
+            isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode == ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -598,12 +604,10 @@ private fun QuickSettingsBottomSheetRow(
 }
 
 /**
- *
- * @param isHighlighted true if the button is currently checked; false otherwise.
+ * @param isHighlighted the button will appear checked when true, or unchecked when false
  * @param onClick will be called when the user clicks the button.
  * @param text The text label to display below the icon.
  * @param painter The icon to display inside the button.
- * @param modifier The Modifier to be applied to the button.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -614,9 +618,10 @@ fun QuickSettingCarouselButton(
     painter: Painter,
     modifier: Modifier = Modifier,
     isHighlighted: Boolean = false,
-    enabled: Boolean = true // todo: handle hidden disabled or visible disabled
+    enabled: Boolean = true
 ) {
-    // todo(kc): better sizing
+    // todo(kc): fix scaling issues... this needs to be smaller
+    // scaling should be based on icon size.
     val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
 
     Column(
@@ -635,7 +640,6 @@ fun QuickSettingCarouselButton(
                     shape = RoundedCornerShape(percent = 30)
                 ),
 
-            // fixme(kc): the colors of disabled buttons here appear invisible when light mode is enabled
             colors = ToggleButtonDefaults.toggleButtonColors(
                 containerColor = Color.White.copy(alpha = 0.16F),
                 contentColor = MaterialTheme.colorScheme.secondaryFixed,

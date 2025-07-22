@@ -319,7 +319,7 @@ private fun ControlsBottom(
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        /*CompositionLocalProvider(
+        CompositionLocalProvider(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -331,7 +331,7 @@ private fun ControlsBottom(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
+                    ZoomRatioText(zoomUiState = zoomUiState as ZoomUiState.Enabled)
                 }
                 if (captureUiState.debugUiState.isDebugMode) {
                     CurrentCameraIdText(physicalCameraId, logicalCameraId)
@@ -363,7 +363,7 @@ private fun ControlsBottom(
                     }
                 }
             }
-        }*/
+        }
 
         Column {
             if (!isQuickSettingsOpen &&

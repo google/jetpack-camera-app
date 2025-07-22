@@ -407,7 +407,7 @@ fun PreviewDisplay(
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
                 previewDisplayUiState.aspectRatioUiState as
@@ -459,6 +459,7 @@ fun PreviewDisplay(
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 CameraXViewfinder(
                     modifier = Modifier
+                        .background(color = Color.Blue)
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
@@ -482,7 +483,7 @@ fun PreviewDisplay(
                         },
                     surfaceRequest = it,
                     implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer
+                    coordinateTransformer = coordinateTransformer,
                 )
             }
         }
