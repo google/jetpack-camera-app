@@ -450,6 +450,10 @@ private fun ControlsBottom(
     }
 }
 
+/**
+ * Converts an internal [ImageCaptureEvent] to its corresponding [ExternalCaptureMode.ImageCaptureEvent]
+ * representation.
+ */
 private fun getImageCaptureEventForExternalCaptureMode(
     captureEvent: ImageCaptureEvent
 ): ExternalCaptureMode.ImageCaptureEvent {
@@ -466,6 +470,10 @@ private fun getImageCaptureEventForExternalCaptureMode(
     }
 }
 
+/**
+ * Converts an internal [VideoCaptureEvent] to its corresponding [ExternalCaptureMode.VideoCaptureEvent]
+ * representation.
+ */
 private fun getVideoCaptureEventForExternalCaptureMode(
     captureEvent: VideoCaptureEvent
 ): ExternalCaptureMode.VideoCaptureEvent {
