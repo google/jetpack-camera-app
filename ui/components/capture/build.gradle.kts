@@ -107,6 +107,7 @@ dependencies {
     implementation(project(":data:media"))
     implementation(project(":data:model"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":data:settings"))
 }
 
 // Allow references to generated code
