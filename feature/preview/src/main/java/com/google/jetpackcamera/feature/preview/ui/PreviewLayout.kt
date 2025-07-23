@@ -17,46 +17,25 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
-//layouts are only concerned with placement. nothing else. no state handling
+// these layouts are only concerned with placement. nothing else. no state handling
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun PreviewLayout(
@@ -89,7 +68,6 @@ fun PreviewLayout(
                 toggleCaptureModeSwitch = captureModeToggle,
                 bottomSheetQuickSettings = quickSettingsOverlay,
                 zoomControls = zoomLevelDisplay,
-                openSettingsButton = settingsButton,
             )
             // controls overlay
             snackBar(Modifier)
@@ -106,7 +84,6 @@ private fun VerticalMaterialControls(
     captureButton: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
-    openSettingsButton: @Composable (Modifier) -> Unit,
     toggleQuickSettings: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
     toggleCaptureModeSwitch: @Composable (Modifier) -> Unit,
@@ -166,18 +143,16 @@ private fun VerticalMaterialControls(
 
                         // left toggle switch item
                         Box(
-                            modifier = Modifier
-                                .weight(1f),
+                            modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             toggleQuickSettings(Modifier)
                         }
                     }
 
-                    // capturemode toggle switch
+                    // capture mode toggle switch
                     Box(
-                        modifier = Modifier
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
                         toggleCaptureModeSwitch(Modifier)
@@ -185,12 +160,9 @@ private fun VerticalMaterialControls(
 
                     // right toggle switch item
                     Box(
-                        modifier = Modifier
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterEnd
-                    ) {
-                        openSettingsButton(Modifier)
-                    }
+                    ) {}
                 }
             }
         }
@@ -221,35 +193,4 @@ private fun VerticalPreviewLayout(
 
         }
     }
-}
-
-@Composable
-private fun NewMaterialLayout() {
-
-}
-
-//todo controlstop should only be visible in debug mode
-@Composable
-fun ControlsTop(
-    settingsButton: @Composable (modifier: Modifier) -> Unit,
-    quickSettingsDropDownButton: @Composable (modifier: Modifier) -> Unit,
-    flashModePreviewButton: @Composable (modifier: Modifier) -> Unit,
-    stabilizationIndicator: @Composable (modifier: Modifier) -> Unit,
-    videoQualityIndicator: @Composable (modifier: Modifier) -> Unit,
-    debugOverlayToggle: @Composable ((modifier: Modifier) -> Unit)? = null,
-) {
-
-}
-
-@Composable
-fun ControlsBottom(
-    debugZoomRatioText: @Composable ((modifier: Modifier) -> Unit)?,
-    debugCameraIdText: @Composable ((modifier: Modifier) -> Unit)?,
-    elapsedTimeText: @Composable (modifier: Modifier) -> Unit,
-    captureModeHdrToggle: @Composable (modifier: Modifier) -> Unit,
-    flipCameraButton: @Composable (modifier: Modifier) -> Unit,
-    pauseResumeToggle: @Composable (modifier: Modifier) -> Unit,
-    captureButton: @Composable (modifier: Modifier) -> Unit,
-) {
-
 }

@@ -459,7 +459,6 @@ fun PreviewDisplay(
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 CameraXViewfinder(
                     modifier = Modifier
-                        .background(color = Color.Blue)
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
@@ -483,7 +482,7 @@ fun PreviewDisplay(
                         },
                     surfaceRequest = it,
                     implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer,
+                    coordinateTransformer = coordinateTransformer
                 )
             }
         }

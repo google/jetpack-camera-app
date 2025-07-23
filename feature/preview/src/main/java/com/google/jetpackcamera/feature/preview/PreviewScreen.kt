@@ -526,6 +526,9 @@ private fun ContentScreen(
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
                 onCaptureModeClick = onSetCaptureMode,
+                onNavigateToSettings = {
+                    onToggleQuickSettings()
+                    onNavigateToSettings() }
             )
         },
         debugOverlay = {

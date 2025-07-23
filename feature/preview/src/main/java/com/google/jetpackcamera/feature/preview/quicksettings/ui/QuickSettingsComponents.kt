@@ -41,6 +41,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -63,6 +65,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
@@ -266,6 +269,19 @@ fun QuickSetCaptureMode(
     }
 }
 
+/**
+ * A button in the quick settings menu that will navigate to the default settings screen
+ */
+@Composable
+fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
+    QuickSettingCarouselButton(
+        onClick = onNavigateToSettings,
+        text = "More Settings",
+        accessibilityText = stringResource(R.string.settings_content_description),
+        painter = rememberVectorPainter( Icons.Filled.MoreHoriz),
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun QuickSetCaptureMode(
@@ -344,12 +360,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-            hdrUiState is HdrUiState.Available &&
-                (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
-            ),
+                hdrUiState is HdrUiState.Available &&
+                        (
+                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                                )
+                ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -500,7 +516,7 @@ fun ToggleQuickSettingsButton(
     modifier: Modifier = Modifier
 ) {
     val rotationAngle by animateFloatAsState(
-        targetValue = if (isOpen) -180f else 0f,
+        targetValue = if (isOpen) -90f else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessLow) // Adjust duration as needed
     )
     Row(
@@ -510,7 +526,7 @@ fun ToggleQuickSettingsButton(
     ) {
         // dropdown icon
         Icon(
-            imageVector = Icons.Filled.ExpandMore,
+            imageVector = Icons.Filled.Settings,
             contentDescription = if (isOpen) {
                 stringResource(R.string.quick_settings_dropdown_open_description)
             } else {
@@ -518,7 +534,7 @@ fun ToggleQuickSettingsButton(
             },
             modifier = Modifier
                 .testTag(QUICK_SETTINGS_DROP_DOWN)
-                .size(72.dp)
+                .size(50.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     // removes the greyish background animation that appears when clicking on a clickable

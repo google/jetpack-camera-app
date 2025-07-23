@@ -51,6 +51,7 @@ import com.google.jetpackcamera.feature.preview.R
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.FocusedQuickSetRatio
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickFlipCamera
+import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetCaptureMode
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.QuickSetFlash
@@ -76,6 +77,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -97,6 +99,7 @@ fun QuickSettingsBottomSheet(
     modifier: Modifier = Modifier,
     quickSettingsUiState: QuickSettingsUiState,
     toggleQuickSettings: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
     onAspectRatioClick: (aspectRation: AspectRatio) -> Unit,
@@ -182,6 +185,14 @@ fun QuickSettingsBottomSheet(
                             onConcurrentCameraModeClick(c)
                         },
                         concurrentCameraUiState = quickSettingsUiState.concurrentCameraUiState
+                    )
+                }
+
+                add {
+                    QuickNavSettings(
+                        modifier = Modifier
+                            .testTag(SETTINGS_BUTTON),
+                        onNavigateToSettings = onNavigateToSettings,
                     )
                 }
             }
