@@ -220,6 +220,7 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(state = scrollState)
+            .noIndicationClickable(onClick = onClose)
     ) {
         Text(text = "Enter and confirm zoom ratio (Absolute not relative)")
         TextField(
@@ -261,6 +262,7 @@ private fun SetTestPatternDialog(
     BackHandler(onBack = { onClose() })
     Column(
         modifier = Modifier.fillMaxSize()
+            .noIndicationClickable(onClick = onClose)
     ) {
         Text(text = "Select test pattern")
         val sortedTestPatterns = remember(availableTestPatterns) {
