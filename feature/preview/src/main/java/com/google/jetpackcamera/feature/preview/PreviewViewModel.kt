@@ -48,9 +48,13 @@ import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -114,7 +118,6 @@ class PreviewViewModel @AssistedInject constructor(
         MutableStateFlow(CaptureUiState.NotReady)
     private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
         MutableStateFlow(TrackedPreviewUiState())
-    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
@@ -774,6 +777,9 @@ class PreviewViewModel @AssistedInject constructor(
             }
         }
     }
+    fun setClearUiScreenBrightness(brightness: Float) {
+        screenFlash.setClearUiScreenBrightness(brightness)
+    }
 
     fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
@@ -787,18 +793,6 @@ class PreviewViewModel @AssistedInject constructor(
             externalCaptureMode: ExternalCaptureMode,
             debugSettings: DebugSettings
         ): PreviewViewModel
-    }
-
-    sealed interface ImageCaptureEvent {
-        data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
-
-        data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
-    }
-
-    sealed interface VideoCaptureEvent {
-        data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
-
-        data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
     }
 
     /**
