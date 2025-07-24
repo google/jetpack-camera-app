@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -43,6 +44,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
@@ -76,7 +78,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
-import com.google.jetpackcamera.ui.uistateadapter.capture.toggleDebugOverlay
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -92,7 +93,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
@@ -116,8 +116,8 @@ class PreviewViewModel @AssistedInject constructor(
 ) : ViewModel() {
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
-    private val lockedRecordingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private val isAnimatingZoomState: MutableStateFlow<Float?> = MutableStateFlow(null)
+    private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
+        MutableStateFlow(TrackedPreviewUiState())
 
     val captureUiState: StateFlow<CaptureUiState> =
         _captureUiState.asStateFlow()
@@ -142,8 +142,8 @@ class PreviewViewModel @AssistedInject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraUseCase.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
-                .applyExternalCaptureMode(externalCaptureMode),
-            debugSettings = debugSettings
+                .applyExternalCaptureMode(externalCaptureMode)
+                .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
     }
 
@@ -177,9 +177,8 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraUseCase.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
                 cameraUseCase.getCurrentCameraState(),
-                lockedRecordingState.filterNotNull().distinctUntilChanged(),
-                isAnimatingZoomState
-            ) { cameraAppSettings, systemConstraints, cameraState, lockedState, animateZoomState ->
+                trackedPreviewUiState
+            ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
                 val captureModeUiState = CaptureModeUiState.from(
@@ -192,7 +191,6 @@ class PreviewViewModel @AssistedInject constructor(
                     systemConstraints
                 )
                 val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
-                var quickSettingsIsOpen: Boolean
                 _captureUiState.update { old ->
                     when (old) {
                         is CaptureUiState.NotReady -> {
@@ -200,7 +198,6 @@ class PreviewViewModel @AssistedInject constructor(
                                 cameraAppSettings,
                                 systemConstraints
                             )
-                            quickSettingsIsOpen = false
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
                             CaptureUiState.Ready()
@@ -212,17 +209,6 @@ class PreviewViewModel @AssistedInject constructor(
                                 systemConstraints = systemConstraints,
                                 cameraState = cameraState
                             )
-                            quickSettingsIsOpen = when (old.quickSettingsUiState) {
-                                is QuickSettingsUiState.Available -> {
-                                    (old.quickSettingsUiState as QuickSettingsUiState.Available)
-                                        .quickSettingsIsOpen
-                                }
-
-                                is QuickSettingsUiState.Unavailable -> {
-                                    false
-                                }
-                            }
-
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
                             old
@@ -241,13 +227,14 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             systemConstraints,
                             aspectRatioUiState,
-                            quickSettingsIsOpen
+                            trackedUiState.isQuickSettingsOpen
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                        debugUiState = DebugUiState.from(
-                            cameraPropertiesJSON,
+                        debugUiState = getDebugUiState(
+                            systemConstraints,
+                            cameraAppSettings,
                             cameraState,
-                            debugSettings.isDebugModeEnabled
+                            trackedUiState.isDebugOverlayOpen
                         ),
                         stabilizationUiState = StabilizationUiState.from(
                             cameraAppSettings,
@@ -263,7 +250,7 @@ class PreviewViewModel @AssistedInject constructor(
                         captureButtonUiState = CaptureButtonUiState.from(
                             cameraAppSettings,
                             cameraState,
-                            lockedState
+                            trackedUiState.isRecordingLocked
                         ),
                         zoomUiState = ZoomUiState.from(
                             systemConstraints,
@@ -271,7 +258,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraState
                         ),
                         zoomControlUiState = ZoomControlUiState.from(
-                            animateZoomState,
+                            trackedUiState.zoomAnimationTarget,
                             systemConstraints,
                             cameraAppSettings,
                             cameraState
@@ -318,6 +305,26 @@ class PreviewViewModel @AssistedInject constructor(
             streamConfigUiState = streamConfigUiState,
             quickSettingsIsOpen = quickSettingsIsOpen
         )
+    }
+
+    private fun getDebugUiState(
+        systemConstraints: SystemConstraints,
+        cameraAppSettings: CameraAppSettings,
+        cameraState: CameraState,
+        isDebugOverlayOpen: Boolean
+    ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
+        if (isDebugOverlayOpen) {
+            DebugUiState.Open.from(
+                systemConstraints,
+                cameraAppSettings,
+                cameraState,
+                cameraPropertiesJSON
+            )
+        } else {
+            DebugUiState.Closed.from(cameraState)
+        }
+    } else {
+        DebugUiState.Disabled
     }
 
     fun updateLastCapturedMedia() {
@@ -636,7 +643,7 @@ class PreviewViewModel @AssistedInject constructor(
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
                 cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
-                    var snackbarToShow: SnackbarData? = null
+                    var snackbarToShow: SnackbarData?
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraUseCase.startRecording OnVideoRecorded")
@@ -683,21 +690,23 @@ class PreviewViewModel @AssistedInject constructor(
      "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
-        viewModelScope.launch {
-            lockedRecordingState.update {
-                isLocked
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(isRecordingLocked = isLocked)
         }
     }
 
     fun setZoomAnimationState(targetValue: Float?) {
-        viewModelScope.launch {
-            isAnimatingZoomState.update { targetValue }
+        trackedPreviewUiState.update { old ->
+            old.copy(zoomAnimationTarget = targetValue)
         }
     }
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         cameraUseCase.changeZoomRatio(newZoomState = newZoomState)
+    }
+
+    fun setTestPattern(newTestPattern: TestPattern) {
+        cameraUseCase.setTestPattern(newTestPattern = newTestPattern)
     }
 
     fun setDynamicRange(dynamicRange: DynamicRange) {
@@ -730,57 +739,15 @@ class PreviewViewModel @AssistedInject constructor(
         }
     }
 
-    // modify ui values
     fun toggleQuickSettings() {
-        viewModelScope.launch {
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    quickSettingsUiState = QuickSettingsUiState.Available(
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).aspectRatioUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).captureModeUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).concurrentCameraUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).flashModeUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).flipLensUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).hdrUiState,
-                        (
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).streamConfigUiState,
-                        !(
-                            old.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                            ).quickSettingsIsOpen
-                    )
-                ) ?: old
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
         }
     }
 
     fun toggleDebugOverlay() {
-        viewModelScope.launch {
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    debugUiState = old.debugUiState.toggleDebugOverlay()
-                ) ?: old
-            }
+        trackedPreviewUiState.update { old ->
+            old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
         }
     }
 
@@ -827,4 +794,20 @@ class PreviewViewModel @AssistedInject constructor(
             debugSettings: DebugSettings
         ): PreviewViewModel
     }
+
+    /**
+     * Data class to track UI-specific states within the PreviewViewModel.
+     *
+     * This state is managed by the ViewModel and can be thought of as UI configuration
+     * or interaction states that might otherwise have been handled by Compose's
+     * `remember` if not hoisted to the ViewModel for broader logic integration
+     * or persistence. It is then transformed into the `PreviewUiState` that the UI
+     * directly observes.
+     */
+    data class TrackedPreviewUiState(
+        val isQuickSettingsOpen: Boolean = false,
+        val isDebugOverlayOpen: Boolean = false,
+        val isRecordingLocked: Boolean = false,
+        val zoomAnimationTarget: Float? = null
+    )
 }
