@@ -1076,11 +1076,6 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         if (newZoomRatio != null &&
                             old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
                         ) {
-                            Log.d(
-                                TAG,
-                                "newZoomRatio: $newZoomRatio on lens ${targetCameraInfo.appLensFacing}"
-                            )
-
                             old.copy(
                                 zoomRatios = old.zoomRatios
                                     .toMutableMap()

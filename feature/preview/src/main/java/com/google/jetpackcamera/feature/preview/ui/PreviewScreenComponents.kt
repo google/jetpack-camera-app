@@ -20,7 +20,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -133,12 +132,13 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -158,51 +158,53 @@ fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
     size: Float = 55f,
-    currentRecordingState: VideoRecordingState.Active
+    currentRecordingState: VideoRecordingState
 ) {
-    var buttonClicked by remember { mutableStateOf(false) }
-    // animation value for the toggle icon itself
-    val animatedToggleScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
-        }
-    )
-    Box(
-        modifier = modifier
-    ) {
+    if (currentRecordingState is VideoRecordingState.Active) {
+        var buttonClicked by remember { mutableStateOf(false) }
+        // animation value for the toggle icon itself
+        val animatedToggleScale by animateFloatAsState(
+            targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            finishedListener = {
+                buttonClicked = false // Reset the trigger
+            }
+        )
         Box(
-            modifier = Modifier
-                .clickable(
-                    onClick = {
-                        buttonClicked = true
-                        onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
-                    },
-                    indication = null,
-                    interactionSource = null
-                )
-                .size(size = size.dp)
-                .scale(scale = animatedToggleScale)
-                .clip(CircleShape)
-                .background(Color.White),
-            contentAlignment = Alignment.Center
+            modifier = modifier
         ) {
-            // icon
-            Icon(
+            Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .size((0.75 * size).dp),
-                tint = Color.Red,
-                imageVector = when (currentRecordingState) {
-                    is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-                    is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
-                },
-                contentDescription = "pause resume toggle"
-            )
+                    .clickable(
+                        onClick = {
+                            buttonClicked = true
+                            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
+                        },
+                        indication = null,
+                        interactionSource = null
+                    )
+                    .size(size = size.dp)
+                    .scale(scale = animatedToggleScale)
+                    .clip(CircleShape)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                // icon
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size((0.75 * size).dp),
+                    tint = Color.Red,
+                    imageVector = when (currentRecordingState) {
+                        is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                        is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+                    },
+                    contentDescription = "pause resume toggle"
+                )
+            }
         }
     }
 }
@@ -410,9 +412,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+                    previewDisplayUiState.aspectRatioUiState as
+                            AspectRatioUiState.Available
+                    ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -473,7 +475,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -520,7 +522,7 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                        "${stabilizationUiState.stabilizationMode}"
+                                            "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
 
@@ -535,8 +537,8 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
-                                        "${stabilizationUiState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                 )
                         }
                     }
@@ -708,7 +710,7 @@ fun CaptureModeDropDown(
         AnimatedVisibility(
             visible = isExpanded,
             enter =
-            fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
             fun onDisabledClick(
@@ -882,7 +884,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

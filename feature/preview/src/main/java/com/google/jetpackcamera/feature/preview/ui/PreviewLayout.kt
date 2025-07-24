@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -40,7 +42,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
+    // snackbarHostState: SnackbarHostState,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
@@ -49,17 +51,23 @@ fun PreviewLayout(
     quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
     imageWellButton: @Composable (modifier: Modifier) -> Unit,
     flashModeButton: @Composable (modifier: Modifier) -> Unit,
+    pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (modifier: Modifier) -> Unit,
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
-    snackBar: @Composable (modifier: Modifier) -> Unit,
+    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             viewfinder(Modifier)
             VerticalMaterialControls(
                 captureButton = captureButton,
@@ -69,10 +77,10 @@ fun PreviewLayout(
                 bottomSheetQuickSettings = quickSettingsOverlay,
                 zoomControls = zoomLevelDisplay,
             )
-            // controls overlay
-            snackBar(Modifier)
 
-            //quickSettingsOverlay(Modifier)
+            debugOverlay(Modifier)
+            // controls overlay
+            snackBar(Modifier, snackbarHostState)
             screenFlashOverlay(Modifier)
         }
     }
@@ -144,7 +152,7 @@ private fun VerticalMaterialControls(
                         // left toggle switch item
                         Box(
                             modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.CenterStart
+                            contentAlignment = Alignment.Center
                         ) {
                             toggleQuickSettings(Modifier)
                         }
@@ -164,6 +172,12 @@ private fun VerticalMaterialControls(
                         contentAlignment = Alignment.CenterEnd
                     ) {}
                 }
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        //todo(kc): tune padding
+                        .padding(bottom = 50.dp)
+                )
             }
         }
         bottomSheetQuickSettings(Modifier)

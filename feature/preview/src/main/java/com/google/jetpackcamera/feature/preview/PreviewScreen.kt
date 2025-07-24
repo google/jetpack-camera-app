@@ -71,6 +71,7 @@ import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.CaptureModeToggleButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.ImageWell
+import com.google.jetpackcamera.feature.preview.ui.PauseResumeToggleButton
 import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.PreviewLayout
 import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
@@ -370,7 +371,7 @@ private fun ContentScreen(
     isDebugMode: Boolean = false,
     onImageWellClick: () -> Unit = {}
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    // val snackbarHostState = remember { SnackbarHostState() }
 
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -393,8 +394,7 @@ private fun ContentScreen(
     }
 
     PreviewLayout(
-        modifier = Modifier,
-        snackbarHostState = snackbarHostState,
+        modifier = modifier,
         viewfinder = {
             PreviewDisplay(
                 previewDisplayUiState = captureUiState.previewDisplayUiState,
@@ -528,7 +528,8 @@ private fun ContentScreen(
                 onCaptureModeClick = onSetCaptureMode,
                 onNavigateToSettings = {
                     onToggleQuickSettings()
-                    onNavigateToSettings() }
+                    onNavigateToSettings()
+                }
             )
         },
         debugOverlay = {
@@ -549,7 +550,7 @@ private fun ContentScreen(
                 onInitialBrightnessCalculated = onClearUiScreenBrightness
             )
         },
-        snackBar = {
+        snackBar = { modifier, snackbarHostState ->
             val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
@@ -560,80 +561,13 @@ private fun ContentScreen(
                 )
             }
         },
-    )
-
-    /*Box(modifier.fillMaxSize()) {
-        // display camera feed. this stays behind everything else
-        PreviewDisplay(
-            previewDisplayUiState = captureUiState.previewDisplayUiState,
-            onFlipCamera = onFlipCamera,
-            onTapToFocus = onTapToFocus,
-            onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
-            surfaceRequest = surfaceRequest,
-            onRequestWindowColorMode = onRequestWindowColorMode
-        )
-
-        QuickSettingsScreenOverlay(
-            modifier = Modifier,
-            quickSettingsUiState = captureUiState.quickSettingsUiState,
-            toggleQuickSettings = onToggleQuickSettings,
-            onLensFaceClick = onSetLensFacing,
-            onFlashModeClick = onChangeFlash,
-            onAspectRatioClick = onChangeAspectRatio,
-            onStreamConfigClick = onSetStreamConfig,
-            onDynamicRangeClick = onChangeDynamicRange,
-            onImageOutputFormatClick = onChangeImageFormat,
-            onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
-            onCaptureModeClick = onSetCaptureMode
-        )
-        // relative-grid style overlay on top of preview display
-        CameraControlsOverlay(
-            captureUiState = captureUiState,
-            onNavigateToSettings = onNavigateToSettings,
-            onSetCaptureMode = onSetCaptureMode,
-            onFlipCamera = onFlipCamera,
-            onChangeFlash = onChangeFlash,
-            onToggleAudio = onToggleAudio,
-            onAnimateZoom = { onAnimateZoom(it, LensToZoom.PRIMARY) },
-            onIncrementZoom = { onIncrementZoom(it, LensToZoom.PRIMARY) },
-            onToggleQuickSettings = onToggleQuickSettings,
-            onToggleDebugOverlay = onToggleDebugOverlay,
-            onChangeImageFormat = onChangeImageFormat,
-            onDisabledCaptureMode = onDisabledCaptureMode,
-            onSetPause = onSetPause,
-            onCaptureImageWithUri = onCaptureImageWithUri,
-            onStartVideoRecording = onStartVideoRecording,
-            onStopVideoRecording = onStopVideoRecording,
-            zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) },
-            onImageWellClick = onImageWellClick,
-            onLockVideoRecording = onLockVideoRecording
-        )
-
-        DebugOverlayComponent(
-            toggleIsOpen = onToggleDebugOverlay,
-            debugUiState = captureUiState.debugUiState,
-            onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
-        )
-
-        val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
-        if (snackBarData != null) {
-            TestableSnackbar(
-                modifier = Modifier.testTag(snackBarData.testTag),
-                snackbarToShow = snackBarData,
-                snackbarHostState = snackbarHostState,
-                onSnackbarResult = onSnackBarResult
+        pauseToggleButton = {
+            PauseResumeToggleButton(
+                onSetPause = onSetPause,
+                currentRecordingState = captureUiState.videoRecordingState
             )
         }
-        // Screen flash overlay that stays on top of everything but invisible normally. This should
-        // not be enabled based on whether screen flash is enabled because a previous image capture
-        // may still be running after flash mode change and clear actions (e.g. brightness restore)
-        // may need to be handled later. Compose smart recomposition should be able to optimize this
-        // if the relevant states are no longer changing.
-        ScreenFlashScreen(
-            screenFlashUiState = screenFlashUiState,
-            onInitialBrightnessCalculated = onClearUiScreenBrightness
-        )
-    }*/
+    )
 }
 
 
