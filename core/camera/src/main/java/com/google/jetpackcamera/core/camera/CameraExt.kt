@@ -39,6 +39,7 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
+import com.google.jetpackcamera.settings.model.TestPattern
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
@@ -134,14 +135,30 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
         ?.contains(
             CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
         ) ?: false
-
-val CameraInfo.isLowLightBoostSupported: Boolean
+val CameraInfo.availableTestPatterns: Set<TestPattern>
     @OptIn(ExperimentalCamera2Interop::class)
-    get() = Camera2CameraInfo.from(this)
-        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
-        ?.contains(
-            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-        ) ?: false
+    get() = buildSet {
+        add(TestPattern.Off)
+        Camera2CameraInfo.from(this@availableTestPatterns)
+            .getCameraCharacteristic(CameraCharacteristics.SENSOR_AVAILABLE_TEST_PATTERN_MODES)
+            ?.forEach { pattern ->
+                when (pattern) {
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_OFF -> TestPattern.Off
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS -> TestPattern.ColorBars
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY ->
+                        TestPattern.ColorBarsFadeToGray
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9 -> TestPattern.PN9
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1 -> TestPattern.Custom1
+                    // Use white as a stand-in for any solid color test pattern
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR ->
+                        TestPattern.SolidColor.WHITE
+                    else -> {
+                        // Ignore unknown test pattern mode
+                        null
+                    }
+                }?.let { add(it) }
+            }
+    }
 
 fun CameraInfo.filterSupportedFixedFrameRates(desired: Set<Int>): Set<Int> {
     return buildSet {

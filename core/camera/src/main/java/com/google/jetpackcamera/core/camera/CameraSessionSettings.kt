@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.settings.model.TestPattern
 
 /**
  * Camera settings that persist as long as a camera is running.
@@ -73,7 +74,8 @@ internal data class TransientSessionSettings(
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
     val primaryLensFacing: LensFacing,
-    val zoomRatios: Map<LensFacing, Float>
+    val zoomRatios: Map<LensFacing, Float>,
+    val testPattern: TestPattern
 )
 
 data class InitialRecordingSettings(

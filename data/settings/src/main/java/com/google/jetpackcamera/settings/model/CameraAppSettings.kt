@@ -50,7 +50,8 @@ data class CameraAppSettings(
     val audioEnabled: Boolean = true,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
-    val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION
+    val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION,
+    val debugSettings: DebugSettings = DebugSettings()
 )
 
 fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =

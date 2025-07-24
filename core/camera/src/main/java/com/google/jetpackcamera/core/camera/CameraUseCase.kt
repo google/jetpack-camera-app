@@ -23,7 +23,6 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -34,6 +33,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.TestPattern
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -48,7 +48,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings = DebugSettings(),
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
@@ -89,6 +88,8 @@ interface CameraUseCase {
     suspend fun stopVideoRecording()
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio)
+
+    fun setTestPattern(newTestPattern: TestPattern)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 

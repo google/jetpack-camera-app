@@ -27,5 +27,6 @@ package com.google.jetpackcamera.model
  */
 data class DebugSettings(
     val isDebugModeEnabled: Boolean = false,
-    val singleLensMode: LensFacing? = null
+    val singleLensMode: LensFacing? = null,
+    val testPattern: TestPattern = TestPattern.Off
 )
