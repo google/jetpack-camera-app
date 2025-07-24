@@ -23,6 +23,10 @@ import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +77,7 @@ import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
@@ -89,6 +94,7 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -244,6 +250,7 @@ fun PreviewScreen(
                 onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
+                onSetTestPattern = viewModel::setTestPattern,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -276,7 +283,6 @@ fun PreviewScreen(
                         )
                     }
                 },
-
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
@@ -325,6 +331,7 @@ private fun ContentScreen(
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
+    onSetTestPattern: (TestPattern) -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -428,11 +435,22 @@ private fun ContentScreen(
                 onLockVideoRecording = onLockVideoRecording
             )
 
-            DebugOverlayComponent(
-                toggleIsOpen = onToggleDebugOverlay,
-                debugUiState = captureUiState.debugUiState,
-                onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
-            )
+            AnimatedContent(
+                targetState = captureUiState.debugUiState,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut() using null
+                },
+                contentKey = { it is DebugUiState.Open }
+            ) {
+                if (it is DebugUiState.Open) {
+                    DebugOverlayComponent(
+                        toggleIsOpen = onToggleDebugOverlay,
+                        debugUiState = it,
+                        onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
+                        onSetTestPattern = onSetTestPattern
+                    )
+                }
+            }
 
             val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {

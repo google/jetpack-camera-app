@@ -53,7 +53,7 @@ sealed interface CaptureUiState {
         val captureModeToggleUiState: CaptureModeToggleUiState =
             CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
-        val debugUiState: DebugUiState = DebugUiState(),
+        val debugUiState: DebugUiState = DebugUiState.Disabled,
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
