@@ -788,7 +788,9 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
-                put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                    put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                }
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(

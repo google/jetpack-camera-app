@@ -21,6 +21,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -483,7 +484,12 @@ constructor(
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                contentValues.put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    getDefaultMediaSaveLocation()
+                )
+            }
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -536,9 +542,14 @@ constructor(
             Calendar.getInstance().time.toString()
         )
         eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        val saveLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+            getDefaultMediaSaveLocation()
+        } else {
+            Environment.DIRECTORY_PICTURES
+        }
         eligibleContentValues.put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            getDefaultMediaSaveLocation()
+            saveLocation
         )
         return eligibleContentValues
     }
