@@ -71,6 +71,7 @@ import com.google.android.gms.cameralowlight.LowLightBoost
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -84,6 +85,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
 import com.google.jetpackcamera.settings.model.VideoQuality.FHD
 import com.google.jetpackcamera.settings.model.VideoQuality.HD
@@ -327,6 +329,10 @@ internal suspend fun processTransientSettingEvents(
     camera.cameraControl.setZoomRatio(
         initialTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
     )
+
+    val camera2OptionsBuilder = CaptureRequestOptions.Builder()
+    updateCamera2RequestOptions(camera, null, initialTransientSettings, sessionSettings, camera2OptionsBuilder)
+
     var prevTransientSettings = initialTransientSettings
     val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
     var torchOn = false
@@ -367,35 +373,6 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            when (newTransientSettings.flashMode) {
-                FlashMode.LOW_LIGHT_BOOST -> {
-
-                    val lowLightBoostAvailability = camera.cameraInfo.getLowLightBoostAvailablity(context)
-
-                    if (lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
-                                lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                sessionSettings?.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE
-                            )) {
-                        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
-                        val captureRequestOptions = CaptureRequestOptions.Builder()
-                            .setCaptureRequestOption(
-                                CaptureRequest.CONTROL_AE_MODE,
-                                CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                            )
-                            .build()
-
-                        Camera2CameraControl.from(camera.cameraControl)
-                            .addCaptureRequestOptions(captureRequestOptions)
-                    }
-                }
-                else -> {
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .setCaptureRequestOptions(CaptureRequestOptions.Builder().build())
-                }
-            }
-        }
-
         if (prevTransientSettings.deviceRotation
             != newTransientSettings.deviceRotation
         ) {
@@ -417,7 +394,114 @@ internal suspend fun processTransientSettingEvents(
                 camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
             }
         }
+
+        updateCamera2RequestOptions(
+            camera,
+            prevTransientSettings,
+            newTransientSettings,
+            sessionSettings,
+            camera2OptionsBuilder
+        )
+
         prevTransientSettings = newTransientSettings
+    }
+}
+
+context(CameraSessionContext)
+@ExperimentalCamera2Interop
+private suspend fun updateCamera2RequestOptions(
+    camera: Camera,
+    prevTransientSettings: TransientSessionSettings?,
+    newTransientSettings: TransientSessionSettings,
+    sessionSettings: PerpetualSessionSettings.SingleCamera?,
+    optionsBuilder: CaptureRequestOptions.Builder
+) {
+    var needsUpdate = false
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+        prevTransientSettings?.flashMode != newTransientSettings.flashMode
+    ) {
+        when (newTransientSettings.flashMode) {
+            FlashMode.LOW_LIGHT_BOOST -> {
+                val lowLightBoostAvailability =
+                    camera.cameraInfo.getLowLightBoostAvailablity(context)
+
+                val prioritizeAeMode = lowLightBoostAvailability ==
+                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                    sessionSettings?.lowLightBoostPriority ==
+                    LowLightBoostPriority.PRIORITIZE_AE_MODE
+                if (lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
+                    prioritizeAeMode
+                ) {
+                    Log.d(
+                        TAG,
+                        "Setting LLB with " +
+                            "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
+                    )
+                    val captureRequestOptions = CaptureRequestOptions.Builder()
+                        .setCaptureRequestOption(
+                            CaptureRequest.CONTROL_AE_MODE,
+                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                        )
+                        .build()
+
+                    Camera2CameraControl.from(camera.cameraControl)
+                        .addCaptureRequestOptions(captureRequestOptions)
+                }
+            }
+            else -> {
+                optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
+            }
+        }
+        needsUpdate = true
+    }
+
+    val newTestPattern = newTransientSettings.testPattern
+    if (prevTransientSettings?.testPattern != newTestPattern) {
+        val (mode: Int?, data: IntArray?) = when (newTestPattern) {
+            TestPattern.Off -> Pair(null, null)
+            TestPattern.ColorBars -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS, null)
+            TestPattern.ColorBarsFadeToGray -> Pair(
+                CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY,
+                null
+            )
+            TestPattern.PN9 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9, null)
+            TestPattern.Custom1 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1, null)
+            is TestPattern.SolidColor -> {
+                Pair(
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR,
+                    intArrayOf(
+                        newTestPattern.red.toInt(),
+                        newTestPattern.greenEven.toInt(),
+                        newTestPattern.greenOdd.toInt(),
+                        newTestPattern.blue.toInt()
+                    )
+                )
+            }
+        }
+        if (mode != null) {
+            optionsBuilder.setCaptureRequestOption(
+                CaptureRequest.SENSOR_TEST_PATTERN_MODE,
+                mode
+            )
+        } else {
+            optionsBuilder.clearCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_MODE)
+        }
+
+        if (data != null) {
+            optionsBuilder.setCaptureRequestOption(
+                CaptureRequest.SENSOR_TEST_PATTERN_DATA,
+                data
+            )
+        } else {
+            optionsBuilder.clearCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_DATA)
+        }
+        needsUpdate = true
+    }
+
+    if (needsUpdate) {
+        Camera2CameraControl.from(camera.cameraControl)
+            .setCaptureRequestOptions(optionsBuilder.build())
     }
 }
 
@@ -764,6 +848,9 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                    put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                }
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(
@@ -783,11 +870,12 @@ private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
+    initialRecordingSettings: InitialRecordingSettings,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
-        old.copy(videoRecordingState = VideoRecordingState.Starting)
+        old.copy(videoRecordingState = VideoRecordingState.Starting(initialRecordingSettings))
     }
 
     // ok. there is a difference between MUTING and ENABLING audio
@@ -956,8 +1044,7 @@ private suspend fun runVideoRecording(
     videoCaptureUri: Uri?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit,
-    onRestoreSettings: () -> Unit = {}
+    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -975,7 +1062,12 @@ private suspend fun runVideoRecording(
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
-            onVideoRecord = onVideoRecord
+            onVideoRecord = onVideoRecord,
+            initialRecordingSettings = InitialRecordingSettings(
+                isAudioEnabled = currentSettings.isAudioEnabled,
+                lensFacing = currentSettings.primaryLensFacing,
+                zoomRatios = currentSettings.zoomRatios
+            )
         ).use { recording ->
             val recordingSettingsUpdater = launch {
                 fun TransientSessionSettings.isFlashModeOn() = flashMode == FlashMode.ON
@@ -1008,7 +1100,6 @@ private suspend fun runVideoRecording(
                 }
             }
         }
-        onRestoreSettings()
     }
 }
 
@@ -1059,8 +1150,7 @@ internal suspend fun processVideoControlEvents(
                     event.videoCaptureUri,
                     videoCaptureControlEvents,
                     event.shouldUseUri,
-                    event.onVideoRecord,
-                    event.onRestoreSettings
+                    event.onVideoRecord
                 )
             }
 

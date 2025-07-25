@@ -32,10 +32,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
-import com.google.jetpackcamera.feature.preview.ui.CAPTURE_BUTTON
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.feature.preview.ui.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.feature.preview.ui.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
@@ -51,8 +51,8 @@ import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
-import com.google.jetpackcamera.utils.runMediaStoreAutoDeleteScenarioTest
-import com.google.jetpackcamera.utils.runScenarioTestForResult
+import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
+import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +72,7 @@ internal class ImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun image_capture_button() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun image_capture_button() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         filePrefix = FILE_PREFIX
     ) {
@@ -90,7 +90,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun image_capture_volumeUp() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun image_capture_volumeUp() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         filePrefix = FILE_PREFIX
     ) {
@@ -107,7 +107,7 @@ internal class ImageCaptureDeviceTest {
     }
 
     @Test
-    fun image_capture_volumeDown() = runMediaStoreAutoDeleteScenarioTest<MainActivity>(
+    fun image_capture_volumeDown() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         filePrefix = FILE_PREFIX
     ) {
@@ -127,7 +127,7 @@ internal class ImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -152,7 +152,7 @@ internal class ImageCaptureDeviceTest {
     fun image_capture_external_illegal_uri() {
         val uri = Uri.parse("asdfasdf")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -178,7 +178,7 @@ internal class ImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
@@ -210,7 +210,7 @@ internal class ImageCaptureDeviceTest {
             uriStrings.add(uri.toString())
         }
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
@@ -241,7 +241,7 @@ internal class ImageCaptureDeviceTest {
     fun multipleImageCaptureExternal_withNullUriList_returnsResultOk() {
         val timeStamp = System.currentTimeMillis()
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
             ) {
                 // Wait for the capture button to be displayed
@@ -265,7 +265,7 @@ internal class ImageCaptureDeviceTest {
     @Test
     fun multipleImageCaptureExternal_withNullUriList_returnsResultCancel() {
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
             ) {
                 // Wait for the capture button to be displayed
@@ -284,7 +284,7 @@ internal class ImageCaptureDeviceTest {
         uriStrings.add("illegal_uri")
         uriStrings.add(getTestUri(DIR_PATH, timeStamp, "jpg").toString())
         val result =
-            runScenarioTestForResult<MainActivity>(
+            runMainActivityScenarioTestForResult(
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA

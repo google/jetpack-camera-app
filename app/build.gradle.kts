@@ -72,9 +72,6 @@ android {
         buildConfig = true
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -139,6 +136,7 @@ dependencies {
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":ui:components:capture"))
     androidTestUtil(libs.androidx.orchestrator)
 
     implementation(libs.androidx.core.ktx)
@@ -165,12 +163,14 @@ dependencies {
 
     // Permissions Screen
     implementation(project(":feature:permissions"))
-
     // benchmark
     implementation(libs.androidx.profileinstaller)
 
     // Desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // capture components
+    implementation(project(":ui:components:capture"))
 }
 
 // Allow references to generated code

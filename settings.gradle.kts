@@ -26,7 +26,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         maven {
-            setUrl("https://androidx.dev/snapshots/builds/12696077/artifacts/repository")
+            setUrl("https://androidx.dev/snapshots/builds/13672667/artifacts/repository")
         }
         google()
         mavenCentral()
@@ -43,3 +43,9 @@ include(":core:common")
 include(":benchmark")
 include(":feature:permissions")
 include(":feature:postcapture")
+include(":ui:uistate")
+include(":ui:uistateadapter")
+include(":ui:uistate:capture")
+include(":ui:uistateadapter:capture")
+include(":ui:components")
+include(":ui:components:capture")

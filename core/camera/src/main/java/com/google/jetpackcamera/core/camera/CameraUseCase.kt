@@ -33,6 +33,7 @@ import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +49,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        isDebugMode: Boolean = false,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
@@ -89,6 +89,8 @@ interface CameraUseCase {
     suspend fun stopVideoRecording()
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio)
+
+    fun setTestPattern(newTestPattern: TestPattern)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 
@@ -156,10 +158,11 @@ interface CameraUseCase {
 sealed interface VideoRecordingState {
 
     /**
-     * [PendingRecording][androidx.camera.video.PendingRecording] has not yet started but is about to.
+     * Indicates that a [PendingRecording][androidx.camera.video.PendingRecording] is about to start.
      * This state may be used as a signal to start processes just before the recording actually starts.
      */
-    data object Starting : VideoRecordingState
+    data class Starting(val initialRecordingSettings: InitialRecordingSettings? = null) :
+        VideoRecordingState
 
     /**
      * Camera is not currently recording a video

@@ -25,7 +25,9 @@ package com.google.jetpackcamera.settings.ui
 //
 // ////////////////////////////////
 
+const val SETTINGS_TITLE = "SettingsTitle"
 const val BACK_BUTTON = "BackButton"
+const val CLOSE_BUTTON = "CloseButton"
 
 // unsupported rationale tags
 const val DEVICE_UNSUPPORTED_TAG = "DeviceUnsupportedTag"

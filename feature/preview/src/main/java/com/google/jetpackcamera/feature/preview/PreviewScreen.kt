@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,18 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,8 +44,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,28 +64,44 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsScreenOverlay
-import com.google.jetpackcamera.feature.preview.ui.CameraControlsOverlay
-import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
-import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
-import com.google.jetpackcamera.feature.preview.ui.TestableToast
-import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
-import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
 import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DynamicRange
+import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.TestPattern
+import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ZoomLevelDisplayState
+import com.google.jetpackcamera.ui.components.capture.ZoomState
+import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScreenOverlay
+import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewScreen"
 
@@ -89,19 +113,19 @@ private const val TAG = "PreviewScreen"
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    previewMode: PreviewMode,
-    isDebugMode: Boolean,
+    externalCaptureMode: ExternalCaptureMode,
+    debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-        { factory -> factory.create(previewMode, isDebugMode) }
+        { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val previewUiState: PreviewUiState by viewModel.previewUiState.collectAsState()
+    val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
-    val screenFlashUiState: ScreenFlash.ScreenFlashUiState
+    val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
@@ -116,10 +140,10 @@ fun PreviewScreen(
 
     if (Trace.isEnabled()) {
         LaunchedEffect(onFirstFrameCaptureCompleted) {
-            snapshotFlow { previewUiState }
+            snapshotFlow { captureUiState }
                 .transformWhile {
                     var continueCollecting = true
-                    (it as? PreviewUiState.Ready)?.let { ready ->
+                    (it as? CaptureUiState.Ready)?.let { ready ->
                         if (ready.sessionFirstFrameTimestamp > 0) {
                             emit(Unit)
                             continueCollecting = false
@@ -132,24 +156,133 @@ fun PreviewScreen(
         }
     }
 
-    when (val currentUiState = previewUiState) {
-        is PreviewUiState.NotReady -> LoadingScreen()
-        is PreviewUiState.Ready -> {
+    when (val currentUiState = captureUiState) {
+        is CaptureUiState.NotReady -> LoadingScreen()
+        is CaptureUiState.Ready -> {
+            var initialRecordingSettings by remember {
+                mutableStateOf<InitialRecordingSettings?>(
+                    null
+                )
+            }
+
             val context = LocalContext.current
             LaunchedEffect(Unit) {
                 debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
             }
+            val scope = rememberCoroutineScope()
+            val zoomState = remember {
+                // the initialZoomLevel must be fetched from the settings, not the cameraState.
+                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
+
+                ZoomState(
+                    initialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
+                        ?.initialZoomRatio
+                        ?: 1f,
+                    onAnimateStateChanged = viewModel::setZoomAnimationState,
+                    onChangeZoomLevel = viewModel::changeZoomRatio,
+                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                        ?.primaryZoomRange
+                        ?: Range(1f, 1f)
+                )
+            }
+
+            LaunchedEffect(
+                (currentUiState.flipLensUiState as? FlipLensUiState.Available)
+                    ?.selectedLensFacing
+            ) {
+                zoomState.onChangeLens(
+                    newInitialZoomLevel = (
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
+                        ?.initialZoomRatio
+                        ?: 1f,
+                    newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                        ?.primaryZoomRange
+                        ?: Range(1f, 1f)
+                )
+            }
+            // todo(kc) handle reset certain values after video recording is complete
+            LaunchedEffect(currentUiState.videoRecordingState) {
+                with(currentUiState.videoRecordingState) {
+                    when (this) {
+                        is VideoRecordingState.Starting -> {
+                            initialRecordingSettings = this.initialRecordingSettings
+                        }
+
+                        is VideoRecordingState.Inactive -> {
+                            initialRecordingSettings?.let {
+                                val oldPrimaryLensFacing = it.lensFacing
+                                val oldZoomRatios = it.zoomRatios
+                                val oldAudioEnabled = it.isAudioEnabled
+                                Log.d(TAG, "reset pre recording settings")
+                                viewModel.setAudioEnabled(oldAudioEnabled)
+                                viewModel.setLensFacing(oldPrimaryLensFacing)
+                                zoomState.apply {
+                                    absoluteZoom(
+                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
+                                        lensToZoom = LensToZoom.PRIMARY
+                                    )
+                                    absoluteZoom(
+                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()]
+                                            ?: 1f,
+                                        lensToZoom = LensToZoom.SECONDARY
+                                    )
+                                }
+                            }
+                            initialRecordingSettings = null
+                        }
+
+                        is VideoRecordingState.Active -> {}
+                    }
+                }
+            }
 
             ContentScreen(
                 modifier = modifier,
-                previewUiState = currentUiState,
+                captureUiState = currentUiState,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
-                onChangeZoomRatio = viewModel::changeZoomRatio,
+                onSetTestPattern = viewModel::setTestPattern,
+                onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.absoluteZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
+                onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.scaleZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
+                onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.animatedZoom(
+                            targetZoomLevel = zoomRatio,
+                            lensToZoom = lensToZoom
+                        )
+                    }
+                },
+                onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                    scope.launch {
+                        zoomState.incrementZoom(
+                            zoomRatio,
+                            lensToZoom
+                        )
+                    }
+                },
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
@@ -166,14 +299,13 @@ fun PreviewScreen(
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onLockVideoRecording = viewModel::setLockedRecording,
-                onToastShown = viewModel::onToastShown,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = isDebugMode,
+                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE
             )
 
             LaunchedEffect(readStoragePermission.status) {
@@ -190,8 +322,8 @@ fun PreviewScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
-    previewUiState: PreviewUiState.Ready,
-    screenFlashUiState: ScreenFlash.ScreenFlashUiState,
+    captureUiState: CaptureUiState.Ready,
+    screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
@@ -199,14 +331,18 @@ private fun ContentScreen(
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
-    onChangeZoomRatio: (CameraZoomRatio) -> Unit = {},
+    onSetTestPattern: (TestPattern) -> Unit = {},
+    onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
+    onAnimateZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onChangeFlash: (FlashMode) -> Unit = {},
     onChangeAspectRatio: (AspectRatio) -> Unit = {},
     onSetStreamConfig: (StreamConfig) -> Unit = {},
     onChangeDynamicRange: (DynamicRange) -> Unit = {},
     onChangeConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
-    onDisabledCaptureMode: (DisabledReason) -> Unit = {},
+    onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -215,16 +351,15 @@ private fun ContentScreen(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
-    onToastShown: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
     isDebugMode: Boolean = false,
@@ -234,39 +369,40 @@ private fun ContentScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
-        val lensFacing by rememberUpdatedState(
-            previewUiState.currentCameraSettings.cameraLensFacing
-        )
+        val onFlipCamera = {
+            if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
+                onSetLensFacing(
+                    (
+                        captureUiState.flipLensUiState as FlipLensUiState.Available
+                        )
+                        .selectedLensFacing.flip()
+                )
+            }
+        }
 
-        val onFlipCamera = { onSetLensFacing(lensFacing.flip()) }
-
-        val isAudioEnabled = remember(previewUiState) {
-            previewUiState.currentCameraSettings.audioEnabled
+        val isAudioEnabled = remember(captureUiState) {
+            captureUiState.audioUiState is AudioUiState.Enabled.On
         }
         val onToggleAudio = remember(isAudioEnabled) {
             {
                 onSetAudioEnabled(!isAudioEnabled)
             }
         }
-
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
-                previewUiState = previewUiState,
+                previewDisplayUiState = captureUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocus,
-                onZoomRatioChange = onChangeZoomRatio,
-                aspectRatio = previewUiState.currentCameraSettings.aspectRatio,
+                onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
             )
 
             QuickSettingsScreenOverlay(
                 modifier = Modifier,
-                previewUiState = previewUiState,
-                isOpen = previewUiState.quickSettingsIsOpen,
+                quickSettingsUiState = captureUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
-                currentCameraSettings = previewUiState.currentCameraSettings,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
@@ -278,13 +414,14 @@ private fun ContentScreen(
             )
             // relative-grid style overlay on top of preview display
             CameraControlsOverlay(
-                previewUiState = previewUiState,
+                captureUiState = captureUiState,
                 onNavigateToSettings = onNavigateToSettings,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
                 onChangeFlash = onChangeFlash,
                 onToggleAudio = onToggleAudio,
-                onSetZoom = onChangeZoomRatio,
+                onAnimateZoom = { onAnimateZoom(it, LensToZoom.PRIMARY) },
+                onIncrementZoom = { onIncrementZoom(it, LensToZoom.PRIMARY) },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleDebugOverlay = onToggleDebugOverlay,
                 onChangeImageFormat = onChangeImageFormat,
@@ -298,22 +435,24 @@ private fun ContentScreen(
                 onLockVideoRecording = onLockVideoRecording
             )
 
-            DebugOverlayComponent(
-                toggleIsOpen = onToggleDebugOverlay,
-                previewUiState = previewUiState,
-                onChangeZoomRatio = onChangeZoomRatio
-            )
-
-            // displays toast when there is a message to show
-            if (previewUiState.toastMessageToShow != null) {
-                TestableToast(
-                    modifier = Modifier.testTag(previewUiState.toastMessageToShow.testTag),
-                    toastMessage = previewUiState.toastMessageToShow,
-                    onToastShown = onToastShown
-                )
+            AnimatedContent(
+                targetState = captureUiState.debugUiState,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut() using null
+                },
+                contentKey = { it is DebugUiState.Open }
+            ) {
+                if (it is DebugUiState.Open) {
+                    DebugOverlayComponent(
+                        toggleIsOpen = onToggleDebugOverlay,
+                        debugUiState = it,
+                        onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
+                        onSetTestPattern = onSetTestPattern
+                    )
+                }
             }
 
-            val snackBarData = previewUiState.snackBarQueue.peek()
+            val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
                     modifier = Modifier.testTag(snackBarData.testTag),
@@ -354,8 +493,8 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            captureUiState = FAKE_PREVIEW_UI_STATE_READY,
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -366,8 +505,8 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_Standard_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -378,10 +517,10 @@ private fun ContentScreen_Standard_Idle() {
 private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
+            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -392,10 +531,10 @@ private fun ContentScreen_ImageOnly_Idle() {
 private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
+            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -406,8 +545,8 @@ private fun ContentScreen_VideoOnly_Idle() {
 private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
@@ -418,19 +557,17 @@ private fun ContentScreen_Standard_Recording() {
 private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            previewUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
-            screenFlashUiState = ScreenFlash.ScreenFlashUiState(),
+            captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
+            screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
     }
 }
 
-private val FAKE_PREVIEW_UI_STATE_READY = PreviewUiState.Ready(
-    currentCameraSettings = DEFAULT_CAMERA_APP_SETTINGS,
+private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
-    systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-    previewMode = PreviewMode.StandardMode {},
-    captureModeToggleUiState = CaptureModeUiState.Unavailable
+    externalCaptureMode = ExternalCaptureMode.StandardMode {},
+    captureModeToggleUiState = CaptureModeToggleUiState.Unavailable
 )
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(

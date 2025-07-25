@@ -35,6 +35,7 @@ import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostPriority
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -66,7 +67,6 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        isDebugMode: Boolean,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         initialized = true
@@ -155,6 +155,13 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
     override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         zoomChanges.update { newZoomState }
     }
+
+    override fun setTestPattern(newTestPattern: TestPattern) {
+        currentSettings.update { old ->
+            old.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern))
+        }
+    }
+
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
