@@ -19,6 +19,7 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -47,6 +48,8 @@ import com.google.jetpackcamera.settings.model.VideoQuality.UHD
 import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.coroutineContext
+
+private const val TAG = "CameraExt"
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
@@ -155,14 +158,27 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
     val cameraId = camera2Info.cameraId
     val lowLightBoostClient = LowLightBoost.getClient(context)
     val gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
-    val gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
+    var gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
     if (gLlbSupport && !gLlbAvailable) {
-        lowLightBoostClient.installModule( null)
+        gLlbAvailable =
+            try {
+                lowLightBoostClient.installModule(null).await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
+                false
+            }
     }
-    if (llbAEModeSupport && !gLlbAvailable) return LowLightBoostAvailability.AE_MODE_ONLY
-    else if (!llbAEModeSupport && gLlbAvailable) return LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY
-    else if (llbAEModeSupport && gLlbAvailable) return LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES
-    return LowLightBoostAvailability.NONE
+    return if (llbAEModeSupport) {
+        if (gLlbAvailable) {
+            LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES
+        } else {
+            LowLightBoostAvailability.AE_MODE_ONLY
+        }
+    } else if (gLlbAvailable) {
+        LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY
+    } else {
+        LowLightBoostAvailability.NONE
+    }
 }
 
 val CameraInfo.availableTestPatterns: Set<TestPattern>
