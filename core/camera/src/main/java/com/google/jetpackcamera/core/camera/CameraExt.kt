@@ -168,12 +168,12 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
             }
     }
     return if (llbAEModeSupport) {
-        if (gLlbAvailable) {
+        if (gLlbSupport && gLlbAvailable) {
             LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES
         } else {
             LowLightBoostAvailability.AE_MODE_ONLY
         }
-    } else if (gLlbAvailable) {
+    } else if (gLlbSupport && gLlbAvailable) {
         LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY
     } else {
         LowLightBoostAvailability.NONE
