@@ -49,7 +49,7 @@ truth = "1.4.4"
 playServices = "18.7.0"
 playServicesCoroutines = "1.10.2"
 playServicesTasks = "18.3.0"
-cameraLowLightBoost = "16.0.0-beta01"
+cameraLowLightBoost = "16.0.1-beta04"
 material = "1.12.0"
 
 [libraries]

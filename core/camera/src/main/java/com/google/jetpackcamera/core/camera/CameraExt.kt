@@ -155,9 +155,9 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
     val cameraId = camera2Info.cameraId
     val lowLightBoostClient = LowLightBoost.getClient(context)
     val gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
-    val gLlbAvailable = lowLightBoostClient.isModuleInstalled(context).await()
+    val gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
     if (gLlbSupport && !gLlbAvailable) {
-        lowLightBoostClient.installModule(context, null)
+        lowLightBoostClient.installModule( null)
     }
     if (llbAEModeSupport && !gLlbAvailable) return LowLightBoostAvailability.AE_MODE_ONLY
     else if (!llbAEModeSupport && gLlbAvailable) return LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY
