@@ -66,6 +66,7 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -787,6 +788,9 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                    put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                }
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(
