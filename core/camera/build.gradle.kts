@@ -139,6 +139,15 @@ dependencies {
     // Project dependencies
     implementation(project(":data:settings"))
     implementation(project(":core:common"))
+
+    // Google Play Services
+    implementation(libs.play.services.base)
+    implementation(libs.play.services.tasks)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Google Low Light Boost
+    implementation(libs.play.services.camera.low.light.boost)
+
 }
 
 // Allow references to generated code
