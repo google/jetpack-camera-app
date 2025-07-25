@@ -25,8 +25,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.settings.model.TestPattern
 
 /**
  * Camera settings that persist as long as a camera is running.

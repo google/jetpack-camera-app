@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings.model
-
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.CaptureRequest
+package com.google.jetpackcamera.model
 
 /**
  * Represents a test pattern to replace sensor pixel data.
  *
  * This sealed interface defines various test patterns that can be displayed by the camera.
  * The behavior of these patterns is generally aligned with the definitions in
- * [CaptureRequest.SENSOR_TEST_PATTERN_MODE].
+ * [android.hardware.camera2.CaptureRequest.SENSOR_TEST_PATTERN_MODE].
  *
  * This interface can be used to provide recognizable test patterns for debugging and testing
  * camera output. Note that the test pattern is applied before any other ISP operations, so
@@ -32,7 +29,7 @@ import android.hardware.camera2.CaptureRequest
 sealed interface TestPattern {
     /**
      * No test pattern is applied; the sensor's normal output is used.
-     * @see CaptureRequest.SENSOR_TEST_PATTERN_MODE_OFF
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_OFF
      */
     object Off : TestPattern {
         override fun toString(): String = "Off"
@@ -40,7 +37,7 @@ sealed interface TestPattern {
 
     /**
      * Displays color bars.
-     * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS
      */
     object ColorBars : TestPattern {
         override fun toString(): String = "ColorBars"
@@ -48,7 +45,7 @@ sealed interface TestPattern {
 
     /**
      * Displays color bars that fade to gray.
-     * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY
      */
     object ColorBarsFadeToGray : TestPattern {
         override fun toString(): String = "ColorBarsFadeToGray"
@@ -56,7 +53,7 @@ sealed interface TestPattern {
 
     /**
      * Displays a PN9 sequence.
-     * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9
      */
     object PN9 : TestPattern {
         override fun toString(): String = "PN9"
@@ -65,7 +62,7 @@ sealed interface TestPattern {
     /**
      * Displays a custom test pattern. The specifics of this pattern are
      * implementation-dependent.
-     * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1
      */
     object Custom1 : TestPattern {
         override fun toString(): String = "Custom1"
@@ -76,7 +73,7 @@ sealed interface TestPattern {
      * The color is defined by the red, green (even/odd lines), and blue channel values.
      * This pattern is similar in concept to `SENSOR_TEST_PATTERN_MODE_SOLID_COLOR`
      * but provides more granular control over the color components.
-     * @see CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR
+     * @see android.hardware.camera2.CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR
      *
      * @param red The value for the red channel.
      * @param greenEven The value for the green channel on even-numbered rows.

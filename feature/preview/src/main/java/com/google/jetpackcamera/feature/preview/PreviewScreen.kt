@@ -77,7 +77,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.StreamConfig
-import com.google.jetpackcamera.settings.model.TestPattern
+import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
