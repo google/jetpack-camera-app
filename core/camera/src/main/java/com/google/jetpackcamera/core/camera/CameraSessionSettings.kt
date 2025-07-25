@@ -16,17 +16,17 @@
 package com.google.jetpackcamera.core.camera
 
 import androidx.camera.core.CameraInfo
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.TestPattern
-import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
 
 /**
  * Camera settings that persist as long as a camera is running.
@@ -50,7 +50,7 @@ internal sealed interface PerpetualSessionSettings {
     ) : PerpetualSessionSettings
 
     /**
-     * @property captureMode is always [CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
+     * @property captureMode is always [com.google.jetpackcamera.model.CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
      * Concurrent Camera currently only supports video capture
      */
     data class ConcurrentCamera(

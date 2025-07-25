@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import android.util.Size
-import com.google.jetpackcamera.settings.model.TestPattern
+import com.google.jetpackcamera.model.TestPattern
 
 sealed interface DebugUiState {
     data object Disabled : DebugUiState

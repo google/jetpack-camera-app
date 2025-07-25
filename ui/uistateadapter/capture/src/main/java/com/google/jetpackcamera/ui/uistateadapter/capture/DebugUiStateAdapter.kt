@@ -17,9 +17,9 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 

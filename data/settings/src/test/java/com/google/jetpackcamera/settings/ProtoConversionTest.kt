@@ -16,12 +16,12 @@
 package com.google.jetpackcamera.settings
 
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.settings.DynamicRange as DynamicRangeProto
-import com.google.jetpackcamera.settings.ImageOutputFormat as ImageOutputFormatProto
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
+import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import org.junit.Test
 
 class ProtoConversionTest {

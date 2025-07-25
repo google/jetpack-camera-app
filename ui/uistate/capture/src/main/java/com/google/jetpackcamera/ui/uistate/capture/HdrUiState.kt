@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ImageOutputFormat
 
 sealed interface HdrUiState {
     data object Unavailable : HdrUiState
