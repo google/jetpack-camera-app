@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.camera.effects
 
 import android.annotation.SuppressLint
@@ -32,7 +31,12 @@ private const val TARGETS =
  */
 @SuppressLint("RestrictedApi")
 @RequiresApi(Build.VERSION_CODES.R)
-class LowLightBoostEffect(cameraId: String, lowLightBoostClient: LowLightBoostClient, sessionContainer: LowLightBoostSessionContainer, coroutineScope: CoroutineScope) : CameraEffect(
+class LowLightBoostEffect(
+    cameraId: String,
+    lowLightBoostClient: LowLightBoostClient,
+    sessionContainer: LowLightBoostSessionContainer,
+    coroutineScope: CoroutineScope
+) : CameraEffect(
     TARGETS,
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
     TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,

@@ -25,8 +25,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
-import androidx.annotation.RequiresApi
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
@@ -89,7 +89,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraUseCase"
@@ -227,7 +226,10 @@ constructor(
                             }
 
                             coroutineScope {
-                                if (camInfo.getLowLightBoostAvailablity(application) != LowLightBoostAvailability.NONE) {
+                                if (camInfo.getLowLightBoostAvailablity(
+                                        application
+                                    ) != LowLightBoostAvailability.NONE
+                                ) {
                                     add(Illuminant.LOW_LIGHT_BOOST)
                                 }
                             }

@@ -403,19 +403,19 @@ fun LowLightBoostPrioritySetting(
         leadingIcon = null,
         enabled = true,
         description =
-            if (lowLightBoostPriorityUiState is LowLightBoostPriorityUiState.Enabled) {
-                when (lowLightBoostPriorityUiState.currentLowLightBoostPriority) {
-                    LowLightBoostPriority.PRIORITIZE_AE_MODE -> stringResource(
-                        id = R.string.low_light_boost_priority_description_ae_mode
-                    )
+        if (lowLightBoostPriorityUiState is LowLightBoostPriorityUiState.Enabled) {
+            when (lowLightBoostPriorityUiState.currentLowLightBoostPriority) {
+                LowLightBoostPriority.PRIORITIZE_AE_MODE -> stringResource(
+                    id = R.string.low_light_boost_priority_description_ae_mode
+                )
 
-                    LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES -> stringResource(
-                        id = R.string.low_light_boost_priority_description_google_play_services
-                    )
-                }
-            } else {
-                TODO("low light boost priority currently has no disabled criteria")
-            },
+                LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES -> stringResource(
+                    id = R.string.low_light_boost_priority_description_google_play_services
+                )
+            }
+        } else {
+            TODO("low light boost priority currently has no disabled criteria")
+        },
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
@@ -424,7 +424,7 @@ fun LowLightBoostPrioritySetting(
                     ),
                     text = stringResource(id = R.string.low_light_boost_priority_selector_ae_mode),
                     selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
-                            LowLightBoostPriority.PRIORITIZE_AE_MODE,
+                        LowLightBoostPriority.PRIORITIZE_AE_MODE,
                     enabled = true,
                     onClick = { setLowLightBoostPriority(LowLightBoostPriority.PRIORITIZE_AE_MODE) }
                 )
@@ -432,11 +432,17 @@ fun LowLightBoostPrioritySetting(
                     modifier = Modifier.testTag(
                         BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_GOOGLE_PLAY_SERVICES_TAG
                     ),
-                    text = stringResource(id = R.string.low_light_boost_priority_selector_google_play_services),
+                    text = stringResource(
+                        id = R.string.low_light_boost_priority_selector_google_play_services
+                    ),
                     selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
-                            LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES,
+                        LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES,
                     enabled = true,
-                    onClick = { setLowLightBoostPriority(LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES) }
+                    onClick = {
+                        setLowLightBoostPriority(
+                            LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+                        )
+                    }
                 )
             }
         }

@@ -47,7 +47,6 @@ import com.google.jetpackcamera.settings.model.VideoQuality.SD
 import com.google.jetpackcamera.settings.model.VideoQuality.UHD
 import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
 import kotlinx.coroutines.tasks.await
-import kotlin.coroutines.coroutineContext
 
 private const val TAG = "CameraExt"
 

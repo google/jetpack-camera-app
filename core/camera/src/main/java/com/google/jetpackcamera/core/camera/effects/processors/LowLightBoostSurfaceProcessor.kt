@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.camera.effects.processors
 
 import android.annotation.SuppressLint
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.TotalCaptureResult
-import android.opengl.Matrix
 import android.os.Build
 import android.util.Log
 import android.view.Surface
@@ -36,6 +31,7 @@ import com.google.android.gms.common.api.Status
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
 import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +40,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.concurrent.Executors
 
 private const val TAG = "LowLightBoostProcessor"
 
@@ -126,7 +121,7 @@ class LowLightBoostSurfaceProcessor(
         inputSurfaceRequestScope?.withSurfaceRequest { currentInputRequest ->
 
             coroutineScope.launch { // Launch in your processor's scope
-                try{
+                try {
                     // Create LowLightBoostOptions with the output surface for LLB
                     // and dimensions from the input SurfaceRequest.
                     val llbOptions = LowLightBoostOptions(
@@ -149,7 +144,9 @@ class LowLightBoostSurfaceProcessor(
 
                     // Get the input surface from the LowLightBoostSession
                     val llbInputSurface = lowLightBoostSession?.getCameraSurface()
-                        ?: throw IllegalStateException("LowLightBoostSession did not provide an input surface.")
+                        ?: throw IllegalStateException(
+                            "LowLightBoostSession did not provide an input surface."
+                        )
 
                     Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
 
@@ -173,7 +170,6 @@ class LowLightBoostSurfaceProcessor(
                             }
                         }
                     }
-
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
                     // Signal error to CameraX for the input request if it hasn't been fulfilled yet.

@@ -68,10 +68,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.android.gms.cameralowlight.LowLightBoost
-import com.google.android.gms.cameralowlight.LowLightBoostSession
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
@@ -170,8 +169,13 @@ internal suspend fun runSingleCameraSession(
     transientSettings
         .filterNotNull()
         .distinctUntilChanged { old, new ->
-            (old.primaryLensFacing == new.primaryLensFacing &&
-                    !((old.flashMode == FlashMode.LOW_LIGHT_BOOST) xor (new.flashMode == FlashMode.LOW_LIGHT_BOOST)))
+            (
+                old.primaryLensFacing == new.primaryLensFacing &&
+                    !(
+                        (old.flashMode == FlashMode.LOW_LIGHT_BOOST) xor
+                            (new.flashMode == FlashMode.LOW_LIGHT_BOOST)
+                        )
+                )
         }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
@@ -183,18 +187,32 @@ internal suspend fun runSingleCameraSession(
             val lowLightBoostAvailability = cameraInfo.getLowLightBoostAvailablity(context)
 
             val cameraEffects = mutableListOf<CameraEffect>()
-            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST &&
-                (lowLightBoostAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
-                        lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                        sessionSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)) {
-                val lowLightBoostClient = LowLightBoost.getClient(context)
-                cameraEffects.add(LowLightBoostEffect(cameraId, lowLightBoostClient, lowLightBoostSessionContainer, this@coroutineScope))
-            } else {
-                lowLightBoostSessionContainer.lowLightBoostSession?.release()
-                lowLightBoostSessionContainer.lowLightBoostSession = null
-
+            if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                val overrideAeMode =
+                    lowLightBoostAvailability ==
+                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        sessionSettings.lowLightBoostPriority ==
+                        LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+                if (lowLightBoostAvailability
+                    == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || overrideAeMode
+                ) {
+                    val lowLightBoostClient = LowLightBoost.getClient(context)
+                    cameraEffects.add(
+                        LowLightBoostEffect(
+                            cameraId,
+                            lowLightBoostClient,
+                            lowLightBoostSessionContainer,
+                            this@coroutineScope
+                        )
+                    )
+                } else {
+                    lowLightBoostSessionContainer.lowLightBoostSession?.release()
+                    lowLightBoostSessionContainer.lowLightBoostSession = null
+                }
             }
-            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM && cameraEffects.isEmpty()) {
+            if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
+                cameraEffects.isEmpty()
+            ) {
                 cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
             }
             val useCaseGroup = createUseCaseGroup(
@@ -331,7 +349,13 @@ internal suspend fun processTransientSettingEvents(
     )
 
     val camera2OptionsBuilder = CaptureRequestOptions.Builder()
-    updateCamera2RequestOptions(camera, null, initialTransientSettings, sessionSettings, camera2OptionsBuilder)
+    updateCamera2RequestOptions(
+        camera,
+        null,
+        initialTransientSettings,
+        sessionSettings,
+        camera2OptionsBuilder
+    )
 
     var prevTransientSettings = initialTransientSettings
     val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT

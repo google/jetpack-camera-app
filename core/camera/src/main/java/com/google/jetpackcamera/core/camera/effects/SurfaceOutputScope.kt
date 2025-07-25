@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.camera.effects
 
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.SurfaceOutput
 import com.google.jetpackcamera.core.common.RefCounted
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -30,7 +30,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
 
 class SurfaceOutputScope(val surfaceOutput: SurfaceOutput) {
     private val surfaceLifecycleJob = SupervisorJob()

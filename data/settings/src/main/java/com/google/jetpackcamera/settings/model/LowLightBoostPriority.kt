@@ -13,27 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.model
+
+import com.google.jetpackcamera.settings.LowLightBoostPriority as LowLightBoostPriorityProto
+import com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
+import com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
+import com.google.jetpackcamera.settings.LowLightBoostPriority.UNRECOGNIZED
 
 enum class LowLightBoostPriority {
     PRIORITIZE_AE_MODE,
     PRIORITIZE_GOOGLE_PLAY_SERVICES;
 
     companion object {
-        /** returns the LowLightBoostPriority enum equivalent of a provided LowLightBoostPriorityProto */
-        fun fromProto(lowLightBoostPriorityProto: com.google.jetpackcamera.settings.LowLightBoostPriority): LowLightBoostPriority {
+        /**
+         * Returns the LowLightBoostPriority enum equivalent of a provided
+         * LowLightBoostPriorityProto
+         * */
+        fun fromProto(
+            lowLightBoostPriorityProto: LowLightBoostPriorityProto
+        ): LowLightBoostPriority {
             return when (lowLightBoostPriorityProto) {
-                com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_AE_MODE -> PRIORITIZE_AE_MODE
-                com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES -> PRIORITIZE_GOOGLE_PLAY_SERVICES
-                com.google.jetpackcamera.settings.LowLightBoostPriority.UNRECOGNIZED -> PRIORITIZE_AE_MODE // Default to AE mode
+                LOW_LIGHT_BOOST_PRIORITY_AE_MODE -> PRIORITIZE_AE_MODE
+                LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES -> PRIORITIZE_GOOGLE_PLAY_SERVICES
+                UNRECOGNIZED -> PRIORITIZE_AE_MODE // Default to AE mode
             }
         }
 
-        fun LowLightBoostPriority.toProto(): com.google.jetpackcamera.settings.LowLightBoostPriority {
+        fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
             return when (this) {
-                PRIORITIZE_AE_MODE -> com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
-                PRIORITIZE_GOOGLE_PLAY_SERVICES -> com.google.jetpackcamera.settings.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
+                PRIORITIZE_AE_MODE -> LOW_LIGHT_BOOST_PRIORITY_AE_MODE
+                PRIORITIZE_GOOGLE_PLAY_SERVICES -> LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
             }
         }
     }

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.core.camera.effects
 
 import androidx.camera.core.SurfaceRequest
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -24,7 +24,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
-import kotlin.coroutines.coroutineContext
 
 class SurfaceRequestScope(private val surfaceRequest: SurfaceRequest) {
     private val requestLifecycleJob = SupervisorJob()
