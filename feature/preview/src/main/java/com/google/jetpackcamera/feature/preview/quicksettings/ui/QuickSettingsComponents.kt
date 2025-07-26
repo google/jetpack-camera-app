@@ -24,6 +24,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,16 +35,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -206,7 +207,7 @@ fun QuickSetCaptureMode(
             CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
         }
 
-        QuickSettingCarouselButton(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
@@ -269,7 +270,7 @@ fun QuickSetHdr(
         ImageOutputFormat.JPEG
     }
 
-    QuickSettingCarouselButton(
+    QuickSettingToggleButton(
         modifier = modifier,
         enum = enum,
         onClick = {
@@ -302,7 +303,7 @@ fun QuickSetRatio(
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
                 else -> CameraAspectRatio.ONE_ONE
             }
-        QuickSettingCarouselButton(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
@@ -319,7 +320,7 @@ fun QuickSetFlash(
 ) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
-            QuickSettingCarouselButton(
+            QuickSettingToggleButton(
                 modifier = modifier,
                 enum = CameraFlashMode.OFF,
                 enabled = false,
@@ -327,7 +328,7 @@ fun QuickSetFlash(
             )
 
         is FlashModeUiState.Available ->
-            QuickSettingCarouselButton(
+            QuickSettingToggleButton(
                 modifier = modifier,
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
                     flashModeUiState.isActive
@@ -352,7 +353,7 @@ fun QuickFlipCamera(
                 LensFacing.FRONT -> CameraLensFace.FRONT
                 LensFacing.BACK -> CameraLensFace.BACK
             }
-        QuickSettingCarouselButton(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
@@ -372,7 +373,7 @@ fun QuickSetStreamConfig(
                 StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
                 StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
             }
-        QuickSettingCarouselButton(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = {
@@ -398,7 +399,7 @@ fun QuickSetConcurrentCamera(
                 ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
                 ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
             }
-        QuickSettingCarouselButton(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = {
@@ -454,14 +455,14 @@ fun ToggleQuickSettingsButton(
 // subcomponents used to build completed components
 
 @Composable
-fun QuickSettingCarouselButton(
+fun QuickSettingToggleButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
-    QuickSettingCarouselButton(
+    QuickSettingToggleButton(
         modifier = modifier,
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
@@ -482,44 +483,44 @@ fun QuickSettingCarouselButton(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun QuickSettingCarouselButton(
+fun QuickSettingToggleButton(
     onClick: () -> Unit,
     text: String,
     accessibilityText: String,
     painter: Painter,
     modifier: Modifier = Modifier,
     isHighlighted: Boolean = false,
-    enabled: Boolean = true // todo: handle hidden disabled or visible disabled
+    enabled: Boolean = true
 ) {
-    // todo(kc): better sizing
-    val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
+    val buttonSize = IconButtonDefaults.mediumContainerSize(
+        IconButtonDefaults.IconButtonWidthOption.Narrow
+    )
 
     Column(
+        modifier = modifier.width(width = buttonSize.width),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        ToggleButton(
+        FilledIconToggleButton(
             checked = isHighlighted,
             enabled = enabled,
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
-            modifier = modifier.size(width = 96.dp, height = 112.dp),
-            shapes = ToggleButtonDefaults.shapes()
-                .copy(
-                    checkedShape = RoundedCornerShape(percent = 50),
-                    shape = RoundedCornerShape(percent = 30)
-                ),
-
-            // fixme(kc): the colors of disabled buttons here appear invisible when light mode is enabled
-            colors = ToggleButtonDefaults.toggleButtonColors(
-                containerColor = Color.White.copy(alpha = 0.16F),
-                contentColor = MaterialTheme.colorScheme.secondaryFixed,
-                checkedContainerColor = MaterialTheme.colorScheme.primaryFixedDim,
-                checkedContentColor = MaterialTheme.colorScheme.onPrimaryFixed
-            )
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .size(buttonSize),
+            shapes = IconButtonDefaults.toggleableShapes().let {
+                // invert the selected shapes
+                it.copy(
+                    shape = it.checkedShape,
+                    checkedShape = it.shape
+                )
+            },
+            colors = IconButtonDefaults.filledIconToggleButtonColors()
+                .copy(containerColor = Color.White.copy(alpha = .17f))
         ) {
             Icon(
-                modifier = Modifier.size(iconSize),
+                modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 painter = painter,
                 contentDescription = accessibilityText
             )
@@ -527,10 +528,13 @@ fun QuickSettingCarouselButton(
 
         Spacer(Modifier.height(4.dp))
         Text(
+            modifier = modifier.width(IntrinsicSize.Max),
             text = text,
-            color = Color.White,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Visible
         )
     }
 }
@@ -800,17 +804,17 @@ private fun QuickSettingToggleButtonPreview() {
 
     Box(
         modifier = Modifier
-            .background(color = Color.LightGray)
+            .background(color = Color.DarkGray)
             .padding(10.dp)
     ) {
         Row(
             modifier = Modifier
-                .width(180.dp)
-                .height(300.dp),
+                .width(300.dp)
+                .height(180.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Instance 1: Unchecked state
-            QuickSettingCarouselButton(
+            QuickSettingToggleButton(
                 onClick = {},
                 text = "Flash Off",
                 accessibilityText = "",
@@ -820,7 +824,7 @@ private fun QuickSettingToggleButtonPreview() {
             )
 
             // Instance 2: Checked state
-            QuickSettingCarouselButton(
+            QuickSettingToggleButton(
                 onClick = {},
                 text = "Flash On",
                 accessibilityText = "",
@@ -830,7 +834,7 @@ private fun QuickSettingToggleButtonPreview() {
             )
 
             // Instance 3: Disabled state
-            QuickSettingCarouselButton(
+            QuickSettingToggleButton(
                 onClick = {},
                 text = "Flash Off",
                 accessibilityText = "",
