@@ -98,6 +98,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty1
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -352,11 +353,11 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private suspend inline fun <R> CameraAppSettings.applyDiff(
         new: CameraAppSettings,
-        settingExtractor: CameraAppSettings.() -> R,
+        settingExtractor: KProperty1<CameraAppSettings, R>,
         crossinline settingApplicator: suspend (R) -> Unit
     ) {
-        val oldSetting = settingExtractor.invoke(this)
-        val newSetting = settingExtractor.invoke(new)
+        val oldSetting = settingExtractor.get(this)
+        val newSetting = settingExtractor.get(new)
         if (oldSetting != newSetting) {
             settingApplicator(newSetting)
         }
