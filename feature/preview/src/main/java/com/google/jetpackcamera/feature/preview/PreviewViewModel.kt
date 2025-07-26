@@ -84,6 +84,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
+import kotlin.reflect.KProperty1
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -352,11 +353,11 @@ class PreviewViewModel @AssistedInject constructor(
      */
     private suspend inline fun <R> CameraAppSettings.applyDiff(
         new: CameraAppSettings,
-        settingExtractor: CameraAppSettings.() -> R,
+        settingExtractor: KProperty1<CameraAppSettings, R>,
         crossinline settingApplicator: suspend (R) -> Unit
     ) {
-        val oldSetting = settingExtractor.invoke(this)
-        val newSetting = settingExtractor.invoke(new)
+        val oldSetting = settingExtractor.get(this)
+        val newSetting = settingExtractor.get(new)
         if (oldSetting != newSetting) {
             settingApplicator(newSetting)
         }
