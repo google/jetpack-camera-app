@@ -164,6 +164,8 @@ dependencies {
     implementation(project(":feature:permissions"))
     // benchmark
     implementation(libs.androidx.profileinstaller)
+    // capture components
+    implementation(project(":ui:components:capture"))
 }
 
 // Allow references to generated code

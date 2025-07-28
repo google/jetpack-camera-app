@@ -39,8 +39,9 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.common.DefaultDispatcher
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
@@ -52,7 +53,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraZoomRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.DeviceRotation
 import com.google.jetpackcamera.settings.model.DynamicRange
 import com.google.jetpackcamera.settings.model.FlashMode
@@ -63,8 +63,9 @@ import com.google.jetpackcamera.settings.model.LensToZoom
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.TestPattern
 import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomChange
+import com.google.jetpackcamera.settings.model.ZoomStrategy
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -131,9 +132,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = configureAndGetCameraProvider(
             context = application,
             singleLensMode = debugSettings.singleLensMode
@@ -243,6 +244,12 @@ constructor(
                             }
                         }
 
+                        val supportedTestPatterns = if (debugSettings.isDebugModeEnabled) {
+                            camInfo.availableTestPatterns
+                        } else {
+                            setOf(TestPattern.Off)
+                        }
+
                         put(
                             lensFacing,
                             CameraConstraints(
@@ -260,7 +267,8 @@ constructor(
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
-                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
+                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
+                                supportedTestPatterns = supportedTestPatterns
                             )
                         )
                     }
@@ -281,6 +289,7 @@ constructor(
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
+                .tryApplyTestPatternConstraints()
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -310,7 +319,8 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomRatios = currentCameraSettings.defaultZoomRatios
+                    zoomRatios = currentCameraSettings.defaultZoomRatios,
+                    testPattern = currentCameraSettings.debugSettings.testPattern
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -474,6 +484,12 @@ constructor(
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                contentValues.put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    getDefaultMediaSaveLocation()
+                )
+            }
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -526,9 +542,14 @@ constructor(
             Calendar.getInstance().time.toString()
         )
         eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        val saveLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+            getDefaultMediaSaveLocation()
+        } else {
+            Environment.DIRECTORY_PICTURES
+        }
         eligibleContentValues.put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            Environment.DIRECTORY_PICTURES
+            saveLocation
         )
         return eligibleContentValues
     }
@@ -538,7 +559,6 @@ constructor(
         shouldUseUri: Boolean,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        val initialRecordSettings = currentSettings.value
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
             Log.d(TAG, "takePicture onError: $e")
@@ -550,20 +570,7 @@ constructor(
                 shouldUseUri,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                onVideoRecord = onVideoRecord,
-
-                onRestoreSettings = {
-                    // restore settings to be called after video recording completes.
-                    // this resets certain settings to their values pre-recording
-                    initialRecordSettings?.let {
-                        currentSettings.update { old ->
-                            old?.copy(
-                                cameraLensFacing = initialRecordSettings.cameraLensFacing,
-                                defaultZoomRatios = initialRecordSettings.defaultZoomRatios
-                            )
-                        }
-                    }
-                }
+                onVideoRecord = onVideoRecord
             )
         )
     }
@@ -586,6 +593,12 @@ constructor(
         }
     }
 
+    override fun setTestPattern(newTestPattern: TestPattern) {
+        currentSettings.update { old ->
+            old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
+        }
+    }
+
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
@@ -595,6 +608,7 @@ constructor(
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
                     ?.tryApplyCaptureModeConstraints()
+                    ?.tryApplyTestPatternConstraints()
             } else {
                 old
             }
@@ -660,26 +674,28 @@ constructor(
     ): CameraAppSettings {
         val lensFacing = when (newZoomState.changeType.lensToZoom) {
             LensToZoom.PRIMARY -> cameraLensFacing
+
             LensToZoom.SECONDARY -> {
-                val newLens = cameraLensFacing.flip()
-                check(systemConstraints.perLensConstraints[newLens] != null) {
-                    "Device does not have a secondary camera"
-                }
-                newLens
+                cameraLensFacing.flip()
             }
         }
+        // no-op if lens doesn't exist
+        if (systemConstraints.perLensConstraints[lensFacing] == null) {
+            return this
+        }
+
         return systemConstraints.perLensConstraints[lensFacing]?.let { constraints ->
             val newZoomRatio = constraints.supportedZoomRange?.let { zoomRatioRange ->
                 when (val change = newZoomState.changeType) {
-                    is ZoomChange.Absolute -> change.value
-                    is ZoomChange.Scale -> (
+                    is ZoomStrategy.Absolute -> change.value
+                    is ZoomStrategy.Scale -> (
                         this.defaultZoomRatios
                             [lensFacing]
                             ?: 1.0f
                         ) *
                         change.value
 
-                    is ZoomChange.Increment -> {
+                    is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
                     }
                 }.coerceIn(zoomRatioRange.lower, zoomRatioRange.upper)
@@ -714,6 +730,7 @@ constructor(
         CaptureMode.STANDARD -> this
         CaptureMode.IMAGE_ONLY ->
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
+
         CaptureMode.VIDEO_ONLY ->
             this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
@@ -813,6 +830,15 @@ constructor(
                 this@tryApplyFlashModeConstraints.copy(
                     flashMode = newFlashMode
                 )
+            }
+        } ?: this
+
+    private fun CameraAppSettings.tryApplyTestPatternConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            if (debugSettings.testPattern in constraints.supportedTestPatterns) {
+                this
+            } else {
+                copy(debugSettings = debugSettings.copy(testPattern = TestPattern.Off))
             }
         } ?: this
 

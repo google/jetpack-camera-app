@@ -84,6 +84,9 @@ dependencies {
     //todo(): icons library is no longer being maintained. Migrate to material symbols.
     implementation(libs.compose.material.icons.extended)
 
+    //todo(): icons library is no longer being maintained. Migrate to material symbols.
+    implementation(libs.compose.material.icons.extended)
+
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
