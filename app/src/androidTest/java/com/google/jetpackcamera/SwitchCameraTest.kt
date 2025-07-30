@@ -146,7 +146,7 @@ inline fun runFlipCameraTest(
     }
 
     // If flipping the camera is available, flip it. Otherwise skip test.
-    val unused = composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+    composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
         "Device does not have multiple cameras to flip between."
     }
 

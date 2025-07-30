@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.BaseColumns
 import android.provider.MediaStore
+import android.util.Log
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -119,7 +120,8 @@ fun mediaStoreInsertedFlow(
             override fun onChange(selfChange: Boolean, uris: Collection<Uri>, flags: Int) {
                 uris.forEach { uri ->
                     queryWrittenFiles(uri).forEach {
-                        val unused = trySend(it)
+                        val result = trySend(it)
+                        Log.d("AppTestUtil", "Media store change: $result")
                     }
                 }
             }

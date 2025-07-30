@@ -106,6 +106,7 @@ fun getResString(@StringRes strRes: Int): String =
  * @throws AssumptionViolatedException if the matcher does not match or the node can no
  * longer be found
  */
+@CanIgnoreReturnValue
 fun SemanticsNodeInteraction.assume(
     matcher: SemanticsMatcher,
     messagePrefixOnError: (() -> String)? = null
@@ -270,12 +271,13 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
-            val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
-                block(description)?.let { result ->
-                    // Return the T value if block returns non-null.
-                    return@checkComponentContentDescriptionState result
-                } ?: false
-            }
+            val unused =
+                node.config[SemanticsProperties.ContentDescription].forEach { description ->
+                    block(description)?.let { result ->
+                        // Return the T value if block returns non-null.
+                        return@checkComponentContentDescriptionState result
+                    }
+                }
             throw AssertionError("Unable to determine state from quick settingz")
         }
 }
@@ -295,34 +297,33 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
         }
 }
 
-fun ComposeTestRule.isHdrEnabled(): Boolean =
-    checkComponentContentDescriptionState<Boolean>(QUICK_SETTINGS_HDR_BUTTON) { description ->
-        when (description) {
-            getResString(CaptureR.string.quick_settings_dynamic_range_hdr_description) -> {
-                return@checkComponentContentDescriptionState true
-            }
-
-            getResString(CaptureR.string.quick_settings_dynamic_range_sdr_description) -> {
-                return@checkComponentContentDescriptionState false
-            }
-
-            else -> null
+fun ComposeTestRule.isHdrEnabled(): Boolean = checkComponentContentDescriptionState<Boolean>(
+    QUICK_SETTINGS_HDR_BUTTON
+) { description ->
+    when (description) {
+        getResString(CaptureR.string.quick_settings_dynamic_range_hdr_description) -> {
+            return@checkComponentContentDescriptionState true
         }
+
+        getResString(CaptureR.string.quick_settings_dynamic_range_sdr_description) -> {
+            return@checkComponentContentDescriptionState false
+        }
+
+        else -> null
     }
+}
 
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
         "Flip camera button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
 
                 getResString(CaptureR.string.quick_settings_back_camera_description) ->
                     return@let LensFacing.BACK
-
-                else -> false
             }
         }
         throw AssertionError("Unable to determine lens facing from quick settings")
@@ -333,7 +334,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
         "Flash button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
@@ -346,8 +347,6 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
 
                 getResString(CaptureR.string.quick_settings_flash_llb_description) ->
                     return@let FlashMode.LOW_LIGHT_BOOST
-
-                else -> false
             }
         }
         throw AssertionError("Unable to determine flash mode from quick settings")
@@ -360,22 +359,21 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
         .fetchSemanticsNode(
             "Concurrent camera button is not visible when expected."
         ).let { node ->
-            val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
-                when (description) {
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_off
-                    ) -> {
-                        return@let ConcurrentCameraMode.OFF
+            val unused =
+                node.config[SemanticsProperties.ContentDescription].forEach { description ->
+                    when (description) {
+                        getResString(
+                            CaptureR.string.quick_settings_description_concurrent_camera_off
+                        ) -> {
+                            return@let ConcurrentCameraMode.OFF
+                        }
+
+                        getResString(
+                            CaptureR.string.quick_settings_description_concurrent_camera_dual
+                        ) ->
+                            return@let ConcurrentCameraMode.DUAL
                     }
-
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_dual
-                    ) ->
-                        return@let ConcurrentCameraMode.DUAL
-
-                    else -> false
                 }
-            }
             throw AssertionError(
                 "Unable to determine concurrent camera mode from quick settings"
             )
@@ -389,7 +387,7 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
         "Capture mode button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
             // check description is one of the capture modes
             when (description) {
                 getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->
@@ -400,8 +398,6 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
 
                 getResString(CaptureR.string.quick_settings_description_capture_mode_video_only) ->
                     return@let CaptureMode.VIDEO_ONLY
-
-                else -> false
             }
         }
         throw (AssertionError("unable to determine capture mode from quick settings"))
@@ -479,7 +475,7 @@ fun SettingsScreenScope.selectLensFacing(lensFacing: LensFacing) {
                 )
             }
             if (!hasStateDescription(expectedContentDescription).matches(fetchSemanticsNode())) {
-                val unused = assume(isEnabled()) { "$lensFacing is not selectable" }
+                assume(isEnabled()) { "$lensFacing is not selectable" }
                 performClick()
             }
 
@@ -509,8 +505,7 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
                 }
             }
 
-            val unused =
-                assume(isEnabled()) { disabledMessage ?: "Setting $settingTestTag is not enabled" }
+            assume(isEnabled()) { disabledMessage ?: "Setting $settingTestTag is not enabled" }
             performClick()
         }
 
