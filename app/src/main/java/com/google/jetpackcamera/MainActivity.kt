@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -184,7 +185,7 @@ class MainActivity : ComponentActivity() {
         return ExternalCaptureMode.StandardMode { event ->
             if (event is ExternalCaptureMode.ImageCaptureEvent.ImageSaved) {
                 @Suppress("DEPRECATION")
-                val intent = Intent(android.hardware.Camera.ACTION_NEW_PICTURE)
+                val intent = Intent(Camera.ACTION_NEW_PICTURE)
                 intent.setData(event.savedUri)
                 sendBroadcast(intent)
             }

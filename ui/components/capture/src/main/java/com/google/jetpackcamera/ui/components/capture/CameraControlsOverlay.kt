@@ -457,7 +457,7 @@ private fun ControlsBottom(
 }
 
 /**
- * Converts an internal [ImageCaptureEvent] to its corresponding [ExternalCaptureMode.ImageCaptureEvent]
+ * Converts an internal [ImageCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.ImageCaptureEvent]
  * representation.
  */
 private fun getImageCaptureEventForExternalCaptureMode(
@@ -477,7 +477,7 @@ private fun getImageCaptureEventForExternalCaptureMode(
 }
 
 /**
- * Converts an internal [VideoCaptureEvent] to its corresponding [ExternalCaptureMode.VideoCaptureEvent]
+ * Converts an internal [VideoCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.VideoCaptureEvent]
  * representation.
  */
 private fun getVideoCaptureEventForExternalCaptureMode(

@@ -89,7 +89,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
 
     // Access Model data
-    implementation(project(":data:model"))
+    implementation(project(":core:model"))
 }
 
 protobuf {

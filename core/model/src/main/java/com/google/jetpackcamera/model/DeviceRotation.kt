@@ -24,7 +24,7 @@ enum class DeviceRotation {
     Rotated270;
 
     /**
-     * Returns the rotation of the UI, expressed as a [android.view.Surface] rotation constant, needed to
+     * Returns the rotation of the UI, expressed as a [Surface] rotation constant, needed to
      * compensate for device rotation.
      *
      * These values do not match up with the device rotation angle. When the device is rotated,

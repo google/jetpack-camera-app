@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.protobuf)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.uistateadapter.capture"
+    namespace = "com.google.jetpackcamera.core.model"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -31,8 +30,8 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
-
 
     flavorDimensions += "flavor"
     productFlavors {
@@ -49,32 +48,57 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
 
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2Api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                }
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
+        }
     }
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
+    implementation(libs.kotlinx.coroutines.core)
 
-    // Compose - Material Design 3
-    implementation(libs.compose.material3)
+    // proto datastore
+    implementation(libs.androidx.datastore)
+    implementation(libs.protobuf.kotlin.lite)
 
-    implementation(project(":data:settings"))
-    implementation(project(":core:model"))
-    implementation(project(":data:media"))
-    implementation(project(":core:camera"))
-    implementation(project(":ui:uistate"))
-    implementation(project(":ui:uistateadapter"))
-    implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:components:capture"))
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.12"
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+
+            task.builtins {
+                create("kotlin") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }
 
 // Allow references to generated code
