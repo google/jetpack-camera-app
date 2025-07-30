@@ -119,7 +119,7 @@ fun mediaStoreInsertedFlow(
             override fun onChange(selfChange: Boolean, uris: Collection<Uri>, flags: Int) {
                 uris.forEach { uri ->
                     queryWrittenFiles(uri).forEach {
-                        trySend(it)
+                        val unused = trySend(it)
                     }
                 }
             }

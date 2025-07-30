@@ -38,6 +38,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -88,7 +89,7 @@ fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(
 /**
  * Fetch a string resources from a [SemanticsNodeInteractionsProvider] context.
  */
-fun SemanticsNodeInteractionsProvider.getResString(@StringRes strRes: Int): String =
+fun getResString(@StringRes strRes: Int): String =
     ApplicationProvider.getApplicationContext<Context>().getString(strRes)
 
 /**
@@ -269,7 +270,7 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
-            node.config[SemanticsProperties.ContentDescription].any { description ->
+            val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
                 block(description)?.let { result ->
                     // Return the T value if block returns non-null.
                     return@checkComponentContentDescriptionState result
@@ -289,7 +290,7 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
             block(node.config[SemanticsProperties.StateDescription])?.let { result ->
                 // Return the T value if block returns non-null.
                 return@checkComponentStateDescriptionState result
-            } ?: false
+            }
             throw AssertionError("Unable to determine state from component")
         }
 }
@@ -313,7 +314,7 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
         "Flip camera button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
@@ -332,7 +333,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
         "Flash button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
@@ -359,7 +360,7 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
         .fetchSemanticsNode(
             "Concurrent camera button is not visible when expected."
         ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].any { description ->
+            val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
                 when (description) {
                     getResString(
                         CaptureR.string.quick_settings_description_concurrent_camera_off
@@ -388,7 +389,7 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
         "Capture mode button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].any { description ->
+        val unused = node.config[SemanticsProperties.ContentDescription].any { description ->
             // check description is one of the capture modes
             when (description) {
                 getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->
@@ -478,7 +479,7 @@ fun SettingsScreenScope.selectLensFacing(lensFacing: LensFacing) {
                 )
             }
             if (!hasStateDescription(expectedContentDescription).matches(fetchSemanticsNode())) {
-                assume(isEnabled()) { "$lensFacing is not selectable" }
+                val unused = assume(isEnabled()) { "$lensFacing is not selectable" }
                 performClick()
             }
 
@@ -508,7 +509,8 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
                 }
             }
 
-            assume(isEnabled()) { disabledMessage ?: "Setting $settingTestTag is not enabled" }
+            val unused =
+                assume(isEnabled()) { disabledMessage ?: "Setting $settingTestTag is not enabled" }
             performClick()
         }
 
@@ -539,6 +541,7 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
  * Navigates to quick settings if not already there and perform action from provided block.
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
+@CanIgnoreReturnValue
 inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
     var needReturnFromQuickSettings = false
     onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
