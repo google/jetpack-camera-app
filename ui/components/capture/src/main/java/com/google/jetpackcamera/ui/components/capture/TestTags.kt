@@ -56,6 +56,10 @@ const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTex
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
 const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
+
+const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
+
+const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
 const val QUICK_SETTINGS_BACKGROUND_MAIN = "quick_settings_container"
 const val QUICK_SETTINGS_BACKGROUND_FOCUSED = "quick_settings_container_focused"
 

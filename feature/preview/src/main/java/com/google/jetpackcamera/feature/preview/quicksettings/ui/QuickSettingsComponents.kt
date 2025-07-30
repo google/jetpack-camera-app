@@ -71,6 +71,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -98,10 +101,13 @@ import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -280,8 +286,8 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         onClick = onNavigateToSettings,
         text = "More Settings",
         accessibilityText = stringResource(R.string.settings_content_description),
-        painter = rememberVectorPainter( Icons.Filled.MoreHoriz),
-        modifier = modifier,
+        painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
+        modifier = modifier.testTag(SETTINGS_BUTTON),
     )
 }
 
@@ -580,9 +586,16 @@ fun QuickSettingsBottomSheet(
     sheetState: SheetState,
     vararg quickSettingButtons: @Composable () -> Unit,
 ) {
+    val openDescription = stringResource(R.string.quick_settings_dropdown_open_description)
+
 
     ModalBottomSheet(
-        modifier = modifier,
+        modifier = modifier
+            .semantics {
+                testTag = QUICK_SETTINGS_BOTTOM_SHEET
+                contentDescription = openDescription
+            },
+
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -611,7 +624,9 @@ private fun QuickSettingsBottomSheetRow(
     // LazyRow is inherently scrollable if content exceeds bounds.
     // It handles the "overflow to the right" behavior by default.
     LazyRow(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .testTag(QUICK_SETTINGS_SCROLL_CONTAINER)
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp), // Space between buttons
         contentPadding = PaddingValues(horizontal = 16.dp) // Padding around the content
     ) {
@@ -640,7 +655,7 @@ fun QuickSettingMaterialButton(
     buttonHeight: Dp = 80.dp
 ) {
     // todo(kc): fix scaling issues... this needs to be smaller
-    val buttonWidth = buttonHeight * (6f/7f)
+    val buttonWidth = buttonHeight * (6f / 7f)
     Column(
         modifier = Modifier.width(buttonWidth),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -651,7 +666,7 @@ fun QuickSettingMaterialButton(
             enabled = enabled,
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
-            modifier = modifier.size(width =  buttonWidth, height = buttonHeight),
+            modifier = modifier.size(width = buttonWidth, height = buttonHeight),
             shapes = ToggleButtonDefaults.shapes()
                 .copy(
                     checkedShape = RoundedCornerShape(percent = 50),
