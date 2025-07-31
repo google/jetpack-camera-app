@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.transform
 
-const val APP_TEST_UTIL_TAG = "AppTestUtil"
+private const val TAG = "AppTestUtil"
 
 internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.CAMERA)
@@ -124,7 +124,7 @@ fun mediaStoreInsertedFlow(
                     queryWrittenFiles(uri).forEach {
                         val result = trySend(it)
                         if (result.isFailure) {
-                            Log.d(APP_TEST_UTIL_TAG, "Media store change failed result: $result")
+                            Log.d(TAG, "Media store change failed result: $result")
                         }
                     }
                 }
