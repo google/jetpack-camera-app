@@ -18,7 +18,6 @@ import android.provider.MediaStore
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isDisplayed
@@ -333,7 +332,6 @@ class ConcurrentCameraTest {
         }
     }
 
-    context(SemanticsNodeInteractionsProvider)
     private fun SemanticsNode.fetchConcurrentCameraMode(): ConcurrentCameraMode {
         config[SemanticsProperties.ContentDescription].any { description ->
             when (description) {
@@ -349,7 +347,6 @@ class ConcurrentCameraTest {
         throw AssertionError("Unable to determine concurrent camera mode from quick settings")
     }
 
-    context(SemanticsNodeInteractionsProvider)
     private fun SemanticsNodeInteraction.assertConcurrentCameraMode(
         mode: ConcurrentCameraMode
     ): SemanticsNodeInteraction {

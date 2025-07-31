@@ -453,7 +453,7 @@ fun PreviewDisplay(
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(Unit) {
+                        .pointerInput(onFlipCamera) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
                                     // double tap to flip camera
