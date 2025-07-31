@@ -47,7 +47,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -370,13 +369,13 @@ private fun ContentScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) {
-        val flipLensState by rememberUpdatedState(
-            captureUiState.flipLensUiState
-        )
         val onFlipCamera = {
-            if (flipLensState is FlipLensUiState.Available) {
+            if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
                 onSetLensFacing(
-                    (flipLensState as FlipLensUiState.Available).selectedLensFacing.flip()
+                    (
+                        captureUiState.flipLensUiState as FlipLensUiState.Available
+                        )
+                        .selectedLensFacing.flip()
                 )
             }
         }
