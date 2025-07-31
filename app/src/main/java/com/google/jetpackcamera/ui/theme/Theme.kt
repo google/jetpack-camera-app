@@ -61,6 +61,7 @@ fun JetpackCameraTheme(
             darkTheme -> DarkColorScheme
             else -> LightColorScheme
         }
+    /*
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -69,6 +70,7 @@ fun JetpackCameraTheme(
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
         }
     }
+    */
 
     MaterialTheme(
         colorScheme = colorScheme,

@@ -62,14 +62,18 @@ fun PreviewLayout(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
+        viewfinder(Modifier)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .safeDrawingPadding()
+
         ) {
-            viewfinder(Modifier)
 
             // visible only debug mode
             Row(verticalAlignment = Alignment.CenterVertically) {

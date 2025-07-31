@@ -52,6 +52,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -390,7 +391,12 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(
+                        topStart = CornerSize(0.dp),
+                        topEnd = CornerSize(0.dp),
+                        bottomStart = CornerSize(16.dp),
+                        bottomEnd = CornerSize(16.dp)
+                    ))
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
