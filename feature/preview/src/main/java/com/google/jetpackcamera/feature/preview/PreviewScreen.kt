@@ -68,6 +68,7 @@ import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSett
 import com.google.jetpackcamera.feature.preview.ui.AmplitudeToggleButton
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.CaptureModeToggleButton
+import com.google.jetpackcamera.feature.preview.ui.CurrentCameraIdText
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
 import com.google.jetpackcamera.feature.preview.ui.ImageWell
 import com.google.jetpackcamera.feature.preview.ui.PauseResumeToggleButton
@@ -434,20 +435,13 @@ private fun ContentScreen(
             )
         },
         zoomLevelDisplay = {
-            Column {
+            Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isDebugMode) {
-                    val zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
-                    var firstRun by remember { mutableStateOf(true) }
-                    LaunchedEffect(captureUiState.zoomUiState) {
-                        if (firstRun) {
-                            firstRun = false
-                        } else {
-                            zoomLevelDisplayState.showZoomLevel()
-                        }
-                    }
+
+                    CurrentCameraIdText(captureUiState.debugUiState.currentPhysicalCameraId, captureUiState.debugUiState.currentLogicalCameraId)
 
                     AnimatedVisibility(
-                        visible = (zoomLevelDisplayState.showZoomLevel && captureUiState.zoomUiState is ZoomUiState.Enabled),
+                        visible = true,
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {

@@ -38,12 +38,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -597,6 +598,7 @@ fun QuickSettingsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
+
         QuickSettingsBottomSheetRow(
             modifier = Modifier,
             quickSettingButtons = quickSettingButtons
@@ -605,6 +607,96 @@ fun QuickSettingsBottomSheet(
         Spacer(Modifier.height(32.dp))
     }
 }
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun focusedRatioButtons(
+    onUnFocus: () -> Unit,
+    onSetAspectRatio: (AspectRatio) -> Unit,
+    aspectRatioUiState: AspectRatioUiState
+): List<@Composable () -> Unit> =
+    listOf(
+        {
+            //todo(kc): reusable exit/return button
+            FilledIconButton(
+                onClick = onUnFocus,
+            ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button")}
+        },
+        {
+            QuickSetRatio(
+                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
+                assignedRatio = AspectRatio.THREE_FOUR,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
+                assignedRatio = AspectRatio.NINE_SIXTEEN,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
+                assignedRatio = AspectRatio.ONE_ONE,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
+            )
+        }
+    )
+
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun focusedCaptureModeButtons(
+    onUnFocus: () -> Unit,
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    captureModeUiState: CaptureModeUiState
+): List<@Composable () -> Unit> =
+    listOf(
+        {
+            //todo(kc): reusable exit/return button
+            FilledIconButton(
+                onClick = onUnFocus,
+            ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button")}
+        },
+        {
+            QuickSetCaptureMode(
+                modifier = Modifier
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+                onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
+                assignedCaptureMode = CaptureMode.STANDARD,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetCaptureMode(
+                modifier = Modifier
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+                assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetCaptureMode(
+                modifier = Modifier
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+                assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        }
+    )
 
 /**
  * A horizontally scrollable row of quick setting buttons for a bottom sheet.
@@ -665,11 +757,7 @@ fun QuickSettingMaterialButton(
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
             modifier = modifier.size(width = buttonWidth, height = buttonHeight),
-            shapes = ToggleButtonDefaults.shapes()
-                .copy(
-                    checkedShape = RoundedCornerShape(percent = 50),
-                    shape = RoundedCornerShape(percent = 30)
-                ),
+            shapes = ToggleButtonDefaults.shapes(),
 
             colors = ToggleButtonDefaults.toggleButtonColors(
                 containerColor = Color.White.copy(alpha = 0.16F),
@@ -695,24 +783,6 @@ fun QuickSettingMaterialButton(
     }
 }
 
-@Composable
-fun QuickSettingUiItem(
-    enum: QuickSettingsEnum,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isHighLighted: Boolean = false,
-    enabled: Boolean = true
-) {
-    QuickSettingUiItem(
-        modifier = modifier,
-        painter = enum.getPainter(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
-        onClick = { onClick() },
-        isHighLighted = isHighLighted,
-        enabled = enabled
-    )
-}
 
 /**
  * The itemized UI component representing each button in quick settings.
