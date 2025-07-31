@@ -54,6 +54,7 @@ fun PreviewLayout(
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    debugToggle: @Composable (modifier:Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (modifier: Modifier) -> Unit,
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
@@ -69,6 +70,13 @@ fun PreviewLayout(
                 .padding(paddingValues)
         ) {
             viewfinder(Modifier)
+
+            // visible only debug mode
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                debugToggle(Modifier)
+                audioToggleButton(Modifier)
+                pauseToggleButton(Modifier)
+            }
             VerticalMaterialControls(
                 captureButton = captureButton,
                 flipCameraButton = flipCameraButton,
@@ -184,27 +192,4 @@ private fun VerticalMaterialControls(
     }
 
 
-}
-
-@Composable
-private fun VerticalPreviewLayout(
-    modifier: Modifier = Modifier,
-    viewFinder: @Composable (Modifier) -> Unit,
-    zoomControls: @Composable (modifier: Modifier) -> Unit,
-    captureButton: @Composable (modifier: Modifier) -> Unit,
-    flipCameraButton: @Composable (modifier: Modifier) -> Unit,
-
-    ) {
-    //viewfinder should fill from top to bottom? with rounded corners
-    Box(
-        modifier = modifier
-            .safeDrawingPadding()
-            .fillMaxSize()
-    ) {
-        viewFinder(Modifier)
-
-        Column() {
-
-        }
-    }
 }

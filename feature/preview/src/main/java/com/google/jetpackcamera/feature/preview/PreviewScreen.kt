@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -66,7 +65,7 @@ import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsBottomSheet
 import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
-import com.google.jetpackcamera.feature.preview.ui.AmplitudeVisualizer
+import com.google.jetpackcamera.feature.preview.ui.AmplitudeToggleButton
 import com.google.jetpackcamera.feature.preview.ui.CaptureButton
 import com.google.jetpackcamera.feature.preview.ui.CaptureModeToggleButton
 import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
@@ -82,6 +81,7 @@ import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
 import com.google.jetpackcamera.feature.preview.ui.ZoomRatioText
 import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
 import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
+import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CaptureMode
 import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
@@ -434,28 +434,29 @@ private fun ContentScreen(
             )
         },
         zoomLevelDisplay = {
-            if (isDebugMode) {
-                val zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
-                var firstRun by remember { mutableStateOf(true) }
-                LaunchedEffect(captureUiState.zoomUiState) {
-                    if (firstRun) {
-                        firstRun = false
-                    } else {
-                        zoomLevelDisplayState.showZoomLevel()
+            Column {
+                if (isDebugMode) {
+                    val zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) }
+                    var firstRun by remember { mutableStateOf(true) }
+                    LaunchedEffect(captureUiState.zoomUiState) {
+                        if (firstRun) {
+                            firstRun = false
+                        } else {
+                            zoomLevelDisplayState.showZoomLevel()
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = (zoomLevelDisplayState.showZoomLevel && captureUiState.zoomUiState is ZoomUiState.Enabled),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        ZoomRatioText(
+                            modifier = it,
+                            zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
+                        )
                     }
                 }
-
-                AnimatedVisibility(
-                    visible = (zoomLevelDisplayState.showZoomLevel && captureUiState.zoomUiState is ZoomUiState.Enabled),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    ZoomRatioText(
-                        modifier = it,
-                        zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
-                    )
-                }
-            } else {
                 ZoomButtonRow(
                     zoomControlUiState = captureUiState.zoomControlUiState,
                     onChangeZoom = { targetZoom ->
@@ -496,7 +497,7 @@ private fun ContentScreen(
         },
         flashModeButton = {},
         audioToggleButton = {
-            AmplitudeVisualizer(
+            AmplitudeToggleButton(
                 modifier = it,
                 onToggleAudio = onToggleAudio,
                 audioUiState = captureUiState.audioUiState
@@ -531,6 +532,11 @@ private fun ContentScreen(
                     onNavigateToSettings()
                 }
             )
+        },
+        debugToggle = {
+            if (captureUiState.debugUiState.isDebugMode) {
+                DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
+            }
         },
         debugOverlay = {
             DebugOverlayComponent(

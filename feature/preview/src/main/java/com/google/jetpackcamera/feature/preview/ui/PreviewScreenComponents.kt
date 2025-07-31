@@ -34,7 +34,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -53,7 +52,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -67,6 +65,9 @@ import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -89,8 +90,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -153,145 +154,89 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
-    size: Float = 55f,
+    size: Dp = ButtonDefaults.MediumContainerHeight,
     currentRecordingState: VideoRecordingState
 ) {
     if (currentRecordingState is VideoRecordingState.Active) {
-        var buttonClicked by remember { mutableStateOf(false) }
-        // animation value for the toggle icon itself
-        val animatedToggleScale by animateFloatAsState(
-            targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMedium
-            ),
-            finishedListener = {
-                buttonClicked = false // Reset the trigger
-            }
-        )
-        Box(
-            modifier = modifier
+        FilledIconToggleButton(
+            checked = currentRecordingState is VideoRecordingState.Active.Recording,
+            onCheckedChange = { onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused) },
+            modifier = modifier.size(size),
         ) {
-            Box(
+            Icon(
                 modifier = Modifier
-                    .clickable(
-                        onClick = {
-                            buttonClicked = true
-                            onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
-                        },
-                        indication = null,
-                        interactionSource = null
-                    )
-                    .size(size = size.dp)
-                    .scale(scale = animatedToggleScale)
-                    .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                // icon
-                Icon(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size((0.75 * size).dp),
-                    tint = Color.Red,
-                    imageVector = when (currentRecordingState) {
-                        is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-                        is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
-                    },
-                    contentDescription = "pause resume toggle"
-                )
-            }
+                    .size(ButtonDefaults.MediumIconSize),
+                imageVector = when (currentRecordingState) {
+                    is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
+                    is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+                },
+                //todo(kc): move contentDescription to XML
+                contentDescription = "pause resume toggle"
+            )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AmplitudeVisualizer(
+fun AmplitudeToggleButton(
     modifier: Modifier = Modifier,
-    size: Float = 75f,
+    buttonSize: Dp = ButtonDefaults.MediumContainerHeight,
     audioUiState: AudioUiState,
     onToggleAudio: () -> Unit
 ) {
     val currentUiState = rememberUpdatedState(audioUiState)
-    var buttonClicked by remember { mutableStateOf(false) }
-    // animation value for the toggle icon itself
-    val animatedToggleScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
-        }
-    )
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
-    val animatedAudioScale by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
+    val animatedAudioAlpha by animateFloatAsState(
+        targetValue = EaseOutExpo.transform(
+            (currentUiState.value.amplitude.toFloat()).coerceIn(
+                0f,
+                1f
+            )
+        ),
         label = "AudioAnimation"
     )
-    Box(
-        modifier = modifier.clickable(
-            onClick = {
-                buttonClicked = true
-                onToggleAudio()
-            },
-            interactionSource = null,
-            // removes the greyish background animation that appears when clicking
-            indication = null
-        )
-    ) {
-        // animated audio circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedAudioScale).coerceIn(size, size * 1.65f),
-                    alpha = .5f,
-                    color = Color.White
-                )
-            }
-        )
-
-        // static circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    radius = (size * animatedToggleScale),
-                    color = Color.White
-                )
-            }
-        )
-
-        Icon(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size((0.5 * size).dp)
-                .scale(animatedToggleScale)
+    Box(contentAlignment = Alignment.Center) {
+        FilledIconToggleButton(
+            modifier = modifier
+                .size(buttonSize)
                 .apply {
-                    if (currentUiState.value is AudioUiState.Enabled.On) {
+                    if (audioUiState is AudioUiState.Enabled.On) {
                         testTag(AMPLITUDE_HOT_TAG)
                     } else {
                         testTag(AMPLITUDE_NONE_TAG)
                     }
+                }
+                .drawBehind {
+                    if (audioUiState is AudioUiState.Enabled.On) {
+                        drawCircle(
+                            color = Color.White,
+                            radius = size.width * .55f,
+                            alpha = animatedAudioAlpha // Animate alpha for a pulsing effect
+                        )
+                    }
                 },
-            tint = Color.Black,
-            imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
-                Icons.Filled.Mic
-            } else {
-                Icons.Filled.MicOff
-            },
-            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
-        )
+            checked = audioUiState is AudioUiState.Enabled.On,
+            onCheckedChange = { onToggleAudio() },
+            //todo shapes
+            enabled = audioUiState is AudioUiState.Enabled
+        ) {
+            Icon(
+                modifier = Modifier.size(ButtonDefaults.MediumIconSize),
+                imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
+                    Icons.Filled.Mic
+                } else {
+                    Icons.Filled.MicOff
+                },
+                contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+            )
+        }
     }
 }
 
@@ -462,7 +407,7 @@ fun PreviewDisplay(
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(Unit) {
+                        .pointerInput(onFlipCamera) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
                                     // double tap to flip camera
