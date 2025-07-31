@@ -123,7 +123,9 @@ fun mediaStoreInsertedFlow(
                 uris.forEach { uri ->
                     queryWrittenFiles(uri).forEach {
                         val result = trySend(it)
-                        Log.d(TAG, "Media store change: $result")
+                        if (result.isFailure) {
+                            Log.d(TAG, "Media store change failed result: $result")
+                        }
                     }
                 }
             }
