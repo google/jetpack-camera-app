@@ -124,6 +124,10 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    if (captureUiState is CaptureUiState.Ready && (captureUiState as CaptureUiState.Ready).flipLensUiState is FlipLensUiState.Available) {
+        val d = ((captureUiState as CaptureUiState.Ready).flipLensUiState as FlipLensUiState.Available).selectedLensFacing
+        Log.d("DJTEST", "PreviewScreen lens state: $d")
+    }
 
     val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
@@ -243,7 +247,7 @@ fun PreviewScreen(
 
             ContentScreen(
                 modifier = modifier,
-                captureUiState = currentUiState,
+                captureUiState = captureUiState as CaptureUiState.Ready,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
@@ -371,11 +375,10 @@ private fun ContentScreen(
     ) {
         val onFlipCamera = {
             if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
+                val d = (captureUiState.flipLensUiState as FlipLensUiState.Available).selectedLensFacing
+                Log.d("DJTEST", "ContentScreen lens state: $d")
                 onSetLensFacing(
-                    (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
-                        .selectedLensFacing.flip()
+                        d.flip()
                 )
             }
         }

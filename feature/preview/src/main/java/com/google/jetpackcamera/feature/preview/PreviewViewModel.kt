@@ -190,6 +190,10 @@ class PreviewViewModel @AssistedInject constructor(
                     cameraAppSettings,
                     systemConstraints
                 )
+                if (flipLensUiState is FlipLensUiState.Available) {
+                    val d = flipLensUiState.selectedLensFacing
+                    Log.d("DJTEST", "ViewModel lens state: $d")
+                }
                 val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
                 _captureUiState.update { old ->
                     when (old) {

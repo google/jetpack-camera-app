@@ -98,7 +98,6 @@ fun QuickSettingsScreenOverlay(
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
     onCaptureModeClick: (CaptureMode) -> Unit
 ) {
-    Log.d("DJTEST", "QSUiState: " + quickSettingsUiState)
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
         var focusedQuickSetting by remember {
             mutableStateOf(FocusedQuickSetting.NONE)
