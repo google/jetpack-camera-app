@@ -271,13 +271,12 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
-            val unused =
-                node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                    block(description)?.let { result ->
-                        // Return the T value if block returns non-null.
-                        return@checkComponentContentDescriptionState result
-                    }
+            node.config[SemanticsProperties.ContentDescription].forEach { description ->
+                block(description)?.let { result ->
+                    // Return the T value if block returns non-null.
+                    return@checkComponentContentDescriptionState result
                 }
+            }
             throw AssertionError("Unable to determine state from quick settingz")
         }
 }
@@ -317,7 +316,7 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
         "Flip camera button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        node.config[SemanticsProperties.ContentDescription].forEach { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
@@ -334,7 +333,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
         "Flash button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        node.config[SemanticsProperties.ContentDescription].forEach { description ->
             when (description) {
                 getResString(CaptureR.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
@@ -359,21 +358,20 @@ fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSetti
         .fetchSemanticsNode(
             "Concurrent camera button is not visible when expected."
         ).let { node ->
-            val unused =
-                node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                    when (description) {
-                        getResString(
-                            CaptureR.string.quick_settings_description_concurrent_camera_off
-                        ) -> {
-                            return@let ConcurrentCameraMode.OFF
-                        }
-
-                        getResString(
-                            CaptureR.string.quick_settings_description_concurrent_camera_dual
-                        ) ->
-                            return@let ConcurrentCameraMode.DUAL
+            node.config[SemanticsProperties.ContentDescription].forEach { description ->
+                when (description) {
+                    getResString(
+                        CaptureR.string.quick_settings_description_concurrent_camera_off
+                    ) -> {
+                        return@let ConcurrentCameraMode.OFF
                     }
+
+                    getResString(
+                        CaptureR.string.quick_settings_description_concurrent_camera_dual
+                    ) ->
+                        return@let ConcurrentCameraMode.DUAL
                 }
+            }
             throw AssertionError(
                 "Unable to determine concurrent camera mode from quick settings"
             )
@@ -387,7 +385,7 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
         "Capture mode button is not visible when expected."
     ).let { node ->
-        val unused = node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        node.config[SemanticsProperties.ContentDescription].forEach { description ->
             // check description is one of the capture modes
             when (description) {
                 getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->

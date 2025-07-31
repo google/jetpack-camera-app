@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.transform
 
+const val TAG = "AppTestUtil"
+
 internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.CAMERA)
     add(android.Manifest.permission.RECORD_AUDIO)
@@ -121,7 +123,7 @@ fun mediaStoreInsertedFlow(
                 uris.forEach { uri ->
                     queryWrittenFiles(uri).forEach {
                         val result = trySend(it)
-                        Log.d("AppTestUtil", "Media store change: $result")
+                        Log.d(TAG, "Media store change: $result")
                     }
                 }
             }
