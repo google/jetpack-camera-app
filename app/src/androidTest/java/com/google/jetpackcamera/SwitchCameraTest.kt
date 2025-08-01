@@ -27,7 +27,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN

@@ -87,6 +87,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+
+    // Access Model data
+    implementation(project(":core:model"))
 }
 
 protobuf {

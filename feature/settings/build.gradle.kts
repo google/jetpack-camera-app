@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.protobuf.kotlin.lite)
 
     implementation(project(":data:settings"))
+    implementation(project(":core:model"))
 }
 
 // Allow references to generated code

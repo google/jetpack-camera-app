@@ -17,6 +17,15 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.google.jetpackcamera.model.proto.AspectRatio
+import com.google.jetpackcamera.model.proto.DarkMode
+import com.google.jetpackcamera.model.proto.DynamicRange
+import com.google.jetpackcamera.model.proto.FlashMode
+import com.google.jetpackcamera.model.proto.ImageOutputFormat
+import com.google.jetpackcamera.model.proto.LensFacing
+import com.google.jetpackcamera.model.proto.StabilizationMode
+import com.google.jetpackcamera.model.proto.StreamConfig
+import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream

@@ -30,16 +30,16 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.TestPattern
-import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.VideoQuality.FHD
-import com.google.jetpackcamera.settings.model.VideoQuality.HD
-import com.google.jetpackcamera.settings.model.VideoQuality.SD
-import com.google.jetpackcamera.settings.model.VideoQuality.UHD
-import com.google.jetpackcamera.settings.model.VideoQuality.UNSPECIFIED
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.VideoQuality.FHD
+import com.google.jetpackcamera.model.VideoQuality.HD
+import com.google.jetpackcamera.model.VideoQuality.SD
+import com.google.jetpackcamera.model.VideoQuality.UHD
+import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {

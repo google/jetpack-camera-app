@@ -37,6 +37,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.MainActivity
 import java.io.File
 import java.net.URLConnection
@@ -220,6 +221,7 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise
  */
+@CanIgnoreReturnValue
 fun deleteFilesInDirAfterTimestamp(
     directoryPath: String,
     instrumentation: Instrumentation,

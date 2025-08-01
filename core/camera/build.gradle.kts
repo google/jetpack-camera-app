@@ -138,6 +138,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":data:settings"))
+    implementation(project(":core:model"))
     implementation(project(":core:common"))
 }
 

@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 
 sealed interface ConcurrentCameraUiState {
     data object Unavailable : ConcurrentCameraUiState

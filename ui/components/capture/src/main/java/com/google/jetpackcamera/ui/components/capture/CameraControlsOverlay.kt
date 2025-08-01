@@ -57,13 +57,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -456,6 +456,10 @@ private fun ControlsBottom(
     }
 }
 
+/**
+ * Converts an internal [ImageCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.ImageCaptureEvent]
+ * representation.
+ */
 private fun getImageCaptureEventForExternalCaptureMode(
     captureEvent: ImageCaptureEvent
 ): ExternalCaptureMode.ImageCaptureEvent {
@@ -472,6 +476,10 @@ private fun getImageCaptureEventForExternalCaptureMode(
     }
 }
 
+/**
+ * Converts an internal [VideoCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.VideoCaptureEvent]
+ * representation.
+ */
 private fun getVideoCaptureEventForExternalCaptureMode(
     captureEvent: VideoCaptureEvent
 ): ExternalCaptureMode.VideoCaptureEvent {
