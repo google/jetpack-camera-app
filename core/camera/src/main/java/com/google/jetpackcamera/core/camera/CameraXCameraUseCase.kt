@@ -500,10 +500,8 @@ constructor(
                     val imageCaptureUri = saveLocation.locationUri
                     val outputStream = contentResolver.openOutputStream(imageCaptureUri)
                     if (outputStream != null) {
-                        outputStream.use { outputStream ->
-                            val outputFileOptions = OutputFileOptions.Builder(
-                                contentResolver.openOutputStream(imageCaptureUri)!!
-                            ).build()
+                        outputStream.use { stream ->
+                            val outputFileOptions = OutputFileOptions.Builder(stream).build()
                             imageCaptureUseCase.takePicture(
                                 outputFileOptions,
                                 onCaptureStarted
