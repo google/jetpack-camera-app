@@ -30,6 +30,7 @@ import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.model.LowLightBoostState
+import com.google.jetpackcamera.settings.model.SaveLocation
 import com.google.jetpackcamera.settings.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.TestPattern
@@ -69,15 +70,13 @@ interface CameraUseCase {
      * location if the uri is not null. If it is null, an error will be thrown.
      */
     suspend fun takePicture(
-        onCaptureStarted: (() -> Unit) = {},
         contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        ignoreUri: Boolean = false
+        saveLocation: SaveLocation,
+        onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
     suspend fun startVideoRecording(
-        videoCaptureUri: Uri?,
-        shouldUseUri: Boolean,
+        saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 

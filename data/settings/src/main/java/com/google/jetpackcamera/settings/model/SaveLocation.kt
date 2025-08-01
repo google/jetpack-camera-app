@@ -15,28 +15,25 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import android.net.Uri
+
 /**
- * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
- * UX differs depends on which mode the Preview is launched under.
+ * Represents the intended save location strategy for captured media.
  */
-enum class ExternalCaptureMode {
-    /**
-     * The default mode for the app.
-     */
-    Standard,
+sealed interface SaveLocation {
 
     /**
-     * Under this mode, the app is launched by an external intent to capture one image.
+     * Indicates that the application's default logic for capturing media
+     * should determine the save location and filename. The CameraUseCase typically
+     * creates a new entry in the MediaStore with a generated name.
      */
-    ImageCapture,
+    object Default : SaveLocation
 
     /**
-     * Under this mode, the app is launched by an external intent to capture a video.
+     * Specifies a fully-defined [Uri] where the captured media should be saved.
+     * The CameraUseCase will pass this Uri directly to the underlying camera API.
+     *
+     * @property locationUri The non-null, complete [Uri] for the output file.
      */
-    VideoCapture,
-
-    /**
-     * Under this mode, the app is launched by an external intent to capture multiple images.
-     */
-    MultipleImageCapture
+    data class Explicit(val locationUri: Uri) : SaveLocation
 }

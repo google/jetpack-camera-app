@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import android.net.Uri
+import com.google.jetpackcamera.settings.model.SaveLocation
 
 /**
  * Represents events that control video capture operations.
@@ -28,8 +28,7 @@ sealed interface VideoCaptureControlEvent {
      * @param onVideoRecord Callback to handle video recording events.
      */
     class StartRecordingEvent(
-        val videoCaptureUri: Uri?,
-        val shouldUseUri: Boolean,
+        val saveLocation: SaveLocation,
         val maxVideoDuration: Long,
         val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent

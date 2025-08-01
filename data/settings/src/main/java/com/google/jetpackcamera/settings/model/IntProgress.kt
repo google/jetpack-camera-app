@@ -16,27 +16,21 @@
 package com.google.jetpackcamera.settings.model
 
 /**
- * This interface is determined before the Preview UI is launched and passed into PreviewScreen. The
- * UX differs depends on which mode the Preview is launched under.
+ * Represents the progress of an integer value within a defined [IntRange].
+ *
+ * This class is used to track a current value that must stay within the bounds
+ * of a given minimum and maximum (inclusive). It ensures that the `currentValue`
+ * is always valid with respect to its `range`.
  */
-enum class ExternalCaptureMode {
-    /**
-     * The default mode for the app.
-     */
-    Standard,
+data class IntProgress(
+    val currentValue: Int,
+    val range: IntRange
+) {
+    init {
+        if (currentValue !in range) {
+            throw IllegalArgumentException("Invalid progress. $currentValue not in range $range")
+        }
+    }
 
-    /**
-     * Under this mode, the app is launched by an external intent to capture one image.
-     */
-    ImageCapture,
-
-    /**
-     * Under this mode, the app is launched by an external intent to capture a video.
-     */
-    VideoCapture,
-
-    /**
-     * Under this mode, the app is launched by an external intent to capture multiple images.
-     */
-    MultipleImageCapture
+    operator fun inc() = IntProgress(currentValue + 1, range)
 }

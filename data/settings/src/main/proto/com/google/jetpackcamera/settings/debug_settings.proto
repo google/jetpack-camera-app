@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
 
-import android.net.Uri
+syntax = "proto3";
 
-sealed interface ImageCaptureEvent {
-    data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
+import "com/google/jetpackcamera/settings/lens_facing.proto";
+import "com/google/jetpackcamera/settings/test_pattern.proto";
 
-    data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
-}
+option java_package = "com.google.jetpackcamera.settings";
+option java_multiple_files = true;
 
-sealed interface VideoCaptureEvent {
-    data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
-
-    data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
+message DebugSettings {
+  bool is_debug_mode_enabled = 1;
+  optional LensFacing single_lens_mode = 2;
+  TestPattern test_pattern = 3;
 }

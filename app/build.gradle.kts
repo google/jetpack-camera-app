@@ -153,6 +153,7 @@ dependencies {
 
     // Access Settings data
     implementation(project(":data:settings"))
+    implementation(libs.protobuf.kotlin.lite)
 
     // Camera Preview
     implementation(project(":feature:preview"))

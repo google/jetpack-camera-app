@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
-import android.net.Uri
 import android.util.Range
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -114,17 +113,8 @@ fun CameraControlsOverlay(
     onSetPause: (Boolean) -> Unit = {},
     onAnimateZoom: (Float) -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
-    onCaptureImageWithUri: (
-        ContentResolver,
-        Uri?,
-        Boolean,
-        (ImageCaptureEvent, Int) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: (
-        Uri?,
-        Boolean,
-        (VideoCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    onCaptureImage: (ContentResolver) -> Unit = {},
+    onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onImageWellClick: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit
@@ -189,7 +179,7 @@ fun CameraControlsOverlay(
                 onFlipCamera = onFlipCamera,
                 onAnimateZoom = onAnimateZoom,
                 onIncrementZoom = onIncrementZoom,
-                onCaptureImageWithUri = onCaptureImageWithUri,
+                onCaptureImage = onCaptureImage,
                 onToggleQuickSettings = onToggleQuickSettings,
                 onToggleAudio = onToggleAudio,
                 onSetPause = onSetPause,
@@ -289,12 +279,7 @@ private fun ControlsBottom(
     isQuickSettingsOpen: Boolean,
     videoRecordingState: VideoRecordingState,
     onFlipCamera: () -> Unit = {},
-    onCaptureImageWithUri: (
-        ContentResolver,
-        Uri?,
-        Boolean,
-        (ImageCaptureEvent, Int) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
+    onCaptureImage: (ContentResolver) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
     onToggleAudio: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
@@ -302,11 +287,7 @@ private fun ControlsBottom(
     onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onAnimateZoom: (Float) -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
-    onStartVideoRecording: (
-        Uri?,
-        Boolean,
-        (VideoCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onImageWellClick: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
@@ -418,9 +399,8 @@ private fun ControlsBottom(
                 }
                 CaptureButton(
                     captureButtonUiState = captureUiState.captureButtonUiState,
-                    externalCaptureMode = captureUiState.externalCaptureMode,
                     isQuickSettingsOpen = isQuickSettingsOpen,
-                    onCaptureImageWithUri = onCaptureImageWithUri,
+                    onCaptureImage = onCaptureImage,
                     onIncrementZoom = { targetZoom ->
                         onIncrementZoom(targetZoom)
                     },
@@ -443,7 +423,7 @@ private fun ControlsBottom(
                             audioUiState = captureUiState.audioUiState
                         )
                     } else if (!isQuickSettingsOpen &&
-                        captureUiState.externalCaptureMode is ExternalCaptureMode.StandardMode
+                        captureUiState.externalCaptureMode == ExternalCaptureMode.Standard
                     ) {
                         ImageWell(
                             imageWellUiState = captureUiState.imageWellUiState,
@@ -456,57 +436,15 @@ private fun ControlsBottom(
     }
 }
 
-private fun getImageCaptureEventForExternalCaptureMode(
-    captureEvent: ImageCaptureEvent
-): ExternalCaptureMode.ImageCaptureEvent {
-    return when (captureEvent) {
-        is ImageCaptureEvent.ImageSaved ->
-            ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
-                captureEvent.savedUri
-            )
-
-        is ImageCaptureEvent.ImageCaptureError ->
-            ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
-                captureEvent.exception
-            )
-    }
-}
-
-private fun getVideoCaptureEventForExternalCaptureMode(
-    captureEvent: VideoCaptureEvent
-): ExternalCaptureMode.VideoCaptureEvent {
-    return when (captureEvent) {
-        is VideoCaptureEvent.VideoSaved ->
-            ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
-                captureEvent.savedUri
-            )
-
-        is VideoCaptureEvent.VideoCaptureError ->
-            ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
-                captureEvent.error
-            )
-    }
-}
-
 @Composable
 private fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
-    externalCaptureMode: ExternalCaptureMode,
     onToggleQuickSettings: () -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
-    onCaptureImageWithUri: (
-        ContentResolver,
-        Uri?,
-        Boolean,
-        (ImageCaptureEvent, Int) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: (
-        Uri?,
-        Boolean,
-        (VideoCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    onCaptureImage: (ContentResolver) -> Unit = {},
+    onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
@@ -519,55 +457,7 @@ private fun CaptureButton(
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
-                    when (externalCaptureMode) {
-                        is ExternalCaptureMode.StandardMode -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                true
-                            ) { event: ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event)
-                                )
-                            }
-                        }
-
-                        is ExternalCaptureMode.ExternalImageCaptureMode -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                externalCaptureMode.imageCaptureUri,
-                                false
-                            ) { event: ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event)
-                                )
-                            }
-                        }
-
-                        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> {
-                            val ignoreUri =
-                                externalCaptureMode.imageCaptureUris.isNullOrEmpty()
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri
-                            ) { event: ImageCaptureEvent, i: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event),
-                                    i
-                                )
-                            }
-                        }
-
-                        else -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                false
-                            ) { _: ImageCaptureEvent, _: Int -> }
-                        }
-                    }
+                    onCaptureImage(context.contentResolver)
                 }
             }
             if (isQuickSettingsOpen) {
@@ -576,27 +466,7 @@ private fun CaptureButton(
         },
         onStartRecording = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                when (externalCaptureMode) {
-                    is ExternalCaptureMode.StandardMode -> {
-                        onStartVideoRecording(null, false) {}
-                    }
-
-                    is ExternalCaptureMode.ExternalVideoCaptureMode -> {
-                        onStartVideoRecording(
-                            externalCaptureMode.videoCaptureUri,
-                            true
-
-                        ) { event: VideoCaptureEvent ->
-                            externalCaptureMode.onVideoCapture(
-                                getVideoCaptureEventForExternalCaptureMode(event)
-                            )
-                        }
-                    }
-
-                    else -> {
-                        onStartVideoRecording(null, false) {}
-                    }
-                }
+                onStartVideoRecording()
                 if (isQuickSettingsOpen) {
                     onToggleQuickSettings()
                 }
@@ -774,7 +644,7 @@ private fun Preview_ControlsBottom() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
-                externalCaptureMode = ExternalCaptureMode.StandardMode {},
+                externalCaptureMode = ExternalCaptureMode.Standard,
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
@@ -808,7 +678,7 @@ private fun Preview_ControlsBottom_NoZoomLevel() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
-                externalCaptureMode = ExternalCaptureMode.StandardMode {},
+                externalCaptureMode = ExternalCaptureMode.Standard,
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
@@ -843,7 +713,7 @@ private fun Preview_ControlsBottom_QuickSettingsOpen() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
-                externalCaptureMode = ExternalCaptureMode.StandardMode {},
+                externalCaptureMode = ExternalCaptureMode.Standard,
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
@@ -879,7 +749,7 @@ private fun Preview_ControlsBottom_NoFlippableCamera() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
-                externalCaptureMode = ExternalCaptureMode.StandardMode {},
+                externalCaptureMode = ExternalCaptureMode.Standard,
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Inactive(),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
@@ -915,7 +785,7 @@ private fun Preview_ControlsBottom_Recording() {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         ControlsBottom(
             captureUiState = CaptureUiState.Ready(
-                externalCaptureMode = ExternalCaptureMode.StandardMode {},
+                externalCaptureMode = ExternalCaptureMode.Standard,
                 captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
                 videoRecordingState = VideoRecordingState.Active.Recording(0L, .9, 1_000_000_000),
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
