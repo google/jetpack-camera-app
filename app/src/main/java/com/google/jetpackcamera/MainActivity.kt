@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity() {
 
     private val captureEventCallback: (CaptureEvent) -> Unit
         get() {
+            val pictureTakenUriList by lazy { arrayListOf<String>() }
             return when (externalCaptureMode) {
                 ExternalCaptureMode.ImageCapture -> { event ->
                     Log.d(TAG, "onImageCapture, event: $event")
@@ -246,39 +247,36 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                ExternalCaptureMode.MultipleImageCapture -> {
-                    val pictureTakenUriList by lazy { arrayListOf<String>() }
-                    return { event ->
-                        Log.d(TAG, "onMultipleImageCapture, event: $event")
-                        val progress = when (event) {
-                            is ImageCaptureEvent.ImageSavedWithProgress -> {
-                                event.progress
-                            }
-
-                            is ImageCaptureEvent.ImageCaptureErrorWithProgress ->
-                                event.progress
-
-                            else -> null
+                ExternalCaptureMode.MultipleImageCapture -> { event ->
+                    Log.d(TAG, "onMultipleImageCapture, event: $event")
+                    val progress = when (event) {
+                        is ImageCaptureEvent.ImageSavedWithProgress -> {
+                            event.progress
                         }
 
-                        if (progress == null) {
-                            if (event is ImageCaptureEvent.ImageSaved) {
-                                pictureTakenUriList.add(event.savedUri.toString())
-                            } else if (event is ImageCaptureEvent.ImageCaptureError) {
-                                pictureTakenUriList.add(event.exception.toString())
-                            }
+                        is ImageCaptureEvent.ImageCaptureErrorWithProgress ->
+                            event.progress
 
-                            val resultIntent = Intent()
-                            resultIntent.putStringArrayListExtra(
-                                MediaStore.EXTRA_OUTPUT,
-                                pictureTakenUriList
-                            )
-                            setResult(RESULT_OK, resultIntent)
-                        } else if (progress.currentValue == progress.range.endInclusive) {
-                            setResult(RESULT_OK, Intent())
-                            Log.d(TAG, "onMultipleImageCapture, finish()")
-                            finish()
+                        else -> null
+                    }
+
+                    if (progress == null) {
+                        if (event is ImageCaptureEvent.ImageSaved) {
+                            pictureTakenUriList.add(event.savedUri.toString())
+                        } else if (event is ImageCaptureEvent.ImageCaptureError) {
+                            pictureTakenUriList.add(event.exception.toString())
                         }
+
+                        val resultIntent = Intent()
+                        resultIntent.putStringArrayListExtra(
+                            MediaStore.EXTRA_OUTPUT,
+                            pictureTakenUriList
+                        )
+                        setResult(RESULT_OK, resultIntent)
+                    } else if (progress.currentValue == progress.range.endInclusive) {
+                        setResult(RESULT_OK, Intent())
+                        Log.d(TAG, "onMultipleImageCapture, finish()")
+                        finish()
                     }
                 }
 
