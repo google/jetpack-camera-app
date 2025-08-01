@@ -16,10 +16,10 @@
 package com.google.jetpackcamera.model
 
 import android.util.Base64
-import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
-import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
 import com.google.jetpackcamera.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.model.TestPattern.Companion.toProto
+import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
+import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
 
 /**
  * Data class for defining settings used in debug flows within the app.
