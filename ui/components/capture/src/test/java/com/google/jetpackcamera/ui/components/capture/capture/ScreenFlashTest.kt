@@ -22,6 +22,7 @@ import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.FlashMode
 import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.settings.model.SaveLocation
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.capture.rules.MainDispatcherRule
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
@@ -73,7 +74,7 @@ class ScreenFlashTest {
         cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraUseCase.setFlashMode(FlashMode.ON)
         val contentResolver: ContentResolver = Mockito.mock()
-        cameraUseCase.takePicture({}, contentResolver, null)
+        cameraUseCase.takePicture(contentResolver, SaveLocation.Default)
 
         advanceUntilIdle()
         assertThat(states.map { it.enabled }).containsExactlyElementsIn(
