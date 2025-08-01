@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
 sealed interface AspectRatioUiState {

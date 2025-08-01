@@ -35,7 +35,7 @@ import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE
-import com.google.jetpackcamera.settings.model.CaptureEvent
+import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.settings.model.DebugSettings
 import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 

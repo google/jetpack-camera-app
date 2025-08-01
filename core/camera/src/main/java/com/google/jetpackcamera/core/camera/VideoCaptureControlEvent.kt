@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import com.google.jetpackcamera.settings.model.SaveLocation
+import com.google.jetpackcamera.model.SaveLocation
 
 /**
  * Represents events that control video capture operations.

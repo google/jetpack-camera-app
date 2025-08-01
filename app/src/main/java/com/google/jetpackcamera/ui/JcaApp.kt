@@ -35,12 +35,12 @@ import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.navigation.navigateToPreview
 import com.google.jetpackcamera.feature.preview.navigation.popUpToPreview
 import com.google.jetpackcamera.feature.preview.navigation.previewScreen
+import com.google.jetpackcamera.model.CaptureEvent
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
-import com.google.jetpackcamera.settings.model.CaptureEvent
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
