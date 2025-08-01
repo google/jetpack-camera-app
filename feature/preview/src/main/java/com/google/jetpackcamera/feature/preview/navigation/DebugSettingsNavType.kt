@@ -17,9 +17,9 @@ package com.google.jetpackcamera.feature.preview.navigation
 
 import android.os.Bundle
 import androidx.navigation.NavType
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DebugSettings.Companion.encodeAsByteArray
-import com.google.jetpackcamera.settings.model.DebugSettings.Companion.encodeAsString
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsByteArray
+import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
 
 /**
  * Custom NavType to handle DebugSettings data class.

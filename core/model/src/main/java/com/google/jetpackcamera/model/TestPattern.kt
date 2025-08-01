@@ -15,15 +15,15 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.settings.TestPattern as ProtoTestPattern
-import com.google.jetpackcamera.settings.TestPattern.PatternCase
-import com.google.jetpackcamera.settings.testPattern as protoTestPattern
-import com.google.jetpackcamera.settings.testPatternColorBars
-import com.google.jetpackcamera.settings.testPatternColorBarsFadeToGray
-import com.google.jetpackcamera.settings.testPatternCustom1
-import com.google.jetpackcamera.settings.testPatternOff
-import com.google.jetpackcamera.settings.testPatternPN9
-import com.google.jetpackcamera.settings.testPatternSolidColor
+import com.google.jetpackcamera.model.proto.TestPattern as ProtoTestPattern
+import com.google.jetpackcamera.model.proto.TestPattern.PatternCase
+import com.google.jetpackcamera.model.proto.testPattern as protoTestPattern
+import com.google.jetpackcamera.model.proto.testPatternColorBars
+import com.google.jetpackcamera.model.proto.testPatternColorBarsFadeToGray
+import com.google.jetpackcamera.model.proto.testPatternCustom1
+import com.google.jetpackcamera.model.proto.testPatternOff
+import com.google.jetpackcamera.model.proto.testPatternPN9
+import com.google.jetpackcamera.model.proto.testPatternSolidColor
 
 /**
  * Represents a test pattern to replace sensor pixel data.

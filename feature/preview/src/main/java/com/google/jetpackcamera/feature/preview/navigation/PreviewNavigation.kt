@@ -36,8 +36,8 @@ import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPT
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE
 import com.google.jetpackcamera.model.CaptureEvent
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.ExternalCaptureMode
 
 object PreviewRoute {
     internal const val ARG_EXTERNAL_CAPTURE_MODE: String = "externalCaptureMode"
