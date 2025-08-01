@@ -105,8 +105,9 @@ dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
-    implementation(project(":data:settings"))
+    implementation(project(":core:model"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":data:settings"))
 }
 
 // Allow references to generated code

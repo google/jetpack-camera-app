@@ -51,7 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.settings.model.TestPattern
+import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON

@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureMode
 
 sealed interface CaptureButtonUiState {
     data object Unavailable : CaptureButtonUiState

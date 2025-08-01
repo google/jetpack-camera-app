@@ -39,11 +39,11 @@ import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.LensFacing
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
