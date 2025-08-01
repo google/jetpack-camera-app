@@ -505,13 +505,7 @@ fun QuickSettingToggleButton(
             modifier = Modifier
                 .minimumInteractiveComponentSize()
                 .size(buttonSize),
-            shapes = IconButtonDefaults.toggleableShapes().let {
-                // invert the selected shapes
-                it.copy(
-                    shape = it.checkedShape,
-                    checkedShape = it.shape
-                )
-            },
+            shapes = IconButtonDefaults.toggleableShapes(),
             colors = IconButtonDefaults.filledIconToggleButtonColors()
                 .copy(containerColor = Color.White.copy(alpha = .17f))
         ) {
