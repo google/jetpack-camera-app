@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
@@ -48,13 +47,10 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -493,7 +489,7 @@ fun QuickSettingToggleButton(
     )
 
     Column(
-        modifier = modifier.width(width = buttonSize.width),
+        modifier = Modifier.width(width = buttonSize.width),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -502,7 +498,7 @@ fun QuickSettingToggleButton(
             enabled = enabled,
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
-            modifier = Modifier
+            modifier = modifier
                 .minimumInteractiveComponentSize()
                 .size(buttonSize),
             shapes = IconButtonDefaults.toggleableShapes(),
@@ -526,88 +522,6 @@ fun QuickSettingToggleButton(
             maxLines = 2,
             overflow = TextOverflow.Visible
         )
-    }
-}
-
-@Composable
-fun QuickSettingUiItem(
-    enum: QuickSettingsEnum,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isHighLighted: Boolean = false,
-    enabled: Boolean = true
-) {
-    QuickSettingUiItem(
-        modifier = modifier,
-        painter = enum.getPainter(),
-        text = stringResource(id = enum.getTextResId()),
-        accessibilityText = stringResource(id = enum.getDescriptionResId()),
-        onClick = { onClick() },
-        isHighLighted = isHighLighted,
-        enabled = enabled
-    )
-}
-
-/**
- * The itemized UI component representing each button in quick settings.
- */
-@Composable
-fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
-    text: String,
-    painter: Painter,
-    accessibilityText: String,
-    onClick: () -> Unit,
-    isHighLighted: Boolean = false,
-    enabled: Boolean = true
-) {
-    val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
-
-    var buttonClicked by remember { mutableStateOf(false) }
-    val animatedScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
-        }
-    )
-    Column(
-        modifier =
-        modifier
-            .wrapContentSize()
-            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable(
-                enabled = enabled,
-                onClick = {
-                    buttonClicked = true
-                    onClick()
-                },
-                indication = null,
-                interactionSource = null
-            ),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
-            // When in disabled state, material3 guidelines say the element's opacity should be 38%
-            // See: https://m3.material.io/foundations/interaction/states/applying-states#3c3032e8-b07a-42ac-a508-a32f573cc7e1
-            // and: https://developer.android.com/develop/ui/compose/designsystems/material2-material3#emphasis-and
-            if (!enabled) it.copy(alpha = 0.38f) else it
-        }
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Icon(
-                painter = painter,
-                contentDescription = accessibilityText,
-                modifier = Modifier
-                    .size(iconSize)
-                    .scale(animatedScale)
-            )
-
-            Text(text = text, textAlign = TextAlign.Center)
-        }
     }
 }
 
