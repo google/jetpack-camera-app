@@ -250,11 +250,11 @@ class MainActivity : ComponentActivity() {
                 ExternalCaptureMode.MultipleImageCapture -> { event ->
                     Log.d(TAG, "onMultipleImageCapture, event: $event")
                     val progress = when (event) {
-                        is ImageCaptureEvent.ImageSavedWithProgress -> {
+                        is ImageCaptureEvent.SequentialImageSaved -> {
                             event.progress
                         }
 
-                        is ImageCaptureEvent.ImageCaptureErrorWithProgress ->
+                        is ImageCaptureEvent.SequentialImageCaptureError ->
                             event.progress
 
                         else -> null

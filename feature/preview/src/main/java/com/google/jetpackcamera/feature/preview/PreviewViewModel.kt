@@ -139,11 +139,7 @@ class PreviewViewModel @Inject constructor(
 
     private val externalCaptureMode: ExternalCaptureMode = savedStateHandle.getExternalCaptureMode()
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
-    private var externalUriProgress: IntProgress = if (externalUris.isNotEmpty()) {
-        IntProgress(0, 0 until externalUris.size)
-    } else {
-        IntProgress(0, 0..0)
-    }
+    private lateinit var externalUriProgress: IntProgress
 
     private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
 
@@ -514,10 +510,13 @@ class PreviewViewModel @Inject constructor(
         ExternalCaptureMode.MultipleImageCapture,
         ExternalCaptureMode.VideoCapture -> {
             if (externalUris.isNotEmpty()) {
+                if (!this::externalUriProgress.isInitialized) {
+                    externalUriProgress = IntProgress(1, 1..externalUris.size)
+                }
                 val progress = externalUriProgress
                 if (progress.currentValue < progress.range.endInclusive) externalUriProgress++
                 Pair(
-                    SaveLocation.Explicit(externalUris[progress.currentValue]),
+                    SaveLocation.Explicit(externalUris[progress.currentValue - 1]),
                     progress
                 )
             } else {
@@ -570,17 +569,17 @@ class PreviewViewModel @Inject constructor(
                 onSuccess = { savedUri ->
                     updateLastCapturedMedia()
                     val event = if (progress != null) {
-                        ImageCaptureEvent.ImageSavedWithProgress(savedUri, progress)
+                        ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
-                        ImageCaptureEvent.ImageSaved(savedUri)
+                        ImageCaptureEvent.SingleImageSaved(savedUri)
                     }
                     _captureEvents.trySend(event)
                 },
                 onFailure = { exception ->
                     val event = if (progress != null) {
-                        ImageCaptureEvent.ImageCaptureErrorWithProgress(exception, progress)
+                        ImageCaptureEvent.SequentialImageCaptureError(exception, progress)
                     } else {
-                        ImageCaptureEvent.ImageCaptureError(exception)
+                        ImageCaptureEvent.SingleImageCaptureError(exception)
                     }
                     _captureEvents.trySend(event)
                 }
