@@ -159,9 +159,9 @@ internal fun SavedStateHandle.getExternalCaptureMode(
 ): ExternalCaptureMode = get(ARG_EXTERNAL_CAPTURE_MODE) ?: defaultIfMissing
 
 internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = emptyList()): List<Uri> =
-    get<Array<String>?>("captureUris")?.map { it.toUri() } ?: defaultIfMissing
+    get<Array<String>?>(ARG_CAPTURE_URIS)?.map { it.toUri() } ?: defaultIfMissing
 
 internal fun SavedStateHandle.getDebugSettings(
     defaultIfMissing: DebugSettings = DebugSettings()
-): DebugSettings = get<ByteArray>("debugSettings")?.let(DebugSettings::parseFromByteArray)
+): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromByteArray)
     ?: defaultIfMissing
