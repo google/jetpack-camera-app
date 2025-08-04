@@ -66,22 +66,24 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoostState
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.VideoQuality.FHD
-import com.google.jetpackcamera.settings.model.VideoQuality.HD
-import com.google.jetpackcamera.settings.model.VideoQuality.SD
-import com.google.jetpackcamera.settings.model.VideoQuality.UHD
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.VideoQuality.FHD
+import com.google.jetpackcamera.model.VideoQuality.HD
+import com.google.jetpackcamera.model.VideoQuality.SD
+import com.google.jetpackcamera.model.VideoQuality.UHD
 import java.io.File
 import java.util.Date
 import java.util.concurrent.Executor
@@ -292,6 +294,10 @@ internal suspend fun processTransientSettingEvents(
     camera.cameraControl.setZoomRatio(
         initialTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
     )
+
+    val camera2OptionsBuilder = CaptureRequestOptions.Builder()
+    updateCamera2RequestOptions(camera, null, initialTransientSettings, camera2OptionsBuilder)
+
     var prevTransientSettings = initialTransientSettings
     val isFrontFacing = camera.cameraInfo.appLensFacing == LensFacing.FRONT
     var torchOn = false
@@ -332,28 +338,6 @@ internal suspend fun processTransientSettingEvents(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-            prevTransientSettings.flashMode != newTransientSettings.flashMode
-        ) {
-            when (newTransientSettings.flashMode) {
-                FlashMode.LOW_LIGHT_BOOST -> {
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
-
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
-                }
-                else -> {
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .setCaptureRequestOptions(CaptureRequestOptions.Builder().build())
-                }
-            }
-        }
-
         if (prevTransientSettings.deviceRotation
             != newTransientSettings.deviceRotation
         ) {
@@ -375,7 +359,89 @@ internal suspend fun processTransientSettingEvents(
                 camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
             }
         }
+
+        updateCamera2RequestOptions(
+            camera,
+            prevTransientSettings,
+            newTransientSettings,
+            camera2OptionsBuilder
+        )
+
         prevTransientSettings = newTransientSettings
+    }
+}
+
+@ExperimentalCamera2Interop
+private fun updateCamera2RequestOptions(
+    camera: Camera,
+    prevTransientSettings: TransientSessionSettings?,
+    newTransientSettings: TransientSessionSettings,
+    optionsBuilder: CaptureRequestOptions.Builder
+) {
+    var needsUpdate = false
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+        prevTransientSettings?.flashMode != newTransientSettings.flashMode
+    ) {
+        when (newTransientSettings.flashMode) {
+            FlashMode.LOW_LIGHT_BOOST -> {
+                optionsBuilder.setCaptureRequestOption(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+            }
+            else -> {
+                optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
+            }
+        }
+        needsUpdate = true
+    }
+
+    val newTestPattern = newTransientSettings.testPattern
+    if (prevTransientSettings?.testPattern != newTestPattern) {
+        val (mode: Int?, data: IntArray?) = when (newTestPattern) {
+            TestPattern.Off -> Pair(null, null)
+            TestPattern.ColorBars -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS, null)
+            TestPattern.ColorBarsFadeToGray -> Pair(
+                CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY,
+                null
+            )
+            TestPattern.PN9 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9, null)
+            TestPattern.Custom1 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1, null)
+            is TestPattern.SolidColor -> {
+                Pair(
+                    CameraMetadata.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR,
+                    intArrayOf(
+                        newTestPattern.red.toInt(),
+                        newTestPattern.greenEven.toInt(),
+                        newTestPattern.greenOdd.toInt(),
+                        newTestPattern.blue.toInt()
+                    )
+                )
+            }
+        }
+        if (mode != null) {
+            optionsBuilder.setCaptureRequestOption(
+                CaptureRequest.SENSOR_TEST_PATTERN_MODE,
+                mode
+            )
+        } else {
+            optionsBuilder.clearCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_MODE)
+        }
+
+        if (data != null) {
+            optionsBuilder.setCaptureRequestOption(
+                CaptureRequest.SENSOR_TEST_PATTERN_DATA,
+                data
+            )
+        } else {
+            optionsBuilder.clearCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_DATA)
+        }
+        needsUpdate = true
+    }
+
+    if (needsUpdate) {
+        Camera2CameraControl.from(camera.cameraControl)
+            .setCaptureRequestOptions(optionsBuilder.build())
     }
 }
 
@@ -722,6 +788,9 @@ private fun getPendingRecording(
         val contentValues =
             ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                    put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                }
             }
         val mediaStoreOutput =
             MediaStoreOutputOptions.Builder(

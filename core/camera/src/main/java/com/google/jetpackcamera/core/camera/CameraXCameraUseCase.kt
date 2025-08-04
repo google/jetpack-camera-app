@@ -29,7 +29,6 @@ import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -39,41 +38,35 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.DebugCameraInfoUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.common.DefaultDispatcher
 import com.google.jetpackcamera.core.common.IODispatcher
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.ZoomStrategy
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
-import com.google.jetpackcamera.settings.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.Illuminant
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LensToZoom
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
 import com.google.jetpackcamera.settings.model.SystemConstraints
-import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.ZoomStrategy
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.File
-import java.io.FileNotFoundException
-import java.lang.IllegalStateException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -86,6 +79,13 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -131,9 +131,9 @@ constructor(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = configureAndGetCameraProvider(
             context = application,
             singleLensMode = debugSettings.singleLensMode
@@ -228,11 +228,11 @@ constructor(
                         val supportedFlashModes = buildSet {
                             add(FlashMode.OFF)
                             if ((
-                                    setOf(
-                                        Illuminant.FLASH_UNIT,
-                                        Illuminant.SCREEN
-                                    ) intersect supportedIlluminants
-                                    ).isNotEmpty()
+                                        setOf(
+                                            Illuminant.FLASH_UNIT,
+                                            Illuminant.SCREEN
+                                        ) intersect supportedIlluminants
+                                        ).isNotEmpty()
                             ) {
                                 add(FlashMode.ON)
                                 add(FlashMode.AUTO)
@@ -241,6 +241,12 @@ constructor(
                             if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
                                 add(FlashMode.LOW_LIGHT_BOOST)
                             }
+                        }
+
+                        val supportedTestPatterns = if (debugSettings.isDebugModeEnabled) {
+                            camInfo.availableTestPatterns
+                        } else {
+                            setOf(TestPattern.Off)
                         }
 
                         put(
@@ -260,7 +266,8 @@ constructor(
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
-                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
+                                unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
+                                supportedTestPatterns = supportedTestPatterns
                             )
                         )
                     }
@@ -281,6 +288,7 @@ constructor(
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
+                .tryApplyTestPatternConstraints()
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -310,7 +318,8 @@ constructor(
                     deviceRotation = currentCameraSettings.deviceRotation,
                     flashMode = currentCameraSettings.flashMode,
                     primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomRatios = currentCameraSettings.defaultZoomRatios
+                    zoomRatios = currentCameraSettings.defaultZoomRatios,
+                    testPattern = currentCameraSettings.debugSettings.testPattern
                 )
 
                 when (currentCameraSettings.concurrentCameraMode) {
@@ -422,7 +431,7 @@ constructor(
                 sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
                     .first {
                         it in supportedStabilizationModes &&
-                            targetFrameRate !in it.unsupportedFpsSet
+                                targetFrameRate !in it.unsupportedFpsSet
                     }
             } else {
                 requestedStabilizationMode
@@ -474,6 +483,12 @@ constructor(
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
             contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                contentValues.put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    getDefaultMediaSaveLocation()
+                )
+            }
             outputFileOptions = OutputFileOptions.Builder(
                 contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -526,9 +541,14 @@ constructor(
             Calendar.getInstance().time.toString()
         )
         eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        val saveLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+            getDefaultMediaSaveLocation()
+        } else {
+            Environment.DIRECTORY_PICTURES
+        }
         eligibleContentValues.put(
             MediaStore.Images.Media.RELATIVE_PATH,
-            Environment.DIRECTORY_PICTURES
+            saveLocation
         )
         return eligibleContentValues
     }
@@ -572,6 +592,12 @@ constructor(
         }
     }
 
+    override fun setTestPattern(newTestPattern: TestPattern) {
+        currentSettings.update { old ->
+            old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
+        }
+    }
+
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
         currentSettings.update { old ->
@@ -581,6 +607,7 @@ constructor(
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
                     ?.tryApplyCaptureModeConstraints()
+                    ?.tryApplyTestPatternConstraints()
             } else {
                 old
             }
@@ -661,11 +688,11 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomStrategy.Absolute -> change.value
                     is ZoomStrategy.Scale -> (
-                        this.defaultZoomRatios
-                            [lensFacing]
-                            ?: 1.0f
-                        ) *
-                        change.value
+                            this.defaultZoomRatios
+                                [lensFacing]
+                                ?: 1.0f
+                            ) *
+                            change.value
 
                     is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
@@ -805,6 +832,15 @@ constructor(
             }
         } ?: this
 
+    private fun CameraAppSettings.tryApplyTestPatternConstraints(): CameraAppSettings =
+        systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+            if (debugSettings.testPattern in constraints.supportedTestPatterns) {
+                this
+            } else {
+                copy(debugSettings = debugSettings.copy(testPattern = TestPattern.Off))
+            }
+        } ?: this
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
@@ -820,7 +856,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase?.screenFlash != null
+                imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -930,6 +966,7 @@ constructor(
             }
             return ProcessCameraProvider.awaitInstance(context)
         }
+
         private val FIXED_FRAME_RATES = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
     }
 }

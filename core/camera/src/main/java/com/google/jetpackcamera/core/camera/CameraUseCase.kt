@@ -19,21 +19,21 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LowLightBoostState
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -48,7 +48,6 @@ interface CameraUseCase {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings = DebugSettings(),
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
@@ -89,6 +88,8 @@ interface CameraUseCase {
     suspend fun stopVideoRecording()
 
     fun changeZoomRatio(newZoomState: CameraZoomRatio)
+
+    fun setTestPattern(newTestPattern: TestPattern)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 

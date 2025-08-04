@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -59,10 +60,10 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
-import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -186,7 +187,7 @@ class MainActivity : ComponentActivity() {
         return ExternalCaptureMode.StandardMode { event ->
             if (event is ExternalCaptureMode.ImageCaptureEvent.ImageSaved) {
                 @Suppress("DEPRECATION")
-                val intent = Intent(android.hardware.Camera.ACTION_NEW_PICTURE)
+                val intent = Intent(Camera.ACTION_NEW_PICTURE)
                 intent.setData(event.savedUri)
                 sendBroadcast(intent)
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,44 +63,49 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.feature.preview.quicksettings.QuickSettingsBottomSheet
-import com.google.jetpackcamera.feature.preview.quicksettings.ui.ToggleQuickSettingsButton
-import com.google.jetpackcamera.feature.preview.ui.AmplitudeToggleButton
-import com.google.jetpackcamera.feature.preview.ui.CaptureButton
-import com.google.jetpackcamera.feature.preview.ui.CaptureModeToggleButton
-import com.google.jetpackcamera.feature.preview.ui.CurrentCameraIdText
-import com.google.jetpackcamera.feature.preview.ui.FlipCameraButton
-import com.google.jetpackcamera.feature.preview.ui.ImageWell
-import com.google.jetpackcamera.feature.preview.ui.PauseResumeToggleButton
-import com.google.jetpackcamera.feature.preview.ui.PreviewDisplay
 import com.google.jetpackcamera.feature.preview.ui.PreviewLayout
-import com.google.jetpackcamera.feature.preview.ui.ScreenFlashScreen
-import com.google.jetpackcamera.feature.preview.ui.SettingsNavButton
-import com.google.jetpackcamera.feature.preview.ui.TestableSnackbar
-import com.google.jetpackcamera.feature.preview.ui.ZoomButtonRow
-import com.google.jetpackcamera.feature.preview.ui.ZoomLevelDisplayState
-import com.google.jetpackcamera.feature.preview.ui.ZoomRatioText
-import com.google.jetpackcamera.feature.preview.ui.debouncedOrientationFlow
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayComponent
-import com.google.jetpackcamera.feature.preview.ui.debug.DebugOverlayToggleButton
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LensToZoom
-import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CaptureButton
+import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
+import com.google.jetpackcamera.ui.components.capture.CurrentCameraIdText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
+import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
+import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
+import com.google.jetpackcamera.ui.components.capture.SettingsNavButton
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
+import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
+import com.google.jetpackcamera.ui.components.capture.ZoomRatioText
+import com.google.jetpackcamera.ui.components.capture.ZoomState
+import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -254,9 +259,11 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
+                onSetTestPattern = viewModel::setTestPattern,
+
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -339,6 +346,7 @@ private fun ContentScreen(
     onSetCaptureMode: (CaptureMode) -> Unit = {},
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
+    onSetTestPattern: (TestPattern) -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -358,12 +366,12 @@ private fun ContentScreen(
         ContentResolver,
         Uri?,
         Boolean,
-        (PreviewViewModel.ImageCaptureEvent, Int) -> Unit
+        (ImageCaptureEvent, Int) -> Unit
     ) -> Unit = { _, _, _, _ -> },
     onStartVideoRecording: (
         Uri?,
         Boolean,
-        (PreviewViewModel.VideoCaptureEvent) -> Unit
+        (VideoCaptureEvent) -> Unit
     ) -> Unit = { _, _, _ -> },
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
@@ -436,9 +444,8 @@ private fun ContentScreen(
         },
         zoomLevelDisplay = {
             Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                if (isDebugMode) {
-
-                    CurrentCameraIdText(captureUiState.debugUiState.currentPhysicalCameraId, captureUiState.debugUiState.currentLogicalCameraId)
+                (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
+                    CurrentCameraIdText(it.currentPhysicalCameraId, it.currentLogicalCameraId)
 
                     AnimatedVisibility(
                         visible = true,
@@ -446,7 +453,7 @@ private fun ContentScreen(
                         exit = fadeOut()
                     ) {
                         ZoomRatioText(
-                            modifier = it,
+                            modifier = Modifier,
                             zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
                         )
                     }
@@ -528,16 +535,19 @@ private fun ContentScreen(
             )
         },
         debugToggle = {
-            if (captureUiState.debugUiState.isDebugMode) {
+            if (captureUiState.debugUiState is DebugUiState.Enabled) {
                 DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
             }
         },
         debugOverlay = {
-            DebugOverlayComponent(
-                toggleIsOpen = onToggleDebugOverlay,
-                debugUiState = captureUiState.debugUiState,
-                onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
-            )
+            (captureUiState.debugUiState as? DebugUiState.Enabled.Open)?.let {
+                DebugOverlayComponent(
+                    toggleIsOpen = onToggleDebugOverlay,
+                    debugUiState = it,
+                    onSetTestPattern = onSetTestPattern,
+                    onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
+                )
+            }
         },
         screenFlashOverlay = {
             // Screen flash overlay that stays on top of everything but invisible normally. This should

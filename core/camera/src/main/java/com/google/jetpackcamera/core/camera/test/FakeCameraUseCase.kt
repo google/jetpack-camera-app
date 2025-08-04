@@ -22,20 +22,20 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DebugSettings
-import com.google.jetpackcamera.settings.model.DeviceRotation
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +66,6 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
-        debugSettings: DebugSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         initialized = true
@@ -155,6 +154,13 @@ class FakeCameraUseCase(defaultCameraSettings: CameraAppSettings = CameraAppSett
     override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         zoomChanges.update { newZoomState }
     }
+
+    override fun setTestPattern(newTestPattern: TestPattern) {
+        currentSettings.update { old ->
+            old.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern))
+        }
+    }
+
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)

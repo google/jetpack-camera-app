@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.ui.uistate.capture.compound
 
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.settings.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.VideoQuality
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -53,7 +53,7 @@ sealed interface CaptureUiState {
         val captureModeToggleUiState: CaptureModeToggleUiState =
             CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
-        val debugUiState: DebugUiState = DebugUiState(),
+        val debugUiState: DebugUiState = DebugUiState.Disabled,
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,

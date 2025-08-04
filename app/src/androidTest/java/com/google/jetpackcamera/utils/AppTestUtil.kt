@@ -22,10 +22,13 @@ import android.net.Uri
 import android.os.Build
 import android.provider.BaseColumns
 import android.provider.MediaStore
+import android.util.Log
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.transform
+
+private const val TAG = "AppTestUtil"
 
 internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.CAMERA)
@@ -119,7 +122,10 @@ fun mediaStoreInsertedFlow(
             override fun onChange(selfChange: Boolean, uris: Collection<Uri>, flags: Int) {
                 uris.forEach { uri ->
                     queryWrittenFiles(uri).forEach {
-                        trySend(it)
+                        val result = trySend(it)
+                        if (result.isFailure) {
+                            Log.d(TAG, "Media store change failed result: $result")
+                        }
                     }
                 }
             }

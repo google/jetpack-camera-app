@@ -16,14 +16,33 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import android.util.Size
+import com.google.jetpackcamera.model.TestPattern
 
-data class DebugUiState(
-    val cameraPropertiesJSON: String = "",
-    val videoResolution: Size? = null,
-    val isDebugMode: Boolean = false,
-    val isDebugOverlayOpen: Boolean = false,
-    val currentPhysicalCameraId: String? = null,
-    val currentLogicalCameraId: String? = null
-) {
-    companion object
+sealed interface DebugUiState {
+    data object Disabled : DebugUiState
+
+    sealed interface Enabled : DebugUiState {
+        val currentPhysicalCameraId: String?
+        val currentLogicalCameraId: String?
+
+        data class Closed(
+            override val currentPhysicalCameraId: String? = null,
+            override val currentLogicalCameraId: String? = null
+        ) : Enabled {
+            companion object
+        }
+
+        data class Open(
+            val cameraPropertiesJSON: String = "",
+            val videoResolution: Size? = null,
+            override val currentPhysicalCameraId: String? = null,
+            override val currentLogicalCameraId: String? = null,
+            val selectedTestPattern: TestPattern = TestPattern.Off,
+            val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
+        ) : Enabled {
+            companion object
+        }
+    }
+
+
 }

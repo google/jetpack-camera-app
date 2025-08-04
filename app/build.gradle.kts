@@ -95,10 +95,6 @@ android {
             }
         }
     }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
-    }
 }
 
 dependencies {
@@ -151,8 +147,9 @@ dependencies {
     // Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // Access Settings data
+    // Access settings & model data
     implementation(project(":data:settings"))
+    implementation(project(":core:model"))
 
     // Camera Preview
     implementation(project(":feature:preview"))
@@ -164,6 +161,8 @@ dependencies {
     implementation(project(":feature:permissions"))
     // benchmark
     implementation(libs.androidx.profileinstaller)
+    // capture components
+    implementation(project(":ui:components:capture"))
 }
 
 // Allow references to generated code

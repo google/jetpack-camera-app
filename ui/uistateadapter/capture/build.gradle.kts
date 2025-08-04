@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.compose.material3)
 
     implementation(project(":data:settings"))
+    implementation(project(":core:model"))
     implementation(project(":data:media"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))

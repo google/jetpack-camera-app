@@ -22,9 +22,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.core.util.toClosedRange
-import com.google.jetpackcamera.settings.model.CameraZoomRatio
-import com.google.jetpackcamera.settings.model.LensToZoom
-import com.google.jetpackcamera.settings.model.ZoomStrategy
+import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.ZoomStrategy
 
 class ZoomState(
     initialZoomLevel: Float,

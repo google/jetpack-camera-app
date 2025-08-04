@@ -17,24 +17,43 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-fun DebugUiState.Companion.from(
-    cameraPropertiesJSON: String,
+fun DebugUiState.Enabled.Open.Companion.from(
+    systemConstraints: SystemConstraints,
+    cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
-    isDebugMode: Boolean
-): DebugUiState {
-    return DebugUiState(
+    cameraPropertiesJSON: String
+): DebugUiState.Enabled {
+    val availableTestPatterns = buildSet {
+        systemConstraints.forCurrentLens(cameraAppSettings)?.supportedTestPatterns
+            ?.forEach {
+                if (it is TestPattern.SolidColor) {
+                    addAll(TestPattern.SolidColor.PREDEFINED_COLORS)
+                } else {
+                    add(it)
+                }
+            }
+    }
+
+    return DebugUiState.Enabled.Open(
         cameraPropertiesJSON = cameraPropertiesJSON,
-        isDebugMode = isDebugMode,
-        isDebugOverlayOpen = false,
         videoResolution = Size(
             cameraState.videoQualityInfo.width,
             cameraState.videoQualityInfo.height
         ),
+        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId
+        selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
+        availableTestPatterns = availableTestPatterns
     )
 }
 
-fun DebugUiState.toggleDebugOverlay(): DebugUiState = copy(isDebugOverlayOpen = !isDebugOverlayOpen)
+fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState) = DebugUiState.Enabled.Closed(
+    currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId
+)
