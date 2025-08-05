@@ -25,18 +25,22 @@ sealed interface DebugUiState {
         val currentPhysicalCameraId: String?
         val currentLogicalCameraId: String?
 
+        val currentPrimaryZoomRatio: Float?
+
         data class Closed(
             override val currentPhysicalCameraId: String? = null,
-            override val currentLogicalCameraId: String? = null
+            override val currentLogicalCameraId: String? = null,
+            override val currentPrimaryZoomRatio: Float?
         ) : Enabled {
             companion object
         }
 
         data class Open(
-            val cameraPropertiesJSON: String = "",
-            val videoResolution: Size? = null,
             override val currentPhysicalCameraId: String? = null,
             override val currentLogicalCameraId: String? = null,
+            override val currentPrimaryZoomRatio: Float?,
+            val cameraPropertiesJSON: String = "",
+            val videoResolution: Size? = null,
             val selectedTestPattern: TestPattern = TestPattern.Off,
             val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
         ) : Enabled {

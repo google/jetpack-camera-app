@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.SystemConstraints
@@ -49,11 +50,13 @@ fun DebugUiState.Enabled.Open.Companion.from(
         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
-        availableTestPatterns = availableTestPatterns
+        availableTestPatterns = availableTestPatterns,
+        currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing]
     )
 }
 
-fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState) = DebugUiState.Enabled.Closed(
+fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing) = DebugUiState.Enabled.Closed(
     currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId
+    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+    currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing]
 )

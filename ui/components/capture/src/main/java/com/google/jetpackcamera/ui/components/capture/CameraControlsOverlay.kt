@@ -316,23 +316,6 @@ private fun ControlsBottom(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AnimatedVisibility(
-                    visible = (
-                        captureUiState.debugUiState is DebugUiState.Enabled && showZoomLevel &&
-                            zoomUiState is ZoomUiState.Enabled
-                        ),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    ZoomRatioText(zoomUiState = zoomUiState as ZoomUiState.Enabled)
-                }
-                val debugUiState = captureUiState.debugUiState
-                if (debugUiState is DebugUiState.Enabled) {
-                    CurrentCameraIdText(
-                        debugUiState.currentPhysicalCameraId,
-                        debugUiState.currentLogicalCameraId
-                    )
-                }
                 if (zoomControlUiState is ZoomControlUiState.Enabled &&
                     zoomUiState is ZoomUiState.Enabled
                 ) {

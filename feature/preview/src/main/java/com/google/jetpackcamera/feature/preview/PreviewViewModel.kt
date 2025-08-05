@@ -321,7 +321,7 @@ class PreviewViewModel @AssistedInject constructor(
                 cameraPropertiesJSON
             )
         } else {
-            DebugUiState.Enabled.Closed.from(cameraState)
+            DebugUiState.Enabled.Closed.from(cameraState, cameraAppSettings.cameraLensFacing)
         }
     } else {
         DebugUiState.Disabled

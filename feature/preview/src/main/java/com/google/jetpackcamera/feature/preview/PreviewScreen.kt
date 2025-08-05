@@ -23,9 +23,6 @@ import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -80,7 +77,6 @@ import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
-import com.google.jetpackcamera.ui.components.capture.CurrentCameraIdText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
@@ -94,11 +90,9 @@ import com.google.jetpackcamera.ui.components.capture.SettingsNavButton
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
-import com.google.jetpackcamera.ui.components.capture.ZoomRatioText
 import com.google.jetpackcamera.ui.components.capture.ZoomState
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
-import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
+import com.google.jetpackcamera.ui.components.capture.debug.DebugComponent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -315,7 +309,6 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
@@ -377,11 +370,8 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false,
     onImageWellClick: () -> Unit = {}
 ) {
-    // val snackbarHostState = remember { SnackbarHostState() }
-
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
@@ -444,20 +434,6 @@ private fun ContentScreen(
         },
         zoomLevelDisplay = {
             Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
-                    CurrentCameraIdText(it.currentPhysicalCameraId, it.currentLogicalCameraId)
-
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        ZoomRatioText(
-                            modifier = Modifier,
-                            zoomUiState = captureUiState.zoomUiState as ZoomUiState.Enabled
-                        )
-                    }
-                }
                 ZoomButtonRow(
                     zoomControlUiState = captureUiState.zoomControlUiState,
                     onChangeZoom = { targetZoom ->
@@ -534,18 +510,14 @@ private fun ContentScreen(
                 }
             )
         },
-        debugToggle = {
-            if (captureUiState.debugUiState is DebugUiState.Enabled) {
-                DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
-            }
-        },
-        debugOverlay = {
-            (captureUiState.debugUiState as? DebugUiState.Enabled.Open)?.let {
-                DebugOverlayComponent(
+        debugOverlay = { modifier, extraControls ->
+            (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
+                DebugComponent(
                     toggleIsOpen = onToggleDebugOverlay,
                     debugUiState = it,
                     onSetTestPattern = onSetTestPattern,
-                    onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) }
+                    onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
+                    extraControls = extraControls.orEmpty()
                 )
             }
         },

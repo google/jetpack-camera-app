@@ -612,34 +612,9 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-@Composable
-fun ZoomRatioText(modifier: Modifier = Modifier, zoomUiState: ZoomUiState.Enabled) {
-    Text(
-        modifier = modifier
-            .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_ratio_text, zoomUiState.primaryZoomRatio ?: 1f)
-    )
-}
 
-@Composable
-fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row {
-            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
-                text = logicalCameraId ?: "---"
-            )
-        }
-        Row {
-            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
-                text = physicalCameraId ?: "---"
-            )
-        }
-    }
-}
+
+
 
 @Composable
 fun CaptureModeDropDown(
