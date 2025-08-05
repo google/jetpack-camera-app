@@ -100,8 +100,8 @@ private fun getSupportedCaptureModes(
     currentHdrImageFormatSupported: Boolean,
     externalCaptureMode: ExternalCaptureMode
 ): List<CaptureMode> = if (
-    externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode &&
-    externalCaptureMode !is ExternalCaptureMode.ExternalVideoCaptureMode &&
+    externalCaptureMode != ExternalCaptureMode.ImageCapture &&
+    externalCaptureMode != ExternalCaptureMode.VideoCapture &&
     currentHdrDynamicRangeSupported &&
     currentHdrImageFormatSupported &&
     cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF
@@ -114,7 +114,7 @@ private fun getSupportedCaptureModes(
     }
 } else if (
     cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.OFF &&
-    externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
+    externalCaptureMode == ExternalCaptureMode.ImageCapture ||
     cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
 ) {
     listOf(CaptureMode.IMAGE_ONLY)
@@ -236,7 +236,7 @@ private fun getCaptureModeDisabledReason(
 ): DisabledReason {
     when (disabledCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            if (externalCaptureMode is ExternalCaptureMode.ExternalVideoCaptureMode) {
+            if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
                 return DisabledReason
                     .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
             }
@@ -277,8 +277,8 @@ private fun getCaptureModeDisabledReason(
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            if (externalCaptureMode is ExternalCaptureMode.ExternalImageCaptureMode ||
-                externalCaptureMode is ExternalCaptureMode.ExternalMultipleImageCaptureMode
+            if (externalCaptureMode == ExternalCaptureMode.ImageCapture ||
+                externalCaptureMode == ExternalCaptureMode.MultipleImageCapture
             ) {
                 return DisabledReason
                     .VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED

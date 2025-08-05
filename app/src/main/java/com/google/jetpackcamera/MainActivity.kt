@@ -59,13 +59,17 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
+import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.collections.emptyList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -137,7 +141,8 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             JcaApp(
-                                externalCaptureMode = getPreviewMode(),
+                                externalCaptureMode = externalCaptureMode,
+                                captureUris = captureUris,
                                 debugSettings = debugSettings,
                                 openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
@@ -153,7 +158,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onFirstFrameCaptureCompleted = {
                                     firstFrameComplete?.complete(Unit)
-                                }
+                                },
+                                onCaptureEvent = captureEventCallback
                             )
                         }
                     }
@@ -181,100 +187,109 @@ class MainActivity : ComponentActivity() {
                 }
         )
 
-    private fun getStandardMode(): ExternalCaptureMode.StandardMode {
-        return ExternalCaptureMode.StandardMode { event ->
-            if (event is ExternalCaptureMode.ImageCaptureEvent.ImageSaved) {
-                @Suppress("DEPRECATION")
-                val intent = Intent(Camera.ACTION_NEW_PICTURE)
-                intent.setData(event.savedUri)
-                sendBroadcast(intent)
+    private val externalCaptureMode: ExternalCaptureMode
+        get() = intent?.action?.let { action ->
+            when (action) {
+                MediaStore.ACTION_IMAGE_CAPTURE -> ExternalCaptureMode.ImageCapture
+                MediaStore.ACTION_VIDEO_CAPTURE -> ExternalCaptureMode.VideoCapture
+                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA ->
+                    ExternalCaptureMode.MultipleImageCapture
+                else -> {
+                    Log.w(TAG, "Ignoring external intent with unknown action: $action")
+                    ExternalCaptureMode.Standard
+                }
             }
-        }
-    }
+        } ?: ExternalCaptureMode.Standard
 
-    private fun getExternalCaptureUri(): Uri? {
-        return IntentCompat.getParcelableExtra(
-            intent,
+    private val Intent.externalCaptureUri: Uri?
+        get() = IntentCompat.getParcelableExtra(
+            this,
             MediaStore.EXTRA_OUTPUT,
             Uri::class.java
-        ) ?: intent?.clipData?.getItemAt(0)?.uri
-    }
+        ) ?: this.clipData?.getItemAt(0)?.uri
 
-    private fun getMultipleExternalCaptureUri(): List<Uri>? {
-        val stringUris = intent.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)
-        if (stringUris.isNullOrEmpty()) {
-            return null
-        } else {
-            val result = mutableListOf<Uri>()
-            for (string in stringUris) {
-                result.add(Uri.parse(string))
-            }
-            return result
+    private val Intent.multipleExternalCaptureUri: List<Uri>?
+        get() = this.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)?.map(Uri::parse)
+
+    private val captureUris: List<Uri>
+        get() = when (externalCaptureMode) {
+            ExternalCaptureMode.ImageCapture,
+            ExternalCaptureMode.VideoCapture ->
+                intent?.externalCaptureUri?.let(::listOf) ?: emptyList()
+            ExternalCaptureMode.MultipleImageCapture ->
+                intent?.multipleExternalCaptureUri ?: emptyList()
+            ExternalCaptureMode.Standard -> emptyList()
         }
-    }
 
-    private fun getPreviewMode(): ExternalCaptureMode {
-        return intent?.action?.let { action ->
-            when (action) {
-                MediaStore.ACTION_IMAGE_CAPTURE ->
-                    ExternalCaptureMode.ExternalImageCaptureMode(getExternalCaptureUri()) { event ->
-                        Log.d(TAG, "onImageCapture, event: $event")
-                        if (event is ExternalCaptureMode.ImageCaptureEvent.ImageSaved) {
-                            val resultIntent = Intent()
-                            resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
-                            setResult(RESULT_OK, resultIntent)
-                            Log.d(TAG, "onImageCapture, finish()")
-                            finish()
-                        }
-                    }
-
-                MediaStore.ACTION_VIDEO_CAPTURE ->
-                    ExternalCaptureMode.ExternalVideoCaptureMode(getExternalCaptureUri()) { event ->
-                        Log.d(TAG, "onVideoCapture, event: $event")
-                        if (event is ExternalCaptureMode.VideoCaptureEvent.VideoSaved) {
-                            val resultIntent = Intent()
-                            resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
-                            setResult(RESULT_OK, resultIntent)
-                            Log.d(TAG, "onVideoCapture, finish()")
-                            finish()
-                        }
-                    }
-
-                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> {
-                    val uriList: List<Uri>? = getMultipleExternalCaptureUri()
-                    val pictureTakenUriList: ArrayList<String?> = arrayListOf()
-                    ExternalCaptureMode.ExternalMultipleImageCaptureMode(
-                        uriList
-                    ) { event: ExternalCaptureMode.ImageCaptureEvent, uriIndex: Int ->
-                        Log.d(TAG, "onMultipleImageCapture, event: $event")
-                        if (uriList == null) {
-                            when (event) {
-                                is ExternalCaptureMode.ImageCaptureEvent.ImageSaved ->
-                                    pictureTakenUriList.add(event.savedUri.toString())
-                                is ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError ->
-                                    pictureTakenUriList.add(event.exception.toString())
-                            }
-                            val resultIntent = Intent()
-                            resultIntent.putStringArrayListExtra(
-                                MediaStore.EXTRA_OUTPUT,
-                                pictureTakenUriList
-                            )
-                            setResult(RESULT_OK, resultIntent)
-                        } else if (uriIndex == uriList.size - 1) {
-                            setResult(RESULT_OK, Intent())
-                            Log.d(TAG, "onMultipleImageCapture, finish()")
-                            finish()
-                        }
+    private val captureEventCallback: (CaptureEvent) -> Unit
+        get() {
+            val pictureTakenUriList by lazy { arrayListOf<String>() }
+            return when (externalCaptureMode) {
+                ExternalCaptureMode.ImageCapture -> { event ->
+                    Log.d(TAG, "onImageCapture, event: $event")
+                    if (event is ImageCaptureEvent.ImageSaved) {
+                        val resultIntent = Intent()
+                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
+                        setResult(RESULT_OK, resultIntent)
+                        Log.d(TAG, "onImageCapture, finish()")
+                        finish()
                     }
                 }
 
-                else -> {
-                    Log.w(TAG, "Ignoring external intent with unknown action.")
-                    getStandardMode()
+                ExternalCaptureMode.VideoCapture -> { event ->
+                    Log.d(TAG, "onVideoCapture, event: $event")
+                    if (event is VideoCaptureEvent.VideoSaved) {
+                        val resultIntent = Intent()
+                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
+                        setResult(RESULT_OK, resultIntent)
+                        Log.d(TAG, "onVideoCapture, finish()")
+                        finish()
+                    }
+                }
+
+                ExternalCaptureMode.MultipleImageCapture -> { event ->
+                    Log.d(TAG, "onMultipleImageCapture, event: $event")
+                    val progress = when (event) {
+                        is ImageCaptureEvent.SequentialImageSaved -> {
+                            event.progress
+                        }
+
+                        is ImageCaptureEvent.SequentialImageCaptureError ->
+                            event.progress
+
+                        else -> null
+                    }
+
+                    if (progress == null) {
+                        if (event is ImageCaptureEvent.ImageSaved) {
+                            pictureTakenUriList.add(event.savedUri.toString())
+                        } else if (event is ImageCaptureEvent.ImageCaptureError) {
+                            pictureTakenUriList.add(event.exception.toString())
+                        }
+
+                        val resultIntent = Intent()
+                        resultIntent.putStringArrayListExtra(
+                            MediaStore.EXTRA_OUTPUT,
+                            pictureTakenUriList
+                        )
+                        setResult(RESULT_OK, resultIntent)
+                    } else if (progress.currentValue == progress.range.endInclusive) {
+                        setResult(RESULT_OK, Intent())
+                        Log.d(TAG, "onMultipleImageCapture, finish()")
+                        finish()
+                    }
+                }
+
+                ExternalCaptureMode.Standard -> { event ->
+                    if (event is ImageCaptureEvent.ImageSaved) {
+                        @Suppress("DEPRECATION")
+                        val intent = Intent(Camera.ACTION_NEW_PICTURE)
+                        intent.setData(event.savedUri)
+                        sendBroadcast(intent)
+                    }
                 }
             }
-        } ?: getStandardMode()
-    }
+        }
 
     companion object {
         private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
