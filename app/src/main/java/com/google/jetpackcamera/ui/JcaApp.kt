@@ -91,8 +91,7 @@ private fun JetpackCameraNavHost(
                 shouldRequestReadWriteStoragePermission = externalCaptureMode ==
                     ExternalCaptureMode.Standard &&
                     Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
-                shouldRequestAudioPermission = externalCaptureMode
-                    == ExternalCaptureMode.Standard,
+                shouldRequestAudioPermission = externalCaptureMode == ExternalCaptureMode.Standard,
                 onAllPermissionsGranted = {
                     // Pop off the permissions screen
                     navController.navigateToPreview {

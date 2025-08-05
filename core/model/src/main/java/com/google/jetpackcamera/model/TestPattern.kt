@@ -210,7 +210,11 @@ sealed interface TestPattern {
          */
         fun fromProto(proto: ProtoTestPattern): TestPattern {
             return when (proto.patternCase) {
-                PatternCase.OFF -> Off
+                PatternCase.OFF,
+                PatternCase.PATTERN_NOT_SET -> {
+                    // Default to Off if the oneof is not set
+                    Off
+                }
                 PatternCase.COLOR_BARS -> ColorBars
                 PatternCase.COLOR_BARS_FADE_TO_GRAY -> ColorBarsFadeToGray
                 PatternCase.PN9 -> PN9
@@ -223,10 +227,6 @@ sealed interface TestPattern {
                         greenOdd = protoSolidColor.greenOdd.toUInt(),
                         blue = protoSolidColor.blue.toUInt()
                     )
-                }
-                PatternCase.PATTERN_NOT_SET -> {
-                    // Default to Off if the oneof is not set
-                    Off
                 }
             }
         }

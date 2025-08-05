@@ -63,8 +63,8 @@ data class DebugSettings(
          */
         fun DebugSettings.toProto(): DebugSettingsProto = debugSettingsProto {
             isDebugModeEnabled = this@toProto.isDebugModeEnabled
-            if (this@toProto.singleLensMode != null) {
-                singleLensMode = this@toProto.singleLensMode.toProto()
+            this@toProto.singleLensMode?.let { lensFacing ->
+                singleLensMode = lensFacing.toProto()
             }
             testPattern = this@toProto.testPattern.toProto()
         }

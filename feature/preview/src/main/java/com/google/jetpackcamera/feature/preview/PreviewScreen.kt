@@ -70,7 +70,6 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -113,7 +112,6 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
@@ -306,7 +304,6 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
@@ -358,7 +355,6 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false,
     onImageWellClick: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -384,6 +380,11 @@ private fun ContentScreen(
                 onSetAudioEnabled(!isAudioEnabled)
             }
         }
+
+        val isDebugMode = remember(captureUiState.debugUiState) {
+            captureUiState.debugUiState is DebugUiState.Enabled
+        }
+
         Box(modifier.fillMaxSize()) {
             // display camera feed. this stays behind everything else
             PreviewDisplay(
