@@ -34,8 +34,8 @@ fun HdrUiState.Companion.from(
         cameraAppSettings
     )
     return when (externalCaptureMode) {
-        is ExternalCaptureMode.ExternalImageCaptureMode,
-        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> if (
+        ExternalCaptureMode.ImageCapture,
+        ExternalCaptureMode.MultipleImageCapture -> if (
             cameraConstraints
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
@@ -45,7 +45,7 @@ fun HdrUiState.Companion.from(
             HdrUiState.Unavailable
         }
 
-        is ExternalCaptureMode.ExternalVideoCaptureMode -> if (
+        ExternalCaptureMode.VideoCapture -> if (
             cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
             cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
         ) {
@@ -57,7 +57,7 @@ fun HdrUiState.Companion.from(
             HdrUiState.Unavailable
         }
 
-        is ExternalCaptureMode.StandardMode -> if ((
+        ExternalCaptureMode.Standard -> if ((
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
                     true ||
                     cameraConstraints?.supportedImageFormatsMap?.get(
