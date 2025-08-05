@@ -60,6 +60,8 @@ const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTextField"
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
 const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
+
+// todo(kc) rename quick_settings_drop_down to something more appropriate?
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 
 const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
