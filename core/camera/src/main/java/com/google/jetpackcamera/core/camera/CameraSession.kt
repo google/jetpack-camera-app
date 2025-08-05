@@ -85,6 +85,7 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
@@ -752,15 +753,25 @@ private fun getPendingRecording(
         is SaveLocation.Explicit ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try {
-                    videoCaptureUseCase.output.prepareRecording(
-                        context,
-                        FileDescriptorOutputOptions.Builder(
-                            context.applicationContext.contentResolver.openFileDescriptor(
-                                saveLocation.locationUri,
-                                "rw"
-                            )!!
-                        ).build()
-                    )
+                    context.applicationContext.contentResolver.openFileDescriptor(
+                        saveLocation.locationUri,
+                        "rw"
+                    )?.let { pfd ->
+                        videoCaptureUseCase.output.prepareRecording(
+                            context,
+                            FileDescriptorOutputOptions.Builder(pfd).build()
+                        )
+                    } ?: run {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                FileNotFoundException(
+                                    "Failed to open file descriptor " +
+                                        "for URI: ${saveLocation.locationUri}"
+                                )
+                            )
+                        )
+                        null
+                    }
                 } catch (e: Exception) {
                     onVideoRecord(
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
@@ -769,10 +780,17 @@ private fun getPendingRecording(
                 }
             } else {
                 if (saveLocation.locationUri.scheme == "file") {
-                    val fileOutputOptions = FileOutputOptions.Builder(
-                        File(saveLocation.locationUri.path!!)
-                    ).build()
-                    videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+                    saveLocation.locationUri.path?.let { path ->
+                        val fileOutputOptions = FileOutputOptions.Builder(File(path)).build()
+                        videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+                    } ?: run {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                RuntimeException("Uri path is null for file scheme.")
+                            )
+                        )
+                        null
+                    }
                 } else {
                     onVideoRecord(
                         CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(

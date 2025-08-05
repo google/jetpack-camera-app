@@ -648,6 +648,16 @@ class PreviewViewModel @AssistedInject constructor(
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
+                if (shouldUseUri && videoCaptureUri == null) {
+                    onVideoCapture(
+                        VideoCaptureEvent.VideoCaptureError(
+                            IllegalArgumentException(
+                                "Video capture URI cannot be null for external capture."
+                            )
+                        )
+                    )
+                    return@launch
+                }
                 val saveLocation = if (videoCaptureUri == null || !shouldUseUri) {
                     SaveLocation.Default
                 } else {
