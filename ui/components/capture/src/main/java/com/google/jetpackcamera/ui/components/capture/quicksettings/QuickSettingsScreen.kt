@@ -128,6 +128,7 @@ fun QuickSettingsBottomSheet(
 
                 FocusedQuickSetting.NONE ->
                     buildList {
+                        //todo(kc): change to expanded setting?
                         add {
                             QuickSetFlash(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
@@ -195,7 +196,6 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
-                            // todo(): use a UiState for this
                             QuickSetConcurrentCamera(
                                 modifier =
                                 Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),

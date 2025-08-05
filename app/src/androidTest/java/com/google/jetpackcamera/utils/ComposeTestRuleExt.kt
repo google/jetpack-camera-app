@@ -36,6 +36,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
@@ -58,7 +59,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
@@ -543,7 +544,7 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
 @CanIgnoreReturnValue
-inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
+inline fun <T> ComposeTestRule.visitQuickSettings(settingTagToFind: String? = null, crossinline block: ComposeTestRule.() -> T): T {
     var needReturnFromQuickSettings = false
     onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
         if (isDisplayed()) {
@@ -563,6 +564,8 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
             throw e
         }
     }
+    // if we opened quick settings and want to immediately search for a setting
+    settingTagToFind?.let { searchForQuickSetting(it) }
     try {
         return block()
     } finally {
@@ -605,7 +608,7 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
     // if reaches the end and not found, throw an error
     val scrollableNode = this.onNodeWithTag(QUICK_SETTINGS_SCROLL_CONTAINER)
     scrollableNode.assertExists()
-    // fixme(kc): bug? it will not continue once the tag is found
+    scrollableNode.performScrollToIndex(0)
     scrollableNode.performScrollToNode(hasTestTag(settingTestTag))
 }
 
@@ -615,15 +618,15 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
 fun ComposeTestRule.unFocusQuickSetting() {
     // this will click the center of the composable... which may coincide with another composable.
     // so we offset click input out of the way
-    onNodeWithTag(QUICK_SETTINGS_BACKGROUND_FOCUSED)
+    onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON)
         .assertExists()
-        .assertHasClickAction()
-        .performTouchInput { down(centerLeft) }
-        .performTouchInput { up() }
+        .performClick()
 
     this
         .waitUntil(timeoutMillis = 2_000) {
-            onNodeWithTag(QUICK_SETTINGS_BACKGROUND_MAIN).isDisplayed()
+            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
+            onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON).isNotDisplayed()
+
         }
 }
 
@@ -634,6 +637,8 @@ fun ComposeTestRule.unFocusQuickSetting() {
 // ////////////////////////////
 fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
     visitQuickSettings {
+        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
+
         if (isHdrEnabled() != enabled) {
             onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                 .assume(isEnabled()) { "Device does not support HDR." }
@@ -645,6 +650,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
 
 fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
     visitQuickSettings {
+        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
         waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
         onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
             .assume(isEnabled()) { "Device does not support concurrent camera." }
@@ -659,6 +665,8 @@ fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode
 
 fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
+        searchForQuickSetting(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+
         waitUntil(timeoutMillis = 1000) {
             onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
         }
@@ -692,6 +700,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
 fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
     visitQuickSettings {
         // Click the flash button to switch to ON
+        searchForQuickSetting(QUICK_SETTINGS_FLASH_BUTTON)
         onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
             .assertExists()
             .assume(isEnabled()) {

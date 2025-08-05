@@ -66,9 +66,12 @@ val compatMainActivityExtras: Bundle?
         // to initialize. Set the device to use single lens mode to work around this issue.
         Bundle().apply {
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
+            putBoolean("KEY_DEBUG_MODE", true)
         }
     } else {
-        null
+        Bundle().apply {
+            putBoolean("KEY_DEBUG_MODE", true)
+        }
     }
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
