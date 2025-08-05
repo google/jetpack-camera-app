@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
@@ -94,7 +93,7 @@ fun ZoomButtonRow(
                     shape = CircleShape
                 )
                 .padding(horizontal = spacing / 2, vertical = spacing / 2)
-                .semantics{
+                .semantics {
                     testTag = ZOOM_BUTTON_ROW_TAG
                     stateDescription = zoomControlUiState.primaryZoomRatio.toString()
                 }
@@ -154,8 +153,8 @@ private fun ZoomButton(
         modifier = modifier.heightIn(buttonSize)
             .semantics {
                 testTag = getZoomButtonTestTag(targetZoom)
-                //todo(kc): move to text resource
-                contentDescription = if(isSelected) "selected" else "not selected"
+                // todo(kc): move to text resource
+                contentDescription = if (isSelected) "selected" else "not selected"
             }
             .testTag(getZoomButtonTestTag(targetZoom)),
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
@@ -181,16 +180,18 @@ private fun ZoomButton(
     }
 }
 
-private fun getZoomButtonTestTag(buttonValue: Float):String{
-    return if (buttonValue < 1 && buttonValue >0)
+private fun getZoomButtonTestTag(buttonValue: Float): String {
+    return if (buttonValue < 1 && buttonValue > 0) {
         ZOOM_BUTTON_MIN_TAG
-    else if (buttonValue == 1f)
+    } else if (buttonValue == 1f) {
         ZOOM_BUTTON_1_TAG
-    else if (buttonValue == 2f)
+    } else if (buttonValue == 2f) {
         ZOOM_BUTTON_2_TAG
-    else if (buttonValue == 5f)
+    } else if (buttonValue == 5f) {
         ZOOM_BUTTON_5_TAG
-    else TODO("Zoom button with value $buttonValue needs a test tag")
+    } else {
+        TODO("Zoom button with value $buttonValue needs a test tag")
+    }
 }
 
 @Preview(showBackground = true)

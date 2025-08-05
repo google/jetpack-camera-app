@@ -24,7 +24,6 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
-import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
@@ -59,9 +58,8 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
@@ -544,7 +542,10 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
 @CanIgnoreReturnValue
-inline fun <T> ComposeTestRule.visitQuickSettings(settingTagToFind: String? = null, crossinline block: ComposeTestRule.() -> T): T {
+inline fun <T> ComposeTestRule.visitQuickSettings(
+    settingTagToFind: String? = null,
+    crossinline block: ComposeTestRule.() -> T
+): T {
     var needReturnFromQuickSettings = false
     onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
         if (isDisplayed()) {
@@ -626,7 +627,6 @@ fun ComposeTestRule.unFocusQuickSetting() {
         .waitUntil(timeoutMillis = 2_000) {
             onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
             onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON).isNotDisplayed()
-
         }
 }
 

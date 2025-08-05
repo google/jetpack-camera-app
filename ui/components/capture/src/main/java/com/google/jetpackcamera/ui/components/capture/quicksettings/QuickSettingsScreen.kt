@@ -128,7 +128,7 @@ fun QuickSettingsBottomSheet(
 
                 FocusedQuickSetting.NONE ->
                     buildList {
-                        //todo(kc): change to expanded setting?
+                        // todo(kc): change to expanded setting?
                         add {
                             QuickSetFlash(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
