@@ -264,7 +264,7 @@ class MainActivity : ComponentActivity() {
                         if (event is ImageCaptureEvent.ImageSaved) {
                             pictureTakenUriList.add(event.savedUri.toString())
                         } else if (event is ImageCaptureEvent.ImageCaptureError) {
-                            pictureTakenUriList.add(event.exception.toString())
+                            pictureTakenUriList.add("")
                         }
 
                         val resultIntent = Intent()
