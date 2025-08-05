@@ -142,8 +142,7 @@ fun NavGraphBuilder.previewScreen(
             onNavigateToPostCapture = onNavigateToPostCapture,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-            onCaptureEvent = onCaptureEvent,
-            debugSettings = debugSettings
+            onCaptureEvent = onCaptureEvent
         )
     }
 }
