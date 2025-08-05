@@ -57,7 +57,7 @@ fun ZoomButtonRow(
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     spacing: Dp = 16.dp
 ) {
-    if(zoomControlUiState is ZoomControlUiState.Enabled) {
+    if (zoomControlUiState is ZoomControlUiState.Enabled) {
         val currentZoomState by rememberUpdatedState(zoomControlUiState)
         val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
             // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.

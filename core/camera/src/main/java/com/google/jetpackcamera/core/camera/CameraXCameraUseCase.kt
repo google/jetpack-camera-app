@@ -29,6 +29,7 @@ import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -67,6 +68,12 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -79,13 +86,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraUseCase"
 const val TARGET_FPS_AUTO = 0
@@ -228,11 +228,11 @@ constructor(
                         val supportedFlashModes = buildSet {
                             add(FlashMode.OFF)
                             if ((
-                                        setOf(
-                                            Illuminant.FLASH_UNIT,
-                                            Illuminant.SCREEN
-                                        ) intersect supportedIlluminants
-                                        ).isNotEmpty()
+                                    setOf(
+                                        Illuminant.FLASH_UNIT,
+                                        Illuminant.SCREEN
+                                    ) intersect supportedIlluminants
+                                    ).isNotEmpty()
                             ) {
                                 add(FlashMode.ON)
                                 add(FlashMode.AUTO)
@@ -431,7 +431,7 @@ constructor(
                 sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
                     .first {
                         it in supportedStabilizationModes &&
-                                targetFrameRate !in it.unsupportedFpsSet
+                            targetFrameRate !in it.unsupportedFpsSet
                     }
             } else {
                 requestedStabilizationMode
@@ -688,11 +688,11 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomStrategy.Absolute -> change.value
                     is ZoomStrategy.Scale -> (
-                            this.defaultZoomRatios
-                                [lensFacing]
-                                ?: 1.0f
-                            ) *
-                            change.value
+                        this.defaultZoomRatios
+                            [lensFacing]
+                            ?: 1.0f
+                        ) *
+                        change.value
 
                     is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
@@ -856,7 +856,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase?.screenFlash != null
+            imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

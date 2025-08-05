@@ -47,6 +47,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
@@ -65,12 +66,11 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import org.junit.AssumptionViolatedException
-import com.google.jetpackcamera.settings.R as SettingsR
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 
 /**
  * Allows use of testRule.onNodeWithText that uses an integer string resource
@@ -553,7 +553,6 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
     }
 
     waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-
         try {
             onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
         } catch (e: AssertionError) {
@@ -584,9 +583,10 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
                     onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
                 }
             } else {
-                println("Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure.")
+                println(
+                    "Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure."
+                )
             }
-
 
             waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
                 onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
@@ -605,7 +605,7 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
     // if reaches the end and not found, throw an error
     val scrollableNode = this.onNodeWithTag(QUICK_SETTINGS_SCROLL_CONTAINER)
     scrollableNode.assertExists()
-    //fixme(kc): bug? it will not continue once the tag is found
+    // fixme(kc): bug? it will not continue once the tag is found
     scrollableNode.performScrollToNode(hasTestTag(settingTestTag))
 }
 

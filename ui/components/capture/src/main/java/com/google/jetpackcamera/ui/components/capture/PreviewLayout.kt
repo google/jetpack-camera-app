@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.annotation.SuppressLint
@@ -55,9 +54,12 @@ fun PreviewLayout(
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
-    debugOverlay: @Composable (modifier: Modifier, extraButtons: Array<@Composable () -> Unit>?) -> Unit,
+    debugOverlay: @Composable (
+        modifier: Modifier,
+        extraButtons: Array<@Composable () -> Unit>?
+    ) -> Unit,
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
-    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -79,7 +81,7 @@ fun PreviewLayout(
                 toggleQuickSettings = quickSettingsButton,
                 toggleCaptureModeSwitch = captureModeToggle,
                 bottomSheetQuickSettings = quickSettingsOverlay,
-                zoomControls = zoomLevelDisplay,
+                zoomControls = zoomLevelDisplay
             )
             // controls overlay
             snackBar(Modifier, snackbarHostState)
@@ -103,15 +105,13 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     toggleQuickSettings: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
-    toggleCaptureModeSwitch: @Composable (Modifier) -> Unit,
+    toggleCaptureModeSwitch: @Composable (Modifier) -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
-
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 // zoom controls row
                 zoomControls(Modifier)
-
 
                 // capture button row
                 Column {
@@ -130,7 +130,7 @@ private fun VerticalMaterialControls(
                                     .height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                //todo leftCaptureButton item
+                                // todo leftCaptureButton item
                             }
                         }
                         captureButton(Modifier)
@@ -157,7 +157,6 @@ private fun VerticalMaterialControls(
                 ) {
                     // Row that holds flip camera, capture button, and audio
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-
                         // left toggle switch item
                         Box(
                             modifier = Modifier.weight(1f),
@@ -184,13 +183,11 @@ private fun VerticalMaterialControls(
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        //todo(kc): tune padding
+                        // todo(kc): tune padding
                         .padding(bottom = 50.dp)
                 )
             }
         }
         bottomSheetQuickSettings(Modifier)
     }
-
-
 }

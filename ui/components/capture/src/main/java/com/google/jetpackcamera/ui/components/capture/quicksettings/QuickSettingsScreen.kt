@@ -87,7 +87,6 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
-
 /**
  * The UI bottom sheet component for quick settings
  */
@@ -115,17 +114,16 @@ fun QuickSettingsBottomSheet(
 
         val displayedQuickSettings: List<@Composable () -> Unit> =
             when (focusedQuickSetting) {
-
                 FocusedQuickSetting.ASPECT_RATIO -> focusedRatioButtons(
                     onUnFocus = onUnFocus,
                     onSetAspectRatio = onAspectRatioClick,
-                    aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
+                    aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
                 )
-                //todo capture mode
+                // todo capture mode
                 FocusedQuickSetting.CAPTURE_MODE -> focusedCaptureModeButtons(
                     onUnFocus = onUnFocus,
                     onSetCaptureMode = onCaptureModeClick,
-                    captureModeUiState = quickSettingsUiState.captureModeUiState,
+                    captureModeUiState = quickSettingsUiState.captureModeUiState
                 )
 
                 FocusedQuickSetting.NONE ->
@@ -152,7 +150,7 @@ fun QuickSettingsBottomSheet(
                                 setCaptureMode = {
                                     focusedQuickSetting = FocusedQuickSetting.CAPTURE_MODE
                                 },
-                                captureModeUiState = quickSettingsUiState.captureModeUiState,
+                                captureModeUiState = quickSettingsUiState.captureModeUiState
                             )
                         }
 
@@ -171,7 +169,7 @@ fun QuickSettingsBottomSheet(
                                     focusedQuickSetting = FocusedQuickSetting.ASPECT_RATIO
                                 },
                                 isHighlightEnabled = false,
-                                aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
+                                aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
                             )
                         }
 
@@ -200,11 +198,12 @@ fun QuickSettingsBottomSheet(
                             // todo(): use a UiState for this
                             QuickSetConcurrentCamera(
                                 modifier =
-                                    Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                                 setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                     onConcurrentCameraModeClick(c)
                                 },
-                                concurrentCameraUiState = quickSettingsUiState.concurrentCameraUiState
+                                concurrentCameraUiState = quickSettingsUiState
+                                    .concurrentCameraUiState
                             )
                         }
 
@@ -212,7 +211,7 @@ fun QuickSettingsBottomSheet(
                             QuickNavSettings(
                                 modifier = Modifier
                                     .testTag(SETTINGS_BUTTON),
-                                onNavigateToSettings = onNavigateToSettings,
+                                onNavigateToSettings = onNavigateToSettings
                             )
                         }
                     }
@@ -257,7 +256,6 @@ fun QuickSettingsScreenOverlay(
             mutableStateOf(FocusedQuickSetting.NONE)
         }
 
-
         AnimatedVisibility(
             visible = quickSettingsUiState.quickSettingsIsOpen,
             enter = slideInVertically(initialOffsetY = { -it / 8 }) + fadeIn(),
@@ -277,20 +275,20 @@ fun QuickSettingsScreenOverlay(
             BackHandler(onBack = onBack)
             Column(
                 modifier =
-                    modifier
-                        .testTag(
-                            when (focusedQuickSetting) {
-                                FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
-                                else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
-                            }
-                        )
-                        .fillMaxSize()
-                        .background(color = Color.Black.copy(alpha = 0.7f))
-                        .clickable(
-                            onClick = onBack,
-                            indication = null,
-                            interactionSource = null
-                        ),
+                modifier
+                    .testTag(
+                        when (focusedQuickSetting) {
+                            FocusedQuickSetting.NONE -> QUICK_SETTINGS_BACKGROUND_MAIN
+                            else -> QUICK_SETTINGS_BACKGROUND_FOCUSED
+                        }
+                    )
+                    .fillMaxSize()
+                    .background(color = Color.Black.copy(alpha = 0.7f))
+                    .clickable(
+                        onClick = onBack,
+                        indication = null,
+                        interactionSource = null
+                    ),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -343,12 +341,12 @@ private fun ExpandedQuickSettingsUi(
 ) {
     Column(
         modifier =
-            modifier
-                .padding(
-                    horizontal = dimensionResource(
-                        id = R.dimen.quick_settings_ui_horizontal_padding
-                    )
+        modifier
+            .padding(
+                horizontal = dimensionResource(
+                    id = R.dimen.quick_settings_ui_horizontal_padding
                 )
+            )
     ) {
         // if no setting is chosen, display the grid of settings
         // to change the order of display just move these lines of code above or below each other
@@ -382,9 +380,9 @@ private fun ExpandedQuickSettingsUi(
                                 },
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
                                 assignedRatio = (
-                                        quickSettingsUiState.aspectRatioUiState
-                                                as AspectRatioUiState.Available
-                                        ).selectedAspectRatio
+                                    quickSettingsUiState.aspectRatioUiState
+                                        as AspectRatioUiState.Available
+                                    ).selectedAspectRatio
                             )
                         }
                     }
@@ -414,7 +412,7 @@ private fun ExpandedQuickSettingsUi(
                         // todo(): use a UiState for this
                         QuickSetConcurrentCamera(
                             modifier =
-                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                            Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                             setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                 onConcurrentCameraModeClick(c)
                             },
@@ -606,4 +604,3 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
         )
     }
 }
-

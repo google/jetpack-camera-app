@@ -77,7 +77,6 @@ fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> 
     }
 }
 
-
 @Composable
 private fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -129,7 +128,7 @@ fun DebugComponent(
                 onChangeZoomRatio = onChangeZoomRatio,
                 onSetTestPattern = onSetTestPattern,
                 toggleIsOpen = toggleIsOpen,
-                debugUiState = it,
+                debugUiState = it
             )
         }
     }
@@ -170,7 +169,6 @@ private fun DebugConsole(
     }
 }
 
-
 @Composable
 private fun DebugOverlayComponent(
     modifier: Modifier = Modifier,
@@ -182,12 +180,12 @@ private fun DebugOverlayComponent(
     var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
     val backgroundColor = Color.Black.copy(
         alpha =
-            when (selectedDialog) {
-                SelectedDialog.None,
-                SelectedDialog.SetTestPattern -> 0.7f
+        when (selectedDialog) {
+            SelectedDialog.None,
+            SelectedDialog.SetTestPattern -> 0.7f
 
-                else -> 0.9f
-            }
+            else -> 0.9f
+        }
     )
 
     BackHandler(onBack = { toggleIsOpen() })
@@ -245,7 +243,7 @@ private fun OpenDebugOverlayMenu(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //todo(kc): permanently move this static information to the debug console?
+        // todo(kc): permanently move this static information to the debug console?
         Row {
             Text("Video resolution: ")
             val size = debugUiState.videoResolution
@@ -341,9 +339,9 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
                 onClick = {
                     try {
                         // no-op if confirmed with empty entry
-                        if(zoomRatioText.value.isEmpty())
+                        if (zoomRatioText.value.isEmpty()) {
                             onClose()
-                        else {
+                        } else {
                             val newRatio = zoomRatioText.value.toFloat()
                             onChangeZoomRatio(newRatio)
                         }

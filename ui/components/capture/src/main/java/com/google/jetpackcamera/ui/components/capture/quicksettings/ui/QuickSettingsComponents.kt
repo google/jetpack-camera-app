@@ -28,13 +28,11 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -45,8 +43,8 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -75,7 +73,6 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -95,7 +92,9 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraConcurrentCameraMode
@@ -104,8 +103,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashM
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
-import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -158,7 +155,6 @@ fun FocusedQuickSetRatio(
     }
 }
 
-
 @Composable
 fun QuickSetRatio(
     onClick: () -> Unit,
@@ -179,7 +175,8 @@ fun QuickSetRatio(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
-            isHighLighted = isHighlightEnabled && (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+            isHighLighted = isHighlightEnabled &&
+                (assignedRatio == aspectRatioUiState.selectedAspectRatio)
         )
     }
 }
@@ -268,7 +265,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -283,7 +280,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         text = "More Settings",
         accessibilityText = stringResource(R.string.settings_content_description),
         painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
-        modifier = modifier.testTag(SETTINGS_BUTTON),
+        modifier = modifier.testTag(SETTINGS_BUTTON)
     )
 }
 
@@ -330,9 +327,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -364,12 +361,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-                hdrUiState is HdrUiState.Available &&
-                        (
-                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                                )
-                ),
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -503,7 +500,8 @@ fun QuickSetConcurrentCamera(
                     ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
                 }
             },
-            isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode == ConcurrentCameraMode.DUAL,
+            isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
+                ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -548,11 +546,11 @@ fun ToggleQuickSettingsButton(
     }
 }
 
-//////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////
 //
 // subcomponents used to build completed components
 //
-//////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////
 
 @Composable
 fun QuickSettingToggleButton(
@@ -579,10 +577,9 @@ fun QuickSettingsBottomSheet(
     modifier: Modifier,
     onDismiss: () -> Unit,
     sheetState: SheetState,
-    vararg quickSettingButtons: @Composable () -> Unit,
+    vararg quickSettingButtons: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_dropdown_open_description)
-
 
     ModalBottomSheet(
         modifier = modifier
@@ -592,9 +589,8 @@ fun QuickSettingsBottomSheet(
             },
 
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
+        sheetState = sheetState
     ) {
-
         QuickSettingsBottomSheetRow(
             modifier = Modifier,
             quickSettingButtons = quickSettingButtons
@@ -610,43 +606,41 @@ fun focusedRatioButtons(
     onUnFocus: () -> Unit,
     onSetAspectRatio: (AspectRatio) -> Unit,
     aspectRatioUiState: AspectRatioUiState
-): List<@Composable () -> Unit> =
-    listOf(
-        {
-            //todo(kc): reusable exit/return button
-            FilledIconButton(
-                onClick = onUnFocus,
-            ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button")}
-        },
-        {
-            QuickSetRatio(
-                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-                onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
-                assignedRatio = AspectRatio.THREE_FOUR,
-                aspectRatioUiState = aspectRatioUiState,
-                isHighlightEnabled = true
-            )
-        },
-        {
-            QuickSetRatio(
-                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-                onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
-                assignedRatio = AspectRatio.NINE_SIXTEEN,
-                aspectRatioUiState = aspectRatioUiState,
-                isHighlightEnabled = true
-            )
-        },
-        {
-            QuickSetRatio(
-                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
-                assignedRatio = AspectRatio.ONE_ONE,
-                aspectRatioUiState = aspectRatioUiState,
-                isHighlightEnabled = true
-            )
-        }
-    )
-
+): List<@Composable () -> Unit> = listOf(
+    {
+        // todo(kc): reusable exit/return button
+        FilledIconButton(
+            onClick = onUnFocus
+        ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button") }
+    },
+    {
+        QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
+            onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
+            assignedRatio = AspectRatio.THREE_FOUR,
+            aspectRatioUiState = aspectRatioUiState,
+            isHighlightEnabled = true
+        )
+    },
+    {
+        QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
+            onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
+            assignedRatio = AspectRatio.NINE_SIXTEEN,
+            aspectRatioUiState = aspectRatioUiState,
+            isHighlightEnabled = true
+        )
+    },
+    {
+        QuickSetRatio(
+            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+            onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
+            assignedRatio = AspectRatio.ONE_ONE,
+            aspectRatioUiState = aspectRatioUiState,
+            isHighlightEnabled = true
+        )
+    }
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -654,45 +648,44 @@ fun focusedCaptureModeButtons(
     onUnFocus: () -> Unit,
     onSetCaptureMode: (CaptureMode) -> Unit,
     captureModeUiState: CaptureModeUiState
-): List<@Composable () -> Unit> =
-    listOf(
-        {
-            //todo(kc): reusable exit/return button
-            FilledIconButton(
-                onClick = onUnFocus,
-            ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button")}
-        },
-        {
-            QuickSetCaptureMode(
-                modifier = Modifier
-                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
-                onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
-                assignedCaptureMode = CaptureMode.STANDARD,
-                captureModeUiState = captureModeUiState,
-                isHighlightEnabled = true
-            )
-        },
-        {
-            QuickSetCaptureMode(
-                modifier = Modifier
-                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-                onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-                assignedCaptureMode = CaptureMode.VIDEO_ONLY,
-                captureModeUiState = captureModeUiState,
-                isHighlightEnabled = true
-            )
-        },
-        {
-            QuickSetCaptureMode(
-                modifier = Modifier
-                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-                onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-                assignedCaptureMode = CaptureMode.IMAGE_ONLY,
-                captureModeUiState = captureModeUiState,
-                isHighlightEnabled = true
-            )
-        }
-    )
+): List<@Composable () -> Unit> = listOf(
+    {
+        // todo(kc): reusable exit/return button
+        FilledIconButton(
+            onClick = onUnFocus
+        ) { Icon(imageVector = Icons.Default.Close, contentDescription = "close button") }
+    },
+    {
+        QuickSetCaptureMode(
+            modifier = Modifier
+                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+            onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
+            assignedCaptureMode = CaptureMode.STANDARD,
+            captureModeUiState = captureModeUiState,
+            isHighlightEnabled = true
+        )
+    },
+    {
+        QuickSetCaptureMode(
+            modifier = Modifier
+                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+            onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+            assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+            captureModeUiState = captureModeUiState,
+            isHighlightEnabled = true
+        )
+    },
+    {
+        QuickSetCaptureMode(
+            modifier = Modifier
+                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+            onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+            assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+            captureModeUiState = captureModeUiState,
+            isHighlightEnabled = true
+        )
+    }
+)
 
 /**
  * A horizontally scrollable row of quick setting buttons for a bottom sheet.
@@ -704,9 +697,8 @@ fun focusedCaptureModeButtons(
 @Composable
 private fun QuickSettingsBottomSheetRow(
     modifier: Modifier = Modifier,
-    vararg quickSettingButtons: @Composable () -> Unit,
+    vararg quickSettingButtons: @Composable () -> Unit
 ) {
-
     // LazyRow is inherently scrollable if content exceeds bounds.
     // It handles the "overflow to the right" behavior by default.
     LazyRow(
@@ -793,25 +785,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -835,25 +827,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(
@@ -937,10 +929,7 @@ fun QuickSettingsIndicators(
     }
 }
 
-private fun <T> List<SingleSelectableUiState<T>>.getNextSelectableItem(
-    selectedItem: T
-): T {
-
+private fun <T> List<SingleSelectableUiState<T>>.getNextSelectableItem(selectedItem: T): T {
     // Filter out only the selectable modes to cycle through them.
     val selectableModes = this
         .filterIsInstance<SingleSelectableUiState.SelectableUi<T>>()

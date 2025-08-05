@@ -55,8 +55,9 @@ fun DebugUiState.Enabled.Open.Companion.from(
     )
 }
 
-fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing) = DebugUiState.Enabled.Closed(
-    currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-    currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing]
-)
+fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing) =
+    DebugUiState.Enabled.Closed(
+        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+        currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing]
+    )

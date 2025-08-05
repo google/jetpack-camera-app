@@ -125,17 +125,17 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-    { factory -> factory.create(externalCaptureMode, debugSettings) }
+        { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -182,9 +182,9 @@ fun PreviewScreen(
 
                 ZoomState(
                     initialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -201,9 +201,9 @@ fun PreviewScreen(
             ) {
                 zoomState.onChangeLens(
                     newInitialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -376,8 +376,8 @@ private fun ContentScreen(
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
                 (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
                     .selectedLensFacing.flip()
             )
         }
@@ -408,8 +408,10 @@ private fun ContentScreen(
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 externalCaptureMode = captureUiState.externalCaptureMode,
-                isQuickSettingsOpen = (captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen
-                    ?: false,
+                isQuickSettingsOpen = (
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
@@ -455,9 +457,9 @@ private fun ContentScreen(
                 modifier = it,
                 toggleDropDown = onToggleQuickSettings,
                 isOpen = (
-                        captureUiState.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                        ).quickSettingsIsOpen
+                    captureUiState.quickSettingsUiState
+                        as QuickSettingsUiState.Available
+                    ).quickSettingsIsOpen
             )
         },
         imageWellButton = {
@@ -484,7 +486,7 @@ private fun ContentScreen(
             if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeToggleUiState.Available,
+                        as CaptureModeToggleUiState.Available,
                     onChangeCaptureMode = onSetCaptureMode,
                     onToggleWhenDisabled = onDisabledCaptureMode,
                     modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -551,7 +553,6 @@ private fun ContentScreen(
         }
     )
 }
-
 
 @Composable
 private fun LoadingScreen(modifier: Modifier = Modifier) {

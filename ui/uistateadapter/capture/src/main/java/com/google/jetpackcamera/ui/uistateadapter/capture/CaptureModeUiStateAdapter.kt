@@ -45,7 +45,9 @@ fun CaptureModeToggleUiState.Companion.from(
     cameraState: CameraState,
     externalCaptureMode: ExternalCaptureMode
 ): CaptureModeToggleUiState =
-    if (cameraState.videoRecordingState !is VideoRecordingState.Inactive || cameraAppSettings.captureMode == CaptureMode.STANDARD) {
+    if (cameraState.videoRecordingState !is VideoRecordingState.Inactive ||
+        cameraAppSettings.captureMode == CaptureMode.STANDARD
+    ) {
         CaptureModeToggleUiState.Unavailable
     } else {
         val availableCaptureModes = getAvailableCaptureModes(
@@ -127,7 +129,7 @@ private fun getAvailableCaptureModes(
         cameraAppSettings
     )
     val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+        cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
     val currentHdrDynamicRangeSupported =
         if (isHdrOn) {
             cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
@@ -313,7 +315,7 @@ private fun SystemConstraints.anySupportsUltraHdr(
     lensFilter: (LensFacing) -> Boolean
 ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
     lensFilter(lensConstraints.key) &&
-            lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-                captureModeFilter(it)
-            }
+        lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
+            captureModeFilter(it)
+        }
 } != null

@@ -20,6 +20,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -125,15 +126,13 @@ import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlin.time.Duration.Companion.nanoseconds
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -159,8 +158,12 @@ fun PauseResumeToggleButton(
     if (currentRecordingState is VideoRecordingState.Active) {
         FilledIconToggleButton(
             checked = currentRecordingState is VideoRecordingState.Active.Recording,
-            onCheckedChange = { onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused) },
-            modifier = modifier.size(size),
+            onCheckedChange = {
+                onSetPause(
+                    currentRecordingState !is VideoRecordingState.Active.Paused
+                )
+            },
+            modifier = modifier.size(size)
         ) {
             Icon(
                 modifier = Modifier
@@ -169,7 +172,7 @@ fun PauseResumeToggleButton(
                     is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
                     is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
                 },
-                //todo(kc): move contentDescription to XML
+                // todo(kc): move contentDescription to XML
                 contentDescription = "pause resume toggle"
             )
         }
@@ -218,7 +221,7 @@ fun AmplitudeToggleButton(
                 },
             checked = audioUiState is AudioUiState.Enabled.On,
             onCheckedChange = { onToggleAudio() },
-            //todo shapes
+            // todo shapes
             enabled = audioUiState is AudioUiState.Enabled
         ) {
             Icon(
@@ -351,9 +354,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                    previewDisplayUiState.aspectRatioUiState as
-                            AspectRatioUiState.Available
-                    ).selectedAspectRatio
+                previewDisplayUiState.aspectRatioUiState as
+                    AspectRatioUiState.Available
+                ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -384,12 +387,14 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(
-                        topStart = CornerSize(0.dp),
-                        topEnd = CornerSize(0.dp),
-                        bottomStart = CornerSize(16.dp),
-                        bottomEnd = CornerSize(16.dp)
-                    ))
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = CornerSize(0.dp),
+                            topEnd = CornerSize(0.dp),
+                            bottomStart = CornerSize(16.dp),
+                            bottomEnd = CornerSize(16.dp)
+                        )
+                    )
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -419,7 +424,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -466,7 +471,7 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                        "${stabilizationUiState.stabilizationMode}"
                                 )
                         }
 
@@ -481,8 +486,8 @@ fun StabilizationIcon(
                             else ->
                                 TODO(
                                     "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                        "${stabilizationUiState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
                                 )
                         }
                     }
@@ -612,10 +617,6 @@ fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-
-
-
-
 @Composable
 fun CaptureModeDropDown(
     modifier: Modifier = Modifier,
@@ -629,7 +630,7 @@ fun CaptureModeDropDown(
         AnimatedVisibility(
             visible = isExpanded,
             enter =
-                fadeIn() + expandVertically(expandFrom = Alignment.Top),
+            fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
             fun onDisabledClick(
@@ -803,7 +804,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

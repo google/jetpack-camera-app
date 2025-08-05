@@ -47,6 +47,4 @@ sealed interface DebugUiState {
             companion object
         }
     }
-
-
 }
