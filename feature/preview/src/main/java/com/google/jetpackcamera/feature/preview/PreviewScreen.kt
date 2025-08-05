@@ -23,21 +23,15 @@ import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -66,6 +60,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.feature.preview.ui.PreviewLayout
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -78,18 +73,28 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
-import com.google.jetpackcamera.ui.components.capture.CameraControlsOverlay
+import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CaptureButton
+import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
+import com.google.jetpackcamera.ui.components.capture.SettingsNavButton
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
-import com.google.jetpackcamera.ui.components.capture.ZoomLevelDisplayState
+import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomState
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayComponent
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScreenOverlay
+import com.google.jetpackcamera.ui.components.capture.debug.DebugComponent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -100,6 +105,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -251,6 +257,7 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onSetTestPattern = viewModel::setTestPattern,
+
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -283,6 +290,7 @@ fun PreviewScreen(
                         )
                     }
                 },
+
                 onSetCaptureMode = viewModel::setCaptureMode,
                 onChangeFlash = viewModel::setFlash,
                 onChangeAspectRatio = viewModel::setAspectRatio,
@@ -301,7 +309,6 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                isDebugMode = debugSettings.isDebugModeEnabled,
                 onImageWellClick = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
@@ -319,6 +326,7 @@ fun PreviewScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContentScreen(
@@ -362,34 +370,31 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    isDebugMode: Boolean = false,
     onImageWellClick: () -> Unit = {}
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) {
-        val onFlipCamera = {
-            if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
-                onSetLensFacing(
-                    (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
-                        .selectedLensFacing.flip()
-                )
-            }
+    val onFlipCamera = {
+        if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
+            onSetLensFacing(
+                (
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
+                    .selectedLensFacing.flip()
+            )
         }
+    }
 
-        val isAudioEnabled = remember(captureUiState) {
-            captureUiState.audioUiState is AudioUiState.Enabled.On
+    val isAudioEnabled = remember(captureUiState) {
+        captureUiState.audioUiState is AudioUiState.Enabled.On
+    }
+    val onToggleAudio = remember(isAudioEnabled) {
+        {
+            onSetAudioEnabled(!isAudioEnabled)
         }
-        val onToggleAudio = remember(isAudioEnabled) {
-            {
-                onSetAudioEnabled(!isAudioEnabled)
-            }
-        }
-        Box(modifier.fillMaxSize()) {
-            // display camera feed. this stays behind everything else
+    }
+
+    PreviewLayout(
+        modifier = modifier,
+        viewfinder = {
             PreviewDisplay(
                 previewDisplayUiState = captureUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
@@ -398,9 +403,99 @@ private fun ContentScreen(
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode
             )
-
-            QuickSettingsScreenOverlay(
-                modifier = Modifier,
+        },
+        captureButton = {
+            CaptureButton(
+                captureButtonUiState = captureUiState.captureButtonUiState,
+                externalCaptureMode = captureUiState.externalCaptureMode,
+                isQuickSettingsOpen = (
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
+                onCaptureImageWithUri = onCaptureImageWithUri,
+                onIncrementZoom = { targetZoom ->
+                    onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
+                },
+                onToggleQuickSettings = onToggleQuickSettings,
+                onStartVideoRecording = onStartVideoRecording,
+                onStopVideoRecording = onStopVideoRecording,
+                onLockVideoRecording = onLockVideoRecording
+            )
+        },
+        flipCameraButton = {
+            FlipCameraButton(
+                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                onClick = onFlipCamera,
+                flipLensUiState = captureUiState.flipLensUiState,
+                // enable only when phone has front and rear camera
+                enabledCondition = when (val flipLensUiState = captureUiState.flipLensUiState) {
+                    is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
+                    FlipLensUiState.Unavailable -> false
+                }
+            )
+        },
+        zoomLevelDisplay = {
+            Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                ZoomButtonRow(
+                    zoomControlUiState = captureUiState.zoomControlUiState,
+                    onChangeZoom = { targetZoom ->
+                        onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
+                    }
+                )
+            }
+        },
+        settingsButton = {
+            SettingsNavButton(
+                modifier = it
+                    .padding(12.dp)
+                    .testTag(SETTINGS_BUTTON),
+                onNavigateToSettings = onNavigateToSettings
+            )
+        },
+        quickSettingsButton = {
+            ToggleQuickSettingsButton(
+                modifier = it,
+                toggleDropDown = onToggleQuickSettings,
+                isOpen = (
+                    captureUiState.quickSettingsUiState
+                        as QuickSettingsUiState.Available
+                    ).quickSettingsIsOpen
+            )
+        },
+        imageWellButton = {
+            if (!(captureUiState.quickSettingsUiState as QuickSettingsUiState.Available)
+                    .quickSettingsIsOpen &&
+                captureUiState.externalCaptureMode is ExternalCaptureMode.StandardMode
+            ) {
+                ImageWell(
+                    modifier = it,
+                    imageWellUiState = captureUiState.imageWellUiState,
+                    onClick = onImageWellClick
+                )
+            }
+        },
+        flashModeButton = {},
+        audioToggleButton = {
+            AmplitudeToggleButton(
+                modifier = it,
+                onToggleAudio = onToggleAudio,
+                audioUiState = captureUiState.audioUiState
+            )
+        },
+        captureModeToggle = {
+            if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+                CaptureModeToggleButton(
+                    uiState = captureUiState.captureModeToggleUiState
+                        as CaptureModeToggleUiState.Available,
+                    onChangeCaptureMode = onSetCaptureMode,
+                    onToggleWhenDisabled = onDisabledCaptureMode,
+                    modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                )
+            }
+        },
+        quickSettingsOverlay = {
+            QuickSettingsBottomSheet(
+                modifier = it,
                 quickSettingsUiState = captureUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
                 onLensFaceClick = onSetLensFacing,
@@ -410,57 +505,25 @@ private fun ContentScreen(
                 onDynamicRangeClick = onChangeDynamicRange,
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
-                onCaptureModeClick = onSetCaptureMode
-            )
-            // relative-grid style overlay on top of preview display
-            CameraControlsOverlay(
-                captureUiState = captureUiState,
-                onNavigateToSettings = onNavigateToSettings,
-                onSetCaptureMode = onSetCaptureMode,
-                onFlipCamera = onFlipCamera,
-                onChangeFlash = onChangeFlash,
-                onToggleAudio = onToggleAudio,
-                onAnimateZoom = { onAnimateZoom(it, LensToZoom.PRIMARY) },
-                onIncrementZoom = { onIncrementZoom(it, LensToZoom.PRIMARY) },
-                onToggleQuickSettings = onToggleQuickSettings,
-                onToggleDebugOverlay = onToggleDebugOverlay,
-                onChangeImageFormat = onChangeImageFormat,
-                onDisabledCaptureMode = onDisabledCaptureMode,
-                onSetPause = onSetPause,
-                onCaptureImageWithUri = onCaptureImageWithUri,
-                onStartVideoRecording = onStartVideoRecording,
-                onStopVideoRecording = onStopVideoRecording,
-                zoomLevelDisplayState = remember { ZoomLevelDisplayState(isDebugMode) },
-                onImageWellClick = onImageWellClick,
-                onLockVideoRecording = onLockVideoRecording
-            )
-
-            AnimatedContent(
-                targetState = captureUiState.debugUiState,
-                transitionSpec = {
-                    fadeIn() togetherWith fadeOut() using null
-                },
-                contentKey = { it is DebugUiState.Open }
-            ) {
-                if (it is DebugUiState.Open) {
-                    DebugOverlayComponent(
-                        toggleIsOpen = onToggleDebugOverlay,
-                        debugUiState = it,
-                        onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
-                        onSetTestPattern = onSetTestPattern
-                    )
+                onCaptureModeClick = onSetCaptureMode,
+                onNavigateToSettings = {
+                    onToggleQuickSettings()
+                    onNavigateToSettings()
                 }
-            }
-
-            val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
-            if (snackBarData != null) {
-                TestableSnackbar(
-                    modifier = Modifier.testTag(snackBarData.testTag),
-                    snackbarToShow = snackBarData,
-                    snackbarHostState = snackbarHostState,
-                    onSnackbarResult = onSnackBarResult
+            )
+        },
+        debugOverlay = { modifier, extraControls ->
+            (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
+                DebugComponent(
+                    toggleIsOpen = onToggleDebugOverlay,
+                    debugUiState = it,
+                    onSetTestPattern = onSetTestPattern,
+                    onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
+                    extraControls = extraControls.orEmpty()
                 )
             }
+        },
+        screenFlashOverlay = {
             // Screen flash overlay that stays on top of everything but invisible normally. This should
             // not be enabled based on whether screen flash is enabled because a previous image capture
             // may still be running after flash mode change and clear actions (e.g. brightness restore)
@@ -470,8 +533,25 @@ private fun ContentScreen(
                 screenFlashUiState = screenFlashUiState,
                 onInitialBrightnessCalculated = onClearUiScreenBrightness
             )
+        },
+        snackBar = { modifier, snackbarHostState ->
+            val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
+            if (snackBarData != null) {
+                TestableSnackbar(
+                    modifier = Modifier.testTag(snackBarData.testTag),
+                    snackbarToShow = snackBarData,
+                    snackbarHostState = snackbarHostState,
+                    onSnackbarResult = onSnackBarResult
+                )
+            }
+        },
+        pauseToggleButton = {
+            PauseResumeToggleButton(
+                onSetPause = onSetPause,
+                currentRecordingState = captureUiState.videoRecordingState
+            )
         }
-    }
+    )
 }
 
 @Composable

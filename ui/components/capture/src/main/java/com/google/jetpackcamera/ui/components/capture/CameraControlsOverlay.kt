@@ -147,7 +147,7 @@ fun CameraControlsOverlay(
         ) {
             if (captureUiState.videoRecordingState is VideoRecordingState.Inactive) {
                 val showDebugButton = captureUiState.debugUiState is DebugUiState.Enabled &&
-                    captureUiState.debugUiState !is DebugUiState.Open
+                    captureUiState.debugUiState !is DebugUiState.Enabled.Open
                 ControlsTop(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -316,21 +316,14 @@ private fun ControlsBottom(
             LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 20.sp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AnimatedVisibility(
-                    visible = (
-                        captureUiState.debugUiState is DebugUiState.Enabled && showZoomLevel &&
-                            zoomUiState is ZoomUiState.Enabled
-                        ),
-                    enter = fadeIn(),
-                    exit = fadeOut()
+                if (zoomControlUiState is ZoomControlUiState.Enabled &&
+                    zoomUiState is ZoomUiState.Enabled
                 ) {
-                    ZoomRatioText(zoomUiState as ZoomUiState.Enabled)
-                }
-                val debugUiState = captureUiState.debugUiState
-                if (debugUiState is DebugUiState.Enabled) {
-                    CurrentCameraIdText(
-                        debugUiState.currentPhysicalCameraId,
-                        debugUiState.currentLogicalCameraId
+                    ZoomButtonRow(
+                        zoomControlUiState = zoomControlUiState,
+                        onChangeZoom = { targetZoom ->
+                            onAnimateZoom(targetZoom)
+                        }
                     )
                 }
                 if (zoomControlUiState is ZoomControlUiState.Enabled &&
@@ -437,7 +430,7 @@ private fun ControlsBottom(
                     contentAlignment = Alignment.Center
                 ) {
                     if (videoRecordingState is VideoRecordingState.Active) {
-                        AmplitudeVisualizer(
+                        AmplitudeToggleButton(
                             modifier = Modifier.fillMaxSize(),
                             onToggleAudio = onToggleAudio,
                             audioUiState = captureUiState.audioUiState
@@ -497,7 +490,7 @@ private fun getVideoCaptureEventForExternalCaptureMode(
 }
 
 @Composable
-private fun CaptureButton(
+fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
@@ -619,7 +612,7 @@ private fun CaptureButton(
 }
 
 @Composable
-private fun CaptureModeToggleButton(
+fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
     onToggleWhenDisabled: (DisableRationale) -> Unit,

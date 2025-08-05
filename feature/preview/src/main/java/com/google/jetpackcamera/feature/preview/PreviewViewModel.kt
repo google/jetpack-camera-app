@@ -314,14 +314,14 @@ class PreviewViewModel @AssistedInject constructor(
         isDebugOverlayOpen: Boolean
     ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
         if (isDebugOverlayOpen) {
-            DebugUiState.Open.from(
+            DebugUiState.Enabled.Open.from(
                 systemConstraints,
                 cameraAppSettings,
                 cameraState,
                 cameraPropertiesJSON
             )
         } else {
-            DebugUiState.Closed.from(cameraState)
+            DebugUiState.Enabled.Closed.from(cameraState, cameraAppSettings.cameraLensFacing)
         }
     } else {
         DebugUiState.Disabled
@@ -694,7 +694,6 @@ class PreviewViewModel @AssistedInject constructor(
             old.copy(isRecordingLocked = isLocked)
         }
     }
-
     fun setZoomAnimationState(targetValue: Float?) {
         trackedPreviewUiState.update { old ->
             old.copy(zoomAnimationTarget = targetValue)

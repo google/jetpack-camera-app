@@ -81,6 +81,8 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+    //todo(): icons library is no longer being maintained. Migrate to material symbols.
+    implementation(libs.compose.material.icons.extended)
 
     //todo(): icons library is no longer being maintained. Migrate to material symbols.
     implementation(libs.compose.material.icons.extended)
