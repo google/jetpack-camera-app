@@ -92,7 +92,7 @@ private fun JetpackCameraNavHost(
             if (externalCaptureMode == ExternalCaptureMode.Standard) {
                 add(android.Manifest.permission.RECORD_AUDIO)
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                    add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }
         }
