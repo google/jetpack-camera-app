@@ -25,7 +25,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
-import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
@@ -66,7 +65,7 @@ class PermissionsTest {
 
     @get:Rule
     val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
-        permissions = arrayOf(CAMERA_PERMISSION, AUDIO_RECORD_PERMISSION),
+        permissions = arrayOf(CAMERA_PERMISSION, android.Manifest.permission.RECORD_AUDIO),
         targetTestNames = arrayOf(
             "writeStoragePermission_granted",
             "writeStoragePermission_denied"
