@@ -16,28 +16,28 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.settings.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.settings.DarkMode as DarkModeProto
-import com.google.jetpackcamera.settings.FlashMode as FlashModeProto
-import com.google.jetpackcamera.settings.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.settings.StreamConfig as StreamConfigProto
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LensFacing.Companion.toProto
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
+import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
+import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
+import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
+import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.DarkMode
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.DynamicRange.Companion.toProto
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.ImageOutputFormat.Companion.toProto
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.LensFacing.Companion.toProto
-import com.google.jetpackcamera.settings.model.LowLightBoostPriority
-import com.google.jetpackcamera.settings.model.LowLightBoostPriority.Companion.fromProto
-import com.google.jetpackcamera.settings.model.LowLightBoostPriority.Companion.toProto
-import com.google.jetpackcamera.settings.model.StabilizationMode
-import com.google.jetpackcamera.settings.model.StreamConfig
-import com.google.jetpackcamera.settings.model.VideoQuality
-import com.google.jetpackcamera.settings.model.VideoQuality.Companion.toProto
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -73,7 +73,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
                     else -> StreamConfig.MULTI_STREAM
                 },
-                lowLightBoostPriority = LowLightBoostPriority.fromProto(it.lowLightBoostPriority),
+                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,

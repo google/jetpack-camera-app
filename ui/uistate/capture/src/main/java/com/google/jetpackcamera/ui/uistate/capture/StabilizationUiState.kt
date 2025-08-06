@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.StabilizationMode
+import com.google.jetpackcamera.model.StabilizationMode
 
 sealed interface StabilizationUiState {
     data object Disabled : StabilizationUiState

@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.settings.model.LensFacing
+import com.google.jetpackcamera.model.LensFacing
 
 sealed interface ZoomControlUiState {
     data object Unavailable : ZoomControlUiState

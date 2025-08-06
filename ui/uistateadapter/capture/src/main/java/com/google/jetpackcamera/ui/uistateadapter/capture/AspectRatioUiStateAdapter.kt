@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.example.uistateadapter.Utils
-import com.google.jetpackcamera.settings.model.AspectRatio
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 

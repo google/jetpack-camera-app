@@ -43,6 +43,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -143,11 +144,15 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":core:model"))
     testImplementation(project(":core:common"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter:capture"))
+
+    // Desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code

@@ -17,9 +17,9 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.SystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -54,7 +54,9 @@ fun FlashModeUiState.Companion.from(
             ORDERED_UI_SUPPORTED_FLASH_MODES
         )
 
-    return if (availableModes.isEmpty() || availableModes == listOf(FlashMode.OFF)) {
+    return if (availableModes.isEmpty() ||
+        availableModes == listOf(SingleSelectableUiState.SelectableUi(FlashMode.OFF))
+    ) {
         // If we only support OFF, then return "Unavailable".
         Unavailable
     } else {

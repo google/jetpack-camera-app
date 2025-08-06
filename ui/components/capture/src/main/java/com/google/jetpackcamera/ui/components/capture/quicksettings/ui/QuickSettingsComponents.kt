@@ -18,32 +18,39 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
@@ -51,17 +58,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.settings.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CaptureMode
-import com.google.jetpackcamera.settings.model.ConcurrentCameraMode
-import com.google.jetpackcamera.settings.model.DEFAULT_HDR_DYNAMIC_RANGE
-import com.google.jetpackcamera.settings.model.DEFAULT_HDR_IMAGE_OUTPUT
-import com.google.jetpackcamera.settings.model.DynamicRange
-import com.google.jetpackcamera.settings.model.FlashMode
-import com.google.jetpackcamera.settings.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.LensFacing
-import com.google.jetpackcamera.settings.model.StreamConfig
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -192,7 +201,7 @@ fun QuickSetCaptureMode(
             CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
         }
 
-        QuickSettingUiItem(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
@@ -255,7 +264,7 @@ fun QuickSetHdr(
         ImageOutputFormat.JPEG
     }
 
-    QuickSettingUiItem(
+    QuickSettingToggleButton(
         modifier = modifier,
         enum = enum,
         onClick = {
@@ -288,7 +297,7 @@ fun QuickSetRatio(
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
                 else -> CameraAspectRatio.ONE_ONE
             }
-        QuickSettingUiItem(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { onClick() },
@@ -305,7 +314,7 @@ fun QuickSetFlash(
 ) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
-            QuickSettingUiItem(
+            QuickSettingToggleButton(
                 modifier = modifier,
                 enum = CameraFlashMode.OFF,
                 enabled = false,
@@ -313,12 +322,12 @@ fun QuickSetFlash(
             )
 
         is FlashModeUiState.Available ->
-            QuickSettingUiItem(
+            QuickSettingToggleButton(
                 modifier = modifier,
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
                     flashModeUiState.isActive
                 ),
-                isHighLighted = flashModeUiState.selectedFlashMode == FlashMode.ON,
+                isHighLighted = flashModeUiState.selectedFlashMode != FlashMode.OFF,
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())
                 }
@@ -338,7 +347,7 @@ fun QuickFlipCamera(
                 LensFacing.FRONT -> CameraLensFace.FRONT
                 LensFacing.BACK -> CameraLensFace.BACK
             }
-        QuickSettingUiItem(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
@@ -358,7 +367,7 @@ fun QuickSetStreamConfig(
                 StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
                 StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
             }
-        QuickSettingUiItem(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = {
@@ -384,7 +393,7 @@ fun QuickSetConcurrentCamera(
                 ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
                 ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
             }
-        QuickSettingUiItem(
+        QuickSettingToggleButton(
             modifier = modifier,
             enum = enum,
             onClick = {
@@ -438,84 +447,81 @@ fun ToggleQuickSettingsButton(
 }
 
 @Composable
-fun QuickSettingUiItem(
+fun QuickSettingToggleButton(
+    modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     isHighLighted: Boolean = false,
     enabled: Boolean = true
 ) {
-    QuickSettingUiItem(
+    QuickSettingToggleButton(
         modifier = modifier,
-        painter = enum.getPainter(),
         text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
-        isHighLighted = isHighLighted,
-        enabled = enabled
+        isHighlighted = isHighLighted,
+        enabled = enabled,
+        painter = enum.getPainter()
     )
 }
 
 /**
- * The itemized UI component representing each button in quick settings.
+ *
+ * @param isHighlighted true if the button is currently checked; false otherwise.
+ * @param onClick will be called when the user clicks the button.
+ * @param text The text label to display below the icon.
+ * @param painter The icon to display inside the button.
+ * @param modifier The Modifier to be applied to the button.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun QuickSettingUiItem(
-    modifier: Modifier = Modifier,
-    text: String,
-    painter: Painter,
-    accessibilityText: String,
+fun QuickSettingToggleButton(
     onClick: () -> Unit,
-    isHighLighted: Boolean = false,
+    text: String,
+    accessibilityText: String,
+    painter: Painter,
+    modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false,
     enabled: Boolean = true
 ) {
-    val iconSize = dimensionResource(id = R.dimen.quick_settings_ui_item_icon_size)
-
-    var buttonClicked by remember { mutableStateOf(false) }
-    val animatedScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
-        }
+    val buttonSize = IconButtonDefaults.mediumContainerSize(
+        IconButtonDefaults.IconButtonWidthOption.Narrow
     )
-    Column(
-        modifier =
-        modifier
-            .wrapContentSize()
-            .padding(dimensionResource(id = R.dimen.quick_settings_ui_item_padding))
-            .clickable(
-                enabled = enabled,
-                onClick = {
-                    buttonClicked = true
-                    onClick()
-                },
-                indication = null,
-                interactionSource = null
-            ),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        val contentColor = (if (isHighLighted) Color.Yellow else Color.White).let {
-            // When in disabled state, material3 guidelines say the element's opacity should be 38%
-            // See: https://m3.material.io/foundations/interaction/states/applying-states#3c3032e8-b07a-42ac-a508-a32f573cc7e1
-            // and: https://developer.android.com/develop/ui/compose/designsystems/material2-material3#emphasis-and
-            if (!enabled) it.copy(alpha = 0.38f) else it
-        }
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Icon(
-                painter = painter,
-                contentDescription = accessibilityText,
-                modifier = Modifier
-                    .size(iconSize)
-                    .scale(animatedScale)
-            )
 
-            Text(text = text, textAlign = TextAlign.Center)
+    Column(
+        modifier = Modifier.width(width = buttonSize.width),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        FilledIconToggleButton(
+            checked = isHighlighted,
+            enabled = enabled,
+            onCheckedChange = { _ -> onClick() },
+            // 1. Size updated to width 48.dp and height 56.dp
+            modifier = modifier
+                .minimumInteractiveComponentSize()
+                .size(buttonSize),
+            shapes = IconButtonDefaults.toggleableShapes(),
+            colors = IconButtonDefaults.filledIconToggleButtonColors()
+                .copy(containerColor = Color.White.copy(alpha = .17f))
+        ) {
+            Icon(
+                modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+                painter = painter,
+                contentDescription = accessibilityText
+            )
         }
+
+        Spacer(Modifier.height(4.dp))
+        Text(
+            modifier = modifier.width(IntrinsicSize.Max),
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Visible
+        )
     }
 }
 
@@ -691,6 +697,55 @@ private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
         when (isActive) {
             true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
             false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun QuickSettingToggleButtonPreview() {
+    // A sample state variable to make the preview interactive in live edit
+
+    Box(
+        modifier = Modifier
+            .background(color = Color.DarkGray)
+            .padding(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .width(300.dp)
+                .height(180.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Instance 1: Unchecked state
+            QuickSettingToggleButton(
+                onClick = {},
+                text = "Flash Off",
+                accessibilityText = "",
+                painter = CameraFlashMode.OFF.getPainter(),
+                isHighlighted = false,
+                enabled = true
+            )
+
+            // Instance 2: Checked state
+            QuickSettingToggleButton(
+                onClick = {},
+                text = "Flash On",
+                accessibilityText = "",
+                painter = CameraFlashMode.ON.getPainter(),
+                isHighlighted = true,
+                enabled = true
+            )
+
+            // Instance 3: Disabled state
+            QuickSettingToggleButton(
+                onClick = {},
+                text = "Flash Off",
+                accessibilityText = "",
+                painter = CameraFlashMode.OFF.getPainter(),
+                isHighlighted = false,
+                enabled = false
+            )
         }
     }
 }

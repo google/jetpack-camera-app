@@ -16,16 +16,16 @@
 
 syntax = "proto3";
 
-import "com/google/jetpackcamera/settings/aspect_ratio.proto";
-import "com/google/jetpackcamera/settings/capture_mode.proto";
-import "com/google/jetpackcamera/settings/dark_mode.proto";
-import "com/google/jetpackcamera/settings/dynamic_range.proto";
-import "com/google/jetpackcamera/settings/flash_mode.proto";
-import "com/google/jetpackcamera/settings/image_output_format.proto";
-import "com/google/jetpackcamera/settings/lens_facing.proto";
-import "com/google/jetpackcamera/settings/stabilization_mode.proto";
-import "com/google/jetpackcamera/settings/video_quality.proto";
-import "com/google/jetpackcamera/settings/low_light_boost_priority.proto";
+import "com/google/jetpackcamera/model/proto/aspect_ratio.proto";
+import "com/google/jetpackcamera/model/proto/capture_mode.proto";
+import "com/google/jetpackcamera/model/proto/dark_mode.proto";
+import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
+import "com/google/jetpackcamera/model/proto/flash_mode.proto";
+import "com/google/jetpackcamera/model/proto/image_output_format.proto";
+import "com/google/jetpackcamera/model/proto/lens_facing.proto";
+import "com/google/jetpackcamera/model/proto/stabilization_mode.proto";
+import "com/google/jetpackcamera/model/proto/video_quality.proto";
+import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
