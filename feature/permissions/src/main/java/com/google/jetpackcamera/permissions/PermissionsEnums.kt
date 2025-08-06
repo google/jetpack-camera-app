@@ -151,11 +151,8 @@ enum class PermissionEnum : PermissionInfoProvider {
     };
 
     companion object {
-        fun fromString(permission: String): PermissionEnum = when (permission) {
-            Manifest.permission.CAMERA -> CAMERA
-            Manifest.permission.RECORD_AUDIO -> RECORD_AUDIO
-            Manifest.permission.WRITE_EXTERNAL_STORAGE -> WRITE_STORAGE
-            else -> throw IllegalArgumentException("Unknown permission: $permission")
-        }
+        fun fromString(permission: String): PermissionEnum =
+            entries.firstOrNull { it.getPermission() == permission }
+                ?: throw IllegalArgumentException("Unknown permission: $permission")
     }
 }
