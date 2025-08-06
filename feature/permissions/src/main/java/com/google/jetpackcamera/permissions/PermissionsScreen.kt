@@ -93,12 +93,6 @@ fun PermissionsScreen(
             modifier = modifier,
             permissionEnum = permissionEnum,
             onDismissPermission = { viewModel.dismissPermission() },
-            onSkipPermission = when (permissionEnum) {
-                PermissionEnum.CAMERA -> null
-                // todo: skip permission button functionality. currently need to go through the
-                // prompt to skip
-                else -> null // permissionsViewModel::dismissPermission
-            },
             onOpenAppSettings = openAppSettings
         )
     }
