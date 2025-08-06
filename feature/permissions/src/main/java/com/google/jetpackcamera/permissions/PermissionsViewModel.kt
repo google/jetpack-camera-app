@@ -15,56 +15,52 @@
  */
 package com.google.jetpackcamera.permissions
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.shouldShowRationale
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
+import com.google.jetpackcamera.permissions.navigation.getRequestablePermissions
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlin.collections.removeFirst as ktRemoveFirst // alias must be used now. see https://issuetracker.google.com/348683480
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 /**
  * A [ViewModel] for [PermissionsScreen]]
  */
 @OptIn(ExperimentalPermissionsApi::class)
-@HiltViewModel(assistedFactory = PermissionsViewModel.Factory::class)
-class PermissionsViewModel @AssistedInject constructor(
-    @Assisted permissionStates: MultiplePermissionsState
+@HiltViewModel()
+class PermissionsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    @AssistedFactory
-    interface Factory {
-        fun create(runtimeArg: MultiplePermissionsState): PermissionsViewModel
-    }
 
-    private var permissionQueue = mutableListOf<PermissionEnum>()
-
-    init {
-        permissionQueue.addAll(getRequestablePermissions(permissionStates))
-    }
-
-    private val _permissionsUiState: MutableStateFlow<PermissionsUiState> =
-        MutableStateFlow(getCurrentPermission())
-    val permissionsUiState: StateFlow<PermissionsUiState> = _permissionsUiState.asStateFlow()
-
-    private fun getCurrentPermission(): PermissionsUiState = if (permissionQueue.isEmpty()) {
+    // Initialize required permissions from savedStateHandle. Assume all permissions are not yet
+    // granted.
+    private var permissionQueue = MutableStateFlow(savedStateHandle.getRequestablePermissions())
+    val permissionsUiState: StateFlow<PermissionsUiState> =
+        permissionQueue.map { permissionQueue ->
+            permissionQueue.toUiState()
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = permissionQueue.value.toUiState()
+        )
+    private fun List<PermissionEnum>.toUiState(): PermissionsUiState = if (isEmpty()) {
         PermissionsUiState.AllPermissionsGranted
     } else {
-        PermissionsUiState.PermissionsNeeded(permissionQueue.first())
+        PermissionsUiState.PermissionsNeeded(first())
     }
 
-    fun dismissPermission() {
-        if (permissionQueue.isNotEmpty()) {
-            permissionQueue.ktRemoveFirst()
-        }
-        _permissionsUiState.update {
-            (getCurrentPermission())
+    fun updatePermissionStates(multiplePermissionsState: MultiplePermissionsState) {
+        permissionQueue.update {
+            getRequestablePermissions(multiplePermissionsState)
         }
     }
 }

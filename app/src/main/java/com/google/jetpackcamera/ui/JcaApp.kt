@@ -38,7 +38,8 @@ import com.google.jetpackcamera.feature.preview.navigation.previewScreen
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.permissions.PermissionsScreen
+import com.google.jetpackcamera.permissions.navigation.permissionsScreen
+import com.google.jetpackcamera.permissions.navigation.popUpToPermissions
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
@@ -86,23 +87,24 @@ private fun JetpackCameraNavHost(
         startDestination = PERMISSIONS_ROUTE,
         modifier = modifier
     ) {
-        composable(PERMISSIONS_ROUTE) {
-            PermissionsScreen(
-                shouldRequestReadWriteStoragePermission = externalCaptureMode ==
-                    ExternalCaptureMode.Standard &&
-                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
-                shouldRequestAudioPermission = externalCaptureMode == ExternalCaptureMode.Standard,
-                onAllPermissionsGranted = {
-                    // Pop off the permissions screen
-                    navController.navigateToPreview {
-                        popUpTo(PERMISSIONS_ROUTE) {
-                            inclusive = true
-                        }
-                    }
-                },
-                openAppSettings = onOpenAppSettings
-            )
+        val requestablePermissions = buildList {
+            add(android.Manifest.permission.CAMERA)
+            if (externalCaptureMode == ExternalCaptureMode.Standard) {
+                add(android.Manifest.permission.RECORD_AUDIO)
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+            }
         }
+        permissionsScreen(
+            requestablePermissions = requestablePermissions,
+            onAllPermissionsGranted = {
+                navController.navigateToPreview {
+                    popUpToPermissions()
+                }
+            },
+            onOpenAppSettings = onOpenAppSettings
+        )
 
         previewScreen(
             externalCaptureMode = externalCaptureMode,
