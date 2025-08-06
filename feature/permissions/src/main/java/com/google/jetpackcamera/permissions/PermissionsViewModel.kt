@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.permissions
 
-import android.Manifest
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -79,36 +77,14 @@ class PermissionsViewModel @AssistedInject constructor(
  * - optional permissions that have not yet been denied by the user
  */
 @OptIn(ExperimentalPermissionsApi::class)
-fun getRequestablePermissions(permissionStates: MultiplePermissionsState): Set<PermissionEnum> {
-    val unGrantedPermissions = buildSet {
+fun getRequestablePermissions(permissionStates: MultiplePermissionsState): List<PermissionEnum> =
+    buildList {
         permissionStates.permissions.forEach { permissionState ->
-            when (permissionState.permission) {
-                // camera is always required
-                Manifest.permission.CAMERA -> {
-                    if (!permissionState.status.isGranted) {
-                        add(PermissionEnum.CAMERA)
-                    }
-                }
-
-                // optional permissions
-                Manifest.permission.RECORD_AUDIO -> {
-                    if (!permissionState.status.shouldShowRationale &&
-                        !permissionState.status.isGranted
-                    ) {
-                        add(PermissionEnum.RECORD_AUDIO)
-                    }
-                }
-
-                Manifest.permission.WRITE_EXTERNAL_STORAGE -> {
-                    if (!permissionState.status.shouldShowRationale &&
-                        !permissionState.status.isGranted &&
-                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-                    ) {
-                        add(PermissionEnum.WRITE_STORAGE)
-                    }
+            val permission = PermissionEnum.fromString(permissionState.permission)
+            if (!permissionState.status.isGranted) {
+                if (!permission.isOptional() || !permissionState.status.shouldShowRationale) {
+                    add(permission)
                 }
             }
         }
     }
-    return unGrantedPermissions
-}

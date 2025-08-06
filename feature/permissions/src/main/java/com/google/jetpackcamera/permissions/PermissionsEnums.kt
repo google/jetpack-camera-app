@@ -148,5 +148,14 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.write_storage_permission_accessibility_text
+    };
+
+    companion object {
+        fun fromString(permission: String): PermissionEnum = when (permission) {
+            Manifest.permission.CAMERA -> CAMERA
+            Manifest.permission.RECORD_AUDIO -> RECORD_AUDIO
+            Manifest.permission.WRITE_EXTERNAL_STORAGE -> WRITE_STORAGE
+            else -> throw IllegalArgumentException("Unknown permission: $permission")
+        }
     }
 }
