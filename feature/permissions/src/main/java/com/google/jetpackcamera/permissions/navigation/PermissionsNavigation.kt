@@ -27,14 +27,16 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.PermissionsScreen
 import com.google.jetpackcamera.permissions.navigation.PermissionsRoute.ARG_REQUESTABLE_PERMISSIONS
-
-object PermissionsRoute {
-    internal const val ARG_REQUESTABLE_PERMISSIONS = "requestable_permissions"
-}
 private const val BASE_ROUTE_DEF = "permissions"
 
 private const val FULL_ROUTE_DEF = "$BASE_ROUTE_DEF?" +
     "$ARG_REQUESTABLE_PERMISSIONS={$ARG_REQUESTABLE_PERMISSIONS}"
+
+object PermissionsRoute {
+    internal const val ARG_REQUESTABLE_PERMISSIONS = "requestable_permissions"
+
+    override fun toString(): String = BASE_ROUTE_DEF
+}
 
 fun NavController.navigateToPermissions(
     requestablePermissions: List<String>? = null,
