@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.permissions.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
@@ -57,7 +55,6 @@ import com.google.jetpackcamera.permissions.R
  * Template for a single page for the permissions Screen
  *
  * @param permissionEnum a [PermissionEnum] representing the target permission
- * @param permissionState a [PermissionState] of the target permission
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -65,7 +62,6 @@ fun PermissionTemplate(
     modifier: Modifier = Modifier,
     permissionEnum: PermissionEnum,
     onDismissPermission: () -> Unit,
-    onSkipPermission: (() -> Unit)? = null,
     onOpenAppSettings: () -> Unit
 ) {
     val permissionState = rememberPermissionState(permissionEnum.getPermission())
@@ -89,7 +85,6 @@ fun PermissionTemplate(
                 permissionState.launchPermissionRequest()
             }
         },
-        onSkipPermission = onSkipPermission,
         imageVector = permissionEnum.getImageVector()!!,
         iconAccessibilityText = stringResource(permissionEnum.getIconAccessibilityTextResId()),
         title = stringResource(permissionEnum.getPermissionTitleResId()),
@@ -118,7 +113,6 @@ fun PermissionTemplate(
     modifier: Modifier = Modifier,
     testTag: String,
     onRequestPermission: () -> Unit,
-    onSkipPermission: (() -> Unit)? = null,
     imageVector: ImageVector,
     iconAccessibilityText: String,
     title: String,
@@ -155,8 +149,7 @@ fun PermissionTemplate(
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),
                 requestButtonText = requestButtonText,
-                onRequestPermission = onRequestPermission,
-                onSkipPermission = onSkipPermission
+                onRequestPermission = onRequestPermission
             )
         }
         Spacer(modifier = Modifier.fillMaxHeight(.2f))
@@ -219,8 +212,7 @@ fun PermissionImage(
 fun PermissionButtonSection(
     modifier: Modifier = Modifier,
     onRequestPermission: () -> Unit,
-    requestButtonText: String,
-    onSkipPermission: (() -> Unit)?
+    requestButtonText: String
 ) {
     Box(modifier = modifier) {
         // permission buttons
@@ -232,17 +224,6 @@ fun PermissionButtonSection(
                 onRequestPermission = { onRequestPermission() },
                 requestButtonText = requestButtonText
             )
-            Spacer(modifier = Modifier.height(20.dp))
-            if (onSkipPermission != null) {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .clickable { onSkipPermission() },
-                    text = "Maybe Later",
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.inversePrimary
-                )
-            }
         }
     }
 }

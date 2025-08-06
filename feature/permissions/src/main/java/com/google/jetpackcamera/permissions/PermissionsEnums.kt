@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.permissions
 
+import android.Manifest
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -29,12 +30,6 @@ import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-
-const val CAMERA_PERMISSION = "android.permission.CAMERA"
-const val AUDIO_RECORD_PERMISSION = "android.permission.RECORD_AUDIO"
-
-const val READ_EXTERNAL_STORAGE_PERMISSION = "android.permission.READ_EXTERNAL_STORAGE"
-const val WRITE_EXTERNAL_STORAGE_PERMISSION = "android.permission.WRITE_EXTERNAL_STORAGE"
 
 /**
  * Helper class storing a permission's relevant UI information
@@ -89,7 +84,7 @@ sealed interface PermissionInfoProvider {
 enum class PermissionEnum : PermissionInfoProvider {
 
     CAMERA {
-        override fun getPermission(): String = CAMERA_PERMISSION
+        override fun getPermission(): String = Manifest.permission.CAMERA
 
         override fun isOptional(): Boolean = false
 
@@ -112,7 +107,7 @@ enum class PermissionEnum : PermissionInfoProvider {
     },
 
     RECORD_AUDIO {
-        override fun getPermission(): String = AUDIO_RECORD_PERMISSION
+        override fun getPermission(): String = Manifest.permission.RECORD_AUDIO
 
         override fun isOptional(): Boolean = true
 
@@ -134,7 +129,7 @@ enum class PermissionEnum : PermissionInfoProvider {
     },
 
     WRITE_STORAGE {
-        override fun getPermission(): String = WRITE_EXTERNAL_STORAGE_PERMISSION
+        override fun getPermission(): String = Manifest.permission.WRITE_EXTERNAL_STORAGE
 
         override fun isOptional(): Boolean = true
 
@@ -153,5 +148,11 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.write_storage_permission_accessibility_text
+    };
+
+    companion object {
+        fun fromString(permission: String): PermissionEnum =
+            entries.firstOrNull { it.getPermission() == permission }
+                ?: throw IllegalArgumentException("Unknown permission: $permission")
     }
 }
