@@ -704,7 +704,7 @@ private fun setFlashModeInternal(
             ) {
                 Log.d(TAG, "ImageCapture.ScreenFlash: apply")
                 screenFlashEvents.trySend(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) {
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) {
                         listener.onCompleted()
                     }
                 )
@@ -713,7 +713,7 @@ private fun setFlashModeInternal(
             override fun clear() {
                 Log.d(TAG, "ImageCapture.ScreenFlash: clear")
                 screenFlashEvents.trySend(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) {}
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) {}
                 )
             }
         }
@@ -746,7 +746,7 @@ private fun getPendingRecording(
     captureTypeSuffix: String,
     videoCaptureUri: Uri?,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
 ): PendingRecording? {
     Log.d(TAG, "getPendingRecording")
 
@@ -764,7 +764,7 @@ private fun getPendingRecording(
                 )
             } catch (e: Exception) {
                 onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
+                    CameraSystem.OnVideoRecordEvent.OnVideoRecordError(e)
                 )
                 null
             }
@@ -776,7 +776,7 @@ private fun getPendingRecording(
                 videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
             } else {
                 onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                    CameraSystem.OnVideoRecordEvent.OnVideoRecordError(
                         RuntimeException("Uri scheme not supported.")
                     )
                 )
@@ -811,7 +811,7 @@ private suspend fun startVideoRecordingInternal(
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
     initialRecordingSettings: InitialRecordingSettings,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
@@ -925,7 +925,7 @@ private suspend fun startVideoRecordingInternal(
                             )
                         }
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                            CameraSystem.OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
@@ -942,7 +942,7 @@ private suspend fun startVideoRecordingInternal(
                         }
 
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                            CameraSystem.OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
@@ -950,7 +950,7 @@ private suspend fun startVideoRecordingInternal(
 
                     else -> {
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                            CameraSystem.OnVideoRecordEvent.OnVideoRecordError(
                                 RuntimeException(
                                     "Recording finished with error: ${onVideoRecordEvent.error}",
                                     onVideoRecordEvent.cause
@@ -984,7 +984,7 @@ private suspend fun runVideoRecording(
     videoCaptureUri: Uri?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     shouldUseUri: Boolean,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 

@@ -17,8 +17,8 @@ package com.google.jetpackcamera.ui.components.capture.capture
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.camera.CameraUseCase
-import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
+import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -49,12 +49,12 @@ class ScreenFlashTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
-    private val cameraUseCase = FakeCameraUseCase()
+    private val cameraSystem = FakeCameraSystem()
     private lateinit var screenFlash: ScreenFlash
 
     @Before
     fun setup() = runTest(testDispatcher) {
-        screenFlash = ScreenFlash(cameraUseCase, testScope)
+        screenFlash = ScreenFlash(cameraSystem, testScope)
     }
 
     @Test
@@ -70,10 +70,10 @@ class ScreenFlashTest {
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraUseCase.setFlashMode(FlashMode.ON)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(FlashMode.ON)
         val contentResolver: ContentResolver = Mockito.mock()
-        cameraUseCase.takePicture({}, contentResolver, null)
+        cameraSystem.takePicture({}, contentResolver, null)
 
         advanceUntilIdle()
         assertThat(states.map { it.enabled }).containsExactlyElementsIn(
@@ -88,8 +88,8 @@ class ScreenFlashTest {
     @Test
     fun emitClearUiEvent_screenFlashUiStateContainsClearUiScreenBrightness() = runCameraTest {
         screenFlash.setClearUiScreenBrightness(5.0f)
-        cameraUseCase.emitScreenFlashEvent(
-            CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
+        cameraSystem.emitScreenFlashEvent(
+            CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
         )
 
         advanceUntilIdle()
@@ -101,8 +101,8 @@ class ScreenFlashTest {
     @Test
     fun invokeOnChangeCompleteAfterClearUiEvent_screenFlashUiStateReset() = runCameraTest {
         screenFlash.setClearUiScreenBrightness(5.0f)
-        cameraUseCase.emitScreenFlashEvent(
-            CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) { }
+        cameraSystem.emitScreenFlashEvent(
+            CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
         )
 
         advanceUntilIdle()
@@ -115,10 +115,10 @@ class ScreenFlashTest {
 
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.initialize(
+            cameraSystem.initialize(
                 DEFAULT_CAMERA_APP_SETTINGS
             ) {}
-            cameraUseCase.runCamera()
+            cameraSystem.runCamera()
         }
 
         testBody()

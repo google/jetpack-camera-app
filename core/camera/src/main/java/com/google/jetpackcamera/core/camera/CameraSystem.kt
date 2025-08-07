@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Data layer for camera.
  */
-interface CameraUseCase {
+interface CameraSystem {
     /**
      * Initializes the camera.
      *

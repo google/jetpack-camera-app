@@ -88,7 +88,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
-private const val TAG = "CameraXCameraUseCase"
+private const val TAG = "CameraXCameraSystem"
 const val TARGET_FPS_AUTO = 0
 const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
@@ -97,24 +97,24 @@ const val TARGET_FPS_60 = 60
 const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
- * CameraX based implementation for [CameraUseCase]
+ * CameraX based implementation for [CameraSystem]
  */
 @ViewModelScoped
-class CameraXCameraUseCase
+class CameraXCameraSystem
 @Inject
 constructor(
     private val application: Application,
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
-) : CameraUseCase {
+) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private var imageCaptureUseCase: ImageCapture? = null
 
     private lateinit var systemConstraints: SystemConstraints
 
-    private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
+    private val screenFlashEvents: Channel<CameraSystem.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
@@ -557,7 +557,7 @@ constructor(
     override suspend fun startVideoRecording(
         videoCaptureUri: Uri?,
         shouldUseUri: Boolean,
-        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+        onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
     ) {
         if (shouldUseUri && videoCaptureUri == null) {
             val e = RuntimeException("Null Uri is provided.")
