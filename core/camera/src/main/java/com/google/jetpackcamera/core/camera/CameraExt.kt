@@ -15,9 +15,13 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
+import android.os.Build
+import android.util.Log
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
@@ -30,9 +34,11 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import com.google.android.gms.cameralowlight.LowLightBoost
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostAvailability
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.FHD
@@ -40,6 +46,9 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
+import kotlinx.coroutines.tasks.await
+
+private const val TAG = "CameraExt"
 
 val CameraInfo.appLensFacing: LensFacing
     get() = when (this.lensFacing) {
@@ -135,6 +144,42 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
         ?.contains(
             CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
         ) ?: false
+
+@RequiresApi(Build.VERSION_CODES.R)
+@OptIn(ExperimentalCamera2Interop::class)
+suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBoostAvailability {
+    val camera2Info = Camera2CameraInfo.from(this)
+    val llbAEModeSupport = camera2Info
+        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+        ?.contains(
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        ) ?: false
+    val cameraId = camera2Info.cameraId
+    val lowLightBoostClient = LowLightBoost.getClient(context)
+    val gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
+    var gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
+    if (gLlbSupport && !gLlbAvailable) {
+        gLlbAvailable =
+            try {
+                lowLightBoostClient.installModule(null).await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
+                false
+            }
+    }
+    return if (llbAEModeSupport) {
+        if (gLlbSupport && gLlbAvailable) {
+            LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES
+        } else {
+            LowLightBoostAvailability.AE_MODE_ONLY
+        }
+    } else if (gLlbSupport && gLlbAvailable) {
+        LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY
+    } else {
+        LowLightBoostAvailability.NONE
+    }
+}
+
 val CameraInfo.availableTestPatterns: Set<TestPattern>
     @OptIn(ExperimentalCamera2Interop::class)
     get() = buildSet {

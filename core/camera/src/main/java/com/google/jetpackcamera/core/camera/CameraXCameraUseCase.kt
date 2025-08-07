@@ -26,6 +26,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
@@ -55,6 +56,8 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.LowLightBoostAvailability
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -130,6 +133,7 @@ constructor(
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
@@ -221,8 +225,13 @@ constructor(
                                 add(Illuminant.SCREEN)
                             }
 
-                            if (camInfo.isLowLightBoostSupported) {
-                                add(Illuminant.LOW_LIGHT_BOOST)
+                            coroutineScope {
+                                if (camInfo.getLowLightBoostAvailablity(
+                                        application
+                                    ) != LowLightBoostAvailability.NONE
+                                ) {
+                                    add(Illuminant.LOW_LIGHT_BOOST)
+                                }
                             }
                         }
 
@@ -346,7 +355,8 @@ constructor(
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
                             videoQuality = currentCameraSettings.videoQuality,
-                            imageFormat = currentCameraSettings.imageFormat
+                            imageFormat = currentCameraSettings.imageFormat,
+                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
                         )
                     }
 
@@ -869,6 +879,12 @@ constructor(
         currentSettings.update { old ->
             old?.copy(videoQuality = videoQuality)
                 ?.tryApplyVideoQualityConstraints()
+        }
+    }
+
+    override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        currentSettings.update { old ->
+            old?.copy(lowLightBoostPriority = lowLightBoostPriority)
         }
     }
 
