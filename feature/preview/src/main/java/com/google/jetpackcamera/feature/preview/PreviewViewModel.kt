@@ -39,6 +39,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.ConstraintsRepository
@@ -534,9 +535,14 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                     Pair(externalUriIndex, uri)
                 } ?: Pair(-1, imageCaptureUri)
+            val saveLocation = if (finalImageUri == null) {
+                SaveLocation.Default
+            } else {
+                SaveLocation.Explicit(finalImageUri)
+            }
             captureImageInternal(
                 doTakePicture = {
-                    cameraUseCase.takePicture({
+                    cameraUseCase.takePicture(contentResolver, saveLocation) {
                         _captureUiState.update { old ->
                             (old as? CaptureUiState.Ready)?.copy(
                                 previewDisplayUiState = PreviewDisplayUiState(
@@ -545,7 +551,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 )
                             ) ?: old
                         }
-                    }, contentResolver, finalImageUri, ignoreUri).savedUri
+                    }.savedUri
                 },
                 onSuccess = { savedUri ->
                     updateLastCapturedMedia()
@@ -642,7 +648,22 @@ class PreviewViewModel @AssistedInject constructor(
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
-                cameraUseCase.startVideoRecording(videoCaptureUri, shouldUseUri) {
+                if (shouldUseUri && videoCaptureUri == null) {
+                    onVideoCapture(
+                        VideoCaptureEvent.VideoCaptureError(
+                            IllegalArgumentException(
+                                "Video capture URI cannot be null for external capture."
+                            )
+                        )
+                    )
+                    return@launch
+                }
+                val saveLocation = if (videoCaptureUri == null || !shouldUseUri) {
+                    SaveLocation.Default
+                } else {
+                    SaveLocation.Explicit(videoCaptureUri)
+                }
+                cameraUseCase.startVideoRecording(saveLocation) {
                     var snackbarToShow: SnackbarData?
                     when (it) {
                         is CameraUseCase.OnVideoRecordEvent.OnVideoRecorded -> {
