@@ -65,7 +65,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -112,7 +112,7 @@ constructor(
 
     private var imageCaptureUseCase: ImageCapture? = null
 
-    private lateinit var systemConstraints: SystemConstraints
+    private lateinit var systemConstraints: CameraSystemConstraints
 
     private val screenFlashEvents: Channel<CameraSystem.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
@@ -150,7 +150,7 @@ constructor(
             }
 
         // Build and update the system constraints
-        systemConstraints = SystemConstraints(
+        systemConstraints = CameraSystemConstraints(
             availableLenses = availableCameraLenses,
             concurrentCamerasSupported = cameraProvider.availableConcurrentCameraInfos.any {
                 it.map { cameraInfo -> cameraInfo.appLensFacing }

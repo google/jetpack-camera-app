@@ -44,7 +44,7 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
@@ -280,7 +280,7 @@ class PreviewViewModel @AssistedInject constructor(
         flashModeUiState: FlashModeUiState,
         flipLensUiState: FlipLensUiState,
         cameraAppSettings: CameraAppSettings,
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
@@ -308,7 +308,7 @@ class PreviewViewModel @AssistedInject constructor(
     }
 
     private fun getDebugUiState(
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
         isDebugOverlayOpen: Boolean
