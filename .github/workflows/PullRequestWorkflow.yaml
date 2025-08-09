@@ -137,10 +137,7 @@ jobs:
         run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Run instrumentation tests
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          arguments: ${{ matrix.device.name }}StableDebugAndroidTest
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+        run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
