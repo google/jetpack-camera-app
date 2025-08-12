@@ -31,7 +31,7 @@ sealed interface VideoCaptureControlEvent {
         val videoCaptureUri: Uri?,
         val shouldUseUri: Boolean,
         val maxVideoDuration: Long,
-        val onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
+        val onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent
 
     /**

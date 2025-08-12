@@ -25,8 +25,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import com.google.jetpackcamera.core.camera.CameraSystem.OnVideoRecordEvent.OnVideoRecordError
-import com.google.jetpackcamera.core.camera.CameraSystem.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
@@ -188,7 +188,7 @@ class CameraXCameraSystemTest {
     } ?: fail("Timeout while waiting for expected value: $expectedValue")
 
     private suspend fun CameraXCameraSystem.startRecording(
-        onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         // Start recording
         startVideoRecording(
