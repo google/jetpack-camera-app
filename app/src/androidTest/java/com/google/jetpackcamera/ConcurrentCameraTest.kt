@@ -333,7 +333,7 @@ class ConcurrentCameraTest {
     }
 
     private fun SemanticsNode.fetchConcurrentCameraMode(): ConcurrentCameraMode {
-        config[SemanticsProperties.ContentDescription].any { description ->
+        config[SemanticsProperties.ContentDescription].forEach { description ->
             when (description) {
                 getResString(R.string.quick_settings_description_concurrent_camera_off) ->
                     return ConcurrentCameraMode.OFF
