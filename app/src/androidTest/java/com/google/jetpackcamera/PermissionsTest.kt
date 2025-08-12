@@ -24,7 +24,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
 import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
@@ -39,6 +38,7 @@ import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IndividualTestGrantPermissionRule
+import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.askEveryTimeDialog
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.denyPermissionDialog
@@ -270,7 +270,7 @@ class PermissionsTest {
             }
         }
 
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
     @SdkSuppress(maxSdkVersion = 28)
