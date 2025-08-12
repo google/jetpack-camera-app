@@ -48,11 +48,11 @@ val TEST_REQUIRED_PERMISSIONS: List<String> = buildList {
     }
 }
 
-val PICTURES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
+internal val PICTURES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
     Environment.DIRECTORY_PICTURES
 ).path
 
-val MOVIES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
+internal val MOVIES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
     Environment.DIRECTORY_MOVIES
 ).path
 
