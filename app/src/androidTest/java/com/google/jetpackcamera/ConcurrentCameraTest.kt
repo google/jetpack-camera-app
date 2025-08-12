@@ -333,18 +333,20 @@ class ConcurrentCameraTest {
     }
 
     private fun SemanticsNode.fetchConcurrentCameraMode(): ConcurrentCameraMode {
-        config[SemanticsProperties.ContentDescription].forEach { description ->
-            when (description) {
-                getResString(R.string.quick_settings_description_concurrent_camera_off) ->
-                    return ConcurrentCameraMode.OFF
-
-                getResString(R.string.quick_settings_description_concurrent_camera_dual) ->
-                    return ConcurrentCameraMode.DUAL
-
-                else -> false
-            }
-        }
-        throw AssertionError("Unable to determine concurrent camera mode from quick settings")
+        return config[SemanticsProperties.ContentDescription]
+            .firstNotNullOfOrNull { description ->
+                when (description) {
+                    getResString(
+                        R.string.quick_settings_description_concurrent_camera_off
+                    ) -> ConcurrentCameraMode.OFF
+                    getResString(
+                        R.string.quick_settings_description_concurrent_camera_dual
+                    ) -> ConcurrentCameraMode.DUAL
+                    else -> null
+                }
+            } ?: throw AssertionError(
+            "Unable to determine concurrent camera mode from quick settings"
+        )
     }
 
     private fun SemanticsNodeInteraction.assertConcurrentCameraMode(
