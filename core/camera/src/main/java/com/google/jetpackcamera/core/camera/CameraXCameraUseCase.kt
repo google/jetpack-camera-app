@@ -515,7 +515,7 @@ constructor(
             closeable?.close()
         }.also { outputFileResults ->
             outputFileResults.savedUri?.let {
-                Log.d(TAG, "Saved image to ${it}")
+                Log.d(TAG, "Saved image to $it")
             }
         }
     } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
