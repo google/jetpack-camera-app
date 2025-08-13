@@ -2,16 +2,8 @@
 
 echo "Running Spotless check before push..."
 
-# Run the spotlessCheck command.
-# If it fails, it will exit with a non-zero status code,
-# which will automatically cause the pre-push hook to fail and abort the push.
-./gradlew spotlessCheck --init-script gradle/init.gradle.kts
-
-# Capture the exit code of the last command
-EXIT_CODE=$?
-
-# Check if the command failed
-if [ $EXIT_CODE -ne 0 ]; then
+# Run the spotlessCheck command. If it fails, print a helpful message and exit.
+if ! ./gradlew spotlessCheck --init-script gradle/init.gradle.kts; then
     echo "--------------------------------------------------"
     echo "ERROR: Spotless check failed."
     echo "Your code is not formatted correctly."
