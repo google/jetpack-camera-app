@@ -1,22 +1,22 @@
 ![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
 # Jetpack Camera App 📸
 
-Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built 
-entirely with CameraX, Kotlin and Jetpack Compose. It follows Android 
+Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built
+entirely with CameraX, Kotlin and Jetpack Compose. It follows Android
 design and development best practices and it's intended to be a useful reference for developers and
 OEMs looking to validate their camera feature implementations.
 
-# Development Environment ⚒️ 
+# Development Environment ⚒️
 
 This project uses the gradle build system, and can be imported directly into Android Studio.
 
-Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only 
+Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only
 compatible with Android Studio Meerkat or newer.
 
 ## Pre-push Hook (Recommended)
 
-This repository includes a `pre-push` hook that automatically checks your code for correct 
-formatting using `spotless` before you push your changes. This helps prevent CI failures due to 
+This repository includes a `pre-push` hook that automatically checks your code for correct
+formatting using `spotless` before you push your changes. This helps prevent CI failures due to
 formatting issues.
 
 To enable this hook, run the following command once from the root of the repository:
@@ -32,7 +32,7 @@ will automatically run every time you push.
 
 ### Bypassing the Hook
 
-If you need to bypass the pre-push check for any reason, you can use the `--no-verify` flag with 
+If you need to bypass the pre-push check for any reason, you can use the `--no-verify` flag with
 your push command:
 
 ```bash
@@ -61,7 +61,7 @@ Pixel 8 (API 34) emulators which can be used to run instrumentation tests with:
 
 # Features ✨🧰✨
 
-This section provides a detailed overview of the camera app's features, highlighting its 
+This section provides a detailed overview of the camera app's features, highlighting its
 capabilities and functionalities. Each feature is described with its purpose, usage, and any
 relevant considerations to help you understand and utilize the app effectively.
 
