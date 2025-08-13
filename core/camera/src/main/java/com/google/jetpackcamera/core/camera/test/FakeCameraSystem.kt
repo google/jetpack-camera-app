@@ -17,11 +17,11 @@ package com.google.jetpackcamera.core.camera.test
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
-import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -31,6 +31,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -114,10 +115,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     @SuppressLint("RestrictedApi")
     override suspend fun takePicture(
-        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        ignoreUri: Boolean
+        saveLocation: SaveLocation,
+        onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
         takePicture(onCaptureStarted)
         return ImageCapture.OutputFileResults(null)
@@ -128,9 +128,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     }
 
     override suspend fun startVideoRecording(
-        videoCaptureUri: Uri?,
-        shouldUseUri: Boolean,
-        onVideoRecord: (CameraSystem.OnVideoRecordEvent) -> Unit
+        saveLocation: SaveLocation,
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")

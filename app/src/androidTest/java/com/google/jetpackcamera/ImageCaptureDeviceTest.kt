@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.net.Uri
-import android.os.Environment
 import android.provider.MediaStore
 import android.view.KeyEvent
 import androidx.compose.ui.test.isDisplayed
@@ -41,6 +40,7 @@ import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_PREFIX
@@ -125,7 +125,7 @@ internal class ImageCaptureDeviceTest {
     @Test
     fun image_capture_external() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
+        val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
@@ -145,7 +145,7 @@ internal class ImageCaptureDeviceTest {
         Truth.assertThat(
             doesMediaExist(uri, IMAGE_PREFIX)
         ).isTrue()
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test
@@ -176,7 +176,7 @@ internal class ImageCaptureDeviceTest {
     @Test
     fun video_capture_during_image_capture_external() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(DIR_PATH, timeStamp, "mp4")
+        val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "mp4")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
@@ -206,7 +206,7 @@ internal class ImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uriStrings = arrayListOf<String>()
         for (i in 1..3) {
-            val uri = getTestUri(DIR_PATH, timeStamp + i.toLong(), "jpg")
+            val uri = getTestUri(PICTURES_DIR_PATH, timeStamp + i.toLong(), "jpg")
             uriStrings.add(uri.toString())
         }
         val result =
@@ -234,7 +234,7 @@ internal class ImageCaptureDeviceTest {
                 doesMediaExist(Uri.parse(string), IMAGE_PREFIX)
             ).isTrue()
         }
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test
@@ -259,7 +259,7 @@ internal class ImageCaptureDeviceTest {
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(result.resultData.getStringArrayListExtra(MediaStore.EXTRA_OUTPUT)?.size)
             .isEqualTo(2)
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
     @Test
@@ -282,7 +282,7 @@ internal class ImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uriStrings = arrayListOf<String>()
         uriStrings.add("illegal_uri")
-        uriStrings.add(getTestUri(DIR_PATH, timeStamp, "jpg").toString())
+        uriStrings.add(getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg").toString())
         val result =
             runMainActivityScenarioTestForResult(
                 getMultipleImageCaptureIntent(
@@ -304,7 +304,7 @@ internal class ImageCaptureDeviceTest {
         Truth.assertThat(
             doesMediaExist(Uri.parse(uriStrings[1]), IMAGE_PREFIX)
         ).isTrue()
-        deleteFilesInDirAfterTimestamp(DIR_PATH, instrumentation, timeStamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
     private fun clickCaptureAndWaitUntilMessageDisappears(msgTimeOut: Long, msgTag: String) {
@@ -323,10 +323,5 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
-    }
-
-    companion object {
-        val DIR_PATH: String =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).path
     }
 }

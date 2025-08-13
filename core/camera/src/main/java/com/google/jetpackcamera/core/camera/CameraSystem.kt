@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
-import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
@@ -28,6 +27,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -68,15 +68,13 @@ interface CameraSystem {
      * location if the uri is not null. If it is null, an error will be thrown.
      */
     suspend fun takePicture(
-        onCaptureStarted: (() -> Unit) = {},
         contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        ignoreUri: Boolean = false
+        saveLocation: SaveLocation,
+        onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
     suspend fun startVideoRecording(
-        videoCaptureUri: Uri?,
-        shouldUseUri: Boolean,
+        saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 

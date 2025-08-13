@@ -26,6 +26,7 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.model.AspectRatio
@@ -39,6 +40,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.ConstraintsRepository
@@ -534,9 +536,14 @@ class PreviewViewModel @AssistedInject constructor(
                     }
                     Pair(externalUriIndex, uri)
                 } ?: Pair(-1, imageCaptureUri)
+            val saveLocation = if (finalImageUri == null) {
+                SaveLocation.Default
+            } else {
+                SaveLocation.Explicit(finalImageUri)
+            }
             captureImageInternal(
                 doTakePicture = {
-                    cameraSystem.takePicture({
+                    cameraSystem.takePicture(contentResolver, saveLocation) {
                         _captureUiState.update { old ->
                             (old as? CaptureUiState.Ready)?.copy(
                                 previewDisplayUiState = PreviewDisplayUiState(
@@ -545,7 +552,7 @@ class PreviewViewModel @AssistedInject constructor(
                                 )
                             ) ?: old
                         }
-                    }, contentResolver, finalImageUri, ignoreUri).savedUri
+                    }.savedUri
                 },
                 onSuccess = { savedUri ->
                     updateLastCapturedMedia()
@@ -642,10 +649,25 @@ class PreviewViewModel @AssistedInject constructor(
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             try {
-                cameraSystem.startVideoRecording(videoCaptureUri, shouldUseUri) {
+                if (shouldUseUri && videoCaptureUri == null) {
+                    onVideoCapture(
+                        VideoCaptureEvent.VideoCaptureError(
+                            IllegalArgumentException(
+                                "Video capture URI cannot be null for external capture."
+                            )
+                        )
+                    )
+                    return@launch
+                }
+                val saveLocation = if (videoCaptureUri == null || !shouldUseUri) {
+                    SaveLocation.Default
+                } else {
+                    SaveLocation.Explicit(videoCaptureUri)
+                }
+                cameraSystem.startVideoRecording(saveLocation) {
                     var snackbarToShow: SnackbarData?
                     when (it) {
-                        is CameraSystem.OnVideoRecordEvent.OnVideoRecorded -> {
+                        is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
                             onVideoCapture(VideoCaptureEvent.VideoSaved(it.savedUri))
                             snackbarToShow = SnackbarData(
@@ -657,7 +679,7 @@ class PreviewViewModel @AssistedInject constructor(
                             updateLastCapturedMedia()
                         }
 
-                        is CameraSystem.OnVideoRecordEvent.OnVideoRecordError -> {
+                        is OnVideoRecordEvent.OnVideoRecordError -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecordError")
                             onVideoCapture(VideoCaptureEvent.VideoCaptureError(it.error))
                             snackbarToShow = SnackbarData(
