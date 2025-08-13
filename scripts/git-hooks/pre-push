@@ -2,17 +2,21 @@
 
 echo "Running Spotless check before push..."
 
+GRADLE_BASE_CMD="./gradlew --init-script gradle/init.gradle.kts"
+
 # Run the spotlessCheck command. If it fails, print a helpful message and exit.
-if ! ./gradlew spotlessCheck --init-script gradle/init.gradle.kts; then
-    echo "--------------------------------------------------"
-    echo "ERROR: Spotless check failed."
-    echo "Your code is not formatted correctly."
-    echo ""
-    echo "Please run the following command to fix it:"
-    echo "  ./gradlew spotlessApply --init-script gradle/init.gradle.kts"
-    echo ""
-    echo "Then, stage the changes and amend your commit before pushing."
-    echo "--------------------------------------------------"
+if ! $GRADLE_BASE_CMD spotlessCheck; then
+    {
+        echo "--------------------------------------------------"
+        echo "ERROR: Spotless check failed."
+        echo "Your code is not formatted correctly."
+        echo ""
+        echo "Please run the following command to fix it:"
+        echo "  $GRADLE_BASE_CMD spotlessApply"
+        echo ""
+        echo "Then, stage the changes and amend your commit before pushing."
+        echo "--------------------------------------------------"
+    } >&2
     # Exit with a non-zero status to abort the push
     exit 1
 fi
