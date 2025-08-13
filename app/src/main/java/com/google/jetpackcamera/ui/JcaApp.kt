@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui
 
 import android.Manifest
+import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
@@ -27,15 +28,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.permissions.PermissionsScreen
@@ -43,7 +47,9 @@ import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
+import com.google.jetpackcamera.ui.Routes.PREVIEW_NAV_ARG_CAPTURE_URIS
 import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
+import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE_WITH_CAPTURE_URIS
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
 @Composable
@@ -51,18 +57,22 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     /*TODO(b/306236646): remove after still capture*/
     externalCaptureMode: ExternalCaptureMode,
-    modifier: Modifier = Modifier,
+    captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
-    onFirstFrameCaptureCompleted: () -> Unit
+    onFirstFrameCaptureCompleted: () -> Unit,
+    onCaptureEvent: (CaptureEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     JetpackCameraNavHost(
+        modifier = modifier,
         externalCaptureMode = externalCaptureMode,
+        captureUris = captureUris,
         debugSettings = debugSettings,
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        modifier = modifier
+        onCaptureEvent = onCaptureEvent
     )
 }
 
@@ -71,10 +81,12 @@ fun JcaApp(
 private fun JetpackCameraNavHost(
     modifier: Modifier = Modifier,
     externalCaptureMode: ExternalCaptureMode,
+    captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onOpenAppSettings: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
+    onCaptureEvent: (CaptureEvent) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(
@@ -84,11 +96,10 @@ private fun JetpackCameraNavHost(
     ) {
         composable(PERMISSIONS_ROUTE) {
             PermissionsScreen(
-                shouldRequestReadWriteStoragePermission = externalCaptureMode is
-                    ExternalCaptureMode.StandardMode &&
+                shouldRequestReadWriteStoragePermission = externalCaptureMode ==
+                    ExternalCaptureMode.Standard &&
                     Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
-                shouldRequestAudioPermission = externalCaptureMode
-                    is ExternalCaptureMode.StandardMode,
+                shouldRequestAudioPermission = externalCaptureMode == ExternalCaptureMode.Standard,
                 onAllPermissionsGranted = {
                     // Pop off the permissions screen
                     navController.navigate(PREVIEW_ROUTE) {
@@ -101,7 +112,16 @@ private fun JetpackCameraNavHost(
             )
         }
 
-        composable(route = PREVIEW_ROUTE, enterTransition = { fadeIn() }) {
+        composable(
+            route = PREVIEW_ROUTE_WITH_CAPTURE_URIS,
+            arguments = listOf(
+                navArgument(name = PREVIEW_NAV_ARG_CAPTURE_URIS) {
+                    type = NavType.StringListType
+                    defaultValue = captureUris.map { it.toString() }
+                }
+            ),
+            enterTransition = { fadeIn() }
+        ) {
             val permissionStates = rememberMultiplePermissionsState(
                 permissions =
                 buildList {
@@ -130,7 +150,8 @@ private fun JetpackCameraNavHost(
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
                 externalCaptureMode = externalCaptureMode,
-                debugSettings = debugSettings
+                debugSettings = debugSettings,
+                onCaptureEvent = onCaptureEvent
             )
         }
         composable(

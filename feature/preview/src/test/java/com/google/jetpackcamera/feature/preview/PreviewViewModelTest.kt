@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
 import com.google.jetpackcamera.data.media.FakeMediaRepository
@@ -56,12 +57,13 @@ class PreviewViewModelTest {
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
-            ExternalCaptureMode.StandardMode {},
+            ExternalCaptureMode.Standard,
             DebugSettings(isDebugModeEnabled = false),
             cameraUseCase = cameraUseCase,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
-            mediaRepository = FakeMediaRepository
+            mediaRepository = FakeMediaRepository,
+            savedStateHandle = SavedStateHandle()
         )
         advanceUntilIdle()
     }
@@ -84,7 +86,7 @@ class PreviewViewModelTest {
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.captureImageWithUri(contentResolver, null) { _, _ -> }
+        previewViewModel.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
     }
@@ -92,7 +94,7 @@ class PreviewViewModelTest {
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording(null, false) {}
+        previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraUseCase.recordingInProgress).isTrue()
     }
@@ -100,7 +102,7 @@ class PreviewViewModelTest {
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording(null, false) {}
+        previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
         advanceUntilIdle()
