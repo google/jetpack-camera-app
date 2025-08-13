@@ -25,7 +25,6 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
-import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -76,6 +75,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -85,6 +85,7 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
@@ -744,63 +745,81 @@ private fun getPendingRecording(
     videoCaptureUseCase: VideoCapture<Recorder>,
     maxDurationMillis: Long,
     captureTypeSuffix: String,
-    videoCaptureUri: Uri?,
-    shouldUseUri: Boolean,
+    saveLocation: SaveLocation,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ): PendingRecording? {
     Log.d(TAG, "getPendingRecording")
-
-    return if (shouldUseUri) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                videoCaptureUseCase.output.prepareRecording(
-                    context,
-                    FileDescriptorOutputOptions.Builder(
-                        context.applicationContext.contentResolver.openFileDescriptor(
-                            videoCaptureUri!!,
-                            "rw"
-                        )!!
-                    ).build()
-                )
-            } catch (e: Exception) {
-                onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
-                )
-                null
-            }
-        } else {
-            if (videoCaptureUri?.scheme == "file") {
-                val fileOutputOptions = FileOutputOptions.Builder(
-                    File(videoCaptureUri.path!!)
-                ).build()
-                videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
-            } else {
-                onVideoRecord(
-                    CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
-                        RuntimeException("Uri scheme not supported.")
+    return when (saveLocation) {
+        is SaveLocation.Explicit ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    context.applicationContext.contentResolver.openFileDescriptor(
+                        saveLocation.locationUri,
+                        "rw"
+                    )?.let { pfd ->
+                        videoCaptureUseCase.output.prepareRecording(
+                            context,
+                            FileDescriptorOutputOptions.Builder(pfd).build()
+                        )
+                    } ?: run {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                FileNotFoundException(
+                                    "Failed to open file descriptor " +
+                                        "for URI: ${saveLocation.locationUri}"
+                                )
+                            )
+                        )
+                        null
+                    }
+                } catch (e: Exception) {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
                     )
-                )
-                null
-            }
-        }
-    } else {
-        val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
-        val contentValues =
-            ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, name)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-                    put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                    null
+                }
+            } else {
+                if (saveLocation.locationUri.scheme == "file") {
+                    saveLocation.locationUri.path?.let { path ->
+                        val fileOutputOptions = FileOutputOptions.Builder(File(path)).build()
+                        videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+                    } ?: run {
+                        onVideoRecord(
+                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                                RuntimeException("Uri path is null for file scheme.")
+                            )
+                        )
+                        null
+                    }
+                } else {
+                    onVideoRecord(
+                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                            RuntimeException("Uri scheme not supported.")
+                        )
+                    )
+                    null
                 }
             }
-        val mediaStoreOutput =
-            MediaStoreOutputOptions.Builder(
-                context.contentResolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            )
-                .setDurationLimitMillis(maxDurationMillis)
-                .setContentValues(contentValues)
-                .build()
-        videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
+
+        is SaveLocation.Default -> {
+            val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
+            val contentValues =
+                ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                        put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                    }
+                }
+            val mediaStoreOutput =
+                MediaStoreOutputOptions.Builder(
+                    context.contentResolver,
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                )
+                    .setDurationLimitMillis(maxDurationMillis)
+                    .setContentValues(contentValues)
+                    .build()
+            videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
+        }
     }
 }
 
@@ -981,9 +1000,8 @@ private suspend fun runVideoRecording(
     context: Context,
     maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
-    videoCaptureUri: Uri?,
+    saveLocation: SaveLocation,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
-    shouldUseUri: Boolean,
     onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
@@ -993,8 +1011,7 @@ private suspend fun runVideoRecording(
         videoCapture,
         maxDurationMillis,
         captureTypeSuffix,
-        videoCaptureUri,
-        shouldUseUri,
+        saveLocation,
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
@@ -1087,9 +1104,8 @@ internal suspend fun processVideoControlEvents(
                     context,
                     event.maxVideoDuration,
                     transientSettings,
-                    event.videoCaptureUri,
+                    event.saveLocation,
                     videoCaptureControlEvents,
-                    event.shouldUseUri,
                     event.onVideoRecord
                 )
             }
