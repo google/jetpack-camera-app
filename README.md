@@ -25,8 +25,10 @@ To enable this hook, run the following command once from the root of the reposit
 git config core.hooksPath scripts/git-hooks
 ```
 
-This command configures Git to use the hooks located in the `scripts/git-hooks/` directory for this 
-repository only. It will not affect your other Git projects.
+This command tells Git to use the hooks located in the `scripts/git-hooks/` directory for this
+repository only. It will not affect your other Git projects. After running the command, the hook
+will automatically run every time you push.
+
 
 ### Bypassing the Hook
 
