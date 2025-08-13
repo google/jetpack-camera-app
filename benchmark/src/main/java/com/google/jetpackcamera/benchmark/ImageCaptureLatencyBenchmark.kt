@@ -68,7 +68,7 @@ class ImageCaptureLatencyBenchmark {
     /**
      * Measures the time between an onClick event on the Capture Button and onImageCapture
      * callback being fired from
-     * [com.google.jetpackcamera.camera.core.CameraXCameraSystem.takePicture].
+     * [takePicture][com.google.jetpackcamera.core.camera.CameraXCameraSystem.takePicture].
      *
      *  @param shouldFaceFront the direction the camera should be facing.
      *  @param flashMode the designated [FlashMode] for the camera.
