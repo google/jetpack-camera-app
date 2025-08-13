@@ -10,8 +10,32 @@ OEMs looking to validate their camera feature implementations.
 
 This project uses the gradle build system, and can be imported directly into Android Studio.
 
-Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only compatible
-with Android Studio Meerkat or newer.
+Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only 
+compatible with Android Studio Meerkat or newer.
+
+## Pre-push Hook (Recommended)
+
+This repository includes a `pre-push` hook that automatically checks your code for correct 
+formatting using `spotless` before you push your changes. This helps prevent CI failures due to 
+formatting issues.
+
+To enable this hook, run the following command once from the root of the repository:
+
+```bash
+git config core.hooksPath scripts/git-hooks
+```
+
+This command configures Git to use the hooks located in the `scripts/git-hooks/` directory for this 
+repository only. It will not affect your other Git projects.
+
+### Bypassing the Hook
+
+If you need to bypass the pre-push check for any reason, you can use the `--no-verify` flag with 
+your push command:
+
+```bash
+git push origin <your-branch-name> --no-verify
+```
 
 # Architecture 📐
 
