@@ -19,9 +19,7 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -32,7 +30,6 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
@@ -55,6 +52,7 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -104,8 +102,8 @@ class CameraXCameraUseCase
 @Inject
 constructor(
     private val application: Application,
-    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-    @IODispatcher private val iODispatcher: CoroutineDispatcher,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+    @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
 ) : CameraUseCase {
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -465,109 +463,70 @@ constructor(
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     override suspend fun takePicture(
-        onCaptureStarted: (() -> Unit),
         contentResolver: ContentResolver,
-        imageCaptureUri: Uri?,
-        ignoreUri: Boolean
-    ): ImageCapture.OutputFileResults {
-        if (imageCaptureUseCase == null) {
-            throw RuntimeException("Attempted take picture with null imageCapture use case")
-        }
-        val eligibleContentValues = getEligibleContentValues()
-        val outputFileOptions: OutputFileOptions
-        if (ignoreUri) {
-            val formatter = SimpleDateFormat(
-                "yyyy-MM-dd-HH-mm-ss-SSS",
-                Locale.US
-            )
-            val filename = "JCA-${formatter.format(Calendar.getInstance().time)}.jpg"
-            val contentValues = ContentValues()
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-                contentValues.put(
-                    MediaStore.Images.Media.RELATIVE_PATH,
-                    getDefaultMediaSaveLocation()
+        saveLocation: SaveLocation,
+        onCaptureStarted: (() -> Unit)
+    ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
+        val (outputFileOptions, closeable) = when (saveLocation) {
+            is SaveLocation.Default -> {
+                val formatter = SimpleDateFormat(
+                    "yyyy-MM-dd-HH-mm-ss-SSS",
+                    Locale.US
                 )
+                val filename = "JCA-${formatter.format(Calendar.getInstance().time)}.jpg"
+                val contentValues = ContentValues()
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                val relativePath = getDefaultMediaSaveLocation()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                    contentValues.put(
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        relativePath
+                    )
+                }
+                val options = OutputFileOptions.Builder(
+                    contentResolver,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues
+                ).build()
+                options to null
             }
-            outputFileOptions = OutputFileOptions.Builder(
-                contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues
-            ).build()
-        } else if (imageCaptureUri == null) {
-            val e = RuntimeException("Null Uri is provided.")
-            Log.d(TAG, "takePicture onError: $e")
-            throw e
-        } else {
-            try {
-                val outputStream = contentResolver.openOutputStream(imageCaptureUri)
-                if (outputStream != null) {
-                    outputFileOptions =
-                        OutputFileOptions.Builder(
-                            contentResolver.openOutputStream(imageCaptureUri)!!
-                        ).build()
-                } else {
-                    val e = RuntimeException("Provider recently crashed.")
+
+            is SaveLocation.Explicit -> {
+                try {
+                    val imageCaptureUri = saveLocation.locationUri
+                    val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                        ?: throw RuntimeException("Provider recently crashed.")
+                    val options = OutputFileOptions.Builder(outputStream).build()
+                    options to outputStream
+                } catch (e: FileNotFoundException) {
                     Log.d(TAG, "takePicture onError: $e")
                     throw e
                 }
-            } catch (e: FileNotFoundException) {
-                Log.d(TAG, "takePicture onError: $e")
-                throw e
             }
         }
+
         try {
-            val outputFileResults = imageCaptureUseCase!!.takePicture(
+            imageCaptureUseCase.takePicture(
                 outputFileOptions,
                 onCaptureStarted
             )
-            val relativePath =
-                eligibleContentValues.getAsString(MediaStore.Images.Media.RELATIVE_PATH)
-            val displayName = eligibleContentValues.getAsString(
-                MediaStore.Images.Media.DISPLAY_NAME
-            )
-            Log.d(TAG, "Saved image to $relativePath/$displayName")
-            return outputFileResults
-        } catch (exception: ImageCaptureException) {
-            Log.d(TAG, "takePicture onError: $exception")
-            throw exception
+        } finally {
+            closeable?.close()
+        }.also { outputFileResults ->
+            outputFileResults.savedUri?.let {
+                Log.d(TAG, "Saved image to $it")
+            }
         }
-    }
-
-    private fun getEligibleContentValues(): ContentValues {
-        val eligibleContentValues = ContentValues()
-        eligibleContentValues.put(
-            MediaStore.Images.Media.DISPLAY_NAME,
-            Calendar.getInstance().time.toString()
-        )
-        eligibleContentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        val saveLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-            getDefaultMediaSaveLocation()
-        } else {
-            Environment.DIRECTORY_PICTURES
-        }
-        eligibleContentValues.put(
-            MediaStore.Images.Media.RELATIVE_PATH,
-            saveLocation
-        )
-        return eligibleContentValues
-    }
+    } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
 
     override suspend fun startVideoRecording(
-        videoCaptureUri: Uri?,
-        shouldUseUri: Boolean,
+        saveLocation: SaveLocation,
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
-        if (shouldUseUri && videoCaptureUri == null) {
-            val e = RuntimeException("Null Uri is provided.")
-            Log.d(TAG, "takePicture onError: $e")
-            throw e
-        }
         videoCaptureControlEvents.send(
             VideoCaptureControlEvent.StartRecordingEvent(
-                videoCaptureUri,
-                shouldUseUri,
+                saveLocation,
                 currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
                 onVideoRecord = onVideoRecord

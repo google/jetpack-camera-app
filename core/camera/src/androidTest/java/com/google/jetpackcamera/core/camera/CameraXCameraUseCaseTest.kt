@@ -31,6 +31,7 @@ import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -172,12 +173,6 @@ class CameraXCameraUseCaseTest {
         providePreviewSurface()
     }
 
-    private suspend fun CompletableDeferred<*>.await(timeoutMs: Long = GENERAL_TIMEOUT_MS) =
-        withTimeoutOrNull(timeoutMs) {
-            await()
-            Unit
-        } ?: fail("Timeout while waiting for the Deferred to complete")
-
     private suspend fun <T> ReceiveChannel<T>.awaitValue(
         expectedValue: T,
         timeoutMs: Long = GENERAL_TIMEOUT_MS
@@ -191,10 +186,7 @@ class CameraXCameraUseCaseTest {
         onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
     ) {
         // Start recording
-        startVideoRecording(
-            videoCaptureUri = null,
-            shouldUseUri = false
-        ) { event ->
+        startVideoRecording(SaveLocation.Default) { event ->
             // Track files that need to be deleted
             if (event is OnVideoRecorded) {
                 val videoUri = event.savedUri
@@ -250,7 +242,7 @@ class CameraXCameraUseCaseTest {
                 ContentResolver.SCHEME_CONTENT -> {
                     try {
                         context.contentResolver.delete(uri, null, null)
-                    } catch (e: RuntimeException) {
+                    } catch (_: RuntimeException) {
                         // Ignore any exception.
                     }
                 }
