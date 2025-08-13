@@ -467,7 +467,7 @@ constructor(
         saveLocation: SaveLocation,
         onCaptureStarted: (() -> Unit)
     ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
-        when (saveLocation) {
+        val (outputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
                 val formatter = SimpleDateFormat(
                     "yyyy-MM-dd-HH-mm-ss-SSS",
@@ -484,42 +484,38 @@ constructor(
                         relativePath
                     )
                 }
-                val outputFileOptions = OutputFileOptions.Builder(
+                val options = OutputFileOptions.Builder(
                     contentResolver,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     contentValues
                 ).build()
-                imageCaptureUseCase.takePicture(
-                    outputFileOptions,
-                    onCaptureStarted
-                )
+                options to null
             }
 
             is SaveLocation.Explicit -> {
                 try {
                     val imageCaptureUri = saveLocation.locationUri
                     val outputStream = contentResolver.openOutputStream(imageCaptureUri)
-                    if (outputStream != null) {
-                        outputStream.use { stream ->
-                            val outputFileOptions = OutputFileOptions.Builder(stream).build()
-                            imageCaptureUseCase.takePicture(
-                                outputFileOptions,
-                                onCaptureStarted
-                            )
-                        }
-                    } else {
-                        val e = RuntimeException("Provider recently crashed.")
-                        Log.d(TAG, "takePicture onError: $e")
-                        throw e
-                    }
+                        ?: throw RuntimeException("Provider recently crashed.")
+                    val options = OutputFileOptions.Builder(outputStream).build()
+                    options to outputStream
                 } catch (e: FileNotFoundException) {
                     Log.d(TAG, "takePicture onError: $e")
                     throw e
                 }
             }
+        }
+
+        try {
+            imageCaptureUseCase.takePicture(
+                outputFileOptions,
+                onCaptureStarted
+            )
+        } finally {
+            closeable?.close()
         }.also { outputFileResults ->
             outputFileResults.savedUri?.let {
-                Log.d(TAG, "Saved image to ${outputFileResults.savedUri}")
+                Log.d(TAG, "Saved image to $it")
             }
         }
     } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
