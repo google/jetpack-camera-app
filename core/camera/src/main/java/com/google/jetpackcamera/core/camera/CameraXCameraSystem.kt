@@ -63,7 +63,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
@@ -86,7 +86,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
-private const val TAG = "CameraXCameraUseCase"
+private const val TAG = "CameraXCameraSystem"
 const val TARGET_FPS_AUTO = 0
 const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
@@ -95,24 +95,24 @@ const val TARGET_FPS_60 = 60
 const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
- * CameraX based implementation for [CameraUseCase]
+ * CameraX based implementation for [CameraSystem]
  */
 @ViewModelScoped
-class CameraXCameraUseCase
+class CameraXCameraSystem
 @Inject
 constructor(
     private val application: Application,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository
-) : CameraUseCase {
+) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private var imageCaptureUseCase: ImageCapture? = null
 
-    private lateinit var systemConstraints: SystemConstraints
+    private lateinit var systemConstraints: CameraSystemConstraints
 
-    private val screenFlashEvents: Channel<CameraUseCase.ScreenFlashEvent> =
+    private val screenFlashEvents: Channel<CameraSystem.ScreenFlashEvent> =
         Channel(capacity = Channel.UNLIMITED)
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
@@ -148,7 +148,7 @@ constructor(
             }
 
         // Build and update the system constraints
-        systemConstraints = SystemConstraints(
+        systemConstraints = CameraSystemConstraints(
             availableLenses = availableCameraLenses,
             concurrentCamerasSupported = cameraProvider.availableConcurrentCameraInfos.any {
                 it.map { cameraInfo -> cameraInfo.appLensFacing }
@@ -522,7 +522,7 @@ constructor(
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
-        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         videoCaptureControlEvents.send(
             VideoCaptureControlEvent.StartRecordingEvent(

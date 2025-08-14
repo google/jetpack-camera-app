@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +30,7 @@ private const val TAG = "ScreenFlash"
 // TODO: Add this to ViewModelScoped so that it can be injected automatically. However, the current
 //  ViewModel and Hilt APIs probably don't support injecting the viewModelScope.
 class ScreenFlash(
-    private val cameraUseCase: CameraUseCase,
+    private val cameraSystem: CameraSystem,
     private val scope: CoroutineScope
 ) {
 
@@ -40,16 +40,16 @@ class ScreenFlash(
 
     init {
         scope.launch {
-            for (event in cameraUseCase.getScreenFlashEvents()) {
+            for (event in cameraSystem.getScreenFlashEvents()) {
                 _screenFlashUiState.emit(
                     when (event.type) {
-                        CameraUseCase.ScreenFlashEvent.Type.APPLY_UI ->
+                        CameraSystem.ScreenFlashEvent.Type.APPLY_UI ->
                             screenFlashUiState.value.copy(
                                 enabled = true,
                                 onChangeComplete = event.onComplete
                             )
 
-                        CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI ->
+                        CameraSystem.ScreenFlashEvent.Type.CLEAR_UI ->
                             screenFlashUiState.value.copy(
                                 enabled = false,
                                 onChangeComplete = {

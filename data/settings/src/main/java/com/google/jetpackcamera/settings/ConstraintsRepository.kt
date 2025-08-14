@@ -15,27 +15,27 @@
  */
 package com.google.jetpackcamera.settings
 
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 interface ConstraintsRepository {
-    val systemConstraints: StateFlow<SystemConstraints?>
+    val systemConstraints: StateFlow<CameraSystemConstraints?>
 }
 
 interface SettableConstraintsRepository : ConstraintsRepository {
-    fun updateSystemConstraints(systemConstraints: SystemConstraints)
+    fun updateSystemConstraints(systemConstraints: CameraSystemConstraints)
 }
 
 class SettableConstraintsRepositoryImpl @Inject constructor() : SettableConstraintsRepository {
 
-    private val _systemConstraints = MutableStateFlow<SystemConstraints?>(null)
-    override val systemConstraints: StateFlow<SystemConstraints?>
+    private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+    override val systemConstraints: StateFlow<CameraSystemConstraints?>
         get() = _systemConstraints.asStateFlow()
 
-    override fun updateSystemConstraints(systemConstraints: SystemConstraints) {
+    override fun updateSystemConstraints(systemConstraints: CameraSystemConstraints) {
         _systemConstraints.value = systemConstraints
     }
 }

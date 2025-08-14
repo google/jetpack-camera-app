@@ -21,13 +21,13 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
 fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     externalCaptureMode: ExternalCaptureMode
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
