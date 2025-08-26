@@ -1,5 +1,6 @@
-![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
-# Jetpack Camera App 📸
+<img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="3840" height="2160" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
+<p style="text-align: right; margin-top: 0;"><small>HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></small></p>
+<h1 style="margin-top: 0;">Jetpack Camera App 📸</h1>
 
 Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built
 entirely with CameraX, Kotlin and Jetpack Compose. It follows Android
@@ -270,6 +271,8 @@ and settings to enhance your video capture experience. It covers various aspects
 functionality, from basic recording to advanced controls and customization.
 
 ### Video Capture
+
+![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
 
 Records video that, in most cases (see limitations), represents the scene visible in the viewfinder.
 When HDR mode is enabled, the captured video can record 10-bit HDR content.
