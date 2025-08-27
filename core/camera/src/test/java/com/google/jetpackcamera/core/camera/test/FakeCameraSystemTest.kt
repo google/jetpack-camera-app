@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.core.camera.test
 
 import com.google.common.truth.Truth
-import com.google.jetpackcamera.core.camera.CameraUseCase
+import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -37,11 +37,11 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FakeCameraUseCaseTest {
+class FakeCameraSystemTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
 
-    private val cameraUseCase = FakeCameraUseCase()
+    private val cameraSystem = FakeCameraSystem()
 
     @Before
     fun setup() {
@@ -55,7 +55,7 @@ class FakeCameraUseCaseTest {
 
     @Test
     fun canInitialize() = runTest(testDispatcher) {
-        cameraUseCase.initialize(
+        cameraSystem.initialize(
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
         ) {}
     }
@@ -63,62 +63,62 @@ class FakeCameraUseCaseTest {
     @Test
     fun canRunCamera() = runTest(testDispatcher) {
         initAndRunCamera()
-        Truth.assertThat(cameraUseCase.isPreviewStarted())
+        Truth.assertThat(cameraSystem.isPreviewStarted())
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeOffAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraUseCase.setFlashMode(flashMode = FlashMode.OFF)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(flashMode = FlashMode.OFF)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeOnAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.BACK)
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.BACK)
+        cameraSystem.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashDisabled_whenFlashModeAutoAndNotFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.BACK)
-        cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.BACK)
+        cameraSystem.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isFalse()
+        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
     }
 
     @Test
     fun screenFlashEnabled_whenFlashModeOnAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraUseCase.setFlashMode(flashMode = FlashMode.ON)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
+        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
     fun screenFlashEnabled_whenFlashModeAutoAndFrontCamera() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraUseCase.setFlashMode(flashMode = FlashMode.AUTO)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(flashMode = FlashMode.AUTO)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraUseCase.isScreenFlashEnabled()).isTrue()
+        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isTrue()
     }
 
     @Test
@@ -126,32 +126,32 @@ class FakeCameraUseCaseTest {
         testDispatcher
     ) {
         initAndRunCamera()
-        val events = mutableListOf<CameraUseCase.ScreenFlashEvent>()
+        val events = mutableListOf<CameraSystem.ScreenFlashEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.getScreenFlashEvents().consumeAsFlow().toList(events)
+            cameraSystem.getScreenFlashEvents().consumeAsFlow().toList(events)
         }
 
         // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraUseCase.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraUseCase.setFlashMode(FlashMode.ON)
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(FlashMode.ON)
         advanceUntilIdle()
-        cameraUseCase.takePicture()
+        cameraSystem.takePicture()
 
         advanceUntilIdle()
         Truth.assertThat(events.map { it.type }).containsExactlyElementsIn(
             listOf(
-                CameraUseCase.ScreenFlashEvent.Type.APPLY_UI,
-                CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI
+                CameraSystem.ScreenFlashEvent.Type.APPLY_UI,
+                CameraSystem.ScreenFlashEvent.Type.CLEAR_UI
             )
         ).inOrder()
     }
 
     private fun TestScope.initAndRunCamera() {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraUseCase.initialize(
+            cameraSystem.initialize(
                 cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
             ) {}
-            cameraUseCase.runCamera()
+            cameraSystem.runCamera()
         }
     }
 }
