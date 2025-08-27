@@ -13,64 +13,60 @@
   - See the License for the specific language governing permissions and
   - limitations under the License.
   -->
-<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 434 434">
-    <defs>
-        <clipPath id="clip-mask">
-            <path d="M1,1h432v432h-432z" />
-        </clipPath>
+<svg width="108" height="108" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <clipPath id="clip-mask">
+      <path d="M16.9117 16.9117H91.0861V91.0861H16.9117V16.9117Z" />
+    </clipPath>
+    <linearGradient id="nebulaGradient1" x1="47.9894" y1="33.91" x2="51.2517" y2="93.1465" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFF59D"/>
+        <stop offset="0.23" stop-color="#FF8A80"/>
+        <stop offset="0.43" stop-color="#004D40"/>
+        <stop offset="0.8" stop-color="#4E2A3A"/>
+    </linearGradient>
+    <linearGradient id="nebulaGradient2" x1="47.9894" y1="33.91" x2="107.226" y2="30.6477" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFF59D"/>
+        <stop offset="0.23" stop-color="#FF8A80"/>
+        <stop offset="0.43" stop-color="#004D40"/>
+        <stop offset="0.8" stop-color="#4E2A3A"/>
+    </linearGradient>
+    <linearGradient id="nebulaGradient3" x1="47.9894" y1="33.91" x2="-11.2471" y2="37.1723" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFF59D"/>
+        <stop offset="0.23" stop-color="#FF8A80"/>
+        <stop offset="0.43" stop-color="#004D40"/>
+        <stop offset="0.8" stop-color="#4E2A3A"/>
+    </linearGradient>
+    <linearGradient id="nebulaGradient4" x1="47.9894" y1="33.91" x2="44.7271" y2="-25.3265" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFF59D"/>
+        <stop offset="0.23" stop-color="#FF8A80"/>
+        <stop offset="0.43" stop-color="#004D40"/>
+        <stop offset="0.8" stop-color="#4E2A3A"/>
+    </linearGradient>
+    <linearGradient id="vignetteGradient" x1="53.9989" y1="16.74" x2="53.9989" y2="91.2578" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#000000" stop-opacity="1"/>
+        <stop offset="0.5" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000000" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
 
-        <linearGradient id="nebulaGradient1" gradientUnits="userSpaceOnUse" x1="182" y1="100" x2="201" y2="445">
-            <stop offset="0"    stop-color="#FFF59D" stop-opacity="1.0"/>
-            <stop offset="0.23" stop-color="#FF8A80" stop-opacity="1.0"/>
-            <stop offset="0.43" stop-color="#004D40" stop-opacity="1.0"/>
-            <stop offset="0.8"  stop-color="#4E2A3A" stop-opacity="1.0"/>
-        </linearGradient>
-        <linearGradient id="nebulaGradient2" gradientUnits="userSpaceOnUse" x1="182" y1="100" x2="527" y2="81">
-            <stop offset="0"    stop-color="#FFF59D" stop-opacity="1.0"/>
-            <stop offset="0.23" stop-color="#FF8A80" stop-opacity="1.0"/>
-            <stop offset="0.43" stop-color="#004D40" stop-opacity="1.0"/>
-            <stop offset="0.8"  stop-color="#4E2A3A" stop-opacity="1.0"/>
-        </linearGradient>
-        <linearGradient id="nebulaGradient3" gradientUnits="userSpaceOnUse" x1="182" y1="100" x2="-163" y2="119">
-            <stop offset="0"    stop-color="#FFF59D" stop-opacity="1.0"/>
-            <stop offset="0.23" stop-color="#FF8A80" stop-opacity="1.0"/>
-            <stop offset="0.43" stop-color="#004D40" stop-opacity="1.0"/>
-            <stop offset="0.8"  stop-color="#4E2A3A" stop-opacity="1.0"/>
-        </linearGradient>
-        <linearGradient id="nebulaGradient4" gradientUnits="userSpaceOnUse" x1="182" y1="100" x2="163" y2="-245">
-            <stop offset="0"    stop-color="#FFF59D" stop-opacity="1.0"/>
-            <stop offset="0.23" stop-color="#FF8A80" stop-opacity="1.0"/>
-            <stop offset="0.43" stop-color="#004D40" stop-opacity="1.0"/>
-            <stop offset="0.8"  stop-color="#4E2A3A" stop-opacity="1.0"/>
-        </linearGradient>
-        <linearGradient id="vignetteGradient" gradientUnits="userSpaceOnUse" x1="217" y1="0" x2="217" y2="434">
-            <stop offset="0"    stop-color="#000000" stop-opacity="1.0"/>
-            <stop offset="0.5"  stop-color="#000000" stop-opacity="0.0"/>
-            <stop offset="1"    stop-color="#000000" stop-opacity="1.0"/>
-        </linearGradient>
-    </defs>
+  <!-- 1. The base background color is drawn first -->
+  <path d="M16.9117 16.9117H91.0861V91.0861H16.9117V16.9117Z" fill="#2C1D3D"/>
 
-    <g transform="translate(67.27, 67.27) scale(0.69, 0.69)">
+  <!-- 2. This group applies a clipping mask to all elements inside it -->
+  <g clip-path="url(#clip-mask)">
+    <!-- 2a. The four nebula layers -->
+    <path d="M47.9894 33.91L165.642 139.282L93.5002 219.834L-24.1521 114.461L47.9894 33.91Z" fill="url(#nebulaGradient1)"/>
+    <path d="M47.9894 33.91L165.642 139.282L237.783 58.7309L120.131 -46.6414L47.9894 33.91Z" fill="url(#nebulaGradient2)"/>
+    <path d="M47.9894 33.91L-69.6629 -71.4623L-141.804 9.08906L-24.1521 114.461L47.9894 33.91Z" fill="url(#nebulaGradient3)"/>
+    <path d="M47.9894 33.91L-69.6629 -71.4623L2.4786 -152.014L120.131 -46.6413L47.9894 33.91Z" fill="url(#nebulaGradient4)"/>
 
-        <!-- 1. The base background color is drawn first -->
-        <path d="M1,1h432v432h-432z" fill="#2C1D3D"/>
+    <!-- 2b. The vignette layer, drawn on top of the nebula -->
+    <path d="M16.9117 16.9117H91.0861V91.0861H16.9117V16.9117Z" fill="url(#vignetteGradient)"/>
 
-        <!-- 2. This group applies a clipping mask to all elements inside it -->
-        <g clip-path="url(#clip-mask)">
-            <!-- 2a. The four nebula layers -->
-            <path d="M182,100l685.22,613.7l-420.16,469.14l-685.22,-613.7z" fill="url(#nebulaGradient1)"/>
-            <path d="M182,100l685.22,613.7l420.16,-469.14l-685.22,-613.7z" fill="url(#nebulaGradient2)"/>
-            <path d="M182,100l-685.22,-613.7l-420.16,469.14l685.22,613.7z" fill="url(#nebulaGradient3)"/>
-            <path d="M182,100l-685.22,-613.7l420.16,-469.14l685.22,613.7z" fill="url(#nebulaGradient4)"/>
+    <!-- 2c. The starfield, drawn on top of the vignette. Opacity is set on the fill. -->
+    <path fill-opacity="1" d="M33.91 25.325H34.4251V25.8401H33.91V25.325ZM59.665 30.476H60.3518V31.1628H59.665V30.476ZM76.835 37.344H77.3501V37.8591H76.835V37.344ZM30.476 42.495H31.3345V43.3535H30.476V42.495ZM47.646 51.08H48.1611V51.5951H47.646V51.08ZM68.25 59.665H68.9368V60.3518H68.25V59.665ZM85.42 68.25H85.9351V68.7651H85.42V68.25ZM37.344 76.835H38.2025V77.6935H37.344V76.835ZM54.514 81.986H55.0291V82.5011H54.514V81.986ZM71.684 87.137H72.3708V87.8238H71.684V87.137ZM25.325 59.665H25.8401V60.1801H25.325V59.665ZM42.495 71.684H43.1818V72.3708H42.495V71.684ZM64.816 20.174H65.3311V20.6891H64.816V20.174ZM81.986 47.646H82.8445V48.5045H81.986V47.646ZM88.854 25.325H89.3691V25.8401H88.854V25.325ZM21.0325 33.91H21.7193V34.5968H21.0325V33.91ZM29.6175 51.08H30.1326V51.5951H29.6175V51.08ZM38.2025 64.816H39.061V65.6745H38.2025V64.816ZM46.7875 21.891H47.4743V22.5778H46.7875V21.891ZM55.3725 42.495H55.8876V43.0101H55.3725V42.495ZM63.9575 76.835H64.816V77.6935H63.9575V76.835ZM72.5425 25.325H73.2293V26.0118H72.5425V25.325ZM81.1275 59.665H81.6426V60.1801H81.1275V59.665ZM87.9955 81.986H88.854V82.8445H87.9955V81.986ZM27.042 61.382H27.5571V61.8971H27.042V61.382ZM49.363 64.816H50.0498V65.5028H49.363V64.816ZM75.118 66.533H75.6331V67.0481H75.118V66.533ZM32.193 69.967H33.0515V70.8255H32.193V69.967ZM61.382 73.401H61.8971V73.9161H61.382V73.401ZM83.703 75.118H84.3898V75.8048H83.703V75.118ZM40.778 80.269H41.2931V80.7841H40.778V80.269ZM66.533 83.703H67.3915V84.5615H66.533V83.703ZM25.325 85.42H26.0118V86.1068H25.325V85.42ZM51.08 88.854H51.5951V89.3691H51.08V88.854Z" fill="white"/>
+  </g>
 
-            <!-- 2b. The vignette layer, drawn on top of the nebula -->
-            <path d="M1,1h432v432h-432z" fill="url(#vignetteGradient)"/>
-
-            <!-- 2c. The starfield, drawn on top of the vignette. Opacity is set on the fill. -->
-            <path fill="#FFFFFF" fill-opacity="1" d="M100,50 h3 v3 h-3z M250,80 h4 v4 h-4z M350,120 h3 v3 h-3z M80,150 h5 v5 h-5z M180,200 h3 v3 h-3z M300,250 h4 v4 h-4z M400,300 h3 v3 h-3z M120,350 h5 v5 h-5z M220,380 h3 v3 h-3z M320,410 h4 v4 h-4z M50,250 h3 v3 h-3z M150,320 h4 v4 h-4z M280,20 h3 v3 h-3z M380,180 h5 v5 h-5z M420,50 h3 v3 h-3z M25,100 h4 v4 h-4z M75,200 h3 v3 h-3z M125,280 h5 v5 h-5z M175,30 h4 v4 h-4z M225,150 h3 v3 h-3z M275,350 h5 v5 h-5z M325,50 h4 v4 h-4z M375,250 h3 v3 h-3z M415,380 h5 v5 h-5z M60,260 h3 v3 h-3z M190,280 h4 v4 h-4z M340,290 h3 v3 h-3z M90,310 h5 v5 h-5z M260,330 h3 v3 h-3z M390,340 h4 v4 h-4z M140,370 h3 v3 h-3z M290,390 h5 v5 h-5z M50,400 h4 v4 h-4z M200,420 h3 v3 h-3z"/>
-        </g>
-
-        <!-- 3. The border stroke is drawn last, outside the clipped group -->
-        <path d="M1,1h432v432h-432z" fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="bevel"/>
-    </g>
+  <!-- 3. The border stroke is drawn last, outside the clipped group -->
+  <path d="M16.9117 16.9117H91.0861V91.0861H16.9117V16.9117Z" stroke="black" stroke-width="0.1717" stroke-linejoin="bevel" fill="none"/>
 </svg>
