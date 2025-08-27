@@ -454,7 +454,7 @@
             </g>
             <polygon points="-30,0 0,-1 30,0 0,1" fill="url(#crossHatchGradient)"/><polygon points="0,-22 -1,0 0,22 1,0" fill="url(#crossHatchGradientVertical)" /><circle cx="0" cy="0" r="7" fill="url(#starWhite)"/>
         </g>
-        <g transform="translate(1600, 850)">
+        <g transform="translate(1491, 845)">
             <g opacity="0.7" filter="url(#crossHatchGlow)">
                 <polygon points="-45,0 -2,-2 45,0 2,2" fill="#A9D2FF"/><polygon points="0,-38 -2,-1 0,38 2,1" fill="#A9D2FF"/>
             </g>

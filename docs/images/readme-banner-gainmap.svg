@@ -158,10 +158,10 @@
         <!-- Defs from jetpack-bot-icon.svg -->
         <filter id="c" width="78.623" height="37.135" x="80.302" y="331.985" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_350_4368" stdDeviation="4.569"/></filter>
         <filter id="f" width="78.623" height="36.973" x="321.37" y="332.571" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_350_4368" stdDeviation="4.569"/></filter>
-        <linearGradient id="a" x1="120.311" x2="120.311" y1="332.659" y2="409.432" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset=".589" stop-color="#FFFFFF"/></linearGradient>
-        <linearGradient id="d" x1="359.983" x2="359.983" y1="333.318" y2="409.432" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset=".589" stop-color="#FFFFFF"/></linearGradient>
-        <radialGradient id="b" cx="0" cy="0" r="1" gradientTransform="matrix(.1994 24.55419 -15.98207 .1298 29.818 39.062)" gradientUnits="userSpaceOnUse"><stop offset=".323" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
-        <radialGradient id="e" cx="0" cy="0" r="1" gradientTransform="rotate(89.531 -1.478 361.806) scale(24.3443 15.9826)" gradientUnits="userSpaceOnUse"><stop offset=".323" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+        <linearGradient id="a" x1="120.311" x2="120.311" y1="332.659" y2="409.432" gradientUnits="userSpaceOnUse"><stop stop-color="#CCCCCC"/><stop offset=".589" stop-color="#CCCCCC"/></linearGradient>
+        <linearGradient id="d" x1="359.983" x2="359.983" y1="333.318" y2="409.432" gradientUnits="userSpaceOnUse"><stop stop-color="#CCCCCC"/><stop offset=".589" stop-color="#CCCCCC"/></linearGradient>
+        <radialGradient id="b" cx="0" cy="0" r="1" gradientTransform="matrix(.1994 24.55419 -15.98207 .1298 29.818 39.062)" gradientUnits="userSpaceOnUse"><stop offset=".323" stop-color="#CCCCCC"/><stop offset="1" stop-color="#CCCCCC" stop-opacity="0"/></radialGradient>
+        <radialGradient id="e" cx="0" cy="0" r="1" gradientTransform="rotate(89.531 -1.478 361.806) scale(24.3443 15.9826)" gradientUnits="userSpaceOnUse"><stop offset=".323" stop-color="#CCCCCC"/><stop offset="1" stop-color="#CCCCCC" stop-opacity="0"/></radialGradient>
         <filter id="m" width="66.468" height="204.012" x="34.984" y="170.473" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_350_4368" stdDeviation="9.138"/></filter>
         <filter id="p" width="100.838" height="322.967" x="98.965" y="94.553" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_350_4368" stdDeviation="9.138"/></filter>
         <filter id="q" width="78.9" height="225.224" x="112.834" y="150.804" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_350_4368" stdDeviation="9.138"/></filter>
@@ -302,12 +302,12 @@
             <feGaussianBlur stdDeviation="1" />
         </filter>
         <filter id="flameGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <!-- Stage 1: Large, diffuse orange glow -->
+            <!-- Stage 1: Large, diffuse gray glow -->
             <feGaussianBlur in="SourceAlpha" stdDeviation="20" result="largeBlur"/>
-            <feFlood flood-color="#FF9800" flood-opacity="0.7" result="orangeColor"/>
-            <feComposite in="orangeColor" in2="largeBlur" operator="in" result="largeOrangeGlow"/>
+            <feFlood flood-color="#FFFFFF" flood-opacity="0.8" result="glowColor"/>
+            <feComposite in="glowColor" in2="largeBlur" operator="in" result="largeWhiteGlow"/>
             <feMerge>
-                <feMergeNode in="largeOrangeGlow"/>
+                <feMergeNode in="largeWhiteGlow"/>
                 <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
@@ -330,8 +330,8 @@
             </feMerge>
         </filter>
         <radialGradient id="flameCoreGradient">
-            <stop offset="0%" stop-color="white" stop-opacity="1" />
-            <stop offset="100%" stop-color="white" stop-opacity="0" />
+            <stop offset="0%" stop-color="#CCCCCC" stop-opacity="1" />
+            <stop offset="100%" stop-color="#CCCCCC" stop-opacity="0" />
         </radialGradient>
         <linearGradient id="backgroundShapeGradient" gradientTransform="rotate(45)">
             <stop offset="0%" stop-color="white" stop-opacity="1" />
@@ -360,10 +360,10 @@
                     </g>
                     <g>
                         <g fill="#FFAB40">
-                            <path d="M 960,540 C 850,470 650,380 400,300 C 590,420 780,460 970,530 Z" opacity="0.8" filter="url(#filamentBlur)" />
-                            <path d="M 960,540 C 1150,630 1350,720 1600,800 C 1320,740 1050,600 965,545 Z" opacity="1" filter="url(#filamentBlur)" />
-                            <path d="M 960,540 C 850,600 700,700 500,800 C 640,690 780,610 930,540 Z" opacity="1" filter="url(#fineDetailBlur)" />
-                            <path d="M 960,540 C 1150,470 1350,320 1500,200 C 1320,360 1170,460 1010,540 Z" opacity="0.6" filter="url(#filamentBlur)" />
+                            <path d="M 960,540 C 850,470 650,380 400,300 C 590,420 780,460 970,530 Z" opacity="0.4" filter="url(#filamentBlur)" />
+                            <path d="M 960,540 C 1150,630 1350,720 1600,800 C 1320,740 1050,600 965,545 Z" opacity="0.5" filter="url(#filamentBlur)" />
+                            <path d="M 960,540 C 850,600 700,700 500,800 C 640,690 780,610 930,540 Z" opacity="0.6" filter="url(#fineDetailBlur)" />
+                            <path d="M 960,540 C 1150,470 1350,320 1500,200 C 1320,360 1170,460 1010,540 Z" opacity="0.3" filter="url(#filamentBlur)" />
                         </g>
                         <g fill="#FFD180" filter="url(#fineDetailBlur)">
                             <path d="M 960,540 C 860,480 700,400 500,350 C 640,430 790,465 970,530 Z" opacity="1" />
@@ -432,7 +432,7 @@
                 </g>
                 <polygon points="-30,0 0,-1 30,0 0,1" fill="#FFFFFF" opacity="1"/><polygon points="0,-22 -1,0 0,22 1,0" fill="#FFFFFF" opacity="1" /><circle cx="0" cy="0" r="7" fill="url(#starWhite)"/>
             </g>
-            <g transform="translate(1600, 850)">
+            <g transform="translate(1491, 845)">
                 <g opacity="1">
                     <polygon points="-45,0 -2,-2 45,0 2,2" fill="#FFFFFF" opacity="1"/><polygon points="0,-38 -2,-1 0,38 2,1" fill="#FFFFFF" opacity="1"/>
                 </g>
