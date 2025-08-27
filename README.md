@@ -1,6 +1,7 @@
-<img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="3840" height="2160" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
-<p style="text-align: right; margin-top: 0;"><small>HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></small></p>
-<h1 style="margin-top: 0;">Jetpack Camera App 📸</h1>
+<img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="2560" height="1440" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
+<p align="end"><sup>Ultra HDR image created with [libultrahdr](https://github.com/google/libultrahdr)</sup></p>
+
+# Jetpack Camera App 📸
 
 Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built
 entirely with CameraX, Kotlin and Jetpack Compose. It follows Android
