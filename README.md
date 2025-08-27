@@ -1,5 +1,5 @@
 <img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="2560" height="1440" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
-<p align="end"><sup>Ultra HDR image created with [libultrahdr](https://github.com/google/libultrahdr)</sup></p>
+<p align="end"><sup>Ultra HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></sup></p>
 
 # Jetpack Camera App 📸
 
