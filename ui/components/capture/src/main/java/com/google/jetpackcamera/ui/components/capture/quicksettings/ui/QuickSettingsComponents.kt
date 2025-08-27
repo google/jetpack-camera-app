@@ -699,7 +699,7 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
  * A horizontally scrollable row of quick setting buttons for a bottom sheet.
  * This row will only enable scrolling if its content overflows the screen width.
  *
- * @param buttons A list of data representing each QuickSettingCarouselButton.
+ * @param quickSettingButtons A list of [QuickSettingCarouselButton].
  * @param modifier The Modifier to be applied to this composable.
  */
 @Composable
@@ -723,7 +723,7 @@ private fun QuickSettingsBottomSheetRow(
 }
 
 /**
- * @param isHighlighted the button will appear checked when true, or unchecked when false
+ * @param isHighlighted true if the button is currently checked; false otherwise.
  * @param onClick will be called when the user clicks the button.
  * @param text The text label to display below the icon.
  * @param painter The icon to display inside the button.

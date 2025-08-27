@@ -42,13 +42,13 @@ import com.google.jetpackcamera.model.VideoQuality
  *                              corresponding value is a [CameraConstraints] object
  *                              detailing the specific capabilities and limitations of that lens.
  */
-data class SystemConstraints(
+data class CameraSystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
     val concurrentCamerasSupported: Boolean = false,
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 )
 
-inline fun <reified T> SystemConstraints.forDevice(
+inline fun <reified T> CameraSystemConstraints.forDevice(
     crossinline constraintSelector: (CameraConstraints) -> Iterable<T>
 ) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
 
@@ -113,7 +113,7 @@ data class CameraConstraints(
  * Useful set of constraints for testing
  */
 val TYPICAL_SYSTEM_CONSTRAINTS =
-    SystemConstraints(
+    CameraSystemConstraints(
         availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK),
         concurrentCamerasSupported = false,
         perLensConstraints = buildMap {

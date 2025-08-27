@@ -26,7 +26,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.components.capture.DisabledReason
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -40,7 +40,7 @@ private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
 )
 
 fun CaptureModeToggleUiState.Companion.from(
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
     externalCaptureMode: ExternalCaptureMode
@@ -76,7 +76,7 @@ fun CaptureModeToggleUiState.Companion.from(
     }
 
 fun CaptureModeUiState.Companion.from(
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode
 ): CaptureModeUiState {
@@ -121,7 +121,7 @@ private fun getSupportedCaptureModes(
 }
 
 private fun getAvailableCaptureModes(
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode
 ): List<SingleSelectableUiState<CaptureMode>> {
@@ -226,7 +226,7 @@ private fun getCaptureModeDisabledReason(
     disabledCaptureMode: CaptureMode,
     hdrDynamicRangeSupported: Boolean,
     hdrImageFormatSupported: Boolean,
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     currentLensFacing: LensFacing,
     currentStreamConfig: StreamConfig,
     concurrentCameraMode: ConcurrentCameraMode,
@@ -298,7 +298,7 @@ private fun getCaptureModeDisabledReason(
     }
 }
 
-private fun SystemConstraints.anySupportsHdrDynamicRange(
+private fun CameraSystemConstraints.anySupportsHdrDynamicRange(
     lensFilter: (LensFacing) -> Boolean
 ): Boolean = perLensConstraints.asSequence().firstOrNull {
     lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
@@ -310,7 +310,7 @@ private fun Map<StreamConfig, Set<ImageOutputFormat>>.anySupportsUltraHdr(
     captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
 } != null
 
-private fun SystemConstraints.anySupportsUltraHdr(
+private fun CameraSystemConstraints.anySupportsUltraHdr(
     captureModeFilter: (StreamConfig) -> Boolean = { true },
     lensFilter: (LensFacing) -> Boolean
 ): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->

@@ -20,12 +20,13 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
 fun DebugUiState.Enabled.Open.Companion.from(
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
     cameraPropertiesJSON: String

@@ -30,13 +30,14 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.ImageCaptureDeviceTest.Companion.DIR_PATH
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
+import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
+import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getHdrToggleState
@@ -248,7 +249,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun image_intent_disables_capture_settings() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
+        val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
@@ -271,7 +272,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun image_intent_disables_hdr_toggle() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(DIR_PATH, timeStamp, "jpg")
+        val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
@@ -295,7 +296,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun video_intent_disables_capture_settings() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
+        val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
@@ -318,7 +319,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun video_intent_disables_hdr_toggle() {
         val timeStamp = System.currentTimeMillis()
-        val uri = getTestUri(VideoRecordingDeviceTest.Companion.DIR_PATH, timeStamp, "mp4")
+        val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
             runMainActivityScenarioTestForResult(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)

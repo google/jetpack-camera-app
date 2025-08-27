@@ -18,7 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 
 private val ORDERED_UI_SUPPORTED_LENS_FACINGS = listOf(
@@ -29,7 +29,7 @@ private val ORDERED_UI_SUPPORTED_LENS_FACINGS = listOf(
 
 fun FlipLensUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints
+    systemConstraints: CameraSystemConstraints
 ): FlipLensUiState {
     val supportedLensFacings = systemConstraints.availableLenses.toSet()
     val availableLensFacings =
