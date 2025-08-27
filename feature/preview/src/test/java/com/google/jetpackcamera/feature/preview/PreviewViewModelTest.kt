@@ -17,7 +17,7 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.camera.test.FakeCameraUseCase
+import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -46,7 +46,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PreviewViewModelTest {
 
-    private val cameraUseCase = FakeCameraUseCase()
+    private val cameraSystem = FakeCameraSystem()
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
@@ -58,7 +58,7 @@ class PreviewViewModelTest {
         previewViewModel = PreviewViewModel(
             ExternalCaptureMode.StandardMode {},
             DebugSettings(isDebugModeEnabled = false),
-            cameraUseCase = cameraUseCase,
+            cameraSystem = cameraSystem,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
             mediaRepository = FakeMediaRepository
@@ -77,7 +77,7 @@ class PreviewViewModelTest {
     fun runCamera() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
 
-        assertThat(cameraUseCase.previewStarted).isTrue()
+        assertThat(cameraSystem.previewStarted).isTrue()
     }
 
     @Test
@@ -86,7 +86,7 @@ class PreviewViewModelTest {
         previewViewModel.startCameraUntilRunning()
         previewViewModel.captureImageWithUri(contentResolver, null) { _, _ -> }
         advanceUntilIdle()
-        assertThat(cameraUseCase.numPicturesTaken).isEqualTo(1)
+        assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
     }
 
     @Test
@@ -94,7 +94,7 @@ class PreviewViewModelTest {
         previewViewModel.startCameraUntilRunning()
         previewViewModel.startVideoRecording(null, false) {}
         advanceUntilIdle()
-        assertThat(cameraUseCase.recordingInProgress).isTrue()
+        assertThat(cameraSystem.recordingInProgress).isTrue()
     }
 
     @Test
@@ -104,7 +104,7 @@ class PreviewViewModelTest {
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
         advanceUntilIdle()
-        assertThat(cameraUseCase.recordingInProgress).isFalse()
+        assertThat(cameraSystem.recordingInProgress).isFalse()
     }
 
     @Test
@@ -144,7 +144,7 @@ class PreviewViewModelTest {
                     .selectedLensFacing
             ).isEqualTo(LensFacing.FRONT)
         }
-        assertThat(cameraUseCase.isLensFacingFront).isTrue()
+        assertThat(cameraSystem.isLensFacingFront).isTrue()
     }
 
     context(TestScope)
