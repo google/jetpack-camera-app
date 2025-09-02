@@ -269,7 +269,7 @@ sealed interface VideoQualityUiState {
 
 /**
  * Settings Ui State for testing, based on Typical System Constraints.
- * @see[com.google.jetpackcamera.settings.model.SystemConstraints]
+ * @see[com.google.jetpackcamera.settings.model.CameraSystemConstraints]
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),

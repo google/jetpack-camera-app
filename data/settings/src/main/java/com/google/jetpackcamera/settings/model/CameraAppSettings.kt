@@ -57,7 +57,8 @@ data class CameraAppSettings(
     val debugSettings: DebugSettings = DebugSettings()
 )
 
-fun SystemConstraints.forCurrentLens(cameraAppSettings: CameraAppSettings): CameraConstraints? =
-    perLensConstraints[cameraAppSettings.cameraLensFacing]
+fun CameraSystemConstraints.forCurrentLens(
+    cameraAppSettings: CameraAppSettings
+): CameraConstraints? = perLensConstraints[cameraAppSettings.cameraLensFacing]
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

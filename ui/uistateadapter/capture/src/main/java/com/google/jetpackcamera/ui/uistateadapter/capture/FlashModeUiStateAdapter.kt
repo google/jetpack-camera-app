@@ -20,7 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -36,7 +36,7 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
 
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints
+    systemConstraints: CameraSystemConstraints
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
     val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
@@ -70,7 +70,7 @@ fun FlashModeUiState.Companion.from(
 
 fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraState: CameraState
 ): FlashModeUiState {
     return when (this) {

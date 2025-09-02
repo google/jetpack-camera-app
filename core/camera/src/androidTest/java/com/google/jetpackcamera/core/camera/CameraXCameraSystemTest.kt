@@ -25,12 +25,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecordError
-import com.google.jetpackcamera.core.camera.CameraUseCase.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
+import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -63,7 +64,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-class CameraXCameraUseCaseTest {
+class CameraXCameraSystemTest {
 
     companion object {
         private const val GENERAL_TIMEOUT_MS = 3_000L
@@ -79,28 +80,28 @@ class CameraXCameraUseCaseTest {
     private val context = instrumentation.context
     private val application = context.applicationContext as Application
     private val videosToDelete = mutableSetOf<Uri>()
-    private lateinit var useCaseScope: CoroutineScope
+    private lateinit var cameraSystemScope: CoroutineScope
 
     @Before
     fun setup() {
-        useCaseScope = CoroutineScope(Dispatchers.Default)
+        cameraSystemScope = CoroutineScope(Dispatchers.Default)
     }
 
     @After
     fun tearDown() {
-        useCaseScope.cancel()
+        cameraSystemScope.cancel()
         deleteVideos()
     }
 
     @Test
     fun canRecordVideo(): Unit = runBlocking {
         // Arrange.
-        val cameraUseCase = createAndInitCameraXUseCase()
-        cameraUseCase.runCameraOnMain()
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        cameraSystem.runCameraOnMain()
 
         // Act.
         val recordingComplete = CompletableDeferred<Unit>()
-        cameraUseCase.startRecording {
+        cameraSystem.startRecording {
             when (it) {
                 is OnVideoRecorded -> {
                     recordingComplete.complete(Unit)
@@ -109,7 +110,7 @@ class CameraXCameraUseCaseTest {
             }
         }
 
-        cameraUseCase.stopVideoRecording()
+        cameraSystem.stopVideoRecording()
 
         // Assert.
         recordingComplete.await()
@@ -120,14 +121,14 @@ class CameraXCameraUseCaseTest {
         // Arrange.
         val lensFacing = LensFacing.BACK
         val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val cameraUseCase = createAndInitCameraXUseCase(
+        val cameraSystem = createAndInitCameraXCameraSystem(
             constraintsRepository = constraintsRepository
         )
         assumeTrue("No flash unit, skip the test.", constraintsRepository.hasFlashUnit(lensFacing))
-        cameraUseCase.runCameraOnMain()
+        cameraSystem.runCameraOnMain()
 
         // Arrange: Create a ReceiveChannel to observe the torch enabled state.
-        val torchEnabled: ReceiveChannel<Boolean> = cameraUseCase.getCurrentCameraState()
+        val torchEnabled: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
             .map { it.torchEnabled }
             .produceIn(this)
 
@@ -136,8 +137,8 @@ class CameraXCameraUseCaseTest {
 
         // Act: Start recording with FlashMode.ON
         val recordingComplete = CompletableDeferred<Unit>()
-        cameraUseCase.setFlashMode(FlashMode.ON)
-        cameraUseCase.startRecording {
+        cameraSystem.setFlashMode(FlashMode.ON)
+        cameraSystem.startRecording {
             when (it) {
                 is OnVideoRecorded -> {
                     recordingComplete.complete(Unit)
@@ -149,7 +150,7 @@ class CameraXCameraUseCaseTest {
         // Assert: Torch enabled transitions to true.
         torchEnabled.awaitValue(true)
 
-        cameraUseCase.stopVideoRecording()
+        cameraSystem.stopVideoRecording()
 
         // Assert: Torch enabled transitions to false.
         torchEnabled.awaitValue(false)
@@ -159,10 +160,10 @@ class CameraXCameraUseCaseTest {
         torchEnabled.cancel()
     }
 
-    private suspend fun createAndInitCameraXUseCase(
+    private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
         constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl()
-    ) = CameraXCameraUseCase(
+    ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
         iODispatcher = Dispatchers.IO,
@@ -171,12 +172,6 @@ class CameraXCameraUseCaseTest {
         initialize(appSettings) {}
         providePreviewSurface()
     }
-
-    private suspend fun CompletableDeferred<*>.await(timeoutMs: Long = GENERAL_TIMEOUT_MS) =
-        withTimeoutOrNull(timeoutMs) {
-            await()
-            Unit
-        } ?: fail("Timeout while waiting for the Deferred to complete")
 
     private suspend fun <T> ReceiveChannel<T>.awaitValue(
         expectedValue: T,
@@ -187,14 +182,11 @@ class CameraXCameraUseCaseTest {
         }
     } ?: fail("Timeout while waiting for expected value: $expectedValue")
 
-    private suspend fun CameraXCameraUseCase.startRecording(
-        onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    private suspend fun CameraXCameraSystem.startRecording(
+        onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         // Start recording
-        startVideoRecording(
-            videoCaptureUri = null,
-            shouldUseUri = false
-        ) { event ->
+        startVideoRecording(SaveLocation.Default) { event ->
             // Track files that need to be deleted
             if (event is OnVideoRecorded) {
                 val videoUri = event.savedUri
@@ -221,8 +213,8 @@ class CameraXCameraUseCaseTest {
         }
     }
 
-    private fun CameraXCameraUseCase.providePreviewSurface() {
-        useCaseScope.launch {
+    private fun CameraXCameraSystem.providePreviewSurface() {
+        cameraSystemScope.launch {
             getSurfaceRequest().filterNotNull().first().let { surfaceRequest ->
                 val surfaceTexture = SurfaceTexture(0)
                 surfaceTexture.setDefaultBufferSize(640, 480)
@@ -235,8 +227,8 @@ class CameraXCameraUseCaseTest {
         }
     }
 
-    private fun CameraXCameraUseCase.runCameraOnMain() {
-        useCaseScope.launch(Dispatchers.Main) { runCamera() }
+    private fun CameraXCameraSystem.runCameraOnMain() {
+        cameraSystemScope.launch(Dispatchers.Main) { runCamera() }
         instrumentation.waitForIdleSync()
     }
 
@@ -250,7 +242,7 @@ class CameraXCameraUseCaseTest {
                 ContentResolver.SCHEME_CONTENT -> {
                     try {
                         context.contentResolver.delete(uri, null, null)
-                    } catch (e: RuntimeException) {
+                    } catch (_: RuntimeException) {
                         // Ignore any exception.
                     }
                 }

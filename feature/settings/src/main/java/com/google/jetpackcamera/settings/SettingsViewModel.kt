@@ -40,7 +40,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_1
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.forDevice
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -108,7 +108,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun getFlashUiState(
         cameraAppSettings: CameraAppSettings,
-        constraints: SystemConstraints
+        constraints: CameraSystemConstraints
     ): FlashUiState {
         val currentSupportedFlashModes =
             constraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes ?: emptySet()
@@ -227,7 +227,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun getStabilizationUiState(
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): StabilizationUiState {
         val deviceStabilizations: Set<StabilizationMode> =
@@ -370,7 +370,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun getVideoQualityUiState(
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): VideoQualityUiState {
         val cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
@@ -429,7 +429,7 @@ class SettingsViewModel @Inject constructor(
      * support the other settings
      * */
     private fun getLensFlipUiState(
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         currentSettings: CameraAppSettings
     ): FlipLensUiState {
         // if there is only one lens, stop here
@@ -513,7 +513,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun getFpsUiState(
-        systemConstraints: SystemConstraints,
+        systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): FpsUiState {
         val optionConstraintRationale: MutableMap<Int, SingleSelectableState> = mutableMapOf()
