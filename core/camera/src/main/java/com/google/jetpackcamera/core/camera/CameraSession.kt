@@ -206,10 +206,10 @@ internal suspend fun runSingleCameraSession(
                             this@coroutineScope
                         )
                     )
-                } else {
-                    lowLightBoostSessionContainer.lowLightBoostSession?.release()
-                    lowLightBoostSessionContainer.lowLightBoostSession = null
                 }
+            } else {
+                lowLightBoostSessionContainer.lowLightBoostSession?.release()
+                lowLightBoostSessionContainer.lowLightBoostSession = null
             }
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
                 cameraEffects.isEmpty()
