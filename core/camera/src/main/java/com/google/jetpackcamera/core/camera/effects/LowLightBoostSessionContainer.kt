@@ -27,4 +27,12 @@ class LowLightBoostSessionContainer {
         lowLightBoostSession?.release()
         lowLightBoostSession = null
     }
+
+    companion object {
+        private var instance: LowLightBoostSessionContainer? = null
+
+        fun getInstance(): LowLightBoostSessionContainer = instance ?: synchronized(this) {
+            instance ?: LowLightBoostSessionContainer().also { instance = it }
+        }
+    }
 }

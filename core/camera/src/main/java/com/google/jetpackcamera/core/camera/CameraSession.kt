@@ -138,7 +138,7 @@ internal suspend fun runSingleCameraSession(
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
 
-    lowLightBoostSessionContainer = LowLightBoostSessionContainer()
+    lowLightBoostSessionContainer = LowLightBoostSessionContainer.getInstance()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
@@ -180,6 +180,7 @@ internal suspend fun runSingleCameraSession(
         }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
+            lowLightBoostSessionContainer.releaseSession()
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
             val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
@@ -208,8 +209,7 @@ internal suspend fun runSingleCameraSession(
                     )
                 }
             } else {
-                lowLightBoostSessionContainer.lowLightBoostSession?.release()
-                lowLightBoostSessionContainer.lowLightBoostSession = null
+                lowLightBoostSessionContainer.releaseSession()
             }
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
                 cameraEffects.isEmpty()
