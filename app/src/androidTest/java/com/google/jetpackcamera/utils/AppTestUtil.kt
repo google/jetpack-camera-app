@@ -20,6 +20,7 @@ import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
@@ -46,6 +47,14 @@ val TEST_REQUIRED_PERMISSIONS: List<String> = buildList {
         add(android.Manifest.permission.READ_MEDIA_VIDEO)
     }
 }
+
+internal val PICTURES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
+    Environment.DIRECTORY_PICTURES
+).path
+
+internal val MOVIES_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
+    Environment.DIRECTORY_MOVIES
+).path
 
 fun mediaStoreInsertedFlow(
     mediaUri: Uri,

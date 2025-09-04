@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
-import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
@@ -28,7 +27,6 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
@@ -41,7 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Data layer for camera.
  */
-interface CameraUseCase {
+interface CameraSystem {
     /**
      * Initializes the camera.
      *
@@ -139,66 +137,4 @@ interface CameraUseCase {
             CLEAR_UI
         }
     }
-
-    /**
-     * Represents the events for video recording.
-     */
-
-    sealed interface OnVideoRecordEvent {
-        data class OnVideoRecorded(val savedUri: Uri) : OnVideoRecordEvent
-
-        data class OnVideoRecordError(val error: Throwable) : OnVideoRecordEvent
-    }
 }
-
-sealed interface VideoRecordingState {
-
-    /**
-     * Indicates that a [PendingRecording][androidx.camera.video.PendingRecording] is about to start.
-     * This state may be used as a signal to start processes just before the recording actually starts.
-     */
-    data class Starting(val initialRecordingSettings: InitialRecordingSettings? = null) :
-        VideoRecordingState
-
-    /**
-     * Camera is not currently recording a video
-     */
-    data class Inactive(val finalElapsedTimeNanos: Long = 0) : VideoRecordingState
-
-    /**
-     * Camera is currently active; paused, stopping, or recording a video
-     */
-    sealed interface Active : VideoRecordingState {
-        val maxDurationMillis: Long
-        val audioAmplitude: Double
-        val elapsedTimeNanos: Long
-
-        data class Recording(
-            override val maxDurationMillis: Long,
-            override val audioAmplitude: Double,
-            override val elapsedTimeNanos: Long
-        ) : Active
-
-        data class Paused(
-            override val maxDurationMillis: Long,
-            override val audioAmplitude: Double,
-            override val elapsedTimeNanos: Long
-        ) : Active
-    }
-}
-
-data class CameraState(
-    val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
-    val zoomRatios: Map<LensFacing, Float> = mapOf(),
-    val linearZoomScales: Map<LensFacing, Float> = mapOf(),
-    val sessionFirstFrameTimestamp: Long = 0L,
-    val torchEnabled: Boolean = false,
-    val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
-    val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
-    val debugInfo: DebugInfo = DebugInfo(null, null),
-    val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
-)
-
-data class DebugInfo(val logicalCameraId: String?, val physicalCameraId: String?)
-
-data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)

@@ -221,9 +221,9 @@ class MainActivity : ComponentActivity() {
             ExternalCaptureMode.Standard -> emptyList()
         }
 
+    val pictureTakenUriList by lazy { arrayListOf<String>() }
     private val captureEventCallback: (CaptureEvent) -> Unit
         get() {
-            val pictureTakenUriList by lazy { arrayListOf<String>() }
             return when (externalCaptureMode) {
                 ExternalCaptureMode.ImageCapture -> { event ->
                     Log.d(TAG, "onImageCapture, event: $event")
@@ -284,7 +284,7 @@ class MainActivity : ComponentActivity() {
                     if (event is ImageCaptureEvent.ImageSaved) {
                         @Suppress("DEPRECATION")
                         val intent = Intent(Camera.ACTION_NEW_PICTURE)
-                        intent.setData(event.savedUri)
+                        intent.data = event.savedUri
                         sendBroadcast(intent)
                     }
                 }
