@@ -18,12 +18,12 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import android.util.Range
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 
 fun ZoomControlUiState.Companion.from(
     animateZoomState: Float?,
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState
 ): ZoomControlUiState {
