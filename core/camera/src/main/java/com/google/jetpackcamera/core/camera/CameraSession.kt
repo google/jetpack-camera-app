@@ -705,7 +705,7 @@ private fun setFlashModeInternal(
             ) {
                 Log.d(TAG, "ImageCapture.ScreenFlash: apply")
                 screenFlashEvents.trySend(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.APPLY_UI) {
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) {
                         listener.onCompleted()
                     }
                 )
@@ -714,7 +714,7 @@ private fun setFlashModeInternal(
             override fun clear() {
                 Log.d(TAG, "ImageCapture.ScreenFlash: clear")
                 screenFlashEvents.trySend(
-                    CameraUseCase.ScreenFlashEvent(CameraUseCase.ScreenFlashEvent.Type.CLEAR_UI) {}
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) {}
                 )
             }
         }
@@ -746,7 +746,7 @@ private fun getPendingRecording(
     maxDurationMillis: Long,
     captureTypeSuffix: String,
     saveLocation: SaveLocation,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (OnVideoRecordEvent) -> Unit
 ): PendingRecording? {
     Log.d(TAG, "getPendingRecording")
     return when (saveLocation) {
@@ -763,7 +763,7 @@ private fun getPendingRecording(
                         )
                     } ?: run {
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                            OnVideoRecordEvent.OnVideoRecordError(
                                 FileNotFoundException(
                                     "Failed to open file descriptor " +
                                         "for URI: ${saveLocation.locationUri}"
@@ -774,7 +774,7 @@ private fun getPendingRecording(
                     }
                 } catch (e: Exception) {
                     onVideoRecord(
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(e)
+                        OnVideoRecordEvent.OnVideoRecordError(e)
                     )
                     null
                 }
@@ -785,7 +785,7 @@ private fun getPendingRecording(
                         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
                     } ?: run {
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                            OnVideoRecordEvent.OnVideoRecordError(
                                 RuntimeException("Uri path is null for file scheme.")
                             )
                         )
@@ -793,7 +793,7 @@ private fun getPendingRecording(
                     }
                 } else {
                     onVideoRecord(
-                        CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                        OnVideoRecordEvent.OnVideoRecordError(
                             RuntimeException("Uri scheme not supported.")
                         )
                     )
@@ -830,7 +830,7 @@ private suspend fun startVideoRecordingInternal(
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
     initialRecordingSettings: InitialRecordingSettings,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (OnVideoRecordEvent) -> Unit
 ): Recording {
     // set the camerastate to starting
     currentCameraState.update { old ->
@@ -944,7 +944,7 @@ private suspend fun startVideoRecordingInternal(
                             )
                         }
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                            OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
@@ -961,7 +961,7 @@ private suspend fun startVideoRecordingInternal(
                         }
 
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecorded(
+                            OnVideoRecordEvent.OnVideoRecorded(
                                 onVideoRecordEvent.outputResults.outputUri
                             )
                         )
@@ -969,7 +969,7 @@ private suspend fun startVideoRecordingInternal(
 
                     else -> {
                         onVideoRecord(
-                            CameraUseCase.OnVideoRecordEvent.OnVideoRecordError(
+                            OnVideoRecordEvent.OnVideoRecordError(
                                 RuntimeException(
                                     "Recording finished with error: ${onVideoRecordEvent.error}",
                                     onVideoRecordEvent.cause
@@ -1002,7 +1002,7 @@ private suspend fun runVideoRecording(
     transientSettings: StateFlow<TransientSessionSettings?>,
     saveLocation: SaveLocation,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
-    onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+    onVideoRecord: (OnVideoRecordEvent) -> Unit
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 

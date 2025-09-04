@@ -30,7 +30,7 @@ sealed interface VideoCaptureControlEvent {
     class StartRecordingEvent(
         val saveLocation: SaveLocation,
         val maxVideoDuration: Long,
-        val onVideoRecord: (CameraUseCase.OnVideoRecordEvent) -> Unit
+        val onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent
 
     /**
