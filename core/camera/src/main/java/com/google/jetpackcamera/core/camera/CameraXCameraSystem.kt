@@ -132,7 +132,6 @@ constructor(
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
-    @RequiresApi(Build.VERSION_CODES.R)
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
@@ -315,7 +314,6 @@ constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     @OptIn(ExperimentalCamera2Interop::class)
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")

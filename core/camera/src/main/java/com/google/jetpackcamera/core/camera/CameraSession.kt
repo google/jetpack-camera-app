@@ -32,7 +32,6 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -128,7 +127,6 @@ lateinit var lowLightBoostSessionContainer: LowLightBoostSessionContainer
 
 context(CameraSessionContext)
 @ExperimentalCamera2Interop
-@RequiresApi(Build.VERSION_CODES.R)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
@@ -195,8 +193,9 @@ internal suspend fun runSingleCameraSession(
                         LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
                         sessionSettings.lowLightBoostPriority ==
                         LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
-                if (lowLightBoostAvailability
-                    == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || overrideAeMode
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                    (lowLightBoostAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                    overrideAeMode)
                 ) {
                     val lowLightBoostClient = LowLightBoost.getClient(context)
                     cameraEffects.add(

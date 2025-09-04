@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
@@ -145,27 +144,38 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
             CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
         ) ?: false
 
-@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalCamera2Interop::class)
 suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBoostAvailability {
     val camera2Info = Camera2CameraInfo.from(this)
-    val llbAEModeSupport = camera2Info
-        .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
-        ?.contains(
-            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-        ) ?: false
-    val cameraId = camera2Info.cameraId
-    val lowLightBoostClient = LowLightBoost.getClient(context)
-    val gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
-    var gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
-    if (gLlbSupport && !gLlbAvailable) {
-        gLlbAvailable =
-            try {
-                lowLightBoostClient.installModule(null).await()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
-                false
-            }
+
+    // Check for LLB AE Mode support.
+    var llbAEModeSupport = false
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        llbAEModeSupport = camera2Info
+            .getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+            ?.contains(
+                CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+            ) ?: false
+    }
+
+    // Check for Google LLB support.
+    var gLlbSupport = false
+    var gLlbAvailable = false
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+        val cameraId = camera2Info.cameraId
+        val lowLightBoostClient = LowLightBoost.getClient(context)
+        gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
+        gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
+        if (gLlbSupport && !gLlbAvailable) {
+            gLlbAvailable =
+                try {
+                    lowLightBoostClient.installModule(null).await()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
+                    false
+                }
+        }
     }
     return if (llbAEModeSupport) {
         if (gLlbSupport && gLlbAvailable) {
