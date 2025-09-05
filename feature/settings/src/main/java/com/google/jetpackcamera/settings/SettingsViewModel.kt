@@ -119,7 +119,7 @@ class SettingsViewModel @Inject constructor(
         val deviceSupportedFlashModes: Set<FlashMode> = constraints.forDevice(
             CameraConstraints::supportedFlashModes
         )
-        // disable entire setting when:git status
+        // disable entire setting when:
         //  device only supports off... device unsupported rationale
         //  lens only supports off... lens unsupported rationale
         if (deviceSupportedFlashModes == setOf(FlashMode.OFF)) {
