@@ -277,7 +277,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
+        const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
     }
 }

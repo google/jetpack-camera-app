@@ -18,12 +18,16 @@ package com.google.jetpackcamera.utils
 import android.app.Instrumentation
 import android.database.ContentObserver
 import android.database.Cursor
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.graphics.blue
+import androidx.core.graphics.green
+import androidx.core.graphics.red
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -151,4 +155,34 @@ fun mediaStoreInsertedFlow(
             emit(it.toPair())
         }
     }
+}
+
+/**
+ * Calculates the average luminance of a [Bitmap].
+ *
+ * @return The average luminance, as a value between 0.0 (black) and 255.0 (white).
+ */
+fun Bitmap.calculateAverageLuminance(): Double {
+    // A hardware bitmap cannot have its pixels accessed directly. If the bitmap is a hardware
+    // bitmap, we must copy it to a software bitmap first.
+    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+        this.config == Bitmap.Config.HARDWARE
+    ) {
+        this.copy(Bitmap.Config.ARGB_8888, false)
+    } else {
+        this
+    }
+
+    var totalLuminance = 0.0
+    val width = bitmap.width
+    val height = bitmap.height
+    val pixels = IntArray(width * height)
+    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+    for (pixel in pixels) {
+        // The luminance formula using the sRGB color space standard (BT.709 matrix)
+        totalLuminance += 0.2126 * pixel.red + 0.7152 * pixel.green + 0.0722 * pixel.blue
+    }
+
+    return totalLuminance / (width * height)
 }
