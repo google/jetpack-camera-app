@@ -16,16 +16,16 @@
 package com.google.jetpackcamera.core.camera.effects
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 
-@RequiresApi(Build.VERSION_CODES.R)
 class LowLightBoostSessionContainer {
     var lowLightBoostSession: LowLightBoostSession? = null
 
     fun releaseSession() {
-        lowLightBoostSession?.release()
-        lowLightBoostSession = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            lowLightBoostSession?.release()
+            lowLightBoostSession = null
+        }
     }
 
     companion object {

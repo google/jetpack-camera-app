@@ -194,5 +194,6 @@ class LowLightBoostSurfaceProcessor(
         Log.d(TAG, "Releasing LLB session")
         lowLightBoostSession?.release()
         lowLightBoostSession = null
+        sessionContainer.lowLightBoostSession = null
     }
 }
