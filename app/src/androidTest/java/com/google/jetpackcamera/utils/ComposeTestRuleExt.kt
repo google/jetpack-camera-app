@@ -668,6 +668,28 @@ fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
     }
 }
 
+fun ComposeTestRule.setLensFacing(lensFacing: LensFacing) {
+    visitQuickSettings {
+        onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)
+            .assertExists()
+            .assume(isEnabled()) {
+                "Current device does not support multiple lenses"
+            }.apply {
+                val initialLensFacing = getCurrentLensFacing()
+                var currentLensFacing = initialLensFacing
+                while (currentLensFacing != lensFacing) {
+                    performClick()
+                    currentLensFacing = getCurrentLensFacing()
+                    if (currentLensFacing == initialLensFacing) {
+                        throw AssumptionViolatedException(
+                            "Current device does not support lens facing: $lensFacing"
+                        )
+                    }
+                }
+            }
+    }
+}
+
 internal fun buildGeneralErrorMessage(
     errorMessage: String,
     nodeInteraction: SemanticsNodeInteraction
