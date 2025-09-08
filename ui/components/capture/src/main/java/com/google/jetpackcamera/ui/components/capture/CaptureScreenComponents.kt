@@ -72,6 +72,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -354,9 +355,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+                    previewDisplayUiState.aspectRatioUiState as
+                            AspectRatioUiState.Available
+                    ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -387,14 +388,7 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = CornerSize(0.dp),
-                            topEnd = CornerSize(0.dp),
-                            bottomStart = CornerSize(16.dp),
-                            bottomEnd = CornerSize(16.dp)
-                        )
-                    )
+                    .clip(RoundedCornerShape(16.dp))
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -424,7 +418,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -440,84 +434,91 @@ fun PreviewDisplay(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(
-    stabilizationUiState: StabilizationUiState.Enabled,
+    stabilizationUiState: StabilizationUiState,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = Color.White.let {
-        if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
-    }
-    CompositionLocalProvider(LocalContentColor provides contentColor) {
-        if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
-            Icon(
-                painter = when (stabilizationUiState) {
-                    is StabilizationUiState.Specific ->
-                        when (stabilizationUiState.stabilizationMode) {
-                            StabilizationMode.AUTO ->
-                                throw IllegalStateException(
-                                    "AUTO is not a specific StabilizationUiState."
-                                )
+    if (stabilizationUiState is StabilizationUiState.Enabled) {
+        val contentColor = Color.White.let {
+            if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
+                Icon(
+                    modifier = modifier.size(IconButtonDefaults.smallIconSize),
 
-                            StabilizationMode.HIGH_QUALITY ->
-                                painterResource(R.drawable.video_stable_hq_filled_icon)
+                            painter = when (stabilizationUiState) {
+                        is StabilizationUiState.Specific ->
+                            when (stabilizationUiState.stabilizationMode) {
+                                StabilizationMode.AUTO ->
+                                    throw IllegalStateException(
+                                        "AUTO is not a specific StabilizationUiState."
+                                    )
 
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_filled_icon)
+                                StabilizationMode.HIGH_QUALITY ->
+                                    painterResource(R.drawable.video_stable_hq_filled_icon)
 
-                            StabilizationMode.ON ->
-                                rememberVectorPainter(Icons.Filled.VideoStable)
+                                StabilizationMode.OPTICAL ->
+                                    painterResource(R.drawable.video_stable_ois_filled_icon)
 
-                            else ->
-                                TODO(
-                                    "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                        "${stabilizationUiState.stabilizationMode}"
-                                )
+                                StabilizationMode.ON ->
+                                    rememberVectorPainter(Icons.Filled.VideoStable)
+
+                                else ->
+                                    TODO(
+                                        "Cannot retrieve icon for unimplemented stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
+                                    )
+                            }
+
+                        is StabilizationUiState.Auto -> {
+                            when (stabilizationUiState.stabilizationMode) {
+                                StabilizationMode.ON ->
+                                    painterResource(R.drawable.video_stable_auto_filled_icon)
+
+                                StabilizationMode.OPTICAL ->
+                                    painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+
+                                else ->
+                                    TODO(
+                                        "Auto stabilization not yet implemented for " +
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
+                                    )
+                            }
                         }
+                    },
+                    contentDescription = when (stabilizationUiState.stabilizationMode) {
+                        StabilizationMode.AUTO ->
+                            stringResource(R.string.stabilization_icon_description_auto)
 
-                    is StabilizationUiState.Auto -> {
-                        when (stabilizationUiState.stabilizationMode) {
-                            StabilizationMode.ON ->
-                                painterResource(R.drawable.video_stable_auto_filled_icon)
+                        StabilizationMode.ON ->
+                            stringResource(R.string.stabilization_icon_description_preview_and_video)
 
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+                        StabilizationMode.HIGH_QUALITY ->
+                            stringResource(R.string.stabilization_icon_description_video_only)
 
-                            else ->
-                                TODO(
-                                    "Auto stabilization not yet implemented for " +
-                                        "${stabilizationUiState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
-                                )
-                        }
-                    }
-                },
-                contentDescription = when (stabilizationUiState.stabilizationMode) {
-                    StabilizationMode.AUTO ->
-                        stringResource(R.string.stabilization_icon_description_auto)
+                        StabilizationMode.OPTICAL ->
+                            stringResource(R.string.stabilization_icon_description_optical)
 
-                    StabilizationMode.ON ->
-                        stringResource(R.string.stabilization_icon_description_preview_and_video)
-
-                    StabilizationMode.HIGH_QUALITY ->
-                        stringResource(R.string.stabilization_icon_description_video_only)
-
-                    StabilizationMode.OPTICAL ->
-                        stringResource(R.string.stabilization_icon_description_optical)
-
-                    else -> null
-                },
-                modifier = modifier
-            )
+                        else -> null
+                    },
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
+                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+
                 painter = when (videoQuality) {
                     VideoQuality.SD ->
                         painterResource(R.drawable.video_resolution_sd_icon)
@@ -551,7 +552,6 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
 
                     else -> null
                 },
-                modifier = modifier
             )
         }
     }
@@ -630,7 +630,7 @@ fun CaptureModeDropDown(
         AnimatedVisibility(
             visible = isExpanded,
             enter =
-            fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                fadeIn() + expandVertically(expandFrom = Alignment.Top),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
         ) {
             fun onDisabledClick(
@@ -804,7 +804,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
+                                        (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }

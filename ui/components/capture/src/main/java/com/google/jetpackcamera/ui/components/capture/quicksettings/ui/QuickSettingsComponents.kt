@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -177,7 +178,7 @@ fun QuickSetRatio(
             enum = enum,
             onClick = { onClick() },
             isHighLighted = isHighlightEnabled &&
-                (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+                    (assignedRatio == aspectRatioUiState.selectedAspectRatio)
         )
     }
 }
@@ -266,7 +267,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -328,9 +329,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                )
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -362,12 +363,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-            hdrUiState is HdrUiState.Available &&
-                (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
-            ),
+                hdrUiState is HdrUiState.Available &&
+                        (
+                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                                )
+                ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -420,7 +421,7 @@ fun QuickSetFlash(
             QuickSettingToggleButton(
                 modifier = modifier,
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isActive
+                    flashModeUiState.isLowLightBoostActive
                 ),
                 isHighLighted = flashModeUiState.selectedFlashMode != FlashMode.OFF,
                 onClick = {
@@ -502,7 +503,7 @@ fun QuickSetConcurrentCamera(
                 }
             },
             isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                ConcurrentCameraMode.DUAL,
+                    ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -770,13 +771,13 @@ fun QuickSettingToggleButton(
 
         Spacer(Modifier.height(4.dp))
         Text(
-            modifier = Modifier.width(IntrinsicSize.Max),
+            modifier = Modifier.width(IntrinsicSize.Max).wrapContentWidth(),
             text = text,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            overflow = TextOverflow.Visible
+            overflow = TextOverflow.Clip
         )
     }
 }
@@ -793,25 +794,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -835,25 +836,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
 
     LazyVerticalGrid(
@@ -866,11 +867,57 @@ fun QuickSettingsGrid(
     }
 }
 
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
+    val enum =
+        if (hdrUiState is HdrUiState.Available &&
+            (
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+        ) {
+            CameraDynamicRange.HDR
+        } else {
+            CameraDynamicRange.SDR
+        }
+    Icon(
+        modifier = modifier.size(IconButtonDefaults.smallIconSize),
+        painter = enum.getPainter(),
+        contentDescription = stringResource(enum.getDescriptionResId())
+    )
+}
+
+@Composable
+fun FlashModeIndicator(
+    flashModeUiState: FlashModeUiState,
+    modifier: Modifier = Modifier
+) {
+    when (flashModeUiState) {
+        is FlashModeUiState.Unavailable ->
+            TopBarQuickSettingIcon(
+                modifier = modifier,
+                enum = CameraFlashMode.OFF,
+                enabled = false
+            )
+
+        is FlashModeUiState.Available ->
+            TopBarQuickSettingIcon(
+                modifier = modifier,
+                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
+                    flashModeUiState.isLowLightBoostActive
+                )
+            )
+    }
+}
+
 /**
  * The top bar indicators for quick settings items.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TopBarSettingIndicator(
+fun TopBarQuickSettingIcon(
     enum: QuickSettingsEnum,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -884,7 +931,7 @@ fun TopBarSettingIndicator(
             painter = enum.getPainter(),
             contentDescription = stringResource(id = enum.getDescriptionResId()),
             modifier = modifier
-                .size(dimensionResource(id = R.dimen.quick_settings_indicator_size))
+                .size(IconButtonDefaults.smallIconSize)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -895,47 +942,6 @@ fun TopBarSettingIndicator(
     }
 }
 
-@Composable
-fun FlashModeIndicator(
-    flashModeUiState: FlashModeUiState,
-    onClick: (flashMode: FlashMode) -> Unit
-) {
-    when (flashModeUiState) {
-        is FlashModeUiState.Unavailable ->
-            TopBarSettingIndicator(
-                enum = CameraFlashMode.OFF,
-                enabled = false
-            )
-
-        is FlashModeUiState.Available ->
-            TopBarSettingIndicator(
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isActive
-                ),
-                onClick = {
-                    onClick(
-                        flashModeUiState.availableFlashModes.getNextSelectableItem(
-                            flashModeUiState.selectedFlashMode
-                        )
-                    )
-                }
-            )
-    }
-}
-
-@Composable
-fun QuickSettingsIndicators(
-    modifier: Modifier = Modifier,
-    flashModeUiState: FlashModeUiState,
-    onFlashModeClick: (flashMode: FlashMode) -> Unit
-) {
-    Row(modifier = modifier) {
-        FlashModeIndicator(
-            flashModeUiState,
-            onFlashModeClick
-        )
-    }
-}
 
 private fun <T> List<SingleSelectableUiState<T>>.getNextSelectableItem(selectedItem: T): T {
     // Filter out only the selectable modes to cycle through them.

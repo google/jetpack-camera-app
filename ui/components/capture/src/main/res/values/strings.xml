@@ -63,8 +63,8 @@
 
     <!-- Quick Settings Text and Tags -->
     <!-- Lens Text -->
-    <string name="quick_settings_front_camera_text">FRONT</string>
-    <string name="quick_settings_back_camera_text">BACK</string>
+    <string name="quick_settings_front_camera_text">Front</string>
+    <string name="quick_settings_back_camera_text">Back</string>
     <string name="quick_settings_front_camera_description">Front Camera</string>
     <string name="quick_settings_back_camera_description">Back Camera</string>
 
@@ -84,9 +84,9 @@
     <string name="quick_settings_dynamic_range_hdr_description">High dynamic range</string>
 
     <!-- Flash Text -->
-    <string name="quick_settings_flash_off">OFF</string>
-    <string name="quick_settings_flash_auto">AUTO</string>
-    <string name="quick_settings_flash_on">ON</string>
+    <string name="quick_settings_flash_off">Off</string>
+    <string name="quick_settings_flash_auto">Auto</string>
+    <string name="quick_settings_flash_on">On</string>
     <string name="quick_settings_flash_llb">LLB</string>
 
     <string name="quick_settings_flash_off_description">Flash off</string>

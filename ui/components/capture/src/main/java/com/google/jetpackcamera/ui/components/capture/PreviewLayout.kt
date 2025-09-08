@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.preview.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // these layouts are only concerned with placement. nothing else. no state handling
@@ -46,10 +49,11 @@ fun PreviewLayout(
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
     zoomLevelDisplay: @Composable (modifier: Modifier) -> Unit,
-    settingsButton: @Composable (modifier: Modifier) -> Unit,
     quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
-    imageWellButton: @Composable (modifier: Modifier) -> Unit,
-    flashModeButton: @Composable (modifier: Modifier) -> Unit,
+    flashModeIndicator: @Composable (modifier: Modifier) -> Unit,
+    hdrIndicator: @Composable (modifier: Modifier) -> Unit,
+    videoQualityIndicator: @Composable (modifier: Modifier) -> Unit,
+    stabilizationIndicator: @Composable (modifier: Modifier) -> Unit,
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
@@ -66,7 +70,21 @@ fun PreviewLayout(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        viewfinder(Modifier)
+        Column {
+            Row(
+                modifier = Modifier
+                    .safeContentPadding()
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                flashModeIndicator(Modifier)
+                hdrIndicator(Modifier)
+                videoQualityIndicator(Modifier)
+                stabilizationIndicator(Modifier)
+            }
+            viewfinder(Modifier)
+        }
 
         Box(
             modifier = Modifier

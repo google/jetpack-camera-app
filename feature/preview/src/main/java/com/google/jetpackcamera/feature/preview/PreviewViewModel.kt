@@ -183,6 +183,7 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
+
                 val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
                     cameraAppSettings,
@@ -193,6 +194,11 @@ class PreviewViewModel @AssistedInject constructor(
                     systemConstraints
                 )
                 val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+                val hdrUiState = HdrUiState.from(
+                    cameraAppSettings,
+                    systemConstraints,
+                    externalCaptureMode
+                )
                 _captureUiState.update { old ->
                     when (old) {
                         is CaptureUiState.NotReady -> {
@@ -229,6 +235,7 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             systemConstraints,
                             aspectRatioUiState,
+                            hdrUiState,
                             trackedUiState.isQuickSettingsOpen
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
@@ -270,7 +277,8 @@ class PreviewViewModel @AssistedInject constructor(
                             cameraAppSettings,
                             cameraState,
                             externalCaptureMode
-                        )
+                        ),
+                        hdrUiState = hdrUiState
                     )
                 }
             }.collect {}
@@ -284,6 +292,7 @@ class PreviewViewModel @AssistedInject constructor(
         cameraAppSettings: CameraAppSettings,
         systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
+        hdrUiState: HdrUiState,
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
@@ -299,11 +308,7 @@ class PreviewViewModel @AssistedInject constructor(
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
-            hdrUiState = HdrUiState.from(
-                cameraAppSettings,
-                systemConstraints,
-                externalCaptureMode
-            ),
+            hdrUiState = hdrUiState,
             streamConfigUiState = streamConfigUiState,
             quickSettingsIsOpen = quickSettingsIsOpen
         )

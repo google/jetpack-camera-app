@@ -106,6 +106,7 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
     )
 }
 
+//todo add imagewell to debug screen
 @Composable
 fun DebugComponent(
     modifier: Modifier = Modifier,

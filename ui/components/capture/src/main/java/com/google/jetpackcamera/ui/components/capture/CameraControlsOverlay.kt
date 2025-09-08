@@ -65,7 +65,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsIndicators
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -147,16 +146,16 @@ fun CameraControlsOverlay(
         ) {
             if (captureUiState.videoRecordingState is VideoRecordingState.Inactive) {
                 val showDebugButton = captureUiState.debugUiState is DebugUiState.Enabled &&
-                    captureUiState.debugUiState !is DebugUiState.Enabled.Open
+                        captureUiState.debugUiState !is DebugUiState.Enabled.Open
                 ControlsTop(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter),
                     isQuickSettingsOpen =
-                    (
-                        captureUiState.quickSettingsUiState
-                            as QuickSettingsUiState.Available
-                        ).quickSettingsIsOpen,
+                        (
+                                captureUiState.quickSettingsUiState
+                                        as QuickSettingsUiState.Available
+                                ).quickSettingsIsOpen,
                     showDebugButton = showDebugButton,
                     onNavigateToSettings = onNavigateToSettings,
                     onChangeFlash = onChangeFlash,
@@ -180,10 +179,10 @@ fun CameraControlsOverlay(
                 zoomUiState = captureUiState.zoomUiState,
                 showZoomLevel = zoomLevelDisplayState.showZoomLevel,
                 isQuickSettingsOpen =
-                (
-                    captureUiState.quickSettingsUiState
-                        as QuickSettingsUiState.Available
-                    ).quickSettingsIsOpen,
+                    (
+                            captureUiState.quickSettingsUiState
+                                    as QuickSettingsUiState.Available
+                            ).quickSettingsIsOpen,
                 videoRecordingState = captureUiState.videoRecordingState,
                 onSetCaptureMode = onSetCaptureMode,
                 onFlipCamera = onFlipCamera,
@@ -231,10 +230,7 @@ private fun ControlsTop(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    QuickSettingsIndicators(
-                        flashModeUiState = flashModeUiState,
-                        onFlashModeClick = onChangeFlash
-                    )
+
                 }
             }
 
@@ -339,16 +335,16 @@ private fun ControlsBottom(
                 if (captureUiState.elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
                     AnimatedVisibility(
                         visible = (
-                            captureUiState.videoRecordingState is
-                                VideoRecordingState.Active
-                            ),
+                                captureUiState.videoRecordingState is
+                                        VideoRecordingState.Active
+                                ),
                         enter = fadeIn(),
                         exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
                     ) {
                         ElapsedTimeText(
                             modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                             elapsedTimeUiState = captureUiState.elapsedTimeUiState
-                                as ElapsedTimeUiState.Enabled
+                                    as ElapsedTimeUiState.Enabled
                         )
                     }
                 }
@@ -358,7 +354,7 @@ private fun ControlsBottom(
         Column {
             if (!isQuickSettingsOpen &&
                 captureUiState.captureModeToggleUiState
-                    is CaptureModeToggleUiState.Available
+                        is CaptureModeToggleUiState.Available
             ) {
                 // TODO(yasith): Align to end of ImageWell based on alignment lines
                 Box(
@@ -368,7 +364,7 @@ private fun ControlsBottom(
                 ) {
                     CaptureModeToggleButton(
                         uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeToggleUiState.Available,
+                                as CaptureModeToggleUiState.Available,
                         onChangeCaptureMode = onSetCaptureMode,
                         onToggleWhenDisabled = onDisabledCaptureMode,
                         modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -397,8 +393,8 @@ private fun ControlsBottom(
                                 flipLensUiState = flipLensUiState,
                                 // enable only when phone has front and rear camera
                                 enabledCondition =
-                                flipLensUiState is FlipLensUiState.Available &&
-                                    flipLensUiState.availableLensFacings.size > 1
+                                    flipLensUiState is FlipLensUiState.Available &&
+                                            flipLensUiState.availableLensFacings.size > 1
                             )
                         } else if (videoRecordingState is VideoRecordingState.Active
                         ) {
@@ -552,7 +548,7 @@ fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri
+                                        ignoreUri
                             ) { event: ImageCaptureEvent, i: Int ->
                                 externalCaptureMode.onImageCapture(
                                     getImageCaptureEventForExternalCaptureMode(event),
@@ -621,13 +617,13 @@ fun CaptureModeToggleButton(
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val initialState =
         when (uiState.selectedCaptureMode) {
-            CaptureMode.IMAGE_ONLY -> ToggleState.Left
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> ToggleState.Left
             CaptureMode.VIDEO_ONLY -> ToggleState.Right
-            CaptureMode.STANDARD -> TODO("toggle should not be visible for STANDARD mode")
         }
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-            uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
+                uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+
     ToggleButton(
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
@@ -654,34 +650,34 @@ fun CaptureModeToggleButton(
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
                 (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
+                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                SingleSelectableUiState.Disabled<CaptureMode>
+                        )?.disabledReason
                     ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
+                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    as? SingleSelectableUiState.Disabled<CaptureMode>
+                            )
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
         // toggle only enabled when both capture modes are available
         enabled = enabled,
         leftIconDescription =
-        if (enabled) {
-            stringResource(id = R.string.capture_mode_image_capture_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_image_capture_content_description_disabled
-            )
-        },
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_image_capture_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_image_capture_content_description_disabled
+                )
+            },
         rightIconDescription =
-        if (enabled) {
-            stringResource(id = R.string.capture_mode_video_recording_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_video_recording_content_description_disabled
-            )
-        },
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_video_recording_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_video_recording_content_description_disabled
+                )
+            },
         modifier = modifier
     )
 }
@@ -718,7 +714,7 @@ private fun Preview_ControlsTop_FlashModeOn() {
                     SingleSelectableUiState.SelectableUi(FlashMode.OFF),
                     SingleSelectableUiState.SelectableUi(FlashMode.ON)
                 ),
-                isActive = false
+                isLowLightBoostActive = false
             )
         )
     }
@@ -737,7 +733,7 @@ private fun Preview_ControlsTop_FlashModeAuto() {
                     SingleSelectableUiState.SelectableUi(FlashMode.ON),
                     SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                 ),
-                isActive = false
+                isLowLightBoostActive = false
             )
         )
     }
