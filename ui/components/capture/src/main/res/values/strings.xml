@@ -115,7 +115,7 @@
     <string name="quick_settings_description_concurrent_camera_dual">Concurrent dual camera mode</string>
 
     <!-- Capture Mode Text -->
-    <string name="quick_settings_text_capture_mode_standard">Standard</string>
+    <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <string name="quick_settings_text_capture_mode_video_only">Video Only</string>
     <string name="quick_settings_text_capture_mode_image_only">Image Only</string>
     <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
