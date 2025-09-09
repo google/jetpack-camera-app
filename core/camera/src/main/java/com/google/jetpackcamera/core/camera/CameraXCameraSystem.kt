@@ -682,7 +682,7 @@ constructor(
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
-                val newDynamicRange = if (contains(dynamicRange)) {
+                val newDynamicRange = if (contains(dynamicRange) && flashMode != FlashMode.LOW_LIGHT_BOOST) {
                     dynamicRange
                 } else {
                     DynamicRange.SDR
@@ -759,7 +759,8 @@ constructor(
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
                     dynamicRange == DynamicRange.SDR &&
-                    streamConfig == StreamConfig.MULTI_STREAM
+                    streamConfig == StreamConfig.MULTI_STREAM &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
                 ) {
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO
@@ -822,6 +823,8 @@ constructor(
     override fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
