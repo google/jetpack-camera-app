@@ -75,6 +75,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostAvailability
@@ -89,6 +90,7 @@ import com.google.jetpackcamera.model.VideoQuality.FHD
 import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.Date
@@ -129,6 +131,7 @@ context(CameraSessionContext)
 @ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
+    cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
@@ -184,18 +187,12 @@ internal suspend fun runSingleCameraSession(
             val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
             val camera2Info = Camera2CameraInfo.from(cameraInfo)
             val cameraId = camera2Info.cameraId
-            val lowLightBoostAvailability = cameraInfo.getLowLightBoostAvailablity(context)
 
             val cameraEffects = mutableListOf<CameraEffect>()
             if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                val overrideAeMode =
-                    lowLightBoostAvailability ==
-                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                        sessionSettings.lowLightBoostPriority ==
-                        LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                    (lowLightBoostAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
-                    overrideAeMode)
+                    cameraConstraints?.supportedIlluminants?.contains(Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
                 ) {
                     val lowLightBoostClient = LowLightBoost.getClient(context)
                     cameraEffects.add(
@@ -325,6 +322,7 @@ internal suspend fun runSingleCameraSession(
                 applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
                 processTransientSettingEvents(
                     camera,
+                    cameraConstraints,
                     useCaseGroup,
                     currentTransientSettings,
                     transientSettings,
@@ -338,6 +336,7 @@ context(CameraSessionContext)
 @OptIn(ExperimentalCamera2Interop::class)
 internal suspend fun processTransientSettingEvents(
     camera: Camera,
+    cameraConstraints: CameraConstraints?,
     useCaseGroup: UseCaseGroup,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
@@ -351,6 +350,7 @@ internal suspend fun processTransientSettingEvents(
     val camera2OptionsBuilder = CaptureRequestOptions.Builder()
     updateCamera2RequestOptions(
         camera,
+        cameraConstraints,
         null,
         initialTransientSettings,
         sessionSettings,
@@ -421,6 +421,7 @@ internal suspend fun processTransientSettingEvents(
 
         updateCamera2RequestOptions(
             camera,
+            cameraConstraints,
             prevTransientSettings,
             newTransientSettings,
             sessionSettings,
@@ -435,6 +436,7 @@ context(CameraSessionContext)
 @ExperimentalCamera2Interop
 private suspend fun updateCamera2RequestOptions(
     camera: Camera,
+    cameraConstraints: CameraConstraints?,
     prevTransientSettings: TransientSessionSettings?,
     newTransientSettings: TransientSessionSettings,
     sessionSettings: PerpetualSessionSettings.SingleCamera?,
@@ -447,16 +449,7 @@ private suspend fun updateCamera2RequestOptions(
     ) {
         when (newTransientSettings.flashMode) {
             FlashMode.LOW_LIGHT_BOOST -> {
-                val lowLightBoostAvailability =
-                    camera.cameraInfo.getLowLightBoostAvailablity(context)
-
-                val prioritizeAeMode = lowLightBoostAvailability ==
-                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                    sessionSettings?.lowLightBoostPriority ==
-                    LowLightBoostPriority.PRIORITIZE_AE_MODE
-                if (lowLightBoostAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
-                    prioritizeAeMode
-                ) {
+                if (cameraConstraints?.supportedIlluminants?.contains(Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true) {
                     Log.d(
                         TAG,
                         "Setting LLB with " +

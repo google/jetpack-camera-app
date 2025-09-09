@@ -224,11 +224,18 @@ constructor(
                             }
 
                             coroutineScope {
-                                if (camInfo.getLowLightBoostAvailablity(
-                                        application
-                                    ) != LowLightBoostAvailability.NONE
-                                ) {
-                                    add(Illuminant.LOW_LIGHT_BOOST)
+                                val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
+                                if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
+                                    llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                    cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE))
+                                {
+                                    add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+                                }
+                                if (llbAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || (
+                                    llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                    cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES))
+                                {
+                                    add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
                                 }
                             }
                         }
@@ -246,7 +253,8 @@ constructor(
                                 add(FlashMode.AUTO)
                             }
 
-                            if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
+                            if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
+                                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants) {
                                 add(FlashMode.LOW_LIGHT_BOOST)
                             }
                         }
@@ -405,6 +413,7 @@ constructor(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
+                                    systemConstraints.forCurrentLens(currentSettings.value!!),
                                     onImageCaptureCreated = { imageCapture ->
                                         imageCaptureUseCase = imageCapture
                                     }
@@ -412,7 +421,8 @@ constructor(
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
-                                        sessionSettings
+                                        sessionSettings,
+                                        systemConstraints.forCurrentLens(currentSettings.value!!)
                                     )
                             }
                         } finally {

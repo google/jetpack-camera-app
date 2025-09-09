@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -39,7 +40,8 @@ private const val TAG = "ConcurrentCameraSession"
 context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
 internal suspend fun runConcurrentCameraSession(
-    sessionSettings: PerpetualSessionSettings.ConcurrentCamera
+    sessionSettings: PerpetualSessionSettings.ConcurrentCamera,
+    cameraConstraints: CameraConstraints?
 ) = coroutineScope {
     val primaryLensFacing = sessionSettings.primaryCameraInfo.appLensFacing
     val secondaryLensFacing = sessionSettings.secondaryCameraInfo.appLensFacing
@@ -161,6 +163,7 @@ internal suspend fun runConcurrentCameraSession(
         applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
         processTransientSettingEvents(
             primaryCamera,
+            cameraConstraints,
             useCaseGroup,
             initialTransientSettings,
             transientSettings,
