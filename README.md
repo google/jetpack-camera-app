@@ -1,4 +1,6 @@
-![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
+<img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="2560" height="1440" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
+<p align="end"><sup>Ultra HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></sup></p>
+
 # Jetpack Camera App 📸
 
 Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built
@@ -72,22 +74,22 @@ relevant considerations to help you understand and utilize the app effectively.
     * [Tap to Focus](#tap-to-focus)
     * [Flip Camera](#flip-camera)
     * [Zoom](#zoom)
-    * [Scene Illumination / Flash](#scene-illumination---flash)
+    * [Scene Illumination / Flash](#scene-illumination--flash)
 - [Video Features](#video-features)
     * [Video Capture](#video-capture)
-    * [Pause / Resume](#pause---resume)
+    * [Pause / Resume](#pause--resume)
     * [Video Duration Limit](#video-duration-limit)
     * [Video Quality](#video-quality)
-    * [Audio / Amplitude Visualization](#audio---amplitude-visualization)
+    * [Audio / Amplitude Visualization](#audio--amplitude-visualization)
     * [Frame Rate](#frame-rate)
     * [Video Stabilization](#video-stabilization)
     * [Flip Camera While Recording](#flip-camera-while-recording)
 - [Advanced Camera Features](#advanced-camera-features)
     * [Screen Flash](#screen-flash)
     * [Dual Concurrent Camera](#dual-concurrent-camera)
-    * [HDR (High Dynamic Range)](#hdr--high-dynamic-range-)
-    * [LLB (Low Light Boost)](#llb--low-light-boost-)
-    * [Single / Multi-stream Mode](#single---multi-stream-mode)
+    * [HDR (High Dynamic Range)](#hdr-high-dynamic-range)
+    * [LLB (Low Light Boost)](#llb-low-light-boost)
+    * [Single / Multi-stream Mode](#single--multi-stream-mode)
 - [Special Application Features](#special-application-features)
     * [Debug Mode](#debug-mode)
     * [Intent Capture Modes](#intent-capture-modes)
@@ -270,6 +272,8 @@ and settings to enhance your video capture experience. It covers various aspects
 functionality, from basic recording to advanced controls and customization.
 
 ### Video Capture
+
+![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
 
 Records video that, in most cases (see limitations), represents the scene visible in the viewfinder.
 When HDR mode is enabled, the captured video can record 10-bit HDR content.
