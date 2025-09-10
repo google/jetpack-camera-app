@@ -198,30 +198,28 @@ internal suspend fun runSingleCameraSession(
             val camera2Info = Camera2CameraInfo.from(cameraInfo)
             val cameraId = camera2Info.cameraId
 
-            val cameraEffects = mutableListOf<CameraEffect>()
+            var cameraEffect: CameraEffect? = null
             if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                     cameraConstraints?.supportedIlluminants?.contains(Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
                 ) {
                     val lowLightBoostClient = LowLightBoost.getClient(context)
-                    cameraEffects.add(
-                        LowLightBoostEffect(
-                            cameraId,
-                            lowLightBoostClient,
-                            LowLightBoostSessionContainer,
-                            this@coroutineScope,
-                            sceneDetectorCallback
-                        )
+                    cameraEffect = LowLightBoostEffect(
+                        cameraId,
+                        lowLightBoostClient,
+                        LowLightBoostSessionContainer,
+                        this@coroutineScope,
+                        sceneDetectorCallback
                     )
                 }
             } else {
                 LowLightBoostSessionContainer.releaseSession()
             }
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
-                cameraEffects.isEmpty()
+                cameraEffect == null
             ) {
-                cameraEffects.add(SingleSurfaceForcingEffect(this@coroutineScope))
+                cameraEffect = SingleSurfaceForcingEffect(this@coroutineScope)
             }
             val useCaseGroup = createUseCaseGroup(
                 cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
@@ -232,7 +230,7 @@ internal suspend fun runSingleCameraSession(
                 dynamicRange = sessionSettings.dynamicRange,
                 imageFormat = sessionSettings.imageFormat,
                 captureMode = sessionSettings.captureMode,
-                effects = cameraEffects
+                effect = cameraEffect
             ).apply {
                 getImageCapture()?.let(onImageCaptureCreated)
             }
@@ -566,7 +564,7 @@ internal fun createUseCaseGroup(
     dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
-    effects: List<CameraEffect>? = null
+    effect: CameraEffect? = null
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
@@ -608,7 +606,7 @@ internal fun createUseCaseGroup(
         imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
         videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
 
-        effects?.let { effect -> effect.forEach { addEffect(it) } }
+        effect?.let { addEffect(it) }
     }.build()
 }
 
