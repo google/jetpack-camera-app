@@ -18,21 +18,13 @@ package com.google.jetpackcamera.core.camera.effects
 import android.os.Build
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 
-class LowLightBoostSessionContainer {
+object LowLightBoostSessionContainer {
     var lowLightBoostSession: LowLightBoostSession? = null
 
     fun releaseSession() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             lowLightBoostSession?.release()
             lowLightBoostSession = null
-        }
-    }
-
-    companion object {
-        private var instance: LowLightBoostSessionContainer? = null
-
-        fun getInstance(): LowLightBoostSessionContainer = instance ?: synchronized(this) {
-            instance ?: LowLightBoostSessionContainer().also { instance = it }
         }
     }
 }

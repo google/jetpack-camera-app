@@ -125,8 +125,6 @@ private val QUALITY_RANGE_MAP = mapOf(
     SD to Range.create(241, 719)
 )
 
-lateinit var lowLightBoostSessionContainer: LowLightBoostSessionContainer
-
 context(CameraSessionContext)
 @ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
@@ -138,8 +136,6 @@ internal suspend fun runSingleCameraSession(
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
         .primaryLensFacing.toCameraSelector()
-
-    lowLightBoostSessionContainer = LowLightBoostSessionContainer.getInstance()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
@@ -195,7 +191,7 @@ internal suspend fun runSingleCameraSession(
         }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
-            lowLightBoostSessionContainer.releaseSession()
+            LowLightBoostSessionContainer.releaseSession()
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
             val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
@@ -213,14 +209,14 @@ internal suspend fun runSingleCameraSession(
                         LowLightBoostEffect(
                             cameraId,
                             lowLightBoostClient,
-                            lowLightBoostSessionContainer,
+                            LowLightBoostSessionContainer,
                             this@coroutineScope,
                             sceneDetectorCallback
                         )
                     )
                 }
             } else {
-                lowLightBoostSessionContainer.releaseSession()
+                LowLightBoostSessionContainer.releaseSession()
             }
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
                 cameraEffects.isEmpty()
@@ -1226,7 +1222,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 super.onCaptureCompleted(session, request, result)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    lowLightBoostSessionContainer.lowLightBoostSession?.processCaptureResult(result)
+                    LowLightBoostSessionContainer.lowLightBoostSession?.processCaptureResult(result)
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
