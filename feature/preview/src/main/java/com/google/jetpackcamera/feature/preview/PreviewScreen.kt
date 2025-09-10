@@ -79,6 +79,7 @@ import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.ImageWell
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.R
@@ -468,7 +469,7 @@ private fun ContentScreen(
         quickSettingsButton = {
             ToggleQuickSettingsButton(
                 modifier = it,
-                toggleDropDown = onToggleQuickSettings,
+                toggleBottomSheet = onToggleQuickSettings,
                 isOpen = (
                         captureUiState.quickSettingsUiState
                                 as QuickSettingsUiState.Available
@@ -487,6 +488,7 @@ private fun ContentScreen(
                 CaptureModeToggleButton(
                     uiState = captureUiState.captureModeToggleUiState
                             as CaptureModeToggleUiState.Available,
+
                     onChangeCaptureMode = onSetCaptureMode,
                     onToggleWhenDisabled = onDisabledCaptureMode,
                     modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -550,6 +552,20 @@ private fun ContentScreen(
                 onSetPause = onSetPause,
                 currentRecordingState = captureUiState.videoRecordingState
             )
+        },
+        imageWell = { modifier ->
+            if (!(
+                        captureUiState.quickSettingsUiState
+                                as QuickSettingsUiState.Available
+                        ).quickSettingsIsOpen &&
+                captureUiState.externalCaptureMode is ExternalCaptureMode.StandardMode
+            ) {
+                ImageWell(
+                    modifier = modifier,
+                    imageWellUiState = captureUiState.imageWellUiState,
+                    onClick = onImageWellClick
+                )
+            }
         }
     )
 }

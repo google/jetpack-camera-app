@@ -15,9 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,6 +25,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -47,20 +45,20 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -74,6 +72,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -279,7 +278,7 @@ fun QuickSetCaptureMode(
 fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     QuickSettingToggleButton(
         onClick = onNavigateToSettings,
-        text = "More Settings",
+        text = "More",
         accessibilityText = stringResource(R.string.settings_content_description),
         painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
@@ -512,22 +511,23 @@ fun QuickSetConcurrentCamera(
 /**
  * Button to toggle quick settings
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ToggleQuickSettingsButton(
-    toggleDropDown: () -> Unit,
+    toggleBottomSheet: () -> Unit,
     isOpen: Boolean,
+    size: Dp = IconButtonDefaults.largeIconSize,
     modifier: Modifier = Modifier
 ) {
-    val rotationAngle by animateFloatAsState(
-        targetValue = if (isOpen) -90f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessLow) // Adjust duration as needed
-    )
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.rotate(rotationAngle)
-    ) {
-        // dropdown icon
+
+
+    IconButton (
+        modifier = modifier
+            .size(IconButtonDefaults.smallContainerSize())
+            .testTag(QUICK_SETTINGS_DROP_DOWN),
+        onClick = toggleBottomSheet,
+        ) {
+        //todo(kc): use settings_photo_camera icon
         Icon(
             imageVector = Icons.Filled.Settings,
             contentDescription = if (isOpen) {
@@ -535,15 +535,7 @@ fun ToggleQuickSettingsButton(
             } else {
                 stringResource(R.string.quick_settings_dropdown_closed_description)
             },
-            modifier = Modifier
-                .testTag(QUICK_SETTINGS_DROP_DOWN)
-                .size(50.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    // removes the greyish background animation that appears when clicking on a clickable
-                    indication = null,
-                    onClick = toggleDropDown
-                )
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -771,7 +763,9 @@ fun QuickSettingToggleButton(
 
         Spacer(Modifier.height(4.dp))
         Text(
-            modifier = Modifier.width(IntrinsicSize.Max).wrapContentWidth(),
+            modifier = Modifier
+                .width(IntrinsicSize.Max)
+                .wrapContentWidth(),
             text = text,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,

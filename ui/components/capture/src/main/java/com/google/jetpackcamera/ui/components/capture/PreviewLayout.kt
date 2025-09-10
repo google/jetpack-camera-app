@@ -57,6 +57,7 @@ fun PreviewLayout(
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    imageWell: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (
         modifier: Modifier,
@@ -109,7 +110,8 @@ fun PreviewLayout(
             Modifier,
             arrayOf(
                 { audioToggleButton(Modifier) },
-                { pauseToggleButton(Modifier) }
+                { pauseToggleButton(Modifier) },
+                { imageWell(Modifier) }
             )
         )
     }

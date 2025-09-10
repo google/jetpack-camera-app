@@ -15,8 +15,10 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
@@ -113,6 +115,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
@@ -120,6 +123,7 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
@@ -134,6 +138,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
+
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -236,6 +244,75 @@ fun AmplitudeToggleButton(
             )
         }
     }
+}
+
+
+@Composable
+fun CaptureModeToggleButton(
+    uiState: CaptureModeToggleUiState.Available,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
+    val toggleState = remember(uiState.selectedCaptureMode) {
+        when (uiState.selectedCaptureMode) {
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> ToggleState.Left
+            CaptureMode.VIDEO_ONLY -> ToggleState.Right
+        }
+    }
+
+    val enabled =
+        uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
+                uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+
+    ToggleButton(
+        leftIcon =
+            rememberVectorPainter(image = Icons.Filled.CameraAlt),
+        rightIcon =
+            rememberVectorPainter(image = Icons.Filled.Videocam),
+        toggleState = toggleState,
+
+        onToggle = {
+            val newCaptureMode = when (toggleState) {
+                ToggleState.Right -> CaptureMode.IMAGE_ONLY
+                ToggleState.Left -> CaptureMode.VIDEO_ONLY
+            }
+            onChangeCaptureMode(newCaptureMode)
+        },
+        onToggleWhenDisabled = {
+            val disabledReason: DisableRationale? =
+                (
+                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                SingleSelectableUiState.Disabled<CaptureMode>
+                        )?.disabledReason
+                    ?: (
+                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    as? SingleSelectableUiState.Disabled<CaptureMode>
+                            )
+                        ?.disabledReason
+            disabledReason?.let { onToggleWhenDisabled(it) }
+        },
+        // toggle only enabled when both capture modes are available
+        enabled = enabled,
+        leftIconDescription =
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_image_capture_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_image_capture_content_description_disabled
+                )
+            },
+        rightIconDescription =
+            if (enabled) {
+                stringResource(id = R.string.capture_mode_video_recording_content_description)
+            } else {
+                stringResource(
+                    id = R.string.capture_mode_video_recording_content_description_disabled
+                )
+            },
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -434,6 +511,169 @@ fun PreviewDisplay(
     }
 }
 
+
+@Composable
+fun CaptureButton(
+    modifier: Modifier = Modifier,
+    captureButtonUiState: CaptureButtonUiState,
+    isQuickSettingsOpen: Boolean,
+    externalCaptureMode: ExternalCaptureMode,
+    onToggleQuickSettings: () -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
+    onCaptureImageWithUri: (
+        ContentResolver,
+        Uri?,
+        Boolean,
+        (ImageCaptureEvent, Int) -> Unit
+    ) -> Unit = { _, _, _, _ -> },
+    onStartVideoRecording: (
+        Uri?,
+        Boolean,
+        (VideoCaptureEvent) -> Unit
+    ) -> Unit = { _, _, _ -> },
+    onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit = {}
+) {
+    val multipleEventsCutter = remember { MultipleEventsCutter() }
+    val context = LocalContext.current
+
+    CaptureButton(
+        modifier = modifier.testTag(CAPTURE_BUTTON),
+        onIncrementZoom = onIncrementZoom,
+        onImageCapture = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                multipleEventsCutter.processEvent {
+                    when (externalCaptureMode) {
+                        is ExternalCaptureMode.StandardMode -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                true
+                            ) { event: ImageCaptureEvent, _: Int ->
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event)
+                                )
+                            }
+                        }
+
+                        is ExternalCaptureMode.ExternalImageCaptureMode -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                externalCaptureMode.imageCaptureUri,
+                                false
+                            ) { event: ImageCaptureEvent, _: Int ->
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event)
+                                )
+                            }
+                        }
+
+                        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> {
+                            val ignoreUri =
+                                externalCaptureMode.imageCaptureUris.isNullOrEmpty()
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
+                                        ignoreUri
+                            ) { event: ImageCaptureEvent, i: Int ->
+                                externalCaptureMode.onImageCapture(
+                                    getImageCaptureEventForExternalCaptureMode(event),
+                                    i
+                                )
+                            }
+                        }
+
+                        else -> {
+                            onCaptureImageWithUri(
+                                context.contentResolver,
+                                null,
+                                false
+                            ) { _: ImageCaptureEvent, _: Int -> }
+                        }
+                    }
+                }
+            }
+            if (isQuickSettingsOpen) {
+                onToggleQuickSettings()
+            }
+        },
+        onStartRecording = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                when (externalCaptureMode) {
+                    is ExternalCaptureMode.StandardMode -> {
+                        onStartVideoRecording(null, false) {}
+                    }
+
+                    is ExternalCaptureMode.ExternalVideoCaptureMode -> {
+                        onStartVideoRecording(
+                            externalCaptureMode.videoCaptureUri,
+                            true
+
+                        ) { event: VideoCaptureEvent ->
+                            externalCaptureMode.onVideoCapture(
+                                getVideoCaptureEventForExternalCaptureMode(event)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        onStartVideoRecording(null, false) {}
+                    }
+                }
+                if (isQuickSettingsOpen) {
+                    onToggleQuickSettings()
+                }
+            }
+        },
+        onStopRecording = {
+            onStopVideoRecording()
+        },
+        captureButtonUiState = captureButtonUiState,
+        onLockVideoRecording = onLockVideoRecording
+    )
+}
+
+/**
+ * Converts an internal [ImageCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.ImageCaptureEvent]
+ * representation.
+ */
+private fun getImageCaptureEventForExternalCaptureMode(
+    captureEvent: ImageCaptureEvent
+): ExternalCaptureMode.ImageCaptureEvent {
+    return when (captureEvent) {
+        is ImageCaptureEvent.ImageSaved ->
+            ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
+                captureEvent.savedUri
+            )
+
+        is ImageCaptureEvent.ImageCaptureError ->
+            ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
+                captureEvent.exception
+            )
+    }
+}
+
+/**
+ * Converts an internal [VideoCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.VideoCaptureEvent]
+ * representation.
+ */
+private fun getVideoCaptureEventForExternalCaptureMode(
+    captureEvent: VideoCaptureEvent
+): ExternalCaptureMode.VideoCaptureEvent {
+    return when (captureEvent) {
+        is VideoCaptureEvent.VideoSaved ->
+            ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
+                captureEvent.savedUri
+            )
+
+        is VideoCaptureEvent.VideoCaptureError ->
+            ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
+                captureEvent.error
+            )
+    }
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(
@@ -449,7 +689,7 @@ fun StabilizationIcon(
                 Icon(
                     modifier = modifier.size(IconButtonDefaults.smallIconSize),
 
-                            painter = when (stabilizationUiState) {
+                    painter = when (stabilizationUiState) {
                         is StabilizationUiState.Specific ->
                             when (stabilizationUiState.stabilizationMode) {
                                 StabilizationMode.AUTO ->
@@ -603,147 +843,19 @@ fun FlipCameraButton(
     }
 }
 
-@Composable
-fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        modifier = modifier,
-        onClick = onNavigateToSettings
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Settings,
-            contentDescription = stringResource(R.string.settings_content_description),
-            modifier = Modifier.size(72.dp)
-        )
-    }
-}
-
-@Composable
-fun CaptureModeDropDown(
-    modifier: Modifier = Modifier,
-    onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (DisableRationale) -> Unit,
-    captureModeUiState: CaptureModeUiState.Available
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter =
-                fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
-        ) {
-            fun onDisabledClick(
-                selectableState: SingleSelectableUiState<CaptureMode>?
-            ): () -> Unit = if (selectableState is SingleSelectableUiState.Disabled) {
-                { onDisabledCaptureMode(selectableState.disabledReason) }
-            } else {
-                { TODO("Enabled should not have disabled click") }
-            }
-
-            Column {
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_standard),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.STANDARD)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.STANDARD)
-                    )
-                )
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.IMAGE_ONLY)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                    )
-                )
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.VIDEO_ONLY)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
-                    )
-
-                )
-            }
-        }
-        // this text displays the current selection
-        Box(
-            modifier = Modifier
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    // removes the greyish background animation that appears when clicking on a clickable
-                    indication = null,
-                    onClick = { isExpanded = !isExpanded }
-                )
-                .padding(8.dp)
-        ) {
-            Text(
-                text = when (captureModeUiState.selectedCaptureMode) {
-                    CaptureMode.STANDARD -> stringResource(
-                        R.string.quick_settings_text_capture_mode_standard
-                    )
-
-                    CaptureMode.VIDEO_ONLY -> stringResource(
-                        R.string.quick_settings_text_capture_mode_image_only
-                    )
-
-                    CaptureMode.IMAGE_ONLY -> stringResource(
-                        R.string.quick_settings_text_capture_mode_video_only
-                    )
-                },
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun DropDownItem(
-    modifier: Modifier = Modifier,
-    text: String,
-    onClick: () -> Unit = {},
-    onDisabledClick: () -> Unit = {},
-    enabled: Boolean = true,
-    isSelected: Boolean = false
-) {
-    Text(
-        text = text,
-        color = if (enabled) Color.Unspecified else Color.DarkGray,
-        modifier = modifier
-            .clickable(enabled = true, onClick = if (enabled) onClick else onDisabledClick)
-            .apply {
-                if (!enabled) {
-                    alpha(.37f)
-                }
-            }
-            .padding(16.dp)
-    )
-}
-
 enum class ToggleState {
     Left,
     Right
 }
 
+//todo(kc): refactor togglebutton to be scalable
 @Composable
 fun ToggleButton(
     leftIcon: Painter,
     rightIcon: Painter,
     modifier: Modifier = Modifier,
-    initialState: ToggleState = ToggleState.Left,
-    onToggleStateChanged: (newState: ToggleState) -> Unit = {},
+    toggleState: ToggleState? = null,
+    onToggle: () -> Unit = {},
     onToggleWhenDisabled: () -> Unit = {},
     enabled: Boolean = true,
     leftIconDescription: String = "leftIcon",
@@ -756,11 +868,11 @@ fun ToggleButton(
     val iconUnSelectionColor = MaterialTheme.colorScheme.primary
     val circleSelectionColor = MaterialTheme.colorScheme.primary
     val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
-    var toggleState by remember { mutableStateOf(initialState) }
     val animatedTogglePosition by animateFloatAsState(
         when (toggleState) {
             ToggleState.Left -> 0f
             ToggleState.Right -> 1f
+            null -> 0f
         },
         label = "togglePosition"
     )
@@ -772,12 +884,8 @@ fun ToggleButton(
                 Modifier.clickable(
                     role = Role.Switch
                 ) {
-                    if (enabled) {
-                        toggleState = when (toggleState) {
-                            ToggleState.Left -> ToggleState.Right
-                            ToggleState.Right -> ToggleState.Left
-                        }
-                        onToggleStateChanged(toggleState)
+                    if (enabled && toggleState != null) {
+                        onToggle()
                     } else {
                         onToggleWhenDisabled()
                     }
@@ -787,6 +895,7 @@ fun ToggleButton(
                 stateDescription = when (toggleState) {
                     ToggleState.Left -> leftIconDescription
                     ToggleState.Right -> rightIconDescription
+                    null -> "unknown togglestate"
                 }
             }
             .width(64.dp)
@@ -872,10 +981,8 @@ private fun Preview_ToggleButton_Selecting_Left() {
             } else {
                 rememberVectorPainter(image = Icons.Outlined.Videocam)
             },
-            initialState = ToggleState.Left,
-            onToggleStateChanged = {
-                toggleState = it
-            }
+            toggleState = ToggleState.Left,
+            onToggle = {}
         )
     }
 }
@@ -887,7 +994,8 @@ private fun Preview_ToggleButton_Selecting_Right() {
         ToggleButton(
             leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
             rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
-            initialState = ToggleState.Right
+            toggleState = ToggleState.Left,
+            onToggle = {}
         )
     }
 }
@@ -899,7 +1007,8 @@ private fun Preview_ToggleButton_Disabled() {
         ToggleButton(
             leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
             rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
-            initialState = ToggleState.Right,
+            toggleState = ToggleState.Right,
+            onToggle = {},
             enabled = false
         )
     }
