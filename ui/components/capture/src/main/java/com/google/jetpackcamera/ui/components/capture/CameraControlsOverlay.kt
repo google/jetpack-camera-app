@@ -62,6 +62,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlayToggleButton
@@ -725,7 +726,7 @@ private fun Preview_ControlsTop_FlashModeOn() {
                     SingleSelectableUiState.SelectableUi(FlashMode.OFF),
                     SingleSelectableUiState.SelectableUi(FlashMode.ON)
                 ),
-                isActive = false
+                strength = LowLightBoostState.MINIMUM_STRENGTH
             )
         )
     }
@@ -744,7 +745,7 @@ private fun Preview_ControlsTop_FlashModeAuto() {
                     SingleSelectableUiState.SelectableUi(FlashMode.ON),
                     SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                 ),
-                isActive = false
+                strength = LowLightBoostState.MINIMUM_STRENGTH
             )
         )
     }

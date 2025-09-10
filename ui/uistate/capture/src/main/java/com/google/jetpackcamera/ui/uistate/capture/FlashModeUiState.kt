@@ -24,7 +24,7 @@ sealed interface FlashModeUiState {
     data class Available(
         val selectedFlashMode: FlashMode,
         val availableFlashModes: List<SingleSelectableUiState<FlashMode>>,
-        val isActive: Boolean
+        val strength: Float
     ) : FlashModeUiState {
         init {
             val isSelectedModePresentAndSelectable = availableFlashModes.any { state ->

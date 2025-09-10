@@ -78,8 +78,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LowLightBoostAvailability
-import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
@@ -199,6 +197,7 @@ internal suspend fun runSingleCameraSession(
                         LowLightBoostEffect(
                             cameraId,
                             lowLightBoostClient,
+                            currentCameraState,
                             lowLightBoostSessionContainer,
                             this@coroutineScope
                         )
@@ -1216,14 +1215,14 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
-                    val boostState = when (nativeBoostState) {
+                    val boostStrength = when (nativeBoostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
-                            LowLightBoostState.ACTIVE
-                        else -> LowLightBoostState.INACTIVE
+                            LowLightBoostState.Strength(LowLightBoostState.MAXIMUM_STRENGTH)
+                        else -> LowLightBoostState.Strength(LowLightBoostState.MINIMUM_STRENGTH)
                     }
                     currentCameraState.update { old ->
-                        if (old.lowLightBoostState != boostState) {
-                            old.copy(lowLightBoostState = boostState)
+                        if (old.lowLightBoostState != boostStrength) {
+                            old.copy(lowLightBoostState = boostStrength)
                         } else {
                             old
                         }
