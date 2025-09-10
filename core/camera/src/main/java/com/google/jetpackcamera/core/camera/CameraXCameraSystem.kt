@@ -223,20 +223,18 @@ constructor(
                                 add(Illuminant.SCREEN)
                             }
 
-                            coroutineScope {
-                                val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
-                                if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
-                                    llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                    cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE))
-                                {
-                                    add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
-                                }
-                                if (llbAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || (
-                                    llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                    cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES))
-                                {
-                                    add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
-                                }
+                            val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
+                            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
+                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE))
+                            {
+                                add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+                            }
+                            if (llbAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || (
+                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES))
+                            {
+                                add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
                             }
                         }
 
