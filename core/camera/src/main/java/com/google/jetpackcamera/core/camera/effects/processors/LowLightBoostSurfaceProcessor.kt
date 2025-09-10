@@ -123,72 +123,70 @@ class LowLightBoostSurfaceProcessor(
     private suspend fun tryCreateLowLightBoostSession(outputSurfaceForLlb: Surface) {
         inputSurfaceRequestScope?.withSurfaceRequest { currentInputRequest ->
 
-            coroutineScope.launch { // Launch in your processor's scope
-                try {
-                    // Create LowLightBoostOptions with the output surface for LLB
-                    // and dimensions from the input SurfaceRequest.
-                    val llbOptions = LowLightBoostOptions(
-                        outputSurfaceForLlb, // This is where LLB writes its output
-                        cameraId,
-                        currentInputRequest.resolution.width,
-                        currentInputRequest.resolution.height,
-                        true
-                    )
+            try {
+                // Create LowLightBoostOptions with the output surface for LLB
+                // and dimensions from the input SurfaceRequest.
+                val llbOptions = LowLightBoostOptions(
+                    outputSurfaceForLlb, // This is where LLB writes its output
+                    cameraId,
+                    currentInputRequest.resolution.width,
+                    currentInputRequest.resolution.height,
+                    true
+                )
 
-                    if (lowLightBoostSession != null) {
-                        releaseLowLightBoostSession()
-                    }
-
-                    lowLightBoostSession = lowLightBoostClient
-                        .createSession(llbOptions, createLowLightBoostCallback())
-                        .await()
-
-                    sessionContainer.lowLightBoostSession = lowLightBoostSession
-
-                    sceneDetectorCallback.let { cb ->
-                        lowLightBoostSession?.setSceneDetectorCallback(cb, null)
-                    }
-
-                    // Get the input surface from the LowLightBoostSession
-                    val llbInputSurface = lowLightBoostSession?.getCameraSurface()
-                        ?: throw IllegalStateException(
-                            "LowLightBoostSession did not provide an input surface."
-                        )
-
-                    Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
-
-                    // Fulfill the CameraX SurfaceRequest with LLB's input surface
-                    currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
-                        Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
-                        llbInputSurface.release()
-                        when (result.resultCode) {
-                            SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
-                                Log.i(TAG, "CameraX is using LLB input surface.")
-                            }
-
-                            SurfaceRequest.Result.RESULT_REQUEST_CANCELLED -> {
-                                // Should have been handled by addRequestCancellationListener
-                            }
-
-                            else -> {
-                                Log.e(TAG, "SurfaceRequest failed: ${result.resultCode}")
-                                // Potentially release LLB session if CameraX won't use the surface
-                                releaseLowLightBoostSession()
-                            }
-                        }
-                    }
-                } catch (ae: ApiException) {
-                    Log.e(TAG, "Google Play Services module for Low Light Boost is not available " +
-                            "on this device. This might be due to the version of Google Play being too old.", ae)
-                    // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
-                    currentInputRequest.willNotProvideSurface()
-                    releaseLowLightBoostSession()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
-                    // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
-                    currentInputRequest.willNotProvideSurface()
+                if (lowLightBoostSession != null) {
                     releaseLowLightBoostSession()
                 }
+
+                lowLightBoostSession = lowLightBoostClient
+                    .createSession(llbOptions, createLowLightBoostCallback())
+                    .await()
+
+                sessionContainer.lowLightBoostSession = lowLightBoostSession
+
+                sceneDetectorCallback.let { cb ->
+                    lowLightBoostSession?.setSceneDetectorCallback(cb, null)
+                }
+
+                // Get the input surface from the LowLightBoostSession
+                val llbInputSurface = lowLightBoostSession?.getCameraSurface()
+                    ?: throw IllegalStateException(
+                        "LowLightBoostSession did not provide an input surface."
+                    )
+
+                Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
+
+                // Fulfill the CameraX SurfaceRequest with LLB's input surface
+                currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
+                    Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
+                    llbInputSurface.release()
+                    when (result.resultCode) {
+                        SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
+                            Log.i(TAG, "CameraX is using LLB input surface.")
+                        }
+
+                        SurfaceRequest.Result.RESULT_REQUEST_CANCELLED -> {
+                            // Should have been handled by addRequestCancellationListener
+                        }
+
+                        else -> {
+                            Log.e(TAG, "SurfaceRequest failed: ${result.resultCode}")
+                            // Potentially release LLB session if CameraX won't use the surface
+                            releaseLowLightBoostSession()
+                        }
+                    }
+                }
+            } catch (ae: ApiException) {
+                Log.e(TAG, "Google Play Services module for Low Light Boost is not available " +
+                        "on this device. This might be due to the version of Google Play being too old.", ae)
+                // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
+                currentInputRequest.willNotProvideSurface()
+                releaseLowLightBoostSession()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
+                // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
+                currentInputRequest.willNotProvideSurface()
+                releaseLowLightBoostSession()
             }
         }
     }
