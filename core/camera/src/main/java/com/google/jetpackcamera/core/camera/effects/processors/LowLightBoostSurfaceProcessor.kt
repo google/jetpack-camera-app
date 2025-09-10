@@ -30,11 +30,9 @@ import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
-import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
 import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
-import com.google.jetpackcamera.model.LowLightBoostState
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -54,10 +52,10 @@ private const val TAG = "LowLightBoostProcessor"
 class LowLightBoostSurfaceProcessor(
     private val cameraId: String,
     private val lowLightBoostClient: LowLightBoostClient,
-    private val cameraState: MutableStateFlow<CameraState>,
     private val sessionContainer: LowLightBoostSessionContainer,
-    private val coroutineScope: CoroutineScope
-) : SurfaceProcessor {
+    private val coroutineScope: CoroutineScope,
+    private val sceneDetectorCallback: SceneDetectorCallback?,
+    ) : SurfaceProcessor {
 
     private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
     private var lowLightBoostSession: LowLightBoostSession? = null
@@ -147,20 +145,9 @@ class LowLightBoostSurfaceProcessor(
 
                     sessionContainer.lowLightBoostSession = lowLightBoostSession
 
-                    val sceneDetectorCallback = object : SceneDetectorCallback {
-                        override fun onSceneBrightnessChanged(session: LowLightBoostSession, boostStrength: Float) {
-                            val strength = LowLightBoostState.Strength(boostStrength)
-                            cameraState.update { old ->
-                                if (old.lowLightBoostState != strength) {
-                                    old.copy(lowLightBoostState = strength)
-                                } else {
-                                    old
-                                }
-                            }
-                        }
+                    sceneDetectorCallback.let { cb ->
+                        lowLightBoostSession?.setSceneDetectorCallback(cb, null)
                     }
-
-                    lowLightBoostSession?.setSceneDetectorCallback(sceneDetectorCallback, null)
 
                     // Get the input surface from the LowLightBoostSession
                     val llbInputSurface = lowLightBoostSession?.getCameraSurface()

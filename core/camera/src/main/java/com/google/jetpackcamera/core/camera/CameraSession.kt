@@ -66,6 +66,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.android.gms.cameralowlight.LowLightBoost
+import com.google.android.gms.cameralowlight.LowLightBoostSession
+import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
@@ -156,6 +158,20 @@ internal suspend fun runSingleCameraSession(
         }
     }
 
+    // A callback to be passed to the LowLightBoostEffect to update the camera state.
+    val sceneDetectorCallback = object : SceneDetectorCallback {
+        override fun onSceneBrightnessChanged(session: LowLightBoostSession, boostStrength: Float) {
+            val strength = LowLightBoostState.Strength(boostStrength)
+            currentCameraState.update { old ->
+                if (old.lowLightBoostState != strength) {
+                    old.copy(lowLightBoostState = strength)
+                } else {
+                    old
+                }
+            }
+        }
+    }
+
     launch {
         processVideoControlEvents(
             videoCaptureUseCase,
@@ -197,9 +213,9 @@ internal suspend fun runSingleCameraSession(
                         LowLightBoostEffect(
                             cameraId,
                             lowLightBoostClient,
-                            currentCameraState,
                             lowLightBoostSessionContainer,
-                            this@coroutineScope
+                            this@coroutineScope,
+                            sceneDetectorCallback
                         )
                     )
                 }

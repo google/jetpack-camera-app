@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect
 import com.google.android.gms.cameralowlight.LowLightBoostClient
+import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.effects.processors.LowLightBoostSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
@@ -36,14 +37,14 @@ private const val TARGETS =
 class LowLightBoostEffect(
     cameraId: String,
     lowLightBoostClient: LowLightBoostClient,
-    cameraState: MutableStateFlow<CameraState>,
     sessionContainer: LowLightBoostSessionContainer,
-    coroutineScope: CoroutineScope
-) : CameraEffect(
+    coroutineScope: CoroutineScope,
+    sceneDetectorCallback: SceneDetectorCallback? = null,
+    ) : CameraEffect(
     TARGETS,
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
     TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
     Runnable::run,
-    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, cameraState, sessionContainer, coroutineScope),
+    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, sessionContainer, coroutineScope, sceneDetectorCallback),
     {}
 )
