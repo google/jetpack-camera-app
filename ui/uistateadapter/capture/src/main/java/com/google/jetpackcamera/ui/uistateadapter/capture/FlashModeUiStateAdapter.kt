@@ -91,16 +91,19 @@ fun FlashModeUiState.updateFrom(
         }
 
         is Available -> {
-            val previousFlashMode = this.selectedFlashMode
-            val previousAvailableFlashModes = this.availableFlashModes
-            val currentAvailableFlashModes =
-                previousAvailableFlashModes.map { supportedFlashMode ->
-                    SingleSelectableUiState.SelectableUi(supportedFlashMode)
-                }
-            if (previousAvailableFlashModes != currentAvailableFlashModes) {
+            val supportedFlashModes =
+                systemConstraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes
+                    ?: setOf(FlashMode.OFF)
+
+            // check if supported flash modes have changed without allocating a new list/set
+            val availableModesChanged =
+                this.availableFlashModes.size != supportedFlashModes.size ||
+                    this.availableFlashModes.any { !supportedFlashModes.contains(it.value) }
+
+            if (availableModesChanged) {
                 // Supported flash modes have changed, generate a new FlashModeUiState
                 FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
-            } else if (previousFlashMode != cameraAppSettings.flashMode) {
+            } else if (this.selectedFlashMode != cameraAppSettings.flashMode) {
                 // Only the selected flash mode has changed, just update the flash mode
                 copy(selectedFlashMode = cameraAppSettings.flashMode)
             } else {

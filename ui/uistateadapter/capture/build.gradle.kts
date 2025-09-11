@@ -77,6 +77,9 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:components:capture"))
 
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+
     // Desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
