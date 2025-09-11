@@ -20,7 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.SystemConstraints
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -36,7 +36,7 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
 
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints
+    systemConstraints: CameraSystemConstraints
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
     val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
@@ -70,7 +70,7 @@ fun FlashModeUiState.Companion.from(
 
 fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: SystemConstraints,
+    systemConstraints: CameraSystemConstraints,
     cameraState: CameraState
 ): FlashModeUiState {
     return when (this) {
@@ -80,16 +80,19 @@ fun FlashModeUiState.updateFrom(
         }
 
         is Available -> {
-            val previousFlashMode = this.selectedFlashMode
-            val previousAvailableFlashModes = this.availableFlashModes
-            val currentAvailableFlashModes =
-                previousAvailableFlashModes.map { supportedFlashMode ->
-                    SingleSelectableUiState.SelectableUi(supportedFlashMode)
-                }
-            if (previousAvailableFlashModes != currentAvailableFlashModes) {
+            val supportedFlashModes =
+                systemConstraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes
+                    ?: setOf(FlashMode.OFF)
+
+            // check if supported flash modes have changed without allocating a new list/set
+            val availableModesChanged =
+                this.availableFlashModes.size != supportedFlashModes.size ||
+                    this.availableFlashModes.any { !supportedFlashModes.contains(it.value) }
+
+            if (availableModesChanged) {
                 // Supported flash modes have changed, generate a new FlashModeUiState
                 FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
-            } else if (previousFlashMode != cameraAppSettings.flashMode) {
+            } else if (this.selectedFlashMode != cameraAppSettings.flashMode) {
                 // Only the selected flash mode has changed, just update the flash mode
                 copy(selectedFlashMode = cameraAppSettings.flashMode)
             } else {

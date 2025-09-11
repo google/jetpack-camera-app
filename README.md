@@ -1,17 +1,45 @@
-![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
+<img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="2560" height="1440" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
+<p align="end"><sup>Ultra HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></sup></p>
+
 # Jetpack Camera App 📸
 
-Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built 
-entirely with CameraX, Kotlin and Jetpack Compose. It follows Android 
+Jetpack Camera App (JCA) is a camera app, focused on features used by app developers, and built
+entirely with CameraX, Kotlin and Jetpack Compose. It follows Android
 design and development best practices and it's intended to be a useful reference for developers and
 OEMs looking to validate their camera feature implementations.
 
-# Development Environment ⚒️ 
+# Development Environment ⚒️
 
 This project uses the gradle build system, and can be imported directly into Android Studio.
 
-Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only compatible
-with Android Studio Meerkat or newer.
+Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only
+compatible with Android Studio Meerkat or newer.
+
+## Pre-push Hook (Recommended)
+
+This repository includes a `pre-push` hook that automatically checks your code for correct
+formatting using `spotless` before you push your changes. This helps prevent CI failures due to
+formatting issues.
+
+To enable this hook, run the following command once from the root of the repository:
+
+```bash
+git config core.hooksPath scripts/git-hooks
+```
+
+This command tells Git to use the hooks located in the `scripts/git-hooks/` directory for this
+repository only. It will not affect your other Git projects. After running the command, the hook
+will automatically run every time you push.
+
+
+### Bypassing the Hook
+
+If you need to bypass the pre-push check for any reason, you can use the `--no-verify` flag with
+your push command:
+
+```bash
+git push origin <your-branch-name> --no-verify
+```
 
 # Architecture 📐
 
@@ -35,7 +63,7 @@ Pixel 8 (API 34) emulators which can be used to run instrumentation tests with:
 
 # Features ✨🧰✨
 
-This section provides a detailed overview of the camera app's features, highlighting its 
+This section provides a detailed overview of the camera app's features, highlighting its
 capabilities and functionalities. Each feature is described with its purpose, usage, and any
 relevant considerations to help you understand and utilize the app effectively.
 
@@ -46,22 +74,22 @@ relevant considerations to help you understand and utilize the app effectively.
     * [Tap to Focus](#tap-to-focus)
     * [Flip Camera](#flip-camera)
     * [Zoom](#zoom)
-    * [Scene Illumination / Flash](#scene-illumination---flash)
+    * [Scene Illumination / Flash](#scene-illumination--flash)
 - [Video Features](#video-features)
     * [Video Capture](#video-capture)
-    * [Pause / Resume](#pause---resume)
+    * [Pause / Resume](#pause--resume)
     * [Video Duration Limit](#video-duration-limit)
     * [Video Quality](#video-quality)
-    * [Audio / Amplitude Visualization](#audio---amplitude-visualization)
+    * [Audio / Amplitude Visualization](#audio--amplitude-visualization)
     * [Frame Rate](#frame-rate)
     * [Video Stabilization](#video-stabilization)
     * [Flip Camera While Recording](#flip-camera-while-recording)
 - [Advanced Camera Features](#advanced-camera-features)
     * [Screen Flash](#screen-flash)
     * [Dual Concurrent Camera](#dual-concurrent-camera)
-    * [HDR (High Dynamic Range)](#hdr--high-dynamic-range-)
-    * [LLB (Low Light Boost)](#llb--low-light-boost-)
-    * [Single / Multi-stream Mode](#single---multi-stream-mode)
+    * [HDR (High Dynamic Range)](#hdr-high-dynamic-range)
+    * [LLB (Low Light Boost)](#llb-low-light-boost)
+    * [Single / Multi-stream Mode](#single--multi-stream-mode)
 - [Special Application Features](#special-application-features)
     * [Debug Mode](#debug-mode)
     * [Intent Capture Modes](#intent-capture-modes)
@@ -244,6 +272,8 @@ and settings to enhance your video capture experience. It covers various aspects
 functionality, from basic recording to advanced controls and customization.
 
 ### Video Capture
+
+![Video Capture with Jetpack Camera App](docs/images/JCA-video-capture.gif "Video Capture with Jetpack Camera App")
 
 Records video that, in most cases (see limitations), represents the scene visible in the viewfinder.
 When HDR mode is enabled, the captured video can record 10-bit HDR content.

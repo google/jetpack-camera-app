@@ -27,5 +27,5 @@ import dagger.hilt.android.components.ViewModelComponent
 @InstallIn(ViewModelComponent::class)
 interface CameraModule {
     @Binds
-    fun bindsCameraUseCase(cameraXCameraUseCase: CameraXCameraUseCase): CameraUseCase
+    fun bindsCameraSystem(cameraXCameraSystem: CameraXCameraSystem): CameraSystem
 }
