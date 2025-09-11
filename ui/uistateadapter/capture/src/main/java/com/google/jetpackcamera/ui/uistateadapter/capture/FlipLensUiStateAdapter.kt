@@ -43,24 +43,3 @@ fun FlipLensUiState.Companion.from(
         availableLensFacings = availableLensFacings
     )
 }
-
-private fun createFrom(
-    selectedLensFacing: LensFacing,
-    supportedLensFacings: Set<LensFacing>
-): FlipLensUiState {
-    // Ensure we at least support one flash mode
-    check(supportedLensFacings.isNotEmpty()) {
-        "No lens supported."
-    }
-
-    val availableLensFacings =
-        Utils.getSelectableListFromValues(
-            supportedLensFacings,
-            ORDERED_UI_SUPPORTED_LENS_FACINGS
-        )
-
-    return FlipLensUiState.Available(
-        selectedLensFacing = selectedLensFacing,
-        availableLensFacings = availableLensFacings
-    )
-}
