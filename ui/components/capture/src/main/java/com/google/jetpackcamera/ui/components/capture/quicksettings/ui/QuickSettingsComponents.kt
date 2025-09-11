@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -204,9 +205,9 @@ fun FocusedQuickSetCaptureMode(
                 {
                     QuickSetCaptureMode(
                         modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-                        assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                        onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+                        assignedCaptureMode = CaptureMode.IMAGE_ONLY,
                         captureModeUiState = captureModeUiState,
                         isHighlightEnabled = true
                     )
@@ -214,13 +215,13 @@ fun FocusedQuickSetCaptureMode(
                 {
                     QuickSetCaptureMode(
                         modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-                        assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                        onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+                        assignedCaptureMode = CaptureMode.VIDEO_ONLY,
                         captureModeUiState = captureModeUiState,
                         isHighlightEnabled = true
                     )
-                }
+                },
             )
         } else {
             emptyArray()
@@ -516,26 +517,30 @@ fun QuickSetConcurrentCamera(
 fun ToggleQuickSettingsButton(
     toggleBottomSheet: () -> Unit,
     isOpen: Boolean,
-    size: Dp = IconButtonDefaults.largeIconSize,
     modifier: Modifier = Modifier
 ) {
-
-
-    IconButton (
+    val buttonSize = IconButtonDefaults.mediumContainerSize(
+        IconButtonDefaults.IconButtonWidthOption.Narrow
+    )
+    IconButton(
         modifier = modifier
-            .size(IconButtonDefaults.smallContainerSize())
+            .size(buttonSize)
             .testTag(QUICK_SETTINGS_DROP_DOWN),
         onClick = toggleBottomSheet,
-        ) {
-        //todo(kc): use settings_photo_camera icon
+        colors = IconButtonDefaults.iconButtonColors(
+            // Set the background color of the button
+            containerColor = Color.White.copy(alpha = 0.08f),
+            // Set the color of the icon inside the button
+            contentColor = Color.White
+        )
+    ) {
         Icon(
-            imageVector = Icons.Filled.Settings,
+            painter = painterResource(R.drawable.settings_photo_camera_icon),
             contentDescription = if (isOpen) {
                 stringResource(R.string.quick_settings_dropdown_open_description)
             } else {
                 stringResource(R.string.quick_settings_dropdown_closed_description)
-            },
-            modifier = Modifier.fillMaxSize()
+            }
         )
     }
 }

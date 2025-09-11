@@ -267,10 +267,20 @@ fun CaptureModeToggleButton(
                 uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleButton(
-        leftIcon =
-            rememberVectorPainter(image = Icons.Filled.CameraAlt),
-        rightIcon =
-            rememberVectorPainter(image = Icons.Filled.Videocam),
+        leftIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.IMAGE_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.CameraAlt)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.CameraAlt)
+        },
+        rightIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.VIDEO_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.Videocam)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.Videocam)
+        },
         toggleState = toggleState,
 
         onToggle = {
@@ -848,7 +858,7 @@ enum class ToggleState {
     Right
 }
 
-//todo(kc): refactor togglebutton to be scalable
+//todo(kc): may need to recreate image toggle button to be scalable and support drag
 @Composable
 fun ToggleButton(
     leftIcon: Painter,

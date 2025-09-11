@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    // snackbarHostState: SnackbarHostState,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
@@ -97,8 +96,8 @@ fun PreviewLayout(
             VerticalMaterialControls(
                 captureButton = captureButton,
                 flipCameraButton = flipCameraButton,
-                toggleQuickSettings = quickSettingsButton,
-                toggleCaptureModeSwitch = captureModeToggle,
+                quickSettingsToggleButton = quickSettingsButton,
+                captureModeToggleSwitch = captureModeToggle,
                 bottomSheetQuickSettings = quickSettingsOverlay,
                 zoomControls = zoomLevelDisplay
             )
@@ -117,15 +116,16 @@ fun PreviewLayout(
     }
 }
 
+
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
     captureButton: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
-    toggleQuickSettings: @Composable (Modifier) -> Unit,
+    quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
-    toggleCaptureModeSwitch: @Composable (Modifier) -> Unit
+    captureModeToggleSwitch: @Composable (Modifier) -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
@@ -150,7 +150,7 @@ private fun VerticalMaterialControls(
                                     .height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // todo leftCaptureButton item
+                                //  item to be placed left of capture button goes here
                             }
                         }
                         captureButton(Modifier)
@@ -167,45 +167,45 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                // bottom controls row
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Max)
-                        .padding(vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Row that holds flip camera, capture button, and audio
-                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        // left toggle switch item
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            toggleQuickSettings(Modifier)
-                        }
-                    }
-
-                    // capture mode toggle switch
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        toggleCaptureModeSwitch(Modifier)
-                    }
-
-                    // right toggle switch item
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {}
-                }
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
                         // todo(kc): tune padding
                         .padding(bottom = 50.dp)
                 )
+
+                // bottom controls row
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
+                        //.padding(vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Row that holds toggle buttons for quick settings and capture mode
+                        // quick settings toggle switch item to the left
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            quickSettingsToggleButton(Modifier)
+                        }
+
+                    // capture mode toggle switch center
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        captureModeToggleSwitch(Modifier)
+                    }
+
+                    // right toggle switch item to the right
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {}
+                }
+
             }
         }
         bottomSheetQuickSettings(Modifier)
