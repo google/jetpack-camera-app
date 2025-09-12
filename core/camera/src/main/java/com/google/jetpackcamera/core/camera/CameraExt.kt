@@ -170,7 +170,10 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
         if (gLlbSupport && !gLlbAvailable) {
             gLlbAvailable =
                 try {
-                    lowLightBoostClient.installModule(null).await()
+                    // Install the module for future use, but the install will take too long since
+                    // the camera needs to be opened right away, so return false for now.
+                    lowLightBoostClient.installModule(null)
+                    false
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
                     false
