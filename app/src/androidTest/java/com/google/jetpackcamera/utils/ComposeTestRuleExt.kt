@@ -180,24 +180,30 @@ fun ComposeTestRule.ensureTagNotAppears(
 // ////////////////////////////
 
 fun parseMinSecToMillis(timeString: String): Long? {
-    // 1. Split the string at the colon
-    val parts = timeString.split(":")
-
-    // 2. Validate the format
+    val parts = timeString.split(':')
     if (parts.size != 2) {
         return null // Not in "mm:ss" format
     }
 
-    // 3. Parse and convert to milliseconds
     return try {
         val minutes = parts[0].toLong()
         val seconds = parts[1].toLong()
-
-        // 4. Perform the calculation
-        val totalMilliseconds = (minutes * 60 + seconds) * 1000
-        totalMilliseconds
+        (minutes * 60 + seconds) * 1000
     } catch (e: NumberFormatException) {
         null // One of the parts was not a valid number
+    }
+}
+
+private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(durationMillis: Long) {
+    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        val text = onNodeWithTag(ELAPSED_TIME_TAG)
+            .fetchSemanticsNode()
+            .config.getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()?.text
+
+        val duration = text?.let { parseMinSecToMillis(it) }
+
+        duration != null && duration >= durationMillis
     }
 }
 
@@ -216,16 +222,7 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(durationMillis: Long = VIDE
             moveBy(delta = Offset(-400f, 0f))
             up()
         }
-    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
-        val text = onNodeWithTag(ELAPSED_TIME_TAG).fetchSemanticsNode().config.getOrNull(
-            SemanticsProperties.Text
-        )?.firstOrNull()?.text
-        text?.let {
-            parseMinSecToMillis(text)?.let { duration ->
-                duration >= durationMillis
-            } ?: false
-        } ?: false
-    }
+    waitUntilVideoRecordingDurationAtLeast(durationMillis)
 }
 
 fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
@@ -239,16 +236,7 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
-    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
-        val text = onNodeWithTag(ELAPSED_TIME_TAG).fetchSemanticsNode().config.getOrNull(
-            SemanticsProperties.Text
-        )?.firstOrNull()?.text
-        text?.let {
-            parseMinSecToMillis(text)?.let { duration ->
-                duration >= durationMillis
-            } ?: false
-        } ?: false
-    }
+    waitUntilVideoRecordingDurationAtLeast(durationMillis)
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
         .performTouchInput {
