@@ -316,7 +316,6 @@ internal class ImageCaptureDeviceTest {
             composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true).isDisplayed()
         }
         composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true)
-            .assertExists("Snackbar dismiss button not found")
             .performClick()
         composeTestRule.waitUntil(timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS) {
             val node = composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true)
