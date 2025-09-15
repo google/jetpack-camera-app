@@ -25,6 +25,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -194,8 +195,12 @@ fun parseMinSecToMillis(timeString: String): Long? {
     }
 }
 
-private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(durationMillis: Long) {
+private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(
+    durationMillis: Long,
+    checkWhileWaiting: () -> Unit = {}
+) {
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting()
         val text = onNodeWithTag(ELAPSED_TIME_TAG)
             .fetchSemanticsNode()
             .config.getOrNull(SemanticsProperties.Text)
@@ -207,13 +212,20 @@ private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(durationMilli
     }
 }
 
-fun ComposeTestRule.pressAndDragToLockVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
+fun ComposeTestRule.pressAndDragToLockVideoRecording(
+    durationMillis: Long = VIDEO_DURATION_MILLIS,
+    checkWhileWaiting: () -> Unit = {
+        // If the video capture fails, there is no point to continue waiting. Assert.
+        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+    }
+) {
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
         .performTouchInput {
             down(center)
         }
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
     onNodeWithTag(CAPTURE_BUTTON)
@@ -222,11 +234,15 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(durationMillis: Long = VIDE
             moveBy(delta = Offset(-400f, 0f))
             up()
         }
-    waitUntilVideoRecordingDurationAtLeast(durationMillis)
+    waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
 }
 
 fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
-    durationMillis: Long = VIDEO_DURATION_MILLIS
+    durationMillis: Long = VIDEO_DURATION_MILLIS,
+    checkWhileWaiting: () -> Unit = {
+        // If the video capture fails, there is no point to continue waiting. Assert.
+        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+    }
 ) {
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
@@ -234,9 +250,10 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
             down(center)
         }
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting()
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
-    waitUntilVideoRecordingDurationAtLeast(durationMillis)
+    waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
         .performTouchInput {
