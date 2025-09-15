@@ -1,0 +1,108 @@
+<!--
+  - Copyright (C) 2025 The Android Open Source Project
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -      http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+    <defs>
+        <!-- Gradients for Flames -->
+        <radialGradient id="leftFlameGlow" cx="68.25" cy="139" r="13" gradientUnits="userSpaceOnUse">
+            <stop offset="0.2" stop-color="#FFFF8D" stop-opacity="1"/>
+            <stop offset="0.8" stop-color="#FFFFEB" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="rightFlameGlow" cx="123.75" cy="139" r="13" gradientUnits="userSpaceOnUse">
+            <stop offset="0.2" stop-color="#FFFF8D" stop-opacity="1"/>
+            <stop offset="0.8" stop-color="#FFFFEB" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Gradients for Shadows -->
+        <linearGradient id="shadowGradient1" x1="95.5486" y1="109.0486" x2="120.0699" y2="128.5699" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000000" stop-opacity="0.4"/>
+            <stop offset="1" stop-color="#000000" stop-opacity="0.1"/>
+        </linearGradient>
+        <linearGradient id="shadowGradient2" x1="95.5486" y1="107.5486" x2="120.0699" y2="127.0699" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#000000" stop-opacity="0.4"/>
+            <stop offset="1" stop-color="#000000" stop-opacity="0.1"/>
+        </linearGradient>
+
+        <!-- Clip Paths -->
+        <clipPath id="clipBooster">
+            <path d="M 111.5,104 a 12.25,20 0 0,1 24.5,0 L 134,135 a 2,2 0 0,1 -2,2 h -16.5 a 2,2 0 0,1 -2,-2 L 111.5,104 Z"/>
+        </clipPath>
+        <clipPath id="clipCameraBody">
+            <path d="M70,95.14 A26,26 0 0,1 122,95.14 Z M70,96.14v31.85c0,3.31 2.69,6 6,6h40c3.31,0 6,-2.69 6,-6V96.14H70z"/>
+        </clipPath>
+    </defs>
+
+    <g transform="translate(-5.52, -13.58) scale(0.62, 0.62)">
+        <!-- Left Flame -->
+        <path d="M68.25,128 C 54.25,136, 58.25,148, 68.25,154 C 78.25,148, 74.25,136, 68.25,128 Z" fill="#FF9800"/>
+        <path d="M68.25,126 C 54.25,134, 58.25,146, 68.25,152 C 78.25,146, 74.25,134, 68.25,126 Z" fill="url(#leftFlameGlow)"/>
+        <!-- Right Flame -->
+        <path d="M123.75,128 C 117.75,136, 113.75,148, 123.75,154 C 133.75,148, 137.75,136, 123.75,128 Z" fill="#FF9800"/>
+        <path d="M123.75,126 C 117.75,134, 113.75,146, 123.75,152 C 133.75,146, 137.75,134, 123.75,126 Z" fill="url(#rightFlameGlow)"/>
+        <!-- Left Booster -->
+        <path d="M 80.5,104 a 12.25,20 0 0,0 -24.5,0 L 58,135 a 2,2 0 0,0 2,2 h 16.5 a 2,2 0 0,0 2,-2 L 80.5,104 Z" fill="#4285F4" stroke="#4285F4" stroke-width="4" stroke-linejoin="round"/>
+        <!-- Right Booster -->
+        <path d="M 111.5,104 a 12.25,20 0 0,1 24.5,0 L 134,135 a 2,2 0 0,1 -2,2 h -16.5 a 2,2 0 0,1 -2,-2 L 111.5,104 Z" fill="#4285F4" stroke="#4285F4" stroke-width="4" stroke-linejoin="round"/>
+        <!-- Left Booster Highlight -->
+        <g transform="translate(0, -1.0)">
+            <path d="M58,94.5 A12.25,20 0 0,1 70,84.2 L70,90.2 A9.25,20 0 0,0 58,100.5 Z" fill="#A8C5FF"/>
+        </g>
+        <!-- Right Booster Highlight -->
+        <g transform="translate(0, -1.0)">
+            <path d="M113.5,94.5 A12.25,20 0 0,1 125.5,84.2 L125.5,90.2 A9.25,20 0 0,0 113.5,100.5 Z" fill="#A8C5FF"/>
+        </g>
+        <!-- Left Booster Shadow -->
+        <path d="M 59,138 C 60,139, 76.5,139, 77.5,138 L 77.5,139 C 76.5,140, 60,140, 59,139 Z" fill="#2A56C6"/>
+        <!-- Right Booster Shadow -->
+        <path d="M 115,138 C 116,139, 132.5,139, 133.5,138 L 133.5,139 C 132.5,140, 116,140, 115,139 Z" fill="#2A56C6"/>
+        <!-- Lens Shadow on Booster -->
+        <g clip-path="url(#clipBooster)">
+            <g transform="scale(1.1, 1.1) translate(-9.6, -6.8)">
+                <path d="M136,117.5l-20.81,-19.99c-2.25,-2.18 -5.86,-2.1 -8.01,0.18l-22.61,23.97c-2.04,2.16 -2.05,5.52 -0.03,7.7L96,141.5c0,0 0,0 0,0h34l0,0c3.4,0 6,-2.76 6,-6.01" fill="url(#shadowGradient1)"/>
+            </g>
+        </g>
+        <!-- Camera Top -->
+        <path d="M70,95.14 A26,26 0 0,1 122,95.14 Z" fill="#3DDC84"/>
+        <!-- Head Highlight -->
+        <path d="M76,82 A22,22 0 0,1 116,82 L116,84 A24,24 0 0,0 76,84 Z" fill="#A1FFC2"/>
+        <!-- Left Antennae -->
+        <path d="M83,72.62 l-4.34,-7.52" stroke="#3DDC84" stroke-width="4.0" stroke-linecap="round"/>
+        <!-- Right Antennae -->
+        <path d="M109,72.62 l4.34,-7.52" stroke="#3DDC84" stroke-width="4.0" stroke-linecap="round"/>
+        <!-- Left Eye -->
+        <circle cx="83.26" cy="84.7" r="3.3" fill="#000000"/>
+        <!-- Right Eye -->
+        <circle cx="108.74" cy="84.7" r="3.3" fill="#000000"/>
+        <!-- Camera Bottom -->
+        <path d="M70,96.14v31.85c0,3.31 2.69,6 6,6h40c3.31,0 6,-2.69 6,-6V96.14H70z" fill="#3DDC84"/>
+        <!-- Camera Body Bottom Shadow -->
+        <path d="M116,132.99H76c-3.31,0 -6,-2.69 -6,-6v1c0,3.31 2.69,6 6,6h40c3.31,0 6,-2.69 6,-6v-1C122,130.3 119.31,132.99 116,132.99z" fill="#1E8E53"/>
+        <!-- Thick gap line -->
+        <line x1="70" y1="95.64" x2="122" y2="95.64" stroke="#000000" stroke-width="3.0"/>
+        <!-- Lens Shadow -->
+        <g clip-path="url(#clipCameraBody)">
+            <g transform="scale(1.1, 1.1) translate(-9.6, -6.8)">
+                <path d="M136,116l-20.81,-19.99c-2.25,-2.18 -5.86,-2.1 -8.01,0.18l-22.61,23.97c-2.04,2.16 -2.05,5.52 -0.03,7.7L96,140c0,0 0,0 0,0h34l0,0c3.4,0 6,-2.76 6,-6.01" fill="url(#shadowGradient2)"/>
+            </g>
+        </g>
+        <!-- Lens and Ring -->
+        <g transform="scale(1.1, 1.1) translate(-9.6, -6.8)">
+            <circle cx="96" cy="108" r="22" fill="#E9FFE8"/>
+            <path d="M76.95,119 A 22,22 0 0 0 115.05,119 A 23.5,23.5 0 0 1 76.95,119 Z" fill="#000000" fill-opacity="0.25"/>
+            <path d="M80.5,104 A 16,16 0 0 1 111.5,104 A 15.75,15.75 0 0 0 80.5,104 Z" fill="#000000" fill-opacity="0.25"/>
+            <circle cx="96" cy="108" r="16" fill="#000000"/>
+        </g>
+    </g>
+</svg>
