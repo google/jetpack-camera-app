@@ -49,6 +49,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
@@ -347,7 +348,7 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    isActive = true
+                    strength = LowLightBoostState.MINIMUM_STRENGTH
                 ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
@@ -414,7 +415,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    isActive = true
+                    strength = LowLightBoostState.MINIMUM_STRENGTH
                 ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,

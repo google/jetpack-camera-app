@@ -393,6 +393,11 @@ class PreviewViewModel @AssistedInject constructor(
         )
         applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
         applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
+        applyDiff(
+            new,
+            CameraAppSettings::lowLightBoostPriority,
+            cameraSystem::setLowLightBoostPriority
+        )
     }
 
     fun startCamera() {

@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.camera.effects
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    GOOGLE_LOW_LIGHT_BOOST
+import android.os.Build
+import com.google.android.gms.cameralowlight.LowLightBoostSession
+
+object LowLightBoostSessionContainer {
+    var lowLightBoostSession: LowLightBoostSession? = null
+
+    fun releaseSession() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            lowLightBoostSession?.release()
+            lowLightBoostSession = null
+        }
+    }
 }

@@ -16,16 +16,15 @@
 package com.google.jetpackcamera.model
 
 /**
- * Enum describing the state of Low Light Boost state.
+ * Class describing the amount of Low Light Boost being applied.
  */
-enum class LowLightBoostState {
+sealed class LowLightBoostState {
     /**
-     * Low Light Boost is turned on, and active
+     * Strength of brightening being applied by Low Light Boost.
      */
-    ACTIVE,
-
-    /**
-     * Low Light Boost is turned on, but inactive
-     */
-    INACTIVE
+    data class Strength(val value: Float) : LowLightBoostState()
+    companion object {
+        const val MINIMUM_STRENGTH = 0.0f
+        const val MAXIMUM_STRENGTH = 1.0f
+    }
 }

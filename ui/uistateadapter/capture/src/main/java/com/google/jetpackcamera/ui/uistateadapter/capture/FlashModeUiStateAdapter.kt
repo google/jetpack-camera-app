@@ -17,6 +17,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -39,9 +41,18 @@ fun FlashModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
-    val supportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
+    val supportedFlashModes = (systemConstraints.forCurrentLens(cameraAppSettings)
         ?.supportedFlashModes
-        ?: setOf(FlashMode.OFF)
+        ?: setOf(FlashMode.OFF)).toMutableSet()
+
+    if (cameraAppSettings.dynamicRange != DynamicRange.SDR) {
+        supportedFlashModes.remove(FlashMode.LOW_LIGHT_BOOST)
+    }
+
+    if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+        supportedFlashModes.remove(FlashMode.LOW_LIGHT_BOOST)
+    }
+
     // Ensure we at least support one flash mode
     check(supportedFlashModes.isNotEmpty()) {
         "No flash modes supported. Should at least support OFF."
@@ -63,7 +74,7 @@ fun FlashModeUiState.Companion.from(
         Available(
             selectedFlashMode = selectedFlashMode,
             availableFlashModes = availableModes,
-            isActive = false
+            strength = LowLightBoostState.MINIMUM_STRENGTH
         )
     }
 }
@@ -98,7 +109,7 @@ fun FlashModeUiState.updateFrom(
             } else {
                 if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     copy(
-                        isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
+                        strength = cameraState.lowLightBoostState.value
                     )
                 } else {
                     // Nothing has changed

@@ -15,9 +15,9 @@
  */
 package com.google.jetpackcamera.model
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    GOOGLE_LOW_LIGHT_BOOST
+enum class LowLightBoostAvailability {
+    NONE,
+    AE_MODE_ONLY,
+    GOOGLE_PLAY_SERVICES_ONLY,
+    AE_MODE_AND_GOOGLE_PLAY_SERVICES
 }

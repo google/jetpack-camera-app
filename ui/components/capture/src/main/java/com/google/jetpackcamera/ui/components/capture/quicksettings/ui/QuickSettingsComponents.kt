@@ -325,7 +325,7 @@ fun QuickSetFlash(
             QuickSettingToggleButton(
                 modifier = modifier,
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isActive
+                    flashModeUiState.strength > 0.5
                 ),
                 isHighLighted = flashModeUiState.selectedFlashMode != FlashMode.OFF,
                 onClick = {
@@ -654,7 +654,7 @@ fun FlashModeIndicator(
         is FlashModeUiState.Available ->
             TopBarSettingIndicator(
                 enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isActive
+                    flashModeUiState.strength > 0.5
                 ),
                 onClick = {
                     onClick(flashModeUiState.getNextFlashMode())

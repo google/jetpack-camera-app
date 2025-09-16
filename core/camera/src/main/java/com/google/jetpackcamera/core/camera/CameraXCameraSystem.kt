@@ -24,7 +24,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -53,6 +55,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.LowLightBoostAvailability
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -219,8 +223,18 @@ constructor(
                                 add(Illuminant.SCREEN)
                             }
 
-                            if (camInfo.isLowLightBoostSupported) {
-                                add(Illuminant.LOW_LIGHT_BOOST)
+                            val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
+                            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
+                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE))
+                            {
+                                add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+                            }
+                            if (llbAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || (
+                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES))
+                            {
+                                add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
                             }
                         }
 
@@ -237,7 +251,8 @@ constructor(
                                 add(FlashMode.AUTO)
                             }
 
-                            if (Illuminant.LOW_LIGHT_BOOST in supportedIlluminants) {
+                            if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
+                                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants) {
                                 add(FlashMode.LOW_LIGHT_BOOST)
                             }
                         }
@@ -305,6 +320,7 @@ constructor(
         }
     }
 
+    @OptIn(ExperimentalCamera2Interop::class)
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")
 
@@ -344,7 +360,8 @@ constructor(
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
                             videoQuality = currentCameraSettings.videoQuality,
-                            imageFormat = currentCameraSettings.imageFormat
+                            imageFormat = currentCameraSettings.imageFormat,
+                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
                         )
                     }
 
@@ -394,6 +411,7 @@ constructor(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
+                                    systemConstraints.forCurrentLens(currentSettings.value!!),
                                     onImageCaptureCreated = { imageCapture ->
                                         imageCaptureUseCase = imageCapture
                                     }
@@ -401,7 +419,8 @@ constructor(
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
-                                        sessionSettings
+                                        sessionSettings,
+                                        systemConstraints.forCurrentLens(currentSettings.value!!)
                                     )
                             }
                         } finally {
@@ -671,7 +690,7 @@ constructor(
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
-                val newDynamicRange = if (contains(dynamicRange)) {
+                val newDynamicRange = if (contains(dynamicRange) && flashMode != FlashMode.LOW_LIGHT_BOOST) {
                     dynamicRange
                 } else {
                     DynamicRange.SDR
@@ -748,7 +767,8 @@ constructor(
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
                     dynamicRange == DynamicRange.SDR &&
-                    streamConfig == StreamConfig.MULTI_STREAM
+                    streamConfig == StreamConfig.MULTI_STREAM &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
                 ) {
                     copy(
                         targetFrameRate = TARGET_FPS_AUTO
@@ -811,6 +831,8 @@ constructor(
     override fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
@@ -828,6 +850,12 @@ constructor(
         currentSettings.update { old ->
             old?.copy(videoQuality = videoQuality)
                 ?.tryApplyVideoQualityConstraints()
+        }
+    }
+
+    override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        currentSettings.update { old ->
+            old?.copy(lowLightBoostPriority = lowLightBoostPriority)
         }
     }
 
