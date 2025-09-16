@@ -19,13 +19,12 @@ import android.app.Activity
 import android.net.Uri
 import android.provider.MediaStore
 import android.view.KeyEvent
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -51,6 +50,7 @@ import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
+import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import org.junit.Rule
@@ -186,9 +186,7 @@ internal class ImageCaptureDeviceTest {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
 
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                    .assertExists()
-                    .performTouchInput { longClick(durationMillis = 3_000) }
+                composeTestRule.longClickForVideoRecording()
 
                 composeTestRule.ensureTagNotAppears(
                     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
@@ -310,12 +308,18 @@ internal class ImageCaptureDeviceTest {
     private fun clickCaptureAndWaitUntilMessageDisappears(msgTimeOut: Long, msgTag: String) {
         clickCapture()
         composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
-            composeTestRule.onNodeWithTag(msgTag).isDisplayed()
+            composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true).isDisplayed()
         }
-        composeTestRule.waitUntil(
-            timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
-        ) {
-            composeTestRule.onNodeWithTag(msgTag).isNotDisplayed()
+        val dismissButtonMatcher =
+            hasContentDescription(value = "dismiss", substring = true, ignoreCase = true)
+        composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
+            composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true).isDisplayed()
+        }
+        composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true)
+            .performClick()
+        composeTestRule.waitUntil(timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS) {
+            val node = composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true)
+            node.isNotDisplayed()
         }
     }
 
