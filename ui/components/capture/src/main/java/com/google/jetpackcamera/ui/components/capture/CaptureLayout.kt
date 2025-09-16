@@ -113,7 +113,7 @@ fun PreviewLayout(
                 { audioToggleButton(Modifier) },
                 { pauseToggleButton(Modifier) },
                 { imageWell(Modifier) },
-                { elapsedTimeDisplay(Modifier) },
+                { elapsedTimeDisplay(Modifier) }
             )
         )
     }

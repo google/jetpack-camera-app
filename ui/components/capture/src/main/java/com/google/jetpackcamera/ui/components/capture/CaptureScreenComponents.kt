@@ -240,7 +240,7 @@ fun CaptureModeToggleButton(
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     JcaSwitch(
-        modifier = modifier,
+        modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
         checked = toggleState,
         onCheckedChange = {
             val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
@@ -273,6 +273,20 @@ fun CaptureModeToggleButton(
             Icons.Filled.Videocam
         } else {
             Icons.Outlined.Videocam
+        },
+        leftIconDescription = if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
+        rightIconDescription = if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
         }
     )
 }

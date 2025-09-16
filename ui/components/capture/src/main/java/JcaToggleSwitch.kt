@@ -139,7 +139,7 @@ fun JcaSwitch(
     }
 
     val gestureModifier = if (enabled) {
-        modifier
+        Modifier
             .pointerInput(checked) { // Re-key gesture input when 'checked' changes
                 detectTapGestures(
                     onTap = {
@@ -163,7 +163,7 @@ fun JcaSwitch(
                 }
             )
     } else {
-        modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
+        Modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
             detectTapGestures(
                 onTap = {
                     onToggleWhenDisabled()
