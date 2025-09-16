@@ -160,19 +160,18 @@ class LowLightBoostSurfaceProcessor(
                 currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
                     Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
                     llbInputSurface.release()
+                    releaseLowLightBoostSession()
                     when (result.resultCode) {
                         SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
-                            Log.i(TAG, "CameraX is using LLB input surface.")
+                            Log.i(TAG, "CameraX used LLB input surface.")
                         }
 
                         SurfaceRequest.Result.RESULT_REQUEST_CANCELLED -> {
-                            // Should have been handled by addRequestCancellationListener
+                            Log.e(TAG, "SurfaceRequest cancelled: ${result.resultCode}")
                         }
 
                         else -> {
                             Log.e(TAG, "SurfaceRequest failed: ${result.resultCode}")
-                            // Potentially release LLB session if CameraX won't use the surface
-                            releaseLowLightBoostSession()
                         }
                     }
                 }
