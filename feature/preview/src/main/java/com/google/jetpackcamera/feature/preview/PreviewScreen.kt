@@ -59,7 +59,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.ui.components.capture.PreviewLayout
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -82,6 +81,7 @@ import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.ImageWell
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
+import com.google.jetpackcamera.ui.components.capture.PreviewLayout
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
@@ -127,17 +127,17 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel<PreviewViewModel, PreviewViewModel.Factory>
-    { factory -> factory.create(externalCaptureMode, debugSettings) }
+        { factory -> factory.create(externalCaptureMode, debugSettings) }
 ) {
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -184,9 +184,9 @@ fun PreviewScreen(
 
                 ZoomState(
                     initialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -203,9 +203,9 @@ fun PreviewScreen(
             ) {
                 zoomState.onChangeLens(
                     newInitialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -378,8 +378,8 @@ private fun ContentScreen(
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
                 (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
                     .selectedLensFacing.flip()
             )
         }
@@ -431,9 +431,9 @@ private fun ContentScreen(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 externalCaptureMode = captureUiState.externalCaptureMode,
                 isQuickSettingsOpen = (
-                        captureUiState.quickSettingsUiState as?
-                                QuickSettingsUiState.Available
-                        )?.quickSettingsIsOpen ?: false,
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
                 onCaptureImageWithUri = onCaptureImageWithUri,
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
@@ -471,9 +471,9 @@ private fun ContentScreen(
                 modifier = it,
                 toggleBottomSheet = onToggleQuickSettings,
                 isOpen = (
-                        captureUiState.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                        ).quickSettingsIsOpen
+                    captureUiState.quickSettingsUiState
+                        as QuickSettingsUiState.Available
+                    ).quickSettingsIsOpen
             )
         },
         audioToggleButton = {
@@ -487,7 +487,7 @@ private fun ContentScreen(
             if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeToggleUiState.Available,
+                        as CaptureModeToggleUiState.Available,
 
                     onChangeCaptureMode = onSetCaptureMode,
                     onToggleWhenDisabled = onDisabledCaptureMode,
@@ -555,9 +555,9 @@ private fun ContentScreen(
         },
         imageWell = { modifier ->
             if (!(
-                        captureUiState.quickSettingsUiState
-                                as QuickSettingsUiState.Available
-                        ).quickSettingsIsOpen &&
+                    captureUiState.quickSettingsUiState
+                        as QuickSettingsUiState.Available
+                    ).quickSettingsIsOpen &&
                 captureUiState.externalCaptureMode is ExternalCaptureMode.StandardMode
             ) {
                 ImageWell(

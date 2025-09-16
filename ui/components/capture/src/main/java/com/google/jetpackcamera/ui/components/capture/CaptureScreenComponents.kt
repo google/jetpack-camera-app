@@ -18,11 +18,11 @@ package com.google.jetpackcamera.ui.components.capture
 import JcaSwitch
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -34,19 +34,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,10 +62,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -90,19 +82,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
@@ -110,26 +96,25 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlin.time.Duration.Companion.nanoseconds
-import androidx.camera.core.DynamicRange as CXDynamicRange
-
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -234,7 +219,6 @@ fun AmplitudeToggleButton(
     }
 }
 
-
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
@@ -245,25 +229,37 @@ fun CaptureModeToggleButton(
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val toggleState = remember(uiState.selectedCaptureMode) {
         when (uiState.selectedCaptureMode) {
-            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false //left
-            CaptureMode.VIDEO_ONLY -> true //right
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false // left
+            CaptureMode.VIDEO_ONLY -> true // right
         }
     }
-
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-                uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+            uiState.isCaptureModeSelectable(
+                CaptureMode.IMAGE_ONLY
+            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     JcaSwitch(
+        modifier = modifier,
         checked = toggleState,
         onCheckedChange = {
             val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
             onChangeCaptureMode(newCaptureMode)
         },
-        modifier = modifier,
+        onToggleWhenDisabled = {
+            val disabledReason: DisableRationale? =
+                (
+                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                        SingleSelectableUiState.Disabled<CaptureMode>
+                    )?.disabledReason
+                    ?: (
+                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                            as? SingleSelectableUiState.Disabled<CaptureMode>
+                        )
+                        ?.disabledReason
+            disabledReason?.let { onToggleWhenDisabled(it) }
+        },
         enabled = enabled,
-        // trackColor = TODO(),
-        //  thumbColor = TODO(),
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
@@ -277,68 +273,8 @@ fun CaptureModeToggleButton(
             Icons.Filled.Videocam
         } else {
             Icons.Outlined.Videocam
-        },
-        //   offIconColor = TODO(),
-        //    onIconColor = TODO()
+        }
     )
-    /*
-    ToggleButton(
-        leftIcon = if (uiState.selectedCaptureMode ==
-            CaptureMode.IMAGE_ONLY
-        ) {
-            rememberVectorPainter(image = Icons.Filled.CameraAlt)
-        } else {
-            rememberVectorPainter(image = Icons.Outlined.CameraAlt)
-        },
-        rightIcon = if (uiState.selectedCaptureMode ==
-            CaptureMode.VIDEO_ONLY
-        ) {
-            rememberVectorPainter(image = Icons.Filled.Videocam)
-        } else {
-            rememberVectorPainter(image = Icons.Outlined.Videocam)
-        },
-        toggleState = toggleState,
-
-        onToggle = {
-            val newCaptureMode = when (toggleState) {
-                ToggleState.Right -> CaptureMode.IMAGE_ONLY
-                ToggleState.Left -> CaptureMode.VIDEO_ONLY
-            }
-            onChangeCaptureMode(newCaptureMode)
-        },
-        onToggleWhenDisabled = {
-            val disabledReason: DisableRationale? =
-                (
-                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                                SingleSelectableUiState.Disabled<CaptureMode>
-                        )?.disabledReason
-                    ?: (
-                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                                    as? SingleSelectableUiState.Disabled<CaptureMode>
-                            )
-                        ?.disabledReason
-            disabledReason?.let { onToggleWhenDisabled(it) }
-        },
-        // toggle only enabled when both capture modes are available
-        enabled = enabled,
-        leftIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_image_capture_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_image_capture_content_description_disabled
-                )
-            },
-        rightIconDescription =
-            if (enabled) {
-                stringResource(id = R.string.capture_mode_video_recording_content_description)
-            } else {
-                stringResource(
-                    id = R.string.capture_mode_video_recording_content_description_disabled
-                )
-            },
-        modifier = modifier
-    )*/
 }
 
 @Composable
@@ -399,7 +335,12 @@ fun DetectWindowColorModeChanges(
 
         LaunchedEffect(Unit) {
             val colorModeSnapshotFlow =
-                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
+                snapshotFlow {
+                    Pair(
+                        currentSurfaceRequest.dynamicRange,
+                        currentImplementationMode
+                    )
+                }
                     .map { (dynamicRange, implMode) ->
                         val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
                         val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
@@ -458,9 +399,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                    previewDisplayUiState.aspectRatioUiState as
-                            AspectRatioUiState.Available
-                    ).selectedAspectRatio
+                previewDisplayUiState.aspectRatioUiState as
+                    AspectRatioUiState.Available
+                ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -521,7 +462,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -536,7 +477,6 @@ fun PreviewDisplay(
         }
     }
 }
-
 
 @Composable
 fun CaptureButton(
@@ -601,7 +541,7 @@ fun CaptureButton(
                                 context.contentResolver,
                                 null,
                                 externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
-                                        ignoreUri
+                                    ignoreUri
                             ) { event: ImageCaptureEvent, i: Int ->
                                 externalCaptureMode.onImageCapture(
                                     getImageCaptureEventForExternalCaptureMode(event),
@@ -661,8 +601,8 @@ fun CaptureButton(
 }
 
 /**
- * Converts an internal [ImageCaptureEvent] to its corresponding [ExternalCaptureMode.ImageCaptureEvent]
- * representation.
+ * Converts an internal [ImageCaptureEvent] to its corresponding
+ * [ExternalCaptureMode.ImageCaptureEvent] representation.
  */
 private fun getImageCaptureEventForExternalCaptureMode(
     captureEvent: ImageCaptureEvent
@@ -702,10 +642,7 @@ private fun getVideoCaptureEventForExternalCaptureMode(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StabilizationIcon(
-    stabilizationUiState: StabilizationUiState,
-    modifier: Modifier = Modifier
-) {
+fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
     if (stabilizationUiState is StabilizationUiState.Enabled) {
         val contentColor = Color.White.let {
             if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
@@ -734,8 +671,9 @@ fun StabilizationIcon(
 
                                 else ->
                                     TODO(
-                                        "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                                "${stabilizationUiState.stabilizationMode}"
+                                        "Cannot retrieve icon for unimplemented " +
+                                            "stabilization mode:" +
+                                            "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -750,8 +688,8 @@ fun StabilizationIcon(
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                                "${stabilizationUiState.stabilizationMode}, " +
-                                                "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                     )
                             }
                         }
@@ -761,7 +699,9 @@ fun StabilizationIcon(
                             stringResource(R.string.stabilization_icon_description_auto)
 
                         StabilizationMode.ON ->
-                            stringResource(R.string.stabilization_icon_description_preview_and_video)
+                            stringResource(
+                                R.string.stabilization_icon_description_preview_and_video
+                            )
 
                         StabilizationMode.HIGH_QUALITY ->
                             stringResource(R.string.stabilization_icon_description_video_only)
@@ -770,7 +710,7 @@ fun StabilizationIcon(
                             stringResource(R.string.stabilization_icon_description_optical)
 
                         else -> null
-                    },
+                    }
                 )
             }
         }
@@ -817,7 +757,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                         stringResource(R.string.video_quality_description_uhd)
 
                     else -> null
-                },
+                }
             )
         }
     }

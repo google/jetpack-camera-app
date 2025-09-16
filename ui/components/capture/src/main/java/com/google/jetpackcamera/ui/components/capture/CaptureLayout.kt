@@ -117,7 +117,6 @@ fun PreviewLayout(
     }
 }
 
-
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
@@ -181,16 +180,16 @@ private fun VerticalMaterialControls(
                         .fillMaxWidth()
                         .height(IntrinsicSize.Max)
                         .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Row that holds toggle buttons for quick settings and capture mode
-                        // quick settings toggle switch item to the left
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            quickSettingsToggleButton(Modifier)
-                        }
+                    // quick settings toggle switch item to the left
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        quickSettingsToggleButton(Modifier)
+                    }
 
                     // capture mode toggle switch center
                     Box(
@@ -206,7 +205,6 @@ private fun VerticalMaterialControls(
                         contentAlignment = Alignment.CenterEnd
                     ) {}
                 }
-
             }
         }
         bottomSheetQuickSettings(Modifier)

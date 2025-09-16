@@ -174,7 +174,7 @@ fun QuickSetRatio(
             enum = enum,
             onClick = { onClick() },
             isHighLighted = isHighlightEnabled &&
-                    (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+                (assignedRatio == aspectRatioUiState.selectedAspectRatio)
         )
     }
 }
@@ -217,7 +217,7 @@ fun FocusedQuickSetCaptureMode(
                         captureModeUiState = captureModeUiState,
                         isHighlightEnabled = true
                     )
-                },
+                }
             )
         } else {
             emptyArray()
@@ -263,7 +263,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -325,9 +325,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -359,12 +359,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-                hdrUiState is HdrUiState.Available &&
-                        (
-                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                                )
-                ),
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -499,7 +499,7 @@ fun QuickSetConcurrentCamera(
                 }
             },
             isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                    ConcurrentCameraMode.DUAL,
+                ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -673,7 +673,7 @@ fun focusedCaptureModeButtons(
             captureModeUiState = captureModeUiState,
             isHighlightEnabled = true
         )
-    },
+    }
 )
 
 @Composable
@@ -789,25 +789,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -831,25 +831,25 @@ fun QuickSettingsGrid(
         min(
             quickSettingsButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
 
     LazyVerticalGrid(
@@ -862,16 +862,15 @@ fun QuickSettingsGrid(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -885,10 +884,7 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FlashModeIndicator(
-    flashModeUiState: FlashModeUiState,
-    modifier: Modifier = Modifier
-) {
+fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
@@ -936,7 +932,6 @@ fun TopBarQuickSettingIcon(
         )
     }
 }
-
 
 private fun <T> List<SingleSelectableUiState<T>>.getNextSelectableItem(selectedItem: T): T {
     // Filter out only the selectable modes to cycle through them.

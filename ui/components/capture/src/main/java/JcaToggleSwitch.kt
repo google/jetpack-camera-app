@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -114,7 +113,7 @@ fun JcaSwitch(
     val initialThumbX = dims.startX + dims.dragRange * animatedPosition
 
     // --- 3. Color Animations ---
-    //color changes if togglemode is off (to indicate on/off state)
+    // color changes if togglemode is off (to indicate on/off state)
     val trackAnimatedColor by animateColorAsState(
         targetValue = trackColor,
         animationSpec = tween(durationMillis = 300),
@@ -204,7 +203,7 @@ fun JcaSwitch(
         )
 
         // 3. Draw the Clipped Icons
-        if (offIconPainter != null || onIconPainter != null)
+        if (offIconPainter != null || onIconPainter != null) {
             drawClippedSwitchIcons(
                 thumbRect = thumbRect,
                 iconSizePx = dims.iconSizePx,
@@ -214,6 +213,7 @@ fun JcaSwitch(
                 offIconColor = if (enabled) unSelectedIconColor else disableColor.copy(.38f),
                 onIconColor = if (enabled) selectedIconColor else disableColor.copy(alpha = .38f)
             )
+        }
     }
 }
 
@@ -271,10 +271,7 @@ private fun rememberSwitchDimensions(
 /**
  * Draws the switch track (the background).
  */
-private fun DrawScope.drawSwitchTrack(
-    color: Color,
-    cornerRadius: CornerRadius
-) {
+private fun DrawScope.drawSwitchTrack(color: Color, cornerRadius: CornerRadius) {
     drawRoundRect(
         color = color,
         topLeft = Offset.Zero,
@@ -293,7 +290,7 @@ private fun DrawScope.drawClippedSwitchIcons(
     leftIconPainter: Painter?,
     rightIconPainter: Painter?,
     offIconColor: Color,
-    onIconColor: Color,
+    onIconColor: Color
 ) {
     val iconY = iconPadding
     val iconDrawSize = Size(iconSizePx, iconSizePx)
@@ -335,7 +332,6 @@ private fun DrawScope.drawClippedSwitchIcons(
                         //  topLeft = Offset(offIconX, iconY),
                         colorFilter = ColorFilter.tint(offIconColor)
                     )
-
                 }
             }
         }
@@ -384,18 +380,13 @@ private fun DrawScope.drawClippedSwitchIcons(
 /**
  * Draws the thumb (the circular handle).
  */
-private fun DrawScope.drawSwitchThumb(
-    center: Offset,
-    radius: Float,
-    color: Color
-) {
+private fun DrawScope.drawSwitchThumb(center: Offset, radius: Float, color: Color) {
     drawCircle(
         color = color,
         radius = radius,
         center = center
     )
 }
-
 
 @Preview(name = "Disabled On", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -425,7 +416,6 @@ private fun Capture_ToggleSwitch_Off_Disabled() {
     }
 }
 
-
 @Preview(name = "on", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Enabled() {
@@ -439,7 +429,6 @@ private fun Capture_ToggleSwitch_On_Enabled() {
         )
     }
 }
-
 
 @Preview(name = "off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -455,7 +444,6 @@ private fun Capture_ToggleSwitch_Off_Enabled() {
     }
 }
 
-
 @Preview(name = "switch off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_Switch_Off_Enabled() {
@@ -465,9 +453,7 @@ private fun Capture_Switch_Off_Enabled() {
             rightIcon = Icons.Outlined.Videocam,
             checked = false,
             onCheckedChange = {},
-            enabled = true,
+            enabled = true
         )
     }
 }
-
-
