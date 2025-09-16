@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -24,8 +25,10 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,6 +50,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -59,36 +64,38 @@ import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
  * @param checked Whether the switch is currently checked (on).
  * @param onCheckedChange Lambda called when the switch state changes.
  * @param modifier Modifier for this component.
- * @param toggleMode whether to treat the appearance like on/off or simple toggle
  * @param enabled Whether the switch is interactive.
  * @param trackColor The color of the track when unchecked.
  * @param thumbColor The color of the thumb and the checked track.
  * @param leftIcon The [ImageVector] (e.g., Google Symbol) for the 'off' state.
  * @param rightIcon The [ImageVector] (e.g., Google Symbol) for the 'on' state.
- * @param offIconColor The tint color for the 'off' icon.
- * @param onIconColor The tint color for the 'on' icon.
+ * @param unSelectedIconColor The tint color for the 'off' icon.
+ * @param selectedIconColor The tint color for the 'on' icon.
  */
 @Composable
 fun JcaSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    toggleMode: Boolean = true,
+    onToggleWhenDisabled: () -> Unit = {},
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    trackColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     thumbColor: Color = MaterialTheme.colorScheme.primary,
+    disableColor: Color = MaterialTheme.colorScheme.onSurface,
     leftIcon: ImageVector? = null,
     rightIcon: ImageVector? = null,
-    offIconColor: Color = Color.White.copy(alpha = 0.8f), // Color for the 'Off' icon
-    onIconColor: Color = Color.Black.copy(alpha = 0.8f),  // Color for the 'On' icon
+    leftIconDescription: String = "leftIcon",
+    rightIconDescription: String = "rightIcon",
+    unSelectedIconColor: Color = MaterialTheme.colorScheme.primary,
+    selectedIconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
     // --- 1. Dimensions ---
     // Encapsulate all Dp and Px calculations
     val dims = rememberSwitchDimensions(
-        switchWidth = 60.dp,
-        switchHeight = 32.dp,
-        thumbDiameter = 24.dp,
-        iconSize = 16.dp
+        switchWidth = 116.dp,
+        switchHeight = 64.dp,
+        thumbDiameter = 40.dp,
+        iconSize = 24.dp
     )
     val thumbY = dims.switchHeightPx / 2
     val trackCornerRadius = CornerRadius(dims.switchHeightPx / 2, dims.switchHeightPx / 2)
@@ -109,12 +116,12 @@ fun JcaSwitch(
     // --- 3. Color Animations ---
     //color changes if togglemode is off (to indicate on/off state)
     val trackAnimatedColor by animateColorAsState(
-        targetValue = if (checked || toggleMode) thumbColor.copy(alpha = 0.5f) else trackColor.copy(alpha = 0.38f),
+        targetValue = trackColor,
         animationSpec = tween(durationMillis = 300),
         label = "trackColor"
     )
     val thumbAnimatedColor by animateColorAsState(
-        targetValue = if (checked || toggleMode) thumbColor else trackColor,
+        targetValue = if (!enabled) disableColor.copy(alpha = 0.12f) else thumbColor,
         animationSpec = tween(durationMillis = 300),
         label = "thumbColor"
     )
@@ -157,7 +164,15 @@ fun JcaSwitch(
                 }
             )
     } else {
-        modifier
+        modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
+            detectTapGestures(
+                onTap = {
+                    onToggleWhenDisabled()
+                }
+            )
+        }
+    }.semantics {
+        stateDescription = if (checked) rightIconDescription else leftIconDescription
     }
 
     // --- 6. Canvas Drawing ---
@@ -185,28 +200,20 @@ fun JcaSwitch(
         drawSwitchThumb(
             center = Offset(initialThumbX, thumbY),
             radius = dims.thumbRadiusPx,
-            color = thumbAnimatedColor.copy(alpha = .5f)
+            color = thumbAnimatedColor
         )
 
         // 3. Draw the Clipped Icons
         if (offIconPainter != null || onIconPainter != null)
-        drawClippedSwitchIcons(
-            thumbRect = thumbRect,
-            iconSizePx = dims.iconSizePx,
-            iconPadding = iconPadding,
-            leftIconPainter = offIconPainter,
-            rightIconPainter = onIconPainter,
-            offIconColor = offIconColor,
-            onIconColor = onIconColor
-        )
-
-        // 5. Draw Disabled state overlay
-        if (!enabled) {
-            drawDisabledOverlay(
-                color = Color.Black.copy(alpha = 0.12f),
-                cornerRadius = trackCornerRadius
+            drawClippedSwitchIcons(
+                thumbRect = thumbRect,
+                iconSizePx = dims.iconSizePx,
+                iconPadding = iconPadding,
+                leftIconPainter = offIconPainter,
+                rightIconPainter = onIconPainter,
+                offIconColor = if (enabled) unSelectedIconColor else disableColor.copy(.38f),
+                onIconColor = if (enabled) selectedIconColor else disableColor.copy(alpha = .38f)
             )
-        }
     }
 }
 
@@ -276,56 +283,6 @@ private fun DrawScope.drawSwitchTrack(
     )
 }
 
-
-/**
- * Draws the 'Off' and 'On' icons, clipping them based on the thumb's position.
- */
-private fun DrawScope.drawSwitchIcons(
-    iconSizePx: Float,
-    iconPadding: Float,
-    leftIconPainter: Painter?,
-    rightIconPainter: Painter?,
-    leftIconColor: Color,
-    rightIconColor: Color,
-) {
-    val iconY = iconPadding
-    val iconDrawSize = Size(iconSizePx, iconSizePx)
-
-    // --- Draw the OFF Icon (Left Side) ---
-    if(leftIconPainter != null) {
-        val offIconX = iconPadding
-
-        translate(
-            left = offIconX,
-            top = iconY
-        ) {
-            with(leftIconPainter) {
-                draw(
-                    size = iconDrawSize,
-                    colorFilter = ColorFilter.tint(leftIconColor)
-                )
-            }
-        }
-
-    }
-    // --- Draw the ON Icon (Right Side) ---
-    if(rightIconPainter != null) {
-        val onIconX = size.width - iconPadding - iconSizePx
-
-        translate(
-            left = onIconX,
-            top = iconY
-        ) {
-            with(rightIconPainter) {
-                draw(
-                    size = iconDrawSize,
-                    colorFilter = ColorFilter.tint(rightIconColor)
-                )
-            }
-        }
-    }
-}
-
 /**
  * Draws the 'Off' and 'On' icons, clipping them based on the thumb's position.
  */
@@ -342,7 +299,7 @@ private fun DrawScope.drawClippedSwitchIcons(
     val iconDrawSize = Size(iconSizePx, iconSizePx)
 
     // --- Draw the OFF Icon (Left Side) ---
-    if(leftIconPainter != null) {
+    if (leftIconPainter != null) {
         val offIconX = iconPadding
         val offIconRect = Rect(offIconX, iconY, offIconX + iconSizePx, iconY + iconSizePx)
 
@@ -384,7 +341,7 @@ private fun DrawScope.drawClippedSwitchIcons(
         }
     }
     // --- Draw the ON Icon (Right Side) ---
-    if(rightIconPainter != null) {
+    if (rightIconPainter != null) {
         val onIconX = size.width - iconPadding - iconSizePx
         val onIconRect = Rect(onIconX, iconY, onIconX + iconSizePx, iconY + iconSizePx)
 
@@ -439,22 +396,8 @@ private fun DrawScope.drawSwitchThumb(
     )
 }
 
-/**
- * Draws the semi-transparent overlay when the switch is disabled.
- */
-private fun DrawScope.drawDisabledOverlay(
-    color: Color,
-    cornerRadius: CornerRadius
-) {
-    drawRoundRect(
-        color = color,
-        topLeft = Offset.Zero,
-        size = size,
-        cornerRadius = cornerRadius
-    )
-}
 
-@Preview
+@Preview(name = "Disabled On", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Disabled() {
     PreviewPreviewTheme(dynamicColor = false) {
@@ -468,22 +411,22 @@ private fun Capture_ToggleSwitch_On_Disabled() {
     }
 }
 
-@Preview
+@Preview(name = "Disabled off ", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Disabled() {
     PreviewPreviewTheme(dynamicColor = false) {
         JcaSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
+            leftIcon = Icons.Filled.CameraAlt,
+            rightIcon = Icons.Outlined.Videocam,
             checked = false,
             onCheckedChange = {},
-            enabled = true
+            enabled = false
         )
     }
 }
 
 
-@Preview
+@Preview(name = "on", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Enabled() {
     PreviewPreviewTheme(dynamicColor = false) {
@@ -498,16 +441,31 @@ private fun Capture_ToggleSwitch_On_Enabled() {
 }
 
 
-@Preview
+@Preview(name = "off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Enabled() {
     PreviewPreviewTheme(dynamicColor = false) {
         JcaSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
+            leftIcon = Icons.Filled.CameraAlt,
+            rightIcon = Icons.Outlined.Videocam,
             checked = false,
             onCheckedChange = {},
             enabled = true
+        )
+    }
+}
+
+
+@Preview(name = "switch off", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun Capture_Switch_Off_Enabled() {
+    PreviewPreviewTheme(dynamicColor = false) {
+        JcaSwitch(
+            leftIcon = Icons.Filled.CameraAlt,
+            rightIcon = Icons.Outlined.Videocam,
+            checked = false,
+            onCheckedChange = {},
+            enabled = true,
         )
     }
 }

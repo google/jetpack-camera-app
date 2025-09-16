@@ -179,8 +179,8 @@ private fun VerticalMaterialControls(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Max),
-                        //.padding(vertical = 20.dp),
+                        .height(IntrinsicSize.Max)
+                        .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Row that holds toggle buttons for quick settings and capture mode

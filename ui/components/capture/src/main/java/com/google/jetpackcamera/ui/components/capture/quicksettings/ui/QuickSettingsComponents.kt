@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,7 +38,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -50,7 +48,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -73,7 +70,6 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -661,9 +657,9 @@ fun focusedCaptureModeButtons(
     {
         QuickSetCaptureMode(
             modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-            onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-            assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+            onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+            assignedCaptureMode = CaptureMode.IMAGE_ONLY,
             captureModeUiState = captureModeUiState,
             isHighlightEnabled = true
         )
@@ -671,13 +667,13 @@ fun focusedCaptureModeButtons(
     {
         QuickSetCaptureMode(
             modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-            onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-            assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+            onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+            assignedCaptureMode = CaptureMode.VIDEO_ONLY,
             captureModeUiState = captureModeUiState,
             isHighlightEnabled = true
         )
-    }
+    },
 )
 
 @Composable
