@@ -119,7 +119,6 @@ private fun JetpackCameraNavHost(
             },
             onCaptureEvent = onCaptureEvent
         )
-
         composable(
             route = SETTINGS_ROUTE,
             enterTransition = {

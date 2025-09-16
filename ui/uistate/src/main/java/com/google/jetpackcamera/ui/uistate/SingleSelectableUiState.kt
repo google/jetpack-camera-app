@@ -27,11 +27,13 @@ import android.content.Context
  * @param T The type of the value that can be selected or is disabled.
  */
 sealed interface SingleSelectableUiState<T> {
+    val value: T
+
     /**
      * Represents an item that is currently available for selection.
      * @property value The underlying value of the selectable item.
      */
-    data class SelectableUi<T>(val value: T) : SingleSelectableUiState<T>
+    data class SelectableUi<T>(override val value: T) : SingleSelectableUiState<T>
 
     /**
      * Represents an item that is currently disabled and cannot be selected.
@@ -39,7 +41,7 @@ sealed interface SingleSelectableUiState<T> {
      * @property value The underlying value of the item, even though it's disabled.
      * @property disabledReason The rationale explaining why this item is disabled.
      */
-    data class Disabled<T>(val value: T, val disabledReason: DisableRationale) :
+    data class Disabled<T>(override val value: T, val disabledReason: DisableRationale) :
         SingleSelectableUiState<T>
 }
 
