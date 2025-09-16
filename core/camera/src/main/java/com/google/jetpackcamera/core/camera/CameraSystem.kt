@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -106,6 +107,8 @@ interface CameraSystem {
     suspend fun setVideoQuality(videoQuality: VideoQuality)
 
     suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
+
+    fun getLowLightBoostEvents(): MutableSharedFlow<LowLightBoostEvent>
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 

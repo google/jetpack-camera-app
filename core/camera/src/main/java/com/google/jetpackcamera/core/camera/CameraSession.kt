@@ -210,7 +210,13 @@ internal suspend fun runSingleCameraSession(
                         lowLightBoostClient,
                         LowLightBoostSessionContainer,
                         this@coroutineScope,
-                        sceneDetectorCallback
+                        sceneDetectorCallback,
+                        {
+                            launch {
+                                Log.d(TAG, "Emitting LLB ErrorEvent")
+                                lowLightBoostEvents.emit(LowLightBoostEvent.ErrorEvent)
+                            }
+                        }
                     )
                 }
             } else {

@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.LowLightBoostEvent
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
@@ -40,6 +41,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,6 +65,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
+    private val lowLightBoostEvents = MutableSharedFlow<LowLightBoostEvent>()
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
@@ -167,6 +170,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
+    override fun getLowLightBoostEvents() = lowLightBoostEvents
     override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
 
     override fun setFlashMode(flashMode: FlashMode) {

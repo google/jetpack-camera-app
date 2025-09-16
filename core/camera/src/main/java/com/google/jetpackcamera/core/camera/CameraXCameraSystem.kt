@@ -24,7 +24,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
@@ -78,8 +77,10 @@ import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,6 +89,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
@@ -121,6 +123,7 @@ constructor(
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
+    private val lowLightBoostEvents = MutableSharedFlow<LowLightBoostEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -150,6 +153,12 @@ constructor(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
+
+        val scope = CoroutineScope(defaultDispatcher)
+        scope.launch {
+            processLowLightBoostEvents()
+        }
+
 
         // Build and update the system constraints
         systemConstraints = CameraSystemConstraints(
@@ -402,6 +411,7 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
+                            lowLightBoostEvents = lowLightBoostEvents,
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
@@ -859,6 +869,8 @@ constructor(
         }
     }
 
+    override fun getLowLightBoostEvents() = lowLightBoostEvents
+
     override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
             old?.copy(streamConfig = streamConfig)
@@ -930,6 +942,17 @@ constructor(
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
+        }
+    }
+
+    private suspend fun processLowLightBoostEvents() {
+        getLowLightBoostEvents().collect { event ->
+            when (event) {
+                is LowLightBoostEvent.ErrorEvent -> {
+                    currentSettings.update { old -> old?.copy(flashMode = FlashMode.OFF) }
+
+                }
+            }
         }
     }
 

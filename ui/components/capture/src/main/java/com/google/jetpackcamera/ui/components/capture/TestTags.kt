@@ -26,6 +26,8 @@ const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
 const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
 const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
 const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
+const val LOW_LIGHT_BOOST_FAILURE_TAG = "LowLightBoostFailureTag"
+
 
 const val IMAGE_WELL_TAG = "ImageWellTag"
 

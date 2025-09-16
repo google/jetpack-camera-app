@@ -21,6 +21,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -37,6 +38,7 @@ internal data class CameraSessionContext(
     val screenFlashEvents: SendChannel<CameraSystem.ScreenFlashEvent>,
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,
     val videoCaptureControlEvents: Channel<VideoCaptureControlEvent>,
+    val lowLightBoostEvents: MutableSharedFlow<LowLightBoostEvent>,
     val currentCameraState: MutableStateFlow<CameraState>,
     val surfaceRequests: MutableStateFlow<SurfaceRequest?>,
     val transientSettings: StateFlow<TransientSessionSettings?>

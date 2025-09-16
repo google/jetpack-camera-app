@@ -55,6 +55,7 @@ class LowLightBoostSurfaceProcessor(
     private val sessionContainer: LowLightBoostSessionContainer,
     private val coroutineScope: CoroutineScope,
     private val sceneDetectorCallback: SceneDetectorCallback?,
+    private val onLowLightBoostErrorCallback: () -> Unit = {}
     ) : SurfaceProcessor {
 
     private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
@@ -184,6 +185,8 @@ class LowLightBoostSurfaceProcessor(
                     else ->
                         Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
                 }
+
+                onLowLightBoostErrorCallback()
 
                 // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
                 currentInputRequest.willNotProvideSurface()

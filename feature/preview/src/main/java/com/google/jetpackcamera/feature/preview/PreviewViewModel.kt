@@ -26,6 +26,8 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import com.google.jetpackcamera.core.camera.LowLightBoostEvent
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -51,6 +53,7 @@ import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNS
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
+import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -94,12 +97,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -175,6 +180,26 @@ class PreviewViewModel @AssistedInject constructor(
                         oldCameraAppSettings = new
                     }
             }
+
+            launch {
+                cameraSystem.getLowLightBoostEvents().collectLatest { event ->
+                    when (event) {
+                        is LowLightBoostEvent.ErrorEvent -> {
+                            val cookieInt = snackBarCount.incrementAndGet()
+                            Log.d(TAG, "LowLightBoostEvent.ErrorEvent #$cookieInt")
+                            addSnackBarData(
+                                SnackbarData(
+                                    cookie = "LowLightBoost-$cookieInt",
+                                    stringResource = R.string.low_light_boost_error_toast_message,
+                                    withDismissAction = true,
+                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             combine(
                 cameraSystem.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
@@ -183,6 +208,7 @@ class PreviewViewModel @AssistedInject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
+
                 val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
                     cameraAppSettings,
