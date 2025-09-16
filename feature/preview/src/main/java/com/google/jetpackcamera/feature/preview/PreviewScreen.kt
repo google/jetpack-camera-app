@@ -22,6 +22,10 @@ import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -76,6 +80,8 @@ import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
+import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
@@ -460,6 +466,21 @@ private fun ContentScreen(
                     onChangeZoom = { targetZoom ->
                         onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
                     }
+                )
+            }
+        },
+        elapsedTimeDisplay = {
+            AnimatedVisibility(
+                visible = (
+                    captureUiState.videoRecordingState is
+                        VideoRecordingState.Active
+                    ),
+                enter = fadeIn(),
+                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+            ) {
+                ElapsedTimeText(
+                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                    elapsedTimeUiState = captureUiState.elapsedTimeUiState
                 )
             }
         },

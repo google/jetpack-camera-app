@@ -48,6 +48,7 @@ fun PreviewLayout(
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
     zoomLevelDisplay: @Composable (modifier: Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (modifier: Modifier) -> Unit,
     quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
     flashModeIndicator: @Composable (modifier: Modifier) -> Unit,
     hdrIndicator: @Composable (modifier: Modifier) -> Unit,
@@ -111,7 +112,8 @@ fun PreviewLayout(
             arrayOf(
                 { audioToggleButton(Modifier) },
                 { pauseToggleButton(Modifier) },
-                { imageWell(Modifier) }
+                { imageWell(Modifier) },
+                { elapsedTimeDisplay(Modifier) },
             )
         )
     }

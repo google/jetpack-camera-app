@@ -118,13 +118,15 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState.Enabled) {
-    Text(
-        modifier = modifier,
-        text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
-            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-        textAlign = TextAlign.Center
-    )
+fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
+    if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+        Text(
+            modifier = modifier,
+            text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
