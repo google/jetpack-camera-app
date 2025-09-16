@@ -175,14 +175,16 @@ class LowLightBoostSurfaceProcessor(
                         }
                     }
                 }
-            } catch (ae: ApiException) {
-                Log.e(TAG, "Google Play Services module for Low Light Boost is not available " +
-                        "on this device. This might be due to the version of Google Play being too old.", ae)
-                // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
-                currentInputRequest.willNotProvideSurface()
-                releaseLowLightBoostSession()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
+                when (e) {
+                    is ApiException ->
+                        Log.e(TAG, "Google Play Services module for Low Light Boost is not " +
+                                "available on this device. This might be due to the version of " +
+                                "Google Play Services being too old.", e)
+                    else ->
+                        Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
+                }
+
                 // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
                 currentInputRequest.willNotProvideSurface()
                 releaseLowLightBoostSession()
