@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.components.capture
 import JcaSwitch
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
@@ -93,7 +92,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -483,20 +481,10 @@ fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
-    externalCaptureMode: ExternalCaptureMode,
     onToggleQuickSettings: () -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
-    onCaptureImageWithUri: (
-        ContentResolver,
-        Uri?,
-        Boolean,
-        (ImageCaptureEvent, Int) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: (
-        Uri?,
-        Boolean,
-        (VideoCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    onCaptureImage: (ContentResolver) -> Unit = {},
+    onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
@@ -509,55 +497,7 @@ fun CaptureButton(
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
                 multipleEventsCutter.processEvent {
-                    when (externalCaptureMode) {
-                        is ExternalCaptureMode.StandardMode -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                true
-                            ) { event: ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event)
-                                )
-                            }
-                        }
-
-                        is ExternalCaptureMode.ExternalImageCaptureMode -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                externalCaptureMode.imageCaptureUri,
-                                false
-                            ) { event: ImageCaptureEvent, _: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event)
-                                )
-                            }
-                        }
-
-                        is ExternalCaptureMode.ExternalMultipleImageCaptureMode -> {
-                            val ignoreUri =
-                                externalCaptureMode.imageCaptureUris.isNullOrEmpty()
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                externalCaptureMode.imageCaptureUris.isNullOrEmpty() ||
-                                    ignoreUri
-                            ) { event: ImageCaptureEvent, i: Int ->
-                                externalCaptureMode.onImageCapture(
-                                    getImageCaptureEventForExternalCaptureMode(event),
-                                    i
-                                )
-                            }
-                        }
-
-                        else -> {
-                            onCaptureImageWithUri(
-                                context.contentResolver,
-                                null,
-                                false
-                            ) { _: ImageCaptureEvent, _: Int -> }
-                        }
-                    }
+                    onCaptureImage(context.contentResolver)
                 }
             }
             if (isQuickSettingsOpen) {
@@ -566,30 +506,7 @@ fun CaptureButton(
         },
         onStartRecording = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                when (externalCaptureMode) {
-                    is ExternalCaptureMode.StandardMode -> {
-                        onStartVideoRecording(null, false) {}
-                    }
-
-                    is ExternalCaptureMode.ExternalVideoCaptureMode -> {
-                        onStartVideoRecording(
-                            externalCaptureMode.videoCaptureUri,
-                            true
-
-                        ) { event: VideoCaptureEvent ->
-                            externalCaptureMode.onVideoCapture(
-                                getVideoCaptureEventForExternalCaptureMode(event)
-                            )
-                        }
-                    }
-
-                    else -> {
-                        onStartVideoRecording(null, false) {}
-                    }
-                }
-                if (isQuickSettingsOpen) {
-                    onToggleQuickSettings()
-                }
+                onStartVideoRecording()
             }
         },
         onStopRecording = {
@@ -598,46 +515,6 @@ fun CaptureButton(
         captureButtonUiState = captureButtonUiState,
         onLockVideoRecording = onLockVideoRecording
     )
-}
-
-/**
- * Converts an internal [ImageCaptureEvent] to its corresponding
- * [ExternalCaptureMode.ImageCaptureEvent] representation.
- */
-private fun getImageCaptureEventForExternalCaptureMode(
-    captureEvent: ImageCaptureEvent
-): ExternalCaptureMode.ImageCaptureEvent {
-    return when (captureEvent) {
-        is ImageCaptureEvent.ImageSaved ->
-            ExternalCaptureMode.ImageCaptureEvent.ImageSaved(
-                captureEvent.savedUri
-            )
-
-        is ImageCaptureEvent.ImageCaptureError ->
-            ExternalCaptureMode.ImageCaptureEvent.ImageCaptureError(
-                captureEvent.exception
-            )
-    }
-}
-
-/**
- * Converts an internal [VideoCaptureEvent] to its corresponding [ExternalCaptureMode.VideoCaptureEvent]
- * representation.
- */
-private fun getVideoCaptureEventForExternalCaptureMode(
-    captureEvent: VideoCaptureEvent
-): ExternalCaptureMode.VideoCaptureEvent {
-    return when (captureEvent) {
-        is VideoCaptureEvent.VideoSaved ->
-            ExternalCaptureMode.VideoCaptureEvent.VideoSaved(
-                captureEvent.savedUri
-            )
-
-        is VideoCaptureEvent.VideoCaptureError ->
-            ExternalCaptureMode.VideoCaptureEvent.VideoCaptureError(
-                captureEvent.error
-            )
-    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

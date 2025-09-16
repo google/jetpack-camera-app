@@ -18,7 +18,6 @@ package com.google.jetpackcamera.feature.preview
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentResolver
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.util.Range
@@ -40,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -60,6 +60,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DebugSettings
@@ -77,7 +78,6 @@ import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
-import com.google.jetpackcamera.ui.components.capture.ImageCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.ImageWell
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
@@ -87,7 +87,6 @@ import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
-import com.google.jetpackcamera.ui.components.capture.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomState
@@ -122,6 +121,7 @@ fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     externalCaptureMode: ExternalCaptureMode,
+    onCaptureEvent: (CaptureEvent) -> Unit,
     debugSettings: DebugSettings,
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
@@ -143,6 +143,13 @@ fun PreviewScreen(
         viewModel.startCamera()
         onStopOrDispose {
             viewModel.stopCamera()
+        }
+    }
+
+    val currentOnCaptureEvent by rememberUpdatedState(onCaptureEvent)
+    LaunchedEffect(Unit) {
+        for (event in viewModel.captureEvents) {
+            currentOnCaptureEvent(event)
         }
     }
 
@@ -305,7 +312,7 @@ fun PreviewScreen(
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
                 onSetAudioEnabled = viewModel::setAudioEnabled,
-                onCaptureImageWithUri = viewModel::captureImageWithUri,
+                onCaptureImage = viewModel::captureImage,
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onLockVideoRecording = viewModel::setLockedRecording,
@@ -357,17 +364,8 @@ private fun ContentScreen(
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetAudioEnabled: (Boolean) -> Unit = {},
-    onCaptureImageWithUri: (
-        ContentResolver,
-        Uri?,
-        Boolean,
-        (ImageCaptureEvent, Int) -> Unit
-    ) -> Unit = { _, _, _, _ -> },
-    onStartVideoRecording: (
-        Uri?,
-        Boolean,
-        (VideoCaptureEvent) -> Unit
-    ) -> Unit = { _, _, _ -> },
+    onCaptureImage: (ContentResolver) -> Unit = {},
+    onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
@@ -429,12 +427,11 @@ private fun ContentScreen(
         captureButton = {
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
-                externalCaptureMode = captureUiState.externalCaptureMode,
                 isQuickSettingsOpen = (
                     captureUiState.quickSettingsUiState as?
                         QuickSettingsUiState.Available
                     )?.quickSettingsIsOpen ?: false,
-                onCaptureImageWithUri = onCaptureImageWithUri,
+                onCaptureImage = onCaptureImage,
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
                 },
@@ -558,7 +555,7 @@ private fun ContentScreen(
                     captureUiState.quickSettingsUiState
                         as QuickSettingsUiState.Available
                     ).quickSettingsIsOpen &&
-                captureUiState.externalCaptureMode is ExternalCaptureMode.StandardMode
+                captureUiState.externalCaptureMode == ExternalCaptureMode.Standard
             ) {
                 ImageWell(
                     modifier = modifier,
@@ -662,7 +659,7 @@ private fun ContentScreen_Locked_Recording() {
 
 private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
-    externalCaptureMode = ExternalCaptureMode.StandardMode {},
+    externalCaptureMode = ExternalCaptureMode.Standard,
     captureModeToggleUiState = CaptureModeToggleUiState.Unavailable
 )
 

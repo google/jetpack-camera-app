@@ -75,6 +75,9 @@ dependencies {
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:components:capture"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
 }
 
 // Allow references to generated code
