@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import JcaSwitch
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -22,11 +23,9 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -34,19 +33,14 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -55,7 +49,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -64,7 +57,6 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
@@ -120,27 +112,23 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.ui.uistate.DisableRationale
-import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 
 private const val TAG = "PreviewScreen"
@@ -257,8 +245,8 @@ fun CaptureModeToggleButton(
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val toggleState = remember(uiState.selectedCaptureMode) {
         when (uiState.selectedCaptureMode) {
-            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> ToggleState.Left
-            CaptureMode.VIDEO_ONLY -> ToggleState.Right
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false //left
+            CaptureMode.VIDEO_ONLY -> true //right
         }
     }
 
@@ -266,6 +254,34 @@ fun CaptureModeToggleButton(
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
                 uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
+    JcaSwitch(
+        checked = toggleState,
+        onCheckedChange = {
+            val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
+            onChangeCaptureMode(newCaptureMode)
+        },
+        modifier = modifier,
+        enabled = enabled,
+        // trackColor = TODO(),
+        //  thumbColor = TODO(),
+        leftIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.IMAGE_ONLY
+        ) {
+            Icons.Filled.CameraAlt
+        } else {
+            Icons.Outlined.CameraAlt
+        },
+        rightIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.VIDEO_ONLY
+        ) {
+            Icons.Filled.Videocam
+        } else {
+            Icons.Outlined.Videocam
+        },
+        //   offIconColor = TODO(),
+        //    onIconColor = TODO()
+    )
+    /*
     ToggleButton(
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
@@ -322,7 +338,7 @@ fun CaptureModeToggleButton(
                 )
             },
         modifier = modifier
-    )
+    )*/
 }
 
 @Composable
@@ -645,7 +661,7 @@ fun CaptureButton(
 }
 
 /**
- * Converts an internal [ImageCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.ImageCaptureEvent]
+ * Converts an internal [ImageCaptureEvent] to its corresponding [ExternalCaptureMode.ImageCaptureEvent]
  * representation.
  */
 private fun getImageCaptureEventForExternalCaptureMode(
@@ -665,7 +681,7 @@ private fun getImageCaptureEventForExternalCaptureMode(
 }
 
 /**
- * Converts an internal [VideoCaptureEvent] to its corresponding [com.google.jetpackcamera.model.ExternalCaptureMode.VideoCaptureEvent]
+ * Converts an internal [VideoCaptureEvent] to its corresponding [ExternalCaptureMode.VideoCaptureEvent]
  * representation.
  */
 private fun getVideoCaptureEventForExternalCaptureMode(
@@ -970,6 +986,7 @@ fun ToggleButton(
         }
     }
 }
+
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
