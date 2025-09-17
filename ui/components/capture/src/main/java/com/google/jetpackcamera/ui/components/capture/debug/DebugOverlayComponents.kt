@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -153,7 +154,10 @@ private fun DebugConsole(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Row {
+        FlowRow(
+            verticalArrangement = Arrangement.Center,
+            itemVerticalAlignment = Alignment.CenterVertically
+        ) {
             // debug menu button
             DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
             extraControls.forEach { it() }

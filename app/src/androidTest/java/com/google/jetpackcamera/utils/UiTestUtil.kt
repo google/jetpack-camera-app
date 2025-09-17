@@ -59,7 +59,7 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-val compatMainActivityExtras: Bundle?
+val compatMainActivityExtras: Bundle
     get() = if (Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28) {
         // The GMD API 28 emulator's PackageInfo reports it has front and back cameras, but
         // GMD is only configured for a back camera. This causes CameraX to take a long time
@@ -188,7 +188,7 @@ inline fun runMainActivityScenarioTestForResult(
 
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
-    activityExtras: Bundle? = null,
+    activityExtras: Bundle?,
     crossinline block: ActivityScenario<T>.() -> Unit
 ): Instrumentation.ActivityResult {
     activityExtras?.let { intent.putExtras(it) }
@@ -197,6 +197,12 @@ inline fun <reified T : Activity> runScenarioTestForResult(
         return runBlocking { scenario.pollResult() }
     }
 }
+
+inline fun <reified T : Activity> runScenarioTestForResult(
+    intent: Intent,
+    crossinline block: ActivityScenario<T>.() -> Unit
+): Instrumentation.ActivityResult =
+    runScenarioTestForResult<T>(intent, compatMainActivityExtras, block)
 
 // Workaround for https://github.com/android/android-test/issues/676
 suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
@@ -368,6 +374,7 @@ fun UiDevice.grantPermissionDialog() {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_allow_button"
+
                 else ->
                     "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
             }
@@ -388,6 +395,7 @@ fun UiDevice.denyPermissionDialog() {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_deny_button"
+
                 else -> "com.android.permissioncontroller:id/permission_deny_button"
             }
         )
