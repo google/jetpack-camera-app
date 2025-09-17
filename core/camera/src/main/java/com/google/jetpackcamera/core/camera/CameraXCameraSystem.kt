@@ -83,6 +83,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -869,7 +870,7 @@ constructor(
         }
     }
 
-    override fun getLowLightBoostEvents() = lowLightBoostEvents
+    override fun getLowLightBoostEvents() = lowLightBoostEvents.asSharedFlow()
 
     override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
@@ -950,7 +951,6 @@ constructor(
             when (event) {
                 is LowLightBoostEvent.ErrorEvent -> {
                     currentSettings.update { old -> old?.copy(flashMode = FlashMode.OFF) }
-
                 }
             }
         }
