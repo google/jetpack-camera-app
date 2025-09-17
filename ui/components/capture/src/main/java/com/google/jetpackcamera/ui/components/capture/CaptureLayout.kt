@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -110,9 +111,9 @@ fun PreviewLayout(
         debugOverlay(
             Modifier,
             arrayOf(
+                { imageWell(Modifier) },
                 { audioToggleButton(Modifier) },
                 { pauseToggleButton(Modifier) },
-                { imageWell(Modifier) },
                 { elapsedTimeDisplay(Modifier) }
             )
         )
@@ -180,9 +181,10 @@ private fun VerticalMaterialControls(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Max)
+                        .defaultMinSize(minHeight = 64.dp)
                         .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     // Row that holds toggle buttons for quick settings and capture mode
                     // quick settings toggle switch item to the left

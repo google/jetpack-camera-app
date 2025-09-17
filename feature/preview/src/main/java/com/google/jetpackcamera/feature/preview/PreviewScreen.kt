@@ -471,10 +471,7 @@ private fun ContentScreen(
         },
         elapsedTimeDisplay = {
             AnimatedVisibility(
-                visible = (
-                    captureUiState.videoRecordingState is
-                        VideoRecordingState.Active
-                    ),
+                visible = (captureUiState.videoRecordingState is VideoRecordingState.Active),
                 enter = fadeIn(),
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
@@ -485,14 +482,20 @@ private fun ContentScreen(
             }
         },
         quickSettingsButton = {
-            ToggleQuickSettingsButton(
-                modifier = it,
-                toggleBottomSheet = onToggleQuickSettings,
-                isOpen = (
-                    captureUiState.quickSettingsUiState
-                        as QuickSettingsUiState.Available
-                    ).quickSettingsIsOpen
-            )
+            AnimatedVisibility(
+                visible = (captureUiState.videoRecordingState !is VideoRecordingState.Active),
+                enter = fadeIn(),
+                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+            ) {
+                ToggleQuickSettingsButton(
+                    modifier = it,
+                    toggleBottomSheet = onToggleQuickSettings,
+                    isOpen = (
+                        captureUiState.quickSettingsUiState
+                            as QuickSettingsUiState.Available
+                        ).quickSettingsIsOpen
+                )
+            }
         },
         audioToggleButton = {
             AmplitudeToggleButton(
