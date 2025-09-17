@@ -162,22 +162,20 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
     var gLlbSupport = false
     var gLlbAvailable = false
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
         val cameraId = camera2Info.cameraId
-        val lowLightBoostClient = LowLightBoost.getClient(context)
-        gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
-        gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
-        if (gLlbSupport && !gLlbAvailable) {
-            gLlbAvailable =
-                try {
-                    // Install the module for future use, but the install will take too long since
-                    // the camera needs to be opened right away, so return false for now.
-                    lowLightBoostClient.installModule(null)
-                    false
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to install Low Light Boost module for camera $cameraId", e)
-                    false
-                }
+        try {
+            val lowLightBoostClient = LowLightBoost.getClient(context)
+            gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
+            gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
+            if (gLlbSupport && !gLlbAvailable) {
+                // Install the module for future use, but the install will take too long to use
+                // now since the camera needs to be opened right away.
+                lowLightBoostClient.installModule(null)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set up Google Low Light Boost for camera $cameraId", e)
+            gLlbSupport = false
+            gLlbAvailable = false
         }
     }
     return if (llbAEModeSupport) {
