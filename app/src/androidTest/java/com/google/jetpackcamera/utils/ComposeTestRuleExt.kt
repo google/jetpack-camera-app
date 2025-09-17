@@ -225,7 +225,7 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
             down(center)
         }
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
-        checkWhileWaiting
+        checkWhileWaiting()
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
     onNodeWithTag(CAPTURE_BUTTON)
