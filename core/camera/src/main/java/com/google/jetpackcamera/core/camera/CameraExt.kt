@@ -34,6 +34,8 @@ import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import com.google.android.gms.cameralowlight.LowLightBoost
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -164,6 +166,10 @@ suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBo
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         val cameraId = camera2Info.cameraId
         try {
+            // TODO: Remove when Google LLB beta07 is available with this fixed.
+            if (!isGooglePlayServicesWithVideoTimestampFixAvailable(context)) {
+                throw Exception("Google Play Services with video timestamp fix not available.")
+            }
             val lowLightBoostClient = LowLightBoost.getClient(context)
             gLlbSupport = lowLightBoostClient.isCameraSupported(cameraId).await()
             gLlbAvailable = lowLightBoostClient.isModuleInstalled().await()
@@ -236,4 +242,10 @@ fun UseCaseGroup.getImageCapture() = getUseCaseOrNull<ImageCapture>()
 
 private inline fun <reified T : UseCase> UseCaseGroup.getUseCaseOrNull(): T? {
     return useCases.filterIsInstance<T>().singleOrNull()
+}
+
+// TODO: Remove when Google LLB beta07 is available with this fixed.
+fun isGooglePlayServicesWithVideoTimestampFixAvailable(context: Context): Boolean {
+    val minVersion = 253300000 // (Y25W33)
+    return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context, minVersion) == ConnectionResult.SUCCESS;
 }
