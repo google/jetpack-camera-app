@@ -95,9 +95,7 @@ class LowLightBoostSurfaceProcessor(
             override fun onSessionDisconnected(status: Status) {
                 Log.d(TAG, "LLB session disconnected: $status")
                 releaseLowLightBoostSession()
-                if (status.statusCode != LowLightBoostStatusCodes.SERVICE_RELEASED) {
-                    onLowLightBoostErrorCallback()
-                }
+                onLowLightBoostErrorCallback()
             }
         }
 
