@@ -27,6 +27,7 @@ import com.google.android.gms.cameralowlight.LowLightBoostCallback
 import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.LowLightBoostOptions
 import com.google.android.gms.cameralowlight.LowLightBoostSession
+import com.google.android.gms.cameralowlight.LowLightBoostStatusCodes
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
@@ -94,6 +95,9 @@ class LowLightBoostSurfaceProcessor(
             override fun onSessionDisconnected(status: Status) {
                 Log.d(TAG, "LLB session disconnected: $status")
                 releaseLowLightBoostSession()
+                if (status.statusCode != LowLightBoostStatusCodes.SERVICE_RELEASED) {
+                    onLowLightBoostErrorCallback()
+                }
             }
         }
 
