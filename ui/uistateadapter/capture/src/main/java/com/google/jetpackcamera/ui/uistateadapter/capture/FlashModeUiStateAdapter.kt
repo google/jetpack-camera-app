@@ -41,9 +41,11 @@ fun FlashModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
-    val supportedFlashModes = (systemConstraints.forCurrentLens(cameraAppSettings)
-        ?.supportedFlashModes
-        ?: setOf(FlashMode.OFF)).toMutableSet()
+    val supportedFlashModes = (
+        systemConstraints.forCurrentLens(cameraAppSettings)
+            ?.supportedFlashModes
+            ?: setOf(FlashMode.OFF)
+        ).toMutableSet()
 
     if (cameraAppSettings.dynamicRange != DynamicRange.SDR) {
         supportedFlashModes.remove(FlashMode.LOW_LIGHT_BOOST)

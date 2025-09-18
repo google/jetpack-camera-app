@@ -159,7 +159,9 @@ class FlashModeUiStateAdapterTest {
     @Test
     fun updateFrom_lowLightBoostActive_updatesStrength() {
         // Given an initial UI state with LOW_LIGHT_BOOST selected
-        val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.LOW_LIGHT_BOOST)
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
@@ -189,7 +191,9 @@ class FlashModeUiStateAdapterTest {
     @Test
     fun updateFrom_lowLightBoostInactive_resetsStrength() {
         // Given an initial UI state with active low light boost strength
-        val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.LOW_LIGHT_BOOST)
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
@@ -223,7 +227,9 @@ class FlashModeUiStateAdapterTest {
     @Test
     fun updateFrom_lowLightBoostError_resetsStrength() {
         // Given an initial UI state with active low light boost strength
-        val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.LOW_LIGHT_BOOST)
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
