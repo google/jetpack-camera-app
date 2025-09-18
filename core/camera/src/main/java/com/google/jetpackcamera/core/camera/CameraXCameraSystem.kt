@@ -56,6 +56,7 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.LowLightBoostAvailability
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -77,13 +78,10 @@ import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -124,7 +122,6 @@ constructor(
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
-    private val lowLightBoostEvents = MutableSharedFlow<LowLightBoostEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -154,11 +151,6 @@ constructor(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
-
-        val scope = CoroutineScope(defaultDispatcher)
-        scope.launch {
-            processLowLightBoostEvents()
-        }
 
 
         // Build and update the system constraints
@@ -334,6 +326,10 @@ constructor(
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")
 
+        launch {
+            handleLowLightBoostErrors()
+        }
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
@@ -412,7 +408,6 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            lowLightBoostEvents = lowLightBoostEvents,
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
@@ -870,8 +865,6 @@ constructor(
         }
     }
 
-    override fun getLowLightBoostEvents() = lowLightBoostEvents.asSharedFlow()
-
     override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
             old?.copy(streamConfig = streamConfig)
@@ -946,11 +939,11 @@ constructor(
         }
     }
 
-    private suspend fun processLowLightBoostEvents() {
-        getLowLightBoostEvents().collect { event ->
-            when (event) {
-                is LowLightBoostEvent.ErrorEvent -> {
-                    currentSettings.update { old -> old?.copy(flashMode = FlashMode.OFF) }
+    private suspend fun handleLowLightBoostErrors() {
+        currentCameraState.map { it.lowLightBoostState }.collect { state ->
+            if (state is LowLightBoostState.Error) {
+                if (currentSettings.value?.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                    setFlashMode(FlashMode.OFF)
                 }
             }
         }

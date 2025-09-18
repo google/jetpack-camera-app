@@ -108,8 +108,12 @@ fun FlashModeUiState.updateFrom(
                 copy(selectedFlashMode = cameraAppSettings.flashMode)
             } else {
                 if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                    val strength = when (val llbState = cameraState.lowLightBoostState) {
+                        is LowLightBoostState.Active -> llbState.strength
+                        else -> LowLightBoostState.MINIMUM_STRENGTH
+                    }
                     copy(
-                        strength = cameraState.lowLightBoostState.value
+                        strength = strength
                     )
                 } else {
                     // Nothing has changed

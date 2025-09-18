@@ -26,8 +26,6 @@ import androidx.tracing.Trace
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.core.camera.CameraXCameraSystem
-import com.google.jetpackcamera.core.camera.LowLightBoostEvent
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -42,6 +40,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -99,8 +98,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -182,11 +183,13 @@ class PreviewViewModel @AssistedInject constructor(
             }
 
             launch {
-                cameraSystem.getLowLightBoostEvents().collectLatest { event ->
-                    when (event) {
-                        is LowLightBoostEvent.ErrorEvent -> {
+                cameraSystem.getCurrentCameraState()
+                    .map { it.lowLightBoostState }
+                    .distinctUntilChanged()
+                    .collect { state ->
+                        if (state is LowLightBoostState.Error) {
                             val cookieInt = snackBarCount.incrementAndGet()
-                            Log.d(TAG, "LowLightBoostEvent.ErrorEvent #$cookieInt")
+                            Log.d(TAG, "LowLightBoostState changed to Error #$cookieInt")
                             addSnackBarData(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
@@ -197,7 +200,6 @@ class PreviewViewModel @AssistedInject constructor(
                             )
                         }
                     }
-                }
             }
 
             combine(

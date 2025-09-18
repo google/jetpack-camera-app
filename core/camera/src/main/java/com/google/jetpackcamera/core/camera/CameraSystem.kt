@@ -108,8 +108,6 @@ interface CameraSystem {
 
     suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
-    fun getLowLightBoostEvents(): SharedFlow<LowLightBoostEvent>
-
     suspend fun setLensFacing(lensFacing: LensFacing)
 
     suspend fun tapToFocus(x: Float, y: Float)

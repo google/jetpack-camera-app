@@ -157,7 +157,7 @@ internal suspend fun runSingleCameraSession(
     // A callback to be passed to the LowLightBoostEffect to update the camera state.
     val sceneDetectorCallback = object : SceneDetectorCallback {
         override fun onSceneBrightnessChanged(session: LowLightBoostSession, boostStrength: Float) {
-            val strength = LowLightBoostState.Strength(boostStrength)
+            val strength = LowLightBoostState.Active(strength = boostStrength)
             currentCameraState.update { old ->
                 if (old.lowLightBoostState != strength) {
                     old.copy(lowLightBoostState = strength)
@@ -210,14 +210,13 @@ internal suspend fun runSingleCameraSession(
                         lowLightBoostClient,
                         LowLightBoostSessionContainer,
                         this@coroutineScope,
-                        sceneDetectorCallback,
-                        {
-                            launch {
-                                Log.d(TAG, "Emitting LLB ErrorEvent")
-                                lowLightBoostEvents.emit(LowLightBoostEvent.ErrorEvent)
-                            }
+                        sceneDetectorCallback
+                    ) { e ->
+                        Log.w(TAG, "Emitting LLB Error", e)
+                        currentCameraState.update { old ->
+                            old.copy(lowLightBoostState = LowLightBoostState.Error(e))
                         }
-                    )
+                    }
                 }
             } else {
                 LowLightBoostSessionContainer.releaseSession()
@@ -1233,8 +1232,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                     val boostStrength = when (nativeBoostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
-                            LowLightBoostState.Strength(LowLightBoostState.MAXIMUM_STRENGTH)
-                        else -> LowLightBoostState.Strength(LowLightBoostState.MINIMUM_STRENGTH)
+                            LowLightBoostState.Active(LowLightBoostState.MAXIMUM_STRENGTH)
+                        else -> LowLightBoostState.Inactive
                     }
                     currentCameraState.update { old ->
                         if (old.lowLightBoostState != boostStrength) {

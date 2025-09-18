@@ -41,7 +41,7 @@ class LowLightBoostEffect(
     sessionContainer: LowLightBoostSessionContainer,
     coroutineScope: CoroutineScope,
     sceneDetectorCallback: SceneDetectorCallback? = null,
-    onLowLightBoostErrorCallback: () -> Unit = {}
+    onLowLightBoostErrorCallback: (Exception) -> Unit = {}
     ) : CameraEffect(
     TARGETS,
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
