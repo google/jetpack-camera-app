@@ -1,0 +1,28 @@
+<!--
+  ~ Copyright (C) 2025 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<svg width="720" height="960" viewBox="0 0 720 960" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@500&amp;family=Roboto+Condensed&amp;display=swap');
+        </style>
+    </defs>
+    <g id="jcaRect">
+        <text id="Jetpack" fill="white" xml:space="preserve" style="white-space: pre" font-family="Roboto" font-size="170" font-style="italic" letter-spacing="0em"><tspan x="60" y="178.605">Jetpack</tspan></text>
+        <text id="Camera" fill="white" xml:space="preserve" style="white-space: pre" font-family="Roboto Condensed" font-size="110" letter-spacing="0em"><tspan x="317" y="279.098">Camera</tspan></text>
+        <circle id="shutterButton" cx="360" cy="814" r="84.5" stroke="white" stroke-width="9" fill="transparent"/>
+        <rect id="rectOutline" x="2.25" y="2.25" width="715.5" height="955.5" rx="57.75" stroke="white" stroke-width="4.5" fill="transparent"/>
+    </g>
+</svg>

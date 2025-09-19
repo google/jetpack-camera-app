@@ -1,0 +1,498 @@
+<!--
+  ~ Copyright (C) 2025 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- A complex SVG nebula with a geometric core, filaments, and dust lanes. -->
+    <defs>
+        <!-- Filters -->
+        <filter id="backgroundBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="80" />
+        </filter>
+
+        <filter id="midgroundBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="35" />
+        </filter>
+
+        <filter id="coreBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="20" />
+        </filter>
+
+        <filter id="glowRingBlur" x="909" y="527" width="102" height="40.8945"
+            filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+            <feGaussianBlur stdDeviation="4" result="effect1_foregroundBlur_9_3" />
+        </filter>
+
+        <filter id="innerRingBlur" x="916" y="535.426" width="88" height="24.5742"
+            filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+            <feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_9_3" />
+        </filter>
+
+        <filter id="filamentBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
+        </filter>
+
+        <filter id="fineDetailBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+        </filter>
+
+        <filter id="dustLaneBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+        </filter>
+
+        <filter id="flareBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
+        </filter>
+
+        <filter id="secondaryFlareBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+        </filter>
+
+        <filter id="starBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" />
+        </filter>
+
+        <filter id="crossHatchGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+        </filter>
+
+        <!-- Gradients -->
+        <radialGradient id="orangeBurst" cx="960" cy="540" r="600" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFD180" stop-opacity="1" />
+            <stop offset="30%" stop-color="#FFAB40" stop-opacity="0.9" />
+            <stop offset="60%" stop-color="#E040FB" stop-opacity="0.7" />
+            <stop offset="100%" stop-color="#448AFF" stop-opacity="0" />
+        </radialGradient>
+
+        <radialGradient id="diffuseOrangeCore">
+            <stop offset="0%" stop-color="#FFF8E1" stop-opacity="0.95" />
+            <stop offset="50%" stop-color="#FFD180" stop-opacity="0.7" />
+            <stop offset="100%" stop-color="#FFAB40" stop-opacity="0" />
+        </radialGradient>
+
+        <radialGradient id="pinkCore">
+            <stop offset="0%" stop-color="#FF4081" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#FF4081" stop-opacity="0" />
+        </radialGradient>
+
+        <radialGradient id="blueCore">
+            <stop offset="0%" stop-color="#448AFF" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#448AFF" stop-opacity="0" />
+        </radialGradient>
+
+        <!-- Gradient for the crescent ring -->
+        <linearGradient id="innerRingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="white" stop-opacity="0"/>
+            <stop offset="25%" stop-color="white" stop-opacity="0.9"/>
+            <stop offset="50%" stop-color="white" stop-opacity="1"/>
+            <stop offset="75%" stop-color="white" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+
+        <!-- Gradients for the main lens flare -->
+        <radialGradient id="starGlow">
+            <stop offset="0%" stop-color="white" stop-opacity="1" />
+            <stop offset="50%" stop-color="#FFFFE0" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#FFD180" stop-opacity="0" />
+        </radialGradient>
+
+        <linearGradient id="flareGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#80D8FF" stop-opacity="0" />
+            <stop offset="40%" stop-color="#80D8FF" stop-opacity="0.5" />
+            <stop offset="50%" stop-color="white" stop-opacity="0.9" />
+            <stop offset="60%" stop-color="#80D8FF" stop-opacity="0.5" />
+            <stop offset="100%" stop-color="#80D8FF" stop-opacity="0" />
+        </linearGradient>
+
+        <linearGradient id="verticalFlareGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#A9D2FF" stop-opacity="0" />
+            <stop offset="50%" stop-color="#A9D2FF" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#A9D2FF" stop-opacity="0" />
+        </linearGradient>
+
+        <linearGradient id="insetFlareHorizontal" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="white" stop-opacity="0" />
+            <stop offset="20%" stop-color="white" stop-opacity="0" />
+            <stop offset="22%" stop-color="white" stop-opacity="0.7" />
+            <stop offset="24%" stop-color="white" stop-opacity="0" />
+            <stop offset="48%" stop-color="white" stop-opacity="1" />
+            <stop offset="52%" stop-color="white" stop-opacity="1" />
+            <stop offset="76%" stop-color="white" stop-opacity="0" />
+            <stop offset="78%" stop-color="white" stop-opacity="0.7" />
+            <stop offset="80%" stop-color="white" stop-opacity="0" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+
+        <linearGradient id="insetFlareVertical" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="white" stop-opacity="0" />
+            <stop offset="20%" stop-color="white" stop-opacity="0" />
+            <stop offset="22%" stop-color="white" stop-opacity="0.6" />
+            <stop offset="24%" stop-color="white" stop-opacity="0" />
+            <stop offset="48%" stop-color="white" stop-opacity="1" />
+            <stop offset="52%" stop-color="white" stop-opacity="1" />
+            <stop offset="76%" stop-color="white" stop-opacity="0" />
+            <stop offset="78%" stop-color="white" stop-opacity="0.6" />
+            <stop offset="80%" stop-color="white" stop-opacity="0" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+
+        <!-- Gradients for the secondary blue flare -->
+        <linearGradient id="secondaryBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#80D8FF" stop-opacity="0" />
+            <stop offset="70%" stop-color="#80D8FF" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#80D8FF" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="secondaryWhite" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="white" stop-opacity="0" />
+            <stop offset="70%" stop-color="white" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+
+        <!-- Gradients for the secondary pink flare -->
+        <linearGradient id="secondaryPink" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FF80AB" stop-opacity="0" />
+            <stop offset="30%" stop-color="#FF80AB" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="#FF80AB" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="secondaryWhitePink" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="white" stop-opacity="0" />
+            <stop offset="30%" stop-color="white" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+
+        <!-- Gradients for the starfield -->
+        <radialGradient id="starWhite">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="starBlue">
+            <stop offset="0%" stop-color="#A9D2FF" stop-opacity="1" />
+            <stop offset="100%" stop-color="#A9D2FF" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="starOrange">
+            <stop offset="0%" stop-color="#FFD180" stop-opacity="1" />
+            <stop offset="100%" stop-color="#FFD180" stop-opacity="0" />
+        </radialGradient>
+
+        <!-- Gradients for cross-hatch star flares -->
+        <linearGradient id="crossHatchGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="white" stop-opacity="0"/>
+            <stop offset="30%" stop-color="white" stop-opacity="0.7"/>
+            <stop offset="50%" stop-color="white" stop-opacity="1"/>
+            <stop offset="70%" stop-color="white" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="crossHatchGradientVertical" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="white" stop-opacity="0"/>
+            <stop offset="30%" stop-color="white" stop-opacity="0.7"/>
+            <stop offset="50%" stop-color="white" stop-opacity="1"/>
+            <stop offset="70%" stop-color="white" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+
+        <!-- Mask for creating dark dust lanes -->
+        <mask id="dustMask">
+            <rect width="100%" height="100%" fill="white" />
+            <g filter="url(#dustLaneBlur)">
+                <path d="M 960,540 C 1200,400 1400,300 1700,200 L 1750,280 C 1450,350 1250,450 970,560 Z" fill="black" opacity="0.6"/>
+                <path d="M 960,540 C 1150,700 1250,850 1400,950 L 1320,1000 C 1200,880 1100,730 950,550 Z" fill="black" opacity="0.7"/>
+                <path d="M 960,540 C 700,700 500,800 300,850 L 250,770 C 450,750 650,650 940,520 Z" fill="black" opacity="0.65"/>
+                <path d="M 960,540 C 750,400 600,300 400,250 L 480,200 C 650,320 800,420 980,530 Z" fill="black" opacity="0.5"/>
+            </g>
+        </mask>
+
+    </defs>
+
+    <g clip-path="url(#roundedCorners)">
+        <!-- Background color -->
+        <rect width="100%" height="100%" fill="#0c0a18" />
+
+        <!-- Background starfield -->
+        <g id="starfield" filter="url(#starBlur)">
+            <circle cx="150" cy="100" r="1.5" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="250" cy="850" r="2" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="50" cy="500" r="1" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1800" cy="950" r="3.5" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1750" cy="200" r="1.2" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1600" cy="600" r="1.8" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1850" cy="50" r="1" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="100" cy="980" r="3" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1450" cy="1000" r="1.5" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="400" cy="80" r="1.7" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="800" cy="950" r="1" fill="url(#starOrange)" opacity="0.8"/>
+            <circle cx="1200" cy="120" r="2.8" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="500" cy="920" r="1.3" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="20" cy="20" r="2.6" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1900" cy="1060" r="1.9" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="300" cy="300" r="1" fill="url(#starWhite)" opacity="0.8"/>
+            <circle cx="600" cy="700" r="1.5" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="900" cy="200" r="2" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1100" cy="800" r="1.2" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1300" cy="400" r="1.8" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1500" cy="750" r="1.4" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1700" cy="450" r="2.1" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="550" cy="150" r="1.1" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="750" cy="850" r="1.7" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1050" cy="50" r="1.3" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="1250" cy="950" r="2.3" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1450" cy="250" r="1.6" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1650" cy="900" r="1.9" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1850" cy="300" r="1" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="220" cy="600" r="0.8" fill="url(#starWhite)" opacity="0.7"/>
+            <circle cx="420" cy="500" r="1.2" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="20" cy="780" r="1.5" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="130" cy="250" r="1" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1780" cy="800" r="3" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1620" cy="150" r="1.1" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1480" cy="500" r="1.9" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1880" cy="350" r="0.9" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="150" cy="900" r="2.2" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1350" cy="980" r="1.3" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="550" cy="280" r="1.6" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="880" cy="880" r="1.2" fill="url(#starOrange)" opacity="0.8"/>
+            <circle cx="1150" cy="220" r="2.5" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="650" cy="850" r="1.4" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="80" cy="120" r="1.8" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1800" cy="1000" r="2" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="330" cy="430" r="0.9" fill="url(#starWhite)" opacity="0.8"/>
+            <circle cx="630" cy="730" r="1.3" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="930" cy="230" r="1.8" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1130" cy="830" r="1.1" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1330" cy="430" r="2" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1530" cy="780" r="1.5" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1730" cy="480" r="2.2" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="580" cy="180" r="1" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="780" cy="880" r="1.6" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1080" cy="80" r="1.4" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="1280" cy="980" r="2.4" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1480" cy="280" r="1.7" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1680" cy="930" r="2" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1880" cy="330" r="1.1" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="180" cy="450" r="1.2" fill="url(#starWhite)" opacity="0.8"/>
+            <circle cx="380" cy="650" r="1.8" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="80" cy="800" r="0.9" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1750" cy="600" r="2.5" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1500" cy="100" r="1.4" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1300" cy="700" r="2.1" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1900" cy="200" r="1.1" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="200" cy="950" r="2.8" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1200" cy="1050" r="1.6" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="600" cy="150" r="1.9" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="950" cy="900" r="1.3" fill="url(#starOrange)" opacity="0.8"/>
+            <circle cx="1000" cy="300" r="2.6" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="700" cy="980" r="1.5" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="100" cy="80" r="2.2" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1850" cy="1000" r="2.1" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="450" cy="350" r="1" fill="url(#starWhite)" opacity="0.8"/>
+            <circle cx="700" cy="600" r="1.6" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="980" cy="150" r="2.2" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1180" cy="750" r="1.3" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1380" cy="350" r="2.1" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1580" cy="700" r="1.6" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="1780" cy="400" r="2.3" fill="url(#starOrange)" opacity="0.75"/>
+            <circle cx="620" cy="220" r="1.2" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="820" cy="920" r="1.8" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1120" cy="120" r="1.5" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="1320" cy="1020" r="2.5" fill="url(#starOrange)" opacity="0.7"/>
+            <circle cx="1520" cy="320" r="1.8" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1720" cy="970" r="2.1" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1900" cy="400" r="1.2" fill="url(#starWhite)" opacity="0.9"/>
+            <!-- Small cross-hatch stars -->
+            <g transform="translate(300, 750)">
+                <polygon points="-12,0 0,-0.5 12,0 0,0.5" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-10 -0.5,0 0,10 0.5,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="2" fill="url(#starWhite)"/>
+            </g>
+            <g transform="translate(1700, 100)">
+                <polygon points="-15,0 0,-0.5 15,0 0,0.5" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-12 -0.5,0 0,12 0.5,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="2.5" fill="url(#starWhite)"/>
+            </g>
+            <g transform="translate(800, 150)">
+                <polygon points="-9,0 0,-0.5 9,0 0,0.5" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-7 -0.5,0 0,7 0.5,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="1.5" fill="url(#starWhite)"/>
+            </g>
+            <g transform="translate(1400, 900)">
+                <polygon points="-13,0 0,-0.5 13,0 0,0.5" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-11 -0.5,0 0,11 0.5,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="2.2" fill="url(#starWhite)"/>
+            </g>
+            <g transform="translate(100, 600)">
+                <polygon points="-11,0 0,-0.5 11,0 0,0.5" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-9 -0.5,0 0,9 0.5,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="1.8" fill="url(#starWhite)"/>
+            </g>
+        </g>
+
+        <!-- Nebula elements -->
+
+        <!-- Broad, soft background clouds for depth -->
+        <g filter="url(#backgroundBlur)" opacity="0.9">
+            <ellipse cx="800" cy="500" rx="700" ry="450" fill="url(#blueCore)" />
+            <ellipse cx="1200" cy="600" rx="600" ry="500" fill="url(#pinkCore)" />
+        </g>
+
+        <!-- Main nebula group with dust mask applied -->
+        <g mask="url(#dustMask)">
+            <!-- Geometric core with perspective -->
+            <g filter="url(#midgroundBlur)" fill="url(#orangeBurst)">
+                <!-- Bottom elements -->
+                <polygon points="960,540 1500,1100 2020,1050 1080,580" />
+                <polygon points="960,540 400,1100 -100,1000 800,460" />
+                <!-- Top elements -->
+                <polygon points="960,540 1200,380 1260,440 1020,600" />
+                <polygon points="960,540 780,380 840,340 1000,480" />
+                <polygon points="960,540 970,380 1010,390 980,550" />
+            </g>
+
+            <!-- Orange filaments with layered detail -->
+            <g>
+                <!-- Base filaments -->
+                <g fill="#FFAB40">
+                    <!-- Softer background filaments -->
+                    <path d="M 960,540 C 850,470 650,380 400,300 C 590,420 780,460 970,530 Z" opacity="0.4" filter="url(#filamentBlur)" />
+                    <path d="M 960,540 C 1150,630 1350,720 1600,800 C 1320,740 1050,600 965,545 Z" opacity="0.5" filter="url(#filamentBlur)" />
+
+                    <!-- Sharper foreground filaments -->
+                    <path d="M 960,540 C 850,600 700,700 500,800 C 640,690 780,610 930,540 Z" opacity="0.6" filter="url(#fineDetailBlur)" />
+                    <path d="M 960,540 C 1150,470 1350,320 1500,200 C 1320,360 1170,460 1010,540 Z" opacity="0.3" filter="url(#filamentBlur)" />
+                </g>
+                <!-- Bright inset cores for the filaments -->
+                <g fill="#FFD180" filter="url(#fineDetailBlur)">
+                    <path d="M 960,540 C 860,480 700,400 500,350 C 640,430 790,465 970,530 Z" opacity="0.8" />
+                    <path d="M 960,540 C 1140,640 1320,715 1500,780 C 1270,730 1080,620 965,545 Z" opacity="0.8" />
+                    <path d="M 960,540 C 840,600 710,690 550,780 C 670,685 790,615 930,545 Z" opacity="0.9" />
+                    <path d="M 960,540 C 1150,480 1320,340 1450,250 C 1290,370 1170,465 1015,540 Z" opacity="0.9" />
+                </g>
+            </g>
+        </g>
+
+        <!-- Large diffuse orange core -->
+        <g filter="url(#coreBlur)">
+            <!-- Main elliptical core -->
+            <ellipse cx="960" cy="540" rx="245" ry="175" fill="url(#diffuseOrangeCore)" />
+            <!-- Smaller offshoots -->
+            <ellipse cx="800" cy="480" rx="105" ry="56" fill="url(#diffuseOrangeCore)" opacity="0.7" transform="rotate(-20, 800, 480)"/>
+            <ellipse cx="1150" cy="620" rx="126" ry="63" fill="url(#diffuseOrangeCore)" opacity="0.6" transform="rotate(15, 1150, 620)"/>
+        </g>
+
+        <!-- Foreground starfield -->
+        <g id="foreground-stars" filter="url(#starBlur)">
+            <circle cx="980" cy="450" r="4" fill="url(#starWhite)" opacity="0.9"/>
+            <circle cx="850" cy="650" r="5" fill="url(#starBlue)" opacity="0.85"/>
+            <circle cx="1200" cy="500" r="6" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="700" cy="300" r="3" fill="url(#starBlue)" opacity="0.9"/>
+            <circle cx="1350" cy="750" r="8" fill="url(#starWhite)" opacity="1"/>
+            <circle cx="1050" cy="350" r="4.5" fill="url(#starWhite)" opacity="0.95"/>
+            <circle cx="600" cy="550" r="10" fill="url(#starBlue)" opacity="0.8"/>
+            <circle cx="1500" cy="400" r="7" fill="url(#starWhite)" opacity="1"/>
+        </g>
+
+        <!-- Highlight stars with cross-hatch flares -->
+        <g id="highlight-stars">
+            <!-- Smaller highlight star with lens flare -->
+            <g transform="translate(400, 250)">
+                <g opacity="0.7" filter="url(#crossHatchGlow)">
+                    <polygon points="-30,0 -1,-2 30,0 1,2" fill="#A9D2FF"/>
+                    <polygon points="0,-25.5 -2,-1 0,25.5 2,1" fill="#A9D2FF" />
+                </g>
+                <!-- Anamorphic lens flare -->
+                <g transform="scale(0.67)">
+                    <!-- Base flare lines -->
+                    <g filter="url(#flareBlur)">
+                        <polygon points="0,-268 1.34,0 0,268 -1.34,0" fill="url(#verticalFlareGradient)" />
+                        <rect x="-670" y="-2.68" width="2010" height="5.36" fill="url(#flareGradient)" />
+                    </g>
+                    <!-- Bright inset flare lines -->
+                    <g>
+                        <polygon points="0,-167.5 0.67,0 0,167.5 -0.67,0" fill="url(#insetFlareVertical)" />
+                        <rect x="-536" y="-0.67" width="1608" height="1.34" fill="url(#insetFlareHorizontal)" />
+                    </g>
+                    <!-- Secondary blue flare (left) -->
+                    <g transform="translate(0, 6.7)">
+                        <rect x="-603" y="0" width="590" height="2.68" fill="url(#secondaryBlue)" filter="url(#secondaryFlareBlur)"/>
+                        <rect x="-570" y="1" width="556" height="0.67" fill="url(#secondaryWhite)" filter="url(#flareBlur)"/>
+                    </g>
+                    <!-- Secondary pink flare (right) -->
+                    <g transform="translate(0, -6.7)">
+                        <rect x="13.4" y="0" width="1180" height="2.68" fill="url(#secondaryPink)" filter="url(#secondaryFlareBlur)"/>
+                        <rect x="13.4" y="1" width="1112" height="0.67" fill="url(#secondaryWhitePink)" filter="url(#flareBlur)"/>
+                    </g>
+                </g>
+                <polygon points="-30,0 0,-1 30,0 0,1" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-22 -1,0 0,22 1,0" fill="url(#crossHatchGradientVertical)" />
+                <circle cx="0" cy="0" r="7" fill="url(#starWhite)"/>
+            </g>
+            <!-- Larger highlight star -->
+            <g transform="translate(1600, 850)">
+                <g opacity="0.7" filter="url(#crossHatchGlow)">
+                    <polygon points="-45,0 -2,-2 45,0 2,2" fill="#A9D2FF"/>
+                    <polygon points="0,-38 -2,-1 0,38 2,1" fill="#A9D2FF"/>
+                </g>
+                <polygon points="-45,0 0,-1 45,0 0,1" fill="url(#crossHatchGradient)"/>
+                <polygon points="0,-38 -1,0 0,38 1,0" fill="url(#crossHatchGradientVertical)"/>
+                <circle cx="0" cy="0" r="15" fill="url(#starWhite)"/>
+            </g>
+        </g>
+
+        <!-- Main anamorphic lens flare layer -->
+        <g transform="translate(960, 540)">
+            <!-- Base flare lines -->
+            <g filter="url(#flareBlur)">
+                <polygon points="0,-400 2,0 0,400 -2,0" fill="url(#verticalFlareGradient)" />
+                <rect x="-1000" y="-4" width="2000" height="8" fill="url(#flareGradient)" />
+            </g>
+
+            <!-- Bright inset flare lines -->
+            <g>
+                <polygon points="0,-250 1,0 0,250 -1,0" fill="url(#insetFlareVertical)" />
+                <rect x="-800" y="-1" width="1600" height="2" fill="url(#insetFlareHorizontal)" />
+            </g>
+
+            <!-- Secondary blue flare (left) -->
+            <g transform="translate(0, 10)">
+                <rect x="-900" y="0" width="880" height="4" fill="url(#secondaryBlue)" filter="url(#secondaryFlareBlur)"/>
+                <rect x="-850" y="1.5" width="830" height="1" fill="url(#secondaryWhite)" filter="url(#flareBlur)"/>
+            </g>
+
+            <!-- Secondary pink flare (right) -->
+            <g transform="translate(0, -10)">
+                <rect x="20" y="0" width="880" height="4" fill="url(#secondaryPink)" filter="url(#secondaryFlareBlur)"/>
+                <rect x="20" y="1.5" width="830" height="1" fill="url(#secondaryWhitePink)" filter="url(#flareBlur)"/>
+            </g>
+
+            <!-- Bright, glowing core of the star -->
+            <circle cx="0" cy="0" r="35" fill="url(#starGlow)" filter="url(#flareBlur)"/>
+        </g>
+
+        <!-- Crescent ring -->
+        <g id="centerStarRing">
+            <g id="glowRing" filter="url(#glowRingBlur)">
+                <path
+                    d="M994.2 535C999.721 537.607 1003 540.862 1003 544.395C1003 552.955 983.748 559.895 960 559.895C936.252 559.895 917 552.955 917 544.395C917 540.862 920.279 537.607 925.799 535C923.996 536.354 923 537.838 923 539.395C923 545.746 939.565 550.895 960 550.895C980.435 550.895 997 545.746 997 539.395C997 537.838 996.004 536.354 994.2 535Z"
+                    fill="white" />
+            </g>
+            <g id="innerRing" filter="url(#innerRingBlur)">
+                <path
+                    d="M998.145 537.426C1000.62 539.274 1002 541.33 1002 543.5C1002 551.508 983.196 558 960 558C936.804 558 918 551.508 918 543.5C918 541.331 919.381 539.274 921.854 537.426C920.65 538.711 920 540.08 920 541.5C920 548.956 937.909 555 960 555C982.091 555 1000 548.956 1000 541.5C1000 540.08 999.349 538.712 998.145 537.426Z"
+                    fill="white" />
+            </g>
+        </g>
+    </g>
+</svg>
