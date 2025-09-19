@@ -20,8 +20,6 @@ import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.data.media.FakeMediaRepository
-import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -57,8 +55,6 @@ class PreviewViewModelTest {
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
-            ExternalCaptureMode.Standard,
-            DebugSettings(isDebugModeEnabled = false),
             cameraSystem = cameraSystem,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
