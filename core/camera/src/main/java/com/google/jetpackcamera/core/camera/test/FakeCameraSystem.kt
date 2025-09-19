@@ -170,7 +170,6 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
-    override fun getLowLightBoostEvents() = lowLightBoostEvents
     override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
 
     override fun setFlashMode(flashMode: FlashMode) {
