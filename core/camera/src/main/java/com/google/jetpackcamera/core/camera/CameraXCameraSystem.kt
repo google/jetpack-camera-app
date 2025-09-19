@@ -940,7 +940,7 @@ constructor(
     }
 
     private suspend fun handleLowLightBoostErrors() {
-        currentCameraState.map { it.lowLightBoostState }.collect { state ->
+        currentCameraState.map { it.lowLightBoostState }.distinctUntilChanged().collect { state ->
             if (state is LowLightBoostState.Error) {
                 if (currentSettings.value?.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     setFlashMode(FlashMode.OFF)
