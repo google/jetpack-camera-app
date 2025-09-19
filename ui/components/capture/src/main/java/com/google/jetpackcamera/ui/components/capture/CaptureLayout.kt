@@ -102,7 +102,8 @@ fun PreviewLayout(
                 quickSettingsToggleButton = quickSettingsButton,
                 captureModeToggleSwitch = captureModeToggle,
                 bottomSheetQuickSettings = quickSettingsOverlay,
-                zoomControls = zoomLevelDisplay
+                zoomControls = zoomLevelDisplay,
+                elapsedTimeDisplay = elapsedTimeDisplay
             )
             // controls overlay
             snackBar(Modifier, snackbarHostState)
@@ -114,7 +115,6 @@ fun PreviewLayout(
                 { imageWell(Modifier) },
                 { audioToggleButton(Modifier) },
                 { pauseToggleButton(Modifier) },
-                { elapsedTimeDisplay(Modifier) }
             )
         )
     }
@@ -128,7 +128,8 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
-    captureModeToggleSwitch: @Composable (Modifier) -> Unit
+    captureModeToggleSwitch: @Composable (Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
@@ -138,6 +139,7 @@ private fun VerticalMaterialControls(
 
                 // capture button row
                 Column {
+                    elapsedTimeDisplay(Modifier)
                     Row(
                         Modifier
                             .fillMaxWidth()

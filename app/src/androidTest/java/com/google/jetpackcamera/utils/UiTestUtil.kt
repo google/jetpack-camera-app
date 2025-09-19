@@ -59,20 +59,17 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-val compatMainActivityExtras: Bundle
+val compatMainActivityExtras: Bundle?
     get() = if (Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28) {
         // The GMD API 28 emulator's PackageInfo reports it has front and back cameras, but
         // GMD is only configured for a back camera. This causes CameraX to take a long time
         // to initialize. Set the device to use single lens mode to work around this issue.
         Bundle().apply {
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
-            putBoolean("KEY_DEBUG_MODE", true)
         }
-    } else {
-        Bundle().apply {
-            putBoolean("KEY_DEBUG_MODE", true)
-        }
-    }
+    } else null
+
+val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
@@ -152,9 +149,9 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
-inline fun runMainActivityScenarioTest(
+inline fun runMainActivityScenarioTest(extras:Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest<MainActivity>(compatMainActivityExtras, block)
+) = runScenarioTest<MainActivity>(extras, block)
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,
@@ -188,7 +185,7 @@ inline fun runMainActivityScenarioTestForResult(
 
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
-    activityExtras: Bundle?,
+    activityExtras: Bundle? = null,
     crossinline block: ActivityScenario<T>.() -> Unit
 ): Instrumentation.ActivityResult {
     activityExtras?.let { intent.putExtras(it) }
@@ -197,12 +194,6 @@ inline fun <reified T : Activity> runScenarioTestForResult(
         return runBlocking { scenario.pollResult() }
     }
 }
-
-inline fun <reified T : Activity> runScenarioTestForResult(
-    intent: Intent,
-    crossinline block: ActivityScenario<T>.() -> Unit
-): Instrumentation.ActivityResult =
-    runScenarioTestForResult<T>(intent, compatMainActivityExtras, block)
 
 // Workaround for https://github.com/android/android-test/issues/676
 suspend inline fun <reified T : Activity> ActivityScenario<T>.pollResult(
@@ -289,9 +280,9 @@ private fun doesVideoExist(
         it.setDataSource(uri.path)
 
         it.getMimeType().startsWith(prefix) &&
-            it.hasVideo() &&
-            (!checkAudio || it.hasAudio()) &&
-            (durationMs == null || it.getDurationMs() == durationMs)
+                it.hasVideo() &&
+                (!checkAudio || it.hasAudio()) &&
+                (durationMs == null || it.getDurationMs() == durationMs)
     } == true
 }
 
@@ -321,7 +312,7 @@ fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String
 
 fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
     SemanticsProperties.StateDescription in it.config &&
-        (it.config[SemanticsProperties.StateDescription] == expected)
+            (it.config[SemanticsProperties.StateDescription] == expected)
 }
 
 /**
