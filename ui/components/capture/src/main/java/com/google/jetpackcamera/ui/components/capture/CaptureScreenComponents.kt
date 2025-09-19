@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import JcaSwitch
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.os.Build
@@ -33,13 +32,18 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,9 +65,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -81,12 +88,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -229,8 +241,8 @@ fun CaptureModeToggleButton(
     // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
     val toggleState = remember(uiState.selectedCaptureMode) {
         when (uiState.selectedCaptureMode) {
-            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false // left
-            CaptureMode.VIDEO_ONLY -> true // right
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> ToggleState.Left
+            CaptureMode.VIDEO_ONLY -> ToggleState.Right
         }
     }
     val enabled =
@@ -239,56 +251,180 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
-    JcaSwitch(
-        modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
-        checked = toggleState,
-        onCheckedChange = {
-            val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
-            onChangeCaptureMode(newCaptureMode)
+        ToggleButton(
+            leftIcon = if (uiState.selectedCaptureMode ==
+                CaptureMode.IMAGE_ONLY
+            ) {
+                rememberVectorPainter(image = Icons.Filled.CameraAlt)
+            } else {
+                rememberVectorPainter(image = Icons.Outlined.CameraAlt)
+            },
+            rightIcon = if (uiState.selectedCaptureMode ==
+                CaptureMode.VIDEO_ONLY
+            ) {
+                rememberVectorPainter(image = Icons.Filled.Videocam)
+            } else {
+                rememberVectorPainter(image = Icons.Outlined.Videocam)
+            },
+            toggleState = toggleState,
+            onToggle = {
+                val newCaptureMode = when (toggleState) {
+                    ToggleState.Right -> CaptureMode.IMAGE_ONLY
+                    ToggleState.Left -> CaptureMode.VIDEO_ONLY
+                }
+                onChangeCaptureMode(newCaptureMode)
+            },
+            onToggleWhenDisabled = {
+                val disabledReason: DisableRationale? =
+                    (
+                            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                    SingleSelectableUiState.Disabled<CaptureMode>
+                            )?.disabledReason
+                        ?: (
+                                uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                        as? SingleSelectableUiState.Disabled<CaptureMode>
+                                )
+                            ?.disabledReason
+                disabledReason?.let { onToggleWhenDisabled(it) }
+            },
+            // toggle only enabled when both capture modes are available
+            enabled = enabled,
+            leftIconDescription =
+                if (enabled) {
+                    stringResource(id = R.string.capture_mode_image_capture_content_description)
+                } else {
+                    stringResource(
+                        id = R.string.capture_mode_image_capture_content_description_disabled
+                    )
+                },
+            rightIconDescription =
+                if (enabled) {
+                    stringResource(id = R.string.capture_mode_video_recording_content_description)
+                } else {
+                    stringResource(
+                        id = R.string.capture_mode_video_recording_content_description_disabled
+                    )
+                },
+            modifier = modifier
+        )
+    }
+
+enum class ToggleState {
+    Left,
+    Right
+}
+
+//todo(kc): need to recreate image toggle button to be scalable and support drag
+@Composable
+fun ToggleButton(
+    leftIcon: Painter,
+    rightIcon: Painter,
+    modifier: Modifier = Modifier,
+    toggleState: ToggleState? = null,
+    onToggle: () -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
+    enabled: Boolean = true,
+    leftIconDescription: String = "leftIcon",
+    rightIconDescription: String = "rightIcon",
+    iconPadding: Dp = 8.dp
+) {
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val disableColor = MaterialTheme.colorScheme.onSurface
+    val iconSelectionColor = MaterialTheme.colorScheme.onPrimary
+    val iconUnSelectionColor = MaterialTheme.colorScheme.primary
+    val circleSelectionColor = MaterialTheme.colorScheme.primary
+    val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
+    val animatedTogglePosition by animateFloatAsState(
+        when (toggleState) {
+            ToggleState.Left -> 0f
+            ToggleState.Right -> 1f
+            null -> 0f
         },
-        onToggleWhenDisabled = {
-            val disabledReason: DisableRationale? =
-                (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
-                    ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
-                        ?.disabledReason
-            disabledReason?.let { onToggleWhenDisabled(it) }
-        },
-        enabled = enabled,
-        leftIcon = if (uiState.selectedCaptureMode ==
-            CaptureMode.IMAGE_ONLY
-        ) {
-            Icons.Filled.CameraAlt
-        } else {
-            Icons.Outlined.CameraAlt
-        },
-        rightIcon = if (uiState.selectedCaptureMode ==
-            CaptureMode.VIDEO_ONLY
-        ) {
-            Icons.Filled.Videocam
-        } else {
-            Icons.Outlined.Videocam
-        },
-        leftIconDescription = if (enabled) {
-            stringResource(id = R.string.capture_mode_image_capture_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_image_capture_content_description_disabled
-            )
-        },
-        rightIconDescription = if (enabled) {
-            stringResource(id = R.string.capture_mode_video_recording_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_video_recording_content_description_disabled
-            )
-        }
+        label = "togglePosition"
     )
+
+    Surface(
+        modifier = modifier
+            .clip(shape = RoundedCornerShape(50))
+            .then(
+                Modifier.clickable(
+                    role = Role.Switch
+                ) {
+                    if (enabled && toggleState != null) {
+                        onToggle()
+                    } else {
+                        onToggleWhenDisabled()
+                    }
+                }
+            )
+            .semantics {
+                stateDescription = when (toggleState) {
+                    ToggleState.Left -> leftIconDescription
+                    ToggleState.Right -> rightIconDescription
+                    null -> "unknown togglestate"
+                }
+            }
+            .width(64.dp)
+            .height(32.dp),
+        color = backgroundColor
+    ) {
+        Box {
+            Row(
+                modifier = Modifier.matchParentSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                val xPos = animatedTogglePosition *
+                                        (constraints.maxWidth - placeable.width)
+                                placeable.placeRelative(xPos.toInt(), 0)
+                            }
+                        }
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(50))
+                        .background(circleColor)
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        if (enabled) Modifier else Modifier.alpha(0.38f)
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    painter = leftIcon,
+                    contentDescription = "leftIcon",
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Left) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+                Icon(
+                    painter = rightIcon,
+                    contentDescription = "rightIcon",
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Right) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -413,9 +549,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+                    previewDisplayUiState.aspectRatioUiState as
+                            AspectRatioUiState.Available
+                    ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -476,7 +612,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -565,8 +701,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                                "stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -581,8 +717,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
                                     )
                             }
                         }
