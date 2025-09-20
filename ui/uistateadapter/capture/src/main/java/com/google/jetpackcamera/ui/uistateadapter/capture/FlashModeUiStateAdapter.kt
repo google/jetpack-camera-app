@@ -63,7 +63,7 @@ fun FlashModeUiState.Companion.from(
         Available(
             selectedFlashMode = selectedFlashMode,
             availableFlashModes = availableModes,
-            isActive = false
+            isLowLightBoostActive = false
         )
     }
 }
@@ -98,7 +98,8 @@ fun FlashModeUiState.updateFrom(
             } else {
                 if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     copy(
-                        isActive = cameraState.lowLightBoostState == LowLightBoostState.ACTIVE
+                        isLowLightBoostActive = cameraState.lowLightBoostState ==
+                            LowLightBoostState.ACTIVE
                     )
                 } else {
                     // Nothing has changed

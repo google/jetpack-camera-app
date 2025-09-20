@@ -26,6 +26,7 @@ import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
@@ -62,6 +63,7 @@ sealed interface CaptureUiState {
         val captureButtonUiState: CaptureButtonUiState = CaptureButtonUiState.Unavailable,
         val imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
-        val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable
+        val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
+        val hdrUiState: HdrUiState = HdrUiState.Unavailable
     ) : CaptureUiState
 }

@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -28,15 +29,18 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.searchForQuickSetting
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +64,12 @@ class NavigationTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
 
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+
         // Navigate to the settings screen
+        composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
             .performClick()
@@ -97,7 +106,12 @@ class NavigationTest {
                 "Device does not have multiple cameras to flip between."
             }.performClick()
 
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+
         // Navigate to the settings screen
+        composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
             .performClick()
@@ -109,6 +123,9 @@ class NavigationTest {
 
         // Assert we're on PreviewScreen by finding the capture button
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+
+        // Assert bottom sheet is not open
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
     }
 
     @Test
@@ -147,6 +164,8 @@ class NavigationTest {
             .assertExists()
             .performClick()
 
+        composeTestRule.searchForQuickSetting(QUICK_SETTINGS_RATIO_BUTTON)
+
         // Navigate to the expanded quick settings ratio screen
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
             .assertExists()
@@ -157,10 +176,15 @@ class NavigationTest {
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON).isDisplayed()
         }
 
+        // todo(kc): what should the new behavior be here? should this back press return to the
+        // greater quick settings menu or close the entire bottom sheet?
+
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on quick settings by finding the ratio button
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON).assertExists()
+        // Assert bottom sheet closed
+        composeTestRule.waitUntil(DEFAULT_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
+        }
     }
 }
