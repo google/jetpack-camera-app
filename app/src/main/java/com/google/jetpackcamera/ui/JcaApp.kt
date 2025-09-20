@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui
 
-import android.Manifest
 import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -25,42 +24,37 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
-import com.google.jetpackcamera.feature.preview.PreviewScreen
+import com.google.jetpackcamera.feature.preview.navigation.navigateToPreview
+import com.google.jetpackcamera.feature.preview.navigation.popUpToPreview
+import com.google.jetpackcamera.feature.preview.navigation.previewScreen
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.permissions.PermissionsScreen
+import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
+import com.google.jetpackcamera.permissions.navigation.navigateToPermissions
+import com.google.jetpackcamera.permissions.navigation.permissionsScreen
+import com.google.jetpackcamera.permissions.navigation.popUpToPermissions
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
-import com.google.jetpackcamera.ui.Routes.PERMISSIONS_ROUTE
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
-import com.google.jetpackcamera.ui.Routes.PREVIEW_NAV_ARG_CAPTURE_URIS
-import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE
-import com.google.jetpackcamera.ui.Routes.PREVIEW_ROUTE_WITH_CAPTURE_URIS
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 
 @Composable
 fun JcaApp(
-    openAppSettings: () -> Unit,
-    /*TODO(b/306236646): remove after still capture*/
     externalCaptureMode: ExternalCaptureMode,
     captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
+    openAppSettings: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -91,69 +85,44 @@ private fun JetpackCameraNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = PERMISSIONS_ROUTE,
+        startDestination = PermissionsRoute.toString(),
         modifier = modifier
     ) {
-        composable(PERMISSIONS_ROUTE) {
-            PermissionsScreen(
-                shouldRequestReadWriteStoragePermission = externalCaptureMode ==
-                    ExternalCaptureMode.Standard &&
-                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.P,
-                shouldRequestAudioPermission = externalCaptureMode == ExternalCaptureMode.Standard,
-                onAllPermissionsGranted = {
-                    // Pop off the permissions screen
-                    navController.navigate(PREVIEW_ROUTE) {
-                        popUpTo(PERMISSIONS_ROUTE) {
-                            inclusive = true
-                        }
-                    }
-                },
-                openAppSettings = onOpenAppSettings
-            )
-        }
-
-        composable(
-            route = PREVIEW_ROUTE_WITH_CAPTURE_URIS,
-            arguments = listOf(
-                navArgument(name = PREVIEW_NAV_ARG_CAPTURE_URIS) {
-                    type = NavType.StringListType
-                    defaultValue = captureUris.map { it.toString() }
-                }
-            ),
-            enterTransition = { fadeIn() }
-        ) {
-            val permissionStates = rememberMultiplePermissionsState(
-                permissions =
-                buildList {
-                    add(Manifest.permission.CAMERA)
-                    add(Manifest.permission.RECORD_AUDIO)
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                        add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    }
-                }
-            )
-            // Automatically navigate to permissions screen when camera permission revoked
-            LaunchedEffect(key1 = permissionStates.permissions[0].status) {
-                if (!permissionStates.permissions[0].status.isGranted) {
-                    // Pop off the preview screen
-                    navController.navigate(PERMISSIONS_ROUTE) {
-                        popUpTo(PREVIEW_ROUTE) {
-                            inclusive = true
-                        }
-                    }
+        val requestablePermissions = buildList {
+            add(android.Manifest.permission.CAMERA)
+            if (externalCaptureMode == ExternalCaptureMode.Standard) {
+                add(android.Manifest.permission.RECORD_AUDIO)
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }
-            PreviewScreen(
-                onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
-                onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-                externalCaptureMode = externalCaptureMode,
-                debugSettings = debugSettings,
-                onCaptureEvent = onCaptureEvent
-            )
         }
+        permissionsScreen(
+            requestablePermissions = requestablePermissions,
+            onAllPermissionsGranted = {
+                navController.navigateToPreview {
+                    popUpToPermissions()
+                }
+            },
+            onOpenAppSettings = onOpenAppSettings
+        )
+
+        previewScreen(
+            externalCaptureMode = externalCaptureMode,
+            captureUris = captureUris,
+            debugSettings = debugSettings,
+            onRequestWindowColorMode = onRequestWindowColorMode,
+            onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
+            onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
+            onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
+            onNavigateToPermissions = {
+                navController.navigateToPermissions {
+                    popUpToPreview()
+                }
+            },
+            onCaptureEvent = onCaptureEvent
+        )
+
         composable(
             route = SETTINGS_ROUTE,
             enterTransition = {
