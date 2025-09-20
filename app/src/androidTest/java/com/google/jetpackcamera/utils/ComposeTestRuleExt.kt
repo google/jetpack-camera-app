@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.utils
 
 import android.content.Context
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -24,9 +25,9 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
-import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasStateDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
@@ -36,9 +37,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.model.CaptureMode
@@ -57,12 +61,13 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_C
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
@@ -493,15 +498,16 @@ inline fun <T> ComposeTestRule.visitSettingsScreen(
     crossinline block: SettingsScreenScope.() -> T
 ): T {
     var needReturnFromSettings = false
-    onNodeWithTag(SETTINGS_BUTTON).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromSettings = true
+    if (onNodeWithTag(SETTINGS_TITLE).isNotDisplayed()) {
+        needReturnFromSettings = true
+        visitQuickSettings {
+            searchForQuickSetting(SETTINGS_BUTTON)
+            onNodeWithTag(SETTINGS_BUTTON).performClick()
         }
     }
 
     onNodeWithTag(SETTINGS_TITLE).assertExists(
-        "Settings can only be entered from PreviewScreen or Settings screen"
+        "Settings can only be entered from Quick Settings or Settings screen"
     )
 
     try {
@@ -540,6 +546,7 @@ fun SettingsScreenScope.selectLensFacing(lensFacing: LensFacing) {
                 LensFacing.FRONT -> getResString(
                     SettingsR.string.default_facing_camera_description_front
                 )
+
                 LensFacing.BACK -> getResString(
                     SettingsR.string.default_facing_camera_description_back
                 )
@@ -607,7 +614,10 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
 @CanIgnoreReturnValue
-inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTestRule.() -> T): T {
+inline fun <T> ComposeTestRule.visitQuickSettings(
+    settingTagToFind: String? = null,
+    crossinline block: ComposeTestRule.() -> T
+): T {
     var needReturnFromQuickSettings = false
     onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
         if (isDisplayed()) {
@@ -616,25 +626,63 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
         }
     }
 
-    onNodeWithContentDescription(
-        CaptureR.string.quick_settings_dropdown_open_description
-    ).assertExists(
-        "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
-    )
-
+    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+        try {
+            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
+        } catch (e: AssertionError) {
+            Log.e(
+                "ComposeTestRuleExt",
+                "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
+            )
+            throw e
+        }
+    }
+    // if we opened quick settings and want to immediately search for a setting
+    settingTagToFind?.let { searchForQuickSetting(it) }
     try {
         return block()
     } finally {
         if (needReturnFromQuickSettings) {
-            onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_open_description)
-                .assertExists()
-                .performClick()
+            val bottomSheetNode = onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            // Check if the bottom sheet content exists and is visible
+
+            if (bottomSheetNode.isDisplayed()) {
+                // It's visible, so perform the swipe down
+                bottomSheetNode.performTouchInput {
+                    down(center)
+                    swipeDown()
+                    up()
+                }
+
+                // Assert that the sheet is no longer visible (e.g., the text disappears)
+                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                    onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
+                }
+            } else {
+                println(
+                    "Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure."
+                )
+            }
 
             waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                onNodeWithTag(QUICK_SETTINGS_BACKGROUND_MAIN).isNotDisplayed()
+                onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
             }
         }
     }
+}
+
+/**
+ * Scrolls through the quick settings menu for a component that contains the desired tag.
+ *
+ * @throws AssertionError when [settingTestTag] is not found
+ */
+fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
+    // scroll if necessary until quick setting is found
+    // if reaches the end and not found, throw an error
+    val scrollableNode = this.onNodeWithTag(QUICK_SETTINGS_SCROLL_CONTAINER)
+    scrollableNode.assertExists()
+    scrollableNode.performScrollToIndex(0)
+    scrollableNode.performScrollToNode(hasTestTag(settingTestTag))
 }
 
 /**
@@ -643,15 +691,14 @@ inline fun <T> ComposeTestRule.visitQuickSettings(crossinline block: ComposeTest
 fun ComposeTestRule.unFocusQuickSetting() {
     // this will click the center of the composable... which may coincide with another composable.
     // so we offset click input out of the way
-    onNodeWithTag(QUICK_SETTINGS_BACKGROUND_FOCUSED)
+    onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON)
         .assertExists()
-        .assertHasClickAction()
-        .performTouchInput { down(centerLeft) }
-        .performTouchInput { up() }
+        .performClick()
 
     this
         .waitUntil(timeoutMillis = 2_000) {
-            onNodeWithTag(QUICK_SETTINGS_BACKGROUND_MAIN).isDisplayed()
+            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
+            onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON).isNotDisplayed()
         }
 }
 
@@ -662,6 +709,8 @@ fun ComposeTestRule.unFocusQuickSetting() {
 // ////////////////////////////
 fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
     visitQuickSettings {
+        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
+
         if (isHdrEnabled() != enabled) {
             onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                 .assume(isEnabled()) { "Device does not support HDR." }
@@ -673,6 +722,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
 
 fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
     visitQuickSettings {
+        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
         waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
         onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
             .assume(isEnabled()) { "Device does not support concurrent camera." }
@@ -687,6 +737,8 @@ fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode
 
 fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
+        searchForQuickSetting(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+
         waitUntil(timeoutMillis = 1000) {
             onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
         }
@@ -720,6 +772,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
 fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
     visitQuickSettings {
         // Click the flash button to switch to ON
+        searchForQuickSetting(QUICK_SETTINGS_FLASH_BUTTON)
         onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
             .assertExists()
             .assume(isEnabled()) {

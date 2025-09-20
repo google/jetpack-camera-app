@@ -83,6 +83,7 @@ android {
 dependencies {
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.material3.window.size.class1)
 
     // Compose
     val composeBom = platform(libs.compose.bom)

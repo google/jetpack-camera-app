@@ -67,9 +67,9 @@ val compatMainActivityExtras: Bundle?
         Bundle().apply {
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-    } else {
-        null
-    }
+    } else null
+
+val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
@@ -149,9 +149,9 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
-inline fun runMainActivityScenarioTest(
+inline fun runMainActivityScenarioTest(extras:Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest<MainActivity>(compatMainActivityExtras, block)
+) = runScenarioTest<MainActivity>(extras, block)
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,
@@ -280,9 +280,9 @@ private fun doesVideoExist(
         it.setDataSource(uri.path)
 
         it.getMimeType().startsWith(prefix) &&
-            it.hasVideo() &&
-            (!checkAudio || it.hasAudio()) &&
-            (durationMs == null || it.getDurationMs() == durationMs)
+                it.hasVideo() &&
+                (!checkAudio || it.hasAudio()) &&
+                (durationMs == null || it.getDurationMs() == durationMs)
     } == true
 }
 
@@ -312,7 +312,7 @@ fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String
 
 fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
     SemanticsProperties.StateDescription in it.config &&
-        (it.config[SemanticsProperties.StateDescription] == expected)
+            (it.config[SemanticsProperties.StateDescription] == expected)
 }
 
 /**
@@ -365,6 +365,7 @@ fun UiDevice.grantPermissionDialog() {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_allow_button"
+
                 else ->
                     "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
             }
@@ -385,6 +386,7 @@ fun UiDevice.denyPermissionDialog() {
             resId = when {
                 Build.VERSION.SDK_INT <= 29 ->
                     "com.android.packageinstaller:id/permission_deny_button"
+
                 else -> "com.android.permissioncontroller:id/permission_deny_button"
             }
         )
