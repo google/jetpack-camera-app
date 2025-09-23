@@ -70,7 +70,6 @@ import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
-import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -80,6 +79,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostSessionState
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
@@ -191,7 +191,11 @@ internal suspend fun runSingleCameraSession(
         }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
-            LowLightBoostSessionContainer.releaseSession()
+            if (lowLightBoostSessionState.value is LowLightBoostSessionState.Ready ||
+                lowLightBoostSessionState.value is LowLightBoostSessionState.Processing) {
+                lowLightBoostSessionState.update { LowLightBoostSessionState.ReleaseRequested }
+            }
+
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()
             val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
@@ -204,13 +208,20 @@ internal suspend fun runSingleCameraSession(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                     cameraConstraints?.supportedIlluminants?.contains(Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
                 ) {
+                    // Make sure the previous session is no longer active. The state should be
+                    // Uninitialized on the first run, and on subsequent runs it should be fully
+                    // Released before we continue setting up Google LLB.
+                    lowLightBoostSessionState.first { state ->
+                        state is LowLightBoostSessionState.Uninitialized ||
+                        state is LowLightBoostSessionState.Released
+                    }
                     val lowLightBoostClient = LowLightBoost.getClient(context)
                     cameraEffect = LowLightBoostEffect(
                         cameraId,
                         lowLightBoostClient,
-                        LowLightBoostSessionContainer,
                         this@coroutineScope,
-                        sceneDetectorCallback
+                        sceneDetectorCallback,
+                        lowLightBoostSessionState
                     ) { e ->
                         Log.w(TAG, "Emitting LLB Error", e)
                         currentCameraState.update { old ->
@@ -218,8 +229,12 @@ internal suspend fun runSingleCameraSession(
                         }
                     }
                 }
-            } else {
-                LowLightBoostSessionContainer.releaseSession()
+            }
+            else {
+                if (lowLightBoostSessionState.value is LowLightBoostSessionState.Ready ||
+                    lowLightBoostSessionState.value is LowLightBoostSessionState.Processing) {
+                    lowLightBoostSessionState.update { LowLightBoostSessionState.ReleaseRequested }
+                }
             }
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
                 cameraEffect == null
@@ -1224,8 +1239,9 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
             ) {
                 super.onCaptureCompleted(session, request, result)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    LowLightBoostSessionContainer.lowLightBoostSession?.processCaptureResult(result)
+                if (lowLightBoostSessionState.value is LowLightBoostSessionState.Ready ||
+                    lowLightBoostSessionState.value is LowLightBoostSessionState.Processing) {
+                lowLightBoostSessionState.update { LowLightBoostSessionState.Processing(result)}
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
