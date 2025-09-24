@@ -49,7 +49,7 @@ import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getResString
-import com.google.jetpackcamera.utils.longClickForVideoRecording
+import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.stateDescriptionMatches
@@ -278,7 +278,7 @@ class ConcurrentCameraTest {
                 .assertExists()
                 .performClick()
 
-            longClickForVideoRecording()
+            longClickForVideoRecordingCheckingElapsedTime()
 
             waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
                 composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()

@@ -37,7 +37,7 @@ fun ConcurrentCameraUiState.Companion.from(
     return ConcurrentCameraUiState.Available(
         selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
         isEnabled = systemConstraints.concurrentCamerasSupported &&
-            externalCaptureMode !is ExternalCaptureMode.ExternalImageCaptureMode && (
+            externalCaptureMode != ExternalCaptureMode.ImageCapture && (
                 (
                     captureModeUiState as?
                         CaptureModeUiState.Available
