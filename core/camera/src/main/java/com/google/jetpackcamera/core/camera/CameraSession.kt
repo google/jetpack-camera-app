@@ -230,12 +230,7 @@ internal suspend fun runSingleCameraSession(
                     }
                 }
             }
-            else {
-                if (lowLightBoostSessionState.value is LowLightBoostSessionState.Ready ||
-                    lowLightBoostSessionState.value is LowLightBoostSessionState.Processing) {
-                    lowLightBoostSessionState.update { LowLightBoostSessionState.ReleaseRequested }
-                }
-            }
+
             if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM &&
                 cameraEffect == null
             ) {
