@@ -38,6 +38,11 @@ sealed interface LowLightBoostSessionState {
     data class Processing(val result: TotalCaptureResult) : LowLightBoostSessionState
 
     /**
+     * Low Light Boost Session should be released.
+     */
+    data object ReleaseRequested : LowLightBoostSessionState
+
+    /**
      * Low Light Boost Session has been released and should no longer be used.
      */
     data object Released : LowLightBoostSessionState

@@ -191,6 +191,10 @@ internal suspend fun runSingleCameraSession(
         }
         .collectLatest { currentTransientSettings ->
             cameraProvider.unbindAll()
+            if (lowLightBoostSessionState.value is LowLightBoostSessionState.Ready ||
+                lowLightBoostSessionState.value is LowLightBoostSessionState.Processing) {
+                lowLightBoostSessionState.update { LowLightBoostSessionState.ReleaseRequested }
+            }
 
             val currentCameraSelector = currentTransientSettings.primaryLensFacing
                 .toCameraSelector()

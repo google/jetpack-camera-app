@@ -71,6 +71,9 @@ class LowLightBoostSurfaceProcessor(
                 if (state is LowLightBoostSessionState.Processing) {
                     lowLightBoostSession?.processCaptureResult(state.result)
                 }
+                if (state is LowLightBoostSessionState.ReleaseRequested) {
+                    releaseLowLightBoostSession()
+                }
             }
         }
 
@@ -96,13 +99,12 @@ class LowLightBoostSurfaceProcessor(
         object : LowLightBoostCallback {
             override fun onSessionDestroyed() {
                 Log.d(TAG, "LLB session destroyed")
-                lowLightBoostSessionState.update { LowLightBoostSessionState.Released }
+                releaseLowLightBoostSession()
             }
 
             override fun onSessionDisconnected(status: Status) {
                 Log.d(TAG, "LLB session disconnected: $status")
                 releaseLowLightBoostSession()
-                lowLightBoostSessionState.update { LowLightBoostSessionState.Released }
                 onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
             }
         }
@@ -219,5 +221,6 @@ class LowLightBoostSurfaceProcessor(
         Log.d(TAG, "Releasing LLB session")
         lowLightBoostSession?.release()
         lowLightBoostSession = null
+        lowLightBoostSessionState.update { LowLightBoostSessionState.Released }
     }
 }
