@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera.effects.processors
 
-import android.annotation.SuppressLint
+import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Log
 import android.view.Surface
@@ -27,22 +27,24 @@ import com.google.android.gms.cameralowlight.LowLightBoostCallback
 import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.LowLightBoostOptions
 import com.google.android.gms.cameralowlight.LowLightBoostSession
-import com.google.android.gms.cameralowlight.LowLightBoostStatusCodes
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
-import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
-import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
-import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
-import java.util.concurrent.Executors
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
 private const val TAG = "LowLightBoostProcessor"
 
@@ -53,164 +55,216 @@ private const val TAG = "LowLightBoostProcessor"
 class LowLightBoostSurfaceProcessor(
     private val cameraId: String,
     private val lowLightBoostClient: LowLightBoostClient,
-    private val sessionContainer: LowLightBoostSessionContainer,
-    private val coroutineScope: CoroutineScope,
+    private val captureResults: StateFlow<TotalCaptureResult?>,
+    coroutineScope: CoroutineScope,
     private val sceneDetectorCallback: SceneDetectorCallback?,
     private val onLowLightBoostErrorCallback: (Exception) -> Unit = {}
-    ) : SurfaceProcessor {
+) : SurfaceProcessor {
 
-    private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
-    private var lowLightBoostSession: LowLightBoostSession? = null
-    private var inputSurfaceRequestScope: SurfaceRequestScope? = null
-
-    // Executor for provideSurface callback
-    private val glExecutor = Executors.newSingleThreadExecutor()
+    private val inputSurfaceRequests =
+        Channel<SurfaceRequest>(Channel.BUFFERED, onBufferOverflow = BufferOverflow.DROP_OLDEST) {
+            Log.w(
+                TAG,
+                "SurfaceRequest dropped. Channel is closed or new SurfaceRequest received: $it"
+            )
+            it.willNotProvideSurface()
+        }
+    private val outputSurfaces =
+        Channel<SurfaceOutput>(Channel.BUFFERED, onBufferOverflow = BufferOverflow.DROP_OLDEST) {
+            Log.w(
+                TAG,
+                "SurfaceOutput dropped. Channel is closed or new SurfaceOutput received: $it"
+            )
+            it.close()
+        }
 
     init {
-        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            outputSurfaceFlow
-                .filterNotNull()
-                .collectLatest { surfaceOutputScope ->
-                    surfaceOutputScope.withSurfaceOutput { refCountedSurface,
-                                                           size,
-                                                           updateTransformMatrix ->
-                        // If we can't acquire the surface, then the surface output is already
-                        // closed, so we'll return and wait for the next output surface.
-                        val outputSurface =
-                            refCountedSurface.acquire() ?: return@withSurfaceOutput
-
-                        tryCreateLowLightBoostSession(outputSurface)
-                    }
-                }
+        coroutineScope.launch { runLowLightBoostSession() }.invokeOnCompletion {
+            inputSurfaceRequests.close()
+            outputSurfaces.close()
         }
     }
 
-    private fun createLowLightBoostCallback(): LowLightBoostCallback =
-        object : LowLightBoostCallback {
-            override fun onSessionDestroyed() {
-                Log.d(TAG, "LLB session destroyed")
-                releaseLowLightBoostSession()
+    private suspend fun runLowLightBoostSession() {
+        for (outputSurface in outputSurfaces) {
+            val outputSurfaceCompleter = CompletableDeferred<Unit>()
+            val surface = outputSurface.getSurface(Runnable::run) {
+                outputSurfaceCompleter.complete(Unit)
             }
-
-            override fun onSessionDisconnected(status: Status) {
-                Log.d(TAG, "LLB session disconnected: $status")
-                releaseLowLightBoostSession()
-                onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
+            coroutineScope {
+                try {
+                    runLowLightBoostSessionWithOutput(surface)
+                } finally {
+                    withContext(NonCancellable) {
+                        outputSurfaceCompleter.await()
+                        outputSurface.close()
+                    }
+                }
             }
-        }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    override fun onInputSurface(request: SurfaceRequest) {
-        // Cancel any previous request handling
-        inputSurfaceRequestScope?.cancel("New SurfaceRequest received.")
-        val newScope = SurfaceRequestScope(request) // Helper to manage request lifecycle
-        inputSurfaceRequestScope = newScope
-
-        outputSurfaceFlow.value?.surfaceOutput?.let { outputSurface ->
-            coroutineScope.launch {
-                val surface = outputSurface.getSurface(glExecutor, {})
-                tryCreateLowLightBoostSession(surface)
-            }
-        }
-
-        // Clean up when the request is released (e.g., camera is closed)
-        request.addRequestCancellationListener(glExecutor) { // Replace context if not available
-            Log.d(TAG, "InputSurfaceRequest cancelled: $request")
-            inputSurfaceRequestScope?.cancel("SurfaceRequest cancelled by CameraX.")
-            inputSurfaceRequestScope = null
-            releaseLowLightBoostSession()
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    private suspend fun tryCreateLowLightBoostSession(outputSurfaceForLlb: Surface) {
-        inputSurfaceRequestScope?.withSurfaceRequest { currentInputRequest ->
-
-            try {
-                // Create LowLightBoostOptions with the output surface for LLB
-                // and dimensions from the input SurfaceRequest.
-                val llbOptions = LowLightBoostOptions(
-                    outputSurfaceForLlb, // This is where LLB writes its output
-                    cameraId,
-                    currentInputRequest.resolution.width,
-                    currentInputRequest.resolution.height,
-                    true
-                )
-
-                if (lowLightBoostSession != null) {
-                    releaseLowLightBoostSession()
-                }
-
-                lowLightBoostSession = lowLightBoostClient
-                    .createSession(llbOptions, createLowLightBoostCallback())
-                    .await()
-
-                sessionContainer.lowLightBoostSession = lowLightBoostSession
-
-                sceneDetectorCallback.let { cb ->
-                    lowLightBoostSession?.setSceneDetectorCallback(cb, null)
-                }
-
-                // Get the input surface from the LowLightBoostSession
-                val llbInputSurface = lowLightBoostSession?.getCameraSurface()
-                    ?: throw IllegalStateException(
-                        "LowLightBoostSession did not provide an input surface."
-                    )
-
-                Log.d(TAG, "LLB Session created. Providing LLB input surface to CameraX.")
-
-                // Fulfill the CameraX SurfaceRequest with LLB's input surface
-                currentInputRequest.provideSurface(llbInputSurface, glExecutor) { result ->
-                    Log.d(TAG, "CameraX SurfaceRequest result: ${result.resultCode}")
-                    llbInputSurface.release()
-                    releaseLowLightBoostSession()
-                    when (result.resultCode) {
-                        SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY -> {
-                            Log.i(TAG, "CameraX used LLB input surface.")
-                        }
-
-                        SurfaceRequest.Result.RESULT_REQUEST_CANCELLED -> {
-                            Log.e(TAG, "SurfaceRequest cancelled: ${result.resultCode}")
-                        }
-
-                        else -> {
-                            Log.e(TAG, "SurfaceRequest failed: ${result.resultCode}")
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                when (e) {
-                    is ApiException ->
-                        Log.e(TAG, "Google Play Services module for Low Light Boost is not " +
-                                "available on this device. This might be due to the version of " +
-                                "Google Play Services being too old.", e)
-                    else ->
-                        Log.e(TAG, "Failed to create LowLightBoostSession or provide surface", e)
-                }
-
-                onLowLightBoostErrorCallback(e)
-
-                // Signal error to CameraX for the input request if it hasn't been fulfilled yet.
-                currentInputRequest.willNotProvideSurface()
-                releaseLowLightBoostSession()
-            }
+    override fun onInputSurface(surfaceRequest: SurfaceRequest) {
+        Log.d(
+            TAG,
+            "New InputSurface received: $surfaceRequest, resolution: ${surfaceRequest.resolution}"
+        )
+        val result = inputSurfaceRequests.trySend(surfaceRequest)
+        if (result.isFailure) {
+            Log.w(TAG, "SurfaceRequest dropped. Channel is closed: $surfaceRequest")
+            surfaceRequest.willNotProvideSurface()
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onOutputSurface(surfaceOutput: SurfaceOutput) {
         Log.d(TAG, "New OutputSurface received: $surfaceOutput, resolution: ${surfaceOutput.size}")
-        val newScope = SurfaceOutputScope(surfaceOutput)
-        outputSurfaceFlow.update { old ->
-            old?.cancel("New SurfaceOutput received.")
-            newScope
+        val result = outputSurfaces.trySend(surfaceOutput)
+        if (result.isFailure) {
+            Log.w(TAG, "SurfaceOutput dropped. Channel is closed: $surfaceOutput")
+            surfaceOutput.close()
         }
     }
 
-    @SuppressLint("NewApi")
-    fun releaseLowLightBoostSession() {
-        Log.d(TAG, "Releasing LLB session")
-        lowLightBoostSession?.release()
-        lowLightBoostSession = null
-        sessionContainer.lowLightBoostSession = null
+    private suspend fun runLowLightBoostSessionWithOutput(outputSurfaceForLlb: Surface) {
+        try {
+            for (currentRequest in inputSurfaceRequests) {
+                handleSurfaceRequest(currentRequest, outputSurfaceForLlb)
+            }
+        } catch (e: Exception) {
+            handleLowLightBoostError(e)
+        }
+    }
+
+    private suspend fun handleSurfaceRequest(
+        surfaceRequest: SurfaceRequest,
+        outputSurfaceForLlb: Surface
+    ) = coroutineScope {
+        Log.d(TAG, "Creating new LowLightBoostSession for $surfaceRequest")
+        var surfaceProvided = false
+        try {
+            val llbOptions = createLlbOptions(surfaceRequest, outputSurfaceForLlb)
+            val llbSessionComplete = CompletableDeferred<Unit>()
+            val callback = createLlbCallback(llbSessionComplete)
+
+            // Must wrap the await() call in a NonCancellable context so we always
+            // release the session, even if the coroutine is cancelled.
+            val lowLightBoostSession = withContext(NonCancellable) {
+                lowLightBoostClient.createSession(llbOptions, callback).await()
+            }
+
+            lowLightBoostSession?.let { session ->
+                useLowLightBoostSession(session, surfaceRequest, llbSessionComplete)
+                surfaceProvided = true
+            }
+        } finally {
+            if (!surfaceProvided) {
+                // In case there was an error, make sure the SurfaceRequest is completed
+                surfaceRequest.willNotProvideSurface()
+            }
+        }
+    }
+
+    private suspend fun useLowLightBoostSession(
+        lowLightBoostSession: LowLightBoostSession,
+        surfaceRequest: SurfaceRequest,
+        llbSessionComplete: CompletableDeferred<Unit>
+    ) = coroutineScope {
+        Log.d(
+            TAG,
+            "LowLightBoostSession created: 0x${lowLightBoostSession.hashCode().toString(16)}"
+        )
+        try {
+            sceneDetectorCallback?.let { cb ->
+                lowLightBoostSession.setSceneDetectorCallback(cb, null)
+            }
+
+            val llbInputSurface = lowLightBoostSession.getCameraSurface()
+
+            launch {
+                captureResults.filterNotNull().collectLatest {
+                    lowLightBoostSession.processCaptureResult(it)
+                }
+            }
+
+            // Must wait for camera to be finished with surface before releasing. Don't allow
+            // cancellation of this coroutine here.
+            withContext(NonCancellable) {
+                surfaceRequest.provideSurfaceAndWaitForCompletion(llbInputSurface)
+                llbInputSurface.release()
+            }
+        } finally {
+            lowLightBoostSession.release()
+            // Must wait for session to be destroyed before continuing so more sessions aren't
+            // created while this one is still active.
+            withContext(NonCancellable) {
+                llbSessionComplete.await()
+            }
+            Log.d(
+                TAG,
+                "LowLightBoostSession released: 0x${lowLightBoostSession.hashCode().toString(16)}"
+            )
+        }
+    }
+
+    private fun createLlbOptions(
+        surfaceRequest: SurfaceRequest,
+        outputSurfaceForLlb: Surface
+    ): LowLightBoostOptions = LowLightBoostOptions(
+        outputSurfaceForLlb,
+        cameraId,
+        surfaceRequest.resolution.width,
+        surfaceRequest.resolution.height,
+        true
+    )
+
+    private fun createLlbCallback(
+        llbSessionComplete: CompletableDeferred<Unit>
+    ): LowLightBoostCallback = object : LowLightBoostCallback {
+        override fun onSessionDestroyed() {
+            Log.d(TAG, "LLB session destroyed")
+            llbSessionComplete.complete(Unit)
+        }
+
+        override fun onSessionDisconnected(status: Status) {
+            Log.d(TAG, "LLB session disconnected: $status")
+            onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
+            llbSessionComplete.complete(Unit)
+        }
+    }
+
+    private fun handleLowLightBoostError(e: Exception) {
+        when (e) {
+            is ApiException ->
+                Log.e(
+                    TAG, "Google Play Services module for Low Light Boost is not " +
+                            "available on this device. This might be due to the version of " +
+                            "Google Play Services being too old.", e
+                )
+
+            is CancellationException -> return // Don't call error callback on cancellation
+            else ->
+                Log.e(
+                    TAG,
+                    "Failed to create LowLightBoostSession or provide surface",
+                    e
+                )
+        }
+        onLowLightBoostErrorCallback(e)
+    }
+}
+
+private suspend fun SurfaceRequest.provideSurfaceAndWaitForCompletion(
+    surface: Surface
+): SurfaceRequest.Result = suspendCancellableCoroutine { continuation ->
+    provideSurface(surface, Runnable::run) { continuation.resume(it) }
+
+    continuation.invokeOnCancellation {
+        assert(false) {
+            "provideSurfaceAndWaitForCompletion should always be called in a " +
+                    "NonCancellable context to ensure the Surface is not closed before the " +
+                    "frame source has finished using it."
+        }
     }
 }
