@@ -28,7 +28,7 @@ sealed interface LowLightBoostSessionState {
     data object Uninitialized : LowLightBoostSessionState
 
     /**
-     * Low Light Boost Session has been created but hasn't processed any frames yet.
+     * Low Light Boost Session hasn't been created yet.
      */
     data object Ready : LowLightBoostSessionState
 
