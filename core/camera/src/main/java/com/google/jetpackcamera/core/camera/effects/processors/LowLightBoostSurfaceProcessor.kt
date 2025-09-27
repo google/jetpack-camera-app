@@ -27,12 +27,13 @@ import com.google.android.gms.cameralowlight.LowLightBoostCallback
 import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.LowLightBoostOptions
 import com.google.android.gms.cameralowlight.LowLightBoostSession
+import com.google.android.gms.cameralowlight.LowLightBoostStatusCodes
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
+import com.google.jetpackcamera.core.camera.effects.LowLightBoostSessionContainer
 import com.google.jetpackcamera.core.camera.effects.SurfaceOutputScope
 import com.google.jetpackcamera.core.camera.effects.SurfaceRequestScope
-import com.google.jetpackcamera.model.LowLightBoostSessionState
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -52,11 +53,11 @@ private const val TAG = "LowLightBoostProcessor"
 class LowLightBoostSurfaceProcessor(
     private val cameraId: String,
     private val lowLightBoostClient: LowLightBoostClient,
+    private val sessionContainer: LowLightBoostSessionContainer,
     private val coroutineScope: CoroutineScope,
     private val sceneDetectorCallback: SceneDetectorCallback?,
-    private val lowLightBoostSessionState: MutableStateFlow<LowLightBoostSessionState>,
-    private val onLowLightBoostErrorCallback: (Exception) -> Unit
-) : SurfaceProcessor {
+    private val onLowLightBoostErrorCallback: (Exception) -> Unit = {}
+    ) : SurfaceProcessor {
 
     private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
     private var lowLightBoostSession: LowLightBoostSession? = null
@@ -66,17 +67,6 @@ class LowLightBoostSurfaceProcessor(
     private val glExecutor = Executors.newSingleThreadExecutor()
 
     init {
-        coroutineScope.launch {
-            lowLightBoostSessionState.collect { state ->
-                if (state is LowLightBoostSessionState.Processing) {
-                    lowLightBoostSession?.processCaptureResult(state.result)
-                }
-                if (state is LowLightBoostSessionState.ReleaseRequested) {
-                    releaseLowLightBoostSession()
-                }
-            }
-        }
-
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             outputSurfaceFlow
                 .filterNotNull()
@@ -155,7 +145,7 @@ class LowLightBoostSurfaceProcessor(
                     .createSession(llbOptions, createLowLightBoostCallback())
                     .await()
 
-                lowLightBoostSessionState.update { LowLightBoostSessionState.Ready }
+                sessionContainer.lowLightBoostSession = lowLightBoostSession
 
                 sceneDetectorCallback.let { cb ->
                     lowLightBoostSession?.setSceneDetectorCallback(cb, null)
@@ -221,6 +211,6 @@ class LowLightBoostSurfaceProcessor(
         Log.d(TAG, "Releasing LLB session")
         lowLightBoostSession?.release()
         lowLightBoostSession = null
-        lowLightBoostSessionState.update { LowLightBoostSessionState.Released }
+        sessionContainer.lowLightBoostSession = null
     }
 }

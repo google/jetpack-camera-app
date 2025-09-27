@@ -21,6 +21,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.LowLightBoostEvent
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
@@ -64,6 +65,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
+    private val lowLightBoostEvents = MutableSharedFlow<LowLightBoostEvent>()
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
 
