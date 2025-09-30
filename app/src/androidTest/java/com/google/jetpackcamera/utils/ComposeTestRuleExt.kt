@@ -659,7 +659,8 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
                     onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
                 }
             } else {
-                println(
+                Log.d(
+                    "ComposeTestRuleExt",
                     "Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure."
                 )
             }
@@ -722,7 +723,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
 
 fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
     visitQuickSettings {
-        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
+        searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
         waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
         onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
             .assume(isEnabled()) { "Device does not support concurrent camera." }

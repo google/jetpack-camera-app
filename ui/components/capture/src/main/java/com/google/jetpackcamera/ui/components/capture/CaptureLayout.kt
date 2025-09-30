@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // these layouts are only concerned with placement. nothing else. no state handling
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
