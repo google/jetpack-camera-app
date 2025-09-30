@@ -151,7 +151,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
 
 inline fun runMainActivityScenarioTest(extras:Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest<MainActivity>(extras, block)
+) = runScenarioTest<MainActivity>(extras?:compatMainActivityExtras, block)
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,

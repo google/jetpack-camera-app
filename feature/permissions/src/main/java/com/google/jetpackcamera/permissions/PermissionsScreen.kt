@@ -15,50 +15,19 @@
  */
 package com.google.jetpackcamera.permissions
 
-import android.Manifest
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 
 private const val TAG = "PermissionsScreen"
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun PermissionsScreen(
-    shouldRequestAudioPermission: Boolean,
-    shouldRequestReadWriteStoragePermission: Boolean,
-    onAllPermissionsGranted: () -> Unit,
-    openAppSettings: () -> Unit
-) {
-    val permissionStates = rememberMultiplePermissionsState(
-        permissions =
-        buildList {
-            add(Manifest.permission.CAMERA)
-            if (shouldRequestAudioPermission) {
-                add(Manifest.permission.RECORD_AUDIO)
-            }
-
-            // sometimes, when the write storage permission is granted, it will automatically grant the read storage permission
-            if (shouldRequestReadWriteStoragePermission) {
-                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-    )
-    PermissionsScreen(
-        permissionStates = permissionStates,
-        onAllPermissionsGranted = onAllPermissionsGranted,
-        openAppSettings = openAppSettings
-    )
-}
 
 /**
  * Permission prompts screen.
@@ -68,14 +37,11 @@ fun PermissionsScreen(
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionsScreen(
-    modifier: Modifier = Modifier,
-    onAllPermissionsGranted: () -> Unit,
-    openAppSettings: () -> Unit,
     permissionStates: MultiplePermissionsState,
-    viewModel: PermissionsViewModel = hiltViewModel<
-        PermissionsViewModel,
-        PermissionsViewModel.Factory
-        > { factory -> factory.create(permissionStates) }
+    onAllPermissionsGranted: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: PermissionsViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PermissionsScreen")
     val permissionsUiState: PermissionsUiState by viewModel.permissionsUiState.collectAsState()
@@ -85,21 +51,20 @@ fun PermissionsScreen(
         }
     }
 
+    LaunchedEffect(permissionStates) {
+        viewModel.updatePermissionStates(permissionStates)
+    }
+
     if (permissionsUiState is PermissionsUiState.PermissionsNeeded) {
         val permissionEnum =
             (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
 
+        val currentPermissionStates by rememberUpdatedState(permissionStates)
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
-            onDismissPermission = { viewModel.dismissPermission() },
-            onSkipPermission = when (permissionEnum) {
-                PermissionEnum.CAMERA -> null
-                // todo: skip permission button functionality. currently need to go through the
-                // prompt to skip
-                else -> null // permissionsViewModel::dismissPermission
-            },
-            onOpenAppSettings = openAppSettings
+            onDismissPermission = { viewModel.updatePermissionStates(currentPermissionStates) },
+            onOpenAppSettings = onOpenAppSettings
         )
     }
 }

@@ -20,7 +20,6 @@ import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
-import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +30,9 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.data.media.MediaRepository
+import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
+import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
+import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureEvent
@@ -85,11 +87,9 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiStat
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
+import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -113,10 +113,8 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * [ViewModel] for [PreviewScreen].
  */
-@HiltViewModel(assistedFactory = PreviewViewModel.Factory::class)
-class PreviewViewModel @AssistedInject constructor(
-    @Assisted val externalCaptureMode: ExternalCaptureMode,
-    @Assisted val debugSettings: DebugSettings,
+@HiltViewModel
+class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
@@ -139,9 +137,12 @@ class PreviewViewModel @AssistedInject constructor(
     private var runningCameraJob: Job? = null
 
     private var recordingJob: Job? = null
-    private val externalUris: List<Uri> = savedStateHandle.get<Array<String>?>("captureUris")
-        ?.map { it.toUri() } ?: emptyList()
+
+    private val externalCaptureMode: ExternalCaptureMode = savedStateHandle.getExternalCaptureMode()
+    private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
+
+    private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
 
     private var cameraPropertiesJSON = ""
 
@@ -802,14 +803,6 @@ class PreviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cameraSystem.setDeviceRotation(deviceRotation)
         }
-    }
-
-    @AssistedFactory
-    interface Factory {
-        fun create(
-            externalCaptureMode: ExternalCaptureMode,
-            debugSettings: DebugSettings
-        ): PreviewViewModel
     }
 
     /**

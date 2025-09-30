@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera
 
+import android.Manifest.permission.CAMERA
+import android.Manifest.permission.RECORD_AUDIO
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -24,7 +26,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.google.jetpackcamera.permissions.AUDIO_RECORD_PERMISSION
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
@@ -51,8 +52,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-const val CAMERA_PERMISSION = "android.permission.CAMERA"
-
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {
     @get:Rule
@@ -66,7 +65,7 @@ class PermissionsTest {
 
     @get:Rule
     val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
-        permissions = arrayOf(CAMERA_PERMISSION, AUDIO_RECORD_PERMISSION),
+        permissions = arrayOf(CAMERA, RECORD_AUDIO),
         targetTestNames = arrayOf(
             "writeStoragePermission_granted",
             "writeStoragePermission_denied"
@@ -75,7 +74,7 @@ class PermissionsTest {
 
     @get:Rule
     val cameraPermissionRule = IndividualTestGrantPermissionRule(
-        permissions = arrayOf(CAMERA_PERMISSION),
+        permissions = arrayOf(CAMERA),
         targetTestNames = arrayOf(
             "recordAudioPermission_granted_closesPage",
             "recordAudioPermission_denied_closesPage"

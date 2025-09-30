@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // these layouts are only concerned with placement. nothing else. no state handling
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
@@ -76,9 +75,9 @@ fun PreviewLayout(
             Row(
                 modifier = Modifier
                     .background(Color.Black)
-                    .safeContentPadding()
+                    .safeDrawingPadding()
                     .fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 flashModeIndicator(Modifier)
