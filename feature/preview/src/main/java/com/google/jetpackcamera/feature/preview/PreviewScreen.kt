@@ -432,23 +432,26 @@ private fun ContentScreen(
                         captureUiState.quickSettingsUiState as?
                                 QuickSettingsUiState.Available
                         )?.quickSettingsIsOpen ?: false,
-                onCaptureImage = onCaptureImage,
+                onCaptureImage = {
+                    // close quick settings if already open
+                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                        onToggleQuickSettings()
+                    }
+                    onCaptureImage(it)
+                },
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
                 },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = {
+                    //close quick settings if already open
                     if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
                         onToggleQuickSettings()
                     }
                     onStartVideoRecording()
                 },
-                onStopVideoRecording = {
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
-                        onToggleQuickSettings()
-                    }
-                    onStopVideoRecording
-                },
+                onStopVideoRecording =
+                    onStopVideoRecording,
                 onLockVideoRecording = onLockVideoRecording
             )
         },
