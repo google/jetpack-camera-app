@@ -138,7 +138,13 @@ private fun VerticalMaterialControls(
 
                 // capture button row
                 Column {
-                    elapsedTimeDisplay(Modifier)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        elapsedTimeDisplay(Modifier)
+                    }
                     Row(
                         Modifier
                             .fillMaxWidth()
