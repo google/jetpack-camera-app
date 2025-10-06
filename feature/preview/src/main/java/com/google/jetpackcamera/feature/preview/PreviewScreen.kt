@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.os.Build
 import android.util.Log
@@ -29,11 +28,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -393,7 +396,7 @@ private fun ContentScreen(
         }
     }
 
-    PreviewLayout(
+    LayoutWrapper(
         modifier = modifier,
         hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
         flashModeIndicator = {
@@ -609,6 +612,70 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
         CircularProgressIndicator(modifier = Modifier.size(50.dp))
         Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
     }
+}
+
+@Composable
+private fun LayoutWrapper(
+    modifier: Modifier = Modifier,
+    viewfinder: @Composable (modifier: Modifier) -> Unit,
+    captureButton: @Composable (modifier: Modifier) -> Unit,
+    flipCameraButton: @Composable (modifier: Modifier) -> Unit,
+    zoomLevelDisplay: @Composable (modifier: Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (modifier: Modifier) -> Unit,
+    quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
+    flashModeIndicator: @Composable (modifier: Modifier) -> Unit,
+    hdrIndicator: @Composable (modifier: Modifier) -> Unit,
+    videoQualityIndicator: @Composable (modifier: Modifier) -> Unit,
+    stabilizationIndicator: @Composable (modifier: Modifier) -> Unit,
+    pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
+    audioToggleButton: @Composable (modifier: Modifier) -> Unit,
+    captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    imageWell: @Composable (modifier: Modifier) -> Unit,
+    quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
+    debugOverlay: @Composable (
+        modifier: Modifier,
+        extraButtons: Array<@Composable () -> Unit>?
+    ) -> Unit,
+    screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
+    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
+) {
+    PreviewLayout(
+        modifier = modifier,
+        viewfinder = viewfinder,
+        captureButton = captureButton,
+        flipCameraButton = flipCameraButton,
+        zoomLevelDisplay = zoomLevelDisplay,
+        elapsedTimeDisplay = elapsedTimeDisplay,
+        quickSettingsButton = quickSettingsButton,
+        captureModeToggle = captureModeToggle,
+        quickSettingsOverlay = quickSettingsOverlay,
+        indicatorRow = { modifier ->
+            Row(
+                modifier = modifier
+                    .background(Color.Black)
+                    .safeDrawingPadding()
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                flashModeIndicator(Modifier)
+                hdrIndicator(Modifier)
+                videoQualityIndicator(Modifier)
+                stabilizationIndicator(Modifier)
+            }
+        },
+        debugOverlay = { modifier ->
+            debugOverlay(
+                modifier, arrayOf(
+                    { imageWell(Modifier) },
+                    { audioToggleButton(Modifier) },
+                    { pauseToggleButton(Modifier) },
+                )
+            )
+        },
+        screenFlashOverlay = screenFlashOverlay,
+        snackBar = snackBar,
+    )
 }
 
 @Preview

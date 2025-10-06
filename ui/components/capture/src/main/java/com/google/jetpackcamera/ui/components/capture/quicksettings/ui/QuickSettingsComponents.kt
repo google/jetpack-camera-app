@@ -283,7 +283,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-fun QuickSetCaptureMode(
+fun ToggleFocusedQuickSetCaptureMode(
     setCaptureMode: (captureMode: CaptureMode) -> Unit,
     captureModeUiState: CaptureModeUiState,
     modifier: Modifier = Modifier,
@@ -370,7 +370,7 @@ fun QuickSetHdr(
 }
 
 @Composable
-fun QuickSetRatio(
+fun ToggleFocusedQuickSetRatio(
     setRatio: (aspectRatio: AspectRatio) -> Unit,
     aspectRatioUiState: AspectRatioUiState,
     modifier: Modifier = Modifier,
