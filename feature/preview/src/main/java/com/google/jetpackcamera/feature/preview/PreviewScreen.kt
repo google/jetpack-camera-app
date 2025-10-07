@@ -554,6 +554,7 @@ private fun ContentScreen(
         debugOverlay = { modifier, extraControls ->
             (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
                 DebugComponent(
+                    modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
                     debugUiState = it,
                     onSetTestPattern = onSetTestPattern,
@@ -577,7 +578,7 @@ private fun ContentScreen(
             val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
-                    modifier = Modifier.testTag(snackBarData.testTag),
+                    modifier = modifier.testTag(snackBarData.testTag),
                     snackbarToShow = snackBarData,
                     snackbarHostState = snackbarHostState,
                     onSnackbarResult = onSnackBarResult

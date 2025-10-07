@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.utils
-
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
@@ -41,8 +40,8 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
-import androidx.compose.ui.test.swipeDown
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.model.CaptureMode
