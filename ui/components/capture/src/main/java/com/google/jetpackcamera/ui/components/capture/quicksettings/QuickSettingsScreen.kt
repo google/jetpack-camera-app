@@ -15,17 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -35,9 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
@@ -53,8 +42,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
@@ -75,6 +62,8 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetR
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsGrid
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedCaptureModeButtons
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedRatioButtons
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -138,7 +127,7 @@ fun QuickSettingsBottomSheet(
 
                         add {
                             val context = LocalContext.current
-                            QuickSetCaptureMode(
+                            ToggleFocusedQuickSetCaptureMode(
                                 modifier = Modifier
                                     .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
                                     .semantics {
@@ -163,7 +152,7 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
-                            QuickSetRatio(
+                            ToggleFocusedQuickSetRatio(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 setRatio = {
                                     focusedQuickSetting = FocusedQuickSetting.ASPECT_RATIO

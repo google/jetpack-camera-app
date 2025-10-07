@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.os.Build
 import android.util.Log
@@ -29,11 +28,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -136,10 +139,10 @@ fun PreviewScreen(
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -189,13 +192,14 @@ fun PreviewScreen(
             val scope = rememberCoroutineScope()
             val zoomState = remember {
                 // the initialZoomLevel must be fetched from the settings, not the cameraState.
-                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
+                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
+                // may not yet be congruent with the settings
 
                 ZoomState(
                     initialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -212,9 +216,9 @@ fun PreviewScreen(
             ) {
                 zoomState.onChangeLens(
                     newInitialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -377,8 +381,8 @@ private fun ContentScreen(
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
                 (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
                     .selectedLensFacing.flip()
             )
         }
@@ -393,7 +397,7 @@ private fun ContentScreen(
         }
     }
 
-    PreviewLayout(
+    LayoutWrapper(
         modifier = modifier,
         hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
         flashModeIndicator = {
@@ -429,12 +433,14 @@ private fun ContentScreen(
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
-                        captureUiState.quickSettingsUiState as?
-                                QuickSettingsUiState.Available
-                        )?.quickSettingsIsOpen ?: false,
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
                     // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                            ?.quickSettingsIsOpen == true
+                    ) {
                         onToggleQuickSettings()
                     }
                     onCaptureImage(it)
@@ -444,14 +450,16 @@ private fun ContentScreen(
                 },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = {
-                    //close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                    // close quick settings if already open
+                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                            ?.quickSettingsIsOpen == true
+                    ) {
                         onToggleQuickSettings()
                     }
                     onStartVideoRecording()
                 },
                 onStopVideoRecording =
-                    onStopVideoRecording,
+                onStopVideoRecording,
                 onLockVideoRecording = onLockVideoRecording
             )
         },
@@ -499,9 +507,9 @@ private fun ContentScreen(
                     modifier = it,
                     toggleBottomSheet = onToggleQuickSettings,
                     isOpen = (
-                            captureUiState.quickSettingsUiState
-                                    as? QuickSettingsUiState.Available
-                            )?.quickSettingsIsOpen == true
+                        captureUiState.quickSettingsUiState
+                            as? QuickSettingsUiState.Available
+                        )?.quickSettingsIsOpen == true
                 )
             }
         },
@@ -516,7 +524,7 @@ private fun ContentScreen(
             if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeToggleUiState.Available,
+                        as CaptureModeToggleUiState.Available,
 
                     onChangeCaptureMode = onSetCaptureMode,
                     onToggleWhenDisabled = onDisabledCaptureMode,
@@ -546,6 +554,7 @@ private fun ContentScreen(
         debugOverlay = { modifier, extraControls ->
             (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
                 DebugComponent(
+                    modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
                     debugUiState = it,
                     onSetTestPattern = onSetTestPattern,
@@ -569,7 +578,7 @@ private fun ContentScreen(
             val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
-                    modifier = Modifier.testTag(snackBarData.testTag),
+                    modifier = modifier.testTag(snackBarData.testTag),
                     snackbarToShow = snackBarData,
                     snackbarHostState = snackbarHostState,
                     onSnackbarResult = onSnackBarResult
@@ -609,6 +618,71 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
         CircularProgressIndicator(modifier = Modifier.size(50.dp))
         Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
     }
+}
+
+@Composable
+private fun LayoutWrapper(
+    modifier: Modifier = Modifier,
+    viewfinder: @Composable (modifier: Modifier) -> Unit,
+    captureButton: @Composable (modifier: Modifier) -> Unit,
+    flipCameraButton: @Composable (modifier: Modifier) -> Unit,
+    zoomLevelDisplay: @Composable (modifier: Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (modifier: Modifier) -> Unit,
+    quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
+    flashModeIndicator: @Composable (modifier: Modifier) -> Unit,
+    hdrIndicator: @Composable (modifier: Modifier) -> Unit,
+    videoQualityIndicator: @Composable (modifier: Modifier) -> Unit,
+    stabilizationIndicator: @Composable (modifier: Modifier) -> Unit,
+    pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
+    audioToggleButton: @Composable (modifier: Modifier) -> Unit,
+    captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    imageWell: @Composable (modifier: Modifier) -> Unit,
+    quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
+    debugOverlay: @Composable (
+        modifier: Modifier,
+        extraButtons: Array<@Composable () -> Unit>?
+    ) -> Unit,
+    screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
+    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
+) {
+    PreviewLayout(
+        modifier = modifier,
+        viewfinder = viewfinder,
+        captureButton = captureButton,
+        flipCameraButton = flipCameraButton,
+        zoomLevelDisplay = zoomLevelDisplay,
+        elapsedTimeDisplay = elapsedTimeDisplay,
+        quickSettingsButton = quickSettingsButton,
+        captureModeToggle = captureModeToggle,
+        quickSettingsOverlay = quickSettingsOverlay,
+        indicatorRow = { modifier ->
+            Row(
+                modifier = modifier
+                    .background(Color.Black)
+                    .safeDrawingPadding()
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                flashModeIndicator(Modifier)
+                hdrIndicator(Modifier)
+                videoQualityIndicator(Modifier)
+                stabilizationIndicator(Modifier)
+            }
+        },
+        debugOverlay = { modifier ->
+            debugOverlay(
+                modifier,
+                arrayOf(
+                    { imageWell(Modifier) },
+                    { audioToggleButton(Modifier) },
+                    { pauseToggleButton(Modifier) }
+                )
+            )
+        },
+        screenFlashOverlay = screenFlashOverlay,
+        snackBar = snackBar
+    )
 }
 
 @Preview
