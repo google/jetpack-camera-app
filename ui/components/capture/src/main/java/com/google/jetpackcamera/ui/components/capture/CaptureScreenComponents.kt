@@ -36,6 +36,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -70,7 +71,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -251,70 +251,70 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
-        ToggleButton(
-            leftIcon = if (uiState.selectedCaptureMode ==
-                CaptureMode.IMAGE_ONLY
-            ) {
-                rememberVectorPainter(image = Icons.Filled.CameraAlt)
-            } else {
-                rememberVectorPainter(image = Icons.Outlined.CameraAlt)
-            },
-            rightIcon = if (uiState.selectedCaptureMode ==
-                CaptureMode.VIDEO_ONLY
-            ) {
-                rememberVectorPainter(image = Icons.Filled.Videocam)
-            } else {
-                rememberVectorPainter(image = Icons.Outlined.Videocam)
-            },
-            toggleState = toggleState,
-            onToggle = {
-                val newCaptureMode = when (toggleState) {
-                    ToggleState.Right -> CaptureMode.IMAGE_ONLY
-                    ToggleState.Left -> CaptureMode.VIDEO_ONLY
-                }
-                onChangeCaptureMode(newCaptureMode)
-            },
-            onToggleWhenDisabled = {
-                val disabledReason: DisableRationale? =
-                    (
-                            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                                    SingleSelectableUiState.Disabled<CaptureMode>
-                            )?.disabledReason
-                        ?: (
-                                uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                                        as? SingleSelectableUiState.Disabled<CaptureMode>
-                                )
-                            ?.disabledReason
-                disabledReason?.let { onToggleWhenDisabled(it) }
-            },
-            // toggle only enabled when both capture modes are available
-            enabled = enabled,
-            leftIconDescription =
-                if (enabled) {
-                    stringResource(id = R.string.capture_mode_image_capture_content_description)
-                } else {
-                    stringResource(
-                        id = R.string.capture_mode_image_capture_content_description_disabled
-                    )
-                },
-            rightIconDescription =
-                if (enabled) {
-                    stringResource(id = R.string.capture_mode_video_recording_content_description)
-                } else {
-                    stringResource(
-                        id = R.string.capture_mode_video_recording_content_description_disabled
-                    )
-                },
-            modifier = modifier
-        )
-    }
+    ToggleButton(
+        leftIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.IMAGE_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.CameraAlt)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.CameraAlt)
+        },
+        rightIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.VIDEO_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.Videocam)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.Videocam)
+        },
+        toggleState = toggleState,
+        onToggle = {
+            val newCaptureMode = when (toggleState) {
+                ToggleState.Right -> CaptureMode.IMAGE_ONLY
+                ToggleState.Left -> CaptureMode.VIDEO_ONLY
+            }
+            onChangeCaptureMode(newCaptureMode)
+        },
+        onToggleWhenDisabled = {
+            val disabledReason: DisableRationale? =
+                (
+                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                        SingleSelectableUiState.Disabled<CaptureMode>
+                    )?.disabledReason
+                    ?: (
+                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                            as? SingleSelectableUiState.Disabled<CaptureMode>
+                        )
+                        ?.disabledReason
+            disabledReason?.let { onToggleWhenDisabled(it) }
+        },
+        // toggle only enabled when both capture modes are available
+        enabled = enabled,
+        leftIconDescription =
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
+        rightIconDescription =
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
+        },
+        modifier = modifier
+    )
+}
 
 enum class ToggleState {
     Left,
     Right
 }
 
-//todo(kc): need to recreate image toggle button to be scalable and support drag
+// todo(kc): need to recreate image toggle button to be scalable and support drag
 @Composable
 fun ToggleButton(
     leftIcon: Painter,
@@ -379,7 +379,7 @@ fun ToggleButton(
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, placeable.height) {
                                 val xPos = animatedTogglePosition *
-                                        (constraints.maxWidth - placeable.width)
+                                    (constraints.maxWidth - placeable.width)
                                 placeable.placeRelative(xPos.toInt(), 0)
                             }
                         }
