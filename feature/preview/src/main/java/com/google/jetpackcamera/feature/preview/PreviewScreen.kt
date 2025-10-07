@@ -139,10 +139,10 @@ fun PreviewScreen(
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -192,13 +192,14 @@ fun PreviewScreen(
             val scope = rememberCoroutineScope()
             val zoomState = remember {
                 // the initialZoomLevel must be fetched from the settings, not the cameraState.
-                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState may not yet be congruent with the settings
+                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
+                // may not yet be congruent with the settings
 
                 ZoomState(
                     initialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -215,9 +216,9 @@ fun PreviewScreen(
             ) {
                 zoomState.onChangeLens(
                     newInitialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -380,8 +381,8 @@ private fun ContentScreen(
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
                 (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
                     .selectedLensFacing.flip()
             )
         }
@@ -432,12 +433,14 @@ private fun ContentScreen(
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
-                        captureUiState.quickSettingsUiState as?
-                                QuickSettingsUiState.Available
-                        )?.quickSettingsIsOpen ?: false,
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
                     // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                            ?.quickSettingsIsOpen == true
+                    ) {
                         onToggleQuickSettings()
                     }
                     onCaptureImage(it)
@@ -447,14 +450,16 @@ private fun ContentScreen(
                 },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = {
-                    //close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                    // close quick settings if already open
+                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                            ?.quickSettingsIsOpen == true
+                    ) {
                         onToggleQuickSettings()
                     }
                     onStartVideoRecording()
                 },
                 onStopVideoRecording =
-                    onStopVideoRecording,
+                onStopVideoRecording,
                 onLockVideoRecording = onLockVideoRecording
             )
         },
@@ -502,9 +507,9 @@ private fun ContentScreen(
                     modifier = it,
                     toggleBottomSheet = onToggleQuickSettings,
                     isOpen = (
-                            captureUiState.quickSettingsUiState
-                                    as? QuickSettingsUiState.Available
-                            )?.quickSettingsIsOpen == true
+                        captureUiState.quickSettingsUiState
+                            as? QuickSettingsUiState.Available
+                        )?.quickSettingsIsOpen == true
                 )
             }
         },
@@ -519,7 +524,7 @@ private fun ContentScreen(
             if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureUiState.captureModeToggleUiState
-                            as CaptureModeToggleUiState.Available,
+                        as CaptureModeToggleUiState.Available,
 
                     onChangeCaptureMode = onSetCaptureMode,
                     onToggleWhenDisabled = onDisabledCaptureMode,
@@ -666,15 +671,16 @@ private fun LayoutWrapper(
         },
         debugOverlay = { modifier ->
             debugOverlay(
-                modifier, arrayOf(
+                modifier,
+                arrayOf(
                     { imageWell(Modifier) },
                     { audioToggleButton(Modifier) },
-                    { pauseToggleButton(Modifier) },
+                    { pauseToggleButton(Modifier) }
                 )
             )
         },
         screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
+        snackBar = snackBar
     )
 }
 

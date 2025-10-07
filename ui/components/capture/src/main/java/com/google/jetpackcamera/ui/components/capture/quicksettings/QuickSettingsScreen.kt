@@ -55,15 +55,15 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FocusedQu
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetCaptureMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetRatio
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsGrid
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedCaptureModeButtons
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedRatioButtons
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState

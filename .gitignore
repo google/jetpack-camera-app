@@ -17,3 +17,4 @@
 .cxx
 local.properties
 /.kotlin
+.gemini/cli_protocol.md

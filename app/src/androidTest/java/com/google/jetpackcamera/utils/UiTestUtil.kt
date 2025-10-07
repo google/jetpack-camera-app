@@ -67,7 +67,9 @@ val compatMainActivityExtras: Bundle?
         Bundle().apply {
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-    } else null
+    } else {
+        null
+    }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
@@ -149,9 +151,10 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
-inline fun runMainActivityScenarioTest(extras:Bundle? = null,
+inline fun runMainActivityScenarioTest(
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest<MainActivity>(extras?:compatMainActivityExtras, block)
+) = runScenarioTest<MainActivity>(extras ?: compatMainActivityExtras, block)
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,
@@ -280,9 +283,9 @@ private fun doesVideoExist(
         it.setDataSource(uri.path)
 
         it.getMimeType().startsWith(prefix) &&
-                it.hasVideo() &&
-                (!checkAudio || it.hasAudio()) &&
-                (durationMs == null || it.getDurationMs() == durationMs)
+            it.hasVideo() &&
+            (!checkAudio || it.hasAudio()) &&
+            (durationMs == null || it.getDurationMs() == durationMs)
     } == true
 }
 
@@ -312,7 +315,7 @@ fun getMultipleImageCaptureIntent(uriStrings: ArrayList<String>?, action: String
 
 fun stateDescriptionMatches(expected: String?) = SemanticsMatcher("stateDescription is $expected") {
     SemanticsProperties.StateDescription in it.config &&
-            (it.config[SemanticsProperties.StateDescription] == expected)
+        (it.config[SemanticsProperties.StateDescription] == expected)
 }
 
 /**

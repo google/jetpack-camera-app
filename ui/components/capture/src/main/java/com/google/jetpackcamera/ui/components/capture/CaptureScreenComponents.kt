@@ -549,9 +549,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                    previewDisplayUiState.aspectRatioUiState as
-                            AspectRatioUiState.Available
-                    ).selectedAspectRatio
+                previewDisplayUiState.aspectRatioUiState as
+                    AspectRatioUiState.Available
+                ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -612,7 +612,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -701,8 +701,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                                "stabilization mode:" +
-                                                "${stabilizationUiState.stabilizationMode}"
+                                            "stabilization mode:" +
+                                            "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -717,8 +717,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                                "${stabilizationUiState.stabilizationMode}, " +
-                                                "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                     )
                             }
                         }
