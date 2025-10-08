@@ -201,7 +201,6 @@ internal suspend fun runSingleCameraSession(
                 var cameraEffect: CameraEffect? = null
                 var captureResults: MutableStateFlow<TotalCaptureResult?>? = null
                 if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                         cameraConstraints?.supportedIlluminants?.contains(Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
                     ) {
@@ -220,7 +219,8 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
                     }
-                } else if (sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
+                }
+                if (cameraEffect == null && sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
                     cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
                 }
                 val useCaseGroup = createUseCaseGroup(
