@@ -128,21 +128,16 @@ class LowLightBoostSurfaceProcessor(
     }
 
     private suspend fun runLowLightBoostSessionWithOutput(outputSurfaceForLlb: Surface) {
-        try {
-            for (currentRequest in inputSurfaceRequests) {
-                handleSurfaceRequest(currentRequest, outputSurfaceForLlb)
-            }
-        } catch (e: Exception) {
-            handleLowLightBoostError(e)
+        for (currentRequest in inputSurfaceRequests) {
+            handleSurfaceRequest(currentRequest, outputSurfaceForLlb)
         }
     }
 
     private suspend fun handleSurfaceRequest(
         surfaceRequest: SurfaceRequest,
         outputSurfaceForLlb: Surface
-    ) = coroutineScope {
+    ) {
         Log.d(TAG, "Creating new LowLightBoostSession for $surfaceRequest")
-        var surfaceProvided = false
         try {
             val llbOptions = createLlbOptions(surfaceRequest, outputSurfaceForLlb)
             val llbSessionComplete = CompletableDeferred<Unit>()
@@ -156,13 +151,11 @@ class LowLightBoostSurfaceProcessor(
 
             lowLightBoostSession?.let { session ->
                 useLowLightBoostSession(session, surfaceRequest, llbSessionComplete)
-                surfaceProvided = true
             }
-        } finally {
-            if (!surfaceProvided) {
-                // In case there was an error, make sure the SurfaceRequest is completed
-                surfaceRequest.willNotProvideSurface()
-            }
+        } catch (e: Exception) {
+            handleLowLightBoostError(e)
+            // In case there was an error, make sure the SurfaceRequest is completed
+            surfaceRequest.willNotProvideSurface()
         }
     }
 
