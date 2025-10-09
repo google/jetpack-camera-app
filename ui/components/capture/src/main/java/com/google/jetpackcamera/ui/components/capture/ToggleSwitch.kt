@@ -300,38 +300,23 @@ private fun DrawScope.drawClippedSwitchIcons(
         val offIconX = iconPadding
         val offIconRect = Rect(offIconX, iconY, offIconX + iconSizePx, iconY + iconSizePx)
 
-        // Clip area: The part *not* covered by the thumb
-        val offClipRight =
-            if (thumbRect.overlaps(offIconRect)) thumbRect.left else offIconRect.right
-
-        translate(
-            left = offIconX,
-            top = iconY
-        ) {
+        // Draw the base (unselected) icon first
+        translate(left = offIconX, top = iconY) {
             with(leftIconPainter) {
-                draw(
-                    size = iconDrawSize,
-                    //  topLeft = Offset(offIconX, iconY),
-                    colorFilter = ColorFilter.tint(onIconColor)
-                )
+                draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
             }
         }
+
+        // Then, clip to the thumb's area and draw the selected part on top
         clipRect(
-            left = offIconRect.left,
+            left = thumbRect.left.coerceIn(offIconRect.left, offIconRect.right),
             top = offIconRect.top,
-            right = offClipRight.coerceIn(offIconRect.left, offIconRect.right),
+            right = thumbRect.right.coerceIn(offIconRect.left, offIconRect.right),
             bottom = offIconRect.bottom
         ) {
-            translate(
-                left = offIconX,
-                top = iconY
-            ) {
+            translate(left = offIconX, top = iconY) {
                 with(leftIconPainter) {
-                    draw(
-                        size = iconDrawSize,
-                        //  topLeft = Offset(offIconX, iconY),
-                        colorFilter = ColorFilter.tint(offIconColor)
-                    )
+                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
                 }
             }
         }
@@ -341,36 +326,23 @@ private fun DrawScope.drawClippedSwitchIcons(
         val onIconX = size.width - iconPadding - iconSizePx
         val onIconRect = Rect(onIconX, iconY, onIconX + iconSizePx, iconY + iconSizePx)
 
-        // Clip area: The part *not* covered by the thumb
-        val onClipLeft = if (thumbRect.overlaps(onIconRect)) thumbRect.right else onIconRect.left
-
-        translate(
-            left = onIconX,
-            top = iconY
-        ) {
+        // Draw the base (unselected) icon first
+        translate(left = onIconX, top = iconY) {
             with(rightIconPainter) {
-                draw(
-                    size = iconDrawSize,
-                    colorFilter = ColorFilter.tint(onIconColor)
-                )
+                draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
             }
         }
 
+        // Then, clip to the thumb's area and draw the selected part on top
         clipRect(
-            left = onClipLeft.coerceIn(onIconRect.left, onIconRect.right),
+            left = thumbRect.left.coerceIn(onIconRect.left, onIconRect.right),
             top = onIconRect.top,
-            right = onIconRect.right,
+            right = thumbRect.right.coerceIn(onIconRect.left, onIconRect.right),
             bottom = onIconRect.bottom
         ) {
-            translate(
-                left = onIconX,
-                top = iconY
-            ) {
+            translate(left = onIconX, top = iconY) {
                 with(rightIconPainter) {
-                    draw(
-                        size = iconDrawSize,
-                        colorFilter = ColorFilter.tint(offIconColor)
-                    )
+                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
                 }
             }
         }

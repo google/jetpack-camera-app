@@ -155,8 +155,7 @@ private fun ZoomButton(
                 testTag = getZoomButtonTestTag(targetZoom)
                 // todo(kc): move to text resource
                 contentDescription = if (isSelected) "selected" else "not selected"
-            }
-            .testTag(getZoomButtonTestTag(targetZoom)),
+            },
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
         colors = if (isSelected) {
