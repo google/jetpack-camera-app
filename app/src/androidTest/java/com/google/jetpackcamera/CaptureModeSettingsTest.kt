@@ -47,8 +47,8 @@ import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
-import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getCaptureModeToggleState
+import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
@@ -87,19 +87,26 @@ internal class CaptureModeSettingsTest {
         }
 
     private fun switchStaysUnchanged(initialCaptureMode: CaptureMode) {
-        check(initialCaptureMode != CaptureMode.STANDARD) { "capture mode should be IMAGE_ONLY or VIDEO_ONLY." }
+        check(initialCaptureMode != CaptureMode.STANDARD) {
+            "capture mode should be IMAGE_ONLY or VIDEO_ONLY."
+        }
         assertThat(composeTestRule.getCaptureModeToggleState() == initialCaptureMode).isTrue()
     }
 
-    private fun ComposeTestRule.initializeCaptureSwitch(captureMode: CaptureMode = CaptureMode.IMAGE_ONLY) {
+    private fun ComposeTestRule.initializeCaptureSwitch(
+        captureMode: CaptureMode = CaptureMode.IMAGE_ONLY
+    ) {
         // Test that the JCA switch is visible on the screen
         composeTestRule.waitForStartup()
 
-        check(captureMode != CaptureMode.STANDARD) { "capture mode should be IMAGE_ONLY or VIDEO_ONLY." }
+        check(
+            captureMode != CaptureMode.STANDARD
+        ) { "capture mode should be IMAGE_ONLY or VIDEO_ONLY." }
         waitForStartup()
 
-        if ((getCurrentCaptureMode()) != captureMode)
+        if ((getCurrentCaptureMode()) != captureMode) {
             setCaptureMode(captureMode)
+        }
 
         waitUntil(DEFAULT_TIMEOUT_MILLIS) {
             onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isDisplayed()
@@ -142,14 +149,13 @@ internal class CaptureModeSettingsTest {
                     .assertExists()
                     .assertIsNotEnabled()
             }
-            //verify switch is disabled and locked on video only
+            // verify switch is disabled and locked on video only
             assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
             assertThat(
                 composeTestRule.getCaptureModeToggleState()
             ).isEqualTo(CaptureMode.VIDEO_ONLY)
 
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
-
                 // set concurrent camera mode back to off
                 setConcurrentCameraMode(ConcurrentCameraMode.OFF)
 
@@ -390,11 +396,15 @@ internal class CaptureModeSettingsTest {
 
         // should be different from initial capture mode
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        composeTestRule.waitUntil { composeTestRule.getCaptureModeToggleState() != initialCaptureMode }
+        composeTestRule.waitUntil {
+            composeTestRule.getCaptureModeToggleState() != initialCaptureMode
+        }
 
         // should now be  she same as the initial capture mode.
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        composeTestRule.waitUntil { composeTestRule.getCaptureModeToggleState() == initialCaptureMode }
+        composeTestRule.waitUntil {
+            composeTestRule.getCaptureModeToggleState() == initialCaptureMode
+        }
     }
 
     @Test
@@ -416,7 +426,8 @@ internal class CaptureModeSettingsTest {
             }
         try {
             composeTestRule.waitUntil(500) { false }
-        } catch (e: ComposeTimeoutException) {/* do nothing, we just want to time out*/
+        } catch (e: ComposeTimeoutException) {
+            /* do nothing, we just want to time out*/
         }
         switchStaysUnchanged(initialCaptureMode)
 
@@ -427,7 +438,8 @@ internal class CaptureModeSettingsTest {
 
         try {
             composeTestRule.waitUntil(500) { false }
-        } catch (e: ComposeTimeoutException) {/* do nothing, we just want to time out*/
+        } catch (e: ComposeTimeoutException) {
+            /* do nothing, we just want to time out*/
         }
         switchStaysUnchanged(initialCaptureMode)
 
@@ -439,7 +451,6 @@ internal class CaptureModeSettingsTest {
             initialCaptureMode != composeTestRule.getCaptureModeToggleState()
         }
     }
-
 
     @Test
     fun jcaSwitch_isNotVisibleWhileRecording(): Unit =
@@ -461,8 +472,8 @@ internal class CaptureModeSettingsTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
             composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isDisplayed()
-                        && composeTestRule.getCaptureModeToggleState() == CaptureMode.VIDEO_ONLY
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isDisplayed() &&
+                    composeTestRule.getCaptureModeToggleState() == CaptureMode.VIDEO_ONLY
             }
 
             deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)

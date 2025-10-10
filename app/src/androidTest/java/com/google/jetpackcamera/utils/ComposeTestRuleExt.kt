@@ -322,11 +322,13 @@ fun ComposeTestRule.getCaptureModeToggleState(): CaptureMode =
     checkComponentStateDescriptionState<CaptureMode>(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
         when (description) {
             getResString(CaptureR.string.capture_mode_image_capture_content_description),
-            getResString(CaptureR.string.capture_mode_image_capture_content_description_disabled)->
+            getResString(CaptureR.string.capture_mode_image_capture_content_description_disabled) ->
                 CaptureMode.IMAGE_ONLY
 
             getResString(CaptureR.string.capture_mode_video_recording_content_description),
-            getResString(CaptureR.string.capture_mode_video_recording_content_description_disabled)->
+            getResString(
+                CaptureR.string.capture_mode_video_recording_content_description_disabled
+            ) ->
                 CaptureMode.VIDEO_ONLY
 
             else -> throw (AssertionError("Unexpected content description: $description"))
@@ -343,7 +345,7 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     crossinline block: (String) -> T?
 ): T {
     waitForNodeWithTag(nodeTag)
-    onNodeWithTag(nodeTag).assume(isEnabled()){"$nodeTag is not enabled"}
+    onNodeWithTag(nodeTag).assume(isEnabled()) { "$nodeTag is not enabled" }
         .fetchSemanticsNode().let { node ->
             node.config[SemanticsProperties.ContentDescription].forEach { description ->
                 block(description)?.let { result ->

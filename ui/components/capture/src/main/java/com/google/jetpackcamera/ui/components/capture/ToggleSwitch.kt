@@ -138,39 +138,41 @@ fun ToggleSwitch(
         dragOffset = newOffset.coerceIn(dragMin, dragMax)
     }
 
-    val gestureModifier = (if (enabled) {
-        Modifier
-            .pointerInput(checked) { // Re-key gesture input when 'checked' changes
-                detectTapGestures(
-                    onTap = {
-                        onCheckedChange(!checked)
+    val gestureModifier = (
+        if (enabled) {
+            Modifier
+                .pointerInput(checked) { // Re-key gesture input when 'checked' changes
+                    detectTapGestures(
+                        onTap = {
+                            onCheckedChange(!checked)
+                            dragOffset = 0f
+                        }
+                    )
+                }
+                .draggable(
+                    state = draggableState,
+                    orientation = Orientation.Horizontal,
+                    onDragStopped = {
+                        // Determine new state based on final drag position
+                        val finalThumbPos = initialThumbX - dims.startX
+                        val newCheckedState = finalThumbPos > (dims.dragRange / 2)
+                        if (newCheckedState != checked) {
+                            onCheckedChange(newCheckedState)
+                        }
+                        // Reset drag offset after drag stops
                         dragOffset = 0f
                     }
                 )
-            }
-            .draggable(
-                state = draggableState,
-                orientation = Orientation.Horizontal,
-                onDragStopped = {
-                    // Determine new state based on final drag position
-                    val finalThumbPos = initialThumbX - dims.startX
-                    val newCheckedState = finalThumbPos > (dims.dragRange / 2)
-                    if (newCheckedState != checked) {
-                        onCheckedChange(newCheckedState)
+        } else {
+            Modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
+                detectTapGestures(
+                    onTap = {
+                        onToggleWhenDisabled()
                     }
-                    // Reset drag offset after drag stops
-                    dragOffset = 0f
-                }
-            )
-    } else {
-        Modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
-            detectTapGestures(
-                onTap = {
-                    onToggleWhenDisabled()
-                }
-            )
+                )
+            }
         }
-    })
+        )
         .semantics { stateDescription = if (checked) rightIconDescription else leftIconDescription }
 
     // --- 6. Canvas Drawing ---

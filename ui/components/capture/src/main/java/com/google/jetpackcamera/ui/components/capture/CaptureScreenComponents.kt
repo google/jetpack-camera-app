@@ -21,6 +21,7 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
@@ -35,7 +36,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -107,13 +107,12 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlin.time.Duration.Companion.nanoseconds
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -237,9 +236,9 @@ fun CaptureModeToggleButton(
 
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-                uiState.isCaptureModeSelectable(
-                    CaptureMode.IMAGE_ONLY
-                ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+            uiState.isCaptureModeSelectable(
+                CaptureMode.IMAGE_ONLY
+            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
@@ -250,13 +249,14 @@ fun CaptureModeToggleButton(
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
-                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                (
+                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
                         SingleSelectableUiState.Disabled<CaptureMode>
-                        )?.disabledReason
+                    )?.disabledReason
                     ?: (
-                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                                    as? SingleSelectableUiState.Disabled<CaptureMode>
-                            )
+                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                            as? SingleSelectableUiState.Disabled<CaptureMode>
+                        )
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
@@ -275,10 +275,16 @@ fun CaptureModeToggleButton(
         } else {
             Icons.Outlined.Videocam
         },
-        leftIconDescription = if (enabled) stringResource(id = R.string.capture_mode_image_capture_content_description)
-        else stringResource(id = R.string.capture_mode_image_capture_content_description_disabled),
-        rightIconDescription = if (enabled) stringResource(id = R.string.capture_mode_video_recording_content_description)
-        else stringResource(id = R.string.capture_mode_video_recording_content_description_disabled)
+        leftIconDescription = if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(id = R.string.capture_mode_image_capture_content_description_disabled)
+        },
+        rightIconDescription = if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(id = R.string.capture_mode_video_recording_content_description_disabled)
+        }
     )
 }
 
@@ -404,9 +410,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                    previewDisplayUiState.aspectRatioUiState as
-                            AspectRatioUiState.Available
-                    ).selectedAspectRatio
+                previewDisplayUiState.aspectRatioUiState as
+                    AspectRatioUiState.Available
+                ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -467,7 +473,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
+                                                "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -556,8 +562,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                                "stabilization mode:" +
-                                                "${stabilizationUiState.stabilizationMode}"
+                                            "stabilization mode:" +
+                                            "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -572,8 +578,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                                "${stabilizationUiState.stabilizationMode}, " +
-                                                "unable to retrieve icon."
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
                                     )
                             }
                         }
