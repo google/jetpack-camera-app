@@ -74,9 +74,9 @@ import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 @Composable
 fun ToggleSwitch(
     checked: Boolean,
+    modifier: Modifier = Modifier,
     onCheckedChange: (Boolean) -> Unit,
     onToggleWhenDisabled: () -> Unit = {},
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     thumbColor: Color = MaterialTheme.colorScheme.primary,
@@ -138,7 +138,7 @@ fun ToggleSwitch(
         dragOffset = newOffset.coerceIn(dragMin, dragMax)
     }
 
-    val gestureModifier = if (enabled) {
+    val gestureModifier = (if (enabled) {
         Modifier
             .pointerInput(checked) { // Re-key gesture input when 'checked' changes
                 detectTapGestures(
@@ -170,9 +170,8 @@ fun ToggleSwitch(
                 }
             )
         }
-    }.semantics {
-        stateDescription = if (checked) rightIconDescription else leftIconDescription
-    }
+    })
+        .semantics { stateDescription = if (checked) rightIconDescription else leftIconDescription }
 
     // --- 6. Canvas Drawing ---
     Canvas(

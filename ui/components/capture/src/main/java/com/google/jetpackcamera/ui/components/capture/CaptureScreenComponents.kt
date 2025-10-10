@@ -227,13 +227,14 @@ fun CaptureModeToggleButton(
     onToggleWhenDisabled: (DisableRationale) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
+    // Captures image (left), else captures video (right).
     val toggleState = remember(uiState.selectedCaptureMode) {
         when (uiState.selectedCaptureMode) {
             CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false
             CaptureMode.VIDEO_ONLY -> true
         }
     }
+
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
                 uiState.isCaptureModeSelectable(
@@ -241,7 +242,7 @@ fun CaptureModeToggleButton(
                 ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
-        modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
         checked = toggleState,
         onCheckedChange = {
             val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
@@ -249,9 +250,8 @@ fun CaptureModeToggleButton(
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
-                (
-                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                                SingleSelectableUiState.Disabled<CaptureMode>
+                (uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                        SingleSelectableUiState.Disabled<CaptureMode>
                         )?.disabledReason
                     ?: (
                             uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
@@ -275,20 +275,10 @@ fun CaptureModeToggleButton(
         } else {
             Icons.Outlined.Videocam
         },
-        leftIconDescription = if (enabled) {
-            stringResource(id = R.string.capture_mode_image_capture_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_image_capture_content_description_disabled
-            )
-        },
-        rightIconDescription = if (enabled) {
-            stringResource(id = R.string.capture_mode_video_recording_content_description)
-        } else {
-            stringResource(
-                id = R.string.capture_mode_video_recording_content_description_disabled
-            )
-        }
+        leftIconDescription = if (enabled) stringResource(id = R.string.capture_mode_image_capture_content_description)
+        else stringResource(id = R.string.capture_mode_image_capture_content_description_disabled),
+        rightIconDescription = if (enabled) stringResource(id = R.string.capture_mode_video_recording_content_description)
+        else stringResource(id = R.string.capture_mode_video_recording_content_description_disabled)
     )
 }
 
@@ -414,9 +404,9 @@ fun PreviewDisplay(
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+                    previewDisplayUiState.aspectRatioUiState as
+                            AspectRatioUiState.Available
+                    ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -477,7 +467,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -566,8 +556,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                                "stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -582,8 +572,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
                                     )
                             }
                         }
