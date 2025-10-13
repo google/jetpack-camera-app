@@ -56,7 +56,6 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.LowLightBoostAvailability
 import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.LowLightBoostSessionState
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
@@ -123,7 +122,6 @@ constructor(
     private val focusMeteringEvents =
         Channel<CameraEvent.FocusMeteringEvent>(capacity = Channel.CONFLATED)
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
-    private val lowLightBoostSessionState = MutableStateFlow<LowLightBoostSessionState>(LowLightBoostSessionState.Uninitialized)
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
@@ -410,7 +408,6 @@ constructor(
                             screenFlashEvents = screenFlashEvents,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
-                            lowLightBoostSessionState = lowLightBoostSessionState,
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings
