@@ -348,7 +348,7 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    strength = LowLightBoostState.MINIMUM_STRENGTH
+                    isLowLightBoostActive = false
                 ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,
@@ -415,7 +415,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                         SingleSelectableUiState.SelectableUi(FlashMode.ON),
                         SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                     ),
-                    strength = LowLightBoostState.MINIMUM_STRENGTH
+                    isLowLightBoostActive = false
                 ),
                 flipLensUiState = FlipLensUiState.Available(
                     selectedLensFacing = LensFacing.BACK,

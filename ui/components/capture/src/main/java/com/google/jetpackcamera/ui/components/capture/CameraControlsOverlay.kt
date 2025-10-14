@@ -588,7 +588,7 @@ private fun Preview_ControlsTop_FlashModeOn() {
                     SingleSelectableUiState.SelectableUi(FlashMode.OFF),
                     SingleSelectableUiState.SelectableUi(FlashMode.ON)
                 ),
-                strength = LowLightBoostState.MINIMUM_STRENGTH
+                isLowLightBoostActive = false
             )
         )
     }
@@ -607,7 +607,7 @@ private fun Preview_ControlsTop_FlashModeAuto() {
                     SingleSelectableUiState.SelectableUi(FlashMode.ON),
                     SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
                 ),
-                strength = LowLightBoostState.MINIMUM_STRENGTH
+                isLowLightBoostActive = false
             )
         )
     }

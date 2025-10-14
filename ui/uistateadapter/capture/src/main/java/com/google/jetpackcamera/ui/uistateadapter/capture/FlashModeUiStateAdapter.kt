@@ -76,7 +76,7 @@ fun FlashModeUiState.Companion.from(
         Available(
             selectedFlashMode = selectedFlashMode,
             availableFlashModes = availableModes,
-            strength = LowLightBoostState.MINIMUM_STRENGTH
+            isLowLightBoostActive = false
         )
     }
 }
@@ -115,7 +115,7 @@ fun FlashModeUiState.updateFrom(
                         else -> LowLightBoostState.MINIMUM_STRENGTH
                     }
                     copy(
-                        strength = strength
+                        isLowLightBoostActive = strength > 0.5
                     )
                 } else {
                     // Nothing has changed
