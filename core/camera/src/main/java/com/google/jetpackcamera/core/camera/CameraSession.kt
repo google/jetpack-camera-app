@@ -1233,7 +1233,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 
                 captureResults?.update { result }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+                    result.get(CaptureResult.CONTROL_AE_MODE) == CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY) {
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                     val boostStrength = when (nativeBoostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
