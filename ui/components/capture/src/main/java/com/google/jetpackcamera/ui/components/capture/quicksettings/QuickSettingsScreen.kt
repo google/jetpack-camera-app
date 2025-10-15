@@ -23,8 +23,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import com.google.jetpackcamera.model.AspectRatio
@@ -90,6 +90,7 @@ fun QuickSettingsBottomSheet(
                     onSetAspectRatio = onAspectRatioClick,
                     aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
                 )
+
                 FocusedQuickSetting.CAPTURE_MODE -> focusedCaptureModeButtons(
                     onUnFocus = onUnFocus,
                     onSetCaptureMode = onCaptureModeClick,
@@ -108,15 +109,18 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
-                            val context = LocalContext.current
+                            val description =
+                                quickSettingsUiState.captureModeUiState.stateDescription()
+                                    ?.let {
+                                        stringResource(it)
+                                    }
                             ToggleFocusedQuickSetCaptureMode(
                                 modifier = Modifier
                                     .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                                    .semantics {
-                                        quickSettingsUiState.captureModeUiState.stateDescription()
-                                            ?.let {
-                                                stateDescription = context.getString(it)
-                                            }
+                                    .apply {
+                                        if (description != null) {
+                                            semantics { stateDescription = description }
+                                        }
                                     },
                                 setCaptureMode = {
                                     focusedQuickSetting = FocusedQuickSetting.CAPTURE_MODE
