@@ -188,13 +188,12 @@ fun DefaultCameraFacing(
     lensUiState: FlipLensUiState,
     setDefaultLensFacing: (LensFacing) -> Unit
 ) {
-    val description =
+    val description = stringResource(
         when (lensUiState.currentLensFacing) {
-            LensFacing.FRONT -> stringResource(
-                R.string.default_facing_camera_description_front
-            )
-            LensFacing.BACK -> stringResource(R.string.default_facing_camera_description_back)
+            LensFacing.FRONT -> R.string.default_facing_camera_description_front
+            LensFacing.BACK -> R.string.default_facing_camera_description_back
         }
+    )
     SwitchSettingUI(
         modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
