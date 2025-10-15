@@ -48,6 +48,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -67,10 +68,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.SecureFlagPolicy
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -579,6 +582,9 @@ fun QuickSettingsBottomSheet(
     ModalBottomSheet(
         modifier = modifier
             .semantics {
+                //since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                // it doesn't inherit the "testTagsAsResourceId" property.
+                testTagsAsResourceId = true
                 testTag = QUICK_SETTINGS_BOTTOM_SHEET
                 contentDescription = openDescription
             },
