@@ -48,7 +48,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -73,7 +72,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.SecureFlagPolicy
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -582,7 +580,7 @@ fun QuickSettingsBottomSheet(
     ModalBottomSheet(
         modifier = modifier
             .semantics {
-                //since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
                 // it doesn't inherit the "testTagsAsResourceId" property.
                 testTagsAsResourceId = true
                 testTag = QUICK_SETTINGS_BOTTOM_SHEET
@@ -821,49 +819,6 @@ fun ExpandedQuickSetting(
     ) {
         items(quickSettingButtons.size) { i ->
             quickSettingButtons[i]()
-        }
-    }
-}
-
-/**
- * Algorithm to determine dimensions of QuickSettings Icon layout
- */
-@Composable
-fun QuickSettingsGrid(
-    modifier: Modifier = Modifier,
-    quickSettingsButtons: List<@Composable () -> Unit>
-) {
-    val initialNumOfColumns =
-        min(
-            quickSettingsButtons.size,
-            (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
-                    (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
-                            (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
-        )
-
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxWidth(),
-        columns = GridCells.Fixed(count = initialNumOfColumns)
-    ) {
-        items(quickSettingsButtons.size) { i ->
-            quickSettingsButtons[i]()
         }
     }
 }
