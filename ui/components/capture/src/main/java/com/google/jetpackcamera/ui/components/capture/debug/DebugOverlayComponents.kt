@@ -31,14 +31,20 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -57,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
+import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
@@ -107,31 +114,45 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
     )
 }
 
-// todo add imagewell to debug screen
 @Composable
 fun DebugComponent(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
     toggleIsOpen: () -> Unit,
+    onToggleHidingComponents: () -> Unit,
     debugUiState: DebugUiState.Enabled,
     vararg extraControls: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        DebugConsole(
-            modifier = Modifier.safeDrawingPadding(),
-            debugUiState = debugUiState,
-            onToggleDebugOverlay = toggleIsOpen,
-            extraControls = extraControls
-        )
+        Column {
+            IconButton(
+                modifier = Modifier.safeDrawingPadding().testTag(DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON),
+                onClick = { onToggleHidingComponents() }) {
+                if(debugUiState.debugHidingComponents)
+                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
+                else
+                    Icon(Icons.Default.Visibility, contentDescription = null)
+            }
+            if (!debugUiState.debugHidingComponents) {
+                DebugConsole(
+                    modifier = Modifier.safeDrawingPadding(),
+                    debugUiState = debugUiState,
+                    onToggleDebugOverlay = toggleIsOpen,
+                    extraControls = extraControls
+                )
+            }
+        }
         (debugUiState as? DebugUiState.Enabled.Open)?.let {
-            DebugOverlayComponent(
-                modifier = Modifier,
-                onChangeZoomRatio = onChangeZoomRatio,
-                onSetTestPattern = onSetTestPattern,
-                toggleIsOpen = toggleIsOpen,
-                debugUiState = it
-            )
+            if (!debugUiState.debugHidingComponents) {
+                DebugOverlayComponent(
+                    modifier = Modifier,
+                    onChangeZoomRatio = onChangeZoomRatio,
+                    onSetTestPattern = onSetTestPattern,
+                    toggleIsOpen = toggleIsOpen,
+                    debugUiState = it
+                )
+            }
         }
     }
 }
@@ -185,12 +206,12 @@ private fun DebugOverlayComponent(
     var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
     val backgroundColor = Color.Black.copy(
         alpha =
-        when (selectedDialog) {
-            SelectedDialog.None,
-            SelectedDialog.SetTestPattern -> 0.7f
+            when (selectedDialog) {
+                SelectedDialog.None,
+                SelectedDialog.SetTestPattern -> 0.7f
 
-            else -> 0.9f
-        }
+                else -> 0.9f
+            }
     )
 
     BackHandler(onBack = { toggleIsOpen() })

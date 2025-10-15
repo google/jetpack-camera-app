@@ -50,6 +50,7 @@ fun PreviewLayout(
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (modifier: Modifier) -> Unit,
+    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
@@ -71,15 +72,17 @@ fun PreviewLayout(
                 .safeDrawingPadding()
 
         ) {
-            VerticalMaterialControls(
-                captureButton = captureButton,
-                flipCameraButton = flipCameraButton,
-                quickSettingsToggleButton = quickSettingsButton,
-                captureModeToggleSwitch = captureModeToggle,
-                bottomSheetQuickSettings = quickSettingsOverlay,
-                zoomControls = zoomLevelDisplay,
-                elapsedTimeDisplay = elapsedTimeDisplay
-            )
+            debugVisibilityWrapper {
+                VerticalMaterialControls(
+                    captureButton = captureButton,
+                    flipCameraButton = flipCameraButton,
+                    quickSettingsToggleButton = quickSettingsButton,
+                    captureModeToggleSwitch = captureModeToggle,
+                    bottomSheetQuickSettings = quickSettingsOverlay,
+                    zoomControls = zoomLevelDisplay,
+                    elapsedTimeDisplay = elapsedTimeDisplay
+                )
+            }
             // controls overlay
             snackBar(Modifier, snackbarHostState)
             screenFlashOverlay(Modifier)
