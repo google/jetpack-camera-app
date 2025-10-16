@@ -41,7 +41,7 @@ class LowLightBoostEffect(
     coroutineScope: CoroutineScope,
     sceneDetectorCallback: SceneDetectorCallback? = null,
     onLowLightBoostErrorCallback: (Exception) -> Unit = {}
-    ) : CameraEffect(
+) : CameraEffect(
     TARGETS,
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
     TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,

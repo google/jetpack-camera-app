@@ -35,7 +35,6 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**

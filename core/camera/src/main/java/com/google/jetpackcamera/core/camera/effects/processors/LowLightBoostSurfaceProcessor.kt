@@ -30,6 +30,7 @@ import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
+import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +45,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.resume
 
 private const val TAG = "LowLightBoostProcessor"
 
@@ -231,9 +231,11 @@ class LowLightBoostSurfaceProcessor(
         when (e) {
             is ApiException ->
                 Log.e(
-                    TAG, "Google Play Services module for Low Light Boost is not " +
-                            "available on this device. This might be due to the version of " +
-                            "Google Play Services being too old.", e
+                    TAG,
+                    "Google Play Services module for Low Light Boost is not " +
+                        "available on this device. This might be due to the version of " +
+                        "Google Play Services being too old.",
+                    e
                 )
 
             is CancellationException -> return // Don't call error callback on cancellation
@@ -256,8 +258,8 @@ private suspend fun SurfaceRequest.provideSurfaceAndWaitForCompletion(
     continuation.invokeOnCancellation {
         assert(false) {
             "provideSurfaceAndWaitForCompletion should always be called in a " +
-                    "NonCancellable context to ensure the Surface is not closed before the " +
-                    "frame source has finished using it."
+                "NonCancellable context to ensure the Surface is not closed before the " +
+                "frame source has finished using it."
         }
     }
 }

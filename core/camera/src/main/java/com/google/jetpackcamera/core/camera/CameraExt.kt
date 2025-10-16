@@ -248,5 +248,5 @@ private inline fun <reified T : UseCase> UseCaseGroup.getUseCaseOrNull(): T? {
 fun isGooglePlayServicesWithVideoTimestampFixAvailable(context: Context): Boolean {
     val minVersion = 253300000 // (Y25W33)
     return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context, minVersion) ==
-            ConnectionResult.SUCCESS
+        ConnectionResult.SUCCESS
 }

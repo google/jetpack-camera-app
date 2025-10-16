@@ -28,6 +28,7 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.SurfaceRequest
@@ -69,6 +70,12 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -82,13 +89,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
-import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraSystem"
 const val TARGET_FPS_AUTO = 0
@@ -150,7 +150,6 @@ constructor(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
-
 
         // Build and update the system constraints
         systemConstraints = CameraSystemConstraints(
@@ -215,54 +214,12 @@ constructor(
                         val supportedFixedFrameRates =
                             camInfo.filterSupportedFixedFrameRates(FIXED_FRAME_RATES)
                         val supportedImageFormats = camInfo.supportedImageFormats
-                        val supportedIlluminants = buildSet {
-                            if (camInfo.hasFlashUnit()) {
-                                add(Illuminant.FLASH_UNIT)
-                            }
-
-                            if (lensFacing == LensFacing.FRONT) {
-                                add(Illuminant.SCREEN)
-                            }
-
-                            val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
-                            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
-                                (llbAvailability ==
-                                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                cameraAppSettings.lowLightBoostPriority ==
-                                    LowLightBoostPriority.PRIORITIZE_AE_MODE)
-                            ) {
-                                add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
-                            }
-                            if (llbAvailability ==
-                                    LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
-                                (llbAvailability ==
-                                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                cameraAppSettings.lowLightBoostPriority ==
-                                    LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)
-                            ) {
-                                add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
-                            }
-                        }
-
-                        val supportedFlashModes = buildSet {
-                            add(FlashMode.OFF)
-                            if ((
-                                setOf(
-                                    Illuminant.FLASH_UNIT,
-                                    Illuminant.SCREEN
-                                ) intersect supportedIlluminants
-                                ).isNotEmpty()
-                            ) {
-                                add(FlashMode.ON)
-                                add(FlashMode.AUTO)
-                            }
-
-                            if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
-                                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants
-                            ) {
-                                add(FlashMode.LOW_LIGHT_BOOST)
-                            }
-                        }
+                        val supportedIlluminants = generateSupportedIlluminants(
+                            camInfo,
+                            lensFacing,
+                            cameraAppSettings
+                        )
+                        val supportedFlashModes = generateSupportedFlashModes(supportedIlluminants)
 
                         val supportedTestPatterns = if (debugSettings.isDebugModeEnabled) {
                             camInfo.availableTestPatterns
@@ -322,8 +279,74 @@ constructor(
                 )
                 writeFileExternalStorage(file, cameraPropertiesJSON)
                 cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
-                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n" +
-                        cameraPropertiesJSON)
+                Log.d(
+                    TAG,
+                    "JCACameraProperties written to ${file.path}. \n" +
+                        cameraPropertiesJSON
+                )
+            }
+        }
+    }
+
+    private suspend fun generateSupportedIlluminants(
+        camInfo: CameraInfo,
+        lensFacing: LensFacing,
+        cameraAppSettings: CameraAppSettings
+    ): Set<Illuminant> {
+        return buildSet {
+            if (camInfo.hasFlashUnit()) {
+                add(Illuminant.FLASH_UNIT)
+            }
+
+            if (lensFacing == LensFacing.FRONT) {
+                add(Illuminant.SCREEN)
+            }
+
+            val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
+            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
+                (
+                    llbAvailability ==
+                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        cameraAppSettings.lowLightBoostPriority ==
+                        LowLightBoostPriority.PRIORITIZE_AE_MODE
+                    )
+            ) {
+                add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+            }
+            if (llbAvailability ==
+                LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                (
+                    llbAvailability ==
+                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        cameraAppSettings.lowLightBoostPriority ==
+                        LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+                    )
+            ) {
+                add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
+            }
+        }
+    }
+
+    private suspend fun generateSupportedFlashModes(
+        supportedIlluminants: Set<Illuminant>
+    ): Set<FlashMode> {
+        return buildSet {
+            add(FlashMode.OFF)
+            if ((
+                    setOf(
+                        Illuminant.FLASH_UNIT,
+                        Illuminant.SCREEN
+                    ) intersect supportedIlluminants
+                    ).isNotEmpty()
+            ) {
+                add(FlashMode.ON)
+                add(FlashMode.AUTO)
+            }
+
+            if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
+                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants
+            ) {
+                add(FlashMode.LOW_LIGHT_BOOST)
             }
         }
     }
@@ -462,7 +485,7 @@ constructor(
                 sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
                     .first {
                         it in supportedStabilizationModes &&
-                                targetFrameRate !in it.unsupportedFpsSet
+                            targetFrameRate !in it.unsupportedFpsSet
                     }
             } else {
                 requestedStabilizationMode
@@ -680,11 +703,11 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomStrategy.Absolute -> change.value
                     is ZoomStrategy.Scale -> (
-                            this.defaultZoomRatios
-                                [lensFacing]
-                                ?: 1.0f
-                            ) *
-                            change.value
+                        this.defaultZoomRatios
+                            [lensFacing]
+                            ?: 1.0f
+                        ) *
+                        change.value
 
                     is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
@@ -853,7 +876,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-                imageCaptureUseCase?.screenFlash != null
+            imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
