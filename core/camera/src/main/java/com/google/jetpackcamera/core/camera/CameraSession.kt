@@ -202,7 +202,8 @@ internal suspend fun runSingleCameraSession(
                 var captureResults: MutableStateFlow<TotalCaptureResult?>? = null
                 if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                        cameraConstraints?.supportedIlluminants?.contains(Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
+                        cameraConstraints?.supportedIlluminants?.contains(
+                            Illuminant.GOOGLE_LOW_LIGHT_BOOST) == true
                     ) {
                         val lowLightBoostClient = LowLightBoost.getClient(context)
                         captureResults = MutableStateFlow(null)
@@ -220,7 +221,8 @@ internal suspend fun runSingleCameraSession(
                         }
                     }
                 }
-                if (cameraEffect == null && sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
+                if (cameraEffect == null &&
+                    sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM) {
                     cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
                 }
                 val useCaseGroup = createUseCaseGroup(
@@ -463,7 +465,8 @@ private suspend fun updateCamera2RequestOptions(
     ) {
         when (newTransientSettings.flashMode) {
             FlashMode.LOW_LIGHT_BOOST -> {
-                if (cameraConstraints?.supportedIlluminants?.contains(Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true) {
+                if (cameraConstraints?.supportedIlluminants?.contains(
+                        Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true) {
                     Log.d(
                         TAG,
                         "Setting LLB with " +
@@ -1234,7 +1237,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 captureResults?.update { result }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
-                    result.get(CaptureResult.CONTROL_AE_MODE) == CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY) {
+                    result.get(CaptureResult.CONTROL_AE_MODE) ==
+                        CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY) {
                     val nativeBoostState = result.get(CaptureResult.CONTROL_LOW_LIGHT_BOOST_STATE)
                     val boostStrength = when (nativeBoostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->

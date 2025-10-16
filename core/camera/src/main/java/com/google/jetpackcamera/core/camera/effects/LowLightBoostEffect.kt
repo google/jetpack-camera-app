@@ -46,6 +46,13 @@ class LowLightBoostEffect(
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
     TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
     Runnable::run,
-    LowLightBoostSurfaceProcessor(cameraId, lowLightBoostClient, captureResults, coroutineScope, sceneDetectorCallback, onLowLightBoostErrorCallback),
+    LowLightBoostSurfaceProcessor(
+        cameraId,
+        lowLightBoostClient,
+        captureResults,
+        coroutineScope,
+        sceneDetectorCallback,
+        onLowLightBoostErrorCallback
+    ),
     {}
 )

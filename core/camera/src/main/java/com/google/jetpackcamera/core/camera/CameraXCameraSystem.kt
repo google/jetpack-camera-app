@@ -28,7 +28,6 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.SurfaceRequest
@@ -53,10 +52,10 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.LowLightBoostAvailability
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -70,13 +69,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_6
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
-import java.io.File
-import java.io.FileNotFoundException
-import java.lang.IllegalStateException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -90,6 +82,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import javax.inject.Inject
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "CameraXCameraSystem"
 const val TARGET_FPS_AUTO = 0
@@ -226,16 +225,21 @@ constructor(
                             }
 
                             val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
-                            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY || (
-                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_AE_MODE))
-                            {
+                            if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
+                                (llbAvailability ==
+                                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority ==
+                                    LowLightBoostPriority.PRIORITIZE_AE_MODE)
+                            ) {
                                 add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
                             }
-                            if (llbAvailability == LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY || (
-                                llbAvailability == LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
-                                cameraAppSettings.lowLightBoostPriority == LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES))
-                            {
+                            if (llbAvailability ==
+                                    LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                                (llbAvailability ==
+                                    LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                                cameraAppSettings.lowLightBoostPriority ==
+                                    LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)
+                            ) {
                                 add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
                             }
                         }
@@ -243,18 +247,19 @@ constructor(
                         val supportedFlashModes = buildSet {
                             add(FlashMode.OFF)
                             if ((
-                                    setOf(
-                                        Illuminant.FLASH_UNIT,
-                                        Illuminant.SCREEN
-                                    ) intersect supportedIlluminants
-                                    ).isNotEmpty()
+                                setOf(
+                                    Illuminant.FLASH_UNIT,
+                                    Illuminant.SCREEN
+                                ) intersect supportedIlluminants
+                                ).isNotEmpty()
                             ) {
                                 add(FlashMode.ON)
                                 add(FlashMode.AUTO)
                             }
 
                             if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
-                                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants) {
+                                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants
+                            ) {
                                 add(FlashMode.LOW_LIGHT_BOOST)
                             }
                         }
@@ -317,7 +322,8 @@ constructor(
                 )
                 writeFileExternalStorage(file, cameraPropertiesJSON)
                 cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
-                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n$cameraPropertiesJSON")
+                Log.d(TAG, "JCACameraProperties written to ${file.path}. \n" +
+                        cameraPropertiesJSON)
             }
         }
     }
@@ -348,7 +354,8 @@ constructor(
                         val cameraConstraints = checkNotNull(
                             systemConstraints.forCurrentLens(currentCameraSettings)
                         ) {
-                            "Could not retrieve constraints for ${currentCameraSettings.cameraLensFacing}"
+                            "Could not retrieve constraints for " +
+                                "${currentCameraSettings.cameraLensFacing}"
                         }
 
                         val resolvedStabilizationMode = resolveStabilizationMode(
@@ -455,7 +462,7 @@ constructor(
                 sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
                     .first {
                         it in supportedStabilizationModes &&
-                            targetFrameRate !in it.unsupportedFpsSet
+                                targetFrameRate !in it.unsupportedFpsSet
                     }
             } else {
                 requestedStabilizationMode
@@ -673,11 +680,11 @@ constructor(
                 when (val change = newZoomState.changeType) {
                     is ZoomStrategy.Absolute -> change.value
                     is ZoomStrategy.Scale -> (
-                        this.defaultZoomRatios
-                            [lensFacing]
-                            ?: 1.0f
-                        ) *
-                        change.value
+                            this.defaultZoomRatios
+                                [lensFacing]
+                                ?: 1.0f
+                            ) *
+                            change.value
 
                     is ZoomStrategy.Increment -> {
                         (this.defaultZoomRatios[lensFacing] ?: 1.0f) + change.value
@@ -696,7 +703,9 @@ constructor(
     private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
-                val newDynamicRange = if (contains(dynamicRange) && flashMode != FlashMode.LOW_LIGHT_BOOST) {
+                val newDynamicRange = if (contains(dynamicRange) &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                ) {
                     dynamicRange
                 } else {
                     DynamicRange.SDR
@@ -844,7 +853,7 @@ constructor(
 
     override fun isScreenFlashEnabled() =
         imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase?.screenFlash != null
+                imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -970,6 +979,7 @@ constructor(
             }
             return ProcessCameraProvider.awaitInstance(context)
         }
+
         private val FIXED_FRAME_RATES = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
     }
 }
