@@ -38,7 +38,7 @@ const val UNLIMITED_VIDEO_DURATION = 0L
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
-    val darkMode: DarkMode = DarkMode.SYSTEM,
+    val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,
     val streamConfig: StreamConfig = StreamConfig.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
