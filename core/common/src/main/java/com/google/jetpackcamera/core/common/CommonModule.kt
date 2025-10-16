@@ -43,7 +43,8 @@ class CommonModule {
     @Singleton
     @DefaultCoroutineScope
     @Provides
-fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) = CoroutineScope(SupervisorJob() + dispatcher)
+    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
+        CoroutineScope(SupervisorJob() + dispatcher)
 }
 
 @Qualifier
