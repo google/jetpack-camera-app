@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -191,16 +190,16 @@ fun DefaultCameraFacing(
     lensUiState: FlipLensUiState,
     setDefaultLensFacing: (LensFacing) -> Unit
 ) {
-    val context = LocalContext.current
+    val description = stringResource(
+        when (lensUiState.currentLensFacing) {
+            LensFacing.FRONT -> R.string.default_facing_camera_description_front
+            LensFacing.BACK -> R.string.default_facing_camera_description_back
+        }
+    )
     SwitchSettingUI(
         modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
-                stateDescription = when (lensUiState.currentLensFacing) {
-                    LensFacing.FRONT ->
-                        context.getString(R.string.default_facing_camera_description_front)
-                    LensFacing.BACK ->
-                        context.getString(R.string.default_facing_camera_description_back)
-                }
+                stateDescription = description
             },
         title = stringResource(id = R.string.default_facing_camera_title),
         description = when (lensUiState) {
