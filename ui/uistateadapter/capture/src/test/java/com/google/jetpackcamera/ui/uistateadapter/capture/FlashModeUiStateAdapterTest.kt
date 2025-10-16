@@ -182,10 +182,10 @@ class FlashModeUiStateAdapterTest {
             cameraState
         )
 
-        // Then the strength is updated in the UI state
+        // Then isLowLightBoostActive is updated in the UI state
         assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = updatedUiState as FlashModeUiState.Available
-        assertThat(availableUiState.strength).isEqualTo(0.7f)
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(true)
     }
 
     @Test
@@ -206,7 +206,7 @@ class FlashModeUiStateAdapterTest {
         )
         var uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
         uiState = uiState.updateFrom(initialAppSettings, systemConstraints, initialCameraState)
-        assertThat((uiState as FlashModeUiState.Available).strength).isEqualTo(0.7f)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
 
         // When the camera state reports inactive low light boost
         val newCameraState = defaultCameraState.copy(
@@ -218,10 +218,10 @@ class FlashModeUiStateAdapterTest {
             newCameraState
         )
 
-        // Then the strength is reset to 0
+        // Then isLowLightBoostActive is reset to false
         assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = updatedUiState as FlashModeUiState.Available
-        assertThat(availableUiState.strength).isEqualTo(0.0f)
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
     }
 
     @Test
@@ -242,7 +242,7 @@ class FlashModeUiStateAdapterTest {
         )
         var uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
         uiState = uiState.updateFrom(initialAppSettings, systemConstraints, initialCameraState)
-        assertThat((uiState as FlashModeUiState.Available).strength).isEqualTo(0.7f)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
 
         // When the camera state reports a low light boost error
         val newCameraState = defaultCameraState.copy(
@@ -254,9 +254,9 @@ class FlashModeUiStateAdapterTest {
             newCameraState
         )
 
-        // Then the strength is reset to 0
+        // Then isLowLightBoostActive is reset to false
         assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = updatedUiState as FlashModeUiState.Available
-        assertThat(availableUiState.strength).isEqualTo(0.0f)
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
     }
 }
