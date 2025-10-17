@@ -29,7 +29,7 @@ import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
@@ -69,7 +69,7 @@ class DebugHideComponentsTest {
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertExists()
 
-            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
             composeTestRule.waitUntil {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isNotDisplayed()
@@ -83,7 +83,7 @@ class DebugHideComponentsTest {
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertDoesNotExist()
 
-            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
             composeTestRule.waitUntil {
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
