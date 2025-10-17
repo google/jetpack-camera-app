@@ -73,6 +73,8 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        animationsDisabled = true
+
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
