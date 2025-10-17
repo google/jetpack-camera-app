@@ -20,8 +20,8 @@
 
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
     <string name="capture_mode_video_recording_content_description">Video recording mode</string>
-    <string name="capture_mode_image_capture_content_description_disabled">HDR Image Capture mode only</string>
-    <string name="capture_mode_video_recording_content_description_disabled">HDR Video recording mode only</string>
+    <string name="capture_mode_image_capture_content_description_disabled">Image Capture mode only</string>
+    <string name="capture_mode_video_recording_content_description_disabled">Video recording mode only</string>
 
     <string name="settings_content_description">Settings</string>
     <string name="flip_camera_content_description">Flip Camera</string>
