@@ -43,7 +43,12 @@ const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 const val ZOOM_RATIO_TAG = "ZoomRatioTag"
 
-const val ZOOM_CONTROL_TAG = "ZoomControlTag"
+const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
+const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"
+const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
+const val ZOOM_BUTTON_2_TAG = "ZoomButton2Tag"
+const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
+
 const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
 const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
@@ -55,7 +60,14 @@ const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTextField"
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
 const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
+
+// todo(kc): rename quick_settings_drop_down to something more appropriate?
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
+
+const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
+
+const val QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON = "QuickSettingsCloseExpandedButton"
+const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
 const val QUICK_SETTINGS_BACKGROUND_MAIN = "quick_settings_container"
 const val QUICK_SETTINGS_BACKGROUND_FOCUSED = "quick_settings_container_focused"
 

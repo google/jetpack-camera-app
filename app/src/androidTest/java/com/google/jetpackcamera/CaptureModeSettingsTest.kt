@@ -19,7 +19,6 @@ import android.app.Activity
 import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -47,6 +46,7 @@ import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isHdrToggleEnabled
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
+import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.setCaptureMode
 import com.google.jetpackcamera.utils.setConcurrentCameraMode
 import com.google.jetpackcamera.utils.setHdrEnabled
@@ -70,10 +70,7 @@ internal class CaptureModeSettingsTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
     private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) =
-        visitQuickSettings {
-            waitUntil(timeoutMillis = 1000) {
-                onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
-            }
+        visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
             captureMode?.let {
                 assertThat(getCurrentCaptureMode()).isEqualTo(captureMode)
             }
@@ -83,7 +80,7 @@ internal class CaptureModeSettingsTest {
     fun can_set_capture_mode_in_quick_settings() {
         runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
-            composeTestRule.visitQuickSettings {
+            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
                 checkCaptureMode(CaptureMode.IMAGE_ONLY)
 
@@ -100,7 +97,7 @@ internal class CaptureModeSettingsTest {
     fun concurrent_only_supports_video_capture_mode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForStartup()
-            composeTestRule.visitQuickSettings {
+            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 // verify concurrent is supported. if not supported, skip test
                 waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                 setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
@@ -128,13 +125,13 @@ internal class CaptureModeSettingsTest {
             composeTestRule.waitForStartup()
             composeTestRule.visitQuickSettings {
                 // verify concurrent is supported. if not supported, skip test
-                waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                 setConcurrentCameraMode(ConcurrentCameraMode.OFF)
 
                 // capture mode should now be image only
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
                 checkCaptureMode(CaptureMode.IMAGE_ONLY)
 
+                searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                 // should not be able to enable concurrent
                 onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                     .assertExists()
@@ -145,6 +142,7 @@ internal class CaptureModeSettingsTest {
                 checkCaptureMode(CaptureMode.STANDARD)
 
                 // concurrent should be enabled again
+                searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                 onNodeWithTag(
                     QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
                 ).assertExists().assertIsEnabled()

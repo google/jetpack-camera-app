@@ -195,6 +195,7 @@ class PreviewViewModel @Inject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
+
                 val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
                     cameraAppSettings,
@@ -205,6 +206,11 @@ class PreviewViewModel @Inject constructor(
                     systemConstraints
                 )
                 val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+                val hdrUiState = HdrUiState.from(
+                    cameraAppSettings,
+                    systemConstraints,
+                    externalCaptureMode
+                )
                 _captureUiState.update { old ->
                     when (old) {
                         is CaptureUiState.NotReady -> {
@@ -241,6 +247,7 @@ class PreviewViewModel @Inject constructor(
                             cameraAppSettings,
                             systemConstraints,
                             aspectRatioUiState,
+                            hdrUiState,
                             trackedUiState.isQuickSettingsOpen
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
@@ -282,7 +289,8 @@ class PreviewViewModel @Inject constructor(
                             cameraAppSettings,
                             cameraState,
                             externalCaptureMode
-                        )
+                        ),
+                        hdrUiState = hdrUiState
                     )
                 }
             }.collect {}
@@ -296,6 +304,7 @@ class PreviewViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings,
         systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
+        hdrUiState: HdrUiState,
         quickSettingsIsOpen: Boolean
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
@@ -311,11 +320,7 @@ class PreviewViewModel @Inject constructor(
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
-            hdrUiState = HdrUiState.from(
-                cameraAppSettings,
-                systemConstraints,
-                externalCaptureMode
-            ),
+            hdrUiState = hdrUiState,
             streamConfigUiState = streamConfigUiState,
             quickSettingsIsOpen = quickSettingsIsOpen
         )
@@ -328,14 +333,14 @@ class PreviewViewModel @Inject constructor(
         isDebugOverlayOpen: Boolean
     ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
         if (isDebugOverlayOpen) {
-            DebugUiState.Open.from(
+            DebugUiState.Enabled.Open.from(
                 systemConstraints,
                 cameraAppSettings,
                 cameraState,
                 cameraPropertiesJSON
             )
         } else {
-            DebugUiState.Closed.from(cameraState)
+            DebugUiState.Enabled.Closed.from(cameraState, cameraAppSettings.cameraLensFacing)
         }
     } else {
         DebugUiState.Disabled
@@ -708,7 +713,6 @@ class PreviewViewModel @Inject constructor(
             old.copy(isRecordingLocked = isLocked)
         }
     }
-
     fun setZoomAnimationState(targetValue: Float?) {
         trackedPreviewUiState.update { old ->
             old.copy(zoomAnimationTarget = targetValue)

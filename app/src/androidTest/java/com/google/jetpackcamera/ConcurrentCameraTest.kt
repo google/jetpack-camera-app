@@ -328,7 +328,7 @@ class ConcurrentCameraTest {
                 block = wrappedBlock
             )
         } else {
-            runMainActivityScenarioTest(wrappedBlock)
+            runMainActivityScenarioTest(block = wrappedBlock)
         }
     }
 
