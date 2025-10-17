@@ -162,7 +162,7 @@ private fun ToggleVisibilityButton(
 }
 
 @Composable
-fun DebugComponent(
+fun DebugOverlay(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
