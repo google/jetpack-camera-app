@@ -174,7 +174,7 @@ internal class CameraAppSettingsViewModelTest {
             (assertIsEnabled(initialState).darkModeUiState as DarkModeUiState.Enabled)
                 .currentDarkMode
 
-        settingsViewModel.setDarkMode(DarkMode.DARK)
+        settingsViewModel.setDarkMode(DarkMode.SYSTEM)
 
         advanceUntilIdle()
 
@@ -185,8 +185,8 @@ internal class CameraAppSettingsViewModelTest {
                 )
                 .currentDarkMode
 
-        assertEquals(initialDarkMode, DarkMode.SYSTEM)
-        assertEquals(DarkMode.DARK, newDarkMode)
+        assertEquals(initialDarkMode, DarkMode.DARK)
+        assertEquals(DarkMode.SYSTEM, newDarkMode)
     }
 }
 
