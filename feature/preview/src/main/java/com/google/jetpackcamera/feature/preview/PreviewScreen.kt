@@ -99,7 +99,7 @@ import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomState
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.debug.DebugComponent
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -553,7 +553,7 @@ private fun ContentScreen(
         },
         debugOverlay = { modifier, extraControls ->
             (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
-                DebugComponent(
+                DebugOverlay(
                     modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
                     debugUiState = it,

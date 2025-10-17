@@ -72,7 +72,7 @@ import kotlin.math.abs
 private const val TAG = "DebugOverlayComponents"
 
 @Composable
-fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> Unit) {
+fun DebugDialogContainerToggle(toggleIsOpen: () -> Unit, modifier: Modifier = Modifier) {
     Button(modifier = modifier.testTag(DEBUG_OVERLAY_BUTTON), onClick = { toggleIsOpen() }) {
         Text(text = "Debug")
     }
@@ -107,9 +107,8 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
     )
 }
 
-// todo add imagewell to debug screen
 @Composable
-fun DebugComponent(
+fun DebugOverlay(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
@@ -125,7 +124,7 @@ fun DebugComponent(
             extraControls = extraControls
         )
         (debugUiState as? DebugUiState.Enabled.Open)?.let {
-            DebugOverlayComponent(
+            DebugDialogContainer(
                 modifier = Modifier,
                 onChangeZoomRatio = onChangeZoomRatio,
                 onSetTestPattern = onSetTestPattern,
@@ -138,11 +137,11 @@ fun DebugComponent(
 
 /**
  * A row of components visible at the top of the debug screen.
- * The first button will always be the [DebugOverlayToggleButton], followed by any components passed
+ * The first button will always be the [DebugDialogContainerToggle], followed by any components passed
  * into [extraControls].
  *
  * @param debugUiState  the current [DebugUiState.Enabled]
- * @param onToggleDebugOverlay a callback to open and hide the [DebugOverlayComponent]
+ * @param onToggleDebugOverlay a callback to open and hide the [DebugDialogContainer]
  * @param extraControls additional composable functions to be displayed in the debug top row.
  * These should NOT include components intended to be exclusive to the debug screen.
  */
@@ -159,7 +158,7 @@ private fun DebugConsole(
             itemVerticalAlignment = Alignment.CenterVertically
         ) {
             // debug menu button
-            DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
+            DebugDialogContainerToggle(toggleIsOpen = onToggleDebugOverlay)
             extraControls.forEach { it() }
         }
 
@@ -174,8 +173,10 @@ private fun DebugConsole(
     }
 }
 
+// Debug Dialogs
+
 @Composable
-private fun DebugOverlayComponent(
+private fun DebugDialogContainer(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
@@ -206,7 +207,7 @@ private fun DebugOverlayComponent(
         ) { dialog ->
             when (dialog) {
                 SelectedDialog.None ->
-                    OpenDebugOverlayMenu(
+                    DebugDialogOptionsMenuDialog(
                         debugUiState,
                         onMoveToComponent = { selectedDialog = it },
                         onClose = { toggleIsOpen() }
@@ -235,7 +236,7 @@ private fun DebugOverlayComponent(
 }
 
 @Composable
-private fun OpenDebugOverlayMenu(
+private fun DebugDialogOptionsMenuDialog(
     debugUiState: DebugUiState.Enabled.Open,
     onMoveToComponent: (SelectedDialog) -> Unit,
     onClose: () -> Unit
@@ -248,7 +249,6 @@ private fun OpenDebugOverlayMenu(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // todo(kc): permanently move this static information to the debug console?
         Row {
             Text("Video resolution: ")
             val size = debugUiState.videoResolution
