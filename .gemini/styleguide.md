@@ -19,8 +19,10 @@ When reviewing a pull request, focus on the following key areas:
 
 2.  **Code Quality and Best Practices**
     * Check for adherence to official Kotlin style guides and Android best practices.
-    * Identify overly complex functions, classes, or composables that could be simplified.
+    * **Simplify Complex Logic:** Look for needlessly complex code. If a multi-line block of logic can be condensed into a more concise and readable idiomatic expression (e.g., using Kotlin standard library functions), suggest the simplification.
+    * **Decompose Large Components:** Identify large, monolithic functions or composables. Suggest breaking them down into smaller sub-functions or sub-composables to improve readability, testability, and reusability.
     * Look for potential null-safety issues, improper error handling, or resource leaks.
+    * **Promote Reusability (DRY Principle):** Identify duplicated or highly similar blocks of code. If a pattern of logic is repeated—even with minor variations—suggest extracting it into a reusable function, composable, or helper class.
 
 3.  **Performance and Efficiency**
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
@@ -42,12 +44,34 @@ When reviewing a pull request, focus on the following key areas:
     * **Mandatory AGP Check:** If the Android Gradle Plugin (AGP) version is modified, you **must** flag that the "Development Environment" section of `README.md` needs to be updated. Suggest the specific version change required.
     * **Review existing updates:** If documentation files were modified in the PR, review the changes for clarity, accuracy, and correctness.
 
-7.  **Readability and Maintainability**
-    * Is the code clear, concise, and easy to understand?
-    * Are function and variable names descriptive?
-    * Suggest adding comments only where necessary to clarify complex logic.
+7.  **DataStore and Settings**
+    *   **Synchronize DataStore Defaults:** When a new setting is added to the proto datastore, its default value must be defined and synchronized in two key locations:
+        1.  In `JcaSettingsSerializer`, which defines the default for the `.pb` file on creation.
+        2.  In `CameraAppSettings`, which represents the default state of the app.
+    *   While `CameraAppSettings` may contain settings not stored in the datastore, any setting that *is* in the datastore must have a consistent default value across both files to avoid unexpected behavior.
+
+8.  **Resource Management**
+    * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
+    * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
+
+9.  **Readability, Logging, and Documentation**
+    *   **Code Clarity:** Is the code clear, concise, and easy to understand? Are function and variable names descriptive?
+    *   **Scrutinize Debug Logs:** Question the use of `Log.d`, `Log.v`, and especially `println()`. These are often remnants of debugging and should be removed before merging unless they provide essential, long-term value. Calls to `println()` should always be replaced with a proper `Log` method.
+    *   **KDoc for Complexity:** For new or significantly modified functions that are complex, have non-obvious logic, or a large number of parameters, suggest adding KDoc comments. Good documentation should explain the function's purpose, its parameters, and what it returns.
+    *   **Keep KDoc Synchronized:** If a PR modifies a function with existing KDocs, verify that the comments are still accurate. Outdated documentation can be more misleading than no documentation at all.
 
 ***
+
+10. **Test Tags and Semantics**
+    *   **Test Tag Naming Convention:** When creating a new test tag, the constant name must be in `UPPER_SNAKE_CASE`, and the string value must be a `lower_snake_case` string following a specific schema: `element_purpose_value`.
+        *   **`element`:** A short prefix indicating the UI element type (e.g., `btn`, `text`, `dialog`, `switch`).
+        *   **`purpose`:** A concise description of the component's function or context (e.g., `setting_flash`, `open_dialog`).
+        *   **`value`:** (Optional) A descriptor for the specific option or state, if applicable (e.g., `option_auto`, `app_version`).
+        *   **Example:** `const val BTN_DIALOG_FLASH_OPTION_AUTO_TAG = "btn_dialog_flash_option_auto_tag"`
+    *   **Static Test Tags:** Test tags must be static `const val` strings. They are used for stable identification in tests. Dynamic information, such as the current state of a toggle button, should be exposed through `stateDescription` or `contentDescription` semantic properties, not by changing the test tag.
+    *   **Apply Proper Semantics:** When building custom UI components from the ground up (e.g., a custom button made of an `Icon` and a `Text`), apply the correct semantics to ensure they are accessible.
+        *   Use `semantics { role = Role.Button }` (or `Role.Checkbox`, etc.) to define the component's logical purpose for screen readers.
+        *   For components made of multiple parts that should be read as a single, coherent unit, use `semantics { mergeDescendants = true }`. This prevents screen readers from announcing inner elements (like an icon and its text label) as separate, unrelated items.
 
 ## Rules for Providing Feedback
 * **Be Constructive:** Frame feedback as suggestions, not commands. Explain the reasoning ("why") behind each comment.
