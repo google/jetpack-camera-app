@@ -77,7 +77,10 @@ When reviewing a pull request, focus on the following key areas:
 
 ## Rules for Providing Feedback
 * **Be Constructive:** Frame feedback as suggestions, not commands. Explain the reasoning ("why") behind each comment.
-* **Handle Renaming Suggestions Carefully:** When suggesting a name change for a variable, function, or class, **NEVER** use the code suggestion feature EXCEPT for test cases. This does not refactor all references and will break the code. Instead, provide the recommendation as a plain text comment.
+* **Handle Renaming Suggestions Carefully:** When suggesting a name change for a variable, function, or class, **NEVER** use the code suggestion feature, with two exceptions:
+    1.  **Test case names.**
+    2.  **Local variables,** provided that all references are updated within the same suggested code snippet.
+*   For all other symbols, this does not refactor all references and will break the code. Instead, provide the recommendation as a plain text comment.
 * **Be Specific:** Reference exact lines of code. Provide clear examples of suggested improvements.
 * **Prioritize Impact:** Focus on the most important issues first (e.g., architectural flaws, missing tests) before minor stylistic nits.
 * **Indicate Low Priority:** For minor cosmetic, spacing, or simple typographical suggestions, preface the comment with `nit:` to indicate it is a low-priority polish item.

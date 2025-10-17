@@ -58,7 +58,7 @@ const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
 const val VIDEO_QUALITY_TAG = "VideoQualityTag"
 const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
 
-const val DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON = "DebugOverlayHideComponentsButton"
+const val BTN_DEBUG_HIDE_COMPONENTS_TAG = "btn_debug_hide_components"
 const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
 const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"

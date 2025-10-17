@@ -569,10 +569,10 @@ private fun ContentScreen(
                 )
             }
         },
-        debugVisibilityWrapper = {content ->
-            when(val uiState = captureUiState.debugUiState){
-                DebugUiState.Disabled -> content()
-                is DebugUiState.Enabled -> if(!uiState.debugHidingComponents) content()
+        debugVisibilityWrapper = { content ->
+            val uiState = captureUiState.debugUiState
+            if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
+                content()
             }
         },
         screenFlashOverlay = {

@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
@@ -59,6 +58,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dp
@@ -66,7 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
@@ -132,6 +134,32 @@ private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: St
 }
 
 @Composable
+private fun ToggleVisibilityButton(
+    onToggleHidingComponents: () -> Unit,
+    isHidingComponents: Boolean,
+
+    ) {
+    val stateDescption = if (isHidingComponents)
+        stringResource(id = R.string.debug_hide_components_desc)
+    else
+        stringResource(R.string.debug_show_components_desc)
+
+    IconButton(
+        modifier = Modifier
+            .safeDrawingPadding()
+            .semantics {
+                testTag = BTN_DEBUG_HIDE_COMPONENTS_TAG
+                stateDescription = stateDescption
+            },
+        onClick = { onToggleHidingComponents() }) {
+        if (isHidingComponents)
+            Icon(Icons.Default.VisibilityOff, contentDescription = null)
+        else
+            Icon(Icons.Default.Visibility, contentDescription = null)
+    }
+}
+
+@Composable
 fun DebugComponent(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
@@ -143,14 +171,10 @@ fun DebugComponent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column {
-            IconButton(
-                modifier = Modifier.safeDrawingPadding().testTag(DEBUG_OVERLAY_HIDE_COMPONENTS_BUTTON),
-                onClick = { onToggleHidingComponents() }) {
-                if(debugUiState.debugHidingComponents)
-                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
-                else
-                    Icon(Icons.Default.Visibility, contentDescription = null)
-            }
+            ToggleVisibilityButton(
+                onToggleHidingComponents = onToggleHidingComponents,
+                isHidingComponents = debugUiState.debugHidingComponents
+            )
             if (!debugUiState.debugHidingComponents) {
                 DebugConsole(
                     modifier = Modifier.padding(top = 100.dp),

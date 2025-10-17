@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (C) 2025 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +36,8 @@
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
     <string name="debug_overlay_toggle_btn_text">Debug</string>
+    <string name="debug_hide_components_desc">Hiding components</string>
+    <string name="debug_show_components_desc">Displaying components</string>
 
 
     <!-- Notification Text -->
