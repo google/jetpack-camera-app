@@ -302,7 +302,7 @@ constructor(
                 add(Illuminant.SCREEN)
             }
 
-            val llbAvailability = camInfo.getLowLightBoostAvailablity(application)
+            val llbAvailability = camInfo.getLowLightBoostAvailability(application)
             if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
                 (
                     llbAvailability ==

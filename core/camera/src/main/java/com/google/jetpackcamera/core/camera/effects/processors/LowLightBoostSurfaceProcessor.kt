@@ -38,6 +38,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -152,10 +154,13 @@ class LowLightBoostSurfaceProcessor(
             lowLightBoostSession?.let { session ->
                 useLowLightBoostSession(session, surfaceRequest, llbSessionComplete)
             }
+        } catch (_: CancellationException) {
+            // Don't call error callback on cancellation, but ensure cancellation is propagated
+            currentCoroutineContext().ensureActive()
         } catch (e: Exception) {
-            handleLowLightBoostError(e)
             // In case there was an error, make sure the SurfaceRequest is completed
             surfaceRequest.willNotProvideSurface()
+            handleLowLightBoostError(e)
         }
     }
 
@@ -184,7 +189,10 @@ class LowLightBoostSurfaceProcessor(
             // Must wait for camera to be finished with surface before releasing. Don't allow
             // cancellation of this coroutine here.
             withContext(NonCancellable) {
-                surfaceRequest.provideSurfaceAndWaitForCompletion(llbInputSurface)
+                val result = surfaceRequest.provideSurfaceAndWaitForCompletion(llbInputSurface)
+                if (result.resultCode != SurfaceRequest.Result.RESULT_SURFACE_USED_SUCCESSFULLY) {
+                    Log.w(TAG, "LLB input surface not used successfully: $result")
+                }
                 llbInputSurface.release()
             }
         } finally {
@@ -237,8 +245,6 @@ class LowLightBoostSurfaceProcessor(
                         "Google Play Services being too old.",
                     e
                 )
-
-            is CancellationException -> return // Don't call error callback on cancellation
             else ->
                 Log.e(
                     TAG,
