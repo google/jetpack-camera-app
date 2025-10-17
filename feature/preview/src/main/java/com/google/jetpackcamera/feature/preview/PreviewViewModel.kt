@@ -394,7 +394,7 @@ class PreviewViewModel @Inject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
                     imageWellUiState =
-                        ImageWellUiState.from(lastCapturedMediaDescriptor)
+                    ImageWellUiState.from(lastCapturedMediaDescriptor)
                 ) ?: old
             }
         }
@@ -754,7 +754,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         trackedPreviewUiState.update { old ->

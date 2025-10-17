@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.isDisplayed
@@ -27,9 +26,9 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
@@ -93,7 +92,6 @@ class DebugHideComponentsTest {
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertExists()
-
         }
     }
 }

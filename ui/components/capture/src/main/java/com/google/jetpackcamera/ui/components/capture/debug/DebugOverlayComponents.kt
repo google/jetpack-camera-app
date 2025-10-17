@@ -66,9 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
-import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
@@ -136,13 +136,13 @@ private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: St
 @Composable
 private fun ToggleVisibilityButton(
     onToggleHidingComponents: () -> Unit,
-    isHidingComponents: Boolean,
-
-    ) {
-    val stateDescption = if (isHidingComponents)
+    isHidingComponents: Boolean
+) {
+    val stateDescption = if (isHidingComponents) {
         stringResource(id = R.string.debug_hide_components_desc)
-    else
+    } else {
         stringResource(R.string.debug_show_components_desc)
+    }
 
     IconButton(
         modifier = Modifier
@@ -151,11 +151,13 @@ private fun ToggleVisibilityButton(
                 testTag = BTN_DEBUG_HIDE_COMPONENTS_TAG
                 stateDescription = stateDescption
             },
-        onClick = { onToggleHidingComponents() }) {
-        if (isHidingComponents)
+        onClick = { onToggleHidingComponents() }
+    ) {
+        if (isHidingComponents) {
             Icon(Icons.Default.VisibilityOff, contentDescription = null)
-        else
+        } else {
             Icon(Icons.Default.Visibility, contentDescription = null)
+        }
     }
 }
 
