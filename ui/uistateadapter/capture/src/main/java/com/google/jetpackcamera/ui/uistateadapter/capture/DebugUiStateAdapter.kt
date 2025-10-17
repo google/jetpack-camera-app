@@ -28,6 +28,7 @@ fun DebugUiState.Enabled.Open.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
+    debugHidingComponents: Boolean,
     cameraPropertiesJSON: String
 ): DebugUiState.Enabled {
     val availableTestPatterns = buildSet {
@@ -51,13 +52,18 @@ fun DebugUiState.Enabled.Open.Companion.from(
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
         availableTestPatterns = availableTestPatterns,
-        currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing]
+        currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
+        debugHidingComponents = debugHidingComponents
     )
 }
 
-fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing) =
-    DebugUiState.Enabled.Closed(
-        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-        currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing]
-    )
+fun DebugUiState.Enabled.Closed.Companion.from(
+    cameraState: CameraState,
+    lensFacing: LensFacing,
+    debugHidingComponents: Boolean
+) = DebugUiState.Enabled.Closed(
+    currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+    currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing],
+    debugHidingComponents = debugHidingComponents
+)

@@ -54,6 +54,8 @@ const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
 const val VIDEO_QUALITY_TAG = "VideoQualityTag"
 const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
+
+const val BTN_DEBUG_HIDE_COMPONENTS_TAG = "btn_debug_hide_components"
 const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
 const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"
@@ -68,8 +70,6 @@ const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
 
 const val QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON = "QuickSettingsCloseExpandedButton"
 const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
-const val QUICK_SETTINGS_BACKGROUND_MAIN = "quick_settings_container"
-const val QUICK_SETTINGS_BACKGROUND_FOCUSED = "quick_settings_container_focused"
 
 const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
 const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"

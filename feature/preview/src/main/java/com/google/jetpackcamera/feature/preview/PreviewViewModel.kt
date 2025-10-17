@@ -255,7 +255,8 @@ class PreviewViewModel @Inject constructor(
                             systemConstraints,
                             cameraAppSettings,
                             cameraState,
-                            trackedUiState.isDebugOverlayOpen
+                            trackedUiState.isDebugOverlayOpen,
+                            trackedUiState.debugHidingComponents
                         ),
                         stabilizationUiState = StabilizationUiState.from(
                             cameraAppSettings,
@@ -326,21 +327,33 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
+    fun toggleDebugHidingComponents() {
+        trackedPreviewUiState.update { old ->
+            old.copy(debugHidingComponents = !old.debugHidingComponents)
+        }
+    }
+
     private fun getDebugUiState(
         systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
-        isDebugOverlayOpen: Boolean
+        isDebugOverlayOpen: Boolean,
+        debugHidingComponents: Boolean
     ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
         if (isDebugOverlayOpen) {
             DebugUiState.Enabled.Open.from(
                 systemConstraints,
                 cameraAppSettings,
                 cameraState,
+                debugHidingComponents,
                 cameraPropertiesJSON
             )
         } else {
-            DebugUiState.Enabled.Closed.from(cameraState, cameraAppSettings.cameraLensFacing)
+            DebugUiState.Enabled.Closed.from(
+                cameraState,
+                cameraAppSettings.cameraLensFacing,
+                debugHidingComponents
+            )
         }
     } else {
         DebugUiState.Disabled
@@ -529,6 +542,7 @@ class PreviewViewModel @Inject constructor(
                 Pair(SaveLocation.Default, null)
             }
         }
+
         ExternalCaptureMode.Standard ->
             Pair(SaveLocation.Default, null)
     }
@@ -713,6 +727,7 @@ class PreviewViewModel @Inject constructor(
             old.copy(isRecordingLocked = isLocked)
         }
     }
+
     fun setZoomAnimationState(targetValue: Float?) {
         trackedPreviewUiState.update { old ->
             old.copy(zoomAnimationTarget = targetValue)
@@ -795,6 +810,7 @@ class PreviewViewModel @Inject constructor(
             }
         }
     }
+
     fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
@@ -818,6 +834,7 @@ class PreviewViewModel @Inject constructor(
         val isQuickSettingsOpen: Boolean = false,
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
-        val zoomAnimationTarget: Float? = null
+        val zoomAnimationTarget: Float? = null,
+        val debugHidingComponents: Boolean = false
     )
 }
