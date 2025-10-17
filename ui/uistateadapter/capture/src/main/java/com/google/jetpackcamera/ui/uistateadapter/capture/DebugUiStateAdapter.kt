@@ -28,7 +28,7 @@ fun DebugUiState.Enabled.Open.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
-    debugHidingComponents:Boolean,
+    debugHidingComponents: Boolean,
     cameraPropertiesJSON: String
 ): DebugUiState.Enabled {
     val availableTestPatterns = buildSet {
@@ -57,10 +57,13 @@ fun DebugUiState.Enabled.Open.Companion.from(
     )
 }
 
-fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing, debugHidingComponents: Boolean) =
-    DebugUiState.Enabled.Closed(
-        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
-        currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing],
-        debugHidingComponents = debugHidingComponents
-    )
+fun DebugUiState.Enabled.Closed.Companion.from(
+    cameraState: CameraState,
+    lensFacing: LensFacing,
+    debugHidingComponents: Boolean
+) = DebugUiState.Enabled.Closed(
+    currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+    currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing],
+    debugHidingComponents = debugHidingComponents
+)

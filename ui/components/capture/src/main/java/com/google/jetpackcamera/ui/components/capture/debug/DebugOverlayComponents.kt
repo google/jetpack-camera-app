@@ -63,9 +63,9 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
-import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
@@ -119,13 +119,13 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
 @Composable
 private fun ToggleVisibilityButton(
     onToggleHidingComponents: () -> Unit,
-    isHidingComponents: Boolean,
-
-    ) {
-    val stateDescption = if (isHidingComponents)
+    isHidingComponents: Boolean
+) {
+    val stateDescption = if (isHidingComponents) {
         stringResource(id = R.string.debug_hide_components_desc)
-    else
+    } else {
         stringResource(R.string.debug_show_components_desc)
+    }
 
     IconButton(
         modifier = Modifier
@@ -134,11 +134,13 @@ private fun ToggleVisibilityButton(
                 testTag = BTN_DEBUG_HIDE_COMPONENTS_TAG
                 stateDescription = stateDescption
             },
-        onClick = { onToggleHidingComponents() }) {
-        if (isHidingComponents)
+        onClick = { onToggleHidingComponents() }
+    ) {
+        if (isHidingComponents) {
             Icon(Icons.Default.VisibilityOff, contentDescription = null)
-        else
+        } else {
             Icon(Icons.Default.Visibility, contentDescription = null)
+        }
     }
 }
 
@@ -230,12 +232,12 @@ private fun DebugOverlayComponent(
     var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
     val backgroundColor = Color.Black.copy(
         alpha =
-            when (selectedDialog) {
-                SelectedDialog.None,
-                SelectedDialog.SetTestPattern -> 0.7f
+        when (selectedDialog) {
+            SelectedDialog.None,
+            SelectedDialog.SetTestPattern -> 0.7f
 
-                else -> 0.9f
-            }
+            else -> 0.9f
+        }
     )
 
     BackHandler(onBack = { toggleIsOpen() })
