@@ -106,6 +106,8 @@
     <string name="quick_settings_lowlightboost_disabled">Low light boost off</string>
     <string name="quick_settings_lowlightboost_enabled_description">Low light boost on</string>
     <string name="quick_settings_lowlightboost_disabled_description">Low light boost off</string>
+    <string name="low_light_boost_error_toast_message">An error occurred when running low light boost.</string>
+
 
     <!--- Concurrent Camera Text -->
 

@@ -15,29 +15,9 @@
  */
 package com.google.jetpackcamera.model
 
-/**
- * Interface describing the state of Low Light Boost.
- */
-sealed interface LowLightBoostState {
-    /**
-     * Low Light Boost is not active.
-     */
-    data object Inactive : LowLightBoostState
-
-    /**
-     * Low Light Boost is active.
-     *
-     * @param strength The strength of brightening being applied.
-     */
-    data class Active(val strength: Float) : LowLightBoostState
-
-    /**
-     * An error occurred with Low Light Boost.
-     */
-    data class Error(val error: Throwable?) : LowLightBoostState
-
-    companion object {
-        const val MINIMUM_STRENGTH = 0.0f
-        const val MAXIMUM_STRENGTH = 1.0f
-    }
+enum class LowLightBoostAvailability {
+    NONE,
+    AE_MODE_ONLY,
+    GOOGLE_PLAY_SERVICES_ONLY,
+    AE_MODE_AND_GOOGLE_PLAY_SERVICES
 }

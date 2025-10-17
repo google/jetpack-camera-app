@@ -73,6 +73,15 @@
     <string name="stream_config_description_multi_stream">Multi Stream</string>
     <string name="stream_config_description_single_stream">Single Stream</string>
 
+    <!-- Low Light Boost priority setting strings -->
+    <string name="low_light_boost_priority_title">Set Low Light Boost Priority</string>
+
+    <string name="low_light_boost_priority_selector_ae_mode">AE Mode</string>
+    <string name="low_light_boost_priority_selector_google_play_services">Google Play Services</string>
+
+    <string name="low_light_boost_priority_description_ae_mode">Prioritizing Low Light Boost AE Mode when multiple options are available</string>
+    <string name="low_light_boost_priority_description_google_play_services">Prioritizing Google Low Light Boost when multiple options are available</string>
+
     <!-- Aspect Ratio setting strings -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>
 

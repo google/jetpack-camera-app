@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    GOOGLE_LOW_LIGHT_BOOST
+syntax = "proto3";
+
+option java_package = "com.google.jetpackcamera.model.proto";
+option java_multiple_files = true;
+
+enum LowLightBoostPriority {
+  LOW_LIGHT_BOOST_PRIORITY_AE_MODE = 0;
+  LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES = 1;
 }
