@@ -17,7 +17,7 @@
 syntax = "proto3";
 
 import "com/google/jetpackcamera/model/proto/aspect_ratio.proto";
-import "com/google/jetpackcamera/model/proto/capture_mode.proto";
+import "com/google/jetpackcamera/model/proto/stream_config.proto";
 import "com/google/jetpackcamera/model/proto/dark_mode.proto";
 import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
 import "com/google/jetpackcamera/model/proto/flash_mode.proto";
