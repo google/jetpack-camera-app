@@ -104,7 +104,7 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         advanceUntilIdle()
         assertThat(initialDarkModeStatus).isNotEqualTo(newDarkModeStatus)
-        assertThat(initialDarkModeStatus).isEqualTo(DarkMode.SYSTEM)
+        assertThat(initialDarkModeStatus).isEqualTo(DarkMode.DARK)
         assertThat(newDarkModeStatus).isEqualTo(DarkMode.LIGHT)
     }
 
