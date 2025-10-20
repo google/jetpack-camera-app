@@ -147,7 +147,7 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
         ) ?: false
 
 @OptIn(ExperimentalCamera2Interop::class)
-suspend fun CameraInfo.getLowLightBoostAvailablity(context: Context): LowLightBoostAvailability {
+suspend fun CameraInfo.getLowLightBoostAvailability(context: Context): LowLightBoostAvailability {
     val camera2Info = Camera2CameraInfo.from(this)
 
     // Check for LLB AE Mode support.
