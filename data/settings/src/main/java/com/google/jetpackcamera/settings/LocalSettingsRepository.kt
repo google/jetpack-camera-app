@@ -53,7 +53,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
-                    else -> DarkMode.SYSTEM
+                    else -> DarkMode.DARK
                 },
                 flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO

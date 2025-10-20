@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +52,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -175,7 +173,7 @@ fun QuickSetRatio(
             enum = enum,
             onClick = { onClick() },
             isHighLighted = isHighlightEnabled &&
-                (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+                    (assignedRatio == aspectRatioUiState.selectedAspectRatio)
         )
     }
 }
@@ -264,7 +262,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -326,9 +324,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                )
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -360,12 +358,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-            hdrUiState is HdrUiState.Available &&
-                (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
-            ),
+                hdrUiState is HdrUiState.Available &&
+                        (
+                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                                )
+                ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -500,7 +498,7 @@ fun QuickSetConcurrentCamera(
                 }
             },
             isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                ConcurrentCameraMode.DUAL,
+                    ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -793,25 +791,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
                     (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
+                            LocalConfiguration.current.screenWidthDp.dp - (
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_horizontal_padding
+                                    ) * 2
+                                    )
+                            ) /
                             (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
+                                    dimensionResource(
+                                        id = R.dimen.quick_settings_ui_item_icon_size
+                                    ) +
+                                            (
+                                                    dimensionResource(
+                                                        id = R.dimen.quick_settings_ui_item_padding
+                                                    ) *
+                                                            2
+                                                    )
+                                    )
+                    ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -829,9 +827,9 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                )
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -885,7 +883,7 @@ fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = null,
                     indication = null,
                     onClick = onClick,
                     enabled = enabled
