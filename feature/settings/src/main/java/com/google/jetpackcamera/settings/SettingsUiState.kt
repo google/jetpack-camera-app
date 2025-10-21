@@ -19,6 +19,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -54,7 +55,8 @@ sealed interface SettingsUiState {
         val stabilizationUiState: StabilizationUiState,
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
-        val audioUiState: AudioUiState
+        val audioUiState: AudioUiState,
+        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState
     ) : SettingsUiState
 }
 
@@ -208,6 +210,15 @@ sealed interface FlashUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : FlashUiState
 }
 
+sealed interface LowLightBoostPriorityUiState {
+    data class Enabled(
+        val currentLowLightBoostPriority: LowLightBoostPriority,
+        val additionalContext: String = ""
+    ) : LowLightBoostPriorityUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : LowLightBoostPriorityUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
@@ -295,5 +306,8 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     ),
     videoQualityUiState = VideoQualityUiState.Disabled(
         DisabledRationale.VideoQualityUnsupportedRationale(R.string.video_quality_rationale_prefix)
+    ),
+    lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
+        DEFAULT_CAMERA_APP_SETTINGS.lowLightBoostPriority
     )
 )
