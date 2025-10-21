@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -50,12 +52,19 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetC
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedCaptureModeButtons
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedRatioButtons
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
@@ -172,7 +181,7 @@ fun QuickSettingsBottomSheet(
                         add {
                             QuickSetConcurrentCamera(
                                 modifier =
-                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                                    Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                                 setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                     onConcurrentCameraModeClick(c)
                                 },
@@ -194,7 +203,7 @@ fun QuickSettingsBottomSheet(
         val sheetState = rememberModalBottomSheetState()
 
         if (quickSettingsUiState.quickSettingsIsOpen) {
-            QuickSettingsBottomSheet(
+            BottomSheetComponent(
                 modifier = modifier,
                 onDismiss = {
                     focusedQuickSetting = FocusedQuickSetting.NONE
@@ -219,5 +228,142 @@ private fun CaptureModeUiState.stateDescription() = (this as? CaptureModeUiState
         CaptureMode.STANDARD -> R.string.quick_settings_description_capture_mode_standard
         CaptureMode.VIDEO_ONLY -> R.string.quick_settings_description_capture_mode_video_only
         CaptureMode.IMAGE_ONLY -> R.string.quick_settings_description_capture_mode_image_only
+    }
+}
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview() {
+    MaterialTheme {
+        QuickSettingsBottomSheet(
+            quickSettingsUiState = QuickSettingsUiState.Available(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                    )
+                ),
+                captureModeUiState = CaptureModeUiState.Available(
+                    selectedCaptureMode = CaptureMode.STANDARD,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                    )
+                ),
+                concurrentCameraUiState = ConcurrentCameraUiState.Available(
+                    selectedConcurrentCameraMode = ConcurrentCameraMode.OFF,
+                    isEnabled = false
+                ),
+                flashModeUiState = FlashModeUiState.Available(
+                    selectedFlashMode = FlashMode.OFF,
+                    availableFlashModes = listOf(
+                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+                    ),
+                    isLowLightBoostActive = false
+                ),
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                hdrUiState = HdrUiState.Unavailable,
+                streamConfigUiState = StreamConfigUiState.Available(
+                    selectedStreamConfig = StreamConfig.MULTI_STREAM,
+                    availableStreamConfigs = listOf(
+                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
+                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
+                    ),
+                    isActive = false
+                ),
+                quickSettingsIsOpen = true
+            ),
+            onLensFaceClick = { },
+            onFlashModeClick = { },
+            onAspectRatioClick = { },
+            onStreamConfigClick = { },
+            onDynamicRangeClick = { },
+            onImageOutputFormatClick = { },
+            onConcurrentCameraModeClick = { },
+            toggleQuickSettings = { },
+            onNavigateToSettings = { },
+            onCaptureModeClick = { },
+        )
+    }
+}
+
+@Preview
+@Composable
+fun ExpandedQuickSettingsUiPreview_WithHdr() {
+    MaterialTheme {
+        QuickSettingsBottomSheet(
+            quickSettingsUiState = QuickSettingsUiState.Available(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                    )
+                ),
+                captureModeUiState = CaptureModeUiState.Available(
+                    selectedCaptureMode = CaptureMode.STANDARD,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                    )
+                ),
+                concurrentCameraUiState = ConcurrentCameraUiState.Available(
+                    selectedConcurrentCameraMode = ConcurrentCameraMode.OFF,
+                    isEnabled = false
+                ),
+                flashModeUiState = FlashModeUiState.Available(
+                    selectedFlashMode = FlashMode.OFF,
+                    availableFlashModes = listOf(
+                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+                    ),
+                    isLowLightBoostActive = false
+                ),
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                hdrUiState = HdrUiState.Available(
+                    selectedDynamicRange = DynamicRange.HLG10,
+                    selectedImageFormat = ImageOutputFormat.JPEG_ULTRA_HDR
+                ),
+                streamConfigUiState = StreamConfigUiState.Available(
+                    selectedStreamConfig = StreamConfig.MULTI_STREAM,
+                    availableStreamConfigs = listOf(
+                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
+                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
+                    ),
+                    isActive = false
+                ),
+                quickSettingsIsOpen = true
+            ),
+            onLensFaceClick = { },
+            onFlashModeClick = { },
+            onAspectRatioClick = { },
+            onStreamConfigClick = { },
+            onDynamicRangeClick = { },
+            onImageOutputFormatClick = { },
+            onConcurrentCameraModeClick = { },
+            toggleQuickSettings = { },
+            onNavigateToSettings = { },
+            onCaptureModeClick = { },
+        )
     }
 }

@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -45,6 +46,8 @@ interface SettingsRepository {
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
     suspend fun updateStreamConfig(streamConfig: StreamConfig)
+
+    suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
     suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 

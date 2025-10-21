@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera.effects
 
 import androidx.camera.core.CameraEffect
+import com.google.jetpackcamera.core.camera.effects.processors.CopyingSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
 
 private const val TARGETS =

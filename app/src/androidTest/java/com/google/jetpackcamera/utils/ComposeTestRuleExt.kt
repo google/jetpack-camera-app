@@ -348,12 +348,10 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
             node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                block(description)?.let { result ->
-                    // Return the T value if block returns non-null.
-                    return@checkComponentContentDescriptionState result
-                }
+                val result = block(description)
+                if (result != null) return result
             }
-            throw AssertionError("Unable to determine state from quick settingz")
+            throw AssertionError("Unable to determine state from quick settings")
         }
 }
 
@@ -364,10 +362,9 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
-            block(node.config[SemanticsProperties.StateDescription])?.let { result ->
-                // Return the T value if block returns non-null.
-                return@checkComponentStateDescriptionState result
-            }
+            val result = block(node.config[SemanticsProperties.StateDescription])
+            if (result != null) return result
+
             throw AssertionError("Unable to determine state from component")
         }
 }
