@@ -85,6 +85,7 @@ import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
@@ -273,7 +274,8 @@ class PreviewViewModel @Inject constructor(
                             systemConstraints,
                             aspectRatioUiState,
                             hdrUiState,
-                            trackedUiState.isQuickSettingsOpen
+                            trackedUiState.isQuickSettingsOpen,
+                            trackedUiState.focusedQuickSetting
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         debugUiState = getDebugUiState(
@@ -330,7 +332,8 @@ class PreviewViewModel @Inject constructor(
         systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
         hdrUiState: HdrUiState,
-        quickSettingsIsOpen: Boolean
+        quickSettingsIsOpen: Boolean,
+        focusedQuickSetting: FocusedQuickSetting,
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
         return QuickSettingsUiState.Available(
@@ -347,7 +350,8 @@ class PreviewViewModel @Inject constructor(
             flipLensUiState = flipLensUiState,
             hdrUiState = hdrUiState,
             streamConfigUiState = streamConfigUiState,
-            quickSettingsIsOpen = quickSettingsIsOpen
+            quickSettingsIsOpen = quickSettingsIsOpen,
+            focusedQuickSetting = focusedQuickSetting
         )
     }
 
@@ -793,6 +797,12 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
+        trackedPreviewUiState.update { old ->
+            old.copy(focusedQuickSetting = focusedQuickSetting)
+        }
+    }
+
     fun toggleDebugOverlay() {
         trackedPreviewUiState.update { old ->
             old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
@@ -846,6 +856,7 @@ class PreviewViewModel @Inject constructor(
      */
     data class TrackedPreviewUiState(
         val isQuickSettingsOpen: Boolean = false,
+        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
         val zoomAnimationTarget: Float? = null

@@ -19,10 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -65,6 +61,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
@@ -76,6 +73,7 @@ fun QuickSettingsBottomSheet(
     modifier: Modifier = Modifier,
     quickSettingsUiState: QuickSettingsUiState,
     toggleQuickSettings: () -> Unit,
+    onSetFocusedSetting: (FocusedQuickSetting) -> Unit,
     onNavigateToSettings: () -> Unit,
     onLensFaceClick: (lensFace: LensFacing) -> Unit,
     onFlashModeClick: (flashMode: FlashMode) -> Unit,
@@ -87,13 +85,10 @@ fun QuickSettingsBottomSheet(
     onCaptureModeClick: (CaptureMode) -> Unit
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
-        var focusedQuickSetting by remember {
-            mutableStateOf(FocusedQuickSetting.NONE)
-        }
-        val onUnFocus = { focusedQuickSetting = FocusedQuickSetting.NONE }
+        val onUnFocus = { onSetFocusedSetting(FocusedQuickSetting.NONE) }
 
         val displayedQuickSettings: List<@Composable () -> Unit> =
-            when (focusedQuickSetting) {
+            when (quickSettingsUiState.focusedQuickSetting) {
                 FocusedQuickSetting.ASPECT_RATIO -> focusedRatioButtons(
                     onUnFocus = onUnFocus,
                     onSetAspectRatio = onAspectRatioClick,
@@ -132,7 +127,7 @@ fun QuickSettingsBottomSheet(
                                         }
                                     },
                                 setCaptureMode = {
-                                    focusedQuickSetting = FocusedQuickSetting.CAPTURE_MODE
+                                   onSetFocusedSetting(FocusedQuickSetting.CAPTURE_MODE)
                                 },
                                 captureModeUiState = quickSettingsUiState.captureModeUiState
                             )
@@ -150,7 +145,7 @@ fun QuickSettingsBottomSheet(
                             ToggleFocusedQuickSetRatio(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 setRatio = {
-                                    focusedQuickSetting = FocusedQuickSetting.ASPECT_RATIO
+                                    onSetFocusedSetting( FocusedQuickSetting.ASPECT_RATIO)
                                 },
                                 isHighlightEnabled = false,
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
@@ -206,7 +201,7 @@ fun QuickSettingsBottomSheet(
             BottomSheetComponent(
                 modifier = modifier,
                 onDismiss = {
-                    focusedQuickSetting = FocusedQuickSetting.NONE
+                    onUnFocus()
                     toggleQuickSettings()
                 },
                 sheetState = sheetState,
@@ -214,13 +209,6 @@ fun QuickSettingsBottomSheet(
             )
         }
     }
-}
-
-// enum representing which individual quick setting is currently focused
-private enum class FocusedQuickSetting {
-    NONE,
-    ASPECT_RATIO,
-    CAPTURE_MODE
 }
 
 private fun CaptureModeUiState.stateDescription() = (this as? CaptureModeUiState.Available)?.let {
@@ -294,6 +282,7 @@ fun ExpandedQuickSettingsUiPreview() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
+            onSetFocusedSetting = {},
         )
     }
 }
@@ -364,6 +353,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
+            onSetFocusedSetting = {},
         )
     }
 }

@@ -114,6 +114,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
@@ -315,6 +316,7 @@ fun PreviewScreen(
                 onChangeImageFormat = viewModel::setImageFormat,
                 onDisabledCaptureMode = viewModel::enqueueDisabledHdrToggleSnackBar,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onSetFocusedSetting = viewModel::setFocusedSetting,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
                 onSetAudioEnabled = viewModel::setAudioEnabled,
@@ -366,6 +368,7 @@ private fun ContentScreen(
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onSetFocusedSetting: (FocusedQuickSetting) -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetAudioEnabled: (Boolean) -> Unit = {},
@@ -537,6 +540,7 @@ private fun ContentScreen(
                 modifier = it,
                 quickSettingsUiState = captureUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
+                onSetFocusedSetting = onSetFocusedSetting,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
