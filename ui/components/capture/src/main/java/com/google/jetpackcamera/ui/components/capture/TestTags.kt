@@ -49,7 +49,7 @@ const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
 const val ZOOM_BUTTON_2_TAG = "ZoomButton2Tag"
 const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
 
-//debug component tags
+// debug component tags
 
 const val ZOOM_RATIO_TAG = "ZoomRatioTag"
 const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"

@@ -127,7 +127,7 @@ fun QuickSettingsBottomSheet(
                                         }
                                     },
                                 setCaptureMode = {
-                                   onSetFocusedSetting(FocusedQuickSetting.CAPTURE_MODE)
+                                    onSetFocusedSetting(FocusedQuickSetting.CAPTURE_MODE)
                                 },
                                 captureModeUiState = quickSettingsUiState.captureModeUiState
                             )
@@ -145,7 +145,7 @@ fun QuickSettingsBottomSheet(
                             ToggleFocusedQuickSetRatio(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 setRatio = {
-                                    onSetFocusedSetting( FocusedQuickSetting.ASPECT_RATIO)
+                                    onSetFocusedSetting(FocusedQuickSetting.ASPECT_RATIO)
                                 },
                                 isHighlightEnabled = false,
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
@@ -176,7 +176,7 @@ fun QuickSettingsBottomSheet(
                         add {
                             QuickSetConcurrentCamera(
                                 modifier =
-                                    Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                                 setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                     onConcurrentCameraModeClick(c)
                                 },
@@ -282,7 +282,7 @@ fun ExpandedQuickSettingsUiPreview() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
-            onSetFocusedSetting = {},
+            onSetFocusedSetting = {}
         )
     }
 }
@@ -353,7 +353,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
-            onSetFocusedSetting = {},
+            onSetFocusedSetting = {}
         )
     }
 }

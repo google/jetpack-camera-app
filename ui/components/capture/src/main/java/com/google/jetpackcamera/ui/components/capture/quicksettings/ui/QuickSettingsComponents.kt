@@ -174,7 +174,7 @@ fun QuickSetRatio(
             enum = enum,
             onClick = { onClick() },
             isHighLighted = isHighlightEnabled &&
-                    (assignedRatio == aspectRatioUiState.selectedAspectRatio)
+                (assignedRatio == aspectRatioUiState.selectedAspectRatio)
         )
     }
 }
@@ -263,7 +263,7 @@ fun QuickSetCaptureMode(
                     captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
             },
             isHighLighted =
-                isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
         )
     }
 }
@@ -325,9 +325,9 @@ fun QuickSetHdr(
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {
@@ -359,12 +359,12 @@ fun QuickSetHdr(
             onClick(newVideoDynamicRange, newImageOutputFormat)
         },
         isHighLighted = (
-                hdrUiState is HdrUiState.Available &&
-                        (
-                                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                                )
-                ),
+            hdrUiState is HdrUiState.Available &&
+                (
+                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                        hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                    )
+            ),
         enabled = hdrUiState is HdrUiState.Available
     )
 }
@@ -499,7 +499,7 @@ fun QuickSetConcurrentCamera(
                 }
             },
             isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                    ConcurrentCameraMode.DUAL,
+                ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -542,7 +542,7 @@ fun ToggleQuickSettingsButton(
     ) {
         Icon(
             painter = painterResource(R.drawable.settings_photo_camera_icon),
-            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description),
+            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description)
         )
     }
 }
@@ -693,7 +693,9 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
     ) {
         Icon(
             imageVector = Icons.Default.Close,
-            contentDescription = stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+            contentDescription = stringResource(
+                R.string.quick_settings_btn_close_expanded_settings_description
+            )
         )
     }
 }
@@ -799,25 +801,25 @@ fun ExpandedQuickSetting(
         min(
             quickSettingButtons.size,
             (
+                (
+                    LocalConfiguration.current.screenWidthDp.dp - (
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_horizontal_padding
+                        ) * 2
+                        )
+                    ) /
                     (
-                            LocalConfiguration.current.screenWidthDp.dp - (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_horizontal_padding
-                                    ) * 2
-                                    )
-                            ) /
+                        dimensionResource(
+                            id = R.dimen.quick_settings_ui_item_icon_size
+                        ) +
                             (
-                                    dimensionResource(
-                                        id = R.dimen.quick_settings_ui_item_icon_size
-                                    ) +
-                                            (
-                                                    dimensionResource(
-                                                        id = R.dimen.quick_settings_ui_item_padding
-                                                    ) *
-                                                            2
-                                                    )
-                                    )
-                    ).toInt()
+                                dimensionResource(
+                                    id = R.dimen.quick_settings_ui_item_padding
+                                ) *
+                                    2
+                                )
+                        )
+                ).toInt()
         )
     LazyVerticalGrid(
         modifier = modifier.fillMaxWidth(),
@@ -835,9 +837,9 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {

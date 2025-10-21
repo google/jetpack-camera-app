@@ -35,7 +35,7 @@ sealed interface QuickSettingsUiState {
         val hdrUiState: HdrUiState,
         val streamConfigUiState: StreamConfigUiState,
         val quickSettingsIsOpen: Boolean = false,
-        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
+        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
     ) : QuickSettingsUiState
 }
 
@@ -45,4 +45,3 @@ enum class FocusedQuickSetting {
     ASPECT_RATIO,
     CAPTURE_MODE
 }
-

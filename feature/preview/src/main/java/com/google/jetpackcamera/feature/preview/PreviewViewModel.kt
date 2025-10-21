@@ -333,7 +333,7 @@ class PreviewViewModel @Inject constructor(
         aspectRatioUiState: AspectRatioUiState,
         hdrUiState: HdrUiState,
         quickSettingsIsOpen: Boolean,
-        focusedQuickSetting: FocusedQuickSetting,
+        focusedQuickSetting: FocusedQuickSetting
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
         return QuickSettingsUiState.Available(
