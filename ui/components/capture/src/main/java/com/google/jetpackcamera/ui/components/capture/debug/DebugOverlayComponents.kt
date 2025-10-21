@@ -73,7 +73,7 @@ private const val TAG = "DebugOverlayComponents"
 @Composable
 fun DebugDialogContainerToggle(toggleIsOpen: () -> Unit, modifier: Modifier = Modifier) {
     Button(modifier = modifier.testTag(DEBUG_OVERLAY_BUTTON), onClick = { toggleIsOpen() }) {
-        Text(text = "Debug")
+        Text(text = stringResource(R.string.debug_overlay_toggle_btn_text))
     }
 }
 

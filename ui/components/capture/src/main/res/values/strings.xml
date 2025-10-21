@@ -29,8 +29,11 @@
     <string name="audio_visualizer_icon">An icon of a microphone</string>
     <string name="zoom_ratio_text">%1$.2fx</string>
 
+    <!-- Debug Overlay Text -->
+
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
+    <string name="debug_overlay_toggle_btn_text">Debug</string>
 
     <!-- Notification Text -->
     <string name="toast_image_capture_success">Image Capture Success</string>
@@ -57,11 +60,15 @@
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
 
-    <!-- Quick Setting Toggle Description   -->
-    <string name="quick_settings_dropdown_open_description">Quick settings open</string>
-    <string name="quick_settings_dropdown_closed_description">Quick settings closed</string>
+    <!-- Quick Setting Toggle and BottomSheet -->
+
+    <string name="quick_settings_toggle_open_description">Quick settings open</string>
+    <string name="quick_settings_toggle_closed_description">Quick settings closed</string>
+    <string name="quick_settings_toggle_icon_description">an icon representing camera settings</string>
+    <string name="quick_settings_btn_close_expanded_settings_description">Close expanded settings button</string>
 
     <!-- Quick Settings Text and Tags -->
+
     <!-- Lens Text -->
     <string name="quick_settings_front_camera_text">Front</string>
     <string name="quick_settings_back_camera_text">Back</string>
@@ -120,7 +127,11 @@
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <string name="quick_settings_text_capture_mode_video_only">Video Only</string>
     <string name="quick_settings_text_capture_mode_image_only">Image Only</string>
-    <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
+         <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
+        <string name="pause_resume_button_description">Pause or resume video recording</string>
     <string name="quick_settings_description_capture_mode_video_only">Video only capture</string>
     <string name="quick_settings_description_capture_mode_image_only">Image only capture</string>
+
+    <!-- More Settings Text -->
+    <string name="quick_settings_more_text">More</string>
 </resources>

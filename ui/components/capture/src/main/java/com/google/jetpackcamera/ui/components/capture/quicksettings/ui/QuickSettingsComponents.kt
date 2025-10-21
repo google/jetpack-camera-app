@@ -64,6 +64,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
@@ -274,7 +275,7 @@ fun QuickSetCaptureMode(
 fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     QuickSettingToggleButton(
         onClick = onNavigateToSettings,
-        text = "More",
+        text = stringResource(R.string.quick_settings_more_text),
         accessibilityText = stringResource(R.string.settings_content_description),
         painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
@@ -517,10 +518,20 @@ fun ToggleQuickSettingsButton(
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
+    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
+    val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
     IconButton(
         modifier = modifier
             .size(buttonSize)
-            .testTag(QUICK_SETTINGS_DROP_DOWN),
+            .testTag(QUICK_SETTINGS_DROP_DOWN)
+            .semantics {
+                testTag = QUICK_SETTINGS_DROP_DOWN
+                stateDescription = if (isOpen) {
+                    openDescription
+                } else {
+                    closedDescription
+                }
+            },
         onClick = toggleBottomSheet,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
@@ -531,11 +542,7 @@ fun ToggleQuickSettingsButton(
     ) {
         Icon(
             painter = painterResource(R.drawable.settings_photo_camera_icon),
-            contentDescription = if (isOpen) {
-                stringResource(R.string.quick_settings_dropdown_open_description)
-            } else {
-                stringResource(R.string.quick_settings_dropdown_closed_description)
-            }
+            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description),
         )
     }
 }
@@ -686,7 +693,7 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
     ) {
         Icon(
             imageVector = Icons.Default.Close,
-            contentDescription = "close exapanded settings button"
+            contentDescription = stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
         )
     }
 }
@@ -746,13 +753,14 @@ fun QuickSettingToggleButton(
         verticalArrangement = Arrangement.Center
     ) {
         FilledIconToggleButton(
+            modifier = modifier
+                .minimumInteractiveComponentSize()
+                .size(buttonSize),
             checked = isHighlighted,
             enabled = enabled,
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
-            modifier = modifier
-                .minimumInteractiveComponentSize()
-                .size(buttonSize),
+
             shapes = IconButtonDefaults.toggleableShapes(),
             colors = IconButtonDefaults.filledIconToggleButtonColors()
                 .copy(containerColor = Color.White.copy(alpha = .17f))

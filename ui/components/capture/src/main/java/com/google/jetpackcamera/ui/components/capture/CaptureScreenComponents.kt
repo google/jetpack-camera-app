@@ -166,8 +166,7 @@ fun PauseResumeToggleButton(
                     is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
                     is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
                 },
-                // todo(kc): move contentDescription to XML
-                contentDescription = "pause resume toggle"
+                contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
         }
     }
