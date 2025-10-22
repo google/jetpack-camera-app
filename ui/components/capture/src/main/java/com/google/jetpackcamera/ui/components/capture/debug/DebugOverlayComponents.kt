@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -199,12 +198,12 @@ private fun DebugDialogContainer(
     var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
     val backgroundColor = Color.Black.copy(
         alpha =
-            when (selectedDialog) {
-                SelectedDialog.None,
-                SelectedDialog.SetTestPattern -> 0.7f
+        when (selectedDialog) {
+            SelectedDialog.None,
+            SelectedDialog.SetTestPattern -> 0.7f
 
-                else -> 0.9f
-            }
+            else -> 0.9f
+        }
     )
 
     BackHandler(onBack = { toggleIsOpen() })

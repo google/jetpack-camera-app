@@ -112,7 +112,6 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
 
-
 @Composable
 fun QuickSetRatio(
     onClick: () -> Unit,

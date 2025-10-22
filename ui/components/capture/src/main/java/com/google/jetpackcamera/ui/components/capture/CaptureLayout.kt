@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -64,7 +63,7 @@ fun PreviewLayout(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Box(modifier = modifier.background(Color.Black)){
+        Box(modifier = modifier.background(Color.Black)) {
             Column {
                 indicatorRow(Modifier.statusBarsPadding())
                 viewfinder(Modifier)
@@ -263,11 +262,9 @@ private fun CaptureLayoutPreview() {
         },
         debugOverlay = {
             // No-op for preview
-
         },
         screenFlashOverlay = {
             // No-op for preview
-
         },
         snackBar = { _, _ ->
             // No-op for preview
