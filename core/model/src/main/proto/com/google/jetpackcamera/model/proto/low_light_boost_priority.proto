@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
 
-import android.net.Uri
+syntax = "proto3";
 
-sealed interface ImageCaptureEvent {
-    data class ImageSaved(val savedUri: Uri? = null) : ImageCaptureEvent
+option java_package = "com.google.jetpackcamera.model.proto";
+option java_multiple_files = true;
 
-    data class ImageCaptureError(val exception: Exception) : ImageCaptureEvent
-}
-
-sealed interface VideoCaptureEvent {
-    data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
-
-    data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
+enum LowLightBoostPriority {
+  LOW_LIGHT_BOOST_PRIORITY_AE_MODE = 0;
+  LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES = 1;
 }

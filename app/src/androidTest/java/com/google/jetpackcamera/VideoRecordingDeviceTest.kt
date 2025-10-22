@@ -41,6 +41,7 @@ import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
+import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
@@ -70,7 +71,7 @@ internal class VideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
-        composeTestRule.longClickForVideoRecording()
+        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
@@ -113,7 +114,7 @@ internal class VideoRecordingDeviceTest {
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
-                composeTestRule.longClickForVideoRecording()
+                composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
         Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isTrue()

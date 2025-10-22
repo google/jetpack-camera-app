@@ -69,6 +69,14 @@ const val BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG =
 const val BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG =
     "btn_dialog_stream_config_option_multi_stream_capture_tag"
 
+// Low Light Boost Priority
+const val BTN_OPEN_DIALOG_SETTING_LOW_LIGHT_BOOST_PRIORITY_TAG =
+    "btn_open_dialog_setting_low_light_boost_priority_tag"
+const val BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_AE_MODE_TAG =
+    "btn_dialog_low_light_boost_priority_option_ae_mode_tag"
+const val BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_GOOGLE_PLAY_SERVICES_TAG =
+    "btn_dialog_low_light_boost_priority_option_google_play_services_tag"
+
 // Max Video Duration
 const val BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG = "btn_open_dialog_setting_video_duration_tag"
 const val BTN_DIALOG_VIDEO_DURATION_OPTION_UNLIMITED_TAG =

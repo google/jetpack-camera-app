@@ -37,7 +37,7 @@ const val UNLIMITED_VIDEO_DURATION = 0L
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
+        .setDarkModeStatus(DarkMode.DARK_MODE_DARK)
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
