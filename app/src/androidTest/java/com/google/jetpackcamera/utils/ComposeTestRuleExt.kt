@@ -19,11 +19,13 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -54,6 +56,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BACKGROUND_MAIN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
@@ -63,7 +66,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import org.junit.AssumptionViolatedException
 
 /**
@@ -178,15 +180,85 @@ fun ComposeTestRule.ensureTagNotAppears(
 //
 // ////////////////////////////
 
-fun ComposeTestRule.pressAndDragToLockVideoRecording() {
+fun parseMinSecToMillis(timeString: String): Long? {
+    val parts = timeString.split(':')
+    if (parts.size != 2) {
+        return null // Not in "mm:ss" format
+    }
+
+    return try {
+        val minutes = parts[0].toLong()
+        val seconds = parts[1].toLong()
+        (minutes * 60 + seconds) * 1000
+    } catch (e: NumberFormatException) {
+        null // One of the parts was not a valid number
+    }
+}
+
+private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(
+    durationMillis: Long,
+    checkWhileWaiting: () -> Unit = {}
+) {
+    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting()
+        val text = onNodeWithTag(ELAPSED_TIME_TAG)
+            .fetchSemanticsNode()
+            .config.getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()?.text
+
+        val duration = text?.let { parseMinSecToMillis(it) }
+
+        duration != null && duration >= durationMillis
+    }
+}
+
+fun ComposeTestRule.pressAndDragToLockVideoRecording(
+    durationMillis: Long = VIDEO_DURATION_MILLIS,
+    checkWhileWaiting: () -> Unit = {
+        // If the video capture fails, there is no point to continue waiting. Assert.
+        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+    }
+) {
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
         .performTouchInput {
             down(center)
-            moveBy(delta = Offset(-400f, 0f), delayMillis = VIDEO_DURATION_MILLIS)
+        }
+    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting()
+        onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
+    }
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            moveBy(delta = Offset(-400f, 0f))
             up()
         }
-    ensureTagNotAppears(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
+    waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
+}
+
+fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
+    durationMillis: Long = VIDEO_DURATION_MILLIS,
+    checkWhileWaiting: () -> Unit = {
+        // If the video capture fails, there is no point to continue waiting. Assert.
+        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+    }
+) {
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            down(center)
+        }
+    waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
+        checkWhileWaiting()
+        onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
+    }
+    waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
+    onNodeWithTag(CAPTURE_BUTTON)
+        .assertExists()
+        .performTouchInput {
+            up()
+        }
 }
 
 fun ComposeTestRule.longClickForVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
@@ -272,12 +344,10 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
             node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                block(description)?.let { result ->
-                    // Return the T value if block returns non-null.
-                    return@checkComponentContentDescriptionState result
-                }
+                val result = block(description)
+                if (result != null) return result
             }
-            throw AssertionError("Unable to determine state from quick settingz")
+            throw AssertionError("Unable to determine state from quick settings")
         }
 }
 
@@ -288,10 +358,9 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled())
         .fetchSemanticsNode().let { node ->
-            block(node.config[SemanticsProperties.StateDescription])?.let { result ->
-                // Return the T value if block returns non-null.
-                return@checkComponentStateDescriptionState result
-            }
+            val result = block(node.config[SemanticsProperties.StateDescription])
+            if (result != null) return result
+
             throw AssertionError("Unable to determine state from component")
         }
 }

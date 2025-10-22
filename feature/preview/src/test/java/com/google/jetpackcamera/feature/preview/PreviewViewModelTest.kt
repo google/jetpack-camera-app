@@ -16,11 +16,10 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.data.media.FakeMediaRepository
-import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -56,12 +55,11 @@ class PreviewViewModelTest {
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
-            ExternalCaptureMode.StandardMode {},
-            DebugSettings(isDebugModeEnabled = false),
             cameraSystem = cameraSystem,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
-            mediaRepository = FakeMediaRepository
+            mediaRepository = FakeMediaRepository,
+            savedStateHandle = SavedStateHandle()
         )
         advanceUntilIdle()
     }
@@ -84,7 +82,7 @@ class PreviewViewModelTest {
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.captureImageWithUri(contentResolver, null) { _, _ -> }
+        previewViewModel.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
     }
@@ -92,7 +90,7 @@ class PreviewViewModelTest {
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording(null, false) {}
+        previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isTrue()
     }
@@ -100,7 +98,7 @@ class PreviewViewModelTest {
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCameraUntilRunning()
-        previewViewModel.startVideoRecording(null, false) {}
+        previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
         advanceUntilIdle()

@@ -16,8 +16,6 @@
 package com.google.jetpackcamera.ui
 
 object Routes {
-    const val PREVIEW_ROUTE = "preview"
     const val SETTINGS_ROUTE = "settings"
-    const val PERMISSIONS_ROUTE = "permissions"
     const val POST_CAPTURE_ROUTE = "postCapture"
 }

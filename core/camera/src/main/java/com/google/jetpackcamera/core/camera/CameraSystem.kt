@@ -27,6 +27,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
@@ -103,6 +104,8 @@ interface CameraSystem {
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
     suspend fun setVideoQuality(videoQuality: VideoQuality)
+
+    suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
     suspend fun setLensFacing(lensFacing: LensFacing)
 

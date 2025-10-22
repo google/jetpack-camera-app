@@ -43,6 +43,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -98,6 +99,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     // Compose - Integration with ViewModels with Navigation and Hilt
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
 
     // Compose - Lifecycle utilities
@@ -149,6 +151,9 @@ dependencies {
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter:capture"))
+
+    // Desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code
