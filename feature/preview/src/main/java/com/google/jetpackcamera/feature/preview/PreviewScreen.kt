@@ -662,8 +662,7 @@ private fun LayoutWrapper(
         indicatorRow = { modifier ->
             Row(
                 modifier = modifier
-                    .background(Color.Black)
-                    .safeDrawingPadding()
+                    .background(Color.Transparent)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

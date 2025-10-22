@@ -580,7 +580,7 @@ fun QuickSettingsBottomSheet(
     sheetState: SheetState,
     vararg quickSettingButtons: @Composable () -> Unit
 ) {
-    val openDescription = stringResource(R.string.quick_settings_dropdown_open_description)
+    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
 
     ModalBottomSheet(
         modifier = modifier

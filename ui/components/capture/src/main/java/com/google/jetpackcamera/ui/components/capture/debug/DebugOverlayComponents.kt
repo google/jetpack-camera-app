@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
@@ -78,32 +80,46 @@ fun DebugDialogContainerToggle(toggleIsOpen: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-private fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
+private fun LogicalCameraIdText(logicalCameraId: String?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row {
-            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
-                text = logicalCameraId ?: "---"
-            )
-        }
-        Row {
-            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
-                text = physicalCameraId ?: "---"
-            )
-        }
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_logical_camera_id_prefix),
+            value = logicalCameraId ?: "---",
+            tag = LOGICAL_CAMERA_ID_TAG
+        )
     }
 }
 
 @Composable
-private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float?) {
-    Text(
-        modifier = modifier
-            .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_ratio_text, primaryZoomRatio ?: 1f)
+private fun PhysicalCameraIdText(physicalCameraId: String?) {
+    DebugTextBar(
+        title = stringResource(R.string.debug_text_physical_camera_id_prefix),
+        value = physicalCameraId ?: "---",
+        tag = PHYSICAL_CAMERA_ID_TAG
     )
+}
+
+@Composable
+private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float?) {
+    DebugTextBar(
+        modifier = modifier,
+        title = "Zoom Ratio: ",
+        value = stringResource(id = R.string.zoom_ratio_text, primaryZoomRatio ?: 1f),
+        tag = ZOOM_RATIO_TAG
+    )
+}
+
+@Composable
+private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: String, tag: String) {
+    Row(modifier = modifier) {
+        Text(modifier = modifier.background(Color.Black.copy(alpha = .7f)), text = title)
+        Text(
+            modifier = modifier
+                .background(Color.Black.copy(alpha = .4f))
+                .testTag(tag),
+            text = value
+        )
+    }
 }
 
 @Composable
@@ -117,7 +133,7 @@ fun DebugOverlay(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         DebugConsole(
-            modifier = Modifier.safeDrawingPadding(),
+            modifier = Modifier.padding(top = 100.dp),
             debugUiState = debugUiState,
             onToggleDebugOverlay = toggleIsOpen,
             extraControls = extraControls
@@ -160,11 +176,8 @@ private fun DebugConsole(
             DebugDialogContainerToggle(toggleIsOpen = onToggleDebugOverlay)
             extraControls.forEach { it() }
         }
-
-        CurrentCameraIdText(
-            debugUiState.currentPhysicalCameraId,
-            debugUiState.currentLogicalCameraId
-        )
+        LogicalCameraIdText(debugUiState.currentLogicalCameraId)
+        PhysicalCameraIdText(debugUiState.currentPhysicalCameraId)
         ZoomRatioText(
             modifier = Modifier,
             primaryZoomRatio = debugUiState.currentPrimaryZoomRatio
@@ -185,12 +198,12 @@ private fun DebugDialogContainer(
     var selectedDialog by remember { mutableStateOf(SelectedDialog.None) }
     val backgroundColor = Color.Black.copy(
         alpha =
-        when (selectedDialog) {
-            SelectedDialog.None,
-            SelectedDialog.SetTestPattern -> 0.7f
+            when (selectedDialog) {
+                SelectedDialog.None,
+                SelectedDialog.SetTestPattern -> 0.7f
 
-            else -> 0.9f
-        }
+                else -> 0.9f
+            }
     )
 
     BackHandler(onBack = { toggleIsOpen() })

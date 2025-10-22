@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -34,6 +37,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 // these layouts are only concerned with placement. nothing else. no state handling
@@ -58,31 +63,32 @@ fun PreviewLayout(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column {
-            indicatorRow(Modifier)
+        Box(modifier = modifier){
+            Column {
+                indicatorRow(Modifier.systemBarsPadding())
+                viewfinder(Modifier)
+            }
 
-            viewfinder(Modifier)
-        }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .safeDrawingPadding()
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .safeDrawingPadding()
-
-        ) {
-            VerticalMaterialControls(
-                captureButton = captureButton,
-                flipCameraButton = flipCameraButton,
-                quickSettingsToggleButton = quickSettingsButton,
-                captureModeToggleSwitch = captureModeToggle,
-                bottomSheetQuickSettings = quickSettingsOverlay,
-                zoomControls = zoomLevelDisplay,
-                elapsedTimeDisplay = elapsedTimeDisplay
-            )
-            // controls overlay
-            snackBar(Modifier, snackbarHostState)
-            screenFlashOverlay(Modifier)
+            ) {
+                VerticalMaterialControls(
+                    captureButton = captureButton,
+                    flipCameraButton = flipCameraButton,
+                    quickSettingsToggleButton = quickSettingsButton,
+                    captureModeToggleSwitch = captureModeToggle,
+                    bottomSheetQuickSettings = quickSettingsOverlay,
+                    zoomControls = zoomLevelDisplay,
+                    elapsedTimeDisplay = elapsedTimeDisplay
+                )
+                // controls overlay
+                snackBar(Modifier, snackbarHostState)
+                screenFlashOverlay(Modifier)
+            }
         }
         debugOverlay(Modifier)
     }
@@ -189,4 +195,91 @@ private fun VerticalMaterialControls(
         }
         bottomSheetQuickSettings(Modifier)
     }
+}
+
+@Preview
+@Composable
+private fun CaptureLayoutPreview() {
+    PreviewLayout(
+        modifier = Modifier.background(Color.Black),
+        viewfinder = { modifier ->
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(600.dp)
+                    .background(Color.DarkGray)
+            )
+        },
+        captureButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(80.dp)
+                    .background(Color.White)
+            )
+        },
+        flipCameraButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        zoomLevelDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth()
+                    .background(Color.Magenta)
+            )
+        },
+        elapsedTimeDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(24.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Red)
+            )
+        },
+        quickSettingsButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Yellow)
+            )
+        },
+        indicatorRow = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth()
+                    .background(Color.Green)
+            )
+        },
+        captureModeToggle = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Blue)
+            )
+        },
+        quickSettingsOverlay = { modifier ->
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Gray.copy(alpha = 0.5f))
+            )
+        },
+        debugOverlay = {
+            // No-op for preview
+
+        },
+        screenFlashOverlay = {
+            // No-op for preview
+
+        },
+        snackBar = { _, _ ->
+            // No-op for preview
+        }
+    )
 }
