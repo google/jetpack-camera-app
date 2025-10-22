@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +52,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,6 +65,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -111,47 +110,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
-
-@Composable
-fun FocusedQuickSetRatio(
-    setRatio: (aspectRatio: AspectRatio) -> Unit,
-    aspectRatioUiState: AspectRatioUiState,
-    modifier: Modifier = Modifier
-) {
-    if (aspectRatioUiState is AspectRatioUiState.Available) {
-        val buttons: Array<@Composable () -> Unit> =
-            arrayOf(
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-                        onClick = { setRatio(AspectRatio.THREE_FOUR) },
-                        assignedRatio = AspectRatio.THREE_FOUR,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-                        onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
-                        assignedRatio = AspectRatio.NINE_SIXTEEN,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                        onClick = { setRatio(AspectRatio.ONE_ONE) },
-                        assignedRatio = AspectRatio.ONE_ONE,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                }
-            )
-        ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
-    }
-}
 
 @Composable
 fun QuickSetRatio(
@@ -275,8 +233,8 @@ fun QuickSetCaptureMode(
 fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     QuickSettingToggleButton(
         onClick = onNavigateToSettings,
-        text = "More",
-        accessibilityText = stringResource(R.string.settings_content_description),
+        text = stringResource(R.string.quick_settings_more_text),
+        accessibilityText = stringResource(R.string.quick_settings_more_description),
         painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
     )
@@ -518,10 +476,20 @@ fun ToggleQuickSettingsButton(
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
+    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
+    val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
     IconButton(
         modifier = modifier
             .size(buttonSize)
-            .testTag(QUICK_SETTINGS_DROP_DOWN),
+            .testTag(QUICK_SETTINGS_DROP_DOWN)
+            .semantics {
+                testTag = QUICK_SETTINGS_DROP_DOWN
+                contentDescription = if (isOpen) {
+                    openDescription
+                } else {
+                    closedDescription
+                }
+            },
         onClick = toggleBottomSheet,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
@@ -532,11 +500,7 @@ fun ToggleQuickSettingsButton(
     ) {
         Icon(
             painter = painterResource(R.drawable.settings_photo_camera_icon),
-            contentDescription = if (isOpen) {
-                stringResource(R.string.quick_settings_dropdown_open_description)
-            } else {
-                stringResource(R.string.quick_settings_dropdown_closed_description)
-            }
+            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description)
         )
     }
 }
@@ -574,11 +538,14 @@ fun QuickSettingsBottomSheet(
     sheetState: SheetState,
     vararg quickSettingButtons: @Composable () -> Unit
 ) {
-    val openDescription = stringResource(R.string.quick_settings_dropdown_open_description)
+    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
 
     ModalBottomSheet(
         modifier = modifier
             .semantics {
+                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                // it doesn't inherit the "testTagsAsResourceId" property.
+                testTagsAsResourceId = true
                 testTag = QUICK_SETTINGS_BOTTOM_SHEET
                 contentDescription = openDescription
             },
@@ -590,8 +557,6 @@ fun QuickSettingsBottomSheet(
             modifier = Modifier,
             quickSettingButtons = quickSettingButtons
         )
-
-        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -684,7 +649,9 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
     ) {
         Icon(
             imageVector = Icons.Default.Close,
-            contentDescription = "close exapanded settings button"
+            contentDescription = stringResource(
+                R.string.quick_settings_btn_close_expanded_settings_description
+            )
         )
     }
 }
@@ -744,13 +711,14 @@ fun QuickSettingToggleButton(
         verticalArrangement = Arrangement.Center
     ) {
         FilledIconToggleButton(
+            modifier = modifier
+                .minimumInteractiveComponentSize()
+                .size(buttonSize),
             checked = isHighlighted,
             enabled = enabled,
             onCheckedChange = { _ -> onClick() },
             // 1. Size updated to width 48.dp and height 56.dp
-            modifier = modifier
-                .minimumInteractiveComponentSize()
-                .size(buttonSize),
+
             shapes = IconButtonDefaults.toggleableShapes(),
             colors = IconButtonDefaults.filledIconToggleButtonColors()
                 .copy(containerColor = Color.White.copy(alpha = .17f))
@@ -771,8 +739,9 @@ fun QuickSettingToggleButton(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
+            minLines = 2,
             maxLines = 2,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -815,49 +784,6 @@ fun ExpandedQuickSetting(
     ) {
         items(quickSettingButtons.size) { i ->
             quickSettingButtons[i]()
-        }
-    }
-}
-
-/**
- * Algorithm to determine dimensions of QuickSettings Icon layout
- */
-@Composable
-fun QuickSettingsGrid(
-    modifier: Modifier = Modifier,
-    quickSettingsButtons: List<@Composable () -> Unit>
-) {
-    val initialNumOfColumns =
-        min(
-            quickSettingsButtons.size,
-            (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
-                    (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
-                            (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
-        )
-
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxWidth(),
-        columns = GridCells.Fixed(count = initialNumOfColumns)
-    ) {
-        items(quickSettingsButtons.size) { i ->
-            quickSettingsButtons[i]()
         }
     }
 }
@@ -924,7 +850,7 @@ fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = null,
                     indication = null,
                     onClick = onClick,
                     enabled = enabled

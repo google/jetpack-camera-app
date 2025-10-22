@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,7 +98,7 @@ import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomState
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.debug.DebugComponent
+import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -114,6 +113,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
@@ -315,6 +315,7 @@ fun PreviewScreen(
                 onChangeImageFormat = viewModel::setImageFormat,
                 onDisabledCaptureMode = viewModel::enqueueDisabledHdrToggleSnackBar,
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
+                onSetFocusedSetting = viewModel::setFocusedSetting,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
                 onSetPause = viewModel::setPaused,
                 onSetAudioEnabled = viewModel::setAudioEnabled,
@@ -366,6 +367,7 @@ private fun ContentScreen(
     onChangeImageFormat: (ImageOutputFormat) -> Unit = {},
     onDisabledCaptureMode: (DisableRationale) -> Unit = {},
     onToggleQuickSettings: () -> Unit = {},
+    onSetFocusedSetting: (FocusedQuickSetting) -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetAudioEnabled: (Boolean) -> Unit = {},
@@ -430,6 +432,14 @@ private fun ContentScreen(
             )
         },
         captureButton = {
+            fun runCaptureAction(action: () -> Unit) {
+                if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                        ?.quickSettingsIsOpen == true
+                ) {
+                    onToggleQuickSettings()
+                }
+                action()
+            }
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
@@ -437,26 +447,18 @@ private fun ContentScreen(
                         QuickSettingsUiState.Available
                     )?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
-                    // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                            ?.quickSettingsIsOpen == true
-                    ) {
-                        onToggleQuickSettings()
+                    runCaptureAction {
+                        onCaptureImage(it)
                     }
-                    onCaptureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
                 },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = {
-                    // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                            ?.quickSettingsIsOpen == true
-                    ) {
-                        onToggleQuickSettings()
+                    runCaptureAction {
+                        onStartVideoRecording()
                     }
-                    onStartVideoRecording()
                 },
                 onStopVideoRecording =
                 onStopVideoRecording,
@@ -537,6 +539,7 @@ private fun ContentScreen(
                 modifier = it,
                 quickSettingsUiState = captureUiState.quickSettingsUiState,
                 toggleQuickSettings = onToggleQuickSettings,
+                onSetFocusedSetting = onSetFocusedSetting,
                 onLensFaceClick = onSetLensFacing,
                 onFlashModeClick = onChangeFlash,
                 onAspectRatioClick = onChangeAspectRatio,
@@ -553,7 +556,7 @@ private fun ContentScreen(
         },
         debugOverlay = { modifier, extraControls ->
             (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
-                DebugComponent(
+                DebugOverlay(
                     modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
                     debugUiState = it,
@@ -592,10 +595,7 @@ private fun ContentScreen(
             )
         },
         imageWell = { modifier ->
-            if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                    ?.quickSettingsIsOpen == false &&
-                captureUiState.externalCaptureMode == ExternalCaptureMode.Standard
-            ) {
+            if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
                 ImageWell(
                     modifier = modifier,
                     imageWellUiState = captureUiState.imageWellUiState,
@@ -658,8 +658,6 @@ private fun LayoutWrapper(
         indicatorRow = { modifier ->
             Row(
                 modifier = modifier
-                    .background(Color.Black)
-                    .safeDrawingPadding()
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -674,8 +672,8 @@ private fun LayoutWrapper(
             debugOverlay(
                 modifier,
                 arrayOf(
-                    { imageWell(Modifier) },
                     { audioToggleButton(Modifier) },
+                    { imageWell(Modifier) },
                     { pauseToggleButton(Modifier) }
                 )
             )

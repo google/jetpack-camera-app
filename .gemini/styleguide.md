@@ -21,6 +21,7 @@ When reviewing a pull request, focus on the following key areas:
     * Check for adherence to official Kotlin style guides and Android best practices.
     * **Simplify Complex Logic:** Look for needlessly complex code. If a multi-line block of logic can be condensed into a more concise and readable idiomatic expression (e.g., using Kotlin standard library functions), suggest the simplification.
     * **Decompose Large Components:** Identify large, monolithic functions or composables. Suggest breaking them down into smaller sub-functions or sub-composables to improve readability, testability, and reusability.
+    * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
     * Look for potential null-safety issues, improper error handling, or resource leaks.
     * **Promote Reusability (DRY Principle):** Identify duplicated or highly similar blocks of code. If a pattern of logic is repeated—even with minor variations—suggest extracting it into a reusable function, composable, or helper class.
 

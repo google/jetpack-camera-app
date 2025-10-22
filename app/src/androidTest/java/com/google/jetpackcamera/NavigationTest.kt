@@ -176,9 +176,6 @@ class NavigationTest {
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON).isDisplayed()
         }
 
-        // todo(kc): what should the new behavior be here? should this back press return to the
-        // greater quick settings menu or close the entire bottom sheet?
-
         // Press the device's back button
         uiDevice.pressBack()
 

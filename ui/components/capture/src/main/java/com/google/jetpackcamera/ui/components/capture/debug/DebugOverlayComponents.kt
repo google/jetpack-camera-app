@@ -23,7 +23,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
@@ -72,44 +73,57 @@ import kotlin.math.abs
 private const val TAG = "DebugOverlayComponents"
 
 @Composable
-fun DebugOverlayToggleButton(modifier: Modifier = Modifier, toggleIsOpen: () -> Unit) {
+fun DebugDialogContainerToggle(toggleIsOpen: () -> Unit, modifier: Modifier = Modifier) {
     Button(modifier = modifier.testTag(DEBUG_OVERLAY_BUTTON), onClick = { toggleIsOpen() }) {
-        Text(text = "Debug")
+        Text(text = stringResource(R.string.debug_overlay_toggle_btn_text))
     }
 }
 
 @Composable
-private fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
+private fun LogicalCameraIdText(logicalCameraId: String?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row {
-            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
-                text = logicalCameraId ?: "---"
-            )
-        }
-        Row {
-            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
-                text = physicalCameraId ?: "---"
-            )
-        }
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_logical_camera_id_prefix),
+            value = logicalCameraId ?: "---",
+            tag = LOGICAL_CAMERA_ID_TAG
+        )
     }
+}
+
+@Composable
+private fun PhysicalCameraIdText(physicalCameraId: String?) {
+    DebugTextBar(
+        title = stringResource(R.string.debug_text_physical_camera_id_prefix),
+        value = physicalCameraId ?: "---",
+        tag = PHYSICAL_CAMERA_ID_TAG
+    )
 }
 
 @Composable
 private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float?) {
-    Text(
-        modifier = modifier
-            .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_ratio_text, primaryZoomRatio ?: 1f)
+    DebugTextBar(
+        modifier = modifier,
+        title = "Zoom Ratio: ",
+        value = stringResource(id = R.string.zoom_ratio_text, primaryZoomRatio ?: 1f),
+        tag = ZOOM_RATIO_TAG
     )
 }
 
-// todo add imagewell to debug screen
 @Composable
-fun DebugComponent(
+private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: String, tag: String) {
+    Row(modifier = modifier) {
+        Text(modifier = modifier.background(Color.Black.copy(alpha = .7f)), text = title)
+        Text(
+            modifier = modifier
+                .background(Color.Black.copy(alpha = .4f))
+                .testTag(tag),
+            text = value
+        )
+    }
+}
+
+@Composable
+fun DebugOverlay(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
@@ -119,13 +133,13 @@ fun DebugComponent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         DebugConsole(
-            modifier = Modifier.safeDrawingPadding(),
+            modifier = Modifier.padding(top = 100.dp),
             debugUiState = debugUiState,
             onToggleDebugOverlay = toggleIsOpen,
             extraControls = extraControls
         )
         (debugUiState as? DebugUiState.Enabled.Open)?.let {
-            DebugOverlayComponent(
+            DebugDialogContainer(
                 modifier = Modifier,
                 onChangeZoomRatio = onChangeZoomRatio,
                 onSetTestPattern = onSetTestPattern,
@@ -138,11 +152,11 @@ fun DebugComponent(
 
 /**
  * A row of components visible at the top of the debug screen.
- * The first button will always be the [DebugOverlayToggleButton], followed by any components passed
+ * The first button will always be the [DebugDialogContainerToggle], followed by any components passed
  * into [extraControls].
  *
  * @param debugUiState  the current [DebugUiState.Enabled]
- * @param onToggleDebugOverlay a callback to open and hide the [DebugOverlayComponent]
+ * @param onToggleDebugOverlay a callback to open and hide the [DebugDialogContainer]
  * @param extraControls additional composable functions to be displayed in the debug top row.
  * These should NOT include components intended to be exclusive to the debug screen.
  */
@@ -159,14 +173,11 @@ private fun DebugConsole(
             itemVerticalAlignment = Alignment.CenterVertically
         ) {
             // debug menu button
-            DebugOverlayToggleButton(toggleIsOpen = onToggleDebugOverlay)
+            DebugDialogContainerToggle(toggleIsOpen = onToggleDebugOverlay)
             extraControls.forEach { it() }
         }
-
-        CurrentCameraIdText(
-            debugUiState.currentPhysicalCameraId,
-            debugUiState.currentLogicalCameraId
-        )
+        LogicalCameraIdText(debugUiState.currentLogicalCameraId)
+        PhysicalCameraIdText(debugUiState.currentPhysicalCameraId)
         ZoomRatioText(
             modifier = Modifier,
             primaryZoomRatio = debugUiState.currentPrimaryZoomRatio
@@ -174,8 +185,10 @@ private fun DebugConsole(
     }
 }
 
+// Debug Dialogs
+
 @Composable
-private fun DebugOverlayComponent(
+private fun DebugDialogContainer(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
@@ -201,12 +214,13 @@ private fun DebugOverlayComponent(
             .background(color = backgroundColor)
     ) {
         AnimatedContent(
+            modifier = Modifier.safeContentPadding(),
             targetState = selectedDialog,
             transitionSpec = { fadeIn() togetherWith fadeOut() using null }
         ) { dialog ->
             when (dialog) {
                 SelectedDialog.None ->
-                    OpenDebugOverlayMenu(
+                    DebugDialogOptionsMenuDialog(
                         debugUiState,
                         onMoveToComponent = { selectedDialog = it },
                         onClose = { toggleIsOpen() }
@@ -235,7 +249,7 @@ private fun DebugOverlayComponent(
 }
 
 @Composable
-private fun OpenDebugOverlayMenu(
+private fun DebugDialogOptionsMenuDialog(
     debugUiState: DebugUiState.Enabled.Open,
     onMoveToComponent: (SelectedDialog) -> Unit,
     onClose: () -> Unit
@@ -244,11 +258,11 @@ private fun OpenDebugOverlayMenu(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .safeContentPadding()
             .noIndicationClickable(onClick = onClose),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // todo(kc): permanently move this static information to the debug console?
         Row {
             Text("Video resolution: ")
             val size = debugUiState.videoResolution
@@ -409,7 +423,7 @@ private fun SetTestPatternDialog(
 
 @Composable
 private fun Modifier.noIndicationClickable(onClick: () -> Unit): Modifier = this.clickable(
-    interactionSource = remember { MutableInteractionSource() },
+    interactionSource = null,
     indication = null,
     onClick = onClick
 )

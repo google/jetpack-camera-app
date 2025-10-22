@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -153,5 +154,109 @@ class FlashModeUiStateAdapterTest {
                 defaultCameraState
             )
         }
+    }
+
+    @Test
+    fun updateFrom_lowLightBoostActive_updatesStrength() {
+        // Given an initial UI state with LOW_LIGHT_BOOST selected
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
+        assertThat(uiState).isInstanceOf(FlashModeUiState.Available::class.java)
+
+        // When the camera state reports active low light boost
+        val cameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Active(strength = 0.7f)
+        )
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            systemConstraints,
+            cameraState
+        )
+
+        // Then isLowLightBoostActive is updated in the UI state
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(true)
+    }
+
+    @Test
+    fun updateFrom_lowLightBoostInactive_resetsStrength() {
+        // Given an initial UI state with active low light boost strength
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val initialCameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Active(strength = 0.7f)
+        )
+        var uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
+        uiState = uiState.updateFrom(initialAppSettings, systemConstraints, initialCameraState)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
+
+        // When the camera state reports inactive low light boost
+        val newCameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Inactive
+        )
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            systemConstraints,
+            newCameraState
+        )
+
+        // Then isLowLightBoostActive is reset to false
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
+    }
+
+    @Test
+    fun updateFrom_lowLightBoostError_resetsStrength() {
+        // Given an initial UI state with active low light boost strength
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val initialCameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Active(strength = 0.7f)
+        )
+        var uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
+        uiState = uiState.updateFrom(initialAppSettings, systemConstraints, initialCameraState)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
+
+        // When the camera state reports a low light boost error
+        val newCameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Error(Throwable())
+        )
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            systemConstraints,
+            newCameraState
+        )
+
+        // Then isLowLightBoostActive is reset to false
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
     }
 }

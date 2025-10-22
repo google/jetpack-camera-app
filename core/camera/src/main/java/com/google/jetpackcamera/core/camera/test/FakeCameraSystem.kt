@@ -31,6 +31,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
@@ -187,6 +188,12 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun setVideoQuality(videoQuality: VideoQuality) {
         currentSettings.update { old ->
             old.copy(videoQuality = videoQuality)
+        }
+    }
+
+    override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        currentSettings.update { old ->
+            old.copy(lowLightBoostPriority = lowLightBoostPriority)
         }
     }
 

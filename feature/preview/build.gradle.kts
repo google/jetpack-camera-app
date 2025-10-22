@@ -43,6 +43,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -83,7 +84,7 @@ android {
 dependencies {
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
-    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.window.size.klass)
 
     // Compose
     val composeBom = platform(libs.compose.bom)
@@ -151,6 +152,9 @@ dependencies {
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter:capture"))
+
+    // Desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code

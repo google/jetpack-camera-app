@@ -47,6 +47,7 @@ import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -58,6 +59,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -83,6 +85,7 @@ import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
@@ -101,8 +104,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -187,6 +192,27 @@ class PreviewViewModel @Inject constructor(
                         oldCameraAppSettings = new
                     }
             }
+
+            launch {
+                cameraSystem.getCurrentCameraState()
+                    .map { it.lowLightBoostState }
+                    .distinctUntilChanged()
+                    .collect { state ->
+                        if (state is LowLightBoostState.Error) {
+                            val cookieInt = snackBarCount.incrementAndGet()
+                            Log.d(TAG, "LowLightBoostState changed to Error #$cookieInt")
+                            addSnackBarData(
+                                SnackbarData(
+                                    cookie = "LowLightBoost-$cookieInt",
+                                    stringResource = R.string.low_light_boost_error_toast_message,
+                                    withDismissAction = true,
+                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG
+                                )
+                            )
+                        }
+                    }
+            }
+
             combine(
                 cameraSystem.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
@@ -248,7 +274,8 @@ class PreviewViewModel @Inject constructor(
                             systemConstraints,
                             aspectRatioUiState,
                             hdrUiState,
-                            trackedUiState.isQuickSettingsOpen
+                            trackedUiState.isQuickSettingsOpen,
+                            trackedUiState.focusedQuickSetting
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         debugUiState = getDebugUiState(
@@ -305,7 +332,8 @@ class PreviewViewModel @Inject constructor(
         systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
         hdrUiState: HdrUiState,
-        quickSettingsIsOpen: Boolean
+        quickSettingsIsOpen: Boolean,
+        focusedQuickSetting: FocusedQuickSetting
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
         return QuickSettingsUiState.Available(
@@ -322,7 +350,8 @@ class PreviewViewModel @Inject constructor(
             flipLensUiState = flipLensUiState,
             hdrUiState = hdrUiState,
             streamConfigUiState = streamConfigUiState,
-            quickSettingsIsOpen = quickSettingsIsOpen
+            quickSettingsIsOpen = quickSettingsIsOpen,
+            focusedQuickSetting = focusedQuickSetting
         )
     }
 
@@ -399,6 +428,11 @@ class PreviewViewModel @Inject constructor(
         )
         applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
         applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
+        applyDiff(
+            new,
+            CameraAppSettings::lowLightBoostPriority,
+            cameraSystem::setLowLightBoostPriority
+        )
     }
 
     fun startCamera() {
@@ -763,6 +797,12 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
+        trackedPreviewUiState.update { old ->
+            old.copy(focusedQuickSetting = focusedQuickSetting)
+        }
+    }
+
     fun toggleDebugOverlay() {
         trackedPreviewUiState.update { old ->
             old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
@@ -816,6 +856,7 @@ class PreviewViewModel @Inject constructor(
      */
     data class TrackedPreviewUiState(
         val isQuickSettingsOpen: Boolean = false,
+        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
         val zoomAnimationTarget: Float? = null
