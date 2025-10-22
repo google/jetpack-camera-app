@@ -25,7 +25,7 @@ enum class LowLightBoostPriority {
         /**
          * Returns the LowLightBoostPriority enum equivalent of a provided
          * LowLightBoostPriorityProto
-         * */
+         */
         fun fromProto(
             lowLightBoostPriorityProto: LowLightBoostPriorityProto
         ): LowLightBoostPriority {
