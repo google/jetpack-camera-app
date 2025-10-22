@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -63,9 +64,9 @@ fun PreviewLayout(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Box(modifier = modifier){
+        Box(modifier = modifier.background(Color.Black)){
             Column {
-                indicatorRow(Modifier.systemBarsPadding())
+                indicatorRow(Modifier.statusBarsPadding())
                 viewfinder(Modifier)
             }
 
@@ -108,18 +109,12 @@ private fun VerticalMaterialControls(
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                elapsedTimeDisplay(Modifier)
+
                 // zoom controls row
                 zoomControls(Modifier)
-
                 // capture button row
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        elapsedTimeDisplay(Modifier)
-                    }
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -263,12 +258,8 @@ private fun CaptureLayoutPreview() {
                     .background(Color.Blue)
             )
         },
-        quickSettingsOverlay = { modifier ->
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(Color.Gray.copy(alpha = 0.5f))
-            )
+        quickSettingsOverlay = {
+            // No-op for preview
         },
         debugOverlay = {
             // No-op for preview

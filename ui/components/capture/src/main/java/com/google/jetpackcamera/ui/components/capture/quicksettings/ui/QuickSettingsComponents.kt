@@ -112,46 +112,6 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
 
-@Composable
-fun FocusedQuickSetRatio(
-    setRatio: (aspectRatio: AspectRatio) -> Unit,
-    aspectRatioUiState: AspectRatioUiState,
-    modifier: Modifier = Modifier
-) {
-    if (aspectRatioUiState is AspectRatioUiState.Available) {
-        val buttons: Array<@Composable () -> Unit> =
-            arrayOf(
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-                        onClick = { setRatio(AspectRatio.THREE_FOUR) },
-                        assignedRatio = AspectRatio.THREE_FOUR,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-                        onClick = { setRatio(AspectRatio.NINE_SIXTEEN) },
-                        assignedRatio = AspectRatio.NINE_SIXTEEN,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                        onClick = { setRatio(AspectRatio.ONE_ONE) },
-                        assignedRatio = AspectRatio.ONE_ONE,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                }
-            )
-        ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
-    }
-}
 
 @Composable
 fun QuickSetRatio(
@@ -599,8 +559,6 @@ fun QuickSettingsBottomSheet(
             modifier = Modifier,
             quickSettingButtons = quickSettingButtons
         )
-
-        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -783,8 +741,9 @@ fun QuickSettingToggleButton(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
+            minLines = 2,
             maxLines = 2,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

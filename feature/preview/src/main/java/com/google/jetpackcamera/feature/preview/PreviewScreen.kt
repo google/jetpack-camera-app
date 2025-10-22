@@ -596,10 +596,7 @@ private fun ContentScreen(
             )
         },
         imageWell = { modifier ->
-            if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                    ?.quickSettingsIsOpen == false &&
-                captureUiState.externalCaptureMode == ExternalCaptureMode.Standard
-            ) {
+            if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
                 ImageWell(
                     modifier = modifier,
                     imageWellUiState = captureUiState.imageWellUiState,
@@ -662,7 +659,6 @@ private fun LayoutWrapper(
         indicatorRow = { modifier ->
             Row(
                 modifier = modifier
-                    .background(Color.Transparent)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -677,8 +673,8 @@ private fun LayoutWrapper(
             debugOverlay(
                 modifier,
                 arrayOf(
-                    { imageWell(Modifier) },
                     { audioToggleButton(Modifier) },
+                    { imageWell(Modifier) },
                     { pauseToggleButton(Modifier) }
                 )
             )
