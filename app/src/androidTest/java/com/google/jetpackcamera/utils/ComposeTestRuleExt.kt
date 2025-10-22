@@ -136,7 +136,15 @@ fun SemanticsNodeInteraction.assume(
 // idles
 //
 // ////////////////////////////
-fun ComposeTestRule.waitForStartup(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
+
+fun ComposeTestRule.wait(timeoutMillis: Long){
+    try {
+        waitUntil(timeoutMillis) { false }
+    } catch (e: ComposeTimeoutException) {
+        /* do nothing, we just want to time out*/
+    }
+}
+fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
     // Wait for the capture button to be displayed
     waitUntil(timeoutMillis = timeoutMillis) {
         onNodeWithTag(CAPTURE_BUTTON).isDisplayed()

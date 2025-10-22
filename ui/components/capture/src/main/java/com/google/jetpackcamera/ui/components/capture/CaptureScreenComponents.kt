@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import ToggleSwitch
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.os.Build

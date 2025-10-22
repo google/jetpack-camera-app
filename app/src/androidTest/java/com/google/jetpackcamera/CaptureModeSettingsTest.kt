@@ -48,7 +48,6 @@ import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.getCaptureModeToggleState
-import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
@@ -62,8 +61,9 @@ import com.google.jetpackcamera.utils.setHdrEnabled
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.unFocusQuickSetting
 import com.google.jetpackcamera.utils.visitQuickSettings
+import com.google.jetpackcamera.utils.wait
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForStartup
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +82,7 @@ internal class CaptureModeSettingsTest {
     private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) =
         visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
             captureMode?.let {
-                assertThat(getCurrentCaptureMode()).isEqualTo(captureMode)
+                assertThat(getCaptureModeToggleState()).isEqualTo(captureMode)
             }
         }
 
@@ -97,14 +97,14 @@ internal class CaptureModeSettingsTest {
         captureMode: CaptureMode = CaptureMode.IMAGE_ONLY
     ) {
         // Test that the JCA switch is visible on the screen
-        composeTestRule.waitForStartup()
+        composeTestRule.waitForCaptureButton()
 
         check(
             captureMode != CaptureMode.STANDARD
         ) { "capture mode should be IMAGE_ONLY or VIDEO_ONLY." }
-        waitForStartup()
+        waitForCaptureButton()
 
-        if ((getCurrentCaptureMode()) != captureMode) {
+        if ((getCaptureModeToggleState()) != captureMode) {
             setCaptureMode(captureMode)
         }
 
@@ -118,7 +118,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun can_set_capture_mode_in_quick_settings() {
         runMainActivityScenarioTest {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
                 checkCaptureMode(CaptureMode.IMAGE_ONLY)
@@ -135,7 +135,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun concurrent_only_supports_video_capture_mode() {
         runMainActivityScenarioTest {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 // verify concurrent is supported. if not supported, skip test
                 waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
@@ -168,7 +168,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun image_only_disables_concurrent_camera() {
         runMainActivityScenarioTest {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.visitQuickSettings {
                 // verify concurrent is supported. if not supported, skip test
                 setConcurrentCameraMode(ConcurrentCameraMode.OFF)
@@ -199,7 +199,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun hdr_supports_image_only() {
         runMainActivityScenarioTest {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.initializeCaptureSwitch()
             composeTestRule.setHdrEnabled(true)
 
@@ -211,7 +211,7 @@ internal class CaptureModeSettingsTest {
 
             // capture mode should be image only
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
-                assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.IMAGE_ONLY)
+                assertThat(getCaptureModeToggleState()).isEqualTo(CaptureMode.IMAGE_ONLY)
             }
             // should not be able to change capture mode
             assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
@@ -223,7 +223,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun hdr_supports_video_only() {
         runMainActivityScenarioTest {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.setHdrEnabled(true)
             // check that switch is disabled and only supports video
             composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -248,7 +248,7 @@ internal class CaptureModeSettingsTest {
     fun hdr_supports_image_and_video() {
         runMainActivityScenarioTest {
             with(composeTestRule) {
-                composeTestRule.waitForStartup()
+                composeTestRule.waitForCaptureButton()
 
                 // enable hdr
                 setHdrEnabled(true)
@@ -304,7 +304,7 @@ internal class CaptureModeSettingsTest {
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitForStartup()
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
                     checkCaptureMode(CaptureMode.IMAGE_ONLY)
 
@@ -327,7 +327,7 @@ internal class CaptureModeSettingsTest {
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitForStartup()
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
                     checkCaptureMode(CaptureMode.IMAGE_ONLY)
                 }
@@ -350,7 +350,7 @@ internal class CaptureModeSettingsTest {
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitForStartup()
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
                     checkCaptureMode(CaptureMode.VIDEO_ONLY)
 
@@ -373,7 +373,7 @@ internal class CaptureModeSettingsTest {
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitForStartup()
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
                     checkCaptureMode(CaptureMode.VIDEO_ONLY)
                 }
@@ -389,10 +389,10 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun jcaSwitch_stateChangesOnTap() = runMainActivityScenarioTest {
-        composeTestRule.waitForStartup()
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.initializeCaptureSwitch()
-        val initialCaptureMode = composeTestRule.getCurrentCaptureMode()
+        val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
 
         // should be different from initial capture mode
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
@@ -410,7 +410,7 @@ internal class CaptureModeSettingsTest {
     @Test
     fun jcaSwitch_stateDoesNotChangeWhenDragging() = runMainActivityScenarioTest {
         // Test that the state of the JCA switch does not change while dragged
-        composeTestRule.waitForStartup()
+        composeTestRule.waitForCaptureButton()
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
         val captureToggleNode = composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
@@ -424,11 +424,9 @@ internal class CaptureModeSettingsTest {
             .performTouchInput {
                 down(center)
             }
-        try {
-            composeTestRule.waitUntil(500) { false }
-        } catch (e: ComposeTimeoutException) {
-            /* do nothing, we just want to time out*/
-        }
+
+        composeTestRule.wait(500L)
+
         switchStaysUnchanged(initialCaptureMode)
 
         // should not change value while dragging
@@ -436,11 +434,7 @@ internal class CaptureModeSettingsTest {
             moveBy(delta = Offset(offsetToSwitch, 0f))
         }
 
-        try {
-            composeTestRule.waitUntil(500) { false }
-        } catch (e: ComposeTimeoutException) {
-            /* do nothing, we just want to time out*/
-        }
+        composeTestRule.wait(500L)
         switchStaysUnchanged(initialCaptureMode)
 
         // should change value after release
@@ -459,7 +453,7 @@ internal class CaptureModeSettingsTest {
         ) {
             val timeStamp = System.currentTimeMillis()
 
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.initializeCaptureSwitch(captureMode = CaptureMode.VIDEO_ONLY)
             // start recording
             composeTestRule.tapStartLockedVideoRecording()

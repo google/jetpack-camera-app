@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.google.jetpackcamera.ui.components.capture
+
 import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 
+private const val DISABLED_ICON_ALPHA = 0.38f
 /**
  * A custom Switch component built with Canvas, supporting drag gestures
  * and custom icons for on/off states, styled for the JCA project.
@@ -74,8 +78,8 @@ import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 @Composable
 fun ToggleSwitch(
     checked: Boolean,
-    modifier: Modifier = Modifier,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     onToggleWhenDisabled: () -> Unit = {},
     enabled: Boolean = true,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -86,15 +90,19 @@ fun ToggleSwitch(
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
     unSelectedIconColor: Color = MaterialTheme.colorScheme.primary,
-    selectedIconColor: Color = MaterialTheme.colorScheme.onPrimary
+    selectedIconColor: Color = MaterialTheme.colorScheme.onPrimary,
+    switchWidth: Dp = 116.dp,
+    switchHeight: Dp = 64.dp,
+    thumbDiameter: Dp = 40.dp,
+    iconSize: Dp = 24.dp
 ) {
     // --- 1. Dimensions ---
     // Encapsulate all Dp and Px calculations
     val dims = rememberSwitchDimensions(
-        switchWidth = 116.dp,
-        switchHeight = 64.dp,
-        thumbDiameter = 40.dp,
-        iconSize = 24.dp
+        switchWidth = switchWidth,
+        switchHeight = switchHeight,
+        thumbDiameter = thumbDiameter,
+        iconSize = iconSize
     )
     val thumbY = dims.switchHeightPx / 2
     val trackCornerRadius = CornerRadius(dims.switchHeightPx / 2, dims.switchHeightPx / 2)
@@ -211,8 +219,8 @@ fun ToggleSwitch(
                 iconPadding = iconPadding,
                 leftIconPainter = offIconPainter,
                 rightIconPainter = onIconPainter,
-                offIconColor = if (enabled) unSelectedIconColor else disableColor.copy(.38f),
-                onIconColor = if (enabled) selectedIconColor else disableColor.copy(alpha = .38f)
+                offIconColor = if (enabled) unSelectedIconColor else disableColor.copy(alpha = DISABLED_ICON_ALPHA),
+                onIconColor = if (enabled) selectedIconColor else disableColor.copy(alpha =DISABLED_ICON_ALPHA)
             )
         }
     }
