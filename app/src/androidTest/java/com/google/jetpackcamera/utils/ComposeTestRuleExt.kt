@@ -615,7 +615,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
     crossinline block: ComposeTestRule.() -> T
 ): T {
     var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(CaptureR.string.quick_settings_dropdown_closed_description).apply {
+    onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_closed_description).apply {
         if (isDisplayed()) {
             performClick()
             needReturnFromQuickSettings = true

@@ -432,6 +432,14 @@ private fun ContentScreen(
             )
         },
         captureButton = {
+            fun runCaptureAction(action: () -> Unit) {
+                if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                        ?.quickSettingsIsOpen == true
+                ) {
+                    onToggleQuickSettings()
+                }
+                action()
+            }
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
@@ -439,26 +447,18 @@ private fun ContentScreen(
                         QuickSettingsUiState.Available
                     )?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
-                    // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                            ?.quickSettingsIsOpen == true
-                    ) {
-                        onToggleQuickSettings()
+                    runCaptureAction {
+                        onCaptureImage(it)
                     }
-                    onCaptureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
                     onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
                 },
                 onToggleQuickSettings = onToggleQuickSettings,
                 onStartVideoRecording = {
-                    // close quick settings if already open
-                    if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                            ?.quickSettingsIsOpen == true
-                    ) {
-                        onToggleQuickSettings()
+                    runCaptureAction {
+                        onStartVideoRecording()
                     }
-                    onStartVideoRecording()
                 },
                 onStopVideoRecording =
                 onStopVideoRecording,

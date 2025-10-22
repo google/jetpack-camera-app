@@ -64,7 +64,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
@@ -235,7 +234,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
     QuickSettingToggleButton(
         onClick = onNavigateToSettings,
         text = stringResource(R.string.quick_settings_more_text),
-        accessibilityText = stringResource(R.string.settings_content_description),
+        accessibilityText = stringResource(R.string.quick_settings_more_description),
         painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
     )
@@ -485,7 +484,7 @@ fun ToggleQuickSettingsButton(
             .testTag(QUICK_SETTINGS_DROP_DOWN)
             .semantics {
                 testTag = QUICK_SETTINGS_DROP_DOWN
-                stateDescription = if (isOpen) {
+                contentDescription = if (isOpen) {
                     openDescription
                 } else {
                     closedDescription

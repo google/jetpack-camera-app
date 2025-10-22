@@ -224,7 +224,7 @@ fun AmplitudeToggleButton(
                 } else {
                     Icons.Filled.MicOff
                 },
-                contentDescription = stringResource(id = R.string.audio_visualizer_icon)
+                contentDescription = stringResource(id = R.string.audio_visualizer_icon_description)
             )
         }
     }
@@ -791,6 +791,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
@@ -822,15 +823,15 @@ fun FlipCameraButton(
             }
         }
         IconButton(
-            modifier = modifier.size(40.dp),
+            modifier = modifier,
             onClick = onClick,
             enabled = enabledCondition
         ) {
             Icon(
                 imageVector = Icons.Filled.FlipCameraAndroid,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
+                contentDescription = stringResource(id = R.string.flip_camera_icon_description),
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
             )
         }

@@ -18,15 +18,18 @@
     <!-- Preview Screen Text -->
     <string name="camera_not_ready">Camera Loading…</string>
 
+    <!-- Capture Mode Toggle -->
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
     <string name="capture_mode_video_recording_content_description">Video recording mode</string>
     <string name="capture_mode_image_capture_content_description_disabled">HDR Image Capture mode only</string>
     <string name="capture_mode_video_recording_content_description_disabled">HDR Video recording mode only</string>
 
-    <string name="settings_content_description">Settings</string>
-    <string name="flip_camera_content_description">Flip Camera</string>
+    <string name="flip_camera_icon_description">Flip Camera Icon</string>
 
-    <string name="audio_visualizer_icon">An icon of a microphone</string>
+    <!-- Mute unmute -->
+    <string name="pause_resume_button_description">Button to pause or resume video recording</string>
+    <string name="audio_visualizer_icon_description">An icon of a microphone</string>
+
     <string name="zoom_ratio_text">%1$.2fx</string>
 
     <!-- Debug Overlay Text -->
@@ -35,10 +38,10 @@
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
     <string name="debug_overlay_toggle_btn_text">Debug</string>
 
+
     <!-- Notification Text -->
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
-
     <string name="toast_capture_failure">Image Capture Failure</string>
     <string name="toast_video_capture_failure">Video Capture Failure</string>
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
@@ -61,7 +64,6 @@
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
 
     <!-- Quick Setting Toggle and BottomSheet -->
-
     <string name="quick_settings_toggle_open_description">Quick settings open</string>
     <string name="quick_settings_toggle_closed_description">Quick settings closed</string>
     <string name="quick_settings_toggle_icon_description">an icon representing camera settings</string>
@@ -127,11 +129,12 @@
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <string name="quick_settings_text_capture_mode_video_only">Video Only</string>
     <string name="quick_settings_text_capture_mode_image_only">Image Only</string>
-         <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
-        <string name="pause_resume_button_description">Pause or resume video recording</string>
+    <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
     <string name="quick_settings_description_capture_mode_video_only">Video only capture</string>
     <string name="quick_settings_description_capture_mode_image_only">Image only capture</string>
 
     <!-- More Settings Text -->
     <string name="quick_settings_more_text">More</string>
+    <string name="quick_settings_more_description">Settings icon</string>
+
 </resources>
